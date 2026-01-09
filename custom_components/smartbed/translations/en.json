@@ -138,10 +138,10 @@
         "name": "Stop All"
       },
       "disconnect": {
-        "name": "Disconnect Bluetooth"
+        "name": "Disconnect"
       },
       "connect": {
-        "name": "Connect Bluetooth"
+        "name": "Connect"
       }
     },
     "cover": {

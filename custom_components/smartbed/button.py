@@ -97,6 +97,7 @@ BUTTON_DESCRIPTIONS: tuple[SmartBedButtonEntityDescription, ...] = (
     # Connection control buttons (diagnostic)
     SmartBedButtonEntityDescription(
         key="disconnect",
+        name=None,
         translation_key="disconnect",
         icon="mdi:bluetooth-off",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -104,6 +105,7 @@ BUTTON_DESCRIPTIONS: tuple[SmartBedButtonEntityDescription, ...] = (
     ),
     SmartBedButtonEntityDescription(
         key="connect",
+        name=None,
         translation_key="connect",
         icon="mdi:bluetooth-connect",
         entity_category=EntityCategory.DIAGNOSTIC,
