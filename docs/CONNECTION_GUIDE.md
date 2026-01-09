@@ -23,7 +23,7 @@ Most smart beds use Bluetooth Low Energy (BLE) to communicate with their remote 
 
 1. **BLE Range**: Typical BLE range is 10-30 meters, but walls and interference can reduce this significantly
 2. **Single Connection**: Most beds only accept ONE Bluetooth connection at a time. If the manufacturer's app is connected, Home Assistant won't be able to connect
-3. **Connection Persistence**: The integration maintains a connection while in use and disconnects after 60 seconds of idle time to allow other devices to connect
+3. **Connection Persistence**: The integration maintains a connection while in use and disconnects after 40 seconds of idle time to allow other devices to connect
 
 ---
 

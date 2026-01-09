@@ -175,4 +175,3 @@ See [Technical Details](docs/CONNECTION_GUIDE.md#technical-details) for protocol
 ## License
 
 This project is licensed under the MIT License.
-
