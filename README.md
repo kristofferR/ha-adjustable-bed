@@ -26,14 +26,14 @@ These guides contain much more detail than this README - **if you're stuck, they
 
 | Brand | Status | Protocol | Notes |
 |-------|--------|----------|-------|
-| **Linak** | ✅ Tested | Linak BLE | Full support with position feedback |
-| **Richmat** | 🔧 Untested | Nordic / WiLinke | Two protocol variants |
-| **Keeson** | 🔧 Untested | KSBT / BaseI4/I5 | Member's Mark, Purple, ErgoMotion |
-| **Solace** | 🔧 Untested | 11-byte packets | Hospital/care beds |
-| **MotoSleep** | 🔧 Untested | HHC ASCII | Device name starts with "HHC" |
-| **Leggett & Platt** | 🔧 Untested | Gen2 ASCII / Okin | Two distinct variants |
-| **Reverie** | 🔧 Untested | XOR checksum | Position-based motor control |
-| **Okimat** | 🔧 Untested | Okin binary | Requires BLE pairing |
+| **[Linak](docs/SUPPORTED_BEDS.md#linak)** | ✅ Tested | Linak BLE | Full support with position feedback |
+| **[Richmat](docs/SUPPORTED_BEDS.md#richmat)** | 🔧 Untested | Nordic / WiLinke | Two protocol variants |
+| **[Keeson](docs/SUPPORTED_BEDS.md#keeson)** | 🔧 Untested | KSBT / BaseI4/I5 | Member's Mark, Purple, ErgoMotion |
+| **[Solace](docs/SUPPORTED_BEDS.md#solace)** | 🔧 Untested | 11-byte packets | Hospital/care beds |
+| **[MotoSleep](docs/SUPPORTED_BEDS.md#motosleep)** | 🔧 Untested | HHC ASCII | Device name starts with "HHC" |
+| **[Leggett & Platt](docs/SUPPORTED_BEDS.md#leggett--platt)** | 🔧 Untested | Gen2 ASCII / Okin | Two distinct variants |
+| **[Reverie](docs/SUPPORTED_BEDS.md#reverie)** | 🔧 Untested | XOR checksum | Position-based motor control |
+| **[Okimat](docs/SUPPORTED_BEDS.md#okimat)** | 🔧 Untested | Okin binary | Requires BLE pairing |
 
 **Not Yet Implemented:** Octo / Sleeptracker AI (cloud-based: Tempur Ergo, BeautyRest, Serta)
 
