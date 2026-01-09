@@ -162,15 +162,15 @@ class RichmatController(BedController):
         # Richmat beds don't support position reading
         pass
 
-    async def _send_command(self, command_byte: int, repeat: int = 15) -> None:
+    async def _send_command(self, command_byte: int, repeat: int = 30) -> None:
         """Send a command to the bed."""
         command = self._build_command(command_byte)
-        await self.write_command(command, repeat_count=repeat, repeat_delay_ms=100)
+        await self.write_command(command, repeat_count=repeat, repeat_delay_ms=50)
 
     async def _move_with_stop(self, command_byte: int) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
-            await self._send_command(command_byte, repeat=15)
+            await self._send_command(command_byte)
         finally:
             await self.write_command(
                 self._build_command(RichmatCommands.END),
@@ -242,7 +242,7 @@ class RichmatController(BedController):
         await self.write_command(
             self._build_command(RichmatCommands.PRESET_FLAT),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -255,7 +255,7 @@ class RichmatController(BedController):
             await self.write_command(
                 self._build_command(command),
                 repeat_count=100,
-                repeat_delay_ms=300,
+                repeat_delay_ms=150,
             )
 
     async def program_memory(self, memory_num: int) -> None:
@@ -272,7 +272,7 @@ class RichmatController(BedController):
         await self.write_command(
             self._build_command(RichmatCommands.PRESET_ZERO_G),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_anti_snore(self) -> None:
@@ -280,7 +280,7 @@ class RichmatController(BedController):
         await self.write_command(
             self._build_command(RichmatCommands.PRESET_ANTI_SNORE),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_tv(self) -> None:
@@ -288,7 +288,7 @@ class RichmatController(BedController):
         await self.write_command(
             self._build_command(RichmatCommands.PRESET_TV),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     # Light methods
