@@ -2,5 +2,8 @@
 smartbed-mqtt/
 smartbed-mqtt-discord-chats/
 
+# Python build artifacts
+*.egg-info/
+
 
 
