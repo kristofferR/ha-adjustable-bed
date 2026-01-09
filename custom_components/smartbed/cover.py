@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Coroutine
@@ -121,7 +120,6 @@ class SmartBedCover(SmartBedEntity, CoverEntity):
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
         self._is_moving = False
         self._move_direction: str | None = None
-        self._move_task: asyncio.Task | None = None
 
     @property
     def is_closed(self) -> bool | None:
@@ -183,15 +181,6 @@ class SmartBedCover(SmartBedEntity, CoverEntity):
             self._coordinator.name,
         )
 
-        # Stop any existing movement
-        if self._move_task and not self._move_task.done():
-            _LOGGER.debug("Cancelling previous movement task")
-            self._move_task.cancel()
-            try:
-                await self._move_task
-            except asyncio.CancelledError:
-                pass
-
         self._is_moving = True
         self._move_direction = direction
         self.async_write_ha_state()
@@ -233,10 +222,6 @@ class SmartBedCover(SmartBedEntity, CoverEntity):
             self.entity_description.key,
             self._coordinator.name,
         )
-
-        if self._move_task and not self._move_task.done():
-            _LOGGER.debug("Cancelling movement task")
-            self._move_task.cancel()
 
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Callable
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -112,7 +113,7 @@ class SmartBedAngleSensor(SmartBedEntity, SensorEntity):
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
-        self._unregister_callback: callable | None = None
+        self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""

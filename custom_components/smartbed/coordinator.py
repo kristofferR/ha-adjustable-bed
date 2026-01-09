@@ -67,7 +67,7 @@ class SmartBedCoordinator:
         """Initialize the coordinator."""
         self.hass = hass
         self.entry = entry
-        self._address: str = entry.data[CONF_ADDRESS]
+        self._address: str = entry.data[CONF_ADDRESS].upper()
         self._bed_type: str = entry.data[CONF_BED_TYPE]
         self._name: str = entry.data.get(CONF_NAME, "Smart Bed")
         self._motor_count: int = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
@@ -78,6 +78,7 @@ class SmartBedCoordinator:
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
+        self._reconnect_timer: asyncio.TimerHandle | None = None
         self._lock = asyncio.Lock()
         self._command_lock = asyncio.Lock()  # Separate lock for command serialization
         self._connecting: bool = False  # Track if we're actively connecting
@@ -86,7 +87,7 @@ class SmartBedCoordinator:
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
-        self._position_callbacks: list[Callable[[dict[str, float]], None]] = []
+        self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
 
         _LOGGER.debug(
             "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s)",
@@ -279,7 +280,7 @@ class SmartBedCoordinator:
                     available_sources = []
                     try:
                         for service_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                            if service_info.address.upper() == self._address.upper():
+                            if service_info.address.upper() == self._address:
                                 source = getattr(service_info, 'source', 'unknown')
                                 rssi = getattr(service_info, 'rssi', 'N/A')
                                 available_sources.append(f"{source} (RSSI: {rssi})")
@@ -425,7 +426,7 @@ class SmartBedCoordinator:
                     def _get_device_from_preferred_adapter():
                         """Get a fresh BLEDevice from the preferred adapter."""
                         for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                            if (svc_info.address.upper() == self._address.upper() and
+                            if (svc_info.address.upper() == self._address and
                                 getattr(svc_info, 'source', None) == self._preferred_adapter):
                                 _LOGGER.debug(
                                     "ble_device_callback returning device from %s (RSSI: %s)",
@@ -636,7 +637,7 @@ class SmartBedCoordinator:
             self._client = None
             self._controller = None
             self._position_data = {}
-            self._intentional_disconnect = False  # Reset flag
+            # Flag is reset in async_disconnect's finally block
             return
 
         _LOGGER.warning(
@@ -656,7 +657,7 @@ class SmartBedCoordinator:
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
 
         # Schedule automatic reconnection attempt
-        self.hass.loop.call_later(
+        self._reconnect_timer = self.hass.loop.call_later(
             5.0,  # Wait 5 seconds before attempting reconnect
             lambda: asyncio.create_task(self._async_auto_reconnect()),
         )
@@ -672,6 +673,9 @@ class SmartBedCoordinator:
 
     async def _async_auto_reconnect(self) -> None:
         """Attempt automatic reconnection after unexpected disconnect."""
+        # Timer has fired, clear the reference
+        self._reconnect_timer = None
+
         # Don't reconnect if we're already connected or connecting
         if self._connecting or (self._client is not None and self._client.is_connected):
             _LOGGER.debug("Skipping auto-reconnect: already connected or connecting")
@@ -700,6 +704,10 @@ class SmartBedCoordinator:
         _LOGGER.debug("async_disconnect called for %s", self._address)
         async with self._lock:
             self._cancel_disconnect_timer()
+            # Cancel any pending reconnect timer
+            if self._reconnect_timer is not None:
+                self._reconnect_timer.cancel()
+                self._reconnect_timer = None
             if self._client is not None:
                 _LOGGER.info("Disconnecting from bed at %s", self._address)
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
@@ -775,32 +783,33 @@ class SmartBedCoordinator:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._cancel_disconnect_timer()
 
-            # Clear cancel signal for this command
-            self._cancel_command.clear()
+            try:
+                # Clear cancel signal for this command
+                self._cancel_command.clear()
 
-            _LOGGER.debug(
-                "async_write_command: %s (repeat: %d, delay: %dms)",
-                command.hex(),
-                repeat_count,
-                repeat_delay_ms,
-            )
-            if not await self.async_ensure_connected():
-                _LOGGER.error("Cannot write command: not connected to bed")
-                raise ConnectionError("Not connected to bed")
+                _LOGGER.debug(
+                    "async_write_command: %s (repeat: %d, delay: %dms)",
+                    command.hex(),
+                    repeat_count,
+                    repeat_delay_ms,
+                )
+                if not await self.async_ensure_connected():
+                    _LOGGER.error("Cannot write command: not connected to bed")
+                    raise ConnectionError("Not connected to bed")
 
-            if self._controller is None:
-                _LOGGER.error("Cannot write command: no controller available")
-                raise RuntimeError("No controller available")
+                if self._controller is None:
+                    _LOGGER.error("Cannot write command: no controller available")
+                    raise RuntimeError("No controller available")
 
-            await self._controller.write_command(
-                command, repeat_count, repeat_delay_ms, self._cancel_command
-            )
+                await self._controller.write_command(
+                    command, repeat_count, repeat_delay_ms, self._cancel_command
+                )
 
-            # Read position after movement if angle sensing is enabled
-            if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                await self._async_read_positions()
-
-            self._reset_disconnect_timer()
+                # Read position after movement if angle sensing is enabled
+                if not self._disable_angle_sensing and not self._cancel_command.is_set():
+                    await self._async_read_positions()
+            finally:
+                self._reset_disconnect_timer()
 
     async def async_stop_command(self) -> None:
         """Immediately stop any running command and send stop to bed."""
@@ -847,24 +856,25 @@ class SmartBedCoordinator:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._cancel_disconnect_timer()
 
-            # Clear cancel signal for this command
-            self._cancel_command.clear()
+            try:
+                # Clear cancel signal for this command
+                self._cancel_command.clear()
 
-            if not await self.async_ensure_connected():
-                _LOGGER.error("Cannot execute command: not connected to bed")
-                raise ConnectionError("Not connected to bed")
+                if not await self.async_ensure_connected():
+                    _LOGGER.error("Cannot execute command: not connected to bed")
+                    raise ConnectionError("Not connected to bed")
 
-            if self._controller is None:
-                _LOGGER.error("Cannot execute command: no controller available")
-                raise RuntimeError("No controller available")
+                if self._controller is None:
+                    _LOGGER.error("Cannot execute command: no controller available")
+                    raise RuntimeError("No controller available")
 
-            await command_fn(self._controller)
+                await command_fn(self._controller)
 
-            # Read position after movement if angle sensing is enabled
-            if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                await self._async_read_positions()
-
-            self._reset_disconnect_timer()
+                # Read position after movement if angle sensing is enabled
+                if not self._disable_angle_sensing and not self._cancel_command.is_set():
+                    await self._async_read_positions()
+            finally:
+                self._reset_disconnect_timer()
 
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""
@@ -900,17 +910,21 @@ class SmartBedCoordinator:
         """Handle a position update from the bed."""
         _LOGGER.debug("Position update: %s = %.1f°", position, angle)
         self._position_data[position] = angle
-        for callback_fn in self._position_callbacks:
-            callback_fn(self._position_data)
+        # Copy to safely iterate while callbacks might unregister themselves
+        for callback_fn in list(self._position_callbacks):
+            try:
+                callback_fn(self._position_data)
+            except Exception as err:
+                _LOGGER.warning("Position callback error: %s", err)
 
     def register_position_callback(
         self, callback_fn: Callable[[dict[str, float]], None]
     ) -> Callable[[], None]:
         """Register a callback for position updates."""
-        self._position_callbacks.append(callback_fn)
+        self._position_callbacks.add(callback_fn)
 
         def unregister() -> None:
-            self._position_callbacks.remove(callback_fn)
+            self._position_callbacks.discard(callback_fn)  # Safe removal, no error if missing
 
         return unregister
 
