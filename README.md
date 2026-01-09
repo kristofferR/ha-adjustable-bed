@@ -2,12 +2,18 @@
 
 A Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE).
 
+> **Warning: Alpha Software**
+>
+> This project is in early alpha. **Only Linak beds have been tested.** Other bed types are planned but not yet implemented. Expect bugs, breaking changes, and incomplete features. Use at your own risk.
+>
+> **Contributions are very welcome!** If you have a different bed type and want to help add support, please open an issue or submit a pull request. See [Contributing](#contributing) below.
+
 ## Supported Beds
 
-### Currently Implemented
-- **Linak** - Full support for Linak-based adjustable beds
+### Currently Implemented & Tested
+- **Linak** - Full support for Linak-based adjustable beds (the only bed type tested so far)
 
-### Planned
+### Planned (Not Yet Implemented)
 - Richmat
 - Solace
 - MotoSleep
@@ -161,7 +167,14 @@ If you're migrating from the smartbed-mqtt addon:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+**Contributions are very welcome!** This project needs help from the community to support more bed types.
+
+### How You Can Help
+
+- **Own a non-Linak bed?** Help us add support! Even just capturing BLE traffic is incredibly valuable.
+- **Found a bug?** Please open an issue with as much detail as possible.
+- **Have ideas?** Feature requests and suggestions are welcome.
+- **Can code?** Pull requests are greatly appreciated.
 
 ### Adding Support for New Bed Types
 
@@ -171,6 +184,8 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 4. Add bed detection to `config_flow.py`
 
 See [Technical Details](docs/CONNECTION_GUIDE.md#technical-details) for protocol documentation format.
+
+If you're not comfortable coding, even sharing BLE captures or protocol documentation for your bed would be a huge help!
 
 ## License
 
