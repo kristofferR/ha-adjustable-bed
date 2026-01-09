@@ -14,14 +14,28 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 pytest_plugins = "pytest_homeassistant_custom_component"
 
 from custom_components.smartbed.const import (
+    BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MOTOSLEEP,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_REVERIE,
+    BED_TYPE_RICHMAT,
+    BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
+    KEESON_BASE_SERVICE_UUID,
+    LEGGETT_GEN2_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
+    OKIMAT_SERVICE_UUID,
+    REVERIE_SERVICE_UUID,
+    RICHMAT_NORDIC_SERVICE_UUID,
+    RICHMAT_WILINKE_SERVICE_UUIDS,
+    SOLACE_SERVICE_UUID,
 )
 
 # Test constants
@@ -108,6 +122,158 @@ def mock_bluetooth_service_info_unknown() -> MagicMock:
     service_info.manufacturer_data = {}
     service_info.service_data = {}
     service_info.service_uuids = ["00001800-0000-1000-8000-00805f9b34fb"]  # Generic Access
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_richmat() -> MagicMock:
+    """Return mock Bluetooth service info for a Richmat bed (Nordic variant)."""
+    service_info = MagicMock()
+    service_info.name = "Richmat Bed"
+    service_info.address = "22:33:44:55:66:77"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [RICHMAT_NORDIC_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_richmat_wilinke() -> MagicMock:
+    """Return mock Bluetooth service info for a Richmat bed (WiLinke variant)."""
+    service_info = MagicMock()
+    service_info.name = "Richmat WiLinke"
+    service_info.address = "33:44:55:66:77:88"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [RICHMAT_WILINKE_SERVICE_UUIDS[0]]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_keeson() -> MagicMock:
+    """Return mock Bluetooth service info for a Keeson bed."""
+    service_info = MagicMock()
+    service_info.name = "Keeson Bed"
+    service_info.address = "44:55:66:77:88:99"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [KEESON_BASE_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_solace() -> MagicMock:
+    """Return mock Bluetooth service info for a Solace bed."""
+    service_info = MagicMock()
+    service_info.name = "Solace Bed"
+    service_info.address = "55:66:77:88:99:AA"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [SOLACE_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_motosleep() -> MagicMock:
+    """Return mock Bluetooth service info for a MotoSleep bed (HHC controller)."""
+    service_info = MagicMock()
+    service_info.name = "HHC3611243CDEF"  # Name starts with HHC
+    service_info.address = "66:77:88:99:AA:BB"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [SOLACE_SERVICE_UUID]  # Same UUID as Solace
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_leggett() -> MagicMock:
+    """Return mock Bluetooth service info for a Leggett & Platt bed (Gen2)."""
+    service_info = MagicMock()
+    service_info.name = "Leggett Bed"
+    service_info.address = "77:88:99:AA:BB:CC"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [LEGGETT_GEN2_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_reverie() -> MagicMock:
+    """Return mock Bluetooth service info for a Reverie bed."""
+    service_info = MagicMock()
+    service_info.name = "Reverie Bed"
+    service_info.address = "88:99:AA:BB:CC:DD"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [REVERIE_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_okimat() -> MagicMock:
+    """Return mock Bluetooth service info for an Okimat bed."""
+    service_info = MagicMock()
+    service_info.name = "Okimat Bed"
+    service_info.address = "99:AA:BB:CC:DD:EE"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [OKIMAT_SERVICE_UUID]
     service_info.source = "local"
     service_info.device = MagicMock()
     service_info.advertisement = MagicMock()

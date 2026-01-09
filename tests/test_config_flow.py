@@ -17,7 +17,14 @@ from custom_components.smartbed.config_flow import (
     is_valid_mac_address,
 )
 from custom_components.smartbed.const import (
+    BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MOTOSLEEP,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_REVERIE,
+    BED_TYPE_RICHMAT,
+    BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -57,6 +64,46 @@ class TestDetectBedType:
         """Test detection of Linak bed."""
         bed_type = detect_bed_type(mock_bluetooth_service_info)
         assert bed_type == BED_TYPE_LINAK
+
+    def test_detect_richmat_nordic_bed(self, mock_bluetooth_service_info_richmat):
+        """Test detection of Richmat bed (Nordic variant)."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_richmat)
+        assert bed_type == BED_TYPE_RICHMAT
+
+    def test_detect_richmat_wilinke_bed(self, mock_bluetooth_service_info_richmat_wilinke):
+        """Test detection of Richmat bed (WiLinke variant)."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_richmat_wilinke)
+        assert bed_type == BED_TYPE_RICHMAT
+
+    def test_detect_keeson_bed(self, mock_bluetooth_service_info_keeson):
+        """Test detection of Keeson bed."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_keeson)
+        assert bed_type == BED_TYPE_KEESON
+
+    def test_detect_solace_bed(self, mock_bluetooth_service_info_solace):
+        """Test detection of Solace bed."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_solace)
+        assert bed_type == BED_TYPE_SOLACE
+
+    def test_detect_motosleep_bed(self, mock_bluetooth_service_info_motosleep):
+        """Test detection of MotoSleep bed (by HHC name prefix)."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_motosleep)
+        assert bed_type == BED_TYPE_MOTOSLEEP
+
+    def test_detect_leggett_platt_bed(self, mock_bluetooth_service_info_leggett):
+        """Test detection of Leggett & Platt bed (Gen2)."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_leggett)
+        assert bed_type == BED_TYPE_LEGGETT_PLATT
+
+    def test_detect_reverie_bed(self, mock_bluetooth_service_info_reverie):
+        """Test detection of Reverie bed."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_reverie)
+        assert bed_type == BED_TYPE_REVERIE
+
+    def test_detect_okimat_bed(self, mock_bluetooth_service_info_okimat):
+        """Test detection of Okimat bed."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_okimat)
+        assert bed_type == BED_TYPE_OKIMAT
 
     def test_detect_unknown_device(
         self, mock_bluetooth_service_info_unknown: BluetoothServiceInfoBleak
