@@ -15,21 +15,24 @@ Most smart beds use Bluetooth Low Energy (BLE) to communicate with their remote 
 
 ## Connection Methods
 
-### Local Bluetooth Adapter
-
-If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
-
-**Pros:** Simple setup, no additional hardware
-
-**Cons:** Limited range, may not work if HA host is far from bed
-
-### ESPHome Bluetooth Proxy (Recommended)
+### *Method 1: ESPHome Bluetooth Proxy (Recommended)*
 
 Use an ESP32 device running ESPHome as a Bluetooth proxy. This extends your Bluetooth range using WiFi.
+
 
 **Pros:** Excellent range (place ESP32 near the bed), multiple proxies for whole-home coverage
 
 **Cons:** Requires additional hardware (~$5-15)
+
+
+### *Method 2: Local Bluetooth Adapter*
+
+If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
+
+
+**Pros:** Simple setup, no additional hardware
+
+**Cons:** Limited range, may not work if HA host is far from bed
 
 ---
 
@@ -83,7 +86,7 @@ Use an ESP32 device running ESPHome as a Bluetooth proxy. This extends your Blue
 
 ## Adding Your Smart Bed
 
-1. **Power on your bed** and disconnect any manufacturer apps
+1. **Power on your bed** and disconnect any manufacturer apps or remove batteries from remotes
 
 2. **Add the integration**: Settings → Devices & Services → Add Integration → "Smart Bed"
 
