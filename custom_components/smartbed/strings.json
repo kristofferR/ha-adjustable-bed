@@ -1,0 +1,201 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select Smart Bed",
+        "description": "Select a discovered bed or enter manually.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "bluetooth_confirm": {
+        "title": "Confirm Smart Bed",
+        "description": "Do you want to set up {name}?",
+        "data": {
+          "name": "Name",
+          "motor_count": "Number of motors",
+          "has_massage": "Has massage feature",
+          "disable_angle_sensing": "Disable angle sensing",
+          "preferred_adapter": "Bluetooth adapter"
+        },
+        "data_description": {
+          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working. Recommended for most users.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically."
+        }
+      },
+      "manual": {
+        "title": "Manual Configuration",
+        "description": "Enter the bed's Bluetooth address manually.",
+        "data": {
+          "address": "Bluetooth address",
+          "bed_type": "Bed type",
+          "name": "Name",
+          "motor_count": "Number of motors",
+          "has_massage": "Has massage feature",
+          "disable_angle_sensing": "Disable angle sensing",
+          "preferred_adapter": "Bluetooth adapter"
+        },
+        "data_description": {
+          "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
+          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working. Recommended for most users.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Device is already configured",
+      "not_supported": "Device is not supported. The required Bluetooth service was not found."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to bed. Check that the bed is powered on and in range.",
+      "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart Bed Options",
+        "description": "Adjust the configuration for your smart bed.",
+        "data": {
+          "motor_count": "Number of motors",
+          "has_massage": "Has massage feature",
+          "disable_angle_sensing": "Disable angle sensing",
+          "preferred_adapter": "Bluetooth adapter"
+        },
+        "data_description": {
+          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically."
+        }
+      }
+    }
+  },
+  "entity": {
+    "button": {
+      "preset_flat": {
+        "name": "Flat"
+      },
+      "preset_memory_1": {
+        "name": "Memory 1"
+      },
+      "preset_memory_2": {
+        "name": "Memory 2"
+      },
+      "preset_memory_3": {
+        "name": "Memory 3"
+      },
+      "preset_memory_4": {
+        "name": "Memory 4"
+      },
+      "program_memory_1": {
+        "name": "Save to Memory 1"
+      },
+      "program_memory_2": {
+        "name": "Save to Memory 2"
+      },
+      "program_memory_3": {
+        "name": "Save to Memory 3"
+      },
+      "program_memory_4": {
+        "name": "Save to Memory 4"
+      },
+      "massage_all_off": {
+        "name": "Massage Off"
+      },
+      "massage_all_toggle": {
+        "name": "Massage Toggle"
+      },
+      "massage_all_up": {
+        "name": "Massage Intensity Up"
+      },
+      "massage_all_down": {
+        "name": "Massage Intensity Down"
+      },
+      "massage_head_toggle": {
+        "name": "Head Massage Toggle"
+      },
+      "massage_head_up": {
+        "name": "Head Massage Up"
+      },
+      "massage_head_down": {
+        "name": "Head Massage Down"
+      },
+      "massage_foot_toggle": {
+        "name": "Foot Massage Toggle"
+      },
+      "massage_foot_up": {
+        "name": "Foot Massage Up"
+      },
+      "massage_foot_down": {
+        "name": "Foot Massage Down"
+      },
+      "massage_mode_step": {
+        "name": "Massage Mode"
+      },
+      "stop": {
+        "name": "Stop All"
+      }
+    },
+    "cover": {
+      "head": {
+        "name": "Head"
+      },
+      "back": {
+        "name": "Back"
+      },
+      "legs": {
+        "name": "Legs"
+      },
+      "feet": {
+        "name": "Feet"
+      }
+    },
+    "sensor": {
+      "head_angle": {
+        "name": "Head Angle"
+      },
+      "back_angle": {
+        "name": "Back Angle"
+      },
+      "legs_angle": {
+        "name": "Legs Angle"
+      },
+      "feet_angle": {
+        "name": "Feet Angle"
+      }
+    },
+    "switch": {
+      "under_bed_lights": {
+        "name": "Under Bed Lights"
+      }
+    }
+  },
+  "services": {
+    "goto_preset": {
+      "name": "Go to Preset",
+      "description": "Move bed to a saved memory position.",
+      "fields": {
+        "preset": {
+          "name": "Preset Number",
+          "description": "Memory slot number (1-4)."
+        }
+      }
+    },
+    "save_preset": {
+      "name": "Save to Preset",
+      "description": "Save current bed position to a memory slot.",
+      "fields": {
+        "preset": {
+          "name": "Preset Number",
+          "description": "Memory slot number (1-4)."
+        }
+      }
+    },
+    "stop_all": {
+      "name": "Stop All Motors",
+      "description": "Immediately stop all bed motors."
+    }
+  }
+}
