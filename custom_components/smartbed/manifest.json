@@ -1,0 +1,18 @@
+{
+  "domain": "smartbed",
+  "name": "Smart Bed",
+  "codeowners": ["@kristofferR"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/kristofferR/smartbed-ha",
+  "homeassistant": "2024.1.0",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/kristofferR/smartbed-ha/issues",
+  "requirements": ["bleak>=0.21.0", "bleak-retry-connector>=3.5.0"],
+  "version": "0.1.0",
+  "bluetooth": [
+    {
+      "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
+    }
+  ]
+}
