@@ -129,7 +129,7 @@ class SolaceController(BedController):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
-            await self.write_command(command, repeat_count=15, repeat_delay_ms=100)
+            await self.write_command(command, repeat_count=30, repeat_delay_ms=50)
         finally:
             await self.write_command(
                 SolaceCommands.MOTOR_STOP,
@@ -201,7 +201,7 @@ class SolaceController(BedController):
         await self.write_command(
             SolaceCommands.PRESET_ALL_FLAT,
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -233,7 +233,7 @@ class SolaceController(BedController):
         await self.write_command(
             SolaceCommands.PRESET_ZERO_G,
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_anti_snore(self) -> None:
@@ -241,7 +241,7 @@ class SolaceController(BedController):
         await self.write_command(
             SolaceCommands.PRESET_ANTI_SNORE,
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_tv(self) -> None:
@@ -249,5 +249,5 @@ class SolaceController(BedController):
         await self.write_command(
             SolaceCommands.PRESET_TV,
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )

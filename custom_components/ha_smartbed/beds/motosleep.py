@@ -139,8 +139,8 @@ class MotoSleepController(BedController):
         # MotoSleep doesn't need explicit stop - just send the command
         await self.write_command(
             self._build_command(command_char),
-            repeat_count=15,
-            repeat_delay_ms=100,
+            repeat_count=30,
+            repeat_delay_ms=50,
         )
 
     # Motor control methods
@@ -207,7 +207,7 @@ class MotoSleepController(BedController):
         await self.write_command(
             self._build_command(MotoSleepCommands.PRESET_HOME),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -220,7 +220,7 @@ class MotoSleepController(BedController):
             await self.write_command(
                 self._build_command(command),
                 repeat_count=100,
-                repeat_delay_ms=300,
+                repeat_delay_ms=150,
             )
 
     async def program_memory(self, memory_num: int) -> None:
@@ -271,7 +271,7 @@ class MotoSleepController(BedController):
         await self.write_command(
             self._build_command(MotoSleepCommands.PRESET_ZERO_G),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_anti_snore(self) -> None:
@@ -279,7 +279,7 @@ class MotoSleepController(BedController):
         await self.write_command(
             self._build_command(MotoSleepCommands.PRESET_ANTI_SNORE),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
 
     async def preset_tv(self) -> None:
@@ -287,5 +287,5 @@ class MotoSleepController(BedController):
         await self.write_command(
             self._build_command(MotoSleepCommands.PRESET_TV),
             repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_delay_ms=150,
         )
