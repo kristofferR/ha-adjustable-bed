@@ -20,6 +20,7 @@ from homeassistant.config_entries import (
     OptionsFlowWithConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .const import (
     ADAPTER_AUTO,
@@ -371,8 +372,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-            motor_pulse_count = user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT)
-            motor_pulse_delay_ms = user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
+            motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
             _LOGGER.info(
                 "User confirmed bed setup: name=%s, type=%s, variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                 user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
@@ -418,11 +419,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
-            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=DEFAULT_MOTOR_PULSE_COUNT): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=100)
+            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
+                TextSelectorConfig()
             ),
-            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=DEFAULT_MOTOR_PULSE_DELAY_MS): vol.All(
-                vol.Coerce(int), vol.Range(min=10, max=500)
+            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
+                TextSelectorConfig()
             ),
         }
 
@@ -536,8 +537,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-                motor_pulse_count = user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT)
-                motor_pulse_delay_ms = user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
+                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
                 _LOGGER.info(
                     "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                     address,
@@ -598,11 +599,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                     vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
                     vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
-                    vol.Optional(CONF_MOTOR_PULSE_COUNT, default=DEFAULT_MOTOR_PULSE_COUNT): vol.All(
-                        vol.Coerce(int), vol.Range(min=1, max=100)
+                    vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
+                        TextSelectorConfig()
                     ),
-                    vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=DEFAULT_MOTOR_PULSE_DELAY_MS): vol.All(
-                        vol.Coerce(int), vol.Range(min=10, max=500)
+                    vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
+                        TextSelectorConfig()
                     ),
                 }
             ),
@@ -618,6 +619,11 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
+            # Convert text values to integers
+            if CONF_MOTOR_PULSE_COUNT in user_input:
+                user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT])
+            if CONF_MOTOR_PULSE_DELAY_MS in user_input:
+                user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS])
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(
@@ -655,12 +661,12 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ): vol.In(adapters),
             vol.Optional(
                 CONF_MOTOR_PULSE_COUNT,
-                default=current_data.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT),
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+                default=str(current_data.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT)),
+            ): TextSelector(TextSelectorConfig()),
             vol.Optional(
                 CONF_MOTOR_PULSE_DELAY_MS,
-                default=current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=500)),
+                default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)),
+            ): TextSelector(TextSelectorConfig()),
         }
 
         # Add variant selection if the bed type has variants
