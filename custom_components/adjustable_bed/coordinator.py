@@ -1,4 +1,4 @@
-"""Coordinator for Smart Bed integration."""
+"""Coordinator for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -16,13 +16,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
-# Try to import connection parameters support (available in HA 2024.1+)
-try:
-    from habluetooth import ConnectParams
-    HAS_CONNECT_PARAMS = True
-except ImportError:
-    HAS_CONNECT_PARAMS = False
-    ConnectParams = None  # type: ignore[misc, assignment]
+from habluetooth import ConnectParams
 
 from .const import (
     ADAPTER_AUTO,
@@ -81,7 +75,7 @@ BLE_CONN_LATENCY = 0  # No latency
 BLE_CONN_SUPERVISION_TIMEOUT = 720  # 720 * 10ms = 7.2 seconds
 
 
-class SmartBedCoordinator:
+class AdjustableBedCoordinator:
     """Coordinator for managing bed connection and state."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -91,7 +85,7 @@ class SmartBedCoordinator:
         self._address: str = entry.data[CONF_ADDRESS].upper()
         self._bed_type: str = entry.data[CONF_BED_TYPE]
         self._protocol_variant: str = entry.data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-        self._name: str = entry.data.get(CONF_NAME, "Smart Bed")
+        self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
         self._motor_count: int = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
         self._disable_angle_sensing: bool = entry.data.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING)
@@ -134,23 +128,10 @@ class SmartBedCoordinator:
 
     def _register_connection_params(self) -> None:
         """Register compatible BLE connection parameters for this device.
-        
+
         This overrides the default FAST parameters with more conservative values
         that work better with devices that have connection stability issues.
         """
-        if not HAS_CONNECT_PARAMS:
-            _LOGGER.debug(
-                "ConnectParams not available (older HA version), using default connection parameters"
-            )
-            return
-        
-        # Check if the registration function exists (HA 2024.1+)
-        if not hasattr(bluetooth, 'async_register_connection_params'):
-            _LOGGER.debug(
-                "async_register_connection_params not available, using default connection parameters"
-            )
-            return
-        
         try:
             # Create compatible connection parameters
             # These are slower but more reliable than the default FAST params
@@ -278,7 +259,7 @@ class SmartBedCoordinator:
 
     def _get_model(self) -> str:
         """Get model name based on bed type."""
-        return f"Smart Bed ({self._motor_count} motors)"
+        return f"Adjustable Bed ({self._motor_count} motors)"
 
     async def async_connect(self) -> bool:
         """Connect to the bed."""

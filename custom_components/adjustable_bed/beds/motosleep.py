@@ -18,7 +18,7 @@ from ..const import MOTOSLEEP_CHAR_UUID
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class MotoSleepCommands:
 class MotoSleepController(BedController):
     """Controller for MotoSleep beds."""
 
-    def __init__(self, coordinator: SmartBedCoordinator) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the MotoSleep controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None

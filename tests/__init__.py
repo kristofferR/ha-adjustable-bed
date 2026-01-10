@@ -1,1 +1,1 @@
-"""Tests for the Smart Bed integration."""
+"""Tests for the Adjustable Bed integration."""

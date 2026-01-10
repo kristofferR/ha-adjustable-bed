@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide covers common issues and their solutions when using the Smart Bed integration.
+This guide covers common issues and their solutions when using the Adjustable Bed integration.
 
 ## Table of Contents
 
@@ -234,11 +234,11 @@ Some beds require Bluetooth pairing before they can be controlled.
 ### Before Asking for Help
 
 1. **Check logs:** Look at Home Assistant logs for error messages
-   - Settings → System → Logs → Filter by "ha_smartbed"
+   - Settings → System → Logs → Filter by "adjustable_bed"
    - **Tip:** If your bed isn't responding, the integration will log all discovered GATT services at INFO level. This helps us add support for new device variants.
 
 2. **Download diagnostics:**
-   - Settings → Integrations → Smart Bed → ⋮ → Download diagnostics
+   - Settings → Integrations → Adjustable Bed → ⋮ → Download diagnostics
    - This includes config and connection info (MAC address is redacted)
 
 3. **Test with BLE scanner:**
@@ -249,7 +249,7 @@ Some beds require Bluetooth pairing before they can be controlled.
    ```yaml
    logger:
      logs:
-       custom_components.ha_smartbed: debug
+       custom_components.adjustable_bed: debug
    ```
 
 ### Information to Include in Bug Reports
@@ -262,8 +262,8 @@ Some beds require Bluetooth pairing before they can be controlled.
 
 ### Where to Get Help
 
-- **GitHub Issues:** [ha_smartbed/issues](https://github.com/kristofferR/ha_smartbed/issues)
-- **Home Assistant Community:** Search for "smart bed" discussions
+- **GitHub Issues:** [ha-adjustable-bed/issues](https://github.com/kristofferR/ha-adjustable-bed/issues)
+- **Home Assistant Community:** Search for "adjustable bed" discussions
 
 ---
 

@@ -1,4 +1,4 @@
-"""Diagnostics support for Smart Bed integration."""
+"""Diagnostics support for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
-from .coordinator import SmartBedCoordinator
+from .coordinator import AdjustableBedCoordinator
 
 # Keys to redact from diagnostics (privacy-sensitive data)
 TO_REDACT = {CONF_ADDRESS, CONF_NAME, "address"}
@@ -28,7 +28,7 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    coordinator: SmartBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     # Get connection state
     is_connected = coordinator.is_connected

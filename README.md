@@ -1,4 +1,4 @@
-# Smart Bed Home Assistant Integration
+# Adjustable Bed Home Assistant Integration
 
 A Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE).
 
@@ -67,12 +67,12 @@ These guides contain much more detail than this README - **if you're stuck, they
 1. Open HACS in Home Assistant
 2. Click the three dots menu and select "Custom repositories"
 3. Add this repository URL with category "Integration"
-4. Search for "Smart Bed" and install
+4. Search for "Adjustable Bed" and install
 5. Restart Home Assistant
 
 ### Manual Installation
 
-1. Copy the `custom_components/ha_smartbed` folder to your Home Assistant `config/custom_components/` directory
+1. Copy the `custom_components/adjustable_bed` folder to your Home Assistant `config/custom_components/` directory
 2. Restart Home Assistant
 
 ## Configuration
@@ -82,14 +82,14 @@ These guides contain much more detail than this README - **if you're stuck, they
 The integration will automatically discover supported beds via Bluetooth based on their service UUIDs and device names. When discovered:
 
 1. Go to **Settings** → **Devices & Services**
-2. You should see a notification about a discovered Smart Bed
+2. You should see a notification about a discovered Adjustable Bed
 3. Click **Configure** and follow the setup wizard
 
 ### Manual Configuration
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ Add Integration**
-3. Search for "Smart Bed"
+3. Search for "Adjustable Bed"
 4. Enter the Bluetooth address manually or select from discovered devices
 5. Configure:
    - **Name**: Friendly name for your bed
@@ -118,8 +118,8 @@ For detailed troubleshooting steps, see the [Troubleshooting Guide](docs/TROUBLE
 
 1. **Check Bluetooth range**: Ensure your Bluetooth adapter or ESPHome proxy is within range
 2. **Disconnect manufacturer app**: Most beds only allow one BLE connection
-3. **Restart the integration**: Go to Settings → Devices & Services → Smart Bed → Reload
-4. **Check logs**: Enable debug logging for `custom_components.ha_smartbed`
+3. **Restart the integration**: Go to Settings → Devices & Services → Adjustable Bed → Reload
+4. **Check logs**: Enable debug logging for `custom_components.adjustable_bed`
 
 ### Debug Logging
 
@@ -129,7 +129,7 @@ Add to `configuration.yaml`:
 logger:
   default: info
   logs:
-    custom_components.ha_smartbed: debug
+    custom_components.adjustable_bed: debug
     homeassistant.components.bluetooth: debug
 ```
 

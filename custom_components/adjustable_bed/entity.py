@@ -1,4 +1,4 @@
-"""Base entity classes for Smart Bed integration."""
+"""Base entity classes for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -10,15 +10,15 @@ from homeassistant.helpers.entity import Entity
 from .const import DOMAIN
 
 if TYPE_CHECKING:
-    from .coordinator import SmartBedCoordinator
+    from .coordinator import AdjustableBedCoordinator
 
 
-class SmartBedEntity(Entity):
-    """Base class for Smart Bed entities."""
+class AdjustableBedEntity(Entity):
+    """Base class for Adjustable Bed entities."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: SmartBedCoordinator) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the entity."""
         self._coordinator = coordinator
         self._attr_device_info = coordinator.device_info

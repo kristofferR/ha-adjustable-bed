@@ -1,4 +1,4 @@
-"""Tests for Smart Bed integration setup and unload."""
+"""Tests for Adjustable Bed integration setup and unload."""
 
 from __future__ import annotations
 
@@ -9,14 +9,14 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from custom_components.ha_smartbed import (
+from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
     SERVICE_SAVE_PRESET,
     SERVICE_STOP_ALL,
     async_setup_entry,
     async_unload_entry,
 )
-from custom_components.ha_smartbed.const import DOMAIN
+from custom_components.adjustable_bed.const import DOMAIN
 
 
 class TestIntegrationSetup:
@@ -56,7 +56,7 @@ class TestIntegrationSetup:
     ):
         """Test setup raises ConfigEntryNotReady on connection timeout."""
         with patch(
-            "custom_components.ha_smartbed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator.establish_connection",
             new_callable=AsyncMock,
             side_effect=TimeoutError("Connection timed out"),
         ):
@@ -71,7 +71,7 @@ class TestIntegrationSetup:
     ):
         """Test setup raises ConfigEntryNotReady when connection fails."""
         with patch(
-            "custom_components.ha_smartbed.coordinator.bluetooth.async_ble_device_from_address",
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
             return_value=None,
         ):
             with pytest.raises(ConfigEntryNotReady):

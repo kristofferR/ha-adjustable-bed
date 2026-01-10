@@ -8,9 +8,9 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.ha_smartbed.beds.linak import LinakCommands, LinakController
-from custom_components.ha_smartbed.const import LINAK_CONTROL_CHAR_UUID
-from custom_components.ha_smartbed.coordinator import SmartBedCoordinator
+from custom_components.adjustable_bed.beds.linak import LinakCommands, LinakController
+from custom_components.adjustable_bed.const import LINAK_CONTROL_CHAR_UUID
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
 class TestLinakCommands:
@@ -62,7 +62,7 @@ class TestLinakController:
         mock_coordinator_connected,
     ):
         """Test controller reports correct characteristic UUID."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         assert coordinator.controller.control_characteristic_uuid == LINAK_CONTROL_CHAR_UUID
@@ -75,7 +75,7 @@ class TestLinakController:
         mock_bleak_client: MagicMock,
     ):
         """Test writing a command to the bed."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         command = LinakCommands.MOVE_STOP
@@ -93,7 +93,7 @@ class TestLinakController:
         mock_bleak_client: MagicMock,
     ):
         """Test writing a command with repeat count."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         command = LinakCommands.MOVE_HEAD_UP
@@ -109,7 +109,7 @@ class TestLinakController:
         mock_bleak_client: MagicMock,
     ):
         """Test writing command when not connected raises error."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         # Simulate disconnection
@@ -126,7 +126,7 @@ class TestLinakController:
         mock_bleak_client: MagicMock,
     ):
         """Test writing command handles BleakError."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         mock_bleak_client.write_gatt_char.side_effect = BleakError("Write failed")
@@ -146,7 +146,7 @@ class TestLinakMovement:
         mock_bleak_client: MagicMock,
     ):
         """Test move head up sends repeated commands followed by stop."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_up()
@@ -167,7 +167,7 @@ class TestLinakMovement:
         mock_bleak_client: MagicMock,
     ):
         """Test move legs down sends repeated commands followed by stop."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_legs_down()
@@ -186,7 +186,7 @@ class TestLinakMovement:
         mock_bleak_client: MagicMock,
     ):
         """Test stop all sends stop command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.stop_all()
@@ -218,7 +218,7 @@ class TestLinakPresets:
         expected_command: bytes,
     ):
         """Test preset memory commands."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.preset_memory(memory_num)
@@ -246,7 +246,7 @@ class TestLinakPresets:
         expected_command: bytes,
     ):
         """Test program memory commands."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.program_memory(memory_num)
@@ -267,7 +267,7 @@ class TestLinakLights:
         mock_bleak_client: MagicMock,
     ):
         """Test lights on command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_on()
@@ -284,7 +284,7 @@ class TestLinakLights:
         mock_bleak_client: MagicMock,
     ):
         """Test lights off command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_off()
@@ -301,7 +301,7 @@ class TestLinakLights:
         mock_bleak_client: MagicMock,
     ):
         """Test lights toggle command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_toggle()
@@ -322,7 +322,7 @@ class TestLinakMassage:
         mock_bleak_client: MagicMock,
     ):
         """Test massage off command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_off()
@@ -339,7 +339,7 @@ class TestLinakMassage:
         mock_bleak_client: MagicMock,
     ):
         """Test massage toggle command."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_toggle()
@@ -359,7 +359,7 @@ class TestLinakPositionData:
         mock_coordinator_connected,
     ):
         """Test position data handling."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         controller = coordinator.controller
@@ -381,7 +381,7 @@ class TestLinakPositionData:
         mock_coordinator_connected,
     ):
         """Test position data at maximum."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         controller = coordinator.controller
@@ -403,7 +403,7 @@ class TestLinakPositionData:
         mock_coordinator_connected,
     ):
         """Test position data at zero."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         controller = coordinator.controller
@@ -424,7 +424,7 @@ class TestLinakPositionData:
         mock_coordinator_connected,
     ):
         """Test invalid position data is ignored."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         controller = coordinator.controller

@@ -20,7 +20,7 @@ from ..const import (
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -120,13 +120,13 @@ class LeggettPlattController(BedController):
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
         variant: str = "gen2",
     ) -> None:
         """Initialize the Leggett & Platt controller.
 
         Args:
-            coordinator: The SmartBedCoordinator instance
+            coordinator: The AdjustableBedCoordinator instance
             variant: Protocol variant ('gen2' or 'okin')
         """
         super().__init__(coordinator)

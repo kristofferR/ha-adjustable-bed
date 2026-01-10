@@ -16,7 +16,7 @@ from ..const import SOLACE_CHAR_UUID
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class SolaceCommands:
 class SolaceController(BedController):
     """Controller for Solace beds."""
 
-    def __init__(self, coordinator: SmartBedCoordinator) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Solace controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None

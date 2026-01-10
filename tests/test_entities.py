@@ -1,4 +1,4 @@
-"""Tests for Smart Bed entities."""
+"""Tests for Adjustable Bed entities."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import pytest
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
-from custom_components.ha_smartbed import async_setup_entry
-from custom_components.ha_smartbed.const import DOMAIN
+from custom_components.adjustable_bed import async_setup_entry
+from custom_components.adjustable_bed.const import DOMAIN
 
 from .conftest import TEST_ADDRESS
 

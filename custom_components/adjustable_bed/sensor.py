@@ -1,4 +1,4 @@
-"""Sensor entities for Smart Bed integration."""
+"""Sensor entities for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT, DOMAIN
-from .coordinator import SmartBedCoordinator
-from .entity import SmartBedEntity
+from .coordinator import AdjustableBedCoordinator
+from .entity import AdjustableBedEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,15 +28,15 @@ UNIT_DEGREES = "°"
 
 
 @dataclass(frozen=True, kw_only=True)
-class SmartBedSensorEntityDescription(SensorEntityDescription):
-    """Describes a Smart Bed sensor entity."""
+class AdjustableBedSensorEntityDescription(SensorEntityDescription):
+    """Describes a Adjustable Bed sensor entity."""
 
     position_key: str
     min_motors: int = 2
 
 
-SENSOR_DESCRIPTIONS: tuple[SmartBedSensorEntityDescription, ...] = (
-    SmartBedSensorEntityDescription(
+SENSOR_DESCRIPTIONS: tuple[AdjustableBedSensorEntityDescription, ...] = (
+    AdjustableBedSensorEntityDescription(
         key="back_angle",
         translation_key="back_angle",
         icon="mdi:angle-acute",
@@ -46,7 +46,7 @@ SENSOR_DESCRIPTIONS: tuple[SmartBedSensorEntityDescription, ...] = (
         position_key="back",
         min_motors=2,
     ),
-    SmartBedSensorEntityDescription(
+    AdjustableBedSensorEntityDescription(
         key="legs_angle",
         translation_key="legs_angle",
         icon="mdi:angle-acute",
@@ -56,7 +56,7 @@ SENSOR_DESCRIPTIONS: tuple[SmartBedSensorEntityDescription, ...] = (
         position_key="legs",
         min_motors=2,
     ),
-    SmartBedSensorEntityDescription(
+    AdjustableBedSensorEntityDescription(
         key="head_angle",
         translation_key="head_angle",
         icon="mdi:angle-acute",
@@ -66,7 +66,7 @@ SENSOR_DESCRIPTIONS: tuple[SmartBedSensorEntityDescription, ...] = (
         position_key="head",
         min_motors=3,
     ),
-    SmartBedSensorEntityDescription(
+    AdjustableBedSensorEntityDescription(
         key="feet_angle",
         translation_key="feet_angle",
         icon="mdi:angle-acute",
@@ -84,8 +84,8 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Smart Bed sensor entities."""
-    coordinator: SmartBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Adjustable Bed sensor entities."""
+    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
 
     # Skip angle sensors if angle sensing is disabled
@@ -96,20 +96,20 @@ async def async_setup_entry(
     entities = []
     for description in SENSOR_DESCRIPTIONS:
         if motor_count >= description.min_motors:
-            entities.append(SmartBedAngleSensor(coordinator, description))
+            entities.append(AdjustableBedAngleSensor(coordinator, description))
 
     async_add_entities(entities)
 
 
-class SmartBedAngleSensor(SmartBedEntity, SensorEntity):
-    """Sensor entity for Smart Bed angle measurements."""
+class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
+    """Sensor entity for Adjustable Bed angle measurements."""
 
-    entity_description: SmartBedSensorEntityDescription
+    entity_description: AdjustableBedSensorEntityDescription
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
-        description: SmartBedSensorEntityDescription,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedSensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)

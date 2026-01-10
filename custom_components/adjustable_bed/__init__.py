@@ -1,4 +1,4 @@
-"""The Smart Bed integration."""
+"""The Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .const import CONF_BED_TYPE, CONF_HAS_MASSAGE, CONF_MOTOR_COUNT, DOMAIN
-from .coordinator import SmartBedCoordinator
+from .coordinator import AdjustableBedCoordinator
 
 # Service constants
 SERVICE_GOTO_PRESET = "goto_preset"
@@ -36,9 +36,9 @@ PLATFORMS: list[Platform] = [
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Smart Bed from a config entry."""
+    """Set up Adjustable Bed from a config entry."""
     _LOGGER.info(
-        "Setting up Smart Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",
+        "Setting up Adjustable Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",
         entry.title,
         entry.data.get(CONF_ADDRESS),
         entry.data.get(CONF_BED_TYPE),
@@ -46,7 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_HAS_MASSAGE),
     )
 
-    coordinator = SmartBedCoordinator(hass, entry)
+    coordinator = AdjustableBedCoordinator(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     # Connect to the bed with a timeout to avoid blocking startup forever
@@ -77,18 +77,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register services if not already registered
     await _async_register_services(hass)
 
-    _LOGGER.info("Smart Bed integration setup complete for %s", entry.title)
+    _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
 
 
 async def _async_register_services(hass: HomeAssistant) -> None:
-    """Register Smart Bed services."""
+    """Register Adjustable Bed services."""
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
     async def _get_coordinator_from_device(
         hass: HomeAssistant, device_id: str
-    ) -> SmartBedCoordinator | None:
+    ) -> AdjustableBedCoordinator | None:
         """Get coordinator from device ID."""
         device_registry = dr.async_get(hass)
         device = device_registry.async_get(device_id)
@@ -173,18 +173,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
-    _LOGGER.debug("Registered Smart Bed services")
+    _LOGGER.debug("Registered Adjustable Bed services")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading Smart Bed integration for %s", entry.title)
+    _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: SmartBedCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
+        coordinator: AdjustableBedCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_disconnect()
-        _LOGGER.info("Successfully unloaded Smart Bed integration for %s", entry.title)
+        _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
         # Unregister services if this was the last entry
         if not hass.data[DOMAIN]:
@@ -199,8 +199,8 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 
 def _async_unregister_services(hass: HomeAssistant) -> None:
-    """Unregister Smart Bed services."""
+    """Unregister Adjustable Bed services."""
     for service in (SERVICE_GOTO_PRESET, SERVICE_SAVE_PRESET, SERVICE_STOP_ALL):
         if hass.services.has_service(DOMAIN, service):
             hass.services.async_remove(DOMAIN, service)
-    _LOGGER.debug("Unregistered Smart Bed services")
+    _LOGGER.debug("Unregistered Adjustable Bed services")

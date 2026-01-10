@@ -1,4 +1,4 @@
-"""Config flow for Smart Bed integration."""
+"""Config flow for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -262,21 +262,21 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     return None
 
 
-class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Smart Bed."""
+class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Adjustable Bed."""
 
     VERSION = 1
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Get the options flow for this handler."""
-        return SmartBedOptionsFlow(config_entry)
+        return AdjustableBedOptionsFlow(config_entry)
 
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
-        _LOGGER.debug("SmartBedConfigFlow initialized")
+        _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -335,7 +335,7 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
             motor_pulse_delay_ms = user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)
             _LOGGER.info(
                 "User confirmed bed setup: name=%s, type=%s, variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
-                user_input.get(CONF_NAME, self._discovery_info.name or "Smart Bed"),
+                user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 bed_type,
                 protocol_variant,
                 self._discovery_info.address,
@@ -347,7 +347,7 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_delay_ms,
             )
             return self.async_create_entry(
-                title=user_input.get(CONF_NAME, self._discovery_info.name or "Smart Bed"),
+                title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 data={
                     CONF_ADDRESS: self._discovery_info.address,
                     CONF_BED_TYPE: bed_type,
@@ -370,7 +370,7 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Build schema with optional variant selection
         schema_dict = {
             vol.Optional(
-                CONF_NAME, default=self._discovery_info.name or "Smart Bed"
+                CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"
             ): str,
             vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
                 [2, 3, 4]
@@ -503,7 +503,7 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     address,
                     bed_type,
                     protocol_variant,
-                    user_input.get(CONF_NAME, "Smart Bed"),
+                    user_input.get(CONF_NAME, "Adjustable Bed"),
                     user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
                     user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
@@ -516,12 +516,12 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
 
                 return self.async_create_entry(
-                    title=user_input.get(CONF_NAME, "Smart Bed"),
+                    title=user_input.get(CONF_NAME, "Adjustable Bed"),
                     data={
                         CONF_ADDRESS: address,
                         CONF_BED_TYPE: bed_type,
                         CONF_PROTOCOL_VARIANT: protocol_variant,
-                        CONF_NAME: user_input.get(CONF_NAME, "Smart Bed"),
+                        CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
                         CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                         CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
                         CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
@@ -551,7 +551,7 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
                         ALL_PROTOCOL_VARIANTS
                     ),
-                    vol.Optional(CONF_NAME, default="Smart Bed"): str,
+                    vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
                     vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
                         [2, 3, 4]
                     ),
@@ -570,8 +570,8 @@ class SmartBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class SmartBedOptionsFlow(OptionsFlowWithConfigEntry):
-    """Handle Smart Bed options."""
+class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
+    """Handle Adjustable Bed options."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

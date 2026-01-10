@@ -1,4 +1,4 @@
-"""Switch entities for Smart Bed integration."""
+"""Switch entities for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import SmartBedCoordinator
-from .entity import SmartBedEntity
+from .coordinator import AdjustableBedCoordinator
+from .entity import AdjustableBedEntity
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -22,15 +22,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class SmartBedSwitchEntityDescription(SwitchEntityDescription):
-    """Describes a Smart Bed switch entity."""
+class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
+    """Describes a Adjustable Bed switch entity."""
 
     turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
 
 
-SWITCH_DESCRIPTIONS: tuple[SmartBedSwitchEntityDescription, ...] = (
-    SmartBedSwitchEntityDescription(
+SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
+    AdjustableBedSwitchEntityDescription(
         key="under_bed_lights",
         translation_key="under_bed_lights",
         icon="mdi:lightbulb",
@@ -45,26 +45,26 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Smart Bed switch entities."""
-    coordinator: SmartBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Adjustable Bed switch entities."""
+    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = [
-        SmartBedSwitch(coordinator, description)
+        AdjustableBedSwitch(coordinator, description)
         for description in SWITCH_DESCRIPTIONS
     ]
 
     async_add_entities(entities)
 
 
-class SmartBedSwitch(SmartBedEntity, SwitchEntity):
-    """Switch entity for Smart Bed."""
+class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
+    """Switch entity for Adjustable Bed."""
 
-    entity_description: SmartBedSwitchEntityDescription
+    entity_description: AdjustableBedSwitchEntityDescription
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
-        description: SmartBedSwitchEntityDescription,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedSwitchEntityDescription,
     ) -> None:
         """Initialize the switch."""
         super().__init__(coordinator)

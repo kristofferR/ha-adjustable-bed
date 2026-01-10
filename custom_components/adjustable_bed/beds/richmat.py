@@ -23,7 +23,7 @@ from ..const import (
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,14 +76,14 @@ class RichmatController(BedController):
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
         is_wilinke: bool = False,
         char_uuid: str | None = None,
     ) -> None:
         """Initialize the Richmat controller.
 
         Args:
-            coordinator: The SmartBedCoordinator instance
+            coordinator: The AdjustableBedCoordinator instance
             is_wilinke: Whether this is a WiLinke variant (uses 5-byte commands)
             char_uuid: The characteristic UUID to use for writing commands
         """

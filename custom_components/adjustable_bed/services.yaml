@@ -3,7 +3,7 @@ goto_preset:
   description: Move bed to a saved memory position.
   target:
     device:
-      integration: ha_smartbed
+      integration: adjustable_bed
   fields:
     preset:
       name: Preset Number
@@ -20,7 +20,7 @@ save_preset:
   description: Save current bed position to a memory slot.
   target:
     device:
-      integration: ha_smartbed
+      integration: adjustable_bed
   fields:
     preset:
       name: Preset Number
@@ -37,4 +37,4 @@ stop_all:
   description: Immediately stop all bed motors.
   target:
     device:
-      integration: ha_smartbed
+      integration: adjustable_bed

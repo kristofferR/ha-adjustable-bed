@@ -1,8 +1,8 @@
-"""Constants for the Smart Bed integration."""
+"""Constants for the Adjustable Bed integration."""
 
 from typing import Final
 
-DOMAIN: Final = "ha_smartbed"
+DOMAIN: Final = "adjustable_bed"
 
 # Configuration keys
 CONF_BED_TYPE: Final = "bed_type"

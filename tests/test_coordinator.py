@@ -1,4 +1,4 @@
-"""Tests for Smart Bed coordinator."""
+"""Tests for Adjustable Bed coordinator."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.ha_smartbed.const import BED_TYPE_LINAK
-from custom_components.ha_smartbed.coordinator import SmartBedCoordinator
+from custom_components.adjustable_bed.const import BED_TYPE_LINAK
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
@@ -23,7 +23,7 @@ class TestCoordinatorInit:
         mock_config_entry,
     ):
         """Test coordinator properties are set correctly."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
 
         assert coordinator.address == TEST_ADDRESS
         assert coordinator.name == TEST_NAME
@@ -40,10 +40,10 @@ class TestCoordinatorInit:
         mock_config_entry,
     ):
         """Test device info is generated correctly."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         device_info = coordinator.device_info
 
-        assert device_info["identifiers"] == {("ha_smartbed", TEST_ADDRESS)}
+        assert device_info["identifiers"] == {("adjustable_bed", TEST_ADDRESS)}
         assert device_info["name"] == TEST_NAME
         assert device_info["manufacturer"] == "Linak"
         assert "2 motors" in device_info["model"]
@@ -60,7 +60,7 @@ class TestCoordinatorConnection:
         mock_bleak_client: MagicMock,
     ):
         """Test successful connection."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         result = await coordinator.async_connect()
 
         assert result is True
@@ -74,10 +74,10 @@ class TestCoordinatorConnection:
     ):
         """Test connection fails when device not found."""
         with patch(
-            "custom_components.ha_smartbed.coordinator.bluetooth.async_ble_device_from_address",
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
             return_value=None,
         ):
-            coordinator = SmartBedCoordinator(hass, mock_config_entry)
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
             result = await coordinator.async_connect()
 
         assert result is False
@@ -92,11 +92,11 @@ class TestCoordinatorConnection:
     ):
         """Test connection handles BleakError."""
         with patch(
-            "custom_components.ha_smartbed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator.establish_connection",
             new_callable=AsyncMock,
             side_effect=BleakError("Connection failed"),
         ):
-            coordinator = SmartBedCoordinator(hass, mock_config_entry)
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
             result = await coordinator.async_connect()
 
         assert result is False
@@ -109,7 +109,7 @@ class TestCoordinatorConnection:
         mock_bleak_client: MagicMock,
     ):
         """Test disconnection."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.async_disconnect()
@@ -124,7 +124,7 @@ class TestCoordinatorConnection:
         mock_bleak_client: MagicMock,
     ):
         """Test ensure_connected returns True when already connected."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         result = await coordinator.async_ensure_connected()
@@ -139,7 +139,7 @@ class TestCoordinatorConnection:
         mock_bleak_client: MagicMock,
     ):
         """Test ensure_connected reconnects when disconnected."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
 
         # First call will connect
         result = await coordinator.async_ensure_connected()
@@ -156,7 +156,7 @@ class TestCoordinatorPositionCallbacks:
         mock_config_entry,
     ):
         """Test registering position callbacks."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         callback = MagicMock()
 
         unregister = coordinator.register_position_callback(callback)
@@ -170,7 +170,7 @@ class TestCoordinatorPositionCallbacks:
         mock_config_entry,
     ):
         """Test unregistering position callbacks."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         callback = MagicMock()
 
         unregister = coordinator.register_position_callback(callback)
@@ -184,7 +184,7 @@ class TestCoordinatorPositionCallbacks:
         mock_config_entry,
     ):
         """Test position updates trigger all callbacks."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         callback1 = MagicMock()
         callback2 = MagicMock()
 
@@ -209,7 +209,7 @@ class TestCoordinatorDisconnectTimer:
         mock_coordinator_connected,
     ):
         """Test disconnect timer is set after connection."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         assert coordinator._disconnect_timer is not None
@@ -222,7 +222,7 @@ class TestCoordinatorDisconnectTimer:
         mock_bleak_client: MagicMock,
     ):
         """Test disconnect timer is cancelled on disconnect."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
         await coordinator.async_disconnect()
 
@@ -240,7 +240,7 @@ class TestCoordinatorWriteCommand:
         mock_bleak_client: MagicMock,
     ):
         """Test writing commands succeeds."""
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         command = bytes([0x01, 0x00])
@@ -259,11 +259,11 @@ class TestCoordinatorWriteCommand:
         """Test writing commands fails when not connected."""
         # Make connection fail
         with patch(
-            "custom_components.ha_smartbed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator.establish_connection",
             new_callable=AsyncMock,
             side_effect=BleakError("Connection failed"),
         ):
-            coordinator = SmartBedCoordinator(hass, mock_config_entry)
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
 
             with pytest.raises(ConnectionError):
                 await coordinator.async_write_command(bytes([0x01, 0x00]))
@@ -281,7 +281,7 @@ class TestCoordinatorNotifications:
     ):
         """Test start_notify is skipped when angle sensing is disabled."""
         # Default config has disable_angle_sensing=True
-        coordinator = SmartBedCoordinator(hass, mock_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.async_start_notify()
@@ -302,14 +302,14 @@ class TestCoordinatorNotifications:
         # Create entry with angle sensing enabled
         mock_config_entry_data["disable_angle_sensing"] = False
         entry = MockConfigEntry(
-            domain="ha_smartbed",
+            domain=DOMAIN,
             title=TEST_NAME,
             data=mock_config_entry_data,
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="test_entry_id_2",
         )
 
-        coordinator = SmartBedCoordinator(hass, entry)
+        coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
 
         await coordinator.async_start_notify()

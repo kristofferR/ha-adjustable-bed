@@ -16,7 +16,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,11 +38,11 @@ class BedController(ABC):
     - massage_* methods
     """
 
-    def __init__(self, coordinator: SmartBedCoordinator) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the controller.
 
         Args:
-            coordinator: The SmartBedCoordinator managing the BLE connection
+            coordinator: The AdjustableBedCoordinator managing the BLE connection
         """
         self._coordinator = coordinator
 

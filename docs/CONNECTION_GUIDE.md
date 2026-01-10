@@ -1,10 +1,10 @@
-# Smart Bed Connection Guide
+# Adjustable Bed Connection Guide
 
-This guide explains how to connect your smart bed to Home Assistant.
+This guide explains how to connect your adjustable bed to Home Assistant.
 
 ## Understanding Bluetooth Connectivity
 
-Most smart beds use Bluetooth Low Energy (BLE) to communicate with their remote controls and apps. This integration connects directly to your bed's BLE controller.
+Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their remote controls and apps. This integration connects directly to your bed's BLE controller.
 
 **Key Points:**
 - **BLE Range**: Typically 10-30 meters, but walls and interference reduce this
@@ -84,11 +84,11 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 ---
 
-## Adding Your Smart Bed
+## Adding Your Adjustable Bed
 
 1. **Power on your bed** and disconnect any manufacturer apps or remove batteries from remotes
 
-2. **Add the integration**: Settings → Devices & Services → Add Integration → "Smart Bed"
+2. **Add the integration**: Settings → Devices & Services → Add Integration → "Adjustable Bed"
 
 3. **Discovery or Manual Entry**
    - **Automatic:** Select your bed from the discovered list
@@ -105,7 +105,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 ## Advanced Options
 
-After setup, you can adjust additional settings via **Settings → Integrations → Smart Bed → Configure**:
+After setup, you can adjust additional settings via **Settings → Integrations → Adjustable Bed → Configure**:
 
 | Setting | Description |
 |---------|-------------|

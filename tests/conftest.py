@@ -1,4 +1,4 @@
-"""Fixtures for Smart Bed tests."""
+"""Fixtures for Adjustable Bed tests."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # Enable custom component loading
 pytest_plugins = "pytest_homeassistant_custom_component"
 
-from custom_components.ha_smartbed.const import (
+from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
@@ -287,7 +287,7 @@ def mock_bluetooth_service_info_okimat() -> MagicMock:
 def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMock, None, None]:
     """Mock bleak_retry_connector.establish_connection."""
     with patch(
-        "custom_components.ha_smartbed.coordinator.establish_connection",
+        "custom_components.adjustable_bed.coordinator.establish_connection",
         new_callable=AsyncMock,
     ) as mock:
         mock.return_value = mock_bleak_client
@@ -298,7 +298,7 @@ def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMo
 def mock_async_ble_device_from_address() -> Generator[MagicMock, None, None]:
     """Mock bluetooth.async_ble_device_from_address."""
     with patch(
-        "custom_components.ha_smartbed.coordinator.bluetooth.async_ble_device_from_address"
+        "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address"
     ) as mock:
         device = MagicMock()
         device.address = TEST_ADDRESS
@@ -313,15 +313,15 @@ def mock_bluetooth_adapters() -> Generator[None, None, None]:
     """Mock bluetooth adapter functions."""
     patches = [
         patch(
-            "custom_components.ha_smartbed.coordinator.bluetooth.async_scanner_count",
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_scanner_count",
             return_value=1,
         ),
         patch(
-            "custom_components.ha_smartbed.coordinator.bluetooth.async_discovered_service_info",
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_discovered_service_info",
             return_value=[],
         ),
         patch(
-            "custom_components.ha_smartbed.coordinator.bluetooth.async_last_service_info",
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
             return_value=None,
         ),
     ]
@@ -332,13 +332,13 @@ def mock_bluetooth_adapters() -> Generator[None, None, None]:
         if hasattr(bluetooth, 'async_register_connection_params'):
             patches.append(
                 patch(
-                    "custom_components.ha_smartbed.coordinator.bluetooth.async_register_connection_params",
+                    "custom_components.adjustable_bed.coordinator.bluetooth.async_register_connection_params",
                 )
             )
     except ImportError:
         pass
 
-    with patch.multiple("custom_components.ha_smartbed.coordinator", HAS_CONNECT_PARAMS=False):
+    with patch.multiple("custom_components.adjustable_bed.coordinator", HAS_CONNECT_PARAMS=False):
         for p in patches:
             p.start()
         try:

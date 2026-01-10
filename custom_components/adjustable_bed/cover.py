@@ -1,4 +1,4 @@
-"""Cover entities for Smart Bed integration."""
+"""Cover entities for Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT, DOMAIN
-from .coordinator import SmartBedCoordinator
-from .entity import SmartBedEntity
+from .coordinator import AdjustableBedCoordinator
+from .entity import AdjustableBedEntity
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -27,8 +27,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
-class SmartBedCoverEntityDescription(CoverEntityDescription):
-    """Describes a Smart Bed cover entity."""
+class AdjustableBedCoverEntityDescription(CoverEntityDescription):
+    """Describes a Adjustable Bed cover entity."""
 
     open_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     close_fn: Callable[[BedController], Coroutine[Any, Any, None]]
@@ -40,8 +40,8 @@ class SmartBedCoverEntityDescription(CoverEntityDescription):
 # - 2 motors: back and legs
 # - 3 motors: back, legs, head
 # - 4 motors: back, legs, head, feet
-COVER_DESCRIPTIONS: tuple[SmartBedCoverEntityDescription, ...] = (
-    SmartBedCoverEntityDescription(
+COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
+    AdjustableBedCoverEntityDescription(
         key="back",
         translation_key="back",
         icon="mdi:human-handsup",
@@ -51,7 +51,7 @@ COVER_DESCRIPTIONS: tuple[SmartBedCoverEntityDescription, ...] = (
         stop_fn=lambda ctrl: ctrl.move_back_stop(),
         min_motors=2,
     ),
-    SmartBedCoverEntityDescription(
+    AdjustableBedCoverEntityDescription(
         key="legs",
         translation_key="legs",
         icon="mdi:human-handsdown",
@@ -61,7 +61,7 @@ COVER_DESCRIPTIONS: tuple[SmartBedCoverEntityDescription, ...] = (
         stop_fn=lambda ctrl: ctrl.move_legs_stop(),
         min_motors=2,
     ),
-    SmartBedCoverEntityDescription(
+    AdjustableBedCoverEntityDescription(
         key="head",
         translation_key="head",
         icon="mdi:head",
@@ -71,7 +71,7 @@ COVER_DESCRIPTIONS: tuple[SmartBedCoverEntityDescription, ...] = (
         stop_fn=lambda ctrl: ctrl.move_head_stop(),
         min_motors=3,
     ),
-    SmartBedCoverEntityDescription(
+    AdjustableBedCoverEntityDescription(
         key="feet",
         translation_key="feet",
         icon="mdi:foot-print",
@@ -89,30 +89,30 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Smart Bed cover entities."""
-    coordinator: SmartBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Adjustable Bed cover entities."""
+    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
 
     entities = []
     for description in COVER_DESCRIPTIONS:
         if motor_count >= description.min_motors:
-            entities.append(SmartBedCover(coordinator, description))
+            entities.append(AdjustableBedCover(coordinator, description))
 
     async_add_entities(entities)
 
 
-class SmartBedCover(SmartBedEntity, CoverEntity):
-    """Cover entity for Smart Bed motor control."""
+class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
+    """Cover entity for Adjustable Bed motor control."""
 
-    entity_description: SmartBedCoverEntityDescription
+    entity_description: AdjustableBedCoverEntityDescription
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
     )
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
-        description: SmartBedCoverEntityDescription,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedCoverEntityDescription,
     ) -> None:
         """Initialize the cover."""
         super().__init__(coordinator)

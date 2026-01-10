@@ -25,7 +25,7 @@ from ..const import (
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,14 +79,14 @@ class KeesonController(BedController):
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
         variant: str = "base",
         char_uuid: str | None = None,
     ) -> None:
         """Initialize the Keeson controller.
 
         Args:
-            coordinator: The SmartBedCoordinator instance
+            coordinator: The AdjustableBedCoordinator instance
             variant: Protocol variant ('ksbt' or 'base')
             char_uuid: The characteristic UUID to use for writing commands
         """

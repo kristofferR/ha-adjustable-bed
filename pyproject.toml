@@ -1,7 +1,7 @@
 [project]
-name = "ha_smartbed"
-version = "0.1.0"
-description = "Home Assistant integration for smart beds (Linak, etc.)"
+name = "ha-adjustable-bed"
+version = "0.5.0"
+description = "Home Assistant integration for adjustable beds (Linak, etc.)"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]

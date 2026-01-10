@@ -1,4 +1,4 @@
-"""Tests for Smart Bed config flow."""
+"""Tests for Adjustable Bed config flow."""
 
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.ha_smartbed.config_flow import (
-    SmartBedConfigFlow,
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
     detect_bed_type,
     is_valid_mac_address,
 )
-from custom_components.ha_smartbed.const import (
+from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
@@ -238,7 +238,7 @@ class TestManualFlow:
     async def test_manual_entry_no_devices_discovered(self, hass: HomeAssistant):
         """Test manual entry when no devices are discovered."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -252,7 +252,7 @@ class TestManualFlow:
     async def test_manual_entry_creates_entry(self, hass: HomeAssistant):
         """Test manual entry creates a config entry."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -282,7 +282,7 @@ class TestManualFlow:
     async def test_manual_entry_invalid_mac(self, hass: HomeAssistant):
         """Test manual entry with invalid MAC address shows error."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -309,7 +309,7 @@ class TestManualFlow:
     async def test_manual_entry_normalizes_mac(self, hass: HomeAssistant):
         """Test manual entry normalizes MAC address format."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -344,7 +344,7 @@ class TestUserFlow:
     ):
         """Test user flow shows discovered devices."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -362,7 +362,7 @@ class TestUserFlow:
     ):
         """Test user can select manual entry from device list."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -389,7 +389,7 @@ class TestOptionsFlow:
     ):
         """Test options flow allows changing settings."""
         with patch(
-            "custom_components.ha_smartbed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)

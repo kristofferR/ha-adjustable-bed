@@ -27,7 +27,7 @@ from ..const import (
 from .base import BedController
 
 if TYPE_CHECKING:
-    from ..coordinator import SmartBedCoordinator
+    from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,12 +91,12 @@ class ErgomotionController(BedController):
 
     def __init__(
         self,
-        coordinator: SmartBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
     ) -> None:
         """Initialize the Ergomotion controller.
 
         Args:
-            coordinator: The SmartBedCoordinator instance
+            coordinator: The AdjustableBedCoordinator instance
         """
         super().__init__(coordinator)
         self._write_char_uuid = ERGOMOTION_WRITE_CHAR_UUID

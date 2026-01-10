@@ -22,7 +22,7 @@ See `smartbed-mqtt-discord-chats/esphome-bug-llm-generated.md` for detailed docu
 ## Architecture
 
 ```
-custom_components/ha_smartbed/
+custom_components/adjustable_bed/
 ├── __init__.py          # Integration setup, platform loading
 ├── config_flow.py       # Device discovery and setup wizard
 ├── coordinator.py       # BLE connection management (central hub)
@@ -46,7 +46,7 @@ custom_components/ha_smartbed/
 
 ### Key Components
 
-**SmartBedCoordinator** (`coordinator.py`): Central BLE connection manager
+**AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
 - Connection retry with progressive backoff (3 attempts, 5-7.5s delays)
 - Auto-disconnect after 40s idle (allows physical remote/app to connect)
@@ -254,8 +254,8 @@ These details were discovered by comparing with the working smartbed-mqtt implem
 ## Integration Features
 
 - **Options Flow** - Reconfigure bed settings without deleting the integration
-- **Diagnostics** - Download debug info from Settings > Devices > Smart Bed
-- **Custom Services** - `ha_smartbed.goto_preset`, `ha_smartbed.save_preset`, `ha_smartbed.stop_all`
+- **Diagnostics** - Download debug info from Settings > Devices > Adjustable Bed
+- **Custom Services** - `adjustable_bed.goto_preset`, `adjustable_bed.save_preset`, `adjustable_bed.stop_all`
 - **Auto-reconnection** - Automatically reconnects after unexpected disconnections
 - **MAC Validation** - Validates Bluetooth address format during manual setup
 
@@ -263,14 +263,14 @@ These details were discovered by comparing with the working smartbed-mqtt implem
 
 ### Testing in Home Assistant
 
-1. Copy `custom_components/ha_smartbed` to your HA's `config/custom_components/`
+1. Copy `custom_components/adjustable_bed` to your HA's `config/custom_components/`
 2. Restart Home Assistant
 3. Add debug logging to `configuration.yaml`:
    ```yaml
    logger:
      default: info
      logs:
-       custom_components.ha_smartbed: debug
+       custom_components.adjustable_bed: debug
        homeassistant.components.bluetooth: debug
    ```
 

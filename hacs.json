@@ -1,5 +1,5 @@
 {
-  "name": "Smart Bed",
+  "name": "Adjustable Bed",
   "homeassistant": "2024.1.0",
   "render_readme": true,
   "content_in_root": false
