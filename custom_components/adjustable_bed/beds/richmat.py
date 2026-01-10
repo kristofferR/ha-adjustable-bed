@@ -257,25 +257,25 @@ class RichmatController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self.write_command(
-            self._build_command(RichmatCommands.PRESET_FLAT),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to flat position.
+
+        Presets are single-command triggered - the bed's internal controller
+        handles moving to the position automatically after receiving one command.
+        """
+        await self.write_command(self._build_command(RichmatCommands.PRESET_FLAT))
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
+        """Go to memory preset.
+
+        Presets are single-command triggered - the bed's internal controller
+        handles moving to the position automatically after receiving one command.
+        """
         commands = {
             1: RichmatCommands.PRESET_MEMORY_1,
             2: RichmatCommands.PRESET_MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=150,
-            )
+            await self.write_command(self._build_command(command))
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -287,28 +287,28 @@ class RichmatController(BedController):
             await self.write_command(self._build_command(command))
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
-        await self.write_command(
-            self._build_command(RichmatCommands.PRESET_ZERO_G),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to zero gravity position.
+
+        Presets are single-command triggered - the bed's internal controller
+        handles moving to the position automatically after receiving one command.
+        """
+        await self.write_command(self._build_command(RichmatCommands.PRESET_ZERO_G))
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        await self.write_command(
-            self._build_command(RichmatCommands.PRESET_ANTI_SNORE),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to anti-snore position.
+
+        Presets are single-command triggered - the bed's internal controller
+        handles moving to the position automatically after receiving one command.
+        """
+        await self.write_command(self._build_command(RichmatCommands.PRESET_ANTI_SNORE))
 
     async def preset_tv(self) -> None:
-        """Go to TV/lounge position."""
-        await self.write_command(
-            self._build_command(RichmatCommands.PRESET_TV),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to TV/lounge position.
+
+        Presets are single-command triggered - the bed's internal controller
+        handles moving to the position automatically after receiving one command.
+        """
+        await self.write_command(self._build_command(RichmatCommands.PRESET_TV))
 
     # Light methods
     async def lights_toggle(self) -> None:
