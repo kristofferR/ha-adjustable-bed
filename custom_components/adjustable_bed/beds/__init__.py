@@ -5,6 +5,7 @@ from .keeson import KeesonController
 from .leggett_platt import LeggettPlattController
 from .linak import LinakController
 from .motosleep import MotoSleepController
+from .octo import OctoController
 from .okimat import OkimatController
 from .reverie import ReverieController
 from .richmat import RichmatController
@@ -16,6 +17,7 @@ __all__ = [
     "LeggettPlattController",
     "LinakController",
     "MotoSleepController",
+    "OctoController",
     "OkimatController",
     "ReverieController",
     "RichmatController",

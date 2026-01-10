@@ -850,12 +850,20 @@ For fine-tuning motor movement behavior, you can adjust these settings in the in
 
 ## Not Yet Supported
 
-### Octo / Sleeptracker AI (Cloud-based)
-- Tempur-Pedic Ergo series
-- Beautyrest SmartMotion
-- Serta Motion series
+### Sleeptracker AI (Cloud-based)
+- Tempur-Pedic Ergo series (cloud-connected models)
+- Beautyrest SmartMotion (cloud-connected models)
+- Serta Motion series (cloud-connected models)
 
 **Reason:** Requires cloud API, not local BLE control.
+
+### Logicdata (Local Network)
+- Tempur-Pedic beds with Logicdata controllers
+- Uses local UDP/HTTP protocol, not BLE
+
+### ErgoWifi (Cloud-based)
+- Beds using Xlink cloud platform
+- Requires Chinese cloud API authentication
 
 ---
 
@@ -871,5 +879,6 @@ For fine-tuning motor movement behavior, you can adjust these settings in the in
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
    - `Dewert*`, `A H Beard*`, or `Hankook*` → DewertOkin
    - `Serta*` or `Motion Perfect*` → Serta
+   - `Octo*` → Octo
 
 If your bed isn't auto-detected, use manual configuration and try different bed types.

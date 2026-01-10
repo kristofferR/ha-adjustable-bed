@@ -27,6 +27,9 @@ BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"
 BED_TYPE_OKIMAT: Final = "okimat"
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
+BED_TYPE_JIECANG: Final = "jiecang"
+BED_TYPE_DEWERTOKIN: Final = "dewertokin"
+BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 
 SUPPORTED_BED_TYPES: Final = [
@@ -39,7 +42,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIMAT,
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,
-    # BED_TYPE_OCTO,  # TODO: implement - cloud-based (Tempur Ergo, BeautyRest, Serta)
+    BED_TYPE_JIECANG,
+    BED_TYPE_DEWERTOKIN,
+    BED_TYPE_SERTA,
+    BED_TYPE_OCTO,
 ]
 
 # Linak specific UUIDs
@@ -138,6 +144,21 @@ REVERIE_CHAR_UUID: Final = "6af87926-dc79-412e-a3e0-5f85c2d55de2"
 OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
+
+# Jiecang specific UUIDs (Glide beds, Dream Motion app)
+JIECANG_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
+
+# DewertOkin specific (A H Beard, HankookGallery beds)
+# Uses handle-based writes rather than UUID
+DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
+
+# Serta Motion Perfect III specific
+# Uses handle-based writes rather than UUID
+SERTA_WRITE_HANDLE: Final = 0x0020
+
+# Octo specific UUIDs
+OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"

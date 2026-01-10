@@ -24,14 +24,18 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
+    BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -226,6 +230,42 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_ERGOMOTION
+
+    # Check for Jiecang - name-based detection (Glide beds, Dream Motion app)
+    if any(x in device_name for x in ["jiecang", "jc-", "dream motion", "glide"]):
+        _LOGGER.info(
+            "Detected Jiecang bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_JIECANG
+
+    # Check for DewertOkin - name-based detection (A H Beard, HankookGallery)
+    if any(x in device_name for x in ["dewertokin", "dewert", "a h beard", "hankook"]):
+        _LOGGER.info(
+            "Detected DewertOkin bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_DEWERTOKIN
+
+    # Check for Serta Motion Perfect - name-based detection
+    if any(x in device_name for x in ["serta", "motion perfect"]):
+        _LOGGER.info(
+            "Detected Serta bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_SERTA
+
+    # Check for Octo - name-based detection (before Solace since same UUID)
+    if "octo" in device_name:
+        _LOGGER.info(
+            "Detected Octo bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_OCTO
 
     # Check for Keeson BaseI4/I5 (must check before generic UUIDs)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:

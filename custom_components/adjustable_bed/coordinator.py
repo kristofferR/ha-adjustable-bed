@@ -21,14 +21,18 @@ from habluetooth import ConnectParams
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -254,6 +258,11 @@ class AdjustableBedCoordinator:
             BED_TYPE_LEGGETT_PLATT: "Leggett & Platt",
             BED_TYPE_REVERIE: "Reverie",
             BED_TYPE_OKIMAT: "Okimat",
+            BED_TYPE_ERGOMOTION: "Ergomotion",
+            BED_TYPE_JIECANG: "Jiecang",
+            BED_TYPE_DEWERTOKIN: "DewertOkin",
+            BED_TYPE_SERTA: "Serta",
+            BED_TYPE_OCTO: "Octo",
         }
         return manufacturers.get(self._bed_type, "Unknown")
 
@@ -781,6 +790,26 @@ class AdjustableBedCoordinator:
             from .beds.ergomotion import ErgomotionController
 
             return ErgomotionController(self)
+
+        if self._bed_type == BED_TYPE_JIECANG:
+            from .beds.jiecang import JiecangController
+
+            return JiecangController(self)
+
+        if self._bed_type == BED_TYPE_DEWERTOKIN:
+            from .beds.dewertokin import DewertOkinController
+
+            return DewertOkinController(self)
+
+        if self._bed_type == BED_TYPE_SERTA:
+            from .beds.serta import SertaController
+
+            return SertaController(self)
+
+        if self._bed_type == BED_TYPE_OCTO:
+            from .beds.octo import OctoController
+
+            return OctoController(self)
 
         raise ValueError(f"Unknown bed type: {self._bed_type}")
 

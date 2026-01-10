@@ -13,6 +13,24 @@
   "bluetooth": [
     {
       "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
+    },
+    {
+      "service_uuid": "0000fee9-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7"
+    },
+    {
+      "service_uuid": "45e25100-3171-4cfc-ae89-1d83cf8d8071"
+    },
+    {
+      "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
+    },
+    {
+      "service_uuid": "1b1d9641-b942-4da8-89cc-98e6a58fbd93"
+    },
+    {
+      "service_uuid": "0000ffe0-0000-1000-8000-00805f9b34fb"
     }
   ]
 }

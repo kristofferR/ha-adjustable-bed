@@ -35,8 +35,11 @@ These guides contain much more detail than this README - **if you're stuck, they
 | **[Leggett & Platt](docs/SUPPORTED_BEDS.md#leggett--platt)** | ⚠️ Untested |
 | **[Reverie](docs/SUPPORTED_BEDS.md#reverie)** | ⚠️ Untested |
 | **[Okimat](docs/SUPPORTED_BEDS.md#okimat)** | ⚠️ Untested |
+| **[Jiecang](docs/SUPPORTED_BEDS.md#jiecang)** | ⚠️ Untested |
+| **[DewertOkin](docs/SUPPORTED_BEDS.md#dewertokin)** | ⚠️ Untested |
+| **[Serta](docs/SUPPORTED_BEDS.md#serta)** | ⚠️ Untested |
 
-**Not Yet Implemented:** Octo / Sleeptracker AI (cloud-based: Tempur Ergo, BeautyRest, Serta)
+**Not Yet Implemented:** Octo / Sleeptracker AI (cloud-based: Tempur Ergo, BeautyRest)
 
 ## Features
 
@@ -48,15 +51,16 @@ These guides contain much more detail than this README - **if you're stuck, they
 
 ### Brand-Specific Features
 
-| Feature | Linak | Richmat | Keeson | Ergomotion | Solace | MotoSleep | Leggett | Reverie | Okimat |
-|---------|-------|---------|--------|------------|--------|-----------|---------|---------|--------|
-| Memory Presets | 4 | 2 | 4 | 4 | 5 | 2 | 4 | 4 | 4 |
-| Program Memory | ✅ | ✅ | - | - | ✅ | ✅ | ✅* | ✅ | - |
-| Under-bed Lights | ✅ | ✅ | ✅ | ✅ | - | ✅ | RGB* | ✅ | ✅ |
-| Massage Control | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅* | ✅ | ✅ |
-| Position Feedback | ✅ | - | - | ✅ | - | - | - | - | - |
-| Zero-G Preset | - | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅ |
-| Anti-Snore | - | ✅ | - | - | ✅ | ✅ | ✅* | ✅ | - |
+| Feature | Linak | Richmat | Keeson | Ergomotion | Solace | MotoSleep | Leggett | Reverie | Okimat | Jiecang | DewertOkin | Serta |
+|---------|-------|---------|--------|------------|--------|-----------|---------|---------|--------|---------|------------|-------|
+| Memory Presets | 4 | 2 | 4 | 4 | 5 | 2 | 4 | 4 | 4 | 2 | 2 | - |
+| Program Memory | ✅ | ✅ | - | - | ✅ | ✅ | ✅* | ✅ | - | - | - | - |
+| Under-bed Lights | ✅ | ✅ | ✅ | ✅ | - | ✅ | RGB* | ✅ | ✅ | - | ✅ | - |
+| Massage Control | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅* | ✅ | ✅ | - | ✅ | ✅ |
+| Position Feedback | ✅ | - | - | ✅ | - | - | - | - | - | - | - | - |
+| Zero-G Preset | - | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Anti-Snore | - | ✅ | - | - | ✅ | ✅ | ✅* | ✅ | - | - | ✅ | ✅ |
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | - | ✅ | ✅ |
 
 *Gen2 variant only
 
