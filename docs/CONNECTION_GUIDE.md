@@ -115,7 +115,7 @@ After setup, you can adjust additional settings via **Settings → Integrations 
 | Motor Pulse Delay | Fine-tune motor smoothness (10-500ms) |
 | Bluetooth Adapter | Choose specific adapter or proxy |
 
-See [Motor Pulse Settings](SUPPORTED_BEDS.md#motor-pulse-settings) for details on pulse configuration.
+See [Motor Pulse Settings](SUPPORTED_ACTUATORS.md#motor-pulse-settings) for details on pulse configuration.
 
 ---
 
@@ -150,4 +150,4 @@ If your bed isn't auto-discovered:
 ## Next Steps
 
 - **Having issues?** See [Troubleshooting](TROUBLESHOOTING.md)
-- **Want to know more about your bed?** See [Supported Beds](SUPPORTED_BEDS.md)
+- **Want to know more about your bed?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)

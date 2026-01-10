@@ -1,4 +1,4 @@
-# Supported Bed Brands
+# Supported Actuators
 
 This document provides detailed information about each supported bed brand, including protocol details and command references.
 
@@ -12,7 +12,7 @@ This document provides detailed information about each supported bed brand, incl
 - [MotoSleep](#motosleep)
 - [Leggett & Platt](#leggett--platt)
 - [Reverie](#reverie)
-- [Okimat](#okimat)
+- [Okimat/Okin](#okimatokin)
 - [Jiecang](#jiecang)
 - [DewertOkin](#dewertokin)
 - [Serta](#serta)
@@ -28,7 +28,7 @@ This document provides detailed information about each supported bed brand, incl
 ### Known Models
 - Linak DPG1M (OEM controller used in many beds)
 - IKEA PRAKTVÄDD / VARDÖ
-- BedreNætter adjustable beds
+- Bedre Nætter
 - Jensen
 - Auping
 - Carpe Diem
@@ -533,15 +533,14 @@ Uses same 32-bit command values as Keeson - see [Keeson commands](#commands-32-b
 
 ---
 
-## Okimat
+## Okimat/Okin
 
 **Status:** ⚠️ Untested
 
 ### Known Models
 - Okimat beds
 - Lucid L600
-- European adjustable beds with Okin motors
-- Beds with Okin RF remotes
+- Other beds with Okin motors
 
 ### Features
 | Feature | Supported |
@@ -836,6 +835,12 @@ For fine-tuning motor movement behavior, you can adjust these settings in the in
 ### ErgoWifi (Cloud-based)
 - Beds using Xlink cloud platform
 - Requires Chinese cloud API authentication
+
+### Eight Sleep
+Will not be implemented. Use the [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) integration instead.
+
+### Sleep Number
+Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integrations/sleepiq/) integration instead.
 
 ---
 
