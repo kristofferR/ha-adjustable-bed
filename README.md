@@ -18,33 +18,35 @@ A Home Assistant custom integration for controlling smart adjustable beds via Bl
 |-------|-------------|
 | **[Connection Guide](docs/CONNECTION_GUIDE.md)** | Setup walkthrough, ESPHome Bluetooth proxy configuration, finding your bed's address |
 | **[Troubleshooting](docs/TROUBLESHOOTING.md)** | Solutions for common problems - connection failures, commands not working, position sensors |
-| **[Supported Beds](docs/SUPPORTED_BEDS.md)** | Detailed info for each bed brand, protocol variants, and complete BLE command references |
+| **[Supported Actuators](docs/SUPPORTED_ACTUATORS.md)** | Detailed info for each actuator, protocol variants, and complete BLE command references |
 
 These guides contain much more detail than this README - **if you're stuck, they're the place to look!**
 
 ## Supported Motors/Actuators
 
-The names below refer to motor/actuator manufacturers, not bed brands. Many bed retailers sell beds using these actuators under their own brand names. For example, a bed sold as "IKEA PRAKTGULL" or "BedreNætter" might use Linak or Keeson actuators internally.
+The names below refer to motor/actuator manufacturers, not bed brands. Many bed retailers sell beds using these actuators under their own brand names. For example, a bed sold as "IKEA PRAKTGULL" or "Bedre Nætter" might use Linak or Keeson actuators internally.
 
-**See the [Supported Beds documentation](docs/SUPPORTED_BEDS.md) for a list of known bed brands and which actuators they use.**
+**See the [Supported Actuators documentation](docs/SUPPORTED_ACTUATORS.md) for a list of known bed brands and which actuators they use.**
 
 | Actuator | Status |
 |-------|--------|
-| **[Linak](docs/SUPPORTED_BEDS.md#linak)** | ✅ Tested |
-| **[Keeson](docs/SUPPORTED_BEDS.md#keeson)** | ✅ Tested |
-| **[Richmat](docs/SUPPORTED_BEDS.md#richmat)** | ⚠️ Tested, not fluid yet |
-| **[Ergomotion](docs/SUPPORTED_BEDS.md#ergomotion)** | ⚠️ Untested |
-| **[Solace](docs/SUPPORTED_BEDS.md#solace)** | ⚠️ Untested |
-| **[MotoSleep](docs/SUPPORTED_BEDS.md#motosleep)** | ⚠️ Untested |
-| **[Leggett & Platt](docs/SUPPORTED_BEDS.md#leggett--platt)** | ⚠️ Untested |
-| **[Reverie](docs/SUPPORTED_BEDS.md#reverie)** | ⚠️ Untested |
-| **[Okimat](docs/SUPPORTED_BEDS.md#okimat)** | ⚠️ Untested |
-| **[Jiecang](docs/SUPPORTED_BEDS.md#jiecang)** | ⚠️ Untested |
-| **[DewertOkin](docs/SUPPORTED_BEDS.md#dewertokin)** | ⚠️ Untested |
-| **[Serta](docs/SUPPORTED_BEDS.md#serta)** | ⚠️ Untested |
-| **[Octo](docs/SUPPORTED_BEDS.md#octo)** | ⚠️ Untested |
+| **[Linak](docs/SUPPORTED_ACTUATORS.md#linak)** | ✅ Tested |
+| **[Keeson](docs/SUPPORTED_ACTUATORS.md#keeson)** | ✅ Tested |
+| **[Richmat](docs/SUPPORTED_ACTUATORS.md#richmat)** | ⚠️ Tested, not fluid yet |
+| **[Ergomotion](docs/SUPPORTED_ACTUATORS.md#ergomotion)** | ⚠️ Untested |
+| **[Solace](docs/SUPPORTED_ACTUATORS.md#solace)** | ⚠️ Untested |
+| **[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep)** | ⚠️ Untested |
+| **[Leggett & Platt](docs/SUPPORTED_ACTUATORS.md#leggett--platt)** | ⚠️ Untested |
+| **[Reverie](docs/SUPPORTED_ACTUATORS.md#reverie)** | ⚠️ Untested |
+| **[Okimat/Okin](docs/SUPPORTED_ACTUATORS.md#okimatokin)** | ⚠️ Untested |
+| **[Jiecang](docs/SUPPORTED_ACTUATORS.md#jiecang)** | ⚠️ Untested |
+| **[DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin)** | ⚠️ Untested |
+| **[Serta](docs/SUPPORTED_ACTUATORS.md#serta)** | ⚠️ Untested |
+| **[Octo](docs/SUPPORTED_ACTUATORS.md#octo)** | ⚠️ Untested |
 
 **Not Yet Implemented:** Sleeptracker AI (cloud-based: Tempur Ergo, BeautyRest), Logicdata, ErgoWifi
+
+**Will Not Be Implemented:** [Eight Sleep](https://github.com/lukas-clarke/eight_sleep), [Sleep Number](https://www.home-assistant.io/integrations/sleepiq/) (use linked integrations instead)
 
 ## Features
 
