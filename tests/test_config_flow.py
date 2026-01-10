@@ -10,6 +10,7 @@ from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.setup import async_setup_component
 
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -249,6 +250,7 @@ class TestBluetoothDiscoveryFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test Bluetooth discovery initiates config flow."""
         result = await hass.config_entries.flow.async_init(
@@ -264,6 +266,7 @@ class TestBluetoothDiscoveryFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test confirming Bluetooth discovery creates entry."""
         # Start the flow
@@ -297,6 +300,7 @@ class TestBluetoothDiscoveryFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info_unknown: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test Bluetooth discovery aborts for unsupported devices."""
         result = await hass.config_entries.flow.async_init(
@@ -313,6 +317,7 @@ class TestBluetoothDiscoveryFlow:
         hass: HomeAssistant,
         mock_config_entry,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test Bluetooth discovery aborts if already configured."""
         # Use the same address as the existing entry
@@ -331,7 +336,7 @@ class TestBluetoothDiscoveryFlow:
 class TestManualFlow:
     """Test manual configuration flow."""
 
-    async def test_manual_entry_no_devices_discovered(self, hass: HomeAssistant):
+    async def test_manual_entry_no_devices_discovered(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry when no devices are discovered."""
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
@@ -345,7 +350,7 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
 
-    async def test_manual_entry_creates_entry(self, hass: HomeAssistant):
+    async def test_manual_entry_creates_entry(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry creates a config entry."""
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
@@ -375,7 +380,7 @@ class TestManualFlow:
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
         assert result["data"][CONF_MOTOR_COUNT] == 3
 
-    async def test_manual_entry_invalid_mac(self, hass: HomeAssistant):
+    async def test_manual_entry_invalid_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry with invalid MAC address shows error."""
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
@@ -402,7 +407,7 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "invalid_mac_address"
 
-    async def test_manual_entry_normalizes_mac(self, hass: HomeAssistant):
+    async def test_manual_entry_normalizes_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry normalizes MAC address format."""
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
@@ -437,6 +442,7 @@ class TestUserFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test user flow shows discovered devices."""
         with patch(
@@ -455,6 +461,7 @@ class TestUserFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
     ):
         """Test user can select manual entry from device list."""
         with patch(
@@ -482,8 +489,14 @@ class TestOptionsFlow:
         self,
         hass: HomeAssistant,
         mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test options flow allows changing settings."""
+        # Set up the integration first so the options flow handler is registered
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],

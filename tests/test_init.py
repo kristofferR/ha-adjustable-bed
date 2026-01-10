@@ -19,6 +19,10 @@ from custom_components.adjustable_bed import (
 from custom_components.adjustable_bed.const import DOMAIN
 
 
+# Import enable_custom_integrations fixture
+from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
+
+
 class TestIntegrationSetup:
     """Test integration setup."""
 
@@ -27,6 +31,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test successful setup of config entry."""
         assert await async_setup_entry(hass, mock_config_entry)
@@ -39,6 +44,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test setup registers services."""
         await async_setup_entry(hass, mock_config_entry)
@@ -87,6 +93,7 @@ class TestIntegrationUnload:
         mock_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """Test successful unload of config entry."""
         await async_setup_entry(hass, mock_config_entry)
@@ -102,6 +109,7 @@ class TestIntegrationUnload:
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test unloading last entry removes services."""
         await async_setup_entry(hass, mock_config_entry)
@@ -122,6 +130,7 @@ class TestIntegrationUnload:
         mock_config_entry,
         mock_config_entry_data: dict,
         mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test services are kept when other entries remain."""
         from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -162,6 +171,7 @@ class TestServices:
         mock_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """Test goto_preset service calls controller."""
         await async_setup_entry(hass, mock_config_entry)
@@ -193,6 +203,7 @@ class TestServices:
         mock_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """Test stop_all service calls controller."""
         await async_setup_entry(hass, mock_config_entry)

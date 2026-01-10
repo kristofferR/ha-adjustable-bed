@@ -13,6 +13,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # Enable custom component loading
 pytest_plugins = "pytest_homeassistant_custom_component"
 
+# Re-export enable_custom_integrations fixture so it's available in tests
+from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
+
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
