@@ -22,9 +22,13 @@ A Home Assistant custom integration for controlling smart adjustable beds via Bl
 
 These guides contain much more detail than this README - **if you're stuck, they're the place to look!**
 
-## Supported Beds
+## Supported Motors/Actuators
 
-| Brand | Status |
+The names below refer to motor/actuator manufacturers, not bed brands. Many bed retailers sell beds using these actuators under their own brand names. For example, a bed sold as "IKEA PRAKTGULL" or "BedreNætter" might use Linak or Keeson actuators internally.
+
+**See the [Supported Beds documentation](docs/SUPPORTED_BEDS.md) for a list of known bed brands and which actuators they use.**
+
+| Actuator | Status |
 |-------|--------|
 | **[Linak](docs/SUPPORTED_BEDS.md#linak)** | ✅ Tested |
 | **[Keeson](docs/SUPPORTED_BEDS.md#keeson)** | ✅ Tested |
