@@ -13,6 +13,10 @@ This document provides detailed information about each supported bed brand, incl
 - [Leggett & Platt](#leggett--platt)
 - [Reverie](#reverie)
 - [Okimat](#okimat)
+- [Jiecang](#jiecang)
+- [DewertOkin](#dewertokin)
+- [Serta](#serta)
+- [Octo](#octo)
 - [Not Yet Supported](#not-yet-supported)
 
 ---
@@ -24,6 +28,7 @@ This document provides detailed information about each supported bed brand, incl
 ### Known Models
 - Linak DPG1M (OEM controller used in many beds)
 - IKEA PRAKTVÄDD / VARDÖ
+- BedreNætter adjustable beds
 - Many OEM adjustable beds with Linak motors
 
 ### Features
@@ -586,6 +591,238 @@ Uses same 32-bit command values as Keeson - see [Keeson commands](#commands-32-b
 
 ---
 
+## Jiecang
+
+**Status:** ⚠️ Untested
+
+### Known Models
+- Glide adjustable beds
+- Beds using Dream Motion app
+- Jiecang-branded controllers
+
+### Features
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ❌ (presets only) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (2 slots) |
+| Zero-G | ✅ |
+| Flat | ✅ |
+
+### Protocol Details
+
+**Characteristic UUID:** `0000ff01-0000-1000-8000-00805f9b34fb`
+**Format:** 7-byte fixed packets
+
+**Note:** Jiecang beds only support preset positions - direct motor control is not available.
+
+#### Preset Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Flat | `f1 f1 08 01 01 0a 7e` | Go to flat position |
+| Zero-G | `f1 f1 07 01 01 09 7e` | Go to zero gravity |
+| Memory 1 | `f1 f1 0b 01 01 0d 7e` | Go to memory preset 1 |
+| Memory 2 | `f1 f1 0d 01 01 0f 7e` | Go to memory preset 2 |
+
+### Detection
+
+Detected by device name containing: `jiecang`, `jc-`, `dream motion`, or `glide`
+
+---
+
+## DewertOkin
+
+**Status:** ⚠️ Untested
+
+### Known Models
+- A H Beard adjustable beds
+- HankookGallery beds
+- Beds with DewertOkin HE150 controller
+- "Comfort Enhancement 2" / "Comfort Plus" app beds
+
+### Features
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (2 slots) |
+| Massage | ✅ (wave, head, foot) |
+| Under-bed Lights | ✅ |
+| Zero-G / TV / Quiet Sleep | ✅ |
+
+### Protocol Details
+
+**Write Handle:** `0x0013`
+**Format:** 6-byte fixed packets
+**Address Type:** Random
+
+**Note:** DewertOkin uses handle-based writes rather than characteristic UUIDs.
+
+#### Motor Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Head Up | `04 02 00 00 00 01` | Raise head |
+| Head Down | `04 02 00 00 00 02` | Lower head |
+| Foot Up | `04 02 00 00 00 04` | Raise foot |
+| Foot Down | `04 02 00 00 00 08` | Lower foot |
+| Stop | `04 02 00 00 00 00` | Stop all motors |
+
+#### Preset Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Flat | `04 02 10 00 00 00` | Go to flat |
+| Zero-G | `04 02 00 00 40 00` | Go to zero gravity |
+| TV | `04 02 00 00 30 00` | Go to TV position |
+| Quiet Sleep | `04 02 00 00 80 00` | Go to quiet sleep |
+| Memory 1 | `04 02 00 00 10 00` | Go to memory 1 |
+| Memory 2 | `04 02 00 00 20 00` | Go to memory 2 |
+
+#### Massage Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Wave Massage | `04 02 80 00 00 00` | Toggle wave massage |
+| Head Massage | `04 02 00 00 08 00` | Toggle head massage |
+| Foot Massage | `04 02 00 40 00 00` | Toggle foot massage |
+| Massage Off | `04 02 02 00 00 00` | Turn off massage |
+
+#### Light Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Underlight | `04 02 00 02 00 00` | Toggle under-bed light |
+
+### Detection
+
+Detected by device name containing: `dewertokin`, `dewert`, `a h beard`, or `hankook`
+
+---
+
+## Serta
+
+**Status:** ⚠️ Untested
+
+### Known Models
+- Serta Motion Perfect III
+- Serta adjustable bases (BLE-enabled, non-cloud)
+
+### Features
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ |
+| Position Feedback | ❌ |
+| Memory Presets | ❌ |
+| Massage | ✅ (intensity control) |
+| Zero-G / TV / Lounge | ✅ |
+
+### Protocol Details
+
+**Write Handle:** `0x0020`
+**Format:** 8-byte packets with `e5fe16` prefix
+
+**Note:** Serta uses handle-based writes rather than characteristic UUIDs.
+
+#### Motor Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Head Up | `e5 fe 16 01 00 00 00 05` | Raise head |
+| Head Down | `e5 fe 16 02 00 00 00 04` | Lower head |
+| Foot Up | `e5 fe 16 04 00 00 00 02` | Raise foot |
+| Foot Down | `e5 fe 16 08 00 00 00 fe` | Lower foot |
+| Stop | `e5 fe 16 00 00 00 00 06` | Stop all motors |
+
+#### Preset Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Flat | `e5 fe 16 00 00 00 08 fe` | Go to flat |
+| Zero-G | `e5 fe 16 00 10 00 00 f6` | Go to zero gravity |
+| TV | `e5 fe 16 00 40 00 00 c6` | Go to TV position |
+| Lounge | `e5 fe 16 00 20 00 00 e6` | Go to lounge |
+| Head Up Preset | `e5 fe 16 00 80 00 00 86` | Go to head up preset |
+
+#### Massage Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Head Massage + | `e5 fe 16 00 08 00 00 fe` | Increase head massage |
+| Head Massage - | `e5 fe 16 00 00 80 00 86` | Decrease head massage |
+| Foot Massage + | `e5 fe 16 00 04 00 00 02` | Increase foot massage |
+| Foot Massage - | `e5 fe 16 00 00 00 01 05` | Decrease foot massage |
+| Head+Foot On | `e5 fe 16 00 01 00 00 05` | Turn on both massage |
+| Massage Timer | `e5 fe 16 00 02 00 00 04` | Cycle massage timer |
+
+### Detection
+
+Detected by device name containing: `serta` or `motion perfect`
+
+---
+
+## Octo
+
+**Status:** ⚠️ Untested
+
+### Known Models
+- Octo-branded adjustable beds
+- Some OEM beds with Octo controllers
+
+### Features
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ |
+| Position Feedback | ❌ |
+| Memory Presets | ❌ |
+| Under-bed Lights | ✅ |
+
+### Protocol Details
+
+**Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
+**Write Characteristic:** `0000ffe1-0000-1000-8000-00805f9b34fb`
+**Format:** Packet-based with start/end markers and checksum
+
+#### Packet Structure
+
+```
+[0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
+```
+
+**Checksum:** `((sum_of_all_bytes XOR 0xFF) + 1) & 0xFF`
+
+#### Motor Commands
+
+Motors are controlled via bit masks:
+- Head motor: `0x02`
+- Legs motor: `0x04`
+- Both motors: `0x06`
+
+| Command | Command Bytes | Data | Description |
+|---------|---------------|------|-------------|
+| Move Up | `[0x02, 0x70]` | `[motor_bits]` | Move motor(s) up |
+| Move Down | `[0x02, 0x71]` | `[motor_bits]` | Move motor(s) down |
+| Stop | `[0x02, 0x73]` | none | Stop all motors |
+
+#### Light Commands
+
+| Command | Command Bytes | Data | Description |
+|---------|---------------|------|-------------|
+| Lights On | `[0x20, 0x72]` | `[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01]` | Turn on under-bed lights |
+| Lights Off | `[0x20, 0x72]` | `[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x00]` | Turn off under-bed lights |
+
+#### Optional PIN
+
+Some Octo beds support a 4-digit PIN lock. If enabled:
+- PIN command: `command=[0x20, 0x43], data=[digit1, digit2, digit3, digit4]`
+
+### Detection
+
+Detected by device name containing: `octo`
+
+---
+
 ## Advanced Configuration
 
 ### Motor Pulse Settings
@@ -631,5 +868,8 @@ For fine-tuning motor movement behavior, you can adjust these settings in the in
    - `DPG*` or `Desk*` → Linak
    - `Okin*` → Okimat
    - `Ergomotion*` or `Ergo*` → Ergomotion
+   - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
+   - `Dewert*`, `A H Beard*`, or `Hankook*` → DewertOkin
+   - `Serta*` or `Motion Perfect*` → Serta
 
 If your bed isn't auto-detected, use manual configuration and try different bed types.
