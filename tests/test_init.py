@@ -7,14 +7,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 
 from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
     SERVICE_SAVE_PRESET,
     SERVICE_STOP_ALL,
-    async_setup_entry,
-    async_unload_entry,
 )
 from custom_components.adjustable_bed.const import DOMAIN
 
@@ -34,8 +31,10 @@ class TestIntegrationSetup:
         enable_custom_integrations,
     ):
         """Test successful setup of config entry."""
-        assert await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
+        assert mock_config_entry.state == ConfigEntryState.LOADED
         assert DOMAIN in hass.data
         assert mock_config_entry.entry_id in hass.data[DOMAIN]
 
@@ -47,7 +46,8 @@ class TestIntegrationSetup:
         enable_custom_integrations,
     ):
         """Test setup registers services."""
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_SAVE_PRESET)
@@ -59,29 +59,35 @@ class TestIntegrationSetup:
         mock_config_entry,
         mock_async_ble_device_from_address,
         mock_bluetooth_adapters,
+        enable_custom_integrations,
     ):
-        """Test setup raises ConfigEntryNotReady on connection timeout."""
+        """Test setup fails on connection timeout."""
         with patch(
             "custom_components.adjustable_bed.coordinator.establish_connection",
             new_callable=AsyncMock,
             side_effect=TimeoutError("Connection timed out"),
         ):
-            with pytest.raises(ConfigEntryNotReady):
-                await async_setup_entry(hass, mock_config_entry)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
 
     async def test_setup_entry_connection_failed(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_bluetooth_adapters,
+        enable_custom_integrations,
     ):
-        """Test setup raises ConfigEntryNotReady when connection fails."""
+        """Test setup fails when connection fails."""
         with patch(
             "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
             return_value=None,
         ):
-            with pytest.raises(ConfigEntryNotReady):
-                await async_setup_entry(hass, mock_config_entry)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
 
 
 class TestIntegrationUnload:
@@ -96,12 +102,14 @@ class TestIntegrationUnload:
         enable_custom_integrations,
     ):
         """Test successful unload of config entry."""
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
-        result = await async_unload_entry(hass, mock_config_entry)
+        result = await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         assert result is True
-        assert mock_config_entry.entry_id not in hass.data[DOMAIN]
+        assert mock_config_entry.state == ConfigEntryState.NOT_LOADED
         mock_bleak_client.disconnect.assert_called()
 
     async def test_unload_last_entry_removes_services(
@@ -112,12 +120,14 @@ class TestIntegrationUnload:
         enable_custom_integrations,
     ):
         """Test unloading last entry removes services."""
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         # Verify services exist
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
 
-        await async_unload_entry(hass, mock_config_entry)
+        await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         # Services should be removed
         assert not hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
@@ -135,7 +145,14 @@ class TestIntegrationUnload:
         """Test services are kept when other entries remain."""
         from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-        # Create a second entry
+        # Set up first entry
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Verify services exist
+        assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+
+        # Create and set up a second entry
         second_entry = MockConfigEntry(
             domain=DOMAIN,
             title="Second Bed",
@@ -144,19 +161,19 @@ class TestIntegrationUnload:
             entry_id="second_entry_id",
         )
         second_entry.add_to_hass(hass)
-
-        # Set up both entries
-        await async_setup_entry(hass, mock_config_entry)
-        await async_setup_entry(hass, second_entry)
+        await hass.config_entries.async_setup(second_entry.entry_id)
+        await hass.async_block_till_done()
 
         # Unload first entry
-        await async_unload_entry(hass, mock_config_entry)
+        await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
-        # Services should still exist
+        # Services should still exist because second entry is still loaded
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
 
         # Clean up second entry
-        await async_unload_entry(hass, second_entry)
+        await hass.config_entries.async_unload(second_entry.entry_id)
+        await hass.async_block_till_done()
 
         # Now services should be removed
         assert not hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
@@ -174,7 +191,8 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test goto_preset service calls controller."""
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         # Get the device ID from the device registry
         from homeassistant.helpers import device_registry as dr
@@ -206,7 +224,8 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test stop_all service calls controller."""
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
         from homeassistant.helpers import device_registry as dr
 
