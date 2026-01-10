@@ -284,11 +284,19 @@ class LinakController(BedController):
         # Little-endian 2-byte value
         raw_position = data[0] | (data[1] << 8)
 
-        # Convert to angle
-        if raw_position < 0:
-            raw_position = 0
+        # Ignore clearly invalid values (e.g., uninitialized sensor data)
+        # Values more than 10% above max are likely garbage/initialization values
+        if raw_position > max_position * 1.1:
+            _LOGGER.debug(
+                "Ignoring invalid position data for %s: raw=%d exceeds max=%d by >10%%",
+                name,
+                raw_position,
+                max_position,
+            )
+            return
 
-        if raw_position > max_position:
+        # Convert to angle (clamp to max if slightly over)
+        if raw_position >= max_position:
             angle = max_angle
         else:
             angle = round(max_angle * (raw_position / max_position), 1)
