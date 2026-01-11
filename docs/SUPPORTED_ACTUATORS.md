@@ -23,7 +23,7 @@ This document provides detailed information about each supported bed brand, incl
 
 ## Linak
 
-**Status:** ✅ Fully Tested
+**Status:** ✅ Tested
 
 ### Known Models
 - Linak DPG1M (OEM controller used in many beds)
@@ -179,7 +179,7 @@ Position data available via notify characteristics:
 
 ## Keeson
 
-**Status:** ⚠️ Untested
+**Status:** ✅ Tested
 
 ### Known Models
 - Purple adjustable bases
