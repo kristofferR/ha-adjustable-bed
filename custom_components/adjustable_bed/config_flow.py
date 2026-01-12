@@ -618,20 +618,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the options."""
-        if user_input is not None:
-            # Convert text values to integers
-            if CONF_MOTOR_PULSE_COUNT in user_input:
-                user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT])
-            if CONF_MOTOR_PULSE_DELAY_MS in user_input:
-                user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS])
-            # Update the config entry with new options
-            new_data = {**self.config_entry.data, **user_input}
-            self.hass.config_entries.async_update_entry(
-                self.config_entry,
-                data=new_data,
-            )
-            return self.async_create_entry(title="", data={})
-
         # Get current values from config entry
         current_data = self.config_entry.data
         bed_type = current_data.get(CONF_BED_TYPE)
@@ -676,6 +662,27 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_PROTOCOL_VARIANT,
                 default=current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
             )] = vol.In(variants)
+
+        if user_input is not None:
+            # Convert text values to integers
+            try:
+                if CONF_MOTOR_PULSE_COUNT in user_input:
+                    user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT])
+                if CONF_MOTOR_PULSE_DELAY_MS in user_input:
+                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS])
+            except ValueError:
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "invalid_number"},
+                )
+            # Update the config entry with new options
+            new_data = {**self.config_entry.data, **user_input}
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data=new_data,
+            )
+            return self.async_create_entry(title="", data={})
 
         return self.async_show_form(
             step_id="init",

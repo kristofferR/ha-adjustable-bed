@@ -288,7 +288,13 @@ class LeggettPlattController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self.move_head_stop()
+        if self._variant == "okin":
+            await self._move_okin("feet", None)
+        else:
+            await self.write_command(
+                LeggettPlattGen2Commands.STOP,
+                cancel_event=asyncio.Event(),
+            )
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -300,7 +306,7 @@ class LeggettPlattController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self.move_head_stop()
+        await self.move_legs_stop()
 
     async def stop_all(self) -> None:
         """Stop all motors."""

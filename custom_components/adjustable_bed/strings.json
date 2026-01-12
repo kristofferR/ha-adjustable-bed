@@ -66,7 +66,8 @@
       "connection_timeout": "Connection timed out. The bed may be out of range or another device may be connected.",
       "pairing_required": "This bed requires Bluetooth pairing. Pair it through your system's Bluetooth settings first.",
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
-      "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first."
+      "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
+      "invalid_number": "Please enter valid numbers for motor pulse count and delay."
     }
   },
   "options": {
@@ -92,6 +93,9 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement."
         }
       }
+    },
+    "error": {
+      "invalid_number": "Please enter valid numbers for motor pulse count and delay."
     }
   },
   "entity": {
