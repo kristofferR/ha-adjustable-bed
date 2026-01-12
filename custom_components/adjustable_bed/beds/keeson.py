@@ -244,7 +244,7 @@ class KeesonController(BedController):
             )
             _LOGGER.debug("Started position notifications for Keeson/Ergomotion bed")
         except BleakError:
-            _LOGGER.warning("Failed to start notifications: %s")
+            _LOGGER.warning("Failed to start notifications")
 
     def _on_notification(self, sender: int, data: bytearray) -> None:
         """Handle incoming BLE notifications (ergomotion variant)."""
@@ -342,7 +342,7 @@ class KeesonController(BedController):
             await self.client.stop_notify(self._notify_char_uuid)
             _LOGGER.debug("Stopped position notifications")
         except BleakError:
-            _LOGGER.debug("Failed to stop notifications: %s")
+            _LOGGER.debug("Failed to stop notifications")
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.

@@ -121,7 +121,7 @@ class LinakController(BedController):
                           If not provided, uses the coordinator's cancel event.
         """
         if self.client is None or not self.client.is_connected:
-                            _LOGGER.exception(
+            _LOGGER.exception(
                 "Cannot write command: BLE client not connected (client=%s, is_connected=%s)",
                 self.client,
                 getattr(self.client, 'is_connected', 'N/A') if self.client else 'N/A',
@@ -244,7 +244,7 @@ class LinakController(BedController):
                     max_angle,
                 )
                 successful.append(name)
-            except BleakError:
+            except BleakError as err:
                 _LOGGER.debug(
                     "Could not start notifications for %s position (UUID: %s): %s (type: %s)",
                     name,
@@ -361,7 +361,7 @@ class LinakController(BedController):
                     _LOGGER.debug("Read position for %s: %s", name, data.hex())
                     self._handle_position_data(name, bytearray(data), max_pos, max_angle)
             except BleakError:
-                _LOGGER.debug("Could not read position for %s: %s", name)
+                _LOGGER.debug("Could not read position for %s", name)
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving
