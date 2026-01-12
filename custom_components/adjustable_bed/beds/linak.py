@@ -121,7 +121,7 @@ class LinakController(BedController):
                           If not provided, uses the coordinator's cancel event.
         """
         if self.client is None or not self.client.is_connected:
-            _LOGGER.exception(
+            _LOGGER.error(
                 "Cannot write command: BLE client not connected (client=%s, is_connected=%s)",
                 self.client,
                 getattr(self.client, 'is_connected', 'N/A') if self.client else 'N/A',
