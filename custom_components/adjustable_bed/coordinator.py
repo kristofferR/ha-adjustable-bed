@@ -16,8 +16,6 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from habluetooth.const import ConnectParams
-
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -74,14 +72,6 @@ RETRY_DELAY = 5.0  # Increased delay between retries for BLE stability
 CONNECTION_TIMEOUT = 30.0  # Timeout for BLE connection attempts
 POST_CONNECT_DELAY = 1.0  # Delay after connection to let it stabilize
 
-# BLE connection parameters - use conservative/compatible values
-# These are in units of 1.25ms for intervals, 10ms for timeout
-# COMPATIBLE: 30-50ms interval (vs FAST: 7.5ms) - works with more devices
-BLE_CONN_MIN_INTERVAL = 24  # 24 * 1.25ms = 30ms
-BLE_CONN_MAX_INTERVAL = 40  # 40 * 1.25ms = 50ms
-BLE_CONN_LATENCY = 0  # No latency
-BLE_CONN_SUPERVISION_TIMEOUT = 720  # 720 * 10ms = 7.2 seconds
-
 
 class AdjustableBedCoordinator:
     """Coordinator for managing bed connection and state."""
@@ -134,51 +124,6 @@ class AdjustableBedCoordinator:
             self._disable_angle_sensing,
             self._preferred_adapter,
         )
-        
-        # Register compatible BLE connection parameters for this device
-        self._register_connection_params()
-
-    def _register_connection_params(self) -> None:
-        """Register compatible BLE connection parameters for this device.
-
-        This overrides the default FAST parameters with more conservative values
-        that work better with devices that have connection stability issues.
-        """
-        try:
-            # Create compatible connection parameters
-            # These are slower but more reliable than the default FAST params
-            params = ConnectParams(
-                min_interval=BLE_CONN_MIN_INTERVAL,
-                max_interval=BLE_CONN_MAX_INTERVAL,
-                latency=BLE_CONN_LATENCY,
-                supervision_timeout=BLE_CONN_SUPERVISION_TIMEOUT,
-            )
-            
-            # Register the parameters with Home Assistant's Bluetooth integration
-            bluetooth.async_register_connection_params(
-                self.hass,
-                self._address,
-                params,
-            )
-            
-            _LOGGER.info(
-                "Registered compatible BLE connection parameters for %s: "
-                "interval=%d-%d (%.1f-%.1fms), latency=%d, timeout=%d (%.1fs)",
-                self._address,
-                BLE_CONN_MIN_INTERVAL,
-                BLE_CONN_MAX_INTERVAL,
-                BLE_CONN_MIN_INTERVAL * 1.25,
-                BLE_CONN_MAX_INTERVAL * 1.25,
-                BLE_CONN_LATENCY,
-                BLE_CONN_SUPERVISION_TIMEOUT,
-                BLE_CONN_SUPERVISION_TIMEOUT * 0.01,
-            )
-        except Exception as err:
-            _LOGGER.warning(
-                "Could not register connection parameters for %s: %s",
-                self._address,
-                err,
-            )
 
     @property
     def address(self) -> str:
