@@ -67,8 +67,6 @@ _LOGGER = logging.getLogger(__name__)
 MAX_RETRIES = 3
 RETRY_DELAY = 5.0  # Increased delay between retries for BLE stability
 CONNECTION_TIMEOUT = 30.0  # Timeout for BLE connection attempts
-DISCONNECT_TIMEOUT = 40.0
-DISCONNECT_TIMEOUT_NO_SENSING = 40.0  # Disconnect when idle (must be > preset time)
 POST_CONNECT_DELAY = 1.0  # Delay after connection to let it stabilize
 
 # BLE connection parameters - use conservative/compatible values
@@ -102,6 +100,10 @@ class AdjustableBedCoordinator:
         )
         self._motor_pulse_count: int = entry.data.get(CONF_MOTOR_PULSE_COUNT, bed_pulse_defaults[0])
         self._motor_pulse_delay_ms: int = entry.data.get(CONF_MOTOR_PULSE_DELAY_MS, bed_pulse_defaults[1])
+
+        # Disconnect behavior configuration
+        self._disconnect_after_command: bool = entry.data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND)
+        self._idle_disconnect_seconds: int = entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -874,15 +876,13 @@ class AdjustableBedCoordinator:
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""
         self._cancel_disconnect_timer()
-        # Use shorter timeout when angle sensing disabled to free up BLE for physical remote
-        timeout = DISCONNECT_TIMEOUT_NO_SENSING if self._disable_angle_sensing else DISCONNECT_TIMEOUT
         _LOGGER.debug(
-            "Setting idle disconnect timer for %s (%.0f seconds)",
+            "Setting idle disconnect timer for %s (%d seconds)",
             self._address,
-            timeout,
+            self._idle_disconnect_seconds,
         )
         self._disconnect_timer = self.hass.loop.call_later(
-            timeout,
+            self._idle_disconnect_seconds,
             lambda: asyncio.create_task(self._async_idle_disconnect()),
         )
 
@@ -895,10 +895,9 @@ class AdjustableBedCoordinator:
 
     async def _async_idle_disconnect(self) -> None:
         """Disconnect after idle timeout."""
-        timeout = DISCONNECT_TIMEOUT_NO_SENSING if self._disable_angle_sensing else DISCONNECT_TIMEOUT
         _LOGGER.info(
-            "Idle timeout reached (%.0f seconds), disconnecting from %s",
-            timeout,
+            "Idle timeout reached (%d seconds), disconnecting from %s",
+            self._idle_disconnect_seconds,
             self._address,
         )
         await self.async_disconnect()
@@ -988,7 +987,16 @@ class AdjustableBedCoordinator:
                 _LOGGER.info("Stop command sent")
             finally:
                 if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
+                    # Disconnect immediately if configured to do so
+                    if self._disconnect_after_command:
+                        _LOGGER.debug(
+                            "Disconnecting after stop command (disconnect_after_command=True) for %s",
+                            self._address,
+                        )
+                        await self.async_disconnect()
+                    else:
+                        # Otherwise, reset the idle disconnect timer
+                        self._reset_disconnect_timer()
 
     async def async_execute_controller_command(
         self,
@@ -1030,7 +1038,16 @@ class AdjustableBedCoordinator:
                     await self._async_read_positions()
             finally:
                 if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
+                    # Disconnect immediately if configured to do so
+                    if self._disconnect_after_command:
+                        _LOGGER.debug(
+                            "Disconnecting after command (disconnect_after_command=True) for %s",
+                            self._address,
+                        )
+                        await self.async_disconnect()
+                    else:
+                        # Otherwise, reset the idle disconnect timer
+                        self._reset_disconnect_timer()
 
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""
