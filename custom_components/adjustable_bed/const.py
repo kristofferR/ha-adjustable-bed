@@ -13,6 +13,8 @@ CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
+CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -221,6 +223,8 @@ DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
 DEFAULT_DISABLE_ANGLE_SENSING: Final = True
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
+DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
+DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them

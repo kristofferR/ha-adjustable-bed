@@ -41,14 +41,18 @@ from .const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_DISABLE_ANGLE_SENSING,
+    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
+    DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
@@ -580,6 +584,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_PREFERRED_ADAPTER: preferred_adapter,
                         CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                         CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                        CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                        CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
                     },
                 )
 
@@ -615,6 +621,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                     vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
                         TextSelectorConfig()
+                    ),
+                    vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
+                    vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
+                        range(10, 301)
                     ),
                 }
             ),
@@ -678,6 +688,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_MOTOR_PULSE_DELAY_MS,
                 default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)),
             ): TextSelector(TextSelectorConfig()),
+            vol.Optional(
+                CONF_DISCONNECT_AFTER_COMMAND,
+                default=current_data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+            ): bool,
+            vol.Optional(
+                CONF_IDLE_DISCONNECT_SECONDS,
+                default=current_data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+            ): vol.In(range(10, 301)),
         }
 
         # Add variant selection if the bed type has variants
