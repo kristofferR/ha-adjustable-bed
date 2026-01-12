@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -40,14 +41,18 @@ from .const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_DISABLE_ANGLE_SENSING,
+    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
+    DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
@@ -287,6 +292,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_SOLACE
+
+    # Check for Mattress Firm 900 (iFlex) - name-based detection
+    # Must check before Richmat Nordic since they share the same UUID
+    if "iflex" in device_name:
+        _LOGGER.info(
+            "Detected Mattress Firm 900 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_MATTRESSFIRM
 
     # Check for Richmat Nordic / Keeson KSBT (same UUID)
     # These share the Nordic UART service UUID
@@ -611,6 +626,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
                         TextSelectorConfig()
                     ),
+                    vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
+                    vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
+                        range(10, 301)
+                    ),
                 }
             ),
             errors=errors,
@@ -659,6 +678,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_MOTOR_PULSE_DELAY_MS,
                 default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)),
             ): TextSelector(TextSelectorConfig()),
+            vol.Optional(
+                CONF_DISCONNECT_AFTER_COMMAND,
+                default=current_data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+            ): bool,
+            vol.Optional(
+                CONF_IDLE_DISCONNECT_SECONDS,
+                default=current_data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+            ): vol.In(range(10, 301)),
         }
 
         # Add variant selection if the bed type has variants
