@@ -108,6 +108,12 @@
       "preset_tv": {
         "name": "TV"
       },
+      "preset_lounge": {
+        "name": "Lounge"
+      },
+      "preset_incline": {
+        "name": "Incline"
+      },
       "preset_memory_1": {
         "name": "Memory 1"
       },
@@ -165,6 +171,9 @@
       "massage_mode_step": {
         "name": "Massage Mode"
       },
+      "light_cycle": {
+        "name": "Light Cycle"
+      },
       "stop": {
         "name": "Stop All"
       },
@@ -187,6 +196,9 @@
       },
       "feet": {
         "name": "Feet"
+      },
+      "lumbar": {
+        "name": "Lumbar"
       }
     },
     "sensor": {

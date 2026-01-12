@@ -816,6 +816,11 @@ class AdjustableBedCoordinator:
 
             return OctoController(self)
 
+        if self._bed_type == BED_TYPE_MATTRESSFIRM:
+            from .beds.mattressfirm import MattressFirmController
+
+            return MattressFirmController(self)
+
         raise ValueError(f"Unknown bed type: {self._bed_type}")
 
     async def _async_auto_reconnect(self) -> None:

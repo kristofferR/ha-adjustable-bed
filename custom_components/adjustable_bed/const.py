@@ -31,6 +31,7 @@ BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_DEWERTOKIN: Final = "dewertokin"
 BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
+BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,
@@ -46,6 +47,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_SERTA,
     BED_TYPE_OCTO,
+    BED_TYPE_MATTRESSFIRM,
 ]
 
 # Linak specific UUIDs
@@ -159,6 +161,12 @@ SERTA_WRITE_HANDLE: Final = 0x0020
 # Octo specific UUIDs
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
+
+# Mattress Firm 900 specific UUIDs
+# Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
+# Uses Nordic UART Service with custom 7-byte command format
+MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"

@@ -122,6 +122,26 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
             BED_TYPE_SOLACE,
         ),
     ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_lounge",
+        translation_key="preset_lounge",
+        icon="mdi:seat-recline-normal",
+        press_fn=lambda ctrl: ctrl.preset_lounge(),
+        cancel_movement=True,
+        supported_bed_types=(
+            "mattressfirm",  # Mattress Firm 900 has separate Lounge preset
+        ),
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_incline",
+        translation_key="preset_incline",
+        icon="mdi:angle-acute",
+        press_fn=lambda ctrl: ctrl.preset_incline(),
+        cancel_movement=True,
+        supported_bed_types=(
+            "mattressfirm",  # Mattress Firm 900 specific
+        ),
+    ),
     # Program buttons (config category)
     AdjustableBedButtonEntityDescription(
         key="program_memory_1",
@@ -252,6 +272,16 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:format-list-numbered",
         requires_massage=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
+    ),
+    # Light cycle button (Mattress Firm 900 specific)
+    AdjustableBedButtonEntityDescription(
+        key="light_cycle",
+        translation_key="light_cycle",
+        icon="mdi:lightbulb-multiple",
+        press_fn=lambda ctrl: ctrl.lights_on(),
+        supported_bed_types=(
+            "mattressfirm",
+        ),
     ),
 )
 
