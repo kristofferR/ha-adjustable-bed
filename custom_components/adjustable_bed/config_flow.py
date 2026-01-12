@@ -372,8 +372,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-            motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
-            motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
+            try:
+                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
+                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
+            except ValueError:
+                _LOGGER.warning("Invalid number input for motor pulse settings")
+                motor_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
+                motor_pulse_delay_ms = DEFAULT_MOTOR_PULSE_DELAY_MS
             _LOGGER.info(
                 "User confirmed bed setup: name=%s, type=%s, variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                 user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
@@ -534,54 +539,55 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Validate MAC address format
             if not is_valid_mac_address(address):
                 errors["base"] = "invalid_mac_address"
-            else:
+            elif not errors:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
-                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
-                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
-                _LOGGER.info(
-                    "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
-                    address,
-                    bed_type,
-                    protocol_variant,
-                    user_input.get(CONF_NAME, "Adjustable Bed"),
-                    user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                    user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                    preferred_adapter,
-                    motor_pulse_count,
-                    motor_pulse_delay_ms,
-                )
+                try:
+                    motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT))
+                    motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS))
+                except ValueError:
+                    errors["base"] = "invalid_number"
 
-                await self.async_set_unique_id(address)
-                self._abort_if_unique_id_configured()
+                if not errors:
+                    _LOGGER.info(
+                        "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
+                        address,
+                        bed_type,
+                        protocol_variant,
+                        user_input.get(CONF_NAME, "Adjustable Bed"),
+                        user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                        user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                        user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                        preferred_adapter,
+                        motor_pulse_count,
+                        motor_pulse_delay_ms,
+                    )
 
-                return self.async_create_entry(
-                    title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                    data={
-                        CONF_ADDRESS: address,
-                        CONF_BED_TYPE: bed_type,
-                        CONF_PROTOCOL_VARIANT: protocol_variant,
-                        CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
-                        CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                        CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                        CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                        CONF_PREFERRED_ADAPTER: preferred_adapter,
-                        CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                        CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                    },
-                )
+                    await self.async_set_unique_id(address)
+                    self._abort_if_unique_id_configured()
+
+                    return self.async_create_entry(
+                        title=user_input.get(CONF_NAME, "Adjustable Bed"),
+                        data={
+                            CONF_ADDRESS: address,
+                            CONF_BED_TYPE: bed_type,
+                            CONF_PROTOCOL_VARIANT: protocol_variant,
+                            CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
+                            CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                            CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                            CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                            CONF_PREFERRED_ADAPTER: preferred_adapter,
+                            CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                            CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                            CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                            CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                        },
+                    )
 
         _LOGGER.debug("Showing manual entry form")
 
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
-
-        # Build bed type choices with variant info
-        bed_type_choices = {
-            bt: f"{bt} (has variants)" if bed_type_has_variants(bt) else bt
-            for bt in SUPPORTED_BED_TYPES
-        }
 
         return self.async_show_form(
             step_id="manual",
