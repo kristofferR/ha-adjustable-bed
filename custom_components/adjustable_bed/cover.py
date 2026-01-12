@@ -105,15 +105,12 @@ async def async_setup_entry(
 
     entities = []
     for description in COVER_DESCRIPTIONS:
-        # Special handling for lumbar - only add if controller supports it
+        # Special handling for lumbar - only add if bed type supports it
         if description.key == "lumbar":
-            if coordinator.controller and hasattr(coordinator.controller, "move_lumbar_up"):
-                # Check if method is actually implemented (not just inherited from base)
-                try:
-                    # The MattressFirm controller implements lumbar, base controller doesn't
-                    entities.append(AdjustableBedCover(coordinator, description))
-                except Exception:
-                    pass
+            # Only Mattress Firm supports lumbar motor
+            from .const import BED_TYPE_MATTRESSFIRM
+            if coordinator.bed_type == BED_TYPE_MATTRESSFIRM:
+                entities.append(AdjustableBedCover(coordinator, description))
         elif motor_count >= description.min_motors:
             entities.append(AdjustableBedCover(coordinator, description))
 
