@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -815,6 +816,11 @@ class AdjustableBedCoordinator:
             from .beds.octo import OctoController
 
             return OctoController(self)
+
+        if self._bed_type == BED_TYPE_MATTRESSFIRM:
+            from .beds.mattressfirm import MattressFirmController
+
+            return MattressFirmController(self)
 
         raise ValueError(f"Unknown bed type: {self._bed_type}")
 

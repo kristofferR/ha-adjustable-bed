@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
+    BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
@@ -287,6 +288,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_SOLACE
+
+    # Check for Mattress Firm 900 (iFlex) - name-based detection
+    # Must check before Richmat Nordic since they share the same UUID
+    if "iflex" in device_name:
+        _LOGGER.info(
+            "Detected Mattress Firm 900 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_MATTRESSFIRM
 
     # Check for Richmat Nordic / Keeson KSBT (same UUID)
     # These share the Nordic UART service UUID
