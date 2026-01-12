@@ -109,7 +109,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 await coordinator.async_execute_controller_command(
-                    lambda ctrl: ctrl.preset_memory(preset)
+                    lambda ctrl, p=preset: ctrl.preset_memory(p)
                 )
 
     async def handle_save_preset(call: ServiceCall) -> None:
@@ -121,7 +121,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 await coordinator.async_execute_controller_command(
-                    lambda ctrl: ctrl.program_memory(preset),
+                    lambda ctrl, p=preset: ctrl.program_memory(p),
                     cancel_running=False,
                 )
 
