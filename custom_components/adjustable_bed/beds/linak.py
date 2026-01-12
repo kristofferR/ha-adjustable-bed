@@ -121,7 +121,7 @@ class LinakController(BedController):
                           If not provided, uses the coordinator's cancel event.
         """
         if self.client is None or not self.client.is_connected:
-            _LOGGER.error(
+                            _LOGGER.exception(
                 "Cannot write command: BLE client not connected (client=%s, is_connected=%s)",
                 self.client,
                 getattr(self.client, 'is_connected', 'N/A') if self.client else 'N/A',
@@ -151,13 +151,11 @@ class LinakController(BedController):
                 await self.client.write_gatt_char(
                     LINAK_CONTROL_CHAR_UUID, command, response=True
                 )
-            except BleakError as err:
-                _LOGGER.error(
-                    "Failed to write command %s to characteristic %s: %s (type: %s)",
+            except BleakError:
+                _LOGGER.exception(
+                    "Failed to write command %s to characteristic %s",
                     command.hex(),
                     LINAK_CONTROL_CHAR_UUID,
-                    err,
-                    type(err).__name__,
                 )
                 raise
 
@@ -246,7 +244,7 @@ class LinakController(BedController):
                     max_angle,
                 )
                 successful.append(name)
-            except BleakError as err:
+            except BleakError:
                 _LOGGER.debug(
                     "Could not start notifications for %s position (UUID: %s): %s (type: %s)",
                     name,
@@ -362,8 +360,8 @@ class LinakController(BedController):
                 if data:
                     _LOGGER.debug("Read position for %s: %s", name, data.hex())
                     self._handle_position_data(name, bytearray(data), max_pos, max_angle)
-            except BleakError as err:
-                _LOGGER.debug("Could not read position for %s: %s", name, err)
+            except BleakError:
+                _LOGGER.debug("Could not read position for %s: %s", name)
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving

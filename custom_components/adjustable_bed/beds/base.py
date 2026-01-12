@@ -143,12 +143,11 @@ class BedController(ABC):
 
             try:
                 await self.client.write_gatt_char(char_uuid, command, response=response)
-            except BleakError as err:
-                _LOGGER.error(
-                    "Failed to write command %s to %s: %s",
+            except BleakError:
+                _LOGGER.exception(
+                    "Failed to write command %s to %s",
                     command.hex(),
                     char_uuid,
-                    err,
                 )
                 raise
 

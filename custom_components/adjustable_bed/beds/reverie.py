@@ -132,8 +132,8 @@ class ReverieController(BedController):
                 await self.client.write_gatt_char(
                     REVERIE_CHAR_UUID, command, response=False
                 )
-            except BleakError as err:
-                _LOGGER.error("Failed to write command: %s", err)
+            except BleakError:
+                _LOGGER.exception("Failed to write command")
                 raise
 
             if i < repeat_count - 1:
@@ -154,8 +154,8 @@ class ReverieController(BedController):
 
             await self.client.start_notify(REVERIE_CHAR_UUID, handler)
             _LOGGER.debug("Started Reverie notifications")
-        except BleakError as err:
-            _LOGGER.debug("Could not start notifications: %s", err)
+        except BleakError:
+            _LOGGER.debug("Could not start notifications: %s")
 
     def _parse_position_data(self, data: bytearray) -> None:
         """Parse position data from notification.

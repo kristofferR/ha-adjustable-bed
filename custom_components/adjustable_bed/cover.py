@@ -204,11 +204,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
                 direction,
             )
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to move cover %s: %s",
+        except Exception:
+            _LOGGER.exception(
+                "Failed to move cover %s",
                 self.entity_description.key,
-                err,
             )
         finally:
             self._is_moving = False
@@ -227,11 +226,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
             await self._coordinator.async_stop_command()
             _LOGGER.debug("Stop command sent for %s", self.entity_description.key)
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to stop cover %s: %s",
+        except Exception:
+            _LOGGER.exception(
+                "Failed to stop cover %s",
                 self.entity_description.key,
-                err,
             )
         finally:
             self._is_moving = False

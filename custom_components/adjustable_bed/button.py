@@ -311,11 +311,10 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 elif self.entity_description.key == "connect":
                     await self._coordinator.async_ensure_connected()
                     _LOGGER.info("Connected to bed")
-            except Exception as err:
-                _LOGGER.error(
-                    "Failed to execute coordinator action %s: %s",
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to execute coordinator action %s",
                     self.entity_description.key,
-                    err,
                 )
             return
 
@@ -323,8 +322,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         if self.entity_description.key == "stop":
             try:
                 await self._coordinator.async_stop_command()
-            except Exception as err:
-                _LOGGER.error("Failed to execute stop command: %s", err)
+            except Exception:
+                _LOGGER.exception("Failed to execute stop command")
             return
 
         try:
@@ -334,9 +333,8 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 cancel_running=self.entity_description.cancel_movement,
             )
             _LOGGER.debug("Button action completed: %s", self.entity_description.key)
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to execute button action %s: %s",
+        except Exception:
+            _LOGGER.exception(
+                "Failed to execute button action %s",
                 self.entity_description.key,
-                err,
             )

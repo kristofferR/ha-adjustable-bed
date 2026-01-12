@@ -218,8 +218,8 @@ class KeesonController(BedController):
                 await self.client.write_gatt_char(
                     self._char_uuid, command, response=False
                 )
-            except BleakError as err:
-                _LOGGER.error("Failed to write command: %s", err)
+            except BleakError:
+                _LOGGER.exception("Failed to write command")
                 raise
 
             if i < repeat_count - 1:
@@ -243,8 +243,8 @@ class KeesonController(BedController):
                 self._on_notification,
             )
             _LOGGER.debug("Started position notifications for Keeson/Ergomotion bed")
-        except BleakError as err:
-            _LOGGER.warning("Failed to start notifications: %s", err)
+        except BleakError:
+            _LOGGER.warning("Failed to start notifications: %s")
 
     def _on_notification(self, sender: int, data: bytearray) -> None:
         """Handle incoming BLE notifications (ergomotion variant)."""
@@ -341,8 +341,8 @@ class KeesonController(BedController):
         try:
             await self.client.stop_notify(self._notify_char_uuid)
             _LOGGER.debug("Stopped position notifications")
-        except BleakError as err:
-            _LOGGER.debug("Failed to stop notifications: %s", err)
+        except BleakError:
+            _LOGGER.debug("Failed to stop notifications: %s")
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.

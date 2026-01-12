@@ -81,8 +81,8 @@ class JiecangController(BedController):
                 await self.client.write_gatt_char(
                     JIECANG_CHAR_UUID, command, response=False
                 )
-            except BleakError as err:
-                _LOGGER.error("Failed to write command: %s", err)
+            except BleakError:
+                _LOGGER.exception("Failed to write command")
                 raise
 
             if i < repeat_count - 1:

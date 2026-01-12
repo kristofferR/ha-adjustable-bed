@@ -94,11 +94,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 "This bed does not support %s feature",
                 self.entity_description.key,
             )
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to turn on switch %s: %s",
+        except Exception:
+            _LOGGER.exception(
+                "Failed to turn on switch %s",
                 self.entity_description.key,
-                err,
             )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -123,9 +122,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 "This bed does not support %s feature",
                 self.entity_description.key,
             )
-        except Exception as err:
-            _LOGGER.error(
-                "Failed to turn off switch %s: %s",
+        except Exception:
+            _LOGGER.exception(
+                "Failed to turn off switch %s",
                 self.entity_description.key,
-                err,
             )
