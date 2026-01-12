@@ -81,6 +81,16 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         stop_fn=lambda ctrl: ctrl.move_feet_stop(),
         min_motors=4,
     ),
+    AdjustableBedCoverEntityDescription(
+        key="lumbar",
+        translation_key="lumbar",
+        icon="mdi:lumbar-vertebrae",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+        close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+        stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+        min_motors=2,  # Lumbar is independent of motor count
+    ),
 )
 
 
@@ -95,7 +105,13 @@ async def async_setup_entry(
 
     entities = []
     for description in COVER_DESCRIPTIONS:
-        if motor_count >= description.min_motors:
+        # Special handling for lumbar - only add if bed type supports it
+        if description.key == "lumbar":
+            # Only Mattress Firm supports lumbar motor
+            from .const import BED_TYPE_MATTRESSFIRM
+            if coordinator.bed_type == BED_TYPE_MATTRESSFIRM:
+                entities.append(AdjustableBedCover(coordinator, description))
+        elif motor_count >= description.min_motors:
             entities.append(AdjustableBedCover(coordinator, description))
 
     async_add_entities(entities)

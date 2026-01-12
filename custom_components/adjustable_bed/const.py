@@ -13,6 +13,8 @@ CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
+CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -31,6 +33,7 @@ BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_DEWERTOKIN: Final = "dewertokin"
 BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
+BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,
@@ -46,6 +49,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_SERTA,
     BED_TYPE_OCTO,
+    BED_TYPE_MATTRESSFIRM,
 ]
 
 # Linak specific UUIDs
@@ -160,6 +164,12 @@ SERTA_WRITE_HANDLE: Final = 0x0020
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
+# Mattress Firm 900 specific UUIDs
+# Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
+# Uses Nordic UART Service with custom 7-byte command format
+MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
@@ -213,6 +223,8 @@ DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
 DEFAULT_DISABLE_ANGLE_SENSING: Final = True
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
+DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
+DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them

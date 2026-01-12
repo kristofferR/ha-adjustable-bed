@@ -43,6 +43,7 @@ The names below refer to motor/actuator manufacturers, not bed brands. Many bed 
 | **[DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin)** | ⚠️ Untested |
 | **[Serta](docs/SUPPORTED_ACTUATORS.md#serta)** | ⚠️ Untested |
 | **[Octo](docs/SUPPORTED_ACTUATORS.md#octo)** | ⚠️ Untested |
+| **[Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900)** | ⚠️ Untested |
 
 **Not Yet Implemented:** Sleeptracker AI (cloud-based: Tempur Ergo, BeautyRest), Logicdata, ErgoWifi
 
