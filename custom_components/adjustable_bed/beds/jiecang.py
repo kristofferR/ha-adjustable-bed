@@ -159,8 +159,8 @@ class JiecangController(BedController):
         pass
 
     async def stop_all(self) -> None:
-        """Stop all motors (not supported)."""
-        pass
+        """Stop all motors by cancelling any in-flight preset commands."""
+        self._coordinator.cancel_command.set()
 
     # Preset methods
     async def preset_flat(self) -> None:
