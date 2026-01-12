@@ -36,14 +36,18 @@ from .const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_DISABLE_ANGLE_SENSING,
+    DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
+    DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
@@ -1036,6 +1040,11 @@ class AdjustableBedCoordinator:
                 # Read position after movement if angle sensing is enabled
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
                     await self._async_read_positions()
+            except (ConnectionError, RuntimeError):
+                # On connection/controller errors, reset timer if not disconnecting after commands
+                if self._client is not None and self._client.is_connected and not self._disconnect_after_command:
+                    self._reset_disconnect_timer()
+                raise
             finally:
                 if self._client is not None and self._client.is_connected:
                     # Disconnect immediately if configured to do so
