@@ -155,7 +155,7 @@ class ReverieController(BedController):
             await self.client.start_notify(REVERIE_CHAR_UUID, handler)
             _LOGGER.debug("Started Reverie notifications")
         except BleakError:
-            _LOGGER.debug("Could not start notifications: %s")
+            _LOGGER.debug("Could not start notifications")
 
     def _parse_position_data(self, data: bytearray) -> None:
         """Parse position data from notification.
