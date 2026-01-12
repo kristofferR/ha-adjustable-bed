@@ -82,7 +82,7 @@ class DewertOkinController(BedController):
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
 
-        effective_cancel = cancel_event or self._coordinator._cancel_command
+        effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
             "Writing command to DewertOkin bed (handle 0x%04x): %s (repeat: %d, delay: %dms)",

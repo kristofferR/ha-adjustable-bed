@@ -129,7 +129,7 @@ class LinakController(BedController):
             raise ConnectionError("Not connected to bed")
 
         # Use coordinator's cancel event if none provided
-        effective_cancel = cancel_event or self._coordinator._cancel_command
+        effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
             "Writing command to Linak bed: %s (repeat: %d, delay: %dms) via characteristic %s",

@@ -200,7 +200,7 @@ class KeesonController(BedController):
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
 
-        effective_cancel = cancel_event or self._coordinator._cancel_command
+        effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
             "Writing command to Keeson bed: %s (repeat: %d, delay: %dms)",

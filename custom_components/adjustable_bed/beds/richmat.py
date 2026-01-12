@@ -131,7 +131,7 @@ class RichmatController(BedController):
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
 
-        effective_cancel = cancel_event or self._coordinator._cancel_command
+        effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
             "Writing command to Richmat bed: %s (repeat: %d, delay: %dms)",
@@ -150,7 +150,7 @@ class RichmatController(BedController):
                     self._char_uuid, command, response=False
                 )
             except BleakError as err:
-                _LOGGER.error("Failed to write command: %s", err)
+                _LOGGER.exception("Failed to write command")
                 # Log discovered services to help debug characteristic not found issues
                 if "not found" in str(err).lower() or "invalid" in str(err).lower():
                     _LOGGER.warning(
@@ -276,6 +276,8 @@ class RichmatController(BedController):
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
+        else:
+            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -285,6 +287,8 @@ class RichmatController(BedController):
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
+        else:
+            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position.
@@ -353,8 +357,12 @@ async def detect_richmat_variant(client) -> tuple[bool, str | None]:
                         write_uuid,
                     )
                     return True, write_uuid
-        except Exception:
-            pass
+        except Exception as err:
+            _LOGGER.debug(
+                "WiLinke variant check failed for service %s: %s",
+                service_uuid,
+                err,
+            )
 
     # Fall back to Nordic
     _LOGGER.debug("Using Nordic Richmat variant")

@@ -240,6 +240,11 @@ class AdjustableBedCoordinator:
         return self._client
 
     @property
+    def cancel_command(self) -> asyncio.Event:
+        """Return the cancel command event."""
+        return self._cancel_command
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this bed."""
         return DeviceInfo(
