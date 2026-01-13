@@ -105,7 +105,7 @@ class BedController(ABC):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
-        response: bool = False,
+        response: bool = True,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -123,7 +123,7 @@ class BedController(ABC):
             cancel_event: Optional event that signals cancellation. If set,
                          the command loop will exit early.
             response: Whether to wait for a write response from the device.
-                     True = write-with-response (more reliable, slower)
+                     True = write-with-response (more reliable, slower) [default]
                      False = write-without-response (faster, less reliable)
 
         Raises:

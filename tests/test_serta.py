@@ -154,7 +154,7 @@ class TestSertaController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, command, response=False
+            SERTA_WRITE_HANDLE, command, response=True
         )
 
     async def test_write_command_with_repeat(
@@ -305,7 +305,7 @@ class TestSertaMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.STOP, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.STOP, response=True
         )
 
     async def test_move_back_up_delegates_to_head(
@@ -448,7 +448,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_FOOT_ON, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_FOOT_ON, response=True
         )
 
     async def test_massage_head_up(
@@ -465,7 +465,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_head_up()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_ADD, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_ADD, response=True
         )
 
     async def test_massage_head_down(
@@ -482,7 +482,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_head_down()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_MIN, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_HEAD_MIN, response=True
         )
 
     async def test_massage_foot_up(
@@ -499,7 +499,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_foot_up()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_FOOT_ADD, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_FOOT_ADD, response=True
         )
 
     async def test_massage_foot_down(
@@ -516,7 +516,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_foot_down()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_FOOT_MIN, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_FOOT_MIN, response=True
         )
 
     async def test_massage_mode_step(
@@ -533,7 +533,7 @@ class TestSertaMassage:
         await coordinator.controller.massage_mode_step()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_TIMER, response=False
+            SERTA_WRITE_HANDLE, SertaCommands.MASSAGE_TIMER, response=True
         )
 
 

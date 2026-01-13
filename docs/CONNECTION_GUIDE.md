@@ -68,7 +68,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
        key: !secret api_encryption_key
 
    ota:
-     platform: esphome
+     - platform: esphome
 
    bluetooth_proxy:
      active: true

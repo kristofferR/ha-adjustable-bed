@@ -485,8 +485,8 @@ class AdjustableBedCoordinator:
                         if hasattr(backend_device, 'details') and isinstance(backend_device.details, dict):
                             actual_adapter = backend_device.details.get('source', 'unknown')
                 except Exception:
-                    pass
-                
+                    _LOGGER.debug("Could not determine actual connection adapter")
+
                 _LOGGER.info(
                     "✓ Successfully connected to %s (name: %s) via adapter: %s",
                     self._address,
