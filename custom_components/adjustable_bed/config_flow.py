@@ -47,6 +47,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_DISABLE_ANGLE_SENSING,
@@ -56,7 +57,10 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
+    POSITION_MODE_ACCURACY,
+    POSITION_MODE_SPEED,
     DOMAIN,
     KEESON_BASE_SERVICE_UUID,
     KEESON_VARIANTS,
@@ -695,6 +699,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
                 ),
             ): bool,
+            vol.Optional(
+                CONF_POSITION_MODE,
+                default=current_data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE),
+            ): vol.In({
+                POSITION_MODE_SPEED: "Speed (recommended)",
+                POSITION_MODE_ACCURACY: "Accuracy",
+            }),
         }
 
         # Add variant selection if the bed type has variants

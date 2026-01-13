@@ -372,6 +372,25 @@ class LinakController(BedController):
             except BleakError:
                 _LOGGER.debug("Could not read position for %s", name)
 
+    async def read_non_notifying_positions(self) -> None:
+        """Read positions only for motors that don't support notifications.
+
+        On Linak beds, only the back motor doesn't send notifications.
+        This is used for efficient polling during movement.
+        """
+        if self.client is None or not self.client.is_connected:
+            return
+
+        # Only back needs polling - legs sends notifications
+        try:
+            data = await self.client.read_gatt_char(LINAK_POSITION_BACK_UUID)
+            if data:
+                self._handle_position_data(
+                    "back", bytearray(data), LINAK_BACK_MAX_POSITION, LINAK_BACK_MAX_ANGLE
+                )
+        except BleakError:
+            pass
+
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving
     # Using 15 repeats @ 100ms = ~1.5 seconds of movement per press

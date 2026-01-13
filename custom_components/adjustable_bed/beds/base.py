@@ -225,6 +225,16 @@ class BedController(ABC):
             don't support this should return immediately without error.
         """
 
+    async def read_non_notifying_positions(self) -> None:
+        """Read positions only for motors that don't support notifications.
+
+        Used for efficient polling during movement - only reads motors that
+        don't push updates via BLE notifications.
+
+        Default implementation does nothing. Override in subclasses where
+        some motors support notifications and others don't.
+        """
+
     # Motor control methods
     # These move motors for a fixed duration (~1-2 seconds) then auto-stop.
     # Implementations should use try/finally to ensure stop is always sent.

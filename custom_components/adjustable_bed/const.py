@@ -15,6 +15,11 @@ CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
+CONF_POSITION_MODE: Final = "position_mode"
+
+# Position mode values
+POSITION_MODE_SPEED: Final = "speed"
+POSITION_MODE_ACCURACY: Final = "accuracy"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -222,6 +227,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
 DEFAULT_DISABLE_ANGLE_SENSING: Final = True
+DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40

@@ -69,6 +69,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
 
+    # Read initial positions in background (don't block startup)
+    hass.async_create_task(coordinator.async_read_initial_positions())
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
