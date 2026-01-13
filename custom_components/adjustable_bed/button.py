@@ -13,13 +13,6 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    BED_TYPE_KEESON,
-    BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_MOTOSLEEP,
-    BED_TYPE_REVERIE,
-    BED_TYPE_RICHMAT,
-    BED_TYPE_SOLACE,
-    CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     DOMAIN,
 )
@@ -41,7 +34,8 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     entity_category: EntityCategory | None = None
     is_coordinator_action: bool = False  # If True, this is a coordinator-level action (connect/disconnect)
     cancel_movement: bool = False  # If True, cancels any running motor command
-    supported_bed_types: tuple[str, ...] | None = None  # If set, only create for these bed types
+    # Capability property name to check on controller (e.g., "supports_preset_zero_g")
+    required_capability: str | None = None
 
 
 BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
@@ -80,6 +74,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:bed",
         press_fn=lambda ctrl: ctrl.preset_flat(),
         cancel_movement=True,
+        required_capability="supports_preset_flat",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_zero_g",
@@ -87,14 +82,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:rocket-launch",
         press_fn=lambda ctrl: ctrl.preset_zero_g(),
         cancel_movement=True,
-        supported_bed_types=(
-            BED_TYPE_KEESON,
-            BED_TYPE_LEGGETT_PLATT,
-            BED_TYPE_MOTOSLEEP,
-            BED_TYPE_REVERIE,
-            BED_TYPE_RICHMAT,
-            BED_TYPE_SOLACE,
-        ),
+        required_capability="supports_preset_zero_g",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_anti_snore",
@@ -102,13 +90,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:sleep-off",
         press_fn=lambda ctrl: ctrl.preset_anti_snore(),
         cancel_movement=True,
-        supported_bed_types=(
-            BED_TYPE_LEGGETT_PLATT,
-            BED_TYPE_MOTOSLEEP,
-            BED_TYPE_REVERIE,
-            BED_TYPE_RICHMAT,
-            BED_TYPE_SOLACE,
-        ),
+        required_capability="supports_preset_anti_snore",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_tv",
@@ -116,11 +98,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:television",
         press_fn=lambda ctrl: ctrl.preset_tv(),
         cancel_movement=True,
-        supported_bed_types=(
-            BED_TYPE_MOTOSLEEP,
-            BED_TYPE_RICHMAT,
-            BED_TYPE_SOLACE,
-        ),
+        required_capability="supports_preset_tv",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_lounge",
@@ -128,9 +106,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:seat-recline-normal",
         press_fn=lambda ctrl: ctrl.preset_lounge(),
         cancel_movement=True,
-        supported_bed_types=(
-            "mattressfirm",  # Mattress Firm 900 has separate Lounge preset
-        ),
+        required_capability="supports_preset_lounge",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_incline",
@@ -138,9 +114,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:angle-acute",
         press_fn=lambda ctrl: ctrl.preset_incline(),
         cancel_movement=True,
-        supported_bed_types=(
-            "mattressfirm",  # Mattress Firm 900 specific
-        ),
+        required_capability="supports_preset_incline",
     ),
     # Program buttons (config category)
     AdjustableBedButtonEntityDescription(
@@ -273,15 +247,13 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
     ),
-    # Light cycle button (Mattress Firm 900 specific)
+    # Light cycle button
     AdjustableBedButtonEntityDescription(
         key="light_cycle",
         translation_key="light_cycle",
         icon="mdi:lightbulb-multiple",
         press_fn=lambda ctrl: ctrl.lights_on(),
-        supported_bed_types=(
-            "mattressfirm",
-        ),
+        required_capability="supports_light_cycle",
     ),
 )
 
@@ -294,15 +266,18 @@ async def async_setup_entry(
     """Set up Adjustable Bed button entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
-    bed_type = entry.data.get(CONF_BED_TYPE)
+    controller = coordinator.controller
 
     entities = []
     for description in BUTTON_DESCRIPTIONS:
         if description.requires_massage and not has_massage:
             continue
-        # Skip buttons that aren't supported by this bed type
-        if description.supported_bed_types is not None and bed_type not in description.supported_bed_types:
-            continue
+        # Skip buttons that require capabilities the controller doesn't have
+        if description.required_capability is not None:
+            if controller is None:
+                continue
+            if not getattr(controller, description.required_capability, False):
+                continue
         entities.append(AdjustableBedButton(coordinator, description))
 
     async_add_entities(entities)

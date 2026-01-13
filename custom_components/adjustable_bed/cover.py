@@ -104,12 +104,11 @@ async def async_setup_entry(
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
 
     entities = []
+    controller = coordinator.controller
     for description in COVER_DESCRIPTIONS:
-        # Special handling for lumbar - only add if bed type supports it
+        # Special handling for lumbar - only add if controller supports it
         if description.key == "lumbar":
-            # Only Mattress Firm supports lumbar motor
-            from .const import BED_TYPE_MATTRESSFIRM
-            if coordinator.bed_type == BED_TYPE_MATTRESSFIRM:
+            if controller is not None and controller.has_lumbar_support:
                 entities.append(AdjustableBedCover(coordinator, description))
         elif motor_count >= description.min_motors:
             entities.append(AdjustableBedCover(coordinator, description))
@@ -136,6 +135,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
         self._is_moving = False
         self._move_direction: str | None = None
+        self._movement_generation: int = 0  # Track active movement to handle cancellation
 
     @property
     def is_closed(self) -> bool | None:
@@ -144,7 +144,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # Return None to indicate unknown state
         angle = self._coordinator.position_data.get(self.entity_description.key)
         if angle is not None:
-            return angle == 0
+            # Use 1-degree tolerance for sensor noise/precision issues
+            return angle < 1.0
         return None
 
     @property
@@ -197,6 +198,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             self._coordinator.name,
         )
 
+        # Increment generation to track this specific movement
+        self._movement_generation += 1
+        current_generation = self._movement_generation
+
         self._is_moving = True
         self._move_direction = direction
         self.async_write_ha_state()
@@ -226,9 +231,11 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
         finally:
-            self._is_moving = False
-            self._move_direction = None
-            self.async_write_ha_state()
+            # Only clear state if no newer movement has started
+            if self._movement_generation == current_generation:
+                self._is_moving = False
+                self._move_direction = None
+                self.async_write_ha_state()
 
     async def _async_stop_movement(self) -> None:
         """Stop the cover movement."""

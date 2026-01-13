@@ -68,6 +68,19 @@ class SertaController(BedController):
         """Return placeholder - this controller uses handle-based writes."""
         return f"handle-0x{SERTA_WRITE_HANDLE:04x}"
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
     async def write_command(
         self,
         command: bytes,
