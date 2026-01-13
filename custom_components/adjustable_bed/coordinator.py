@@ -42,6 +42,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_DISABLE_ANGLE_SENSING,
@@ -51,7 +52,9 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
+    POSITION_MODE_ACCURACY,
     DOMAIN,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
@@ -88,6 +91,7 @@ class AdjustableBedCoordinator:
         self._motor_count: int = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
         self._disable_angle_sensing: bool = entry.data.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING)
+        self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
 
         # Get bed-type-specific motor pulse defaults, falling back to global defaults
@@ -878,6 +882,36 @@ class AdjustableBedCoordinator:
                 err,
             )
 
+    async def async_read_initial_positions(self) -> None:
+        """Read positions at startup to initialize sensors.
+
+        Called after initial connection to populate position sensors with
+        actual values instead of starting as 'unknown'.
+        Runs in background with short timeout to not block startup.
+        """
+        if self._disable_angle_sensing:
+            _LOGGER.debug("Skipping initial position read (angle sensing disabled)")
+            return
+
+        _LOGGER.debug("Reading initial positions for %s", self._address)
+        try:
+            async with asyncio.timeout(5.0):
+                if self._client is not None and self._client.is_connected:
+                    await self._async_read_positions()
+                    # Only log success if position_data has values
+                    if self._position_data:
+                        _LOGGER.info(
+                            "Initial positions read for %s: %s",
+                            self._address,
+                            {k: f"{v}°" for k, v in self._position_data.items()},
+                        )
+                    else:
+                        _LOGGER.debug("Initial position read completed but no data received")
+        except TimeoutError:
+            _LOGGER.debug("Initial position read timed out - sensors will update on first command")
+        except Exception as err:
+            _LOGGER.debug("Initial position read failed: %s - sensors will update on first command", err)
+
     async def async_disconnect(self) -> None:
         """Disconnect from the bed."""
         _LOGGER.debug("async_disconnect called for %s", self._address)
@@ -985,13 +1019,38 @@ class AdjustableBedCoordinator:
                     _LOGGER.error("Cannot write command: no controller available")
                     raise RuntimeError("No controller available")
 
-                await self._controller.write_command(
-                    command, repeat_count, repeat_delay_ms, self._cancel_command
-                )
+                # Start position polling during movement if angle sensing enabled
+                poll_stop: asyncio.Event | None = None
+                poll_task: asyncio.Task[None] | None = None
+                if not self._disable_angle_sensing:
+                    poll_stop = asyncio.Event()
+                    poll_task = asyncio.create_task(
+                        self._async_poll_positions_during_movement(poll_stop)
+                    )
 
-                # Read position after movement if angle sensing is enabled
+                try:
+                    await self._controller.write_command(
+                        command, repeat_count, repeat_delay_ms, self._cancel_command
+                    )
+                finally:
+                    # Stop polling
+                    if poll_stop is not None:
+                        poll_stop.set()
+                    if poll_task is not None:
+                        poll_task.cancel()
+                        try:
+                            await poll_task
+                        except asyncio.CancelledError:
+                            pass
+
+                # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    await self._async_read_positions()
+                    if self._position_mode == POSITION_MODE_ACCURACY:
+                        # Accuracy mode: wait for read to complete
+                        await self._async_read_positions()
+                    else:
+                        # Speed mode: fire-and-forget (no blocking)
+                        self.hass.async_create_task(self._async_read_positions())
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -1066,11 +1125,36 @@ class AdjustableBedCoordinator:
                     _LOGGER.error("Cannot execute command: no controller available")
                     raise RuntimeError("No controller available")
 
-                await command_fn(self._controller)
+                # Start position polling during movement if angle sensing enabled
+                poll_stop: asyncio.Event | None = None
+                poll_task: asyncio.Task[None] | None = None
+                if not self._disable_angle_sensing:
+                    poll_stop = asyncio.Event()
+                    poll_task = asyncio.create_task(
+                        self._async_poll_positions_during_movement(poll_stop)
+                    )
 
-                # Read position after movement if angle sensing is enabled
+                try:
+                    await command_fn(self._controller)
+                finally:
+                    # Stop polling
+                    if poll_stop is not None:
+                        poll_stop.set()
+                    if poll_task is not None:
+                        poll_task.cancel()
+                        try:
+                            await poll_task
+                        except asyncio.CancelledError:
+                            pass
+
+                # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    await self._async_read_positions()
+                    if self._position_mode == POSITION_MODE_ACCURACY:
+                        # Accuracy mode: wait for read to complete
+                        await self._async_read_positions()
+                    else:
+                        # Speed mode: fire-and-forget (no blocking)
+                        self.hass.async_create_task(self._async_read_positions())
             except (ConnectionError, RuntimeError):
                 # On connection/controller errors, reset timer if not disconnecting after commands
                 if self._client is not None and self._client.is_connected and not self._disconnect_after_command:
@@ -1115,12 +1199,42 @@ class AdjustableBedCoordinator:
             return
 
         try:
-            async with asyncio.timeout(5.0):
+            async with asyncio.timeout(3.0):
                 await self._controller.read_positions(self._motor_count)
         except TimeoutError:
-            _LOGGER.debug("Position read timed out after 5s")
+            _LOGGER.debug("Position read timed out")
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
+
+    async def _async_poll_positions_during_movement(
+        self, stop_event: asyncio.Event
+    ) -> None:
+        """Poll positions periodically during movement.
+
+        Some motors (like Linak back) don't send notifications, only support reads.
+        This provides real-time position updates during movement for those motors.
+        Only polls motors that don't support notifications to avoid redundant reads.
+        """
+        if self._controller is None:
+            return
+
+        poll_interval = 0.5  # 500ms between polls
+        while not stop_event.is_set():
+            try:
+                # Only read motors that don't send notifications
+                async with asyncio.timeout(0.4):
+                    await self._controller.read_non_notifying_positions()
+            except TimeoutError:
+                pass  # Timeout is expected during rapid polling
+            except Exception as err:
+                _LOGGER.debug("Position polling error (non-fatal): %s", err)
+
+            # Wait for interval or stop signal
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=poll_interval)
+                break  # Stop event was set
+            except TimeoutError:
+                pass  # Continue polling
 
     @callback
     def _handle_position_update(self, position: str, angle: float) -> None:
