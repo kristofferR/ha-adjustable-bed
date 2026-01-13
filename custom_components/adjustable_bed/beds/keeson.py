@@ -438,22 +438,27 @@ class KeesonController(BedController):
         return command
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it."""
+        """Move a motor in a direction or stop it, always sending STOP at the end."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
 
-        if command:
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-            )
-        # Send stop (zero command)
-        self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
-        )
+        try:
+            if command:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=self._coordinator.motor_pulse_count,
+                    repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                )
+        finally:
+            # Always send stop with a fresh event so it's not affected by cancellation
+            self._motor_state = {}
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
