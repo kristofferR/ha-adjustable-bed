@@ -528,17 +528,9 @@ class AdjustableBedCoordinator:
                     getattr(self._client, 'mtu_size', 'N/A'),
                 )
 
-                # Explicitly discover services - some BLE backends don't auto-populate
-                # This is required for reliable variant detection in Richmat/Keeson
-                _LOGGER.debug("Discovering BLE services...")
-                try:
-                    await self._client.get_services()
-                except BleakError as err:
-                    _LOGGER.warning(
-                        "Failed to discover services on %s: %s",
-                        self._address,
-                        err,
-                    )
+                # Services are auto-discovered by HA's BleakClientWrapper during connection
+                # Just log what we have - no need to explicitly call get_services()
+                _LOGGER.debug("Checking discovered BLE services...")
 
                 # Log discovered services in detail
                 if self._client.services:
