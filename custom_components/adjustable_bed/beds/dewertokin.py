@@ -100,7 +100,7 @@ class DewertOkinController(BedController):
             try:
                 # Write to handle directly (Bleak supports integer handles)
                 await self.client.write_gatt_char(
-                    DEWERTOKIN_WRITE_HANDLE, command, response=False
+                    DEWERTOKIN_WRITE_HANDLE, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
@@ -251,11 +251,19 @@ class DewertOkinController(BedController):
         await self.write_command(DewertOkinCommands.UNDERLIGHT)
 
     async def lights_on(self) -> None:
-        """Turn lights on (toggle)."""
+        """Turn lights on.
+
+        Note: The Okin protocol only supports toggle, so this sends a toggle command.
+        Calling lights_on() when lights are already on will turn them off.
+        """
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn lights off (toggle)."""
+        """Turn lights off.
+
+        Note: The Okin protocol only supports toggle, so this sends a toggle command.
+        Calling lights_off() when lights are already off will turn them on.
+        """
         await self.lights_toggle()
 
     # Massage methods

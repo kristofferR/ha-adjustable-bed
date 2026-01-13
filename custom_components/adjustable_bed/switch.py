@@ -99,6 +99,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 "Failed to turn on switch %s",
                 self.entity_description.key,
             )
+            raise
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
@@ -127,3 +128,4 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 "Failed to turn off switch %s",
                 self.entity_description.key,
             )
+            raise

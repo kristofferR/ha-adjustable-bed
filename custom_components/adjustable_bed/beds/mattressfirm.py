@@ -130,7 +130,7 @@ class MattressFirmController(BedController):
         ):
             await self.initialize()
 
-        effective_cancel = cancel_event or self._coordinator._cancel_command
+        effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
             "Writing command to Mattress Firm bed: %s (repeat: %d, delay: %dms)",
@@ -146,7 +146,7 @@ class MattressFirmController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    MATTRESSFIRM_CHAR_UUID, command, response=False
+                    MATTRESSFIRM_CHAR_UUID, command, response=True
                 )
             except BleakError as err:
                 _LOGGER.error("Failed to write command: %s", err)
@@ -322,7 +322,7 @@ class MattressFirmController(BedController):
         """Stop all movement."""
         # Mattress Firm beds stop when command stream ends
         # We signal cancellation to stop any ongoing command repetitions
-        self._coordinator._cancel_command.set()
+        self._coordinator.cancel_command.set()
 
     # Massage controls
     async def massage_toggle(self) -> None:

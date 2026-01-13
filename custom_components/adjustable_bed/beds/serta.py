@@ -98,7 +98,7 @@ class SertaController(BedController):
             try:
                 # Write to handle directly (Bleak supports integer handles)
                 await self.client.write_gatt_char(
-                    SERTA_WRITE_HANDLE, command, response=False
+                    SERTA_WRITE_HANDLE, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
