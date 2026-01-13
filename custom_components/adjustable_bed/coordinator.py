@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import traceback
 from typing import TYPE_CHECKING, Any, Callable, Coroutine
 
@@ -248,8 +249,10 @@ class AdjustableBedCoordinator:
             return True
 
         _LOGGER.info("Initiating BLE connection to %s (max %d attempts)", self._address, MAX_RETRIES)
+        overall_start = time.monotonic()
 
         for attempt in range(MAX_RETRIES):
+            attempt_start = time.monotonic()
             # On retries, add a delay before attempting to give the Bluetooth stack time to reset
             if attempt > 0:
                 pre_retry_delay = RETRY_DELAY * (1 + attempt * 0.5)  # Progressive backoff
@@ -339,10 +342,12 @@ class AdjustableBedCoordinator:
                             fallback_source,
                         )
                 if device is None:
+                    lookup_elapsed = time.monotonic() - attempt_start
                     _LOGGER.warning(
-                        "Device %s not found in Bluetooth scanner (attempt %d/%d). "
-                        "Ensure bed is powered on and a Bluetooth adapter or ESPHome proxy is in range.",
+                        "Device %s NOT FOUND in Bluetooth scanner after %.1fs (attempt %d/%d). "
+                        "Bed may be powered off, out of range, or connected to another device.",
                         self._address,
+                        lookup_elapsed,
                         attempt + 1,
                         MAX_RETRIES,
                     )
@@ -376,9 +381,11 @@ class AdjustableBedCoordinator:
                 if hasattr(device, 'details') and isinstance(device.details, dict):
                     device_source = device.details.get('source')
                 
+                lookup_elapsed = time.monotonic() - attempt_start
                 _LOGGER.info(
-                    "Found device %s (name: %s) via adapter: %s",
+                    "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
                     self._address,
+                    lookup_elapsed,
                     device.name or "Unknown",
                     device_source or "unknown",
                 )
@@ -429,9 +436,10 @@ class AdjustableBedCoordinator:
                 # This handles ESPHome Bluetooth proxy connections properly
                 # Using standard BleakClient (not cached) for better compatibility
                 # with devices that have connection stability issues
-                _LOGGER.debug(
-                    "Calling establish_connection with max_attempts=%d, timeout=%.1fs...",
-                    MAX_RETRIES,
+                connect_start = time.monotonic()
+                _LOGGER.info(
+                    "Attempting BLE GATT connection to %s (timeout: %.0fs)...",
+                    self._address,
                     CONNECTION_TIMEOUT,
                 )
                 
@@ -487,10 +495,13 @@ class AdjustableBedCoordinator:
                 except Exception:
                     _LOGGER.debug("Could not determine actual connection adapter")
 
+                connect_elapsed = time.monotonic() - connect_start
+                total_elapsed = time.monotonic() - attempt_start
                 _LOGGER.info(
-                    "✓ Successfully connected to %s (name: %s) via adapter: %s",
+                    "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
-                    device.name or "Unknown",
+                    total_elapsed,
+                    connect_elapsed,
                     actual_adapter,
                 )
                 
@@ -577,9 +588,19 @@ class AdjustableBedCoordinator:
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
+                attempt_elapsed = time.monotonic() - attempt_start
+                # Categorize the error for clearer diagnostics
+                if isinstance(err, TimeoutError) or "timeout" in str(err).lower():
+                    error_category = "CONNECTION TIMEOUT"
+                elif "refused" in str(err).lower() or "rejected" in str(err).lower():
+                    error_category = "CONNECTION REFUSED (another device may be connected)"
+                else:
+                    error_category = "BLE ERROR"
                 _LOGGER.warning(
-                    "BLE connection failed to %s (attempt %d/%d): %s",
+                    "✗ %s to %s after %.1fs (attempt %d/%d): %s",
+                    error_category,
                     self._address,
+                    attempt_elapsed,
                     attempt + 1,
                     MAX_RETRIES,
                     err,
@@ -631,17 +652,18 @@ class AdjustableBedCoordinator:
                     self._client = None
                 # Delay is handled at the start of the next iteration with progressive backoff
 
+        total_elapsed = time.monotonic() - overall_start
         _LOGGER.error(
-            "Failed to connect to %s after %d attempts. "
-            "Possible causes:\n"
-            "  - Bed may be powered off or out of range\n"
-            "  - Another device may be connected to the bed\n"
-            "  - Bluetooth adapter/proxy may have interference\n"
-            "  - Try moving the Bluetooth adapter/proxy closer to the bed\n"
-            "  - Try restarting the bed (unplug power for 30 seconds)\n"
-            "  - If using ESPHome proxies, check that they are online and in range",
+            "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
+            "Troubleshooting:\n"
+            "  1. Power cycle bed (unplug 30 seconds)\n"
+            "  2. Close any phone apps connected to bed\n"
+            "  3. Check Bluetooth adapter is working\n"
+            "  4. Move adapter closer to bed\n"
+            "  5. If using ESPHome proxy, verify it's online",
             self._address,
             MAX_RETRIES,
+            total_elapsed,
         )
         return False
 
