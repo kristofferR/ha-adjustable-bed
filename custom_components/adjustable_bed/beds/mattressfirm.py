@@ -107,8 +107,8 @@ class MattressFirmController(BedController):
 
             self._initialized = True
             _LOGGER.info("Mattress Firm 900 bed initialized successfully")
-        except Exception as err:
-            _LOGGER.error("Failed to initialize bed: %s", err)
+        except Exception:
+            _LOGGER.exception("Failed to initialize bed")
             raise
 
     async def write_command(
@@ -148,8 +148,8 @@ class MattressFirmController(BedController):
                 await self.client.write_gatt_char(
                     MATTRESSFIRM_CHAR_UUID, command, response=True
                 )
-            except BleakError as err:
-                _LOGGER.error("Failed to write command: %s", err)
+            except BleakError:
+                _LOGGER.exception("Failed to write command")
                 raise
 
             if i < repeat_count - 1:

@@ -510,7 +510,7 @@ class KeesonController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Keeson)."""
-        _LOGGER.warning("Keeson beds don't support programming memory presets")
+        _LOGGER.warning("Keeson beds don't support programming memory presets (requested: %d)", memory_num)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""

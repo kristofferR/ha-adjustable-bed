@@ -160,7 +160,7 @@ class TestLeggettPlattControllerGen2:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, command, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, command, response=True
         )
 
 
@@ -222,7 +222,7 @@ class TestLeggettPlattMovement:
         await coordinator.controller.move_head_stop()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=True
         )
 
     async def test_stop_all_gen2(
@@ -239,7 +239,7 @@ class TestLeggettPlattMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=True
         )
 
 
@@ -330,7 +330,7 @@ class TestLeggettPlattPresets:
         await coordinator.controller.program_memory(memory_num)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, expected_command, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected_command, response=True
         )
 
 
@@ -351,7 +351,7 @@ class TestLeggettPlattLights:
         await coordinator.controller.lights_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=True
         )
 
     async def test_lights_on_gen2(
@@ -369,7 +369,7 @@ class TestLeggettPlattLights:
 
         expected = LeggettPlattGen2Commands.rgb_set(255, 255, 255, 255)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
         )
 
     async def test_lights_off_gen2(
@@ -386,7 +386,7 @@ class TestLeggettPlattLights:
         await coordinator.controller.lights_off()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=True
         )
 
 
@@ -426,7 +426,7 @@ class TestLeggettPlattMassage:
         # Level should increment to 1
         expected = LeggettPlattGen2Commands.massage_head_strength(1)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_toggle_gen2(
@@ -443,7 +443,7 @@ class TestLeggettPlattMassage:
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.MASSAGE_WAVE_ON, response=False
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.MASSAGE_WAVE_ON, response=True
         )
 
 

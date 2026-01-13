@@ -43,7 +43,6 @@ class TestSolaceCommands:
         assert len(SolaceCommands.PRESET_MEMORY_2) == 11
         assert len(SolaceCommands.PRESET_MEMORY_3) == 11
         assert len(SolaceCommands.PRESET_MEMORY_4) == 11
-        assert len(SolaceCommands.PRESET_MEMORY_5) == 11
 
     def test_program_memory_commands(self):
         """Test program memory commands are correct."""
@@ -51,7 +50,6 @@ class TestSolaceCommands:
         assert len(SolaceCommands.PROGRAM_MEMORY_2) == 11
         assert len(SolaceCommands.PROGRAM_MEMORY_3) == 11
         assert len(SolaceCommands.PROGRAM_MEMORY_4) == 11
-        assert len(SolaceCommands.PROGRAM_MEMORY_5) == 11
 
     def test_motor_commands(self):
         """Test motor commands are correct."""
@@ -134,7 +132,7 @@ class TestSolaceController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, command, response=False
+            SOLACE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -246,7 +244,7 @@ class TestSolaceMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, SolaceCommands.MOTOR_STOP, response=False
+            SOLACE_CHAR_UUID, SolaceCommands.MOTOR_STOP, response=True
         )
 
 
@@ -324,7 +322,6 @@ class TestSolacePresets:
             (2, SolaceCommands.PRESET_MEMORY_2),
             (3, SolaceCommands.PRESET_MEMORY_3),
             (4, SolaceCommands.PRESET_MEMORY_4),
-            (5, SolaceCommands.PRESET_MEMORY_5),
         ],
     )
     async def test_preset_memory(
@@ -352,7 +349,6 @@ class TestSolacePresets:
             (2, SolaceCommands.PROGRAM_MEMORY_2),
             (3, SolaceCommands.PROGRAM_MEMORY_3),
             (4, SolaceCommands.PROGRAM_MEMORY_4),
-            (5, SolaceCommands.PROGRAM_MEMORY_5),
         ],
     )
     async def test_program_memory(
@@ -371,7 +367,7 @@ class TestSolacePresets:
         await coordinator.controller.program_memory(memory_num)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            SOLACE_CHAR_UUID, expected_command, response=False
+            SOLACE_CHAR_UUID, expected_command, response=True
         )
 
 

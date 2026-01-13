@@ -6,8 +6,7 @@ This document provides detailed information about each supported bed brand, incl
 
 - [Linak](#linak)
 - [Richmat](#richmat)
-- [Keeson](#keeson)
-- [Ergomotion](#ergomotion)
+- [Keeson](#keeson) (includes Ergomotion)
 - [Solace](#solace)
 - [MotoSleep](#motosleep)
 - [Leggett & Platt](#leggett--platt)
@@ -758,7 +757,7 @@ Detected by device name containing: `serta` or `motion perfect`
 
 #### Packet Structure
 
-```
+```text
 [0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
 ```
 
