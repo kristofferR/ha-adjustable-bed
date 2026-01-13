@@ -153,7 +153,7 @@ class TestOkimatController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, command, response=False
+            OKIMAT_WRITE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -246,7 +246,7 @@ class TestOkimatMovement:
 
         expected_stop = coordinator.controller._build_command(0)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_stop, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_stop, response=True
         )
 
 
@@ -333,7 +333,7 @@ class TestOkimatLights:
 
         expected_cmd = coordinator.controller._build_command(OkimatCommands.TOGGLE_LIGHTS)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
 
@@ -355,7 +355,7 @@ class TestOkimatMassage:
 
         expected_cmd = coordinator.controller._build_command(OkimatCommands.MASSAGE_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_head_up(
@@ -373,7 +373,7 @@ class TestOkimatMassage:
 
         expected_cmd = coordinator.controller._build_command(OkimatCommands.MASSAGE_HEAD_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_foot_down(
@@ -391,7 +391,7 @@ class TestOkimatMassage:
 
         expected_cmd = coordinator.controller._build_command(OkimatCommands.MASSAGE_FOOT_DOWN)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_mode_step(
@@ -409,7 +409,7 @@ class TestOkimatMassage:
 
         expected_cmd = coordinator.controller._build_command(OkimatCommands.MASSAGE_TIMER_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=False
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
 

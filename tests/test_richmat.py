@@ -171,7 +171,7 @@ class TestRichmatController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, command, response=False
+            RICHMAT_NORDIC_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -267,7 +267,7 @@ class TestRichmatMovement:
 
         expected_end = coordinator.controller._build_command(RichmatCommands.END)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_end, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_end, response=True
         )
 
 
@@ -392,7 +392,7 @@ class TestRichmatPresets:
 
         expected_cmd = coordinator.controller._build_command(expected_value)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
 
@@ -414,7 +414,7 @@ class TestRichmatLights:
 
         expected_cmd = coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
 
@@ -436,7 +436,7 @@ class TestRichmatMassage:
 
         expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_head_toggle(
@@ -454,7 +454,7 @@ class TestRichmatMassage:
 
         expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_HEAD_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_foot_toggle(
@@ -472,7 +472,7 @@ class TestRichmatMassage:
 
         expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_FOOT_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_mode_step(
@@ -490,7 +490,7 @@ class TestRichmatMassage:
 
         expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_PATTERN_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=False
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
         )
 
 

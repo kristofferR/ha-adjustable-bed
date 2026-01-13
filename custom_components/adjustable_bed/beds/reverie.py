@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, ClassVar
 
 from bleak.exc import BleakError
 
@@ -28,25 +28,25 @@ class ReverieCommands:
     """Reverie command constants."""
 
     # Presets
-    PRESET_ZERO_G = [0x15]
-    PRESET_ANTI_SNORE = [0x16]
-    PRESET_FLAT = [0x05]
-    PRESET_MEMORY_1 = [0x11]
-    PRESET_MEMORY_2 = [0x12]
-    PRESET_MEMORY_3 = [0x13]
-    PRESET_MEMORY_4 = [0x14]
+    PRESET_ZERO_G: ClassVar[list[int]] = [0x15]
+    PRESET_ANTI_SNORE: ClassVar[list[int]] = [0x16]
+    PRESET_FLAT: ClassVar[list[int]] = [0x05]
+    PRESET_MEMORY_1: ClassVar[list[int]] = [0x11]
+    PRESET_MEMORY_2: ClassVar[list[int]] = [0x12]
+    PRESET_MEMORY_3: ClassVar[list[int]] = [0x13]
+    PRESET_MEMORY_4: ClassVar[list[int]] = [0x14]
 
     # Programming
-    PROGRAM_MEMORY_1 = [0x21]
-    PROGRAM_MEMORY_2 = [0x22]
-    PROGRAM_MEMORY_3 = [0x23]
-    PROGRAM_MEMORY_4 = [0x24]
+    PROGRAM_MEMORY_1: ClassVar[list[int]] = [0x21]
+    PROGRAM_MEMORY_2: ClassVar[list[int]] = [0x22]
+    PROGRAM_MEMORY_3: ClassVar[list[int]] = [0x23]
+    PROGRAM_MEMORY_4: ClassVar[list[int]] = [0x24]
 
     # Lighting
-    LIGHTS_TOGGLE = [0x5B, 0x00]
+    LIGHTS_TOGGLE: ClassVar[list[int]] = [0x5B, 0x00]
 
     # Motor stop
-    MOTOR_STOP = [0xFF]
+    MOTOR_STOP: ClassVar[list[int]] = [0xFF]
 
     @staticmethod
     def massage_head(level: int) -> list[int]:
@@ -215,8 +215,11 @@ class ReverieController(BedController):
             pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data."""
-        pass
+        """Read current position data.
+
+        Reverie beds report positions via notifications, not direct reads.
+        Position updates are handled by _parse_position_data via start_notify.
+        """
 
     async def _move_to_position(self, motor: str, position: int) -> None:
         """Move a motor to a specific position (0-100)."""

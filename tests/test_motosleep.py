@@ -148,7 +148,7 @@ class TestMotoSleepController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, command, response=False
+            MOTOSLEEP_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -259,7 +259,7 @@ class TestMotoSleepMovement:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_STOP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
 
@@ -384,7 +384,7 @@ class TestMotoSleepPresets:
 
         expected = coordinator.controller._build_command(expected_char)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
 
@@ -406,7 +406,7 @@ class TestMotoSleepLights:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
 
@@ -428,7 +428,7 @@ class TestMotoSleepMassage:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_STOP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_head_toggle(
@@ -446,7 +446,7 @@ class TestMotoSleepMassage:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_HEAD_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_foot_toggle(
@@ -464,7 +464,7 @@ class TestMotoSleepMassage:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_FOOT_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_head_up(
@@ -482,7 +482,7 @@ class TestMotoSleepMassage:
 
         expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_HEAD_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=False
+            MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
 
