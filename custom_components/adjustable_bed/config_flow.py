@@ -449,6 +449,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
                 TextSelectorConfig()
             ),
+            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
+            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.All(
+                vol.Coerce(int), vol.Range(min=10, max=300)
+            ),
         }
 
         # Add variant selection if the bed type has variants
