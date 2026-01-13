@@ -181,7 +181,7 @@ class LeggettPlattController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    self._char_uuid, command, response=False
+                    self._char_uuid, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
@@ -222,17 +222,19 @@ class LeggettPlattController(BedController):
         self._motor_state[motor] = direction
         command = self._get_okin_move_command()
 
-        if command:
+        try:
+            if command:
+                await self.write_command(
+                    self._build_okin_command(command),
+                    repeat_count=25,
+                    repeat_delay_ms=200,
+                )
+        finally:
+            self._motor_state = {}
             await self.write_command(
-                self._build_okin_command(command),
-                repeat_count=25,
-                repeat_delay_ms=200,
+                self._build_okin_command(0),
+                cancel_event=asyncio.Event(),
             )
-        self._motor_state = {}
-        await self.write_command(
-            self._build_okin_command(0),
-            cancel_event=asyncio.Event(),
-        )
 
     # Motor control methods - Gen2 variant doesn't have motor control via BLE
     # (uses position-based control instead)

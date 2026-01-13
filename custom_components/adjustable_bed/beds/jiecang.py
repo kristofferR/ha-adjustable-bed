@@ -79,7 +79,7 @@ class JiecangController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    JIECANG_CHAR_UUID, command, response=False
+                    JIECANG_CHAR_UUID, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")

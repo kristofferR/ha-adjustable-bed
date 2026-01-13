@@ -130,7 +130,7 @@ class ReverieController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    REVERIE_CHAR_UUID, command, response=False
+                    REVERIE_CHAR_UUID, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")

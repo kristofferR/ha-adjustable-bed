@@ -117,7 +117,7 @@ class OkimatController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    OKIMAT_WRITE_CHAR_UUID, command, response=False
+                    OKIMAT_WRITE_CHAR_UUID, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
