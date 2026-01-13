@@ -51,6 +51,11 @@ class JiecangController(BedController):
         """Return the UUID of the control characteristic."""
         return JIECANG_CHAR_UUID
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
     async def write_command(
         self,
         command: bytes,

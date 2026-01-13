@@ -100,6 +100,15 @@ class LinakController(BedController):
         )
 
     @property
+    def supports_preset_flat(self) -> bool:
+        """Return False - Linak has no native flat command.
+
+        Linak's preset_flat() uses Memory 1, which may not be programmed as flat.
+        Users should use the memory presets directly instead.
+        """
+        return False
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return LINAK_CONTROL_CHAR_UUID
@@ -375,7 +384,11 @@ class LinakController(BedController):
             await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
         finally:
             # Always send STOP with a fresh event so it's not affected by cancellation
-            await self.write_command(LinakCommands.MOVE_STOP, cancel_event=asyncio.Event())
+            # Wrap in try-except to prevent masking the original exception
+            try:
+                await self.write_command(LinakCommands.MOVE_STOP, cancel_event=asyncio.Event())
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     async def move_head_up(self) -> None:
         """Move head up."""

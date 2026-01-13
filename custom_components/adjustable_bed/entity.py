@@ -27,8 +27,8 @@ class AdjustableBedEntity(Entity):
     def available(self) -> bool:
         """Return True if entity is available.
 
-        Entities are always available as long as the integration is loaded.
-        We connect on-demand when commands are sent.
+        Entities are available when the bed is currently connected.
+        This provides accurate availability feedback in the Home Assistant UI.
         """
-        return True
+        return self._coordinator.is_connected
 

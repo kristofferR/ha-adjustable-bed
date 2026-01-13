@@ -74,6 +74,19 @@ class SolaceController(BedController):
         """Return the UUID of the control characteristic."""
         return SOLACE_CHAR_UUID
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
     async def write_command(
         self,
         command: bytes,
