@@ -145,7 +145,7 @@ class TestDewertOkinController:
 
         # DewertOkin uses handle-based writes (integer handle)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, command, response=False
+            DEWERTOKIN_WRITE_HANDLE, command, response=True
         )
 
     async def test_write_command_with_repeat(
@@ -289,7 +289,7 @@ class TestDewertOkinMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.STOP, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.STOP, response=True
         )
 
 
@@ -420,7 +420,7 @@ class TestDewertOkinLights:
         await coordinator.controller.lights_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.UNDERLIGHT, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.UNDERLIGHT, response=True
         )
 
     async def test_lights_on(
@@ -437,7 +437,7 @@ class TestDewertOkinLights:
         await coordinator.controller.lights_on()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.UNDERLIGHT, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.UNDERLIGHT, response=True
         )
 
 
@@ -458,7 +458,7 @@ class TestDewertOkinMassage:
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.WAVE_MASSAGE, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.WAVE_MASSAGE, response=True
         )
 
     async def test_massage_off(
@@ -475,7 +475,7 @@ class TestDewertOkinMassage:
         await coordinator.controller.massage_off()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.MASSAGE_OFF, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.MASSAGE_OFF, response=True
         )
 
     async def test_massage_head_toggle(
@@ -492,7 +492,7 @@ class TestDewertOkinMassage:
         await coordinator.controller.massage_head_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.HEAD_MASSAGE, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.HEAD_MASSAGE, response=True
         )
 
     async def test_massage_foot_toggle(
@@ -509,7 +509,7 @@ class TestDewertOkinMassage:
         await coordinator.controller.massage_foot_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.FOOT_MASSAGE, response=False
+            DEWERTOKIN_WRITE_HANDLE, DewertOkinCommands.FOOT_MASSAGE, response=True
         )
 
 

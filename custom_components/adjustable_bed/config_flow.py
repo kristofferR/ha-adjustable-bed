@@ -351,7 +351,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("  Manufacturer data: %s", discovery_info.manufacturer_data)
         _LOGGER.debug("  Service data: %s", discovery_info.service_data)
 
-        await self.async_set_unique_id(discovery_info.address)
+        # Normalize address to uppercase to prevent duplicates from case mismatches
+        # between Bluetooth discovery (may be lowercase) and manual entry (normalized)
+        await self.async_set_unique_id(discovery_info.address.upper())
         self._abort_if_unique_id_configured()
 
         bed_type = detect_bed_type(discovery_info)
@@ -410,7 +412,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 data={
-                    CONF_ADDRESS: self._discovery_info.address,
+                    CONF_ADDRESS: self._discovery_info.address.upper(),
                     CONF_BED_TYPE: bed_type,
                     CONF_PROTOCOL_VARIANT: protocol_variant,
                     CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
@@ -420,6 +422,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_PREFERRED_ADAPTER: preferred_adapter,
                     CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                     CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
                 },
             )
 
@@ -473,7 +477,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_manual()
 
             _LOGGER.info("User selected device: %s", address)
-            await self.async_set_unique_id(address)
+            # Normalize address to uppercase to match Bluetooth discovery
+            await self.async_set_unique_id(address.upper())
             self._abort_if_unique_id_configured()
 
             self._discovery_info = self._discovered_devices[address]

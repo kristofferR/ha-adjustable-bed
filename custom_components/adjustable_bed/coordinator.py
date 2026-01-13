@@ -221,6 +221,7 @@ class AdjustableBedCoordinator:
             BED_TYPE_DEWERTOKIN: "DewertOkin",
             BED_TYPE_SERTA: "Serta",
             BED_TYPE_OCTO: "Octo",
+            BED_TYPE_MATTRESSFIRM: "MattressFirm",
         }
         return manufacturers.get(self._bed_type, "Unknown")
 
@@ -236,6 +237,10 @@ class AdjustableBedCoordinator:
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Connect to the bed (must hold lock)."""
+        # Clear intentional disconnect flag when explicitly connecting
+        # This ensures the flag persists through late disconnect callbacks
+        self._intentional_disconnect = False
+
         if self._client is not None and self._client.is_connected:
             _LOGGER.debug("Already connected to %s, reusing connection", self._address)
             if reset_timer:
@@ -504,13 +509,25 @@ class AdjustableBedCoordinator:
                 
                 # Small delay to let connection stabilize before operations
                 await asyncio.sleep(POST_CONNECT_DELAY)
-                
+
                 # Log connection details
                 _LOGGER.debug(
                     "BleakClient connected: is_connected=%s, mtu_size=%s",
                     self._client.is_connected,
                     getattr(self._client, 'mtu_size', 'N/A'),
                 )
+
+                # Explicitly discover services - some BLE backends don't auto-populate
+                # This is required for reliable variant detection in Richmat/Keeson
+                _LOGGER.debug("Discovering BLE services...")
+                try:
+                    await self._client.get_services()
+                except BleakError as err:
+                    _LOGGER.warning(
+                        "Failed to discover services on %s: %s",
+                        self._address,
+                        err,
+                    )
 
                 # Log discovered services in detail
                 if self._client.services:
@@ -829,9 +846,8 @@ class AdjustableBedCoordinator:
                 finally:
                     self._client = None
                     self._controller = None
-                    # Clear flag after disconnect completes - _on_disconnect may or may not fire
-                    # depending on BLE backend, so we clear it here as well
-                    self._intentional_disconnect = False
+                    # Note: _intentional_disconnect is NOT cleared here
+                    # It persists until an explicit reconnect to handle late disconnect callbacks
 
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""

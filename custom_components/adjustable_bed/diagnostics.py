@@ -17,6 +17,7 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    SUPPORTED_BED_TYPES,
 )
 from .coordinator import AdjustableBedCoordinator
 
@@ -90,14 +91,5 @@ async def async_get_config_entry_diagnostics(
         "ble": ble_info,
         "controller": controller_info,
         "position_data": position_data,
-        "supported_bed_types": [
-            "linak",
-            "richmat (nordic/wilinke)",
-            "keeson (base/ksbt)",
-            "solace",
-            "motosleep",
-            "leggett_platt (gen2/okin)",
-            "reverie",
-            "okimat",
-        ],
+        "supported_bed_types": list(SUPPORTED_BED_TYPES),
     }
