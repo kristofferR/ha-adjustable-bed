@@ -317,6 +317,80 @@ class BedController(ABC):
             specific controller implementation for support.
         """
 
+    # Capability properties - override in subclasses that support these features
+    # These are used by button.py and cover.py to determine which entities to create
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        """Return True if bed has a dedicated flat preset.
+
+        Some beds (like Linak) don't have a native flat command - they use
+        Memory 1 which may not actually be programmed as flat. Those controllers
+        should override this to return False.
+        """
+        return True
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        """Return True if bed supports zero gravity preset."""
+        return False
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        """Return True if bed supports anti-snore preset."""
+        return False
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        """Return True if bed supports TV preset."""
+        return False
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        """Return True if bed supports lounge preset."""
+        return False
+
+    @property
+    def supports_preset_incline(self) -> bool:
+        """Return True if bed supports incline preset."""
+        return False
+
+    @property
+    def supports_light_cycle(self) -> bool:
+        """Return True if bed supports light cycle control."""
+        return False
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        """Return True if bed has lumbar motor control."""
+        return False
+
+    # Lumbar motor control (optional - only some beds have this)
+
+    async def move_lumbar_up(self) -> None:
+        """Move lumbar motor up for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have lumbar motor
+        """
+        raise NotImplementedError("Lumbar motor not supported on this bed")
+
+    async def move_lumbar_down(self) -> None:
+        """Move lumbar motor down for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have lumbar motor
+        """
+        raise NotImplementedError("Lumbar motor not supported on this bed")
+
+    async def move_lumbar_stop(self) -> None:
+        """Immediately stop lumbar motor movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have lumbar motor
+        """
+        raise NotImplementedError("Lumbar motor not supported on this bed")
+
     # Optional preset methods (may not be available on all beds)
     # These raise NotImplementedError by default. Subclasses override if supported.
 

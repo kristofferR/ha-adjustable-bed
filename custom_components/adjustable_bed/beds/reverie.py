@@ -91,6 +91,15 @@ class ReverieController(BedController):
         """Return the UUID of the control characteristic."""
         return REVERIE_CHAR_UUID
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
     def _build_command(self, command_bytes: list[int]) -> bytes:
         """Build command with XOR checksum.
 
@@ -222,17 +231,27 @@ class ReverieController(BedController):
         """
 
     async def _move_to_position(self, motor: str, position: int) -> None:
-        """Move a motor to a specific position (0-100)."""
+        """Move a motor to a specific position (0-100) and always send STOP at the end."""
         if motor == "head":
             cmd = ReverieCommands.motor_head(position)
         else:
             cmd = ReverieCommands.motor_feet(position)
 
-        await self.write_command(
-            self._build_command(cmd),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                self._build_command(cmd),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            # Always send STOP with a fresh event so it's not affected by cancellation
+            try:
+                await self.write_command(
+                    self._build_command(ReverieCommands.MOTOR_STOP),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods - Reverie uses position-based control
     # For up/down we'll move incrementally toward 100/0

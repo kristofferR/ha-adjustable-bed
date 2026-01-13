@@ -80,6 +80,19 @@ class MotoSleepController(BedController):
         """Return the UUID of the control characteristic."""
         return MOTOSLEEP_CHAR_UUID
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
     def _build_command(self, char_code: int) -> bytes:
         """Build a 2-byte command: [0x24, char_code]."""
         return bytes([0x24, char_code])
@@ -135,13 +148,22 @@ class MotoSleepController(BedController):
         pass
 
     async def _move_with_stop(self, command_char: int) -> None:
-        """Execute a movement command."""
-        # MotoSleep doesn't need explicit stop - just send the command
-        await self.write_command(
-            self._build_command(command_char),
-            repeat_count=30,
-            repeat_delay_ms=50,
-        )
+        """Execute a movement command and always send STOP at the end."""
+        try:
+            await self.write_command(
+                self._build_command(command_char),
+                repeat_count=30,
+                repeat_delay_ms=50,
+            )
+        finally:
+            # Always send STOP with a fresh event so it's not affected by cancellation
+            try:
+                await self.write_command(
+                    self._build_command(MotoSleepCommands.MASSAGE_STOP),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

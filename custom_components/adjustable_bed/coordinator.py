@@ -576,7 +576,7 @@ class AdjustableBedCoordinator:
 
                 return True
 
-            except BleakError as err:
+            except (BleakError, TimeoutError, OSError) as err:
                 _LOGGER.warning(
                     "BLE connection failed to %s (attempt %d/%d): %s",
                     self._address,
@@ -585,7 +585,7 @@ class AdjustableBedCoordinator:
                     err,
                 )
                 _LOGGER.debug(
-                    "BleakError details - type: %s, args: %s",
+                    "Connection error details - type: %s, args: %s",
                     type(err).__name__,
                     err.args,
                 )
@@ -664,8 +664,8 @@ class AdjustableBedCoordinator:
             )
             self._client = None
             self._controller = None
-            self._position_data = {}
-            # Flag is reset in async_disconnect's finally block
+            # Keep _position_data for last known state; entity availability handles offline
+            # Flag is reset in _async_connect_locked when reconnecting
             return
 
         _LOGGER.warning(
@@ -680,11 +680,14 @@ class AdjustableBedCoordinator:
         )
         self._client = None
         self._controller = None
-        self._position_data = {}  # Clear stale position data
+        # Keep _position_data for last known state; entity availability handles offline
         self._cancel_disconnect_timer()
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
 
         # Schedule automatic reconnection attempt
+        # Cancel any existing reconnect timer first to prevent multiple concurrent reconnects
+        if self._reconnect_timer is not None:
+            self._reconnect_timer.cancel()
         self._reconnect_timer = self.hass.loop.call_later(
             5.0,  # Wait 5 seconds before attempting reconnect
             lambda: asyncio.create_task(self._async_auto_reconnect()),
@@ -839,6 +842,12 @@ class AdjustableBedCoordinator:
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
                 self._intentional_disconnect = True
                 try:
+                    # Stop notifications before disconnecting
+                    if self._controller is not None:
+                        try:
+                            await self._controller.stop_notify()
+                        except Exception as err:
+                            _LOGGER.debug("Error stopping notifications: %s", err)
                     await self._client.disconnect()
                     _LOGGER.debug("Successfully disconnected from %s", self._address)
                 except BleakError as err:

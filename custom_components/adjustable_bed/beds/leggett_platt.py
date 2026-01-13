@@ -149,6 +149,17 @@ class LeggettPlattController(BedController):
         """Return the UUID of the control characteristic."""
         return self._char_uuid
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        # Only Okin variant supports Zero G
+        return self._variant == "okin"
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        # Only Gen2 variant supports Anti-Snore
+        return self._variant != "okin"
+
     def _build_okin_command(self, command_value: int) -> bytes:
         """Build Okin binary command: [0x04, 0x02, ...int_bytes]."""
         return bytes([0x04, 0x02] + int_to_bytes(command_value))
@@ -231,10 +242,14 @@ class LeggettPlattController(BedController):
                 )
         finally:
             self._motor_state = {}
-            await self.write_command(
-                self._build_okin_command(0),
-                cancel_event=asyncio.Event(),
-            )
+            # Wrap in try-except to prevent masking the original exception
+            try:
+                await self.write_command(
+                    self._build_okin_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send stop command during cleanup")
 
     # Motor control methods - Gen2 variant doesn't have motor control via BLE
     # (uses position-based control instead)

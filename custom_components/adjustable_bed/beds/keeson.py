@@ -134,38 +134,53 @@ class KeesonController(BedController):
         """Detect the correct write characteristic UUID from available services.
 
         Tries the primary UUID first, then falls back to alternative UUIDs
-        if the primary service is not available.
+        if the primary service is not available. Verifies that the characteristic
+        actually exists within the service before returning.
         """
         client = self.client
         if client is None or client.services is None:
             _LOGGER.debug("No BLE services available, using default UUID")
             return KEESON_BASE_WRITE_CHAR_UUID
 
-        # Get all available service UUIDs
-        available_services = {str(service.uuid).lower() for service in client.services}
-        _LOGGER.debug("Available Keeson services: %s", available_services)
+        # Build a map of service UUID -> service object for efficient lookup
+        services_map = {str(service.uuid).lower(): service for service in client.services}
+        _LOGGER.debug("Available Keeson services: %s", list(services_map.keys()))
 
-        # Check if primary service is available
-        if KEESON_BASE_SERVICE_UUID.lower() in available_services:
-            _LOGGER.debug("Found primary Keeson service, using primary UUID")
-            return KEESON_BASE_WRITE_CHAR_UUID
+        # Check if primary service is available and has the expected characteristic
+        primary_service = services_map.get(KEESON_BASE_SERVICE_UUID.lower())
+        if primary_service is not None:
+            char = primary_service.get_characteristic(KEESON_BASE_WRITE_CHAR_UUID)
+            if char is not None:
+                _LOGGER.debug("Found primary Keeson service with expected characteristic")
+                return KEESON_BASE_WRITE_CHAR_UUID
+            _LOGGER.debug(
+                "Primary service found but characteristic %s not present",
+                KEESON_BASE_WRITE_CHAR_UUID,
+            )
 
-        # Try fallback service/characteristic pairs
+        # Try fallback service/characteristic pairs, verifying characteristic exists
         for fallback_service, fallback_char in KEESON_FALLBACK_GATT_PAIRS:
-            if fallback_service.lower() in available_services:
-                _LOGGER.info(
-                    "Primary Keeson service not found, using fallback: %s/%s",
+            service = services_map.get(fallback_service.lower())
+            if service is not None:
+                char = service.get_characteristic(fallback_char)
+                if char is not None:
+                    _LOGGER.info(
+                        "Using fallback service/characteristic: %s/%s",
+                        fallback_service,
+                        fallback_char,
+                    )
+                    return fallback_char
+                _LOGGER.debug(
+                    "Fallback service %s found but characteristic %s not present",
                     fallback_service,
                     fallback_char,
                 )
-                return fallback_char
 
-        # No matching service found, log all services for debugging and use default
+        # No matching service/characteristic found, log all services for debugging
         _LOGGER.warning(
-            "No recognized Keeson service found. "
+            "No recognized Keeson service/characteristic found. "
             "Please report this to help add support for your device."
         )
-        # Log all discovered services at INFO level to help with debugging
         self.log_discovered_services(level=logging.INFO)
         return KEESON_BASE_WRITE_CHAR_UUID
 
@@ -173,6 +188,19 @@ class KeesonController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return self._char_uuid
+
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
 
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
@@ -216,7 +244,7 @@ class KeesonController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    self._char_uuid, command, response=False
+                    self._char_uuid, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
@@ -410,22 +438,27 @@ class KeesonController(BedController):
         return command
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it."""
+        """Move a motor in a direction or stop it, always sending STOP at the end."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
 
-        if command:
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-            )
-        # Send stop (zero command)
-        self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
-        )
+        try:
+            if command:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=self._coordinator.motor_pulse_count,
+                    repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                )
+        finally:
+            # Always send stop with a fresh event so it's not affected by cancellation
+            self._motor_state = {}
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

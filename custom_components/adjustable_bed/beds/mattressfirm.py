@@ -84,6 +84,35 @@ class MattressFirmController(BedController):
         """Return the UUID of the control characteristic."""
         return MATTRESSFIRM_CHAR_UUID
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_incline(self) -> bool:
+        return True
+
+    @property
+    def supports_light_cycle(self) -> bool:
+        return True
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        return True
+
     async def initialize(self) -> None:
         """Initialize the bed connection.
 

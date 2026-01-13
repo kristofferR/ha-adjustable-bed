@@ -23,7 +23,8 @@ SERVICE_STOP_ALL = "stop_all"
 ATTR_PRESET = "preset"
 
 # Timeout for initial connection at startup
-SETUP_TIMEOUT = 15.0
+# Must be long enough to cover at least one full connection attempt (30s) with margin
+SETUP_TIMEOUT = 45.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -111,6 +112,11 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 await coordinator.async_execute_controller_command(
                     lambda ctrl, p=preset: ctrl.preset_memory(p)
                 )
+            else:
+                _LOGGER.warning(
+                    "Could not find Adjustable Bed device with ID %s for goto_preset service",
+                    device_id,
+                )
 
     async def handle_save_preset(call: ServiceCall) -> None:
         """Handle save_preset service call."""
@@ -124,6 +130,11 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     lambda ctrl, p=preset: ctrl.program_memory(p),
                     cancel_running=False,
                 )
+            else:
+                _LOGGER.warning(
+                    "Could not find Adjustable Bed device with ID %s for save_preset service",
+                    device_id,
+                )
 
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""
@@ -133,6 +144,11 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 await coordinator.async_stop_command()
+            else:
+                _LOGGER.warning(
+                    "Could not find Adjustable Bed device with ID %s for stop_all service",
+                    device_id,
+                )
 
     hass.services.async_register(
         DOMAIN,
