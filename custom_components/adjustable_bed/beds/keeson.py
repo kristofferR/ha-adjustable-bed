@@ -216,7 +216,7 @@ class KeesonController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    self._char_uuid, command, response=True
+                    self._char_uuid, command, response=False
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")

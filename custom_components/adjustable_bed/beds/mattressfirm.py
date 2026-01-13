@@ -146,7 +146,7 @@ class MattressFirmController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    MATTRESSFIRM_CHAR_UUID, command, response=False
+                    MATTRESSFIRM_CHAR_UUID, command, response=True
                 )
             except BleakError as err:
                 _LOGGER.error("Failed to write command: %s", err)

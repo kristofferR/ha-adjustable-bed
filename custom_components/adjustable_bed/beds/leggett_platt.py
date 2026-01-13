@@ -181,7 +181,7 @@ class LeggettPlattController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    self._char_uuid, command, response=False
+                    self._char_uuid, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")

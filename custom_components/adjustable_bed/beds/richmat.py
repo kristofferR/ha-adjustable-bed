@@ -147,7 +147,7 @@ class RichmatController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    self._char_uuid, command, response=False
+                    self._char_uuid, command, response=True
                 )
             except BleakError as err:
                 _LOGGER.exception("Failed to write command")

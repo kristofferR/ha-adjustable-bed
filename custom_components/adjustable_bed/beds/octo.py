@@ -103,7 +103,7 @@ class OctoController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    OCTO_CHAR_UUID, command, response=False
+                    OCTO_CHAR_UUID, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
