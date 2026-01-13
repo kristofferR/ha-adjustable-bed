@@ -1,4 +1,6 @@
-# Adjustable Bed Home Assistant Integration
+<p align="center">
+  <img src="docs/header.png" alt="Adjustable Bed Integration for Home Assistant">
+</p>
 
 A Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE).
 
