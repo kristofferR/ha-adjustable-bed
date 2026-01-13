@@ -142,10 +142,13 @@ class SertaController(BedController):
                 command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
             )
         finally:
-            await self.write_command(
-                SertaCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+            try:
+                await self.write_command(
+                    SertaCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

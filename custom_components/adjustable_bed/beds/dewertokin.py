@@ -138,16 +138,19 @@ class DewertOkinController(BedController):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
-            pulse_count = self._coordinator._motor_pulse_count
-            pulse_delay = self._coordinator._motor_pulse_delay_ms
+            pulse_count = self._coordinator.motor_pulse_count
+            pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
                 command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
             )
         finally:
-            await self.write_command(
-                DewertOkinCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+            try:
+                await self.write_command(
+                    DewertOkinCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
