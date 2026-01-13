@@ -83,6 +83,20 @@ _LOGGER = logging.getLogger(__name__)
 # MAC address regex pattern (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
 MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
+# Device name patterns that should NOT be detected as beds
+# These use generic BUIDs that beds also use, but are clearly not beds
+EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
+    "scooter",
+    "ninebot",
+    "segway",
+    "ebike",
+    "e-bike",
+    "escooter",
+    "e-scooter",
+    "skateboard",
+    "hoverboard",
+)
+
 
 def is_valid_mac_address(address: str) -> bool:
     """Validate a MAC address format."""
@@ -176,6 +190,18 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     )
     _LOGGER.debug("  Service UUIDs: %s", service_uuids)
     _LOGGER.debug("  Manufacturer data: %s", service_info.manufacturer_data)
+
+    # Exclude devices that are clearly not beds based on name
+    # These often use the same generic BLE UUIDs as beds
+    for pattern in EXCLUDED_DEVICE_PATTERNS:
+        if pattern in device_name:
+            _LOGGER.debug(
+                "Device %s excluded: name '%s' matches excluded pattern '%s'",
+                service_info.address,
+                service_info.name,
+                pattern,
+            )
+            return None
 
     # Check for Linak - most specific first
     if LINAK_CONTROL_SERVICE_UUID.lower() in service_uuids:
