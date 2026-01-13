@@ -1,10 +1,14 @@
 goto_preset:
   name: Go to Preset
   description: Move bed to a saved memory position.
-  target:
-    device:
-      integration: adjustable_bed
   fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
     preset:
       name: Preset Number
       description: Memory slot number (1-4).
@@ -18,10 +22,14 @@ goto_preset:
 save_preset:
   name: Save to Preset
   description: Save current bed position to a memory slot.
-  target:
-    device:
-      integration: adjustable_bed
   fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
     preset:
       name: Preset Number
       description: Memory slot number (1-4).
@@ -35,6 +43,11 @@ save_preset:
 stop_all:
   name: Stop All Motors
   description: Immediately stop all bed motors.
-  target:
-    device:
-      integration: adjustable_bed
+  fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
