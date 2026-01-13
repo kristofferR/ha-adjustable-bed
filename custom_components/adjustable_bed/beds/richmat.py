@@ -109,6 +109,19 @@ class RichmatController(BedController):
         """Return the UUID of the control characteristic."""
         return self._char_uuid
 
+    # Capability properties
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
         if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:
@@ -191,10 +204,14 @@ class RichmatController(BedController):
         try:
             await self._send_command(command_byte)
         finally:
-            await self.write_command(
-                self._build_command(RichmatCommands.END),
-                cancel_event=asyncio.Event(),
-            )
+            # Wrap in try-except to prevent masking the original exception
+            try:
+                await self.write_command(
+                    self._build_command(RichmatCommands.END),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send END command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:

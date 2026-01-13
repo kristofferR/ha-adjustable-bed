@@ -287,8 +287,27 @@ These details were discovered by comparing with the working smartbed-mqtt implem
 - **Position sensing breaks physical remote**: Enable `disable_angle_sensing` option
 - **Connection drops**: Move ESP32 proxy closer to bed, check for interference
 
+## Known Issues / Future Work
+
+See `GEMINI_BUGS.md` for a detailed list of architectural improvements and known limitations. Key items by priority:
+
+**HIGH PRIORITY:**
+- Hardcoded max angles in `cover.py` → incorrect position % for non-Linak beds
+
+**MEDIUM PRIORITY:**
+- `async_connect` is ~400 lines → should be refactored into smaller methods
+- Detection order in `config_flow.py` → beds might be misidentified
+- Private HA Bluetooth manager attributes → could break in future HA versions
+
+**LOW PRIORITY (Design limitations):**
+- 30-second blocking preset loops (required by protocol)
+- Optimistic switch state (expected behavior)
+- Memory 1 = Flat assumption (Linak convention)
+- Unsynchronized massage state (no hardware feedback)
+
 ## Reference Materials
 
 - `smartbed-mqtt/` - Old Node.js addon (broken, but has protocol implementations for many bed types)
 - `smartbed-mqtt-discord-chats/` - Discord exports with reverse-engineering discussions and user reports
 - `docs/CONNECTION_GUIDE.md` - User-facing setup and troubleshooting guide
+- `GEMINI_BUGS.md` - Detailed known issues and recommendations
