@@ -1109,12 +1109,16 @@ class AdjustableBedCoordinator:
         """Actively read current positions from the bed.
 
         Called after movement commands to ensure position data is up to date.
+        Uses a short timeout to avoid blocking commands.
         """
         if self._controller is None:
             return
 
         try:
-            await self._controller.read_positions(self._motor_count)
+            async with asyncio.timeout(5.0):
+                await self._controller.read_positions(self._motor_count)
+        except TimeoutError:
+            _LOGGER.debug("Position read timed out after 5s")
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
 
