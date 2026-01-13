@@ -670,12 +670,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
             ): bool,
             vol.Optional(
-                CONF_DISABLE_ANGLE_SENSING,
-                default=current_data.get(
-                    CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-                ),
-            ): bool,
-            vol.Optional(
                 CONF_PREFERRED_ADAPTER,
                 default=current_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
             ): vol.In(adapters),
@@ -695,6 +689,12 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_IDLE_DISCONNECT_SECONDS,
                 default=current_data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
             ): vol.In(range(10, 301)),
+            vol.Optional(
+                CONF_DISABLE_ANGLE_SENSING,
+                default=current_data.get(
+                    CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+                ),
+            ): bool,
         }
 
         # Add variant selection if the bed type has variants
