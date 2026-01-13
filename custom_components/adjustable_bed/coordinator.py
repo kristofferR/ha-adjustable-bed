@@ -328,19 +328,55 @@ class AdjustableBedCoordinator:
                     except Exception as err:
                         _LOGGER.debug("Error looking up device from specific adapter: %s", err)
                 
-                # Fall back to default lookup if no preferred adapter or device not found
+                # Fall back to auto selection if no preferred adapter or device not found
+                # Auto mode: pick the adapter with the best RSSI (strongest signal)
                 if device is None:
-                    device = bluetooth.async_ble_device_from_address(
-                        self.hass, self._address, connectable=True
-                    )
-                    if device:
-                        fallback_source = "unknown"
-                        if hasattr(device, 'details') and isinstance(device.details, dict):
-                            fallback_source = device.details.get('source', 'unknown')
+                    best_rssi = -999
+                    best_source = None
+                    try:
+                        discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                        for svc_info in discovered:
+                            if svc_info.address.upper() == self._address.upper():
+                                rssi = getattr(svc_info, 'rssi', -999)
+                                source = getattr(svc_info, 'source', 'unknown')
+                                _LOGGER.debug(
+                                    "Auto-select candidate: source=%s, rssi=%d",
+                                    source, rssi
+                                )
+                                if rssi > best_rssi:
+                                    best_rssi = rssi
+                                    best_source = source
+                    except Exception as err:
+                        _LOGGER.debug("Error during auto adapter selection: %s", err)
+
+                    if best_source:
                         _LOGGER.info(
-                            "Using automatic adapter selection, device found via: %s",
-                            fallback_source,
+                            "Auto-selected adapter %s with best RSSI %d",
+                            best_source, best_rssi
                         )
+                        # Get device from the best adapter
+                        try:
+                            for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
+                                if (svc_info.address.upper() == self._address.upper() and
+                                    getattr(svc_info, 'source', None) == best_source):
+                                    device = svc_info.device
+                                    break
+                        except Exception:
+                            pass
+
+                    # Final fallback to default lookup
+                    if device is None:
+                        device = bluetooth.async_ble_device_from_address(
+                            self.hass, self._address, connectable=True
+                        )
+                        if device:
+                            fallback_source = "unknown"
+                            if hasattr(device, 'details') and isinstance(device.details, dict):
+                                fallback_source = device.details.get('source', 'unknown')
+                            _LOGGER.info(
+                                "Using fallback adapter selection, device found via: %s",
+                                fallback_source,
+                            )
                 if device is None:
                     lookup_elapsed = time.monotonic() - attempt_start
                     _LOGGER.warning(
