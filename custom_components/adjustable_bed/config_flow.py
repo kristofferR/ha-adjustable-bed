@@ -61,6 +61,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
+    BEDS_WITH_ANGLE_SENSING,
     DOMAIN,
     KEESON_BASE_SERVICE_UUID,
     KEESON_VARIANTS,
@@ -436,6 +437,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
+        # Default angle sensing to enabled for beds that support it
+        default_disable_angle = bed_type not in BEDS_WITH_ANGLE_SENSING
+
         # Build schema with optional variant selection
         schema_dict = {
             vol.Optional(
@@ -445,7 +449,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 [2, 3, 4]
             ),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
+            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
             vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
                 TextSelectorConfig()

@@ -223,10 +223,15 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RICHMAT_VARIANT_WILINKE,
 ]
 
+# Bed types that support angle sensing (position feedback)
+BEDS_WITH_ANGLE_SENSING: Final = frozenset({
+    BED_TYPE_LINAK,
+})
+
 # Default values
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
-DEFAULT_DISABLE_ANGLE_SENSING: Final = True
+DEFAULT_DISABLE_ANGLE_SENSING: Final = True  # For beds without angle sensing
 DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
