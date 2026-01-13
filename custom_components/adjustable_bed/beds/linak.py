@@ -385,11 +385,12 @@ class LinakController(BedController):
         try:
             data = await self.client.read_gatt_char(LINAK_POSITION_BACK_UUID)
             if data:
+                _LOGGER.debug("Polled back position: %s", data.hex())
                 self._handle_position_data(
                     "back", bytearray(data), LINAK_BACK_MAX_POSITION, LINAK_BACK_MAX_ANGLE
                 )
         except BleakError:
-            pass
+            _LOGGER.debug("Failed to poll back position (may be disconnected)")
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving

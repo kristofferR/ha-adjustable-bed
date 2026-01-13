@@ -1224,8 +1224,10 @@ class AdjustableBedCoordinator:
                 # Only read motors that don't send notifications
                 async with asyncio.timeout(0.4):
                     await self._controller.read_non_notifying_positions()
-            except (TimeoutError, Exception):
-                pass  # Don't let polling errors affect movement
+            except TimeoutError:
+                pass  # Timeout is expected during rapid polling
+            except Exception as err:
+                _LOGGER.debug("Position polling error (non-fatal): %s", err)
 
             # Wait for interval or stop signal
             try:
