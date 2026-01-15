@@ -185,6 +185,7 @@ Position data available via notify characteristics:
 - Purple adjustable bases
 - GhostBed
 - Member's Mark (Sam's Club) adjustable beds
+- South Bay International MMKD
 - Ergomotion beds
 - Tempur-Pedic (some newer models)
 - Sealy Ease
@@ -739,6 +740,7 @@ Detected by device name containing: `serta` or `motion perfect`
 
 ### Known Models
 - Octo-branded adjustable beds
+- Beka
 - Some OEM beds with Octo controllers
 
 ### Features
