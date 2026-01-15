@@ -255,6 +255,14 @@ class MotoSleepController(BedController):
             await self.write_command(self._build_command(command))
 
     # Light methods
+    async def lights_on(self) -> None:
+        """Turn on under-bed lights (MotoSleep only supports toggle)."""
+        await self.write_command(self._build_command(MotoSleepCommands.LIGHTS_TOGGLE))
+
+    async def lights_off(self) -> None:
+        """Turn off under-bed lights (MotoSleep only supports toggle)."""
+        await self.write_command(self._build_command(MotoSleepCommands.LIGHTS_TOGGLE))
+
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
         await self.write_command(self._build_command(MotoSleepCommands.LIGHTS_TOGGLE))
