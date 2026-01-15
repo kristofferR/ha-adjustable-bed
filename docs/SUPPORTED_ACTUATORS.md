@@ -332,7 +332,7 @@ Position data includes:
 
 ## MotoSleep
 
-**Status:** ⚠️ Untested
+**Status:** 🔄 Works, improvements in progress
 
 ### Known Models
 - Beds with HHC (Hangzhou Huaci) controllers

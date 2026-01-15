@@ -40,11 +40,11 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | **[Linak](docs/SUPPORTED_ACTUATORS.md#linak)** | ✅ Fully tested | Full feature support including position feedback |
 | **[Keeson](docs/SUPPORTED_ACTUATORS.md#keeson)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
 | **[Richmat](docs/SUPPORTED_ACTUATORS.md#richmat)** | ✅ Works | Improvements in progress |
+| **[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep)** | ✅ Works | Improvements in progress |
 
 ### Implemented, Need Testers
 
 [Solace](docs/SUPPORTED_ACTUATORS.md#solace) ·
-[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep) ·
 [Leggett & Platt](docs/SUPPORTED_ACTUATORS.md#leggett--platt) ·
 [Reverie](docs/SUPPORTED_ACTUATORS.md#reverie) ·
 [Okimat/Okin](docs/SUPPORTED_ACTUATORS.md#okimatokin) ·
