@@ -215,10 +215,14 @@ LEGGETT_VARIANTS: Final = {
 # Richmat variants (auto-detected, but can be overridden)
 RICHMAT_VARIANT_NORDIC: Final = "nordic"
 RICHMAT_VARIANT_WILINKE: Final = "wilinke"
+# Richmat remote codes (for documentation - all use same command values)
+# Reference: https://github.com/richardhopton/smartbed-mqtt/blob/main/src/Richmat/remoteFeatures.ts
+RICHMAT_VARIANT_190_0055: Final = "190-0055"
 RICHMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
     RICHMAT_VARIANT_NORDIC: "Nordic (single-byte commands)",
     RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with checksum)",
+    RICHMAT_VARIANT_190_0055: "190-0055 (Head, Pillow, Feet, Massage, Lights)",
 }
 
 # Octo variants
@@ -242,6 +246,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_OKIN,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    RICHMAT_VARIANT_190_0055,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
 ]
