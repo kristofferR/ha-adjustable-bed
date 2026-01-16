@@ -41,7 +41,6 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | **[Keeson](docs/SUPPORTED_ACTUATORS.md#keeson)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
 | **[Richmat](docs/SUPPORTED_ACTUATORS.md#richmat)** | ✅ Works | Improvements in progress |
 | **[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep)** | ✅ Works | Improvements in progress |
-| **[Octo](docs/SUPPORTED_ACTUATORS.md#octo)** | ✅ Works | PIN auth, lights, Star2 variant |
 
 ### Implemented, Need Testers
 
@@ -52,6 +51,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 [Jiecang](docs/SUPPORTED_ACTUATORS.md#jiecang) ·
 [DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin) ·
 [Serta](docs/SUPPORTED_ACTUATORS.md#serta) ·
+[Octo](docs/SUPPORTED_ACTUATORS.md#octo) ·
 [Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900)
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) if it works!
