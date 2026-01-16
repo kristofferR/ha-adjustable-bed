@@ -270,6 +270,145 @@ class TestRichmatMovement:
             RICHMAT_NORDIC_CHAR_UUID, expected_end, response=True
         )
 
+    async def test_move_lumbar_up(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move lumbar up sends LUMBAR_UP command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_lumbar_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        # First call should be LUMBAR_UP
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_LUMBAR_UP)
+        assert first_command == expected
+
+    async def test_move_lumbar_down(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move lumbar down sends LUMBAR_DOWN command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_lumbar_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        # First call should be LUMBAR_DOWN
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_LUMBAR_DOWN)
+        assert first_command == expected
+
+    async def test_move_pillow_up(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move pillow up sends PILLOW_UP command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_pillow_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        # First call should be PILLOW_UP
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_PILLOW_UP)
+        assert first_command == expected
+
+    async def test_move_pillow_down(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move pillow down sends PILLOW_DOWN command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_pillow_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        # First call should be PILLOW_DOWN
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_PILLOW_DOWN)
+        assert first_command == expected
+
+    async def test_has_lumbar_support(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Richmat controller reports lumbar support with default 'auto' remote."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.has_lumbar_support is True
+
+    async def test_has_pillow_support(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Richmat controller reports pillow support with default 'auto' remote."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.has_pillow_support is True
+
+
+class TestRichmatFeatureDetection:
+    """Test Richmat remote-based feature detection."""
+
+    def test_v1rm_no_pillow_no_lumbar(self):
+        """Test V1RM remote has no pillow or lumbar support."""
+        from custom_components.adjustable_bed.beds.richmat import RichmatController
+
+        # Create controller with V1RM remote code
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=False, remote_code="V1RM")
+
+        assert controller.has_pillow_support is False
+        assert controller.has_lumbar_support is False
+        assert controller.supports_preset_zero_g is True
+        assert controller.supports_preset_tv is False
+
+    def test_190_0055_pillow_no_lumbar(self):
+        """Test 190-0055 remote has pillow but no lumbar support."""
+        from custom_components.adjustable_bed.beds.richmat import RichmatController
+
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=False, remote_code="190-0055")
+
+        assert controller.has_pillow_support is True
+        assert controller.has_lumbar_support is False
+
+    def test_virm_full_features(self):
+        """Test VIRM remote has full feature support."""
+        from custom_components.adjustable_bed.beds.richmat import RichmatController
+
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=False, remote_code="VIRM")
+
+        assert controller.has_pillow_support is True
+        assert controller.has_lumbar_support is True
+        assert controller.supports_preset_zero_g is True
+        assert controller.supports_preset_anti_snore is True
+
 
 class TestRichmatPresets:
     """Test Richmat preset commands."""

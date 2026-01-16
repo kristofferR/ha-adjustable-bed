@@ -1,5 +1,6 @@
 """Constants for the Adjustable Bed integration."""
 
+from enum import IntFlag
 from typing import Final
 
 DOMAIN: Final = "adjustable_bed"
@@ -17,6 +18,7 @@ CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
 CONF_OCTO_PIN: Final = "octo_pin"
+CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"
@@ -229,13 +231,17 @@ OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-")
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt")
 
-# Richmat Nordic name patterns (e.g., QRRM157052)
-RICHMAT_NAME_PATTERNS: Final = ("qrrm",)
+# Richmat Nordic name patterns (e.g., QRRM157052, Sleep Function 2.0)
+RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function")
 
 # Ergomotion name patterns
 # - "ergomotion", "ergo" (generic)
 # - "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
 ERGOMOTION_NAME_PATTERNS: Final = ("ergomotion", "ergo", "serta-i")
+
+# Octo name patterns
+# - "da1458x" - Dialog Semiconductor BLE SoC used in some Octo receivers
+OCTO_NAME_PATTERNS: Final = ("da1458x",)
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
@@ -260,17 +266,167 @@ LEGGETT_VARIANTS: Final = {
     LEGGETT_VARIANT_OKIN: "Okin (requires BLE pairing)",
 }
 
-# Richmat variants (auto-detected, but can be overridden)
+# Richmat protocol variants (auto-detected, but can be overridden)
 RICHMAT_VARIANT_NORDIC: Final = "nordic"
 RICHMAT_VARIANT_WILINKE: Final = "wilinke"
-# Richmat remote codes (for documentation - all use same command values)
-# Reference: https://github.com/richardhopton/smartbed-mqtt/blob/main/src/Richmat/remoteFeatures.ts
-RICHMAT_VARIANT_190_0055: Final = "190-0055"
 RICHMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
     RICHMAT_VARIANT_NORDIC: "Nordic (single-byte commands)",
     RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with checksum)",
-    RICHMAT_VARIANT_190_0055: "190-0055 (Head, Pillow, Feet, Massage, Lights)",
+}
+
+
+# Richmat feature flags for remote-based feature detection
+# Reference: https://github.com/richardhopton/smartbed-mqtt/blob/main/src/Richmat/Features.ts
+class RichmatFeatures(IntFlag):
+    """Feature flags for Richmat beds based on remote code."""
+
+    NONE = 0
+
+    # Presets
+    PRESET_FLAT = 1 << 0
+    PRESET_ANTI_SNORE = 1 << 1
+    PRESET_LOUNGE = 1 << 2
+    PRESET_MEMORY_1 = 1 << 3
+    PRESET_MEMORY_2 = 1 << 4
+    PRESET_TV = 1 << 5
+    PRESET_ZERO_G = 1 << 6
+
+    # Program (save to memory)
+    PROGRAM_ANTI_SNORE = 1 << 7
+    PROGRAM_LOUNGE = 1 << 8
+    PROGRAM_MEMORY_1 = 1 << 9
+    PROGRAM_MEMORY_2 = 1 << 10
+    PROGRAM_TV = 1 << 11
+    PROGRAM_ZERO_G = 1 << 12
+
+    # Lights
+    UNDER_BED_LIGHTS = 1 << 13
+
+    # Massage
+    MASSAGE_HEAD_STEP = 1 << 14
+    MASSAGE_FOOT_STEP = 1 << 15
+    MASSAGE_MODE = 1 << 16
+    MASSAGE_TOGGLE = 1 << 17
+
+    # Motors
+    MOTOR_HEAD = 1 << 18
+    MOTOR_FEET = 1 << 19
+    MOTOR_PILLOW = 1 << 20
+    MOTOR_LUMBAR = 1 << 21
+
+
+# Richmat remote codes and their supported features
+# Reference: https://github.com/richardhopton/smartbed-mqtt/blob/main/src/Richmat/remoteFeatures.ts
+RICHMAT_REMOTE_AUTO: Final = "auto"
+RICHMAT_REMOTE_AZRN: Final = "AZRN"
+RICHMAT_REMOTE_BVRM: Final = "BVRM"
+RICHMAT_REMOTE_VIRM: Final = "VIRM"
+RICHMAT_REMOTE_V1RM: Final = "V1RM"
+RICHMAT_REMOTE_W6RM: Final = "W6RM"
+RICHMAT_REMOTE_X1RM: Final = "X1RM"
+RICHMAT_REMOTE_ZR10: Final = "ZR10"
+RICHMAT_REMOTE_ZR60: Final = "ZR60"
+RICHMAT_REMOTE_I7RM: Final = "I7RM"
+RICHMAT_REMOTE_190_0055: Final = "190-0055"
+
+# Display names for remote selection
+RICHMAT_REMOTES: Final = {
+    RICHMAT_REMOTE_AUTO: "Auto (all features enabled)",
+    RICHMAT_REMOTE_AZRN: "AZRN (Head, Pillow, Feet)",
+    RICHMAT_REMOTE_BVRM: "BVRM (Head, Feet, Massage)",
+    RICHMAT_REMOTE_VIRM: "VIRM (Head, Feet, Pillow, Lumbar, Massage, Lights)",
+    RICHMAT_REMOTE_V1RM: "V1RM (Head, Feet)",
+    RICHMAT_REMOTE_W6RM: "W6RM (Head, Feet, Massage, Lights)",
+    RICHMAT_REMOTE_X1RM: "X1RM (Head, Feet)",
+    RICHMAT_REMOTE_ZR10: "ZR10 (Head, Feet, Lights)",
+    RICHMAT_REMOTE_ZR60: "ZR60 (Head, Feet, Lights)",
+    RICHMAT_REMOTE_I7RM: "I7RM / HJH85 / Sleep Function 2.0 (Head, Feet, Pillow, Lumbar, Massage, Lights)",
+    RICHMAT_REMOTE_190_0055: "190-0055 (Head, Pillow, Feet, Massage, Lights)",
+}
+
+# Feature sets for each remote code
+_F = RichmatFeatures  # Shorthand for readability
+RICHMAT_REMOTE_FEATURES: Final = {
+    RICHMAT_REMOTE_AUTO: (
+        # All features enabled for auto mode
+        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_LOUNGE | _F.PRESET_MEMORY_1 |
+        _F.PRESET_MEMORY_2 | _F.PRESET_TV | _F.PRESET_ZERO_G |
+        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
+        _F.PROGRAM_MEMORY_2 | _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+    ),
+    RICHMAT_REMOTE_AZRN: (
+        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 | _F.PRESET_MEMORY_2 |
+        _F.PRESET_TV | _F.PRESET_ZERO_G |
+        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
+        _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
+        _F.MOTOR_HEAD | _F.MOTOR_PILLOW | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_BVRM: (
+        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 | _F.PRESET_MEMORY_2 |
+        _F.PRESET_TV | _F.PRESET_ZERO_G |
+        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 | _F.PROGRAM_MEMORY_2 |
+        _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_VIRM: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+    ),
+    RICHMAT_REMOTE_V1RM: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_W6RM: (
+        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_LOUNGE | _F.PRESET_MEMORY_1 |
+        _F.PRESET_MEMORY_2 | _F.PRESET_TV | _F.PRESET_ZERO_G |
+        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
+        _F.PROGRAM_MEMORY_2 | _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_X1RM: (
+        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_ZERO_G | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_ZR10: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.UNDER_BED_LIGHTS |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    RICHMAT_REMOTE_ZR60: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.UNDER_BED_LIGHTS |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET
+    ),
+    # I7RM - same features as VIRM (full-featured remote)
+    RICHMAT_REMOTE_I7RM: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+    ),
+    # 190-0055 - Has Pillow but NOT Lumbar
+    RICHMAT_REMOTE_190_0055: (
+        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
+        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD | _F.MOTOR_PILLOW | _F.MOTOR_FEET
+    ),
 }
 
 # Octo variants
@@ -317,7 +473,6 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_OKIN,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
-    RICHMAT_VARIANT_190_0055,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     OKIMAT_VARIANT_80608,

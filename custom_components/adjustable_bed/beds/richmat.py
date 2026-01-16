@@ -17,8 +17,11 @@ from ..const import (
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_SINGLE,
     RICHMAT_PROTOCOL_WILINKE,
+    RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTE_FEATURES,
     RICHMAT_WILINKE_CHAR_UUIDS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RichmatFeatures,
 )
 from .base import BedController
 
@@ -79,6 +82,7 @@ class RichmatController(BedController):
         coordinator: AdjustableBedCoordinator,
         is_wilinke: bool = False,
         char_uuid: str | None = None,
+        remote_code: str | None = None,
     ) -> None:
         """Initialize the Richmat controller.
 
@@ -86,11 +90,16 @@ class RichmatController(BedController):
             coordinator: The AdjustableBedCoordinator instance
             is_wilinke: Whether this is a WiLinke variant (uses 5-byte commands)
             char_uuid: The characteristic UUID to use for writing commands
+            remote_code: The remote code for feature detection (e.g., "VIRM", "I7RM")
         """
         super().__init__(coordinator)
         self._is_wilinke = is_wilinke
         self._char_uuid = char_uuid or RICHMAT_NORDIC_CHAR_UUID
         self._notify_callback: Callable[[str, float], None] | None = None
+        self._remote_code = remote_code or RICHMAT_REMOTE_AUTO
+        self._features = RICHMAT_REMOTE_FEATURES.get(
+            self._remote_code, RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
+        )
 
         # Determine command protocol based on variant
         self._command_protocol = (
@@ -98,10 +107,11 @@ class RichmatController(BedController):
         )
 
         _LOGGER.debug(
-            "RichmatController initialized (wilinke: %s, char: %s, protocol: %s)",
+            "RichmatController initialized (wilinke: %s, char: %s, protocol: %s, remote: %s)",
             is_wilinke,
             self._char_uuid,
             self._command_protocol,
+            self._remote_code,
         )
 
     @property
@@ -109,18 +119,35 @@ class RichmatController(BedController):
         """Return the UUID of the control characteristic."""
         return self._char_uuid
 
-    # Capability properties
+    @property
+    def features(self) -> RichmatFeatures:
+        """Return the feature flags for this controller."""
+        return self._features
+
+    # Capability properties based on remote code features
     @property
     def supports_preset_zero_g(self) -> bool:
-        return True
+        return bool(self._features & RichmatFeatures.PRESET_ZERO_G)
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        return True
+        return bool(self._features & RichmatFeatures.PRESET_ANTI_SNORE)
 
     @property
     def supports_preset_tv(self) -> bool:
-        return True
+        return bool(self._features & RichmatFeatures.PRESET_TV)
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return bool(self._features & RichmatFeatures.PRESET_LOUNGE)
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        return bool(self._features & RichmatFeatures.MOTOR_LUMBAR)
+
+    @property
+    def has_pillow_support(self) -> bool:
+        return bool(self._features & RichmatFeatures.MOTOR_PILLOW)
 
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
@@ -263,6 +290,30 @@ class RichmatController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
+        await self.move_head_stop()
+
+    async def move_lumbar_up(self) -> None:
+        """Move lumbar up."""
+        await self._move_with_stop(RichmatCommands.MOTOR_LUMBAR_UP)
+
+    async def move_lumbar_down(self) -> None:
+        """Move lumbar down."""
+        await self._move_with_stop(RichmatCommands.MOTOR_LUMBAR_DOWN)
+
+    async def move_lumbar_stop(self) -> None:
+        """Stop lumbar motor."""
+        await self.move_head_stop()
+
+    async def move_pillow_up(self) -> None:
+        """Move pillow up."""
+        await self._move_with_stop(RichmatCommands.MOTOR_PILLOW_UP)
+
+    async def move_pillow_down(self) -> None:
+        """Move pillow down."""
+        await self._move_with_stop(RichmatCommands.MOTOR_PILLOW_DOWN)
+
+    async def move_pillow_stop(self) -> None:
+        """Stop pillow motor."""
         await self.move_head_stop()
 
     async def stop_all(self) -> None:
