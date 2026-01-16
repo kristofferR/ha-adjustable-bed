@@ -279,6 +279,30 @@
     "stop_all": {
       "name": "Stop All Motors",
       "description": "Immediately stop all bed motors."
+    },
+    "run_diagnostics": {
+      "name": "Run BLE Diagnostics",
+      "description": "Capture BLE protocol data from a device for troubleshooting and adding support for new bed models.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "A configured adjustable bed device to diagnose."
+        },
+        "target_address": {
+          "name": "Target Address",
+          "description": "Bluetooth MAC address of an unconfigured device (e.g., AA:BB:CC:DD:EE:FF)."
+        },
+        "capture_duration": {
+          "name": "Capture Duration",
+          "description": "How long to capture notifications in seconds (10-300). Operate the physical remote during this time."
+        }
+      }
+    }
+  },
+  "issues": {
+    "unsupported_device": {
+      "title": "Unsupported BLE device: {name}",
+      "description": "A Bluetooth device was detected that could not be identified as a supported adjustable bed.\n\n**Device:** {name}\n**Address:** `{address}`\n**Reason:** {reason}\n\nIf this is an adjustable bed that you'd like to see supported, please [report it on GitHub]({github_url}) with as much information as possible about your bed model.\n\nYou can also run the **Run BLE Diagnostics** service with this device's address to capture protocol data that can help us add support."
     }
   }
 }

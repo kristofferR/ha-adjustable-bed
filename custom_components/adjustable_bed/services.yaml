@@ -51,3 +51,33 @@ stop_all:
       selector:
         device:
           integration: adjustable_bed
+
+run_diagnostics:
+  name: Run BLE Diagnostics
+  description: Capture BLE protocol data from a device for troubleshooting and adding support for new bed models. Either provide a configured device or a target MAC address.
+  fields:
+    device_id:
+      name: Device
+      description: A configured adjustable bed device to diagnose.
+      required: false
+      selector:
+        device:
+          integration: adjustable_bed
+    target_address:
+      name: Target Address
+      description: Bluetooth MAC address of an unconfigured device (e.g., AA:BB:CC:DD:EE:FF). Use this to diagnose devices that haven't been set up yet.
+      required: false
+      example: "AA:BB:CC:DD:EE:FF"
+      selector:
+        text:
+    capture_duration:
+      name: Capture Duration
+      description: How long to capture notifications in seconds. Operate the physical remote during this time to generate data.
+      required: false
+      default: 120
+      selector:
+        number:
+          min: 10
+          max: 300
+          unit_of_measurement: seconds
+          mode: box

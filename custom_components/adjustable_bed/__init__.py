@@ -20,7 +20,15 @@ from .coordinator import AdjustableBedCoordinator
 SERVICE_GOTO_PRESET = "goto_preset"
 SERVICE_SAVE_PRESET = "save_preset"
 SERVICE_STOP_ALL = "stop_all"
+SERVICE_RUN_DIAGNOSTICS = "run_diagnostics"
 ATTR_PRESET = "preset"
+ATTR_TARGET_ADDRESS = "target_address"
+ATTR_CAPTURE_DURATION = "capture_duration"
+
+# Default capture duration for diagnostics (seconds)
+DEFAULT_CAPTURE_DURATION = 120
+MIN_CAPTURE_DURATION = 10
+MAX_CAPTURE_DURATION = 300
 
 # Timeout for initial connection at startup
 # Must be long enough to cover at least one full connection attempt (30s) with margin
@@ -192,6 +200,101 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
+    async def handle_run_diagnostics(call: ServiceCall) -> None:
+        """Handle run_diagnostics service call."""
+        from homeassistant.components.persistent_notification import async_create
+
+        from .ble_diagnostics import BLEDiagnosticRunner, save_diagnostic_report
+
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        target_address = call.data.get(ATTR_TARGET_ADDRESS)
+        capture_duration = call.data.get(ATTR_CAPTURE_DURATION, DEFAULT_CAPTURE_DURATION)
+
+        # Determine which address to use
+        address: str | None = None
+        coordinator: AdjustableBedCoordinator | None = None
+
+        if target_address:
+            # Use the provided target address
+            from .config_flow import is_valid_mac_address
+
+            address = target_address.upper().replace("-", ":")
+            if not is_valid_mac_address(address):
+                _LOGGER.error(
+                    "Invalid MAC address format for run_diagnostics: %s",
+                    target_address,
+                )
+                return
+            _LOGGER.info(
+                "Running diagnostics on unconfigured device at %s",
+                address,
+            )
+        elif device_ids:
+            # Use the first device ID to get the coordinator
+            device_id = device_ids[0]
+            coordinator = await _get_coordinator_from_device(hass, device_id)
+            if coordinator:
+                address = coordinator.address
+                _LOGGER.info(
+                    "Running diagnostics on configured device %s at %s",
+                    coordinator.name,
+                    address,
+                )
+            else:
+                _LOGGER.error(
+                    "Could not find Adjustable Bed device with ID %s for run_diagnostics service",
+                    device_id,
+                )
+                return
+        else:
+            _LOGGER.error("No device_id or target_address provided for run_diagnostics service")
+            return
+
+        # Run diagnostics
+        try:
+            runner = BLEDiagnosticRunner(
+                hass,
+                address,
+                capture_duration=capture_duration,
+                coordinator=coordinator,
+            )
+            report = await runner.run_diagnostics()
+            filepath = save_diagnostic_report(hass, report, address)
+
+            # Create persistent notification
+            async_create(
+                hass,
+                f"BLE diagnostic report saved to:\n\n`{filepath}`\n\n"
+                f"Captured {len(report.notifications)} notifications over {capture_duration} seconds.\n\n"
+                "Please attach this file when reporting the device.",
+                title="Adjustable Bed Diagnostic Report Ready",
+                notification_id=f"adjustable_bed_diagnostic_{address.replace(':', '_').lower()}",
+            )
+            _LOGGER.info("Diagnostic report saved to %s", filepath)
+        except Exception as err:
+            _LOGGER.exception("Failed to run diagnostics for %s: %s", address, err)
+            async_create(
+                hass,
+                f"Failed to run BLE diagnostics for {address}:\n\n{err}",
+                title="Adjustable Bed Diagnostic Error",
+                notification_id=f"adjustable_bed_diagnostic_error_{address.replace(':', '_').lower()}",
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_RUN_DIAGNOSTICS,
+        handle_run_diagnostics,
+        schema=vol.Schema(
+            {
+                vol.Optional(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Optional(ATTR_TARGET_ADDRESS): cv.string,
+                vol.Optional(ATTR_CAPTURE_DURATION, default=DEFAULT_CAPTURE_DURATION): vol.All(
+                    vol.Coerce(int), vol.Range(min=MIN_CAPTURE_DURATION, max=MAX_CAPTURE_DURATION)
+                ),
+            }
+        ),
+    )
+
     _LOGGER.debug("Registered Adjustable Bed services")
 
 
@@ -219,7 +322,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 def _async_unregister_services(hass: HomeAssistant) -> None:
     """Unregister Adjustable Bed services."""
-    for service in (SERVICE_GOTO_PRESET, SERVICE_SAVE_PRESET, SERVICE_STOP_ALL):
+    for service in (SERVICE_GOTO_PRESET, SERVICE_SAVE_PRESET, SERVICE_STOP_ALL, SERVICE_RUN_DIAGNOSTICS):
         if hass.services.has_service(DOMAIN, service):
             hass.services.async_remove(DOMAIN, service)
     _LOGGER.debug("Unregistered Adjustable Bed services")

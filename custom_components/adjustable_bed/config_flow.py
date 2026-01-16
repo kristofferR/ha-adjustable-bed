@@ -91,6 +91,11 @@ from .const import (
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
 )
+from .unsupported import (
+    capture_device_info,
+    create_unsupported_device_issue,
+    log_unsupported_device,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -429,6 +434,27 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     return None
 
 
+def _determine_unsupported_reason(service_info: BluetoothServiceInfoBleak) -> str:
+    """Determine why a device was not detected as a supported bed."""
+    device_name = (service_info.name or "").lower()
+
+    # Check if it was excluded
+    for pattern in EXCLUDED_DEVICE_PATTERNS:
+        if pattern in device_name:
+            return f"Device name contains excluded pattern '{pattern}' (non-bed device)"
+
+    # Check if it has any service UUIDs at all
+    if not service_info.service_uuids:
+        return "No BLE service UUIDs advertised"
+
+    # Check if it has manufacturer data but unknown protocol
+    if service_info.manufacturer_data:
+        return "Has manufacturer data but no recognized service UUIDs"
+
+    # Generic reason
+    return "No matching service UUIDs or name patterns found"
+
+
 class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Adjustable Bed."""
 
@@ -470,6 +496,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         bed_type = detect_bed_type(discovery_info)
         if bed_type is None:
+            # Capture device info for troubleshooting
+            device_info = capture_device_info(discovery_info)
+            reason = _determine_unsupported_reason(discovery_info)
+
+            # Log detailed info and create Repairs issue
+            log_unsupported_device(device_info, reason)
+            await create_unsupported_device_issue(self.hass, device_info, reason)
+
             _LOGGER.debug(
                 "Device %s is not a supported bed type, aborting",
                 discovery_info.address,
