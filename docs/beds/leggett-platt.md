@@ -18,6 +18,22 @@
 | RGB Lighting | ✅ | ❌ |
 | Anti-Snore | ✅ | ❌ |
 
+## Detection
+
+Leggett & Platt beds have two protocol variants with different detection methods:
+
+### Gen2 Variant
+- **Service UUID:** `45e25100-...` (unique to Gen2)
+- Detection: Automatic by service UUID
+
+### Okin Variant
+- **Service UUID:** `62741523-...` (shared with Okimat and Nectar)
+- Detection: By device name patterns ("leggett", "l&p", "adjustable base")
+
+**If your Okin bed is misidentified as Okimat:** Change the bed type in integration settings and select the Okin variant.
+
+See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
+
 ## Gen2 Variant (ASCII Commands)
 
 **Service UUID:** `45e25100-3171-4cfc-ae89-1d83cf8d8071`

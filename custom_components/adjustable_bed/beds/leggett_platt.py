@@ -1,8 +1,26 @@
 """Leggett & Platt bed controller implementation.
 
 Leggett & Platt beds have two protocol variants:
-- Gen2: ASCII text commands (Richmat-based)
-- Okin: Binary commands with 6-byte format (requires BLE pairing)
+
+Gen2 (Richmat-based, ASCII commands):
+    Service UUID: 45e25100-3171-4cfc-ae89-1d83cf8d8071
+    Write characteristic: 45e25101-3171-4cfc-ae89-1d83cf8d8071
+    Read characteristic: 45e25103-3171-4cfc-ae89-1d83cf8d8071
+    Command format: ASCII text (e.g., b"MEM 0" for flat preset)
+    Motor timing: Single command per action; presets move to position automatically
+    Position feedback: Not supported
+
+Okin variant (requires BLE pairing):
+    Service UUID: 62741523-52f9-8864-b1ab-3b3a8d65950b (shared with Okimat/Nectar)
+    Write characteristic: 62741525-52f9-8864-b1ab-3b3a8d65950b
+    Command format: 6-byte binary [0x04, 0x02, <4-byte-command-big-endian>]
+    Motor timing: 25 pulses at 200ms intervals for continuous movement
+    Position feedback: Not supported
+    Pairing: Required before first use; handled by coordinator
+
+Note: The Okin variant shares its BLE service UUID with Okimat and Nectar beds.
+Detection uses device name patterns ("leggett", "l&p") to distinguish between these
+bed types. See okin_protocol.py for the shared binary protocol specification.
 """
 
 from __future__ import annotations
@@ -18,21 +36,12 @@ from ..const import (
     LEGGETT_OKIN_CHAR_UUID,
 )
 from .base import BedController
+from .okin_protocol import build_okin_command
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def int_to_bytes(value: int) -> list[int]:
-    """Convert an integer to 4 bytes (big-endian)."""
-    return [
-        (value >> 24) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 8) & 0xFF,
-        value & 0xFF,
-    ]
 
 
 class LeggettPlattGen2Commands:
@@ -161,8 +170,15 @@ class LeggettPlattController(BedController):
         return self._variant != "okin"
 
     def _build_okin_command(self, command_value: int) -> bytes:
-        """Build Okin binary command: [0x04, 0x02, ...int_bytes]."""
-        return bytes([0x04, 0x02] + int_to_bytes(command_value))
+        """Build Okin binary command by delegating to build_okin_command.
+
+        Args:
+            command_value: 32-bit command value (0 to 0xFFFFFFFF)
+
+        Returns:
+            6-byte command: [0x04, 0x02, <4-byte-command-big-endian>]
+        """
+        return build_okin_command(command_value)
 
     async def write_command(
         self,

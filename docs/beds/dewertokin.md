@@ -18,6 +18,18 @@
 | Under-bed Lights | ✅ |
 | Zero-G / TV / Quiet Sleep | ✅ |
 
+## Protocol Family
+
+DewertOkin uses the same Okin 6-byte command format (`[0x04, 0x02, <4-byte>]`) as:
+- **Okimat** - UUID-based writes to `62741525-...`
+- **Leggett & Platt Okin** - UUID-based writes to `62741525-...`
+
+The key difference is that DewertOkin writes to a BLE **handle** (`0x0013`) rather than a UUID-based characteristic.
+
+Detection is by **device name patterns** ("dewertokin", "dewert", "a h beard", "hankook"), not service UUID.
+
+See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
+
 ## Protocol Details
 
 **Write Handle:** `0x0013`

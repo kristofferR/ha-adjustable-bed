@@ -54,6 +54,29 @@ For fine-tuning motor movement behavior, you can adjust these settings in the in
 
 ---
 
+## Okin Protocol Family
+
+Multiple bed brands use controllers based on OKIN technology (now part of DewertOkin GmbH). These beds share similar protocols and sometimes even the same BLE service UUID, which can cause detection ambiguity.
+
+### Beds Using OKIN Service UUID (`62741523-...`)
+
+| Bed Type | Command Format | Detection Method |
+|----------|---------------|------------------|
+| [Okimat](beds/okimat.md) | 6-byte binary | Name patterns or fallback |
+| [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte binary | Name patterns |
+| [Nectar](beds/nectar.md) | 7-byte binary | Name contains "nectar" |
+
+### Beds Using OKIN Protocol with Different UUIDs
+
+| Bed Type | Write Method | Detection Method |
+|----------|-------------|------------------|
+| [DewertOkin](beds/dewertokin.md) | Handle 0x0013 | Name patterns |
+| [Leggett & Platt Gen2](beds/leggett-platt.md) | UUID `45e25100-...` | Service UUID |
+
+**If auto-detection fails:** These beds can be manually configured. If your bed uses the OKIN service UUID but is detected as the wrong type, change the bed type in the integration settings.
+
+---
+
 ## Not Yet Supported
 
 ### Sleeptracker AI (Cloud-based)
@@ -87,7 +110,8 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - `HHC*` → MotoSleep
    - `DPG*` or `Desk*` → Linak
    - `Nectar*` → Nectar
-   - `Okin*` → Okimat
+   - `Okimat*`, `Okin RF*`, `Okin BLE*` → Okimat
+   - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
    - `Ergomotion*` or `Ergo*` → Ergomotion (use Keeson)
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
    - `Dewert*`, `A H Beard*`, or `Hankook*` → DewertOkin
@@ -95,6 +119,8 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
 4. **Check service UUIDs** (using nRF Connect):
+   - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
+   - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
 
 If your bed isn't auto-detected, use manual configuration and try different bed types.
