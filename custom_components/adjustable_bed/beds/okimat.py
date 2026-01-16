@@ -62,6 +62,19 @@ def int_to_bytes(value: int) -> list[int]:
 
 
 @dataclass
+class OkimatComplexCommand:
+    """A command with specific timing requirements.
+
+    Some Okimat commands require specific repeat count and delay timing.
+    Reference: https://github.com/richardhopton/smartbed-mqtt/commit/6b18011
+    """
+
+    data: int  # The command code
+    count: int  # Number of times to repeat
+    wait_time: int  # Delay in ms between repeats
+
+
+@dataclass
 class OkimatRemoteConfig:
     """Configuration for a specific Okimat remote model."""
 
@@ -79,8 +92,8 @@ class OkimatRemoteConfig:
     memory_2: int | None = None
     memory_3: int | None = None
     memory_4: int | None = None
-    memory_save: int | None = None
-    toggle_lights: int = 0x20000  # UBL (under-bed lights)
+    memory_save: int | OkimatComplexCommand | None = None
+    toggle_lights: int | OkimatComplexCommand = 0x20000  # UBL (under-bed lights)
 
 
 # Remote configurations based on smartbed-mqtt supportedRemotes.ts
@@ -135,7 +148,8 @@ OKIMAT_REMOTES: dict[str, OkimatRemoteConfig] = {
         flat=0x10000000,
         memory_1=0x1000,
         memory_2=0x2000,
-        memory_save=0x10000,
+        memory_save=OkimatComplexCommand(data=0x10000, count=25, wait_time=200),
+        toggle_lights=OkimatComplexCommand(data=0x20000, count=50, wait_time=100),
     ),
 }
 
@@ -509,6 +523,30 @@ class OkimatController(BedController):
                 "Memory %d not available on remote %s", memory_num, self._variant
             )
 
+    async def _execute_command(
+        self,
+        cmd: int | OkimatComplexCommand,
+        default_count: int,
+        default_delay_ms: int,
+    ) -> None:
+        """Execute a command with appropriate timing.
+
+        Handles both simple int commands (using default timing) and
+        OkimatComplexCommand objects (using their embedded timing).
+        """
+        if isinstance(cmd, OkimatComplexCommand):
+            await self.write_command(
+                self._build_command(cmd.data),
+                repeat_count=cmd.count,
+                repeat_delay_ms=cmd.wait_time,
+            )
+        else:
+            await self.write_command(
+                self._build_command(cmd),
+                repeat_count=default_count,
+                repeat_delay_ms=default_delay_ms,
+            )
+
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory.
 
@@ -516,18 +554,14 @@ class OkimatController(BedController):
         last-used memory slot. The memory_num parameter is logged but the actual
         slot saved depends on the remote's internal state.
         """
-        if self._remote.memory_save is not None:
+        cmd = self._remote.memory_save
+        if cmd is not None:
             _LOGGER.debug(
                 "Saving to memory slot %d on remote %s (remote determines actual slot)",
                 memory_num,
                 self._variant,
             )
-            # Memory save requires holding the command
-            await self.write_command(
-                self._build_command(self._remote.memory_save),
-                repeat_count=10,
-                repeat_delay_ms=200,
-            )
+            await self._execute_command(cmd, default_count=10, default_delay_ms=200)
         else:
             _LOGGER.warning(
                 "Memory save not available on remote %s", self._variant
@@ -536,10 +570,8 @@ class OkimatController(BedController):
     # Light methods
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
-        await self.write_command(
-            self._build_command(self._remote.toggle_lights),
-            repeat_count=50,
-            repeat_delay_ms=100,
+        await self._execute_command(
+            self._remote.toggle_lights, default_count=50, default_delay_ms=100
         )
 
     # Massage methods (may not work on all Okimat remotes - inherited from Keeson)

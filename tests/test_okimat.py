@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okimat import (
     OKIMAT_REMOTES,
+    OkimatComplexCommand,
     OkimatController,
     OkimatRemoteConfig,
     int_to_bytes,
@@ -29,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_VARIANT_82418,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
+    OKIMAT_VARIANT_94238,
     OKIMAT_WRITE_CHAR_UUID,
     VARIANT_AUTO,
 )
@@ -100,7 +102,28 @@ class TestOkimatRemoteConfigs:
     def test_all_remotes_have_lights(self):
         """Test all remotes support under-bed lights."""
         for variant, remote in OKIMAT_REMOTES.items():
-            assert remote.toggle_lights == 0x20000, f"Remote {variant} missing lights"
+            cmd = remote.toggle_lights
+            if isinstance(cmd, OkimatComplexCommand):
+                assert cmd.data == 0x20000, f"Remote {variant} has wrong lights command"
+            else:
+                assert cmd == 0x20000, f"Remote {variant} missing lights"
+
+    def test_remote_94238_complex_commands(self):
+        """Test 94238 RF FLASHLINE uses complex commands for lights and memory save."""
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_94238]
+        assert remote.name == "RF FLASHLINE"
+
+        # UBL (Under-Bed Lights) has complex command with specific timing
+        assert isinstance(remote.toggle_lights, OkimatComplexCommand)
+        assert remote.toggle_lights.data == 0x20000
+        assert remote.toggle_lights.count == 50
+        assert remote.toggle_lights.wait_time == 100
+
+        # Memory save also has complex command with specific timing
+        assert isinstance(remote.memory_save, OkimatComplexCommand)
+        assert remote.memory_save.data == 0x10000
+        assert remote.memory_save.count == 25
+        assert remote.memory_save.wait_time == 200
 
 
 @pytest.fixture
@@ -160,6 +183,37 @@ def mock_okimat_93329_config_entry(
         data=mock_okimat_93329_config_entry_data,
         unique_id="AA:BB:CC:DD:EE:FF",
         entry_id="okimat_93329_test_entry",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.fixture
+def mock_okimat_94238_config_entry_data() -> dict:
+    """Return mock config entry data for Okimat 94238 bed (complex commands)."""
+    return {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+        CONF_NAME: "Okimat 94238 Test Bed",
+        CONF_BED_TYPE: BED_TYPE_OKIMAT,
+        CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_94238,
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+
+
+@pytest.fixture
+def mock_okimat_94238_config_entry(
+    hass: HomeAssistant, mock_okimat_94238_config_entry_data: dict
+) -> MockConfigEntry:
+    """Return a mock config entry for Okimat 94238 bed."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Okimat 94238 Test Bed",
+        data=mock_okimat_94238_config_entry_data,
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="okimat_94238_test_entry",
     )
     entry.add_to_hass(hass)
     return entry
@@ -458,6 +512,32 @@ class TestOkimatPresets:
 
         assert "Memory save not available" in caplog.text
 
+    async def test_program_memory_complex_command(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_94238_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test program memory with complex command (94238 remote)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okimat_94238_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.program_memory(1)
+
+        # 94238 has complex command: data=0x10000, count=25, wait_time=200
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_94238]
+        assert isinstance(remote.memory_save, OkimatComplexCommand)
+
+        # Command should use the data field from complex command
+        expected_cmd = coordinator.controller._build_command(remote.memory_save.data)
+        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_call[0][1] == expected_cmd
+
+        # Should send count (25) commands
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 25
+
 
 class TestOkimatLights:
     """Test Okimat light commands."""
@@ -480,6 +560,54 @@ class TestOkimatLights:
         # Lights toggle sends multiple commands
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
+
+    async def test_lights_toggle_complex_command(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_94238_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test lights toggle with complex command (94238 remote)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okimat_94238_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.lights_toggle()
+
+        # 94238 has complex command: data=0x20000, count=50, wait_time=100
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_94238]
+        assert isinstance(remote.toggle_lights, OkimatComplexCommand)
+
+        # Command should use the data field from complex command
+        expected_cmd = coordinator.controller._build_command(remote.toggle_lights.data)
+        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_call[0][1] == expected_cmd
+
+        # Should send count (50) commands
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 50
+
+    async def test_lights_toggle_complex_command_timing(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_94238_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test lights toggle uses correct timing from complex command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okimat_94238_config_entry)
+        await coordinator.async_connect()
+
+        with patch.object(
+            coordinator.controller, "write_command", new_callable=AsyncMock
+        ) as mock_write:
+            await coordinator.controller.lights_toggle()
+
+            mock_write.assert_called_once()
+            _, kwargs = mock_write.call_args
+            # Verify wait_time (100) from complex command is passed as repeat_delay_ms
+            assert kwargs.get("repeat_delay_ms") == 100
+            # Verify count (50) from complex command is passed as repeat_count
+            assert kwargs.get("repeat_count") == 50
 
 
 class TestOkimatMassage:
