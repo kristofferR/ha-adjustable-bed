@@ -4,6 +4,8 @@ Octo beds use a packet-based BLE protocol with the following format:
 [0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
 
 The checksum is calculated as: ((sum_of_bytes XOR 0xff) + 1) & 0xff
+
+Response packets use 0x80 as the first byte for checksum calculation.
 """
 
 from __future__ import annotations
@@ -27,6 +29,12 @@ _LOGGER = logging.getLogger(__name__)
 OCTO_MOTOR_HEAD = 0x02
 OCTO_MOTOR_LEGS = 0x04
 
+# Feature IDs
+OCTO_FEATURE_PIN = 0x000003
+
+# Feature discovery timeout
+OCTO_FEATURE_TIMEOUT = 5.0
+
 
 class OctoController(BedController):
     """Controller for Octo beds."""
@@ -42,6 +50,12 @@ class OctoController(BedController):
         self._notify_callback: Callable[[str, float], None] | None = None
         self._pin: str = pin
         self._keepalive_task: asyncio.Task[None] | None = None
+
+        # Feature discovery state
+        self._has_pin: bool | None = None  # None = not yet discovered
+        self._pin_locked: bool | None = None
+        self._features_loaded: asyncio.Event = asyncio.Event()
+
         _LOGGER.debug(
             "OctoController initialized (PIN %s)",
             "configured" if pin else "not configured",
@@ -84,6 +98,115 @@ class OctoController(BedController):
         packet[5] = self._calculate_checksum(packet)
 
         return bytes(packet)
+
+    def _parse_response_packet(self, message: bytes) -> dict | None:
+        """Parse a response packet from the bed.
+
+        Format: [0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
+        Response checksum is calculated with 0x80 as the first byte.
+
+        Returns:
+            Dict with 'command' and 'data' keys, or None if invalid.
+        """
+        if len(message) < 7:
+            return None
+
+        if message[0] != 0x40 or message[-1] != 0x40:
+            return None
+
+        command = [message[1], message[2]]
+        data_len = (message[3] << 8) + message[4]
+        checksum = message[5]
+        data = list(message[6:-1])
+
+        if len(data) != data_len:
+            _LOGGER.debug(
+                "Packet data length mismatch: expected %d, got %d",
+                data_len,
+                len(data),
+            )
+            return None
+
+        # Verify checksum (response uses 0x80 as first byte)
+        check_data = [0x80, *command, message[3], message[4], *data]
+        expected_checksum = self._calculate_checksum(check_data)
+        if checksum != expected_checksum:
+            _LOGGER.debug(
+                "Checksum mismatch: expected 0x%02x, got 0x%02x",
+                expected_checksum,
+                checksum,
+            )
+            return None
+
+        return {"command": command, "data": data}
+
+    def _extract_feature_value_pair(self, data: list[int]) -> tuple[int, list[int]] | None:
+        """Extract a feature ID and value from data bytes.
+
+        Data format:
+        - 3 bytes: feature ID (big-endian)
+        - 1 byte: flag (unused)
+        - 1 byte: skip length
+        - N bytes: skipped data
+        - 1 byte: unknown
+        - remaining: value bytes
+
+        Returns:
+            Tuple of (feature_id, value_bytes) or None if invalid.
+        """
+        if len(data) < 6:
+            return None
+
+        # Extract 3-byte feature ID (big-endian)
+        feature_id = (data[0] << 16) + (data[1] << 8) + data[2]
+
+        # Skip flag byte (index 3)
+        skip_length = data[4]
+
+        # Calculate value start position: 5 (header) + skip_length + 1 (unknown byte)
+        value_start = 5 + skip_length + 1
+        if value_start > len(data):
+            return None
+
+        value = data[value_start:]
+        return (feature_id, value)
+
+    def _handle_feature_response(self, data: list[int]) -> None:
+        """Process feature data from a 0x21 0x71 response."""
+        result = self._extract_feature_value_pair(data)
+        if result is None:
+            _LOGGER.debug("Could not extract feature from data: %s", data)
+            return
+
+        feature_id, value = result
+        _LOGGER.debug("Feature 0x%06x: %s", feature_id, value)
+
+        if feature_id == OCTO_FEATURE_PIN:
+            # value[0] = hasPin (0x01 if bed has PIN feature)
+            # value[1] = pinLock (0x01 if unlocked, other if locked)
+            self._has_pin = len(value) > 0 and value[0] == 0x01
+            self._pin_locked = len(value) > 1 and value[1] != 0x01
+            _LOGGER.info(
+                "PIN feature detected: hasPin=%s, pinLocked=%s",
+                self._has_pin,
+                self._pin_locked,
+            )
+            self._features_loaded.set()
+
+    def _on_notification(self, _sender: int, data: bytearray) -> None:
+        """Handle BLE notifications from the bed."""
+        _LOGGER.debug("Received notification: %s", data.hex())
+
+        packet = self._parse_response_packet(bytes(data))
+        if packet is None:
+            return
+
+        command = packet["command"]
+        packet_data = packet["data"]
+
+        # Handle feature response (0x21 0x71)
+        if command[0] == 0x21 and command[1] == 0x71:
+            self._handle_feature_response(packet_data)
 
     async def write_command(
         self,
@@ -135,17 +258,92 @@ class OctoController(BedController):
         await self.write_command(packet, repeat_count, repeat_delay_ms, cancel_event)
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
-        """Start listening for position notifications."""
+        """Start listening for notifications.
+
+        Octo beds don't support position notifications, but we use notifications
+        for feature discovery responses.
+        """
         self._notify_callback = callback
-        _LOGGER.debug("Octo beds don't support position notifications")
+        if self.client is not None and self.client.is_connected:
+            try:
+                await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
+                _LOGGER.debug("Started Octo notifications for feature discovery")
+            except BleakError as err:
+                _LOGGER.debug("Could not start notifications: %s", err)
 
     async def stop_notify(self) -> None:
-        """Stop listening for position notifications."""
-        pass
+        """Stop listening for notifications."""
+        if self.client is not None and self.client.is_connected:
+            try:
+                await self.client.stop_notify(OCTO_CHAR_UUID)
+            except BleakError:
+                pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
         pass
+
+    @property
+    def requires_pin(self) -> bool:
+        """Check if the bed requires PIN authentication.
+
+        Returns True if:
+        - Features have been discovered AND hasPin is True AND pinLocked is True
+        - OR features have not been discovered and a PIN is configured (fallback)
+        """
+        if self._has_pin is not None:
+            # Features discovered - use actual detection
+            return self._has_pin and (self._pin_locked or False)
+        # Features not discovered - fall back to config
+        return bool(self._pin)
+
+    async def discover_features(self) -> bool:
+        """Discover bed features including PIN requirement.
+
+        Sends feature request command and waits for response.
+
+        Returns:
+            True if features were discovered, False on timeout.
+        """
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.error("Cannot discover features: not connected")
+            return False
+
+        # Reset state
+        self._features_loaded.clear()
+        self._has_pin = None
+        self._pin_locked = None
+
+        _LOGGER.debug("Requesting bed features...")
+
+        try:
+            # Send feature request [0x20, 0x71]
+            await self._write_octo_command(command=[0x20, 0x71])
+
+            # Wait for response with timeout
+            try:
+                await asyncio.wait_for(
+                    self._features_loaded.wait(),
+                    timeout=OCTO_FEATURE_TIMEOUT,
+                )
+                _LOGGER.info(
+                    "Feature discovery complete: hasPin=%s, pinLocked=%s",
+                    self._has_pin,
+                    self._pin_locked,
+                )
+                return True
+            except asyncio.TimeoutError:
+                _LOGGER.debug(
+                    "Feature discovery timed out - bed may not support feature query"
+                )
+                # Set defaults for beds that don't respond to feature query
+                self._has_pin = bool(self._pin)  # Assume PIN needed if configured
+                self._pin_locked = bool(self._pin)
+                return False
+
+        except BleakError as err:
+            _LOGGER.warning("Feature discovery failed: %s", err)
+            return False
 
     async def _move_motor(
         self, motor_bits: int, direction: str, cancel_event: asyncio.Event | None = None
@@ -287,9 +485,16 @@ class OctoController(BedController):
 
         The PIN command uses [0x20, 0x43] followed by the PIN digits as integers.
         This must be sent periodically to maintain the BLE connection.
+
+        Only sends PIN if the bed requires it (detected via feature discovery
+        or assumed if PIN is configured but features not discovered).
         """
         if not self._pin:
             _LOGGER.debug("No PIN configured, skipping PIN authentication")
+            return
+
+        if not self.requires_pin:
+            _LOGGER.debug("Bed does not require PIN authentication")
             return
 
         if self.client is None or not self.client.is_connected:
@@ -317,9 +522,15 @@ class OctoController(BedController):
 
         Octo beds drop BLE connection after ~30 seconds without PIN re-authentication.
         This starts a background task to periodically send the PIN.
+
+        Only starts if the bed requires PIN authentication.
         """
         if not self._pin:
             _LOGGER.debug("No PIN configured, keep-alive not needed")
+            return
+
+        if not self.requires_pin:
+            _LOGGER.debug("Bed does not require PIN, keep-alive not needed")
             return
 
         if self._keepalive_task is not None:
