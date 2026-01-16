@@ -35,6 +35,7 @@ OCTO_MOTOR_LEGS = 0x04
 
 # Feature IDs
 OCTO_FEATURE_PIN = 0x000003
+OCTO_FEATURE_LIGHT = 0x000102
 
 # Feature discovery timeout
 OCTO_FEATURE_TIMEOUT = 5.0
@@ -58,6 +59,7 @@ class OctoController(BedController):
         # Feature discovery state
         self._has_pin: bool | None = None  # None = not yet discovered
         self._pin_locked: bool | None = None
+        self._has_lights: bool | None = None  # None = not yet discovered
         self._features_loaded: asyncio.Event = asyncio.Event()
 
         _LOGGER.debug(
@@ -195,7 +197,14 @@ class OctoController(BedController):
                 self._has_pin,
                 self._pin_locked,
             )
-            self._features_loaded.set()
+        elif feature_id == OCTO_FEATURE_LIGHT:
+            # Presence of light feature means bed has lights
+            # value[0] = current light state (0x01 = on, 0x00 = off)
+            self._has_lights = True
+            _LOGGER.info("Light feature detected: bed has under-bed lights")
+
+        # Signal that we received at least one feature response
+        self._features_loaded.set()
 
     def _on_notification(self, _sender: int, data: bytearray) -> None:
         """Handle BLE notifications from the bed."""
@@ -301,8 +310,24 @@ class OctoController(BedController):
         # Features not discovered - fall back to config
         return bool(self._pin)
 
+    @property
+    def supports_lights(self) -> bool:
+        """Check if the bed has under-bed lights.
+
+        Returns True if:
+        - Light feature (0x000102) was detected during discovery
+        - OR features have not been discovered (fallback for backward compatibility)
+
+        Returns False if:
+        - Features were discovered but light feature was not present
+        """
+        if self._has_lights is not None:
+            return self._has_lights
+        # Features not discovered - assume lights exist for backward compatibility
+        return True
+
     async def discover_features(self) -> bool:
-        """Discover bed features including PIN requirement.
+        """Discover bed features including PIN requirement and lights.
 
         Sends feature request command and waits for response.
 
@@ -317,6 +342,7 @@ class OctoController(BedController):
         self._features_loaded.clear()
         self._has_pin = None
         self._pin_locked = None
+        self._has_lights = None
 
         _LOGGER.debug("Requesting bed features...")
 
@@ -330,10 +356,18 @@ class OctoController(BedController):
                     self._features_loaded.wait(),
                     timeout=OCTO_FEATURE_TIMEOUT,
                 )
+                # Got at least one feature, wait for additional features to arrive
+                await asyncio.sleep(1.0)
+
+                # Set defaults for features not detected (bed doesn't have them)
+                if self._has_lights is None:
+                    self._has_lights = False
+
                 _LOGGER.info(
-                    "Feature discovery complete: hasPin=%s, pinLocked=%s",
+                    "Feature discovery complete: hasPin=%s, pinLocked=%s, hasLights=%s",
                     self._has_pin,
                     self._pin_locked,
+                    self._has_lights,
                 )
                 return True
             except asyncio.TimeoutError:
@@ -343,6 +377,7 @@ class OctoController(BedController):
                 # Set defaults for beds that don't respond to feature query
                 self._has_pin = bool(self._pin)  # Assume PIN needed if configured
                 self._pin_locked = bool(self._pin)
+                self._has_lights = True  # Assume lights exist for backward compatibility
                 return False
 
         except BleakError as err:
