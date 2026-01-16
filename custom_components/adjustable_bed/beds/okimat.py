@@ -176,7 +176,10 @@ class OkimatController(BedController):
         """Initialize the Okimat controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        self._motor_state: dict[str, bool | None] = {}
+        # Motor state stores command values per motor (head, back, legs, feet)
+        # This allows combining multiple motor commands simultaneously
+        # Reference: https://github.com/richardhopton/smartbed-mqtt/pull/66
+        self._motor_state: dict[str, int] = {}
 
         # Resolve variant to remote config
         if variant == VARIANT_AUTO or variant not in OKIMAT_REMOTES:
@@ -348,71 +351,81 @@ class OkimatController(BedController):
             _LOGGER.debug("Could not read position data: %s", err)
 
     def _get_move_command(self) -> int:
-        """Calculate the combined motor movement command."""
+        """Calculate the combined motor movement command.
+
+        Sums all active motor command values to create a combined command.
+        This allows multiple motors to move simultaneously when their
+        command values are set in _motor_state.
+
+        Reference: https://github.com/richardhopton/smartbed-mqtt/pull/66
+        """
         command = 0
         state = self._motor_state
-        remote = self._remote
 
-        # Back motor (all remotes)
-        if state.get("back") is True:
-            command |= remote.back_up
-        elif state.get("back") is False:
-            command |= remote.back_down
-
-        # Legs motor (all remotes)
-        if state.get("legs") is True:
-            command |= remote.legs_up
-        elif state.get("legs") is False:
-            command |= remote.legs_down
-
-        # Head/tilt motor (93329, 93332 only)
-        if remote.head_up is not None and remote.head_down is not None:
-            if state.get("head") is True:
-                command |= remote.head_up
-            elif state.get("head") is False:
-                command |= remote.head_down
-
-        # Feet motor (93332 only)
-        if remote.feet_up is not None and remote.feet_down is not None:
-            if state.get("feet") is True:
-                command |= remote.feet_up
-            elif state.get("feet") is False:
-                command |= remote.feet_down
+        # Sum all active motor commands
+        if "head" in state:
+            command += state["head"]
+        if "back" in state:
+            command += state["back"]
+        if "legs" in state:
+            command += state["legs"]
+        if "feet" in state:
+            command += state["feet"]
 
         return command
 
-    async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it."""
-        self._motor_state[motor] = direction
-        command = self._get_move_command()
+    async def _move_motor(self, motor: str, command_value: int | None) -> None:
+        """Move a motor with a specific command value or stop it.
+
+        Args:
+            motor: Motor name ('head', 'back', 'legs', 'feet')
+            command_value: The command code to send, or None to stop the motor.
+
+        This method updates the motor state and sends the combined command
+        for all active motors. When command_value is None (stop), only this
+        motor is removed from state, allowing other motors to continue.
+        """
+        # Update motor state
+        if command_value is None or command_value == 0:
+            # Stop this motor - remove from state
+            self._motor_state.pop(motor, None)
+        else:
+            # Set this motor's command value
+            self._motor_state[motor] = command_value
+
+        # Calculate combined command for all active motors
+        combined_command = self._get_move_command()
 
         # Use configurable pulse settings from coordinator
         pulse_count = getattr(self._coordinator, 'motor_pulse_count', 25)
         pulse_delay = getattr(self._coordinator, 'motor_pulse_delay_ms', 200)
 
         try:
-            if command:
+            if combined_command:
                 await self.write_command(
-                    self._build_command(command),
+                    self._build_command(combined_command),
                     repeat_count=pulse_count,
                     repeat_delay_ms=pulse_delay,
                 )
         finally:
-            # Always send stop (zero command) and clear state
-            self._motor_state = {}
-            await self.write_command(
-                self._build_command(0),
-                cancel_event=asyncio.Event(),
-            )
+            # Clear this motor's state after command completes
+            self._motor_state.pop(motor, None)
+
+            # Send stop command only if no other motors are active
+            if not self._motor_state:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
 
     # Motor control methods - Back (primary motor on all remotes)
     async def move_head_up(self) -> None:
         """Move head/back up."""
-        await self._move_motor("back", True)
+        await self._move_motor("back", self._remote.back_up)
 
     async def move_head_down(self) -> None:
         """Move head/back down."""
-        await self._move_motor("back", False)
+        await self._move_motor("back", self._remote.back_down)
 
     async def move_head_stop(self) -> None:
         """Stop head/back motor."""
@@ -420,11 +433,11 @@ class OkimatController(BedController):
 
     async def move_back_up(self) -> None:
         """Move back up."""
-        await self._move_motor("back", True)
+        await self._move_motor("back", self._remote.back_up)
 
     async def move_back_down(self) -> None:
         """Move back down."""
-        await self._move_motor("back", False)
+        await self._move_motor("back", self._remote.back_down)
 
     async def move_back_stop(self) -> None:
         """Stop back motor."""
@@ -433,11 +446,11 @@ class OkimatController(BedController):
     # Motor control methods - Legs (all remotes)
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._move_motor("legs", True)
+        await self._move_motor("legs", self._remote.legs_up)
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._move_motor("legs", False)
+        await self._move_motor("legs", self._remote.legs_down)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -447,7 +460,7 @@ class OkimatController(BedController):
     async def move_feet_up(self) -> None:
         """Move feet up."""
         if self._remote.feet_up is not None:
-            await self._move_motor("feet", True)
+            await self._move_motor("feet", self._remote.feet_up)
         else:
             # Fall back to legs for remotes without separate feet motor
             await self.move_legs_up()
@@ -455,7 +468,7 @@ class OkimatController(BedController):
     async def move_feet_down(self) -> None:
         """Move feet down."""
         if self._remote.feet_down is not None:
-            await self._move_motor("feet", False)
+            await self._move_motor("feet", self._remote.feet_down)
         else:
             await self.move_legs_down()
 
@@ -470,14 +483,14 @@ class OkimatController(BedController):
     async def move_tilt_up(self) -> None:
         """Move tilt/head up (93329, 93332 only)."""
         if self._remote.head_up is not None:
-            await self._move_motor("head", True)
+            await self._move_motor("head", self._remote.head_up)
         else:
             _LOGGER.debug("Tilt motor not available on remote %s", self._variant)
 
     async def move_tilt_down(self) -> None:
         """Move tilt/head down (93329, 93332 only)."""
         if self._remote.head_down is not None:
-            await self._move_motor("head", False)
+            await self._move_motor("head", self._remote.head_down)
         else:
             _LOGGER.debug("Tilt motor not available on remote %s", self._variant)
 
