@@ -11,7 +11,7 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
-| Position Feedback | ❌ |
+| Position Feedback | ✅ |
 | Memory Presets | ✅ (2-4 slots depending on remote) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
@@ -70,3 +70,25 @@ Different remotes use different values for the Flat preset:
 | `0x0000002a` | 93329 |
 | `0x10000000` | 94238 |
 | `0x100000aa` | 80608, 88875, 91244 |
+
+## Position Feedback
+
+Okimat beds support position feedback via BLE notifications.
+
+**Position Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+
+### Data Format
+
+Position notifications are 7+ bytes:
+- Bytes 3-4: Head position (little-endian uint16)
+- Bytes 5-6: Foot position (little-endian uint16)
+
+### Angle Conversion
+
+| Motor | Max Raw Value | Max Angle |
+|-------|---------------|-----------|
+| Head/Back | 16000 | 60° |
+| Foot/Legs | 12000 | 45° |
+
+Formula: `angle = (raw_value / max_raw) * max_angle`
