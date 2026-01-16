@@ -736,7 +736,7 @@ Detected by device name containing: `serta` or `motion perfect`
 
 ## Octo
 
-**Status:** ⚠️ Untested
+**Status:** ✅ Works
 
 ### Known Models
 - Octo-branded adjustable beds
