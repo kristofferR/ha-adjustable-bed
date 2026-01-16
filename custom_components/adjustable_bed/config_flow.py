@@ -48,6 +48,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -58,6 +59,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     POSITION_MODE_ACCURACY,
@@ -454,22 +456,26 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_count,
                 motor_pulse_delay_ms,
             )
+            entry_data = {
+                CONF_ADDRESS: self._discovery_info.address.upper(),
+                CONF_BED_TYPE: bed_type,
+                CONF_PROTOCOL_VARIANT: protocol_variant,
+                CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
+                CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                CONF_PREFERRED_ADAPTER: preferred_adapter,
+                CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+            }
+            # Add Octo PIN if configured
+            if bed_type == BED_TYPE_OCTO:
+                entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
-                data={
-                    CONF_ADDRESS: self._discovery_info.address.upper(),
-                    CONF_BED_TYPE: bed_type,
-                    CONF_PROTOCOL_VARIANT: protocol_variant,
-                    CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
-                    CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                    CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                    CONF_PREFERRED_ADAPTER: preferred_adapter,
-                    CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                    CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-                },
+                data=entry_data,
             )
 
         _LOGGER.debug("Showing bluetooth confirmation form for %s", self._discovery_info.address)
@@ -507,6 +513,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         variants = get_variants_for_bed_type(bed_type)
         if variants:
             schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(variants)
+
+        # Add PIN field for Octo beds
+        if bed_type == BED_TYPE_OCTO:
+            schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
+                TextSelectorConfig()
+            )
 
         return self.async_show_form(
             step_id="bluetooth_confirm",
@@ -638,22 +650,26 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
 
+                    entry_data = {
+                        CONF_ADDRESS: address,
+                        CONF_BED_TYPE: bed_type,
+                        CONF_PROTOCOL_VARIANT: protocol_variant,
+                        CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
+                        CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                        CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                        CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                        CONF_PREFERRED_ADAPTER: preferred_adapter,
+                        CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                        CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                        CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                        CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                    }
+                    # Add Octo PIN if configured
+                    if bed_type == BED_TYPE_OCTO:
+                        entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                        data={
-                            CONF_ADDRESS: address,
-                            CONF_BED_TYPE: bed_type,
-                            CONF_PROTOCOL_VARIANT: protocol_variant,
-                            CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
-                            CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                            CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                            CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                            CONF_PREFERRED_ADAPTER: preferred_adapter,
-                            CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                            CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                            CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                            CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-                        },
+                        data=entry_data,
                     )
 
         _LOGGER.debug("Showing manual entry form")
@@ -686,6 +702,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
                     vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
                         range(10, 301)
+                    ),
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
+                        TextSelectorConfig()
                     ),
                 }
             ),
@@ -759,6 +778,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_PROTOCOL_VARIANT,
                 default=current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
             )] = vol.In(variants)
+
+        # Add PIN field for Octo beds
+        if bed_type == BED_TYPE_OCTO:
+            schema_dict[vol.Optional(
+                CONF_OCTO_PIN,
+                default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+            )] = TextSelector(TextSelectorConfig())
 
         if user_input is not None:
             # Convert text values to integers

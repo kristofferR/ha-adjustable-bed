@@ -16,6 +16,7 @@ CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
+CONF_OCTO_PIN: Final = "octo_pin"
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"
@@ -185,6 +186,10 @@ SERTA_WRITE_HANDLE: Final = 0x0020
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
+# Octo PIN keep-alive interval (seconds)
+# Octo beds drop BLE connection after ~30s without PIN re-authentication
+OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
+
 # Mattress Firm 900 specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
 # Uses Nordic UART Service with custom 7-byte command format
@@ -297,6 +302,7 @@ DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
+DEFAULT_OCTO_PIN: Final = ""
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them
