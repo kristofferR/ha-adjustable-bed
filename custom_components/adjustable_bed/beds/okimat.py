@@ -21,7 +21,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
@@ -268,18 +269,20 @@ class OkimatController(BedController):
         self._motor_state[motor] = direction
         command = self._get_move_command()
 
-        if command:
+        try:
+            if command:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=25,
+                    repeat_delay_ms=200,
+                )
+        finally:
+            # Always send stop (zero command) and clear state
+            self._motor_state = {}
             await self.write_command(
-                self._build_command(command),
-                repeat_count=25,
-                repeat_delay_ms=200,
+                self._build_command(0),
+                cancel_event=asyncio.Event(),
             )
-        # Send stop (zero command)
-        self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
-        )
 
     # Motor control methods - Back (primary motor on all remotes)
     async def move_head_up(self) -> None:
@@ -400,8 +403,18 @@ class OkimatController(BedController):
             )
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory."""
+        """Program current position to memory.
+
+        Note: Okimat remotes use a single memory_save command that saves to the
+        last-used memory slot. The memory_num parameter is logged but the actual
+        slot saved depends on the remote's internal state.
+        """
         if self._remote.memory_save is not None:
+            _LOGGER.debug(
+                "Saving to memory slot %d on remote %s (remote determines actual slot)",
+                memory_num,
+                self._variant,
+            )
             # Memory save requires holding the command
             await self.write_command(
                 self._build_command(self._remote.memory_save),
