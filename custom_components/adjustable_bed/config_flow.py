@@ -70,6 +70,8 @@ from .const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_VARIANTS,
     LINAK_CONTROL_SERVICE_UUID,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANTS,
     OKIMAT_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
@@ -113,12 +115,14 @@ def get_variants_for_bed_type(bed_type: str) -> dict[str, str] | None:
         return LEGGETT_VARIANTS
     if bed_type == BED_TYPE_RICHMAT:
         return RICHMAT_VARIANTS
+    if bed_type == BED_TYPE_OCTO:
+        return OCTO_VARIANTS
     return None
 
 
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
-    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_RICHMAT)
+    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OCTO, BED_TYPE_RICHMAT)
 
 
 def get_available_adapters(hass) -> dict[str, str]:
@@ -296,6 +300,15 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_SERTA
+
+    # Check for Octo Star2 variant - service UUID detection (before name-based Octo check)
+    if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Octo Star2 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_OCTO
 
     # Check for Octo - name-based detection (before Solace since same UUID)
     if "octo" in device_name:

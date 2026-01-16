@@ -16,7 +16,11 @@ from typing import TYPE_CHECKING, Callable
 
 from bleak.exc import BleakError
 
-from ..const import OCTO_CHAR_UUID, OCTO_PIN_KEEPALIVE_INTERVAL
+from ..const import (
+    OCTO_CHAR_UUID,
+    OCTO_PIN_KEEPALIVE_INTERVAL,
+    OCTO_STAR2_CHAR_UUID,
+)
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -576,3 +580,246 @@ class OctoController(BedController):
                 break
             except Exception as err:
                 _LOGGER.warning("Keep-alive PIN send failed: %s", err)
+
+
+class OctoStar2Controller(BedController):
+    """Controller for Octo Remote Star2 beds.
+
+    Star2 uses a different protocol with fixed command bytes:
+    - Service UUID: aa5c
+    - Characteristic UUID: 5a55
+    - Packet format: starts with 0x68, ends with 0x16
+    """
+
+    # Star2 fixed command bytes
+    # Protocol reverse-engineered by goedh452
+    # (https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10)
+    # Format: starts with 0x68, ends with 0x16
+    CMD_HEAD_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x36, 0x31, 0x38, 0x16])
+    CMD_HEAD_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x39, 0x31, 0x3B, 0x16])
+    CMD_FEET_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x34, 0x31, 0x36, 0x16])
+    CMD_FEET_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x37, 0x31, 0x39, 0x16])
+    CMD_BOTH_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x37, 0x31, 0x3B, 0x16])
+    CMD_BOTH_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x38, 0x31, 0x3C, 0x16])
+
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+        """Initialize the Octo Star2 controller."""
+        super().__init__(coordinator)
+        self._notify_callback: Callable[[str, float], None] | None = None
+        _LOGGER.debug("OctoStar2Controller initialized")
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        """Return the UUID of the control characteristic."""
+        return OCTO_STAR2_CHAR_UUID
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a command to the bed."""
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.error("Cannot write command: BLE client not connected")
+            raise ConnectionError("Not connected to bed")
+
+        effective_cancel = cancel_event or self._coordinator.cancel_command
+
+        _LOGGER.debug(
+            "Writing command to Octo Star2 bed: %s (repeat: %d, delay: %dms)",
+            command.hex(),
+            repeat_count,
+            repeat_delay_ms,
+        )
+
+        for i in range(repeat_count):
+            if effective_cancel is not None and effective_cancel.is_set():
+                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                return
+
+            try:
+                await self.client.write_gatt_char(
+                    OCTO_STAR2_CHAR_UUID, command, response=True
+                )
+            except BleakError:
+                _LOGGER.exception("Failed to write command")
+                raise
+
+            if i < repeat_count - 1:
+                await asyncio.sleep(repeat_delay_ms / 1000)
+
+    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
+        """Start listening for notifications.
+
+        Star2 doesn't support position notifications, so this only stores the callback.
+        """
+        _LOGGER.debug(
+            "start_notify called for OctoStar2Controller - notifications not supported"
+        )
+        self._notify_callback = callback
+
+    async def stop_notify(self) -> None:
+        """Stop listening for notifications."""
+        _LOGGER.debug(
+            "stop_notify called for OctoStar2Controller - notifications not supported"
+        )
+        self._notify_callback = None
+
+    async def read_positions(self, motor_count: int = 2) -> list[float]:
+        """Read current position data.
+
+        Star2 doesn't support position feedback.
+
+        Args:
+            motor_count: Number of motors to read positions for (unused).
+
+        Returns:
+            Empty list as position feedback is not supported.
+        """
+        _LOGGER.debug(
+            "read_positions called for OctoStar2Controller with motor_count=%d "
+            "- position feedback not supported",
+            motor_count,
+        )
+        return []
+
+    async def _send_stop(self) -> None:
+        """Send stop command.
+
+        Star2 protocol doesn't have an explicit stop command.
+        Motors stop when commands stop being sent.
+        """
+        _LOGGER.debug(
+            "Stop requested for OctoStar2Controller - Star2 has no explicit stop command, "
+            "motors stop when commands cease"
+        )
+
+    # Motor control methods using fixed Star2 commands
+    async def move_head_up(self) -> None:
+        """Move head motor up."""
+        try:
+            await self.write_command(
+                self.CMD_HEAD_UP,
+                repeat_count=25,
+                repeat_delay_ms=200,
+            )
+        finally:
+            await self._send_stop()
+
+    async def move_head_down(self) -> None:
+        """Move head motor down."""
+        try:
+            await self.write_command(
+                self.CMD_HEAD_DOWN,
+                repeat_count=25,
+                repeat_delay_ms=200,
+            )
+        finally:
+            await self._send_stop()
+
+    async def move_head_stop(self) -> None:
+        """Stop head motor.
+
+        Star2 doesn't have explicit stop - motors stop when commands cease.
+        """
+        await self._send_stop()
+
+    async def move_back_up(self) -> None:
+        """Move back up (same as head for Star2)."""
+        await self.move_head_up()
+
+    async def move_back_down(self) -> None:
+        """Move back down (same as head for Star2)."""
+        await self.move_head_down()
+
+    async def move_back_stop(self) -> None:
+        """Stop back motor."""
+        await self.move_head_stop()
+
+    async def move_legs_up(self) -> None:
+        """Move legs motor up."""
+        try:
+            await self.write_command(
+                self.CMD_FEET_UP,
+                repeat_count=25,
+                repeat_delay_ms=200,
+            )
+        finally:
+            await self._send_stop()
+
+    async def move_legs_down(self) -> None:
+        """Move legs motor down."""
+        try:
+            await self.write_command(
+                self.CMD_FEET_DOWN,
+                repeat_count=25,
+                repeat_delay_ms=200,
+            )
+        finally:
+            await self._send_stop()
+
+    async def move_legs_stop(self) -> None:
+        """Stop legs motor.
+
+        Star2 doesn't have explicit stop - motors stop when commands cease.
+        """
+        await self._send_stop()
+
+    async def move_feet_up(self) -> None:
+        """Move feet up (same as legs for Star2)."""
+        await self.move_legs_up()
+
+    async def move_feet_down(self) -> None:
+        """Move feet down (same as legs for Star2)."""
+        await self.move_legs_down()
+
+    async def move_feet_stop(self) -> None:
+        """Stop feet motor."""
+        await self.move_legs_stop()
+
+    async def stop_all(self) -> None:
+        """Stop all motors.
+
+        Star2 doesn't have explicit stop command - motors stop when commands cease.
+        """
+        await self._send_stop()
+
+    async def preset_flat(self) -> None:
+        """Go to flat position by moving both motors down."""
+        try:
+            await self.write_command(
+                self.CMD_BOTH_DOWN,
+                repeat_count=25,
+                repeat_delay_ms=200,
+            )
+        finally:
+            await self._send_stop()
+
+    async def preset_memory(self, memory_num: int) -> None:
+        """Go to memory preset.
+
+        Star2 doesn't support memory presets.
+
+        Args:
+            memory_num: Memory slot number (unused - feature not supported).
+        """
+        _LOGGER.warning(
+            "Octo Star2 beds don't support memory presets (requested memory_num=%d)",
+            memory_num,
+        )
+
+    async def program_memory(self, memory_num: int) -> None:
+        """Program current position to memory.
+
+        Star2 doesn't support memory presets.
+
+        Args:
+            memory_num: Memory slot number (unused - feature not supported).
+        """
+        _LOGGER.warning(
+            "Octo Star2 beds don't support programming memory presets "
+            "(requested memory_num=%d)",
+            memory_num,
+        )

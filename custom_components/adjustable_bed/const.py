@@ -167,12 +167,21 @@ DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 SERTA_WRITE_HANDLE: Final = 0x0020
 
 # Octo specific UUIDs
+# Standard Octo variant
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
+
+# Octo Remote Star2 variant
+OCTO_STAR2_SERVICE_UUID: Final = "0000aa5c-0000-1000-8000-00805f9b34fb"
+OCTO_STAR2_CHAR_UUID: Final = "00005a55-0000-1000-8000-00805f9b34fb"
 
 # Octo PIN keep-alive interval (seconds)
 # Octo beds drop BLE connection after ~30s without PIN re-authentication
 OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
+
+# Octo variant identifiers (dict defined later after VARIANT_AUTO)
+OCTO_VARIANT_STANDARD: Final = "standard"
+OCTO_VARIANT_STAR2: Final = "star2"
 
 # Mattress Firm 900 specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
@@ -212,6 +221,13 @@ RICHMAT_VARIANTS: Final = {
     RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with checksum)",
 }
 
+# Octo variants
+OCTO_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (recommended)",
+    OCTO_VARIANT_STANDARD: "Standard Octo (most common)",
+    OCTO_VARIANT_STAR2: "Octo Remote Star2",
+}
+
 # Richmat command protocols (how command bytes are encoded - used internally)
 RICHMAT_PROTOCOL_WILINKE: Final = "wilinke"  # [110, 1, 0, cmd, cmd+111]
 RICHMAT_PROTOCOL_SINGLE: Final = "single"  # [cmd]
@@ -226,6 +242,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_OKIN,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    OCTO_VARIANT_STANDARD,
+    OCTO_VARIANT_STAR2,
 ]
 
 # Bed types that support angle sensing (position feedback)

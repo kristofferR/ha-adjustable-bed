@@ -63,6 +63,8 @@ from .const import (
     KEESON_VARIANT_KSBT,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANT_STAR2,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
 )
@@ -864,9 +866,26 @@ class AdjustableBedCoordinator:
             return SertaController(self)
 
         if self._bed_type == BED_TYPE_OCTO:
-            from .beds.octo import OctoController
+            from .beds.octo import OctoController, OctoStar2Controller
 
-            return OctoController(self, pin=self._octo_pin)
+            # Use configured variant or auto-detect
+            if self._protocol_variant == OCTO_VARIANT_STAR2:
+                _LOGGER.debug("Using Star2 Octo variant (configured)")
+                return OctoStar2Controller(self)
+            elif self._protocol_variant in (None, "", "auto"):
+                # Auto-detect: check if Star2 service UUID is available
+                if self._client and self._client.services:
+                    for service in self._client.services:
+                        if service.uuid.lower() == OCTO_STAR2_SERVICE_UUID.lower():
+                            _LOGGER.debug("Using Star2 Octo variant (auto-detected)")
+                            return OctoStar2Controller(self)
+                # Default to standard Octo
+                _LOGGER.debug("Using standard Octo variant")
+                return OctoController(self, pin=self._octo_pin)
+            else:
+                # Explicit standard variant
+                _LOGGER.debug("Using standard Octo variant (configured)")
+                return OctoController(self, pin=self._octo_pin)
 
         if self._bed_type == BED_TYPE_MATTRESSFIRM:
             from .beds.mattressfirm import MattressFirmController
