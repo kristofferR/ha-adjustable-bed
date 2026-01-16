@@ -194,7 +194,7 @@ class OkimatController(BedController):
         return OKIMAT_WRITE_CHAR_UUID
 
     def _build_command(self, command_value: int) -> bytes:
-        """Build command bytes: [0x04, 0x02, ...int_to_bytes(command)]."""
+        """Build command bytes using build_okin_command: [0x04, 0x02, <4-byte>]."""
         return build_okin_command(command_value)
 
     async def write_command(

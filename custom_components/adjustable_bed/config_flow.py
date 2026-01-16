@@ -264,9 +264,10 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
         # Fallback: default to Okimat with warning about ambiguity
         _LOGGER.warning(
-            "Okin UUID detected but device name '%s' doesn't match known patterns. "
+            "Okin UUID detected but device name '%s' at %s doesn't match known patterns. "
             "Defaulting to Okimat. Change to Leggett & Platt in settings if needed.",
             service_info.name,
+            service_info.address,
         )
         return BED_TYPE_OKIMAT
 

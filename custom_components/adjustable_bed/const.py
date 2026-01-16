@@ -219,7 +219,7 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # - Okimat (6-byte protocol)
 # - Leggett & Platt Okin variant (6-byte protocol, same as Okimat)
 # Detection priority: name patterns first, then UUID fallback to Okimat
-LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p", "adjustable base")
+LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
 OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble")
 
 # Protocol variants

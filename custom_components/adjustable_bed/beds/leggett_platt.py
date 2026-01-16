@@ -1,12 +1,26 @@
 """Leggett & Platt bed controller implementation.
 
 Leggett & Platt beds have two protocol variants:
-- Gen2: ASCII text commands (Richmat-based, unique service UUID)
-- Okin: Binary commands with 6-byte format (requires BLE pairing)
 
-Note: The Okin variant shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b)
-with Okimat and Nectar beds. Detection uses device name patterns to distinguish between these
-bed types. See okin_protocol.py for the shared protocol specification.
+Gen2 (Richmat-based, ASCII commands):
+    Service UUID: 45e25100-3171-4cfc-ae89-1d83cf8d8071
+    Write characteristic: 45e25101-3171-4cfc-ae89-1d83cf8d8071
+    Read characteristic: 45e25103-3171-4cfc-ae89-1d83cf8d8071
+    Command format: ASCII text (e.g., b"MEM 0" for flat preset)
+    Motor timing: Single command per action; presets move to position automatically
+    Position feedback: Not supported
+
+Okin variant (requires BLE pairing):
+    Service UUID: 62741523-52f9-8864-b1ab-3b3a8d65950b (shared with Okimat/Nectar)
+    Write characteristic: 62741525-52f9-8864-b1ab-3b3a8d65950b
+    Command format: 6-byte binary [0x04, 0x02, <4-byte-command-big-endian>]
+    Motor timing: 25 pulses at 50ms intervals for full movement
+    Position feedback: Not supported
+    Pairing: Required before first use; handled by coordinator
+
+Note: The Okin variant shares its BLE service UUID with Okimat and Nectar beds.
+Detection uses device name patterns ("leggett", "l&p") to distinguish between these
+bed types. See okin_protocol.py for the shared binary protocol specification.
 """
 
 from __future__ import annotations

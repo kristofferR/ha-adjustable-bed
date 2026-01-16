@@ -17,11 +17,21 @@ def int_to_bytes(value: int) -> list[int]:
     """Convert an integer to 4 bytes (big-endian).
 
     Args:
-        value: 32-bit integer command value
+        value: 32-bit unsigned integer command value (0 to 0xFFFFFFFF)
 
     Returns:
         List of 4 bytes in big-endian order
+
+    Raises:
+        TypeError: If value is not an integer
+        ValueError: If value is outside the valid 32-bit unsigned range
     """
+    if not isinstance(value, int):
+        raise TypeError(f"Command value must be an integer, got {type(value).__name__}")
+    if value < 0 or value > 0xFFFFFFFF:
+        raise ValueError(
+            f"Command value must be 0 <= value <= 0xFFFFFFFF, got {value:#x}"
+        )
     return [
         (value >> 24) & 0xFF,
         (value >> 16) & 0xFF,
