@@ -1,15 +1,30 @@
 """DewertOkin bed controller implementation.
 
-DewertOkin beds (A H Beard, HankookGallery) use handle-based writes.
-Commands are 6 bytes written to handle 0x0013.
-Uses "random" BLE address type.
+DewertOkin beds (A H Beard, HankookGallery) use handle-based BLE writes.
 
-Protocol family: DewertOkin uses the same Okin 6-byte command format as Okimat
-and Leggett & Platt Okin variant ([0x04, 0x02, <4-byte-command>]). The key
-difference is DewertOkin writes to a BLE handle (0x0013) rather than a UUID.
-Detection is by device name patterns, not service UUID.
+Protocol details:
+    Write handle: 0x0013 (not UUID-based)
+    Address type: Random
+    Command format: 6-byte Okin frame [0x04, 0x02, <4-byte-command-big-endian>]
+    See okin_protocol.py for shared frame building functions.
 
-See okin_protocol.py for the shared protocol specification.
+Motor timing:
+    Pulse width: Single BLE write per pulse
+    Inter-pulse delay: 50ms for continuous movement
+    Repeat count: 25 pulses for typical motor travel
+    Stop command: Send STOP (0x000000) to halt motors
+
+Preset timing:
+    Preset commands move to stored positions automatically
+    Duration: Variable based on distance to target (typically 10-30 seconds)
+    No debounce required between preset commands
+
+Position feedback: Not supported
+    DewertOkin beds do not report motor positions.
+    The 4-byte command payload is output-only (motor commands, not position data).
+
+Detection: By device name patterns ("dewertokin", "dewert", "a h beard", "hankook"),
+not by service UUID.
 """
 
 from __future__ import annotations
