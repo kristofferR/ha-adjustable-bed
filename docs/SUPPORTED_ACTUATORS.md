@@ -548,7 +548,7 @@ Uses same 32-bit command values as Keeson - see [Keeson commands](#commands-32-b
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
-| Position Feedback | ❌ |
+| Position Feedback | ✅ (head/foot angles) |
 | Memory Presets | ✅ (2-4 slots depending on remote) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
@@ -605,6 +605,23 @@ Different remotes use different values for the Flat preset:
 | `0x0000002a` | 93329 |
 | `0x10000000` | 94238 |
 | `0x100000aa` | 80608, 88875, 91244 |
+
+### Position Feedback
+
+Position data is available via BLE notifications on a secondary service:
+
+**Position Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+
+The notification contains 7+ bytes with position data:
+- Bytes 3-4: Head position (little-endian uint16)
+- Bytes 5-6: Foot position (little-endian uint16)
+
+Position values are normalized to angles:
+- Head: 0-16000 raw → 0-60 degrees
+- Foot: 0-12000 raw → 0-45 degrees
+
+**Reference:** [smartbed-mqtt#53](https://github.com/richardhopton/smartbed-mqtt/issues/53)
 
 ---
 
