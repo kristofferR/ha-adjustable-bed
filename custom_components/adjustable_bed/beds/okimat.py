@@ -36,6 +36,11 @@ from ..const import (
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
     OKIMAT_WRITE_CHAR_UUID,
+    OKIN_FOOT_MAX_ANGLE,
+    OKIN_FOOT_MAX_RAW,
+    OKIN_HEAD_MAX_ANGLE,
+    OKIN_HEAD_MAX_RAW,
+    OKIN_POSITION_NOTIFY_CHAR_UUID,
     VARIANT_AUTO,
 )
 from .base import BedController
@@ -218,17 +223,115 @@ class OkimatController(BedController):
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
-        """Start listening for position notifications."""
+        """Start listening for position notifications.
+
+        OKIN beds report position via BLE notifications on characteristic FFE4.
+        Data format: bytes 3-4 = head raw (LE), bytes 5-6 = foot raw (LE)
+        Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
+        """
         self._notify_callback = callback
-        _LOGGER.debug("Okimat beds don't support position notifications")
+
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.warning("Cannot start position notifications: not connected")
+            return
+
+        _LOGGER.info(
+            "Setting up position notifications for Okin bed at %s",
+            self._coordinator.address,
+        )
+
+        try:
+            await self.client.start_notify(
+                OKIN_POSITION_NOTIFY_CHAR_UUID,
+                self._handle_position_notification,
+            )
+            _LOGGER.info(
+                "Position notifications active for Okin bed (UUID: %s)",
+                OKIN_POSITION_NOTIFY_CHAR_UUID,
+            )
+        except BleakError as err:
+            _LOGGER.debug(
+                "Could not start position notifications for Okin bed: %s "
+                "(bed may not support position feedback)",
+                err,
+            )
+
+    def _handle_position_notification(self, _: int, data: bytearray) -> None:
+        """Handle position notification data from OKIN controller.
+
+        Data format (7+ bytes):
+        - Bytes 0-2: Unknown (possibly status/header)
+        - Bytes 3-4: Head position (little-endian uint16)
+        - Bytes 5-6: Foot position (little-endian uint16)
+
+        Position values are normalized:
+        - Head: 0-16000 raw → 0-60 degrees
+        - Foot: 0-12000 raw → 0-45 degrees
+        """
+        if len(data) < 7:
+            _LOGGER.debug(
+                "Received invalid position data: expected 7+ bytes, got %d",
+                len(data),
+            )
+            return
+
+        _LOGGER.debug("Okin position notification: %s", data.hex())
+
+        # Extract head position (bytes 3-4, little-endian)
+        head_raw = data[3] | (data[4] << 8)
+        head_angle = round((head_raw / OKIN_HEAD_MAX_RAW) * OKIN_HEAD_MAX_ANGLE, 1)
+        # Clamp to max angle
+        head_angle = min(head_angle, OKIN_HEAD_MAX_ANGLE)
+
+        # Extract foot position (bytes 5-6, little-endian)
+        foot_raw = data[5] | (data[6] << 8)
+        foot_angle = round((foot_raw / OKIN_FOOT_MAX_RAW) * OKIN_FOOT_MAX_ANGLE, 1)
+        # Clamp to max angle
+        foot_angle = min(foot_angle, OKIN_FOOT_MAX_ANGLE)
+
+        _LOGGER.debug(
+            "Okin position: head=%d raw (%.1f°), foot=%d raw (%.1f°)",
+            head_raw,
+            head_angle,
+            foot_raw,
+            foot_angle,
+        )
+
+        if self._notify_callback:
+            # Map to standard position names used by the integration
+            # "back" is the primary head/back motor
+            self._notify_callback("back", head_angle)
+            # "legs" is the primary foot/legs motor
+            self._notify_callback("legs", foot_angle)
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        if self.client is None or not self.client.is_connected:
+            return
+
+        try:
+            await self.client.stop_notify(OKIN_POSITION_NOTIFY_CHAR_UUID)
+            _LOGGER.debug("Stopped position notifications for Okin bed")
+        except BleakError:
+            pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data."""
-        pass
+        """Read current position data.
+
+        Note: OKIN beds typically use notifications rather than reads for
+        position data. This method attempts a read but may not work on all beds.
+        """
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.debug("Cannot read positions: not connected")
+            return
+
+        try:
+            data = await self.client.read_gatt_char(OKIN_POSITION_NOTIFY_CHAR_UUID)
+            if data:
+                _LOGGER.debug("Read Okin position data: %s", data.hex())
+                self._handle_position_notification(0, bytearray(data))
+        except BleakError as err:
+            _LOGGER.debug("Could not read position data: %s", err)
 
     def _get_move_command(self) -> int:
         """Calculate the combined motor movement command."""
