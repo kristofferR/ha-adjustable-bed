@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Callable
 
 from bleak.exc import BleakError
 
-from ..const import OCTO_CHAR_UUID
+from ..const import OCTO_CHAR_UUID, OCTO_PIN_KEEPALIVE_INTERVAL
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -31,11 +31,21 @@ OCTO_MOTOR_LEGS = 0x04
 class OctoController(BedController):
     """Controller for Octo beds."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Octo controller."""
+    def __init__(self, coordinator: AdjustableBedCoordinator, pin: str = "") -> None:
+        """Initialize the Octo controller.
+
+        Args:
+            coordinator: The bed coordinator.
+            pin: Optional PIN for authentication. Required for some Octo beds.
+        """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        _LOGGER.debug("OctoController initialized")
+        self._pin: str = pin
+        self._keepalive_task: asyncio.Task[None] | None = None
+        _LOGGER.debug(
+            "OctoController initialized (PIN %s)",
+            "configured" if pin else "not configured",
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -269,3 +279,81 @@ class OctoController(BedController):
         This is a best-effort toggle that turns lights on.
         """
         await self.lights_on()
+
+    # PIN authentication and keep-alive methods
+
+    async def send_pin(self) -> None:
+        """Send PIN authentication command.
+
+        The PIN command uses [0x20, 0x43] followed by the PIN digits as integers.
+        This must be sent periodically to maintain the BLE connection.
+        """
+        if not self._pin:
+            _LOGGER.debug("No PIN configured, skipping PIN authentication")
+            return
+
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.debug("Cannot send PIN: not connected")
+            return
+
+        try:
+            # Convert PIN string to list of integer digits
+            pin_data = [int(c) for c in self._pin]
+            _LOGGER.debug("Sending PIN authentication (%d digits)", len(pin_data))
+            await self._write_octo_command(
+                command=[0x20, 0x43],
+                data=pin_data,
+            )
+            _LOGGER.debug("PIN authentication sent successfully")
+        except (ValueError, BleakError) as err:
+            _LOGGER.warning("Failed to send PIN: %s", err)
+
+    async def start_keepalive(self) -> None:
+        """Start the PIN keep-alive loop.
+
+        Octo beds drop BLE connection after ~30 seconds without PIN re-authentication.
+        This starts a background task to periodically send the PIN.
+        """
+        if not self._pin:
+            _LOGGER.debug("No PIN configured, keep-alive not needed")
+            return
+
+        if self._keepalive_task is not None:
+            _LOGGER.debug("Keep-alive already running")
+            return
+
+        _LOGGER.info(
+            "Starting PIN keep-alive (interval: %ds)",
+            OCTO_PIN_KEEPALIVE_INTERVAL,
+        )
+        self._keepalive_task = asyncio.create_task(self._keepalive_loop())
+
+    async def stop_keepalive(self) -> None:
+        """Stop the keep-alive loop."""
+        if self._keepalive_task is None:
+            return
+
+        _LOGGER.debug("Stopping PIN keep-alive")
+        self._keepalive_task.cancel()
+        try:
+            await self._keepalive_task
+        except asyncio.CancelledError:
+            pass
+        self._keepalive_task = None
+        _LOGGER.debug("PIN keep-alive stopped")
+
+    async def _keepalive_loop(self) -> None:
+        """Periodically send PIN to maintain connection."""
+        while True:
+            try:
+                await asyncio.sleep(OCTO_PIN_KEEPALIVE_INTERVAL)
+                if self.client is not None and self.client.is_connected:
+                    _LOGGER.debug("Sending keep-alive PIN")
+                    await self.send_pin()
+                else:
+                    _LOGGER.debug("Keep-alive: not connected, skipping PIN send")
+            except asyncio.CancelledError:
+                _LOGGER.debug("Keep-alive loop cancelled")
+                break
+            except Exception as err:
+                _LOGGER.warning("Keep-alive PIN send failed: %s", err)
