@@ -721,8 +721,10 @@ class AdjustableBedCoordinator:
             return
 
         # Stop keepalive task before clearing controller to prevent task leak
-        if self._controller is not None and hasattr(self._controller, 'stop_keepalive'):
-            asyncio.create_task(self._async_stop_keepalive_safe())
+        # Capture controller reference before clearing to avoid race condition
+        controller = self._controller
+        if controller is not None and hasattr(controller, 'stop_keepalive'):
+            asyncio.create_task(controller.stop_keepalive())
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
@@ -760,14 +762,6 @@ class AdjustableBedCoordinator:
             5.0,  # Wait 5 seconds before attempting reconnect
             lambda: asyncio.create_task(self._async_auto_reconnect()),
         )
-
-    async def _async_stop_keepalive_safe(self) -> None:
-        """Safely stop keepalive task (called from sync disconnect callback)."""
-        if self._controller is not None and hasattr(self._controller, 'stop_keepalive'):
-            try:
-                await self._controller.stop_keepalive()
-            except Exception as err:
-                _LOGGER.debug("Error stopping keep-alive on disconnect: %s", err)
 
     async def _async_create_controller(self) -> BedController:
         """Create the appropriate bed controller."""
