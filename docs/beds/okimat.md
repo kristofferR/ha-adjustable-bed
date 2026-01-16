@@ -58,6 +58,8 @@ Different Okimat remotes have varying capabilities. The remote code is typically
 | Memory Save | `0x00010000` | 82418, 93329, 93332, 94238 | Save current position |
 | Toggle Lights | `0x00020000` | All | Toggle under-bed lights |
 
+**Note:** On remote 93332, Head Down and Feet Down share the same command value (`0x00000020`). This is intentional per the [smartbed-mqtt reference implementation](https://github.com/richardhopton/smartbed-mqtt) - the remote hardware maps this single command to different motor functions.
+
 ### Flat Command Values
 
 Different remotes use different values for the Flat preset:

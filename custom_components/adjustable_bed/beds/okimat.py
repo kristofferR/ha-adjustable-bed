@@ -269,12 +269,16 @@ class OkimatController(BedController):
         self._motor_state[motor] = direction
         command = self._get_move_command()
 
+        # Use configurable pulse settings from coordinator
+        pulse_count = getattr(self._coordinator, 'motor_pulse_count', 25)
+        pulse_delay = getattr(self._coordinator, 'motor_pulse_delay_ms', 200)
+
         try:
             if command:
                 await self.write_command(
                     self._build_command(command),
-                    repeat_count=25,
-                    repeat_delay_ms=200,
+                    repeat_count=pulse_count,
+                    repeat_delay_ms=pulse_delay,
                 )
         finally:
             # Always send stop (zero command) and clear state
