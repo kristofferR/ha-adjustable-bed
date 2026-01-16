@@ -335,15 +335,6 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_OCTO
 
-    # Check for Octo - name-based detection (before Solace since same UUID)
-    if "octo" in device_name:
-        _LOGGER.info(
-            "Detected Octo bed at %s (name: %s)",
-            service_info.address,
-            service_info.name,
-        )
-        return BED_TYPE_OCTO
-
     # Check for Keeson BaseI4/I5 (must check before generic UUIDs)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
         _LOGGER.info(
@@ -353,16 +344,27 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_KEESON
 
-    # Check for Solace/MotoSleep (same UUID, different protocols)
-    # Solace uses 11-byte commands, MotoSleep uses 2-byte ASCII
+    # Check for Solace/Octo (same UUID, different protocols)
+    # Octo is more common, so default to Octo unless name indicates Solace
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
-        # If name doesn't start with HHC, assume Solace
+        # Check for explicit Solace name patterns:
+        # - Contains "solace"
+        # - Matches Solace naming convention like "S4-Y-192-461000AD"
+        solace_pattern = re.compile(r"^s\d+-[a-z]-\d+-[a-z0-9]+$", re.IGNORECASE)
+        if "solace" in device_name or solace_pattern.match(device_name):
+            _LOGGER.info(
+                "Detected Solace bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_SOLACE
+        # Default to Octo (more common)
         _LOGGER.info(
-            "Detected Solace bed at %s (name: %s)",
+            "Detected Octo bed at %s (name: %s) - defaulting to Octo for shared UUID",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_SOLACE
+        return BED_TYPE_OCTO
 
     # Check for Mattress Firm 900 (iFlex) - name-based detection
     # Must check before Richmat Nordic since they share the same UUID
@@ -459,6 +461,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         bed_type = detect_bed_type(self._discovery_info)
 
         if user_input is not None:
+            # Get user-selected bed type (may differ from auto-detected)
+            selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             try:
@@ -469,8 +473,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
                 motor_pulse_delay_ms = DEFAULT_MOTOR_PULSE_DELAY_MS
             _LOGGER.info(
-                "User confirmed bed setup: name=%s, type=%s, variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
+                "User confirmed bed setup: name=%s, type=%s (detected: %s), variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                 user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
+                selected_bed_type,
                 bed_type,
                 protocol_variant,
                 self._discovery_info.address,
@@ -483,7 +488,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             entry_data = {
                 CONF_ADDRESS: self._discovery_info.address.upper(),
-                CONF_BED_TYPE: bed_type,
+                CONF_BED_TYPE: selected_bed_type,
                 CONF_PROTOCOL_VARIANT: protocol_variant,
                 CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
                 CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
@@ -496,7 +501,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
             }
             # Add Octo PIN if configured
-            if bed_type == BED_TYPE_OCTO:
+            if selected_bed_type == BED_TYPE_OCTO:
                 entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
@@ -513,6 +518,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Build schema with optional variant selection
         schema_dict = {
+            vol.Optional(CONF_BED_TYPE, default=bed_type): vol.In(SUPPORTED_BED_TYPES),
             vol.Optional(
                 CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"
             ): str,

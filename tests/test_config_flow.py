@@ -238,9 +238,28 @@ class TestDetectBedType:
         assert bed_type == BED_TYPE_SERTA
 
     def test_detect_octo_bed(self, mock_bluetooth_service_info_octo):
-        """Test detection of Octo bed by name (prioritized over Solace UUID)."""
+        """Test detection of Octo bed by name containing 'octo'."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_octo)
         assert bed_type == BED_TYPE_OCTO
+
+    def test_detect_octo_rc2_receiver(self, mock_bluetooth_service_info_octo_rc2):
+        """Test detection of Octo RC2 receiver - defaults to Octo for shared UUID.
+
+        Issue #73: Devices like RC2 that share the Solace UUID but don't have
+        'solace' in the name should default to Octo since it's more common.
+        """
+        bed_type = detect_bed_type(mock_bluetooth_service_info_octo_rc2)
+        assert bed_type == BED_TYPE_OCTO
+
+    def test_detect_solace_bed(self, mock_bluetooth_service_info_solace):
+        """Test detection of Solace bed by name containing 'solace'."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_solace)
+        assert bed_type == BED_TYPE_SOLACE
+
+    def test_detect_solace_bed_pattern(self, mock_bluetooth_service_info_solace_pattern):
+        """Test detection of Solace bed by naming pattern like S4-Y-192-461000AD."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_solace_pattern)
+        assert bed_type == BED_TYPE_SOLACE
 
     def test_detect_octo_star2_bed(self, mock_bluetooth_service_info_octo_star2):
         """Test detection of Octo Star2 bed by service UUID (not by name)."""

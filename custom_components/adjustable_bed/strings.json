@@ -12,6 +12,7 @@
         "title": "Confirm Adjustable Bed",
         "description": "Do you want to set up {name}?",
         "data": {
+          "bed_type": "Bed type",
           "name": "Name",
           "motor_count": "Number of motors",
           "has_massage": "Has massage feature",
@@ -25,6 +26,7 @@
           "octo_pin": "Octo PIN"
         },
         "data_description": {
+          "bed_type": "Auto-detected bed type. Change if detection was incorrect.",
           "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
           "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working. Recommended for most users.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",

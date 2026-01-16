@@ -456,6 +456,74 @@ def mock_bluetooth_service_info_octo() -> MagicMock:
 
 
 @pytest.fixture
+def mock_bluetooth_service_info_octo_rc2() -> MagicMock:
+    """Return mock Bluetooth service info for an Octo RC2 receiver.
+
+    This tests the scenario from issue #73 where devices named "RC2"
+    should be detected as Octo (not Solace) since they share the same UUID.
+    """
+    service_info = MagicMock()
+    service_info.name = "RC2"
+    service_info.address = "EE:00:11:22:33:55"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [SOLACE_SERVICE_UUID]  # Shares UUID with Solace
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_solace() -> MagicMock:
+    """Return mock Bluetooth service info for a Solace bed.
+
+    This tests that devices with "solace" in the name are correctly
+    detected as Solace (not Octo) even though they share the same UUID.
+    """
+    service_info = MagicMock()
+    service_info.name = "Solace Smart Bed"
+    service_info.address = "EE:00:11:22:33:66"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [SOLACE_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_solace_pattern() -> MagicMock:
+    """Return mock Bluetooth service info for a Solace bed with pattern name.
+
+    Solace devices use naming convention like "S4-Y-192-461000AD".
+    """
+    service_info = MagicMock()
+    service_info.name = "S4-Y-192-461000AD"
+    service_info.address = "EE:00:11:22:33:77"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [SOLACE_SERVICE_UUID]
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
 def mock_bluetooth_service_info_octo_star2() -> MagicMock:
     """Return mock Bluetooth service info for an Octo Star2 bed."""
     service_info = MagicMock()
