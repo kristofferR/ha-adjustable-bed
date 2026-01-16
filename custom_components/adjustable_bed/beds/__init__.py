@@ -8,6 +8,7 @@ from .leggett_platt import LeggettPlattController
 from .linak import LinakController
 from .mattressfirm import MattressFirmController
 from .motosleep import MotoSleepController
+from .nectar import NectarController
 from .octo import OctoController
 from .okimat import OkimatController
 from .reverie import ReverieController
@@ -24,6 +25,7 @@ __all__ = [
     "LinakController",
     "MattressFirmController",
     "MotoSleepController",
+    "NectarController",
     "OctoController",
     "OkimatController",
     "ReverieController",

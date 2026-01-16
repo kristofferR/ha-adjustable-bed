@@ -33,6 +33,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
@@ -69,6 +70,7 @@ from .const import (
     LEGGETT_VARIANTS,
     LINAK_CONTROL_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_VARIANTS,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_VARIANTS,
@@ -111,12 +113,14 @@ def get_variants_for_bed_type(bed_type: str) -> dict[str, str] | None:
         return LEGGETT_VARIANTS
     if bed_type == BED_TYPE_RICHMAT:
         return RICHMAT_VARIANTS
+    if bed_type == BED_TYPE_OKIMAT:
+        return OKIMAT_VARIANTS
     return None
 
 
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
-    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_RICHMAT)
+    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OKIMAT, BED_TYPE_RICHMAT)
 
 
 def get_available_adapters(hass) -> dict[str, str]:
@@ -229,6 +233,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_REVERIE
+
+    # Check for Nectar - name-based detection (before Okimat since same UUID)
+    # Nectar beds use OKIN service UUID but different command protocol
+    if "nectar" in device_name:
+        _LOGGER.info(
+            "Detected Nectar bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_NECTAR
 
     # Check for Okimat/Leggett Okin (same UUID, requires pairing)
     if OKIMAT_SERVICE_UUID.lower() in service_uuids:

@@ -39,6 +39,7 @@ BED_TYPE_DEWERTOKIN: Final = "dewertokin"
 BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
+BED_TYPE_NECTAR: Final = "nectar"
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,
@@ -55,6 +56,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SERTA,
     BED_TYPE_OCTO,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_NECTAR,
 ]
 
 # Linak specific UUIDs
@@ -175,6 +177,14 @@ OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
+# Nectar specific UUIDs
+# Protocol reverse-engineered by MaximumWorf (https://github.com/MaximumWorf/homeassistant-nectar)
+# Uses OKIN service UUID but with 7-byte direct command format (similar to Mattress Firm 900)
+# Note: Shares service UUID with Okimat but uses different command protocol
+NECTAR_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
+NECTAR_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
+NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
+
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
@@ -211,6 +221,29 @@ RICHMAT_VARIANTS: Final = {
 RICHMAT_PROTOCOL_WILINKE: Final = "wilinke"  # [110, 1, 0, cmd, cmd+111]
 RICHMAT_PROTOCOL_SINGLE: Final = "single"  # [cmd]
 
+# Okimat remote code variants
+# Different remotes have different command values and motor configurations
+# Reference: https://github.com/richardhopton/smartbed-mqtt
+OKIMAT_VARIANT_80608: Final = "80608"
+OKIMAT_VARIANT_82417: Final = "82417"
+OKIMAT_VARIANT_82418: Final = "82418"
+OKIMAT_VARIANT_88875: Final = "88875"
+OKIMAT_VARIANT_91244: Final = "91244"
+OKIMAT_VARIANT_93329: Final = "93329"
+OKIMAT_VARIANT_93332: Final = "93332"
+OKIMAT_VARIANT_94238: Final = "94238"
+OKIMAT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (try 82417 first)",
+    OKIMAT_VARIANT_80608: "80608 - RFS ELLIPSE (Back, Legs)",
+    OKIMAT_VARIANT_82417: "82417 - RF TOPLINE (Back, Legs)",
+    OKIMAT_VARIANT_82418: "82418 - RF TOPLINE (Back, Legs, 2 Memory)",
+    OKIMAT_VARIANT_88875: "88875 - RF LITELINE (Back, Legs)",
+    OKIMAT_VARIANT_91244: "91244 - RF-FLASHLINE (Back, Legs)",
+    OKIMAT_VARIANT_93329: "93329 - RF TOPLINE (Head, Back, Legs, 4 Memory)",
+    OKIMAT_VARIANT_93332: "93332 - RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)",
+    OKIMAT_VARIANT_94238: "94238 - RF FLASHLINE (Back, Legs, 2 Memory)",
+}
+
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
@@ -221,6 +254,14 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_OKIN,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    OKIMAT_VARIANT_80608,
+    OKIMAT_VARIANT_82417,
+    OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_93329,
+    OKIMAT_VARIANT_93332,
+    OKIMAT_VARIANT_94238,
 ]
 
 # Bed types that support angle sensing (position feedback)
