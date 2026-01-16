@@ -128,58 +128,47 @@ def bed_type_has_variants(bed_type: str) -> bool:
 def get_available_adapters(hass) -> dict[str, str]:
     """Get available Bluetooth adapters/proxies."""
     adapters: dict[str, str] = {ADAPTER_AUTO: "Automatic (let Home Assistant choose)"}
-    
+
     try:
-        # Build a map of source -> friendly name
+        # Build a map of source -> friendly name from registered scanners
         scanner_names: dict[str, str] = {}
-        
-        # Try to get scanner names from Bluetooth manager
+
+        # Use the official API to get all active scanners with their names
         try:
-            from homeassistant.components.bluetooth import async_scanner_by_source
-            # We'll populate names as we find sources
+            from homeassistant.components.bluetooth import async_current_scanners
+            for scanner in async_current_scanners(hass):
+                source = getattr(scanner, 'source', None)
+                name = getattr(scanner, 'name', None)
+                if source and name:
+                    scanner_names[source] = name
         except ImportError:
-            pass
-        
-        # Try accessing the manager directly for scanner names
-        try:
-            from homeassistant.components.bluetooth import DOMAIN as BLUETOOTH_DOMAIN
-            manager = hass.data.get(BLUETOOTH_DOMAIN)
-            if manager:
-                # Try different attributes that might contain scanner info
-                for attr in ('_connectable_scanners', '_scanners', 'scanners'):
-                    scanners = getattr(manager, attr, None)
-                    if scanners:
-                        for scanner in scanners:
-                            source = getattr(scanner, 'source', None)
-                            name = getattr(scanner, 'name', None)
-                            if source and name and source not in scanner_names:
-                                scanner_names[source] = name
+            _LOGGER.debug("async_current_scanners not available")
         except Exception as err:
-            _LOGGER.debug("Could not get scanner names from manager: %s", err)
-        
+            _LOGGER.debug("Could not get scanner names: %s", err)
+
         # Collect unique sources from all discovered devices
         seen_sources: set[str] = set()
         for service_info in async_discovered_service_info(hass, connectable=True):
             source = getattr(service_info, 'source', None)
             if source and source not in seen_sources:
                 seen_sources.add(source)
-                
-                # Try to get a friendly name
+
+                # Try to get a friendly name from the scanner
                 friendly_name = scanner_names.get(source)
-                
-                if friendly_name:
-                    # Use the scanner's friendly name
+
+                if friendly_name and friendly_name != source:
+                    # Use the scanner's friendly name with source in parentheses
                     adapters[source] = f"{friendly_name} ({source})"
                 elif ':' in source:
-                    # Looks like a MAC address - probably an ESPHome proxy
+                    # Looks like a MAC address - probably an ESPHome proxy without name
                     adapters[source] = f"Bluetooth Proxy ({source})"
                 else:
                     # Might be a local adapter name like "hci0"
                     adapters[source] = f"Local Adapter ({source})"
-                    
+
     except Exception as err:
         _LOGGER.debug("Error getting Bluetooth adapters: %s", err)
-    
+
     _LOGGER.debug("Available Bluetooth adapters: %s", adapters)
     return adapters
 
