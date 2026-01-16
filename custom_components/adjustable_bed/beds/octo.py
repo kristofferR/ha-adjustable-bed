@@ -55,7 +55,6 @@ class OctoController(BedController):
         self._has_pin: bool | None = None  # None = not yet discovered
         self._pin_locked: bool | None = None
         self._features_loaded: asyncio.Event = asyncio.Event()
-        self._response_buffer: bytearray = bytearray()
 
         _LOGGER.debug(
             "OctoController initialized (PIN %s)",
