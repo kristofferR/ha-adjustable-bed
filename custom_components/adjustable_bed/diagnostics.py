@@ -14,6 +14,7 @@ from .const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_OCTO_PIN,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -22,7 +23,7 @@ from .const import (
 from .coordinator import AdjustableBedCoordinator
 
 # Keys to redact from diagnostics (privacy-sensitive data)
-TO_REDACT = {CONF_ADDRESS, CONF_NAME, "address"}
+TO_REDACT = {CONF_ADDRESS, CONF_NAME, CONF_OCTO_PIN, "address"}
 
 
 async def async_get_config_entry_diagnostics(

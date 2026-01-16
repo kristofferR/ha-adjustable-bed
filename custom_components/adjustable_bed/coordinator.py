@@ -42,6 +42,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -52,6 +53,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     POSITION_MODE_ACCURACY,
@@ -104,6 +106,9 @@ class AdjustableBedCoordinator:
         # Disconnect behavior configuration
         self._disconnect_after_command: bool = entry.data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND)
         self._idle_disconnect_seconds: int = entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
+
+        # Octo-specific configuration
+        self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -617,6 +622,11 @@ class AdjustableBedCoordinator:
                 # Start position notifications (no-op if angle sensing disabled)
                 await self.async_start_notify()
 
+                # For Octo beds with PIN: send initial PIN and start keep-alive
+                if self._bed_type == BED_TYPE_OCTO and hasattr(self._controller, 'send_pin'):
+                    await self._controller.send_pin()
+                    await self._controller.start_keepalive()
+
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
@@ -709,6 +719,12 @@ class AdjustableBedCoordinator:
                 self._address,
             )
             return
+
+        # Stop keepalive task before clearing controller to prevent task leak
+        # Capture controller reference before clearing to avoid race condition
+        controller = self._controller
+        if controller is not None and hasattr(controller, 'stop_keepalive'):
+            asyncio.create_task(controller.stop_keepalive())
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
@@ -845,7 +861,7 @@ class AdjustableBedCoordinator:
         if self._bed_type == BED_TYPE_OCTO:
             from .beds.octo import OctoController
 
-            return OctoController(self)
+            return OctoController(self, pin=self._octo_pin)
 
         if self._bed_type == BED_TYPE_MATTRESSFIRM:
             from .beds.mattressfirm import MattressFirmController
@@ -926,8 +942,14 @@ class AdjustableBedCoordinator:
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
                 self._intentional_disconnect = True
                 try:
-                    # Stop notifications before disconnecting
+                    # Stop keep-alive and notifications before disconnecting
                     if self._controller is not None:
+                        # Stop Octo keep-alive if running
+                        if hasattr(self._controller, 'stop_keepalive'):
+                            try:
+                                await self._controller.stop_keepalive()
+                            except Exception as err:
+                                _LOGGER.debug("Error stopping keep-alive: %s", err)
                         try:
                             await self._controller.stop_notify()
                         except Exception as err:
