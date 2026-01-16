@@ -298,6 +298,10 @@ class OctoController(BedController):
 
         try:
             # Convert PIN string to list of integer digits
+            # Validation should happen in config flow, but add defensive check
+            if not self._pin.isdigit():
+                _LOGGER.error("Invalid PIN: must contain only digits")
+                return
             pin_data = [int(c) for c in self._pin]
             _LOGGER.debug("Sending PIN authentication (%d digits)", len(pin_data))
             await self._write_octo_command(
@@ -349,7 +353,11 @@ class OctoController(BedController):
                 await asyncio.sleep(OCTO_PIN_KEEPALIVE_INTERVAL)
                 if self.client is not None and self.client.is_connected:
                     _LOGGER.debug("Sending keep-alive PIN")
-                    await self.send_pin()
+                    # Use coordinator's command execution for proper locking
+                    await self._coordinator.async_execute_controller_command(
+                        lambda c: c.send_pin(),
+                        cancel_running=False,
+                    )
                 else:
                     _LOGGER.debug("Keep-alive: not connected, skipping PIN send")
             except asyncio.CancelledError:
