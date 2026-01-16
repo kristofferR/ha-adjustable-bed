@@ -356,8 +356,8 @@ class OctoController(BedController):
                     self._features_loaded.wait(),
                     timeout=OCTO_FEATURE_TIMEOUT,
                 )
-                # Got at least one feature, wait a bit more for additional features
-                await asyncio.sleep(0.5)
+                # Got at least one feature, wait for additional features to arrive
+                await asyncio.sleep(1.0)
 
                 # Set defaults for features not detected (bed doesn't have them)
                 if self._has_lights is None:
