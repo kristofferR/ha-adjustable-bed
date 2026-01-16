@@ -622,10 +622,15 @@ class AdjustableBedCoordinator:
                 # Start position notifications (no-op if angle sensing disabled)
                 await self.async_start_notify()
 
-                # For Octo beds with PIN: send initial PIN and start keep-alive
-                if self._bed_type == BED_TYPE_OCTO and hasattr(self._controller, 'send_pin'):
-                    await self._controller.send_pin()
-                    await self._controller.start_keepalive()
+                # For Octo beds: discover features and handle PIN if needed
+                if self._bed_type == BED_TYPE_OCTO:
+                    # Discover features to detect PIN requirement
+                    if hasattr(self._controller, 'discover_features'):
+                        await self._controller.discover_features()
+                    # Send initial PIN and start keep-alive if bed requires it
+                    if hasattr(self._controller, 'send_pin'):
+                        await self._controller.send_pin()
+                        await self._controller.start_keepalive()
 
                 return True
 
