@@ -843,7 +843,9 @@ class AdjustableBedCoordinator:
         if self._bed_type == BED_TYPE_OKIMAT:
             from .beds.okimat import OkimatController
 
-            return OkimatController(self)
+            # Pass the configured variant (remote code) to the controller
+            _LOGGER.debug("Using Okimat variant: %s", self._protocol_variant)
+            return OkimatController(self, variant=self._protocol_variant)
 
         if self._bed_type == BED_TYPE_ERGOMOTION:
             # Ergomotion uses the same protocol as Keeson with position feedback
