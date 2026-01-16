@@ -341,29 +341,29 @@ class OkimatController(BedController):
 
         # Back motor (all remotes)
         if state.get("back") is True:
-            command += remote.back_up
+            command |= remote.back_up
         elif state.get("back") is False:
-            command += remote.back_down
+            command |= remote.back_down
 
         # Legs motor (all remotes)
         if state.get("legs") is True:
-            command += remote.legs_up
+            command |= remote.legs_up
         elif state.get("legs") is False:
-            command += remote.legs_down
+            command |= remote.legs_down
 
         # Head/tilt motor (93329, 93332 only)
         if remote.head_up is not None and remote.head_down is not None:
             if state.get("head") is True:
-                command += remote.head_up
+                command |= remote.head_up
             elif state.get("head") is False:
-                command += remote.head_down
+                command |= remote.head_down
 
         # Feet motor (93332 only)
         if remote.feet_up is not None and remote.feet_down is not None:
             if state.get("feet") is True:
-                command += remote.feet_up
+                command |= remote.feet_up
             elif state.get("feet") is False:
-                command += remote.feet_down
+                command |= remote.feet_down
 
         return command
 
