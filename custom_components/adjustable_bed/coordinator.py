@@ -28,6 +28,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
@@ -235,6 +236,7 @@ class AdjustableBedCoordinator:
             BED_TYPE_SERTA: "Serta",
             BED_TYPE_OCTO: "Octo",
             BED_TYPE_MATTRESSFIRM: "MattressFirm",
+            BED_TYPE_NECTAR: "Nectar",
         }
         return manufacturers.get(self._bed_type, "Unknown")
 
@@ -894,6 +896,11 @@ class AdjustableBedCoordinator:
             from .beds.mattressfirm import MattressFirmController
 
             return MattressFirmController(self)
+
+        if self._bed_type == BED_TYPE_NECTAR:
+            from .beds.nectar import NectarController
+
+            return NectarController(self)
 
         raise ValueError(f"Unknown bed type: {self._bed_type}")
 
