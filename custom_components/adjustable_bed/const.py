@@ -220,7 +220,22 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # - Leggett & Platt Okin variant (6-byte protocol, same as Okimat)
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
-OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble")
+# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", or "OKIN-XXXXXX" (e.g., OKIN-346311)
+OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-")
+
+# Keeson name patterns for devices that may not advertise the specific service UUID
+# - base-i4.XXXXXXXX (e.g., base-i4.00002574)
+# - base-i5.XXXXXXXX (e.g., base-i5.00000682)
+# - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
+KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt")
+
+# Richmat Nordic name patterns (e.g., QRRM157052)
+RICHMAT_NAME_PATTERNS: Final = ("qrrm",)
+
+# Ergomotion name patterns
+# - "ergomotion", "ergo" (generic)
+# - "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
+ERGOMOTION_NAME_PATTERNS: Final = ("ergomotion", "ergo", "serta-i")
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"

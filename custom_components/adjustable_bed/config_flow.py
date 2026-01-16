@@ -63,7 +63,9 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    ERGOMOTION_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
+    KEESON_NAME_PATTERNS,
     KEESON_VARIANTS,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
@@ -77,6 +79,7 @@ from .const import (
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     REVERIE_SERVICE_UUID,
+    RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_VARIANTS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -291,13 +294,33 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         return BED_TYPE_MOTOSLEEP
 
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)
-    if "ergomotion" in device_name or "ergo" in device_name:
+    # Includes "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
+    if any(pattern in device_name for pattern in ERGOMOTION_NAME_PATTERNS):
         _LOGGER.info(
             "Detected Ergomotion bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
         return BED_TYPE_ERGOMOTION
+
+    # Check for Keeson by name patterns (e.g., base-i4.XXXX, base-i5.XXXX, KSBTXXXX)
+    # This catches devices that may not advertise the specific service UUID
+    if any(device_name.startswith(pattern) for pattern in KEESON_NAME_PATTERNS):
+        _LOGGER.info(
+            "Detected Keeson bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_KEESON
+
+    # Check for Richmat by name pattern (e.g., QRRM157052)
+    if any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS):
+        _LOGGER.info(
+            "Detected Richmat bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_RICHMAT
 
     # Check for Jiecang - name-based detection (Glide beds, Dream Motion app)
     if any(x in device_name for x in ["jiecang", "jc-", "dream motion", "glide"]):

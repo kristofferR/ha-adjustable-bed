@@ -167,6 +167,73 @@ class TestDetectBedType:
         bed_type = detect_bed_type(service_info)
         assert bed_type == BED_TYPE_ERGOMOTION
 
+    def test_detect_ergomotion_serta_i_name(self):
+        """Test Ergomotion detection with 'serta-i' prefix (e.g., Serta-i490350)."""
+        service_info = MagicMock()
+        service_info.name = "Serta-i490350"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_ERGOMOTION
+
+    def test_detect_keeson_base_i4_name(self):
+        """Test Keeson detection with 'base-i4.' prefix (e.g., base-i4.00002574)."""
+        service_info = MagicMock()
+        service_info.name = "base-i4.00002574"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_KEESON
+
+    def test_detect_keeson_base_i5_name(self):
+        """Test Keeson detection with 'base-i5.' prefix (e.g., base-i5.00000682)."""
+        service_info = MagicMock()
+        service_info.name = "base-i5.00000682"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_KEESON
+
+    def test_detect_keeson_ksbt_name(self):
+        """Test Keeson detection with 'KSBT' prefix (e.g., KSBT03C000015046)."""
+        service_info = MagicMock()
+        service_info.name = "KSBT03C000015046"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_KEESON
+
+    def test_detect_richmat_qrrm_name(self):
+        """Test Richmat detection with 'QRRM' prefix (e.g., QRRM157052)."""
+        service_info = MagicMock()
+        service_info.name = "QRRM157052"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_RICHMAT
+
+    def test_detect_okimat_okin_prefix_name(self):
+        """Test Okimat detection with 'OKIN-' prefix (e.g., OKIN-346311)."""
+        from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
+        service_info = MagicMock()
+        service_info.name = "OKIN-346311"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = [OKIMAT_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_OKIMAT
+
     def test_detect_jiecang_bed(self, mock_bluetooth_service_info_jiecang):
         """Test detection of Jiecang bed by name (JC- prefix)."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_jiecang)
