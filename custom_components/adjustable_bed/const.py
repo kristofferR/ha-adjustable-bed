@@ -39,6 +39,7 @@ BED_TYPE_DEWERTOKIN: Final = "dewertokin"
 BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
+BED_TYPE_NECTAR: Final = "nectar"
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,
@@ -55,6 +56,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SERTA,
     BED_TYPE_OCTO,
     BED_TYPE_MATTRESSFIRM,
+    BED_TYPE_NECTAR,
 ]
 
 # Linak specific UUIDs
@@ -174,6 +176,14 @@ OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 # Uses Nordic UART Service with custom 7-byte command format
 MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+
+# Nectar specific UUIDs
+# Protocol reverse-engineered by MaximumWorf (https://github.com/MaximumWorf/homeassistant-nectar)
+# Uses OKIN service UUID but with 7-byte direct command format (similar to Mattress Firm 900)
+# Note: Shares service UUID with Okimat but uses different command protocol
+NECTAR_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
+NECTAR_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
+NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
