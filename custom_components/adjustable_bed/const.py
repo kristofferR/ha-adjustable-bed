@@ -155,6 +155,20 @@ OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
+# OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
+# Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
+OKIN_POSITION_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+OKIN_POSITION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+
+# OKIN position calibration
+# Position data is in bytes 3-6 of notification (2 bytes each, little-endian)
+# Head: raw 0-16000 maps to 0-60 degrees
+# Foot: raw 0-12000 maps to 0-45 degrees
+OKIN_HEAD_MAX_RAW: Final = 16000
+OKIN_HEAD_MAX_ANGLE: Final = 60.0
+OKIN_FOOT_MAX_RAW: Final = 12000
+OKIN_FOOT_MAX_ANGLE: Final = 45.0
+
 # Jiecang specific UUIDs (Glide beds, Dream Motion app)
 JIECANG_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
 
@@ -285,6 +299,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_LINAK,
+    BED_TYPE_OKIMAT,
 })
 
 # Default values
