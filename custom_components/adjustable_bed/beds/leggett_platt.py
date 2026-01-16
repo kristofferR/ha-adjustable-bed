@@ -1,8 +1,12 @@
 """Leggett & Platt bed controller implementation.
 
 Leggett & Platt beds have two protocol variants:
-- Gen2: ASCII text commands (Richmat-based)
+- Gen2: ASCII text commands (Richmat-based, unique service UUID)
 - Okin: Binary commands with 6-byte format (requires BLE pairing)
+
+Note: The Okin variant shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b)
+with Okimat and Nectar beds. Detection uses device name patterns to distinguish between these
+bed types. See okin_protocol.py for the shared protocol specification.
 """
 
 from __future__ import annotations
@@ -18,21 +22,12 @@ from ..const import (
     LEGGETT_OKIN_CHAR_UUID,
 )
 from .base import BedController
+from .okin_protocol import build_okin_command
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def int_to_bytes(value: int) -> list[int]:
-    """Convert an integer to 4 bytes (big-endian)."""
-    return [
-        (value >> 24) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 8) & 0xFF,
-        value & 0xFF,
-    ]
 
 
 class LeggettPlattGen2Commands:
@@ -162,7 +157,7 @@ class LeggettPlattController(BedController):
 
     def _build_okin_command(self, command_value: int) -> bytes:
         """Build Okin binary command: [0x04, 0x02, ...int_bytes]."""
-        return bytes([0x04, 0x02] + int_to_bytes(command_value))
+        return build_okin_command(command_value)
 
     async def write_command(
         self,

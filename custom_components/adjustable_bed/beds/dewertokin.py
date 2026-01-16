@@ -3,6 +3,13 @@
 DewertOkin beds (A H Beard, HankookGallery) use handle-based writes.
 Commands are 6 bytes written to handle 0x0013.
 Uses "random" BLE address type.
+
+Protocol family: DewertOkin uses the same Okin 6-byte command format as Okimat
+and Leggett & Platt Okin variant ([0x04, 0x02, <4-byte-command>]). The key
+difference is DewertOkin writes to a BLE handle (0x0013) rather than a UUID.
+Detection is by device name patterns, not service UUID.
+
+See okin_protocol.py for the shared protocol specification.
 """
 
 from __future__ import annotations

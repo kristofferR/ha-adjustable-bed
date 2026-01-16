@@ -213,6 +213,15 @@ NECTAR_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
+# Detection name patterns for beds sharing the OKIN service UUID
+# Multiple bed types share the same UUID (62741523-...), so name patterns help disambiguate:
+# - Nectar (7-byte protocol)
+# - Okimat (6-byte protocol)
+# - Leggett & Platt Okin variant (6-byte protocol, same as Okimat)
+# Detection priority: name patterns first, then UUID fallback to Okimat
+LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p", "adjustable base")
+OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble")
+
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 

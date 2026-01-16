@@ -3,6 +3,10 @@
 Okimat beds use the Okin protocol with 6-byte commands: [0x04, 0x02, ...int_to_bytes(command)]
 They require BLE pairing before use.
 
+Note: Okimat shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b) with
+Leggett & Platt Okin variant and Nectar beds. Detection uses device name patterns to
+distinguish between these bed types. See okin_protocol.py for shared protocol details.
+
 Supported remote codes (configured via variant):
 - 80608: RFS ELLIPSE (Back, Legs)
 - 82417: RF TOPLINE (Back, Legs)
@@ -20,8 +24,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
@@ -44,21 +48,12 @@ from ..const import (
     VARIANT_AUTO,
 )
 from .base import BedController
+from .okin_protocol import build_okin_command
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def int_to_bytes(value: int) -> list[int]:
-    """Convert an integer to 4 bytes (big-endian)."""
-    return [
-        (value >> 24) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 8) & 0xFF,
-        value & 0xFF,
-    ]
 
 
 @dataclass
@@ -200,7 +195,7 @@ class OkimatController(BedController):
 
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes: [0x04, 0x02, ...int_to_bytes(command)]."""
-        return bytes([0x04, 0x02] + int_to_bytes(command_value))
+        return build_okin_command(command_value)
 
     async def write_command(
         self,

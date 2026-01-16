@@ -52,7 +52,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 [DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin) ·
 [Serta](docs/SUPPORTED_ACTUATORS.md#serta) ·
 [Octo](docs/SUPPORTED_ACTUATORS.md#octo) ·
-[Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900)
+[Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900) ·
+[Nectar](docs/SUPPORTED_ACTUATORS.md#nectar)
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) if it works!
 

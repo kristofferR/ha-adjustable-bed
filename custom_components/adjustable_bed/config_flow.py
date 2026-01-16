@@ -7,7 +7,6 @@ import re
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
@@ -40,6 +39,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
+    BEDS_WITH_ANGLE_SENSING,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
@@ -62,19 +62,20 @@ from .const import (
     DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
-    POSITION_MODE_ACCURACY,
-    POSITION_MODE_SPEED,
-    BEDS_WITH_ANGLE_SENSING,
     DOMAIN,
     KEESON_BASE_SERVICE_UUID,
     KEESON_VARIANTS,
     LEGGETT_GEN2_SERVICE_UUID,
+    LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_VARIANTS,
     LINAK_CONTROL_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANTS,
+    OKIMAT_NAME_PATTERNS,
     OKIMAT_SERVICE_UUID,
     OKIMAT_VARIANTS,
+    POSITION_MODE_ACCURACY,
+    POSITION_MODE_SPEED,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_VARIANTS,
@@ -239,12 +240,32 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_NECTAR
 
-    # Check for Okimat/Leggett Okin (same UUID, requires pairing)
+    # Check for beds using OKIN service UUID (Okimat, Leggett Okin, Nectar)
+    # Nectar is already handled above by name check
+    # Use name patterns to disambiguate between Okimat and Leggett Okin
     if OKIMAT_SERVICE_UUID.lower() in service_uuids:
-        # Could be Okimat or Leggett Okin - default to Okimat
-        _LOGGER.info(
-            "Detected Okimat/Okin bed at %s (name: %s)",
-            service_info.address,
+        # Check for Leggett & Platt Okin by name patterns
+        if any(pattern in device_name for pattern in LEGGETT_OKIN_NAME_PATTERNS):
+            _LOGGER.info(
+                "Detected Leggett & Platt Okin bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_LEGGETT_PLATT
+
+        # Check for Okimat-specific name patterns
+        if any(pattern in device_name for pattern in OKIMAT_NAME_PATTERNS):
+            _LOGGER.info(
+                "Detected Okimat bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_OKIMAT
+
+        # Fallback: default to Okimat with warning about ambiguity
+        _LOGGER.warning(
+            "Okin UUID detected but device name '%s' doesn't match known patterns. "
+            "Defaulting to Okimat. Change to Leggett & Platt in settings if needed.",
             service_info.name,
         )
         return BED_TYPE_OKIMAT
