@@ -65,6 +65,7 @@ from .const import (
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STAR2,
+    RICHMAT_VARIANT_190_0055,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
 )
@@ -781,7 +782,7 @@ class AdjustableBedCoordinator:
             from .beds.richmat import RichmatController, detect_richmat_variant
 
             # Use configured variant or auto-detect
-            if self._protocol_variant == RICHMAT_VARIANT_NORDIC:
+            if self._protocol_variant in (RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_190_0055):
                 _LOGGER.debug("Using Nordic Richmat variant (configured)")
                 return RichmatController(self, is_wilinke=False)
             elif self._protocol_variant == RICHMAT_VARIANT_WILINKE:
