@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
@@ -130,60 +131,59 @@ class NectarController(BedController):
             if i < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
-    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
+    async def start_notify(self, _callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         # Nectar beds don't support position feedback
         _LOGGER.debug("Nectar beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, _motor_count: int = 2) -> None:
         """Read current motor positions."""
         # Not supported on Nectar beds
-        pass
+
+    async def _move_with_stop(self, command: bytes) -> None:
+        """Execute a movement command and always send STOP at the end."""
+        try:
+            pulse_count = self._coordinator.motor_pulse_count
+            pulse_delay = self._coordinator.motor_pulse_delay_ms
+            await self.write_command(
+                command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
+            )
+        finally:
+            try:
+                await self.write_command(
+                    NectarCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self.write_command(
-            NectarCommands.HEAD_UP,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self.write_command(
-            NectarCommands.HEAD_DOWN,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head movement."""
-        await self.write_command(NectarCommands.STOP, repeat_count=1)
+        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
-        await self.write_command(
-            NectarCommands.FOOT_UP,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.FOOT_UP)
 
     async def move_feet_down(self) -> None:
         """Move feet down."""
-        await self.write_command(
-            NectarCommands.FOOT_DOWN,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.FOOT_DOWN)
 
     async def move_feet_stop(self) -> None:
         """Stop feet movement."""
-        await self.write_command(NectarCommands.STOP, repeat_count=1)
+        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
 
     async def move_back_up(self) -> None:
         """Move back up (use head for 2-motor beds)."""
@@ -212,23 +212,15 @@ class NectarController(BedController):
     # Lumbar control
     async def move_lumbar_up(self) -> None:
         """Move lumbar up."""
-        await self.write_command(
-            NectarCommands.LUMBAR_UP,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.LUMBAR_UP)
 
     async def move_lumbar_down(self) -> None:
         """Move lumbar down."""
-        await self.write_command(
-            NectarCommands.LUMBAR_DOWN,
-            repeat_count=self._coordinator.motor_pulse_count,
-            repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-        )
+        await self._move_with_stop(NectarCommands.LUMBAR_DOWN)
 
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar movement."""
-        await self.write_command(NectarCommands.STOP, repeat_count=1)
+        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
 
     # Preset positions
     async def preset_flat(self) -> None:
@@ -267,7 +259,7 @@ class NectarController(BedController):
         """Go to TV position (alias for lounge)."""
         await self.preset_lounge()
 
-    async def preset_memory(self, slot: int) -> None:
+    async def preset_memory(self, _slot: int) -> None:
         """Go to memory position.
 
         Note: Nectar beds don't support user-programmable memory slots.
@@ -278,15 +270,13 @@ class NectarController(BedController):
         )
         raise NotImplementedError("Memory slots not supported on Nectar beds")
 
-    async def program_memory(self, slot: int) -> None:
+    async def program_memory(self, _slot: int) -> None:
         """Program memory position."""
         raise NotImplementedError("Memory programming not supported on Nectar beds")
 
     async def stop_all(self) -> None:
         """Stop all movement."""
-        # Send stop command and signal cancellation
-        self._coordinator.cancel_command.set()
-        await self.write_command(NectarCommands.STOP, repeat_count=1)
+        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
 
     # Massage controls
     async def massage_toggle(self) -> None:

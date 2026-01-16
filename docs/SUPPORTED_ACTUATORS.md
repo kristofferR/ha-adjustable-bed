@@ -571,11 +571,13 @@ Uses same 32-bit command values as Keeson - see [Keeson commands](#commands-32-b
 **Credit:** Protocol reverse-engineered by [MaximumWorf](https://github.com/MaximumWorf) - [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)
 
 ### Known Models
+
 - Nectar Split King Luxe Adjustable Foundation
 - Nectar adjustable bases
 - Other beds using OKIN controllers with 7-byte command format
 
 ### Features
+
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (Head, Foot, Lumbar) |

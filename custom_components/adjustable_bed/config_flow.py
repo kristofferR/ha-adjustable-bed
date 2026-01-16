@@ -233,7 +233,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
     # Check for Nectar - name-based detection (before Okimat since same UUID)
     # Nectar beds use OKIN service UUID but different command protocol
-    if "nectar" in device_name:
+    if "nectar" in device_name and OKIMAT_SERVICE_UUID.lower() in service_uuids:
         _LOGGER.info(
             "Detected Nectar bed at %s (name: %s)",
             service_info.address,
