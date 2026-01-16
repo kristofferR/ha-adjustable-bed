@@ -375,6 +375,11 @@ class BedController(ABC):
         """Return True if bed has lumbar motor control."""
         return False
 
+    @property
+    def has_pillow_support(self) -> bool:
+        """Return True if bed has pillow motor control."""
+        return False
+
     # Lumbar motor control (optional - only some beds have this)
 
     async def move_lumbar_up(self) -> None:
@@ -400,6 +405,32 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't have lumbar motor
         """
         raise NotImplementedError("Lumbar motor not supported on this bed")
+
+    # Pillow motor control (optional - only some beds have this)
+
+    async def move_pillow_up(self) -> None:
+        """Move pillow motor up for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have pillow motor
+        """
+        raise NotImplementedError("Pillow motor not supported on this bed")
+
+    async def move_pillow_down(self) -> None:
+        """Move pillow motor down for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have pillow motor
+        """
+        raise NotImplementedError("Pillow motor not supported on this bed")
+
+    async def move_pillow_stop(self) -> None:
+        """Immediately stop pillow motor movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have pillow motor
+        """
+        raise NotImplementedError("Pillow motor not supported on this bed")
 
     # Optional preset methods (may not be available on all beds)
     # These raise NotImplementedError by default. Subclasses override if supported.

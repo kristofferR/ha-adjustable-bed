@@ -71,6 +71,7 @@ from .const import (
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_VARIANTS,
     LINAK_CONTROL_SERVICE_UUID,
+    OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANTS,
     OKIMAT_NAME_PATTERNS,
@@ -81,8 +82,11 @@ from .const import (
     REVERIE_SERVICE_UUID,
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
+    RICHMAT_REMOTE_AUTO,
+    RICHMAT_REMOTES,
     RICHMAT_VARIANTS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    CONF_RICHMAT_REMOTE,
     SOLACE_SERVICE_UUID,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
@@ -352,7 +356,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_SERTA
 
-    # Check for Octo Star2 variant - service UUID detection (before name-based Octo check)
+    # Check for Octo by name pattern (e.g., DA1458x BLE chip used in some receivers)
+    if any(device_name.startswith(pattern) for pattern in OCTO_NAME_PATTERNS):
+        _LOGGER.info(
+            "Detected Octo bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_OCTO
+
+    # Check for Octo Star2 variant - service UUID detection
     if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
         _LOGGER.info(
             "Detected Octo Star2 bed at %s (name: %s)",
@@ -528,6 +541,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Add Octo PIN if configured
             if selected_bed_type == BED_TYPE_OCTO:
                 entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+            # Add Richmat remote code if configured
+            if selected_bed_type == BED_TYPE_RICHMAT:
+                entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 data=entry_data,
@@ -575,6 +591,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = vol.All(
                 str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
             )
+
+        # Add remote selection for Richmat beds
+        if bed_type == BED_TYPE_RICHMAT:
+            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(RICHMAT_REMOTES)
 
         return self.async_show_form(
             step_id="bluetooth_confirm",
@@ -724,6 +744,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if bed_type == BED_TYPE_OCTO:
                         self._manual_data = entry_data
                         return await self.async_step_manual_octo()
+                    # Add Richmat remote code if configured
+                    if bed_type == BED_TYPE_RICHMAT:
+                        entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
                         data=entry_data,
@@ -734,34 +757,46 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
+        # Build base schema
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Required(CONF_ADDRESS): str,
+            vol.Required(CONF_BED_TYPE): vol.In(SUPPORTED_BED_TYPES),
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
+                ALL_PROTOCOL_VARIANTS
+            ),
+        }
+
+        # Only show Richmat remote field when bed type is Richmat
+        selected_bed_type = user_input.get(CONF_BED_TYPE) if user_input else None
+        if selected_bed_type == BED_TYPE_RICHMAT:
+            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(
+                RICHMAT_REMOTES
+            )
+
+        # Add remaining fields
+        schema_dict.update({
+            vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
+            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
+                [2, 3, 4]
+            ),
+            vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
+            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
+            vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
+            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
+                TextSelectorConfig()
+            ),
+            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
+                TextSelectorConfig()
+            ),
+            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
+            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
+                range(10, 301)
+            ),
+        })
+
         return self.async_show_form(
             step_id="manual",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_ADDRESS): str,
-                    vol.Required(CONF_BED_TYPE): vol.In(SUPPORTED_BED_TYPES),
-                    vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
-                        ALL_PROTOCOL_VARIANTS
-                    ),
-                    vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
-                    vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
-                        [2, 3, 4]
-                    ),
-                    vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-                    vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
-                    vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
-                    vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
-                        TextSelectorConfig()
-                    ),
-                    vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
-                        TextSelectorConfig()
-                    ),
-                    vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
-                    vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
-                        range(10, 301)
-                    ),
-                }
-            ),
+            data_schema=vol.Schema(schema_dict),
             errors=errors,
         )
 
@@ -863,6 +898,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_OCTO_PIN,
                 default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
             )] = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+
+        # Add remote selection for Richmat beds
+        if bed_type == BED_TYPE_RICHMAT:
+            schema_dict[vol.Optional(
+                CONF_RICHMAT_REMOTE,
+                default=current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
+            )] = vol.In(RICHMAT_REMOTES)
 
         if user_input is not None:
             # Convert text values to integers

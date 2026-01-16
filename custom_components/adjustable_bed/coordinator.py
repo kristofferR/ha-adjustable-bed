@@ -66,9 +66,10 @@ from .const import (
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STAR2,
-    RICHMAT_VARIANT_190_0055,
+    RICHMAT_REMOTE_AUTO,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    CONF_RICHMAT_REMOTE,
 )
 
 if TYPE_CHECKING:
@@ -113,6 +114,9 @@ class AdjustableBedCoordinator:
 
         # Octo-specific configuration
         self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+
+        # Richmat-specific configuration
+        self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -784,12 +788,12 @@ class AdjustableBedCoordinator:
             from .beds.richmat import RichmatController, detect_richmat_variant
 
             # Use configured variant or auto-detect
-            if self._protocol_variant in (RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_190_0055):
+            if self._protocol_variant == RICHMAT_VARIANT_NORDIC:
                 _LOGGER.debug("Using Nordic Richmat variant (configured)")
-                return RichmatController(self, is_wilinke=False)
+                return RichmatController(self, is_wilinke=False, remote_code=self._richmat_remote)
             elif self._protocol_variant == RICHMAT_VARIANT_WILINKE:
                 _LOGGER.debug("Using WiLinke Richmat variant (configured)")
-                return RichmatController(self, is_wilinke=True)
+                return RichmatController(self, is_wilinke=True, remote_code=self._richmat_remote)
             else:
                 # Auto-detect variant based on available services
                 _LOGGER.debug("Auto-detecting Richmat variant...")
@@ -798,6 +802,7 @@ class AdjustableBedCoordinator:
                     self,
                     is_wilinke=is_wilinke,
                     char_uuid=char_uuid,
+                    remote_code=self._richmat_remote,
                 )
 
         if self._bed_type == BED_TYPE_KEESON:

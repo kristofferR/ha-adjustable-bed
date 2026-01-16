@@ -217,6 +217,17 @@ class TestDetectBedType:
         bed_type = detect_bed_type(service_info)
         assert bed_type == BED_TYPE_RICHMAT
 
+    def test_detect_richmat_sleep_function_name(self):
+        """Test Richmat detection with 'Sleep Function' prefix (I7RM remote)."""
+        service_info = MagicMock()
+        service_info.name = "Sleep Function 2.0"
+        service_info.address = "AA:BB:CC:DD:EE:FF"
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_RICHMAT
+
     def test_detect_okimat_okin_prefix_name(self):
         """Test Okimat detection with 'OKIN-' prefix (e.g., OKIN-346311)."""
         from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
