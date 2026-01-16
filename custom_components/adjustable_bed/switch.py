@@ -27,6 +27,8 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
 
     turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
+    # Capability property name to check on controller (e.g., "supports_lights")
+    required_capability: str | None = None
 
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
@@ -36,6 +38,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:lightbulb",
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
+        required_capability="supports_lights",
     ),
 )
 
@@ -47,11 +50,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed switch entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    controller = coordinator.controller
 
-    entities = [
-        AdjustableBedSwitch(coordinator, description)
-        for description in SWITCH_DESCRIPTIONS
-    ]
+    entities = []
+    for description in SWITCH_DESCRIPTIONS:
+        # Skip switches that require capabilities the controller doesn't have
+        if description.required_capability is not None:
+            if controller is None:
+                continue
+            if not getattr(controller, description.required_capability, True):
+                continue
+        entities.append(AdjustableBedSwitch(coordinator, description))
 
     async_add_entities(entities)
 
