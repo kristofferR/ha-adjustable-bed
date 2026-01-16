@@ -517,7 +517,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
             schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = vol.All(
-                str, vol.Match(r"^\d*$", msg="PIN must contain only digits")
+                str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
             )
 
         return self.async_show_form(
@@ -727,7 +727,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
-                        str, vol.Match(r"^\d*$", msg="PIN must contain only digits")
+                        str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
                     ),
                 }
             ),
@@ -806,7 +806,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             schema_dict[vol.Optional(
                 CONF_OCTO_PIN,
                 default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-            )] = vol.All(str, vol.Match(r"^\d*$", msg="PIN must contain only digits"))
+            )] = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
 
         if user_input is not None:
             # Convert text values to integers

@@ -36,6 +36,7 @@ OCTO_MOTOR_LEGS = 0x04
 # Feature IDs
 OCTO_FEATURE_PIN = 0x000003
 OCTO_FEATURE_LIGHT = 0x000102
+OCTO_FEATURE_END = 0xFFFFFF  # End-of-features sentinel
 
 # Feature discovery timeout
 OCTO_FEATURE_TIMEOUT = 5.0
@@ -61,6 +62,7 @@ class OctoController(BedController):
         self._pin_locked: bool | None = None
         self._has_lights: bool | None = None  # None = not yet discovered
         self._features_loaded: asyncio.Event = asyncio.Event()
+        self._features_complete: asyncio.Event = asyncio.Event()  # Set when 0xFFFFFF sentinel received
 
         _LOGGER.debug(
             "OctoController initialized (PIN %s)",
@@ -187,7 +189,11 @@ class OctoController(BedController):
         feature_id, value = result
         _LOGGER.debug("Feature 0x%06x: %s", feature_id, value)
 
-        if feature_id == OCTO_FEATURE_PIN:
+        if feature_id == OCTO_FEATURE_END:
+            # End-of-features sentinel - all features have been received
+            _LOGGER.debug("Feature discovery complete (received 0xFFFFFF sentinel)")
+            self._features_complete.set()
+        elif feature_id == OCTO_FEATURE_PIN:
             # value[0] = hasPin (0x01 if bed has PIN feature)
             # value[1] = pinLock (0x01 if unlocked, other if locked)
             self._has_pin = len(value) > 0 and value[0] == 0x01
@@ -329,7 +335,7 @@ class OctoController(BedController):
     async def discover_features(self) -> bool:
         """Discover bed features including PIN requirement and lights.
 
-        Sends feature request command and waits for response.
+        Sends feature request command and waits for the 0xFFFFFF end sentinel.
 
         Returns:
             True if features were discovered, False on timeout.
@@ -340,6 +346,7 @@ class OctoController(BedController):
 
         # Reset state
         self._features_loaded.clear()
+        self._features_complete.clear()
         self._has_pin = None
         self._pin_locked = None
         self._has_lights = None
@@ -350,14 +357,12 @@ class OctoController(BedController):
             # Send feature request [0x20, 0x71]
             await self._write_octo_command(command=[0x20, 0x71])
 
-            # Wait for response with timeout
+            # Wait for 0xFFFFFF end sentinel with timeout
             try:
                 await asyncio.wait_for(
-                    self._features_loaded.wait(),
+                    self._features_complete.wait(),
                     timeout=OCTO_FEATURE_TIMEOUT,
                 )
-                # Got at least one feature, wait for additional features to arrive
-                await asyncio.sleep(1.0)
 
                 # Set defaults for features not detected (bed doesn't have them)
                 if self._has_lights is None:
@@ -644,6 +649,11 @@ class OctoStar2Controller(BedController):
         _LOGGER.debug("OctoStar2Controller initialized")
 
     @property
+    def supports_lights(self) -> bool:
+        """Star2 protocol doesn't support light control."""
+        return False
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return OCTO_STAR2_CHAR_UUID
@@ -702,23 +712,19 @@ class OctoStar2Controller(BedController):
         )
         self._notify_callback = None
 
-    async def read_positions(self, motor_count: int = 2) -> list[float]:
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.
 
         Star2 doesn't support position feedback.
 
         Args:
             motor_count: Number of motors to read positions for (unused).
-
-        Returns:
-            Empty list as position feedback is not supported.
         """
         _LOGGER.debug(
             "read_positions called for OctoStar2Controller with motor_count=%d "
             "- position feedback not supported",
             motor_count,
         )
-        return []
 
     async def _send_stop(self) -> None:
         """Send stop command.
