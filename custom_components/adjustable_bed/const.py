@@ -236,6 +236,29 @@ OCTO_VARIANTS: Final = {
 RICHMAT_PROTOCOL_WILINKE: Final = "wilinke"  # [110, 1, 0, cmd, cmd+111]
 RICHMAT_PROTOCOL_SINGLE: Final = "single"  # [cmd]
 
+# Okimat remote code variants
+# Different remotes have different command values and motor configurations
+# Reference: https://github.com/richardhopton/smartbed-mqtt
+OKIMAT_VARIANT_80608: Final = "80608"
+OKIMAT_VARIANT_82417: Final = "82417"
+OKIMAT_VARIANT_82418: Final = "82418"
+OKIMAT_VARIANT_88875: Final = "88875"
+OKIMAT_VARIANT_91244: Final = "91244"
+OKIMAT_VARIANT_93329: Final = "93329"
+OKIMAT_VARIANT_93332: Final = "93332"
+OKIMAT_VARIANT_94238: Final = "94238"
+OKIMAT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (try 82417 first)",
+    OKIMAT_VARIANT_80608: "80608 - RFS ELLIPSE (Back, Legs)",
+    OKIMAT_VARIANT_82417: "82417 - RF TOPLINE (Back, Legs)",
+    OKIMAT_VARIANT_82418: "82418 - RF TOPLINE (Back, Legs, 2 Memory)",
+    OKIMAT_VARIANT_88875: "88875 - RF LITELINE (Back, Legs)",
+    OKIMAT_VARIANT_91244: "91244 - RF-FLASHLINE (Back, Legs)",
+    OKIMAT_VARIANT_93329: "93329 - RF TOPLINE (Head, Back, Legs, 4 Memory)",
+    OKIMAT_VARIANT_93332: "93332 - RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)",
+    OKIMAT_VARIANT_94238: "94238 - RF FLASHLINE (Back, Legs, 2 Memory)",
+}
+
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
@@ -249,6 +272,14 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RICHMAT_VARIANT_190_0055,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    OKIMAT_VARIANT_80608,
+    OKIMAT_VARIANT_82417,
+    OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_93329,
+    OKIMAT_VARIANT_93332,
+    OKIMAT_VARIANT_94238,
 ]
 
 # Bed types that support angle sensing (position feedback)
