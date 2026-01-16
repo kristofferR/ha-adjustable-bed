@@ -197,7 +197,10 @@ class DewertOkinController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self.move_head_stop()
+        await self.write_command(
+            DewertOkinCommands.STOP,
+            cancel_event=asyncio.Event(),
+        )
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -209,7 +212,10 @@ class DewertOkinController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self.move_head_stop()
+        await self.write_command(
+            DewertOkinCommands.STOP,
+            cancel_event=asyncio.Event(),
+        )
 
     async def stop_all(self) -> None:
         """Stop all motors."""
