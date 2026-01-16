@@ -73,6 +73,7 @@ from .const import (
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANTS,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_VARIANTS,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_VARIANTS,
@@ -117,12 +118,14 @@ def get_variants_for_bed_type(bed_type: str) -> dict[str, str] | None:
         return RICHMAT_VARIANTS
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANTS
+    if bed_type == BED_TYPE_OKIMAT:
+        return OKIMAT_VARIANTS
     return None
 
 
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
-    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OCTO, BED_TYPE_RICHMAT)
+    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OCTO, BED_TYPE_OKIMAT, BED_TYPE_RICHMAT)
 
 
 def get_available_adapters(hass) -> dict[str, str]:
