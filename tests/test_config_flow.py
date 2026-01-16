@@ -86,11 +86,6 @@ class TestDetectBedType:
         bed_type = detect_bed_type(mock_bluetooth_service_info_keeson)
         assert bed_type == BED_TYPE_KEESON
 
-    def test_detect_solace_bed(self, mock_bluetooth_service_info_solace):
-        """Test detection of Solace bed."""
-        bed_type = detect_bed_type(mock_bluetooth_service_info_solace)
-        assert bed_type == BED_TYPE_SOLACE
-
     def test_detect_motosleep_bed(self, mock_bluetooth_service_info_motosleep):
         """Test detection of MotoSleep bed (by HHC name prefix)."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_motosleep)

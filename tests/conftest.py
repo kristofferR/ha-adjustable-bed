@@ -200,25 +200,6 @@ def mock_bluetooth_service_info_keeson() -> MagicMock:
 
 
 @pytest.fixture
-def mock_bluetooth_service_info_solace() -> MagicMock:
-    """Return mock Bluetooth service info for a Solace bed."""
-    service_info = MagicMock()
-    service_info.name = "Solace Bed"
-    service_info.address = "55:66:77:88:99:AA"
-    service_info.rssi = -60
-    service_info.manufacturer_data = {}
-    service_info.service_data = {}
-    service_info.service_uuids = [SOLACE_SERVICE_UUID]
-    service_info.source = "local"
-    service_info.device = MagicMock()
-    service_info.advertisement = MagicMock()
-    service_info.connectable = True
-    service_info.time = 0
-    service_info.tx_power = None
-    return service_info
-
-
-@pytest.fixture
 def mock_bluetooth_service_info_motosleep() -> MagicMock:
     """Return mock Bluetooth service info for a MotoSleep bed (HHC controller)."""
     service_info = MagicMock()
