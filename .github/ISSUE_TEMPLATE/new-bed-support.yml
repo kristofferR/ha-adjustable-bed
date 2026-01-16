@@ -1,0 +1,114 @@
+name: New Bed Support Request
+description: Request support for a new adjustable bed brand or model
+title: "[New Bed] "
+labels: ["new-bed", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to request support for a new bed! The information you provide helps us implement the protocol correctly.
+
+        **Before submitting:** Check the [Supported Actuators guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/SUPPORTED_ACTUATORS.md) to see if your bed might already be supported under a different actuator brand name.
+
+  - type: input
+    id: manufacturer
+    attributes:
+      label: Bed Manufacturer/Brand
+      description: The brand name of your bed (e.g., Tempur-Pedic, Sleep Number, Nectar)
+      placeholder: "e.g., Tempur-Pedic"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Bed Model
+      description: The specific model name or number
+      placeholder: "e.g., Ergo Extend"
+    validations:
+      required: true
+
+  - type: input
+    id: remote_model
+    attributes:
+      label: Remote Control Model Number
+      description: Check the back of your remote for a model number
+      placeholder: "e.g., RF TOPLINE 82417"
+    validations:
+      required: false
+
+  - type: input
+    id: bluetooth_name
+    attributes:
+      label: Bluetooth Device Name
+      description: |
+        The name shown when scanning with a BLE app like nRF Connect.
+        Tip: Look for names containing your bed brand, "Desk", "HHC", "Base", etc.
+      placeholder: "e.g., Desk 12345, HHC-BLE, base-i5.00000123"
+    validations:
+      required: true
+
+  - type: textarea
+    id: service_uuids
+    attributes:
+      label: BLE Service UUIDs
+      description: |
+        List the service UUIDs shown in nRF Connect when connected to your bed.
+        These help identify which protocol family your bed uses.
+      placeholder: |
+        e.g.,
+        - 0000ffe0-0000-1000-8000-00805f9b34fb
+        - 6e400001-b5a3-f393-e0a9-e50e24dcca9e
+    validations:
+      required: true
+
+  - type: textarea
+    id: manufacturer_data
+    attributes:
+      label: Manufacturer Data (if available)
+      description: |
+        From nRF Connect, check the "Advertising" or "Scanner" tab for manufacturer-specific data.
+        This is optional but can help with detection.
+      placeholder: "e.g., 0x4C00 02 15 ..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: photos
+    attributes:
+      label: Photos
+      description: |
+        Please attach photos of:
+        - Remote control (front and back)
+        - Controller box under the bed (if accessible)
+        - Any labels showing model numbers
+
+        Drag and drop images here or paste from clipboard.
+      placeholder: "Drag and drop images here"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information
+      description: |
+        Any other helpful details:
+        - Does the bed have an official mobile app? (name it)
+        - Does the app require cloud login or work locally?
+        - Any special pairing requirements?
+        - What features does your bed have? (massage, lights, presets, etc.)
+      placeholder: |
+        e.g., Uses the "Smart Bed" app from App Store, requires Bluetooth pairing, has 4 memory presets and massage
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: testing
+    attributes:
+      label: Testing Availability
+      description: Let us know if you can help test an implementation
+      options:
+        - label: I can test beta implementations on my bed
+        - label: I have access to BLE sniffing tools (nRF Connect, Wireshark, etc.)
+        - label: I can capture BLE traffic from the official app

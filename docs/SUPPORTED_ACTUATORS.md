@@ -29,28 +29,9 @@ This document provides an overview of supported bed brands. Click on a brand nam
 
 ---
 
-## Advanced Configuration
+## Configuration
 
-### Motor Pulse Settings
-
-For fine-tuning motor movement behavior, you can adjust these settings in the integration options:
-
-| Setting | Range | Default | Description |
-|---------|-------|---------|-------------|
-| Motor Pulse Count | 1-100 | Bed-specific | Number of command repeats sent for motor movement |
-| Motor Pulse Delay (ms) | 10-500 | Bed-specific | Delay between command pulses |
-
-**Default values by bed type:**
-| Bed Type | Pulse Count | Pulse Delay |
-|----------|-------------|-------------|
-| Richmat | 30 | 50ms |
-| Keeson | 25 | 200ms |
-| Others | 25 | 50ms |
-
-**When to adjust:**
-- **Increase pulse count** if motors stop moving too soon
-- **Decrease pulse delay** for smoother movement
-- **Increase pulse delay** if commands are getting dropped
+For detailed configuration options including motor pulse settings, protocol variants, and bed-specific settings, see the [Configuration Guide](CONFIGURATION.md).
 
 ---
 

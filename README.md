@@ -89,13 +89,20 @@ Your bed should auto-discover via Bluetooth. If not:
 2. Search for "Adjustable Bed"
 3. Enter your bed's Bluetooth address or select from discovered devices
 
-<details>
-<summary><b>Advanced configuration options</b></summary>
+To adjust settings after setup, click the **gear icon** on your device in Settings → Devices & Services.
 
-- **Motor Count**: 2 (back/legs), 3 (adds head), or 4 (adds feet)
-- **Has Massage**: Enable if your bed has massage
-- **Protocol Variant**: Usually auto-detected, override if needed
-- **Motor Pulse Settings**: Fine-tune movement timing
+<details>
+<summary><b>Quick reference</b></summary>
+
+| Setting | Description |
+|---------|-------------|
+| Motor Count | 2 (back/legs), 3 (adds head), or 4 (adds feet) |
+| Has Massage | Enable if your bed has massage |
+| Protocol Variant | Usually auto-detected, override if needed |
+| Motor Pulse Settings | Fine-tune movement timing |
+| Disable Angle Sensing | Keep on to allow physical remote to work |
+
+See the [Configuration Guide](docs/CONFIGURATION.md) for all options.
 
 </details>
 

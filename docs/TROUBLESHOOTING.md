@@ -195,7 +195,7 @@ If motors move too briefly or movement is choppy, adjust **Motor Pulse Settings*
 | Movement is choppy | Decrease pulse delay |
 | Commands get dropped | Increase pulse delay |
 
-See [Motor Pulse Settings](SUPPORTED_ACTUATORS.md#motor-pulse-settings) for default values by bed type.
+See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default values by bed type.
 
 ---
 

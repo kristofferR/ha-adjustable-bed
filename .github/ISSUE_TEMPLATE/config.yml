@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Home Assistant Community
+    url: https://community.home-assistant.io/
+    about: Ask questions and discuss Home Assistant integrations with the community
+  - name: Supported Actuators Guide
+    url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/SUPPORTED_ACTUATORS.md
+    about: Check if your bed is already supported or find your bed's actuator brand
+  - name: Configuration Guide
+    url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/CONFIGURATION.md
+    about: Learn about all configuration options available for the integration

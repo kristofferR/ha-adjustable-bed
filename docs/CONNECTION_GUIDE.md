@@ -105,17 +105,14 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 ## Advanced Options
 
-After setup, you can adjust additional settings via **Settings → Integrations → Adjustable Bed → Configure**:
+After setup, you can adjust additional settings via **Settings → Integrations → Adjustable Bed → Configure** (gear icon):
 
-| Setting | Description |
-|---------|-------------|
-| Protocol Variant | Override auto-detected variant (Keeson: base/ksbt, Richmat: nordic/wilinke) |
-| Command Protocol | Richmat only: Override command byte encoding |
-| Motor Pulse Count | Fine-tune motor movement duration (1-100) |
-| Motor Pulse Delay | Fine-tune motor smoothness (10-500ms) |
-| Bluetooth Adapter | Choose specific adapter or proxy |
+- **Protocol variant** - Override if auto-detection fails
+- **Motor pulse settings** - Fine-tune movement behavior
+- **Bluetooth adapter** - Choose a specific adapter or proxy
+- **Angle sensing** - Disable to allow physical remote to work (recommended)
 
-See [Motor Pulse Settings](SUPPORTED_ACTUATORS.md#motor-pulse-settings) for details on pulse configuration.
+See the [Configuration Guide](CONFIGURATION.md) for detailed explanations of all options.
 
 ---
 
