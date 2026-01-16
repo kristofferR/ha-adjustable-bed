@@ -396,6 +396,123 @@ class TestOkimatMovement:
         )
 
 
+class TestOkimatMultiMotor:
+    """Test Okimat multi-motor command support."""
+
+    def test_get_move_command_empty_state(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_config_entry,
+    ):
+        """Test combined command with no active motors."""
+        from custom_components.adjustable_bed.beds.okimat import OkimatController
+
+        # Create controller without full coordinator setup
+        class MockCoordinator:
+            address = "AA:BB:CC:DD:EE:FF"
+
+        controller = OkimatController(MockCoordinator(), OKIMAT_VARIANT_82417)
+        assert controller._get_move_command() == 0
+
+    def test_get_move_command_single_motor(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_config_entry,
+    ):
+        """Test combined command with single motor."""
+        from custom_components.adjustable_bed.beds.okimat import OkimatController
+
+        class MockCoordinator:
+            address = "AA:BB:CC:DD:EE:FF"
+
+        controller = OkimatController(MockCoordinator(), OKIMAT_VARIANT_82417)
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_82417]
+
+        # Set back motor to up
+        controller._motor_state["back"] = remote.back_up
+        assert controller._get_move_command() == remote.back_up
+
+    def test_get_move_command_multiple_motors(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_config_entry,
+    ):
+        """Test combined command sums multiple motor values."""
+        from custom_components.adjustable_bed.beds.okimat import OkimatController
+
+        class MockCoordinator:
+            address = "AA:BB:CC:DD:EE:FF"
+
+        controller = OkimatController(MockCoordinator(), OKIMAT_VARIANT_82417)
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_82417]
+
+        # Set both back and legs motors
+        controller._motor_state["back"] = remote.back_up  # 0x1
+        controller._motor_state["legs"] = remote.legs_up  # 0x4
+
+        # Combined command should be sum: 0x1 + 0x4 = 0x5
+        expected = remote.back_up + remote.legs_up
+        assert controller._get_move_command() == expected
+
+    def test_get_move_command_all_motors_93332(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Test combined command with all four motors on 93332 remote."""
+        from custom_components.adjustable_bed.beds.okimat import OkimatController
+
+        class MockCoordinator:
+            address = "AA:BB:CC:DD:EE:FF"
+
+        controller = OkimatController(MockCoordinator(), OKIMAT_VARIANT_93332)
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_93332]
+
+        # Set all four motors
+        controller._motor_state["head"] = remote.head_up  # 0x10
+        controller._motor_state["back"] = remote.back_up  # 0x1
+        controller._motor_state["legs"] = remote.legs_up  # 0x4
+        controller._motor_state["feet"] = remote.feet_up  # 0x40
+
+        expected = remote.head_up + remote.back_up + remote.legs_up + remote.feet_up
+        assert controller._get_move_command() == expected
+
+    async def test_move_head_sends_correct_command(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move_head_up sends correct command value from remote config."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okimat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_head_up()
+
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_82417]
+        expected_cmd = coordinator.controller._build_command(remote.back_up)
+        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_call[0][1] == expected_cmd
+
+    async def test_move_legs_sends_correct_command(
+        self,
+        hass: HomeAssistant,
+        mock_okimat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move_legs_down sends correct command value from remote config."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okimat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_legs_down()
+
+        remote = OKIMAT_REMOTES[OKIMAT_VARIANT_82417]
+        expected_cmd = coordinator.controller._build_command(remote.legs_down)
+        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_call[0][1] == expected_cmd
+
+
 class TestOkimatPresets:
     """Test Okimat preset commands."""
 
