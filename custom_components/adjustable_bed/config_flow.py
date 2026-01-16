@@ -365,6 +365,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
+        self._manual_data: dict[str, Any] | None = None
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     async def async_step_bluetooth(
@@ -650,9 +651,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
                         CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
                     }
-                    # Add Octo PIN if configured
+                    # For Octo beds, collect PIN in a separate step
                     if bed_type == BED_TYPE_OCTO:
-                        entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_octo()
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
                         data=entry_data,
@@ -689,12 +691,33 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
                         range(10, 301)
                     ),
-                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
-                        TextSelectorConfig()
-                    ),
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_manual_octo(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Octo-specific configuration (PIN)."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            self._manual_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+            return self.async_create_entry(
+                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                data=self._manual_data,
+            )
+
+        return self.async_show_form(
+            step_id="manual_octo",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
+                        str, vol.Match(r"^\d*$", msg="PIN must contain only digits")
+                    ),
+                }
+            ),
         )
 
 

@@ -51,8 +51,7 @@
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN"
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
@@ -63,8 +62,17 @@
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead.",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN."
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead."
+        }
+      },
+      "manual_octo": {
+        "title": "Octo PIN Configuration",
+        "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
+        "data": {
+          "octo_pin": "Octo PIN"
+        },
+        "data_description": {
+          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
         }
       }
     },
