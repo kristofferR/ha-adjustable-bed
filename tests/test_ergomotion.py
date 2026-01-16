@@ -1,4 +1,4 @@
-"""Tests for Ergomotion bed controller."""
+"""Tests for Ergomotion bed controller (Keeson ergomotion variant)."""
 
 from __future__ import annotations
 
@@ -10,11 +10,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.ergomotion import (
-    ErgomotionCommands,
-    ErgomotionController,
-    crc,
-    int_to_bytes_le,
+from custom_components.adjustable_bed.beds.keeson import (
+    KeesonCommands,
+    KeesonController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ERGOMOTION,
@@ -29,61 +27,44 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestErgomotionHelpers:
-    """Test Ergomotion helper functions."""
-
-    def test_int_to_bytes_le(self):
-        """Test integer to little-endian bytes conversion."""
-        assert int_to_bytes_le(0x1) == [0x01, 0x00, 0x00, 0x00]
-        assert int_to_bytes_le(0x100) == [0x00, 0x01, 0x00, 0x00]
-        assert int_to_bytes_le(0x8000000) == [0x00, 0x00, 0x00, 0x08]
-
-    def test_crc(self):
-        """Test CRC checksum calculation."""
-        # CRC is inverted sum
-        data = bytes([0xE5, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x00])
-        expected = (~sum(data)) & 0xFF
-        assert crc(data) == expected
-
-
 class TestErgomotionCommands:
-    """Test Ergomotion command constants."""
+    """Test Keeson command constants (used by Ergomotion variant)."""
 
     def test_preset_commands(self):
         """Test preset command values."""
-        assert ErgomotionCommands.PRESET_FLAT == 0x8000000
-        assert ErgomotionCommands.PRESET_ZERO_G == 0x1000
-        assert ErgomotionCommands.PRESET_LOUNGE == 0x2000
-        assert ErgomotionCommands.PRESET_TV == 0x4000
-        assert ErgomotionCommands.PRESET_MEMORY_1 == 0x2000
-        assert ErgomotionCommands.PRESET_MEMORY_2 == 0x4000
-        assert ErgomotionCommands.PRESET_MEMORY_3 == 0x8000
-        assert ErgomotionCommands.PRESET_MEMORY_4 == 0x10000
+        assert KeesonCommands.PRESET_FLAT == 0x8000000
+        assert KeesonCommands.PRESET_ZERO_G == 0x1000
+        assert KeesonCommands.PRESET_LOUNGE == 0x2000
+        assert KeesonCommands.PRESET_TV == 0x4000
+        assert KeesonCommands.PRESET_MEMORY_1 == 0x2000
+        assert KeesonCommands.PRESET_MEMORY_2 == 0x4000
+        assert KeesonCommands.PRESET_MEMORY_3 == 0x8000
+        assert KeesonCommands.PRESET_MEMORY_4 == 0x10000
 
     def test_motor_commands(self):
         """Test motor command values."""
-        assert ErgomotionCommands.MOTOR_HEAD_UP == 0x1
-        assert ErgomotionCommands.MOTOR_HEAD_DOWN == 0x2
-        assert ErgomotionCommands.MOTOR_FEET_UP == 0x4
-        assert ErgomotionCommands.MOTOR_FEET_DOWN == 0x8
-        assert ErgomotionCommands.MOTOR_TILT_UP == 0x10
-        assert ErgomotionCommands.MOTOR_TILT_DOWN == 0x20
-        assert ErgomotionCommands.MOTOR_LUMBAR_UP == 0x40
-        assert ErgomotionCommands.MOTOR_LUMBAR_DOWN == 0x80
+        assert KeesonCommands.MOTOR_HEAD_UP == 0x1
+        assert KeesonCommands.MOTOR_HEAD_DOWN == 0x2
+        assert KeesonCommands.MOTOR_FEET_UP == 0x4
+        assert KeesonCommands.MOTOR_FEET_DOWN == 0x8
+        assert KeesonCommands.MOTOR_TILT_UP == 0x10
+        assert KeesonCommands.MOTOR_TILT_DOWN == 0x20
+        assert KeesonCommands.MOTOR_LUMBAR_UP == 0x40
+        assert KeesonCommands.MOTOR_LUMBAR_DOWN == 0x80
 
     def test_massage_commands(self):
         """Test massage command values."""
-        assert ErgomotionCommands.MASSAGE_HEAD_UP == 0x800
-        assert ErgomotionCommands.MASSAGE_HEAD_DOWN == 0x800000
-        assert ErgomotionCommands.MASSAGE_FOOT_UP == 0x400
-        assert ErgomotionCommands.MASSAGE_FOOT_DOWN == 0x1000000
-        assert ErgomotionCommands.MASSAGE_STEP == 0x100
-        assert ErgomotionCommands.MASSAGE_TIMER_STEP == 0x200
-        assert ErgomotionCommands.MASSAGE_WAVE_STEP == 0x10000000
+        assert KeesonCommands.MASSAGE_HEAD_UP == 0x800
+        assert KeesonCommands.MASSAGE_HEAD_DOWN == 0x800000
+        assert KeesonCommands.MASSAGE_FOOT_UP == 0x400
+        assert KeesonCommands.MASSAGE_FOOT_DOWN == 0x1000000
+        assert KeesonCommands.MASSAGE_STEP == 0x100
+        assert KeesonCommands.MASSAGE_TIMER_STEP == 0x200
+        assert KeesonCommands.MASSAGE_WAVE_STEP == 0x10000000
 
     def test_light_commands(self):
         """Test light command values."""
-        assert ErgomotionCommands.TOGGLE_LIGHTS == 0x20000
+        assert KeesonCommands.TOGGLE_LIGHTS == 0x20000
 
 
 @pytest.fixture
@@ -117,7 +98,7 @@ def mock_ergomotion_config_entry(
 
 
 class TestErgomotionController:
-    """Test Ergomotion controller."""
+    """Test Keeson controller with ergomotion variant."""
 
     async def test_control_characteristic_uuid(
         self,
@@ -278,7 +259,7 @@ class TestErgomotionPresets:
 
         await coordinator.controller.preset_flat()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.PRESET_FLAT)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_FLAT)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -295,7 +276,7 @@ class TestErgomotionPresets:
 
         await coordinator.controller.preset_zero_g()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.PRESET_ZERO_G)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_ZERO_G)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -312,17 +293,17 @@ class TestErgomotionPresets:
 
         await coordinator.controller.preset_tv()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.PRESET_TV)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_TV)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
     @pytest.mark.parametrize(
         "memory_num,expected_value",
         [
-            (1, ErgomotionCommands.PRESET_MEMORY_1),
-            (2, ErgomotionCommands.PRESET_MEMORY_2),
-            (3, ErgomotionCommands.PRESET_MEMORY_3),
-            (4, ErgomotionCommands.PRESET_MEMORY_4),
+            (1, KeesonCommands.PRESET_MEMORY_1),
+            (2, KeesonCommands.PRESET_MEMORY_2),
+            (3, KeesonCommands.PRESET_MEMORY_3),
+            (4, KeesonCommands.PRESET_MEMORY_4),
         ],
     )
     async def test_preset_memory(
@@ -377,7 +358,7 @@ class TestErgomotionLights:
 
         await coordinator.controller.lights_toggle()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.TOGGLE_LIGHTS)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.TOGGLE_LIGHTS)
         mock_bleak_client.write_gatt_char.assert_called_with(
             ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=False
         )
@@ -399,7 +380,7 @@ class TestErgomotionMassage:
 
         await coordinator.controller.massage_toggle()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.MASSAGE_STEP)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
             ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=False
         )
@@ -417,7 +398,7 @@ class TestErgomotionMassage:
 
         await coordinator.controller.massage_head_up()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.MASSAGE_HEAD_UP)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_HEAD_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
             ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=False
         )
@@ -435,7 +416,7 @@ class TestErgomotionMassage:
 
         await coordinator.controller.massage_foot_down()
 
-        expected_cmd = coordinator.controller._build_command(ErgomotionCommands.MASSAGE_FOOT_DOWN)
+        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_FOOT_DOWN)
         mock_bleak_client.write_gatt_char.assert_called_with(
             ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=False
         )
