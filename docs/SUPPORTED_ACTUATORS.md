@@ -19,6 +19,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Serta](beds/serta.md) | ❓ Untested | Massage intensity control, Zero-G/TV/Lounge |
 | [Octo](beds/octo.md) | ❓ Untested | Two protocol variants, optional PIN auth, lights |
 | [Mattress Firm 900](beds/mattressfirm.md) | ❓ Untested | Lumbar control, 3-level massage, built-in presets |
+| [Nectar](beds/nectar.md) | ❓ Untested | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 
 ### Status Legend
 
@@ -85,6 +86,7 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
 3. **Look at device names:**
    - `HHC*` → MotoSleep
    - `DPG*` or `Desk*` → Linak
+   - `Nectar*` → Nectar
    - `Okin*` → Okimat
    - `Ergomotion*` or `Ergo*` → Ergomotion (use Keeson)
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang

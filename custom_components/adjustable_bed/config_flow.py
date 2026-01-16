@@ -33,6 +33,7 @@ from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
@@ -227,6 +228,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_REVERIE
+
+    # Check for Nectar - name-based detection (before Okimat since same UUID)
+    # Nectar beds use OKIN service UUID but different command protocol
+    if "nectar" in device_name and OKIMAT_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Nectar bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_NECTAR
 
     # Check for Okimat/Leggett Okin (same UUID, requires pairing)
     if OKIMAT_SERVICE_UUID.lower() in service_uuids:
