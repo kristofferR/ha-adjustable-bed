@@ -16,6 +16,7 @@ CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
+CONF_OCTO_PIN: Final = "octo_pin"
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"
@@ -156,6 +157,20 @@ OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
+# OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
+# Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
+OKIN_POSITION_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+OKIN_POSITION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+
+# OKIN position calibration
+# Position data is in bytes 3-6 of notification (2 bytes each, little-endian)
+# Head: raw 0-16000 maps to 0-60 degrees
+# Foot: raw 0-12000 maps to 0-45 degrees
+OKIN_HEAD_MAX_RAW: Final = 16000
+OKIN_HEAD_MAX_ANGLE: Final = 60.0
+OKIN_FOOT_MAX_RAW: Final = 12000
+OKIN_FOOT_MAX_ANGLE: Final = 45.0
+
 # Jiecang specific UUIDs (Glide beds, Dream Motion app)
 JIECANG_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
 
@@ -168,8 +183,21 @@ DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 SERTA_WRITE_HANDLE: Final = 0x0020
 
 # Octo specific UUIDs
+# Standard Octo variant
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OCTO_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
+
+# Octo Remote Star2 variant
+OCTO_STAR2_SERVICE_UUID: Final = "0000aa5c-0000-1000-8000-00805f9b34fb"
+OCTO_STAR2_CHAR_UUID: Final = "00005a55-0000-1000-8000-00805f9b34fb"
+
+# Octo PIN keep-alive interval (seconds)
+# Octo beds drop BLE connection after ~30s without PIN re-authentication
+OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
+
+# Octo variant identifiers (dict defined later after VARIANT_AUTO)
+OCTO_VARIANT_STANDARD: Final = "standard"
+OCTO_VARIANT_STAR2: Final = "star2"
 
 # Mattress Firm 900 specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
@@ -211,15 +239,49 @@ LEGGETT_VARIANTS: Final = {
 # Richmat variants (auto-detected, but can be overridden)
 RICHMAT_VARIANT_NORDIC: Final = "nordic"
 RICHMAT_VARIANT_WILINKE: Final = "wilinke"
+# Richmat remote codes (for documentation - all use same command values)
+# Reference: https://github.com/richardhopton/smartbed-mqtt/blob/main/src/Richmat/remoteFeatures.ts
+RICHMAT_VARIANT_190_0055: Final = "190-0055"
 RICHMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
     RICHMAT_VARIANT_NORDIC: "Nordic (single-byte commands)",
     RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with checksum)",
+    RICHMAT_VARIANT_190_0055: "190-0055 (Head, Pillow, Feet, Massage, Lights)",
+}
+
+# Octo variants
+OCTO_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (recommended)",
+    OCTO_VARIANT_STANDARD: "Standard Octo (most common)",
+    OCTO_VARIANT_STAR2: "Octo Remote Star2",
 }
 
 # Richmat command protocols (how command bytes are encoded - used internally)
 RICHMAT_PROTOCOL_WILINKE: Final = "wilinke"  # [110, 1, 0, cmd, cmd+111]
 RICHMAT_PROTOCOL_SINGLE: Final = "single"  # [cmd]
+
+# Okimat remote code variants
+# Different remotes have different command values and motor configurations
+# Reference: https://github.com/richardhopton/smartbed-mqtt
+OKIMAT_VARIANT_80608: Final = "80608"
+OKIMAT_VARIANT_82417: Final = "82417"
+OKIMAT_VARIANT_82418: Final = "82418"
+OKIMAT_VARIANT_88875: Final = "88875"
+OKIMAT_VARIANT_91244: Final = "91244"
+OKIMAT_VARIANT_93329: Final = "93329"
+OKIMAT_VARIANT_93332: Final = "93332"
+OKIMAT_VARIANT_94238: Final = "94238"
+OKIMAT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (try 82417 first)",
+    OKIMAT_VARIANT_80608: "80608 - RFS ELLIPSE (Back, Legs)",
+    OKIMAT_VARIANT_82417: "82417 - RF TOPLINE (Back, Legs)",
+    OKIMAT_VARIANT_82418: "82418 - RF TOPLINE (Back, Legs, 2 Memory)",
+    OKIMAT_VARIANT_88875: "88875 - RF LITELINE (Back, Legs)",
+    OKIMAT_VARIANT_91244: "91244 - RF-FLASHLINE (Back, Legs)",
+    OKIMAT_VARIANT_93329: "93329 - RF TOPLINE (Head, Back, Legs, 4 Memory)",
+    OKIMAT_VARIANT_93332: "93332 - RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)",
+    OKIMAT_VARIANT_94238: "94238 - RF FLASHLINE (Back, Legs, 2 Memory)",
+}
 
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
@@ -231,11 +293,23 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_OKIN,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    RICHMAT_VARIANT_190_0055,
+    OCTO_VARIANT_STANDARD,
+    OCTO_VARIANT_STAR2,
+    OKIMAT_VARIANT_80608,
+    OKIMAT_VARIANT_82417,
+    OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_93329,
+    OKIMAT_VARIANT_93332,
+    OKIMAT_VARIANT_94238,
 ]
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_LINAK,
+    BED_TYPE_OKIMAT,
 })
 
 # Default values
@@ -246,6 +320,7 @@ DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
+DEFAULT_OCTO_PIN: Final = ""
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them

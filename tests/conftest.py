@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
+    OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
@@ -445,6 +446,25 @@ def mock_bluetooth_service_info_octo() -> MagicMock:
     service_info.manufacturer_data = {}
     service_info.service_data = {}
     service_info.service_uuids = [SOLACE_SERVICE_UUID]  # Shares UUID with Solace
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_octo_star2() -> MagicMock:
+    """Return mock Bluetooth service info for an Octo Star2 bed."""
+    service_info = MagicMock()
+    service_info.name = "Star2 Bed"  # Name doesn't contain "octo"
+    service_info.address = "FF:00:11:22:33:44"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [OCTO_STAR2_SERVICE_UUID]  # Detected by service UUID
     service_info.source = "local"
     service_info.device = MagicMock()
     service_info.advertisement = MagicMock()

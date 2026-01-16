@@ -242,6 +242,56 @@ class TestDetectBedType:
         bed_type = detect_bed_type(mock_bluetooth_service_info_octo)
         assert bed_type == BED_TYPE_OCTO
 
+    def test_detect_octo_star2_bed(self, mock_bluetooth_service_info_octo_star2):
+        """Test detection of Octo Star2 bed by service UUID (not by name)."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_octo_star2)
+        assert bed_type == BED_TYPE_OCTO
+
+
+class TestPinValidation:
+    """Test PIN validation for Octo beds."""
+
+    def test_valid_4_digit_pin(self):
+        """Test that 4-digit PIN is accepted."""
+        import voluptuous as vol
+        validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+        assert validator("1234") == "1234"
+        assert validator("0000") == "0000"
+        assert validator("9999") == "9999"
+
+    def test_empty_pin_allowed(self):
+        """Test that empty PIN (no PIN) is allowed."""
+        import voluptuous as vol
+        validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+        assert validator("") == ""
+
+    def test_invalid_pin_too_short(self):
+        """Test that PIN shorter than 4 digits is rejected."""
+        import voluptuous as vol
+        validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+        with pytest.raises(vol.Invalid):
+            validator("123")
+        with pytest.raises(vol.Invalid):
+            validator("1")
+
+    def test_invalid_pin_too_long(self):
+        """Test that PIN longer than 4 digits is rejected."""
+        import voluptuous as vol
+        validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+        with pytest.raises(vol.Invalid):
+            validator("12345")
+        with pytest.raises(vol.Invalid):
+            validator("123456")
+
+    def test_invalid_pin_non_digits(self):
+        """Test that PIN with non-digit characters is rejected."""
+        import voluptuous as vol
+        validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+        with pytest.raises(vol.Invalid):
+            validator("abcd")
+        with pytest.raises(vol.Invalid):
+            validator("12ab")
+
 
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""

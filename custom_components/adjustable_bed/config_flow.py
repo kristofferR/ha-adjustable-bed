@@ -48,6 +48,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -58,6 +59,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     POSITION_MODE_ACCURACY,
@@ -69,7 +71,10 @@ from .const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_VARIANTS,
     LINAK_CONTROL_SERVICE_UUID,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANTS,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_VARIANTS,
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_VARIANTS,
@@ -112,69 +117,62 @@ def get_variants_for_bed_type(bed_type: str) -> dict[str, str] | None:
         return LEGGETT_VARIANTS
     if bed_type == BED_TYPE_RICHMAT:
         return RICHMAT_VARIANTS
+    if bed_type == BED_TYPE_OCTO:
+        return OCTO_VARIANTS
+    if bed_type == BED_TYPE_OKIMAT:
+        return OKIMAT_VARIANTS
     return None
 
 
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
-    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_RICHMAT)
+    return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OCTO, BED_TYPE_OKIMAT, BED_TYPE_RICHMAT)
 
 
 def get_available_adapters(hass) -> dict[str, str]:
     """Get available Bluetooth adapters/proxies."""
     adapters: dict[str, str] = {ADAPTER_AUTO: "Automatic (let Home Assistant choose)"}
-    
+
     try:
-        # Build a map of source -> friendly name
+        # Build a map of source -> friendly name from registered scanners
         scanner_names: dict[str, str] = {}
-        
-        # Try to get scanner names from Bluetooth manager
+
+        # Use the official API to get all active scanners with their names
         try:
-            from homeassistant.components.bluetooth import async_scanner_by_source
-            # We'll populate names as we find sources
+            from homeassistant.components.bluetooth import async_current_scanners
+            for scanner in async_current_scanners(hass):
+                source = getattr(scanner, 'source', None)
+                name = getattr(scanner, 'name', None)
+                if source and name:
+                    scanner_names[source] = name
         except ImportError:
-            pass
-        
-        # Try accessing the manager directly for scanner names
-        try:
-            from homeassistant.components.bluetooth import DOMAIN as BLUETOOTH_DOMAIN
-            manager = hass.data.get(BLUETOOTH_DOMAIN)
-            if manager:
-                # Try different attributes that might contain scanner info
-                for attr in ('_connectable_scanners', '_scanners', 'scanners'):
-                    scanners = getattr(manager, attr, None)
-                    if scanners:
-                        for scanner in scanners:
-                            source = getattr(scanner, 'source', None)
-                            name = getattr(scanner, 'name', None)
-                            if source and name and source not in scanner_names:
-                                scanner_names[source] = name
+            _LOGGER.debug("async_current_scanners not available")
         except Exception as err:
-            _LOGGER.debug("Could not get scanner names from manager: %s", err)
-        
+            _LOGGER.debug("Could not get scanner names: %s", err)
+
         # Collect unique sources from all discovered devices
         seen_sources: set[str] = set()
         for service_info in async_discovered_service_info(hass, connectable=True):
             source = getattr(service_info, 'source', None)
             if source and source not in seen_sources:
                 seen_sources.add(source)
-                
-                # Try to get a friendly name
+
+                # Try to get a friendly name from the scanner
                 friendly_name = scanner_names.get(source)
-                
-                if friendly_name:
-                    # Use the scanner's friendly name
+
+                if friendly_name and friendly_name != source:
+                    # Use the scanner's friendly name with source in parentheses
                     adapters[source] = f"{friendly_name} ({source})"
                 elif ':' in source:
-                    # Looks like a MAC address - probably an ESPHome proxy
+                    # Looks like a MAC address - probably an ESPHome proxy without name
                     adapters[source] = f"Bluetooth Proxy ({source})"
                 else:
                     # Might be a local adapter name like "hci0"
                     adapters[source] = f"Local Adapter ({source})"
-                    
+
     except Exception as err:
         _LOGGER.debug("Error getting Bluetooth adapters: %s", err)
-    
+
     _LOGGER.debug("Available Bluetooth adapters: %s", adapters)
     return adapters
 
@@ -306,6 +304,15 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_SERTA
 
+    # Check for Octo Star2 variant - service UUID detection (before name-based Octo check)
+    if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Octo Star2 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_OCTO
+
     # Check for Octo - name-based detection (before Solace since same UUID)
     if "octo" in device_name:
         _LOGGER.info(
@@ -374,6 +381,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
+        self._manual_data: dict[str, Any] | None = None
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     async def async_step_bluetooth(
@@ -451,22 +459,26 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_count,
                 motor_pulse_delay_ms,
             )
+            entry_data = {
+                CONF_ADDRESS: self._discovery_info.address.upper(),
+                CONF_BED_TYPE: bed_type,
+                CONF_PROTOCOL_VARIANT: protocol_variant,
+                CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
+                CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                CONF_PREFERRED_ADAPTER: preferred_adapter,
+                CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+            }
+            # Add Octo PIN if configured
+            if bed_type == BED_TYPE_OCTO:
+                entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
-                data={
-                    CONF_ADDRESS: self._discovery_info.address.upper(),
-                    CONF_BED_TYPE: bed_type,
-                    CONF_PROTOCOL_VARIANT: protocol_variant,
-                    CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
-                    CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                    CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                    CONF_PREFERRED_ADAPTER: preferred_adapter,
-                    CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                    CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-                },
+                data=entry_data,
             )
 
         _LOGGER.debug("Showing bluetooth confirmation form for %s", self._discovery_info.address)
@@ -504,6 +516,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         variants = get_variants_for_bed_type(bed_type)
         if variants:
             schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(variants)
+
+        # Add PIN field for Octo beds
+        if bed_type == BED_TYPE_OCTO:
+            schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = vol.All(
+                str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+            )
 
         return self.async_show_form(
             step_id="bluetooth_confirm",
@@ -635,22 +653,27 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
 
+                    entry_data = {
+                        CONF_ADDRESS: address,
+                        CONF_BED_TYPE: bed_type,
+                        CONF_PROTOCOL_VARIANT: protocol_variant,
+                        CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
+                        CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                        CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                        CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                        CONF_PREFERRED_ADAPTER: preferred_adapter,
+                        CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                        CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                        CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                        CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                    }
+                    # For Octo beds, collect PIN in a separate step
+                    if bed_type == BED_TYPE_OCTO:
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_octo()
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                        data={
-                            CONF_ADDRESS: address,
-                            CONF_BED_TYPE: bed_type,
-                            CONF_PROTOCOL_VARIANT: protocol_variant,
-                            CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
-                            CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                            CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                            CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                            CONF_PREFERRED_ADAPTER: preferred_adapter,
-                            CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                            CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                            CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                            CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-                        },
+                        data=entry_data,
                     )
 
         _LOGGER.debug("Showing manual entry form")
@@ -687,6 +710,30 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_manual_octo(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Octo-specific configuration (PIN)."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            self._manual_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+            return self.async_create_entry(
+                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                data=self._manual_data,
+            )
+
+        return self.async_show_form(
+            step_id="manual_octo",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
+                        str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+                    ),
+                }
+            ),
         )
 
 
@@ -756,6 +803,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_PROTOCOL_VARIANT,
                 default=current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
             )] = vol.In(variants)
+
+        # Add PIN field for Octo beds
+        if bed_type == BED_TYPE_OCTO:
+            schema_dict[vol.Optional(
+                CONF_OCTO_PIN,
+                default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+            )] = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
 
         if user_input is not None:
             # Convert text values to integers

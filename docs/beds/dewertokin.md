@@ -1,0 +1,67 @@
+# DewertOkin
+
+**Status:** ⚠️ Untested
+
+## Known Models
+- A H Beard adjustable beds
+- HankookGallery beds
+- Beds with DewertOkin HE150 controller
+- "Comfort Enhancement 2" / "Comfort Plus" app beds
+
+## Features
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (2 slots) |
+| Massage | ✅ (wave, head, foot) |
+| Under-bed Lights | ✅ |
+| Zero-G / TV / Quiet Sleep | ✅ |
+
+## Protocol Details
+
+**Write Handle:** `0x0013`
+**Format:** 6-byte fixed packets
+**Address Type:** Random
+
+**Note:** DewertOkin uses handle-based writes rather than characteristic UUIDs.
+
+### Motor Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Head Up | `04 02 00 00 00 01` | Raise head |
+| Head Down | `04 02 00 00 00 02` | Lower head |
+| Foot Up | `04 02 00 00 00 04` | Raise foot |
+| Foot Down | `04 02 00 00 00 08` | Lower foot |
+| Stop | `04 02 00 00 00 00` | Stop all motors |
+
+### Preset Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Flat | `04 02 10 00 00 00` | Go to flat |
+| Zero-G | `04 02 00 00 40 00` | Go to zero gravity |
+| TV | `04 02 00 00 30 00` | Go to TV position |
+| Quiet Sleep | `04 02 00 00 80 00` | Go to quiet sleep |
+| Memory 1 | `04 02 00 00 10 00` | Go to memory 1 |
+| Memory 2 | `04 02 00 00 20 00` | Go to memory 2 |
+
+### Massage Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Wave Massage | `04 02 80 00 00 00` | Toggle wave massage |
+| Head Massage | `04 02 00 00 08 00` | Toggle head massage |
+| Foot Massage | `04 02 00 40 00 00` | Toggle foot massage |
+| Massage Off | `04 02 02 00 00 00` | Turn off massage |
+
+### Light Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Underlight | `04 02 00 02 00 00` | Toggle under-bed light |
+
+## Detection
+
+Detected by device name containing: `dewertokin`, `dewert`, `a h beard`, or `hankook`

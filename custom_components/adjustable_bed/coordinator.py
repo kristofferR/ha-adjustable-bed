@@ -43,6 +43,7 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -53,6 +54,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     POSITION_MODE_ACCURACY,
@@ -62,6 +64,9 @@ from .const import (
     KEESON_VARIANT_KSBT,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
+    OCTO_STAR2_SERVICE_UUID,
+    OCTO_VARIANT_STAR2,
+    RICHMAT_VARIANT_190_0055,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
 )
@@ -105,6 +110,9 @@ class AdjustableBedCoordinator:
         # Disconnect behavior configuration
         self._disconnect_after_command: bool = entry.data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND)
         self._idle_disconnect_seconds: int = entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
+
+        # Octo-specific configuration
+        self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -619,6 +627,16 @@ class AdjustableBedCoordinator:
                 # Start position notifications (no-op if angle sensing disabled)
                 await self.async_start_notify()
 
+                # For Octo beds: discover features and handle PIN if needed
+                if self._bed_type == BED_TYPE_OCTO:
+                    # Discover features to detect PIN requirement
+                    if hasattr(self._controller, 'discover_features'):
+                        await self._controller.discover_features()
+                    # Send initial PIN and start keep-alive if bed requires it
+                    if hasattr(self._controller, 'send_pin'):
+                        await self._controller.send_pin()
+                        await self._controller.start_keepalive()
+
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
@@ -712,6 +730,12 @@ class AdjustableBedCoordinator:
             )
             return
 
+        # Stop keepalive task before clearing controller to prevent task leak
+        # Capture controller reference before clearing to avoid race condition
+        controller = self._controller
+        if controller is not None and hasattr(controller, 'stop_keepalive'):
+            asyncio.create_task(controller.stop_keepalive())
+
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
             _LOGGER.debug(
@@ -760,7 +784,7 @@ class AdjustableBedCoordinator:
             from .beds.richmat import RichmatController, detect_richmat_variant
 
             # Use configured variant or auto-detect
-            if self._protocol_variant == RICHMAT_VARIANT_NORDIC:
+            if self._protocol_variant in (RICHMAT_VARIANT_NORDIC, RICHMAT_VARIANT_190_0055):
                 _LOGGER.debug("Using Nordic Richmat variant (configured)")
                 return RichmatController(self, is_wilinke=False)
             elif self._protocol_variant == RICHMAT_VARIANT_WILINKE:
@@ -821,7 +845,9 @@ class AdjustableBedCoordinator:
         if self._bed_type == BED_TYPE_OKIMAT:
             from .beds.okimat import OkimatController
 
-            return OkimatController(self)
+            # Pass the configured variant (remote code) to the controller
+            _LOGGER.debug("Using Okimat variant: %s", self._protocol_variant)
+            return OkimatController(self, variant=self._protocol_variant)
 
         if self._bed_type == BED_TYPE_ERGOMOTION:
             # Ergomotion uses the same protocol as Keeson with position feedback
@@ -845,9 +871,26 @@ class AdjustableBedCoordinator:
             return SertaController(self)
 
         if self._bed_type == BED_TYPE_OCTO:
-            from .beds.octo import OctoController
+            from .beds.octo import OctoController, OctoStar2Controller
 
-            return OctoController(self)
+            # Use configured variant or auto-detect
+            if self._protocol_variant == OCTO_VARIANT_STAR2:
+                _LOGGER.debug("Using Star2 Octo variant (configured)")
+                return OctoStar2Controller(self)
+            elif self._protocol_variant in (None, "", "auto"):
+                # Auto-detect: check if Star2 service UUID is available
+                if self._client and self._client.services:
+                    for service in self._client.services:
+                        if service.uuid.lower() == OCTO_STAR2_SERVICE_UUID.lower():
+                            _LOGGER.debug("Using Star2 Octo variant (auto-detected)")
+                            return OctoStar2Controller(self)
+                # Default to standard Octo
+                _LOGGER.debug("Using standard Octo variant")
+                return OctoController(self, pin=self._octo_pin)
+            else:
+                # Explicit standard variant
+                _LOGGER.debug("Using standard Octo variant (configured)")
+                return OctoController(self, pin=self._octo_pin)
 
         if self._bed_type == BED_TYPE_MATTRESSFIRM:
             from .beds.mattressfirm import MattressFirmController
@@ -933,8 +976,14 @@ class AdjustableBedCoordinator:
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
                 self._intentional_disconnect = True
                 try:
-                    # Stop notifications before disconnecting
+                    # Stop keep-alive and notifications before disconnecting
                     if self._controller is not None:
+                        # Stop Octo keep-alive if running
+                        if hasattr(self._controller, 'stop_keepalive'):
+                            try:
+                                await self._controller.stop_keepalive()
+                            except Exception as err:
+                                _LOGGER.debug("Error stopping keep-alive: %s", err)
                         try:
                             await self._controller.stop_notify()
                         except Exception as err:

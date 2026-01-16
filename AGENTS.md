@@ -136,8 +136,8 @@ Motor commands:
   0x00 = stop all
 
 Motor timing:
-  - 25 repeats at 100ms intervals (2.5 seconds total movement)
-  - ALWAYS send STOP (0x00) after movement - use try/finally pattern
+  - 15 repeats at 100ms intervals (1.5 seconds total movement)
+  - Send STOP (0x00) after movement using try/finally with fresh asyncio.Event()
 
 Presets:
   0x0E, 0x0F, 0x0C, 0x44 = Memory 1-4

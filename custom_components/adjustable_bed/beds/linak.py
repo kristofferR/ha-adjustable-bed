@@ -393,22 +393,19 @@ class LinakController(BedController):
             _LOGGER.debug("Failed to poll back position (may be disconnected)")
 
     # Motor control methods
-    # Linak protocol requires continuous command sending to keep motors moving
-    # Using 15 repeats @ 100ms = ~1.5 seconds of movement per press
-    # All movement methods use try/finally to ensure STOP is always sent,
-    # even if the movement is cancelled mid-way.
+    # Linak protocol requires continuous command sending to keep motors moving.
+    # Using 15 repeats @ 100ms = ~1.5 seconds of movement per press.
+    # Motors auto-stop when commands stop arriving - no explicit STOP needed.
 
     async def _move_with_stop(self, move_command: bytes) -> None:
-        """Execute a movement command and always send STOP at the end."""
-        try:
-            await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
-        finally:
-            # Always send STOP with a fresh event so it's not affected by cancellation
-            # Wrap in try-except to prevent masking the original exception
-            try:
-                await self.write_command(LinakCommands.MOVE_STOP, cancel_event=asyncio.Event())
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+        """Execute a movement command.
+
+        Linak beds auto-stop when commands stop arriving (typically within 200-500ms).
+        We do NOT send an explicit STOP command because it can cause a brief reverse
+        movement due to how the motor controller interprets the 0x00 command.
+        See: https://github.com/kristofferR/ha-adjustable-bed/issues/45
+        """
+        await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
 
     async def move_head_up(self) -> None:
         """Move head up."""

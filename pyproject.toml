@@ -2,14 +2,16 @@
 name = "ha-adjustable-bed"
 version = "1.2.0"
 description = "Home Assistant integration for adjustable beds (Linak, etc.)"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.24.0",
-    "pytest-homeassistant-custom-component>=0.13.0",
+    "pytest-asyncio>=0.23.5",
+    "pytest-homeassistant-custom-component>=0.13.206",
     "pytest-cov>=4.1.0",
+    "pyserial>=3.5",
+    "aiousbwatcher>=1.1.1",
 ]
 
 [tool.pytest.ini_options]
@@ -22,7 +24,7 @@ markers = [
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
