@@ -418,6 +418,14 @@ class RichmatController(BedController):
         """Toggle under-bed lights."""
         await self.write_command(self._build_command(RichmatCommands.LIGHTS_TOGGLE))
 
+    async def lights_on(self) -> None:
+        """Turn on under-bed lights (toggle-only, state unknown)."""
+        await self.lights_toggle()
+
+    async def lights_off(self) -> None:
+        """Turn off under-bed lights (toggle-only, state unknown)."""
+        await self.lights_toggle()
+
     # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle massage."""
@@ -442,6 +450,13 @@ async def detect_richmat_variant(client) -> tuple[bool, str | None]:
     Returns:
         Tuple of (is_wilinke, characteristic_uuid)
     """
+    # Guard against missing service discovery
+    if client.services is None:
+        _LOGGER.warning(
+            "BLE services not discovered, falling back to Nordic Richmat variant"
+        )
+        return False, RICHMAT_NORDIC_CHAR_UUID
+
     # Try WiLinke variants first
     for i, service_uuid in enumerate(RICHMAT_WILINKE_SERVICE_UUIDS):
         try:

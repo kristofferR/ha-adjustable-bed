@@ -16,7 +16,14 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT, DOMAIN
+from .const import (
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_KEESON,
+    CONF_BED_TYPE,
+    CONF_MOTOR_COUNT,
+    DEFAULT_MOTOR_COUNT,
+    DOMAIN,
+)
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -86,10 +93,19 @@ async def async_setup_entry(
     """Set up Adjustable Bed sensor entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    bed_type = entry.data.get(CONF_BED_TYPE)
 
     # Skip angle sensors if angle sensing is disabled
     if coordinator.disable_angle_sensing:
         _LOGGER.debug("Angle sensing disabled, skipping angle sensor creation")
+        return
+
+    # Skip angle sensors for beds that report percentage instead of angles
+    # (Keeson/Ergomotion report 0-100% position, not degrees)
+    if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+        _LOGGER.debug(
+            "Skipping angle sensors for %s - reports percentage, not angle", bed_type
+        )
         return
 
     entities = []
