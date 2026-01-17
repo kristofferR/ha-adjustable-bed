@@ -149,13 +149,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
-                # Check if controller supports memory presets
+                # Check if controller supports programming memory presets
                 controller = coordinator.controller
                 if controller is None or not getattr(
-                    controller, "supports_memory_presets", False
+                    controller, "supports_memory_programming", False
                 ):
                     _LOGGER.warning(
-                        "Device %s does not support memory presets",
+                        "Device %s does not support programming memory presets",
                         coordinator.name,
                     )
                     continue

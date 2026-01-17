@@ -428,11 +428,25 @@ class BedController(ABC):
         return False
 
     @property
+    def has_tilt_support(self) -> bool:
+        """Return True if bed has tilt motor control."""
+        return False
+
+    @property
     def supports_motor_control(self) -> bool:
         """Return True if bed supports direct motor control (up/down/stop).
 
         Some beds (like Jiecang) only support preset positions, not
         individual motor movement commands.
+        """
+        return True
+
+    @property
+    def supports_stop_all(self) -> bool:
+        """Return True if bed supports a stop-all command.
+
+        Some beds (like Keeson) don't have a dedicated stop command -
+        motors stop automatically when commands stop being sent.
         """
         return True
 
@@ -507,6 +521,32 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't have pillow motor
         """
         raise NotImplementedError("Pillow motor not supported on this bed")
+
+    # Tilt motor control (optional - only some beds have this)
+
+    async def move_tilt_up(self) -> None:
+        """Move tilt motor up for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have tilt motor
+        """
+        raise NotImplementedError("Tilt motor not supported on this bed")
+
+    async def move_tilt_down(self) -> None:
+        """Move tilt motor down for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have tilt motor
+        """
+        raise NotImplementedError("Tilt motor not supported on this bed")
+
+    async def move_tilt_stop(self) -> None:
+        """Immediately stop tilt motor movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have tilt motor
+        """
+        raise NotImplementedError("Tilt motor not supported on this bed")
 
     # Optional preset methods (may not be available on all beds)
     # These raise NotImplementedError by default. Subclasses override if supported.

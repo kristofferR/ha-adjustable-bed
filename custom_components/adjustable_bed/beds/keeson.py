@@ -224,6 +224,21 @@ class KeesonController(BedController):
         """Return False - Keeson only supports toggle, not discrete on/off."""
         return False
 
+    @property
+    def has_tilt_support(self) -> bool:
+        """Return True - Keeson beds have tilt motor control."""
+        return True
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        """Return True - Keeson beds have lumbar motor control."""
+        return True
+
+    @property
+    def supports_stop_all(self) -> bool:
+        """Return False - Keeson beds don't have a dedicated stop command."""
+        return False
+
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
         if self._variant == "ksbt":
@@ -544,14 +559,36 @@ class KeesonController(BedController):
             cancel_event=asyncio.Event(),
         )
 
+    # Tilt motor control
+    async def move_tilt_up(self) -> None:
+        """Move tilt up."""
+        await self._move_motor(motor="tilt", direction=True)
+
+    async def move_tilt_down(self) -> None:
+        """Move tilt down."""
+        await self._move_motor(motor="tilt", direction=False)
+
+    async def move_tilt_stop(self) -> None:
+        """Stop tilt motor."""
+        await self._move_motor(motor="tilt", direction=None)
+
+    # Lumbar motor control
+    async def move_lumbar_up(self) -> None:
+        """Move lumbar up."""
+        await self._move_motor(motor="lumbar", direction=True)
+
+    async def move_lumbar_down(self) -> None:
+        """Move lumbar down."""
+        await self._move_motor(motor="lumbar", direction=False)
+
+    async def move_lumbar_stop(self) -> None:
+        """Stop lumbar motor."""
+        await self._move_motor(motor="lumbar", direction=None)
+
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            self._build_command(KeesonCommands.PRESET_FLAT),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT))
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -562,11 +599,7 @@ class KeesonController(BedController):
             4: KeesonCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
+            await self.write_command(self._build_command(command))
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Keeson)."""
@@ -574,27 +607,15 @@ class KeesonController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(
-            self._build_command(KeesonCommands.PRESET_ZERO_G),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (Memory 1)."""
-        await self.write_command(
-            self._build_command(KeesonCommands.PRESET_LOUNGE),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE))
 
     async def preset_tv(self) -> None:
         """Go to TV position (Memory 2)."""
-        await self.write_command(
-            self._build_command(KeesonCommands.PRESET_TV),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
 
     # Light methods
     async def lights_toggle(self) -> None:

@@ -226,6 +226,9 @@
       },
       "pillow": {
         "name": "Pillow"
+      },
+      "tilt": {
+        "name": "Tilt"
       }
     },
     "sensor": {
