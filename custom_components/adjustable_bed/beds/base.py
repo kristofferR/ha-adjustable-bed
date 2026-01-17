@@ -45,6 +45,48 @@ class BedController(ABC):
             coordinator: The AdjustableBedCoordinator managing the BLE connection
         """
         self._coordinator = coordinator
+        self._raw_notify_callback: Callable[[str, bytes], None] | None = None
+        self._ble_lock = asyncio.Lock()
+
+    @property
+    def ble_lock(self) -> asyncio.Lock:
+        """Return the BLE operation lock.
+
+        This lock should be acquired by any code that performs BLE read/write
+        operations to prevent concurrent GATT operations which can cause
+        'operation in progress' errors on some BLE backends.
+        """
+        return self._ble_lock
+
+    def set_raw_notify_callback(
+        self, callback: Callable[[str, bytes], None] | None
+    ) -> None:
+        """Set a callback to receive raw notification data.
+
+        This is used by diagnostics to capture raw BLE notifications without
+        disrupting normal notification handling. The callback receives the
+        characteristic UUID and raw bytes for each notification.
+
+        Args:
+            callback: Function to call with (characteristic_uuid, data), or None to clear.
+        """
+        self._raw_notify_callback = callback
+
+    def forward_raw_notification(self, characteristic_uuid: str, data: bytes) -> None:
+        """Forward raw notification data to the registered callback.
+
+        Subclasses should call this from their notification handlers to
+        enable diagnostics capture.
+
+        Args:
+            characteristic_uuid: The UUID of the characteristic that sent the notification.
+            data: The raw notification data bytes.
+        """
+        if self._raw_notify_callback is not None:
+            try:
+                self._raw_notify_callback(characteristic_uuid, data)
+            except Exception:
+                _LOGGER.debug("Error in raw notification callback", exc_info=True)
 
     @property
     def client(self) -> BleakClient | None:
@@ -142,7 +184,10 @@ class BedController(ABC):
                 return
 
             try:
-                await self.client.write_gatt_char(char_uuid, command, response=response)
+                # Acquire BLE lock for each individual write to prevent conflicts
+                # with concurrent position reads during movement
+                async with self._ble_lock:
+                    await self.client.write_gatt_char(char_uuid, command, response=response)
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write command %s to %s",

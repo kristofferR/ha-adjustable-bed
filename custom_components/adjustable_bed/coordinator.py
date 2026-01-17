@@ -1281,6 +1281,20 @@ class AdjustableBedCoordinator:
         _LOGGER.info("Starting position notifications for %s", self._address)
         await self._controller.start_notify(self._handle_position_update)
 
+    def set_raw_notify_callback(
+        self, callback: Callable[[str, bytes], None] | None
+    ) -> None:
+        """Set a callback to receive raw notification data.
+
+        Used by diagnostics to capture raw BLE notifications from the controller
+        without disrupting normal notification handling.
+
+        Args:
+            callback: Function to call with (characteristic_uuid, data), or None to clear.
+        """
+        if self._controller is not None:
+            self._controller.set_raw_notify_callback(callback)
+
     async def _async_read_positions(self) -> None:
         """Actively read current positions from the bed.
 

@@ -177,9 +177,11 @@ class LinakController(BedController):
             try:
                 # Use response=True for reliable BLE writes (write-with-response)
                 # This ensures commands are acknowledged by the device
-                await self.client.write_gatt_char(
-                    LINAK_CONTROL_CHAR_UUID, command, response=True
-                )
+                # Acquire BLE lock to prevent conflicts with concurrent position reads
+                async with self._ble_lock:
+                    await self.client.write_gatt_char(
+                        LINAK_CONTROL_CHAR_UUID, command, response=True
+                    )
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write command %s to characteristic %s",
@@ -253,7 +255,7 @@ class LinakController(BedController):
                 uuid,
             )
             try:
-                def make_handler(n: str, mp: int, ma: float):
+                def make_handler(n: str, mp: int, ma: float, char_uuid: str):
                     def handler(_, data: bytearray) -> None:
                         _LOGGER.debug(
                             "Notification received for %s: raw_data=%s (%d bytes)",
@@ -261,10 +263,11 @@ class LinakController(BedController):
                             data.hex(),
                             len(data),
                         )
+                        self.forward_raw_notification(char_uuid, bytes(data))
                         self._handle_position_data(n, data, mp, ma)
                     return handler
 
-                await self.client.start_notify(uuid, make_handler(name, max_pos, max_angle))
+                await self.client.start_notify(uuid, make_handler(name, max_pos, max_angle, uuid))
                 _LOGGER.debug(
                     "Successfully started notifications for %s position (UUID: %s, max_pos: %d, max_angle: %.1f°)",
                     name,
@@ -403,7 +406,9 @@ class LinakController(BedController):
 
         # Only back needs polling - legs sends notifications
         try:
-            data = await self.client.read_gatt_char(LINAK_POSITION_BACK_UUID)
+            # Acquire BLE lock to prevent conflicts with concurrent writes
+            async with self._ble_lock:
+                data = await self.client.read_gatt_char(LINAK_POSITION_BACK_UUID)
             if data:
                 _LOGGER.debug("Polled back position: %s", data.hex())
                 self._handle_position_data(

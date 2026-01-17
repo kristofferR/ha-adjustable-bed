@@ -221,6 +221,11 @@ class OkimatController(BedController):
         return self._remote.memory_save is not None
 
     @property
+    def supports_lights(self) -> bool:
+        """Return True - Okimat remotes support under-bed lighting."""
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Okimat only supports toggle, not discrete on/off."""
         return False
@@ -312,6 +317,8 @@ class OkimatController(BedController):
         - Head: 0-16000 raw → 0-60 degrees
         - Foot: 0-12000 raw → 0-45 degrees
         """
+        self.forward_raw_notification(OKIN_POSITION_NOTIFY_CHAR_UUID, bytes(data))
+
         if len(data) < 7:
             _LOGGER.debug(
                 "Received invalid position data: expected 7+ bytes, got %d",
@@ -608,6 +615,14 @@ class OkimatController(BedController):
             )
 
     # Light methods
+    async def lights_on(self) -> None:
+        """Turn on under-bed lights (via toggle - no discrete control)."""
+        await self.lights_toggle()
+
+    async def lights_off(self) -> None:
+        """Turn off under-bed lights (via toggle - no discrete control)."""
+        await self.lights_toggle()
+
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
         await self._execute_command(

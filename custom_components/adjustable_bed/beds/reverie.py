@@ -179,6 +179,7 @@ class ReverieController(BedController):
         try:
             def handler(_, data: bytearray) -> None:
                 _LOGGER.debug("Reverie notification: %s", data.hex())
+                self.forward_raw_notification(REVERIE_CHAR_UUID, bytes(data))
                 self._parse_position_data(data)
 
             await self.client.start_notify(REVERIE_CHAR_UUID, handler)

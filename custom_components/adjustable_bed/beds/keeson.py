@@ -298,6 +298,7 @@ class KeesonController(BedController):
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle incoming BLE notifications (ergomotion variant)."""
         _LOGGER.debug("Received notification: %s", data.hex())
+        self.forward_raw_notification(self._notify_char_uuid, bytes(data))
         self._parse_notification(bytes(data))
 
     def _parse_notification(self, data: bytes) -> None:

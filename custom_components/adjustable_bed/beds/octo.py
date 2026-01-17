@@ -217,6 +217,7 @@ class OctoController(BedController):
     def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notifications from the bed."""
         _LOGGER.debug("Received notification: %s", data.hex())
+        self.forward_raw_notification(OCTO_CHAR_UUID, bytes(data))
 
         packet = self._parse_response_packet(bytes(data))
         if packet is None:

@@ -335,6 +335,14 @@ class BLEDiagnosticRunner:
 
         return info
 
+    def _raw_notify_callback(self, characteristic_uuid: str, data: bytes) -> None:
+        """Handle raw notification from coordinator's controller.
+
+        This is called synchronously from the controller's notification handler.
+        We schedule the async handler to run in the event loop.
+        """
+        asyncio.create_task(self._handle_notification(characteristic_uuid, data))
+
     async def _subscribe_to_notifications(
         self, services: list[ServiceInfo]
     ) -> None:
@@ -342,12 +350,14 @@ class BLEDiagnosticRunner:
         if not self._client:
             return
 
-        # Skip notification subscription when using coordinator's connection
-        # to avoid replacing or tearing down coordinator callbacks
+        # When using coordinator's connection, register a raw callback instead
+        # of subscribing directly (which would replace coordinator callbacks)
         if self._using_coordinator_connection:
-            _LOGGER.debug(
-                "Skipping notification subscription (using coordinator connection)"
-            )
+            if self.coordinator is not None:
+                _LOGGER.debug(
+                    "Registering raw notification callback with coordinator"
+                )
+                self.coordinator.set_raw_notify_callback(self._raw_notify_callback)
             return
 
         for service in services:
@@ -373,12 +383,13 @@ class BLEDiagnosticRunner:
         if not self._client or not self._client.is_connected:
             return
 
-        # Skip notification unsubscription when using coordinator's connection
-        # to avoid tearing down coordinator callbacks
+        # When using coordinator's connection, clear the raw callback
         if self._using_coordinator_connection:
-            _LOGGER.debug(
-                "Skipping notification unsubscription (using coordinator connection)"
-            )
+            if self.coordinator is not None:
+                _LOGGER.debug(
+                    "Clearing raw notification callback from coordinator"
+                )
+                self.coordinator.set_raw_notify_callback(None)
             return
 
         for service in services:

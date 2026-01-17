@@ -269,7 +269,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
-            await self._coordinator.async_stop_command()
+            await self._coordinator.async_execute_controller_command(
+                self.entity_description.stop_fn
+            )
             _LOGGER.debug("Stop command sent for %s", self.entity_description.key)
         except Exception:
             _LOGGER.exception(
