@@ -282,14 +282,22 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def current_cover_position(self) -> int | None:
         """Return current position of cover."""
-        # Get angle from position data if available
-        angle = self._coordinator.position_data.get(self._position_key)
-        if angle is None:
+        # Get position from position data if available
+        position = self._coordinator.position_data.get(self._position_key)
+        if position is None:
             return None
+
+        # Check if controller reports percentage directly (e.g., Keeson/Ergomotion)
+        controller = self._coordinator.controller
+        if controller is not None and getattr(
+            controller, "reports_percentage_position", False
+        ):
+            # Position is already 0-100 percentage
+            return min(100, max(0, int(position)))
 
         # Convert angle to percentage (0-100) using the description's max_angle
         max_angle = self.entity_description.max_angle
-        return min(100, int((angle / max_angle) * 100))
+        return min(100, int((position / max_angle) * 100))
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (raise the motor)."""

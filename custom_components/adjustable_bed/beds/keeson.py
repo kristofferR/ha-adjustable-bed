@@ -220,6 +220,11 @@ class KeesonController(BedController):
         return False
 
     @property
+    def supports_lights(self) -> bool:
+        """Return True - Keeson beds support under-bed/safety lighting."""
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Keeson only supports toggle, not discrete on/off."""
         return False
@@ -238,6 +243,11 @@ class KeesonController(BedController):
     def supports_stop_all(self) -> bool:
         """Return False - Keeson beds don't have a dedicated stop command."""
         return False
+
+    @property
+    def reports_percentage_position(self) -> bool:
+        """Return True - Keeson/Ergomotion report 0-100 percentage, not angle degrees."""
+        return True
 
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
@@ -618,6 +628,14 @@ class KeesonController(BedController):
         await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
 
     # Light methods
+    async def lights_on(self) -> None:
+        """Turn on safety lights (toggle - no discrete control)."""
+        await self.lights_toggle()
+
+    async def lights_off(self) -> None:
+        """Turn off safety lights (toggle - no discrete control)."""
+        await self.lights_toggle()
+
     async def lights_toggle(self) -> None:
         """Toggle safety lights."""
         await self.write_command(

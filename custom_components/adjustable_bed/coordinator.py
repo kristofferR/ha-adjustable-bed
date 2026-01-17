@@ -591,19 +591,28 @@ class AdjustableBedCoordinator:
                     getattr(self._client, 'mtu_size', 'N/A'),
                 )
 
-                # Services are auto-discovered by HA's BleakClientWrapper during connection
-                # Just log what we have - no need to explicitly call get_services()
-                _LOGGER.debug("Checking discovered BLE services...")
+                # Explicitly discover services - not all backends auto-discover
+                _LOGGER.debug("Discovering BLE services...")
+                client = self._client  # Local reference for type narrowing
+                if client is not None:
+                    try:
+                        await client.get_services()
+                    except Exception as svc_err:
+                        _LOGGER.warning(
+                            "Service discovery failed for %s: %s",
+                            self._address,
+                            svc_err,
+                        )
 
                 # Log discovered services in detail
-                if self._client.services:
-                    services_list = list(self._client.services)
+                if client is not None and client.services:
+                    services_list = list(client.services)
                     _LOGGER.debug(
                         "Discovered %d BLE services on %s:",
                         len(services_list),
                         self._address,
                     )
-                    for service in self._client.services:
+                    for service in client.services:
                         _LOGGER.debug(
                             "  Service: %s (handle: %s)",
                             service.uuid,
