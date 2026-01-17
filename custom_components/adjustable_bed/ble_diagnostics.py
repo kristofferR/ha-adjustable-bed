@@ -116,6 +116,7 @@ class BLEDiagnosticRunner:
         self._notifications: list[CapturedNotification] = []
         self._errors: list[str] = []
         self._notification_lock = asyncio.Lock()
+        self._diagnostic_notifications_started: bool = False
 
     async def run_diagnostics(self) -> DiagnosticReport:
         """Run full diagnostic capture on the device."""
@@ -366,6 +367,7 @@ class BLEDiagnosticRunner:
                         "Angle sensing disabled - starting notifications for diagnostic capture"
                     )
                     await self.coordinator.async_start_notify_for_diagnostics()
+                    self._diagnostic_notifications_started = True
             return
 
         for service in services:
@@ -398,6 +400,13 @@ class BLEDiagnosticRunner:
                     "Clearing raw notification callback from coordinator"
                 )
                 self.coordinator.set_raw_notify_callback(None)
+                # Stop notifications if we started them for diagnostics
+                if self._diagnostic_notifications_started and self.coordinator.controller is not None:
+                    _LOGGER.debug(
+                        "Stopping diagnostic notifications that were started for capture"
+                    )
+                    await self.coordinator.controller.stop_notify()
+                self._diagnostic_notifications_started = False
             return
 
         for service in services:

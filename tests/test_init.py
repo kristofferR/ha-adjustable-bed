@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 
 # Import enable_custom_integrations fixture
-from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
+from pytest_homeassistant_custom_component.plugins import enable_custom_integrations
 
 from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,

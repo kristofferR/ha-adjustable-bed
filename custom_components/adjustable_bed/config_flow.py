@@ -851,7 +851,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         adapters = get_available_adapters(self.hass)
 
         # Build base schema - include diagnostic as a bed type option
-        manual_bed_types = SUPPORTED_BED_TYPES + [BED_TYPE_DIAGNOSTIC]
+        manual_bed_types = [*SUPPORTED_BED_TYPES, BED_TYPE_DIAGNOSTIC]
         schema_dict: dict[vol.Marker, Any] = {
             vol.Required(CONF_ADDRESS): str,
             vol.Required(CONF_BED_TYPE): vol.In(manual_bed_types),
@@ -1054,12 +1054,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Confirm diagnostic device setup."""
         assert self._discovery_info is not None
 
+        # Get discovery source for default adapter selection
+        discovery_source = getattr(self._discovery_info, "source", None) or ADAPTER_AUTO
+
         if user_input is not None:
+            preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, discovery_source)
             device_name = user_input.get(CONF_NAME, self._discovery_info.name or "Diagnostic Device")
             _LOGGER.info(
-                "Creating diagnostic device entry: name=%s, address=%s",
+                "Creating diagnostic device entry: name=%s, address=%s, adapter=%s",
                 device_name,
                 self._discovery_info.address,
+                preferred_adapter,
             )
 
             return self.async_create_entry(
@@ -1071,8 +1076,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_MOTOR_COUNT: 0,  # No motors for diagnostic
                     CONF_HAS_MASSAGE: False,
                     CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: preferred_adapter,
                 },
             )
+
+        # Get available Bluetooth adapters
+        adapters = get_available_adapters(self.hass)
 
         return self.async_show_form(
             step_id="diagnostic_confirm",
@@ -1081,6 +1090,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(
                         CONF_NAME, default=self._discovery_info.name or "Diagnostic Device"
                     ): str,
+                    vol.Optional(
+                        CONF_PREFERRED_ADAPTER, default=discovery_source
+                    ): vol.In(adapters),
                 }
             ),
             description_placeholders={
@@ -1105,11 +1117,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(address)
                 self._abort_if_unique_id_configured()
 
+                preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 device_name = user_input.get(CONF_NAME, "Diagnostic Device")
                 _LOGGER.info(
-                    "Creating diagnostic device entry (manual): name=%s, address=%s",
+                    "Creating diagnostic device entry (manual): name=%s, address=%s, adapter=%s",
                     device_name,
                     address,
+                    preferred_adapter,
                 )
 
                 return self.async_create_entry(
@@ -1121,8 +1135,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_MOTOR_COUNT: 0,  # No motors for diagnostic
                         CONF_HAS_MASSAGE: False,
                         CONF_DISABLE_ANGLE_SENSING: True,
+                        CONF_PREFERRED_ADAPTER: preferred_adapter,
                     },
                 )
+
+        # Get available Bluetooth adapters
+        adapters = get_available_adapters(self.hass)
 
         return self.async_show_form(
             step_id="diagnostic_manual",
@@ -1130,6 +1148,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_ADDRESS): str,
                     vol.Optional(CONF_NAME, default="Diagnostic Device"): str,
+                    vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
                 }
             ),
             errors=errors,

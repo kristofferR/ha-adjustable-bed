@@ -67,6 +67,9 @@ class DiagnosticBedController(BedController):
         cancel_event=None,
     ) -> None:
         """No-op - diagnostic devices don't accept commands."""
+        if cancel_event is not None and cancel_event.is_set():
+            return
+        _ = (command, repeat_count, repeat_delay_ms)
         _LOGGER.debug("Diagnostic mode: write_command ignored (no known protocol)")
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
@@ -74,15 +77,17 @@ class DiagnosticBedController(BedController):
 
         The diagnostic service handles raw notification capture separately.
         """
+        _ = callback
         _LOGGER.debug("Diagnostic mode: start_notify skipped (no known characteristics)")
 
     async def stop_notify(self) -> None:
         """No-op - nothing to stop."""
-        pass
+        return None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """No-op - diagnostic devices don't have position characteristics."""
-        pass
+        _ = motor_count
+        return None
 
     # Motor control methods - all raise NotImplementedError
 
