@@ -355,14 +355,16 @@ class AdjustableBedCoordinator:
                         discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
                         for svc_info in discovered:
                             if svc_info.address.upper() == self._address.upper():
-                                rssi = getattr(svc_info, 'rssi', -999)
+                                rssi = getattr(svc_info, 'rssi', None)
+                                # Handle None RSSI by using a low default value
+                                rssi_value = rssi if rssi is not None else -999
                                 source = getattr(svc_info, 'source', 'unknown')
                                 _LOGGER.debug(
-                                    "Auto-select candidate: source=%s, rssi=%d",
-                                    source, rssi
+                                    "Auto-select candidate: source=%s, rssi=%s",
+                                    source, rssi_value
                                 )
-                                if rssi > best_rssi:
-                                    best_rssi = rssi
+                                if rssi_value > best_rssi:
+                                    best_rssi = rssi_value
                                     best_source = source
                     except Exception as err:
                         _LOGGER.debug("Error during auto adapter selection: %s", err)

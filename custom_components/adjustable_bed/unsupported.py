@@ -104,13 +104,15 @@ def capture_device_info(
     discovery_info: BluetoothServiceInfoBleak,
 ) -> UnsupportedDeviceInfo:
     """Extract device information from BluetoothServiceInfoBleak."""
+    # Handle None service_uuids gracefully
+    service_uuids = discovery_info.service_uuids
     return UnsupportedDeviceInfo(
         address=discovery_info.address,
         name=discovery_info.name,
-        service_uuids=[str(uuid) for uuid in discovery_info.service_uuids],
+        service_uuids=[str(uuid) for uuid in service_uuids] if service_uuids else [],
         manufacturer_data={
             k: bytes(v) for k, v in discovery_info.manufacturer_data.items()
-        },
+        } if discovery_info.manufacturer_data else {},
         rssi=getattr(discovery_info, "rssi", None),
     )
 

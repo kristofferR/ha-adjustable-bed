@@ -389,6 +389,26 @@ class BedController(ABC):
         """
         return True
 
+    @property
+    def memory_slot_count(self) -> int:
+        """Return the number of memory preset slots supported.
+
+        Override in subclasses. Common values:
+        - 0: No memory presets (Octo, Serta, Nectar, MattressFirm)
+        - 2: Memory 1-2 (Jiecang, MotoSleep, DewertOkin, Linak)
+        - 4: Memory 1-4 (Keeson, Reverie)
+        """
+        return 0
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True if bed supports programming memory positions via BLE.
+
+        Some beds have read-only memory presets (can recall but not save).
+        Override in subclasses that support programming.
+        """
+        return False
+
     # Lumbar motor control (optional - only some beds have this)
 
     async def move_lumbar_up(self) -> None:

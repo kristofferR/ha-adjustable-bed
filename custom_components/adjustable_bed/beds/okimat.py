@@ -200,6 +200,26 @@ class OkimatController(BedController):
         return self._remote.memory_1 is not None
 
     @property
+    def memory_slot_count(self) -> int:
+        """Return number of memory slots based on remote variant."""
+        count = 0
+        if self._remote.memory_1 is not None:
+            count = 1
+        if self._remote.memory_2 is not None:
+            count = 2
+        if self._remote.memory_3 is not None:
+            count = 3
+        if self._remote.memory_4 is not None:
+            count = 4
+        return count
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True if this remote supports programming memory positions."""
+        # Okimat remotes use a single memory_save command
+        return self._remote.memory_save is not None
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Okimat only supports toggle, not discrete on/off."""
         return False

@@ -208,6 +208,16 @@ class KeesonController(BedController):
         return True
 
     @property
+    def memory_slot_count(self) -> int:
+        """Return 4 - Keeson beds support memory slots 1-4."""
+        return 4
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True - Keeson beds support programming memory positions."""
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Keeson only supports toggle, not discrete on/off."""
         return False

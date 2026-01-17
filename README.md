@@ -37,23 +37,23 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 
 | Actuator | Status | Notes |
 |----------|--------|-------|
-| **[Linak](docs/SUPPORTED_ACTUATORS.md#linak)** | ✅ Fully tested | Full feature support including position feedback |
-| **[Keeson](docs/SUPPORTED_ACTUATORS.md#keeson)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
-| **[Richmat](docs/SUPPORTED_ACTUATORS.md#richmat)** | ✅ Works | Improvements in progress |
-| **[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep)** | ✅ Works | Improvements in progress |
+| **[Linak](docs/beds/linak.md)** | ✅ Fully tested | Full feature support including position feedback |
+| **[Keeson](docs/beds/keeson.md)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
+| **[Richmat](docs/beds/richmat.md)** | ✅ Works | Improvements in progress |
+| **[MotoSleep](docs/beds/motosleep.md)** | ✅ Works | Improvements in progress |
 
 ### Implemented, Need Testers
 
-[Solace](docs/SUPPORTED_ACTUATORS.md#solace) ·
-[Leggett & Platt](docs/SUPPORTED_ACTUATORS.md#leggett--platt) ·
-[Reverie](docs/SUPPORTED_ACTUATORS.md#reverie) ·
-[Okimat/Okin](docs/SUPPORTED_ACTUATORS.md#okimatokin) ·
-[Jiecang](docs/SUPPORTED_ACTUATORS.md#jiecang) ·
-[DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin) ·
-[Serta](docs/SUPPORTED_ACTUATORS.md#serta) ·
-[Octo](docs/SUPPORTED_ACTUATORS.md#octo) ·
-[Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900) ·
-[Nectar](docs/SUPPORTED_ACTUATORS.md#nectar)
+[Solace](docs/beds/solace.md) ·
+[Leggett & Platt](docs/beds/leggett-platt.md) ·
+[Reverie](docs/beds/reverie.md) ·
+[Okimat/Okin](docs/beds/okimat.md) ·
+[Jiecang](docs/beds/jiecang.md) ·
+[DewertOkin](docs/beds/dewertokin.md) ·
+[Serta](docs/beds/serta.md) ·
+[Octo](docs/beds/octo.md) ·
+[Mattress Firm 900](docs/beds/mattressfirm.md) ·
+[Nectar](docs/beds/nectar.md)
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) if it works!
 
@@ -153,7 +153,7 @@ See the [Connection Guide](docs/CONNECTION_GUIDE.md) for setup help.
 3. Implement a controller in `beds/`
 4. Add detection to `config_flow.py`
 
-See [Technical Details](docs/CONNECTION_GUIDE.md#technical-details) for protocol documentation.
+See [Supported Actuators](docs/SUPPORTED_ACTUATORS.md) for protocol documentation.
 
 </details>
 
