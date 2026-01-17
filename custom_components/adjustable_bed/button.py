@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Coroutine, Any
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -36,6 +36,10 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     cancel_movement: bool = False  # If True, cancels any running motor command
     # Capability property name to check on controller (e.g., "supports_preset_zero_g")
     required_capability: str | None = None
+    # Memory slot number for memory preset/program buttons (1-4). Used to check memory_slot_count.
+    memory_slot: int | None = None
+    # Whether this is a memory programming button (requires supports_memory_programming)
+    is_program_button: bool = False
 
 
 BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
@@ -47,6 +51,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.preset_memory(1),
         cancel_movement=True,
         required_capability="supports_memory_presets",
+        memory_slot=1,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_2",
@@ -55,6 +60,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.preset_memory(2),
         cancel_movement=True,
         required_capability="supports_memory_presets",
+        memory_slot=2,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_3",
@@ -63,6 +69,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.preset_memory(3),
         cancel_movement=True,
         required_capability="supports_memory_presets",
+        memory_slot=3,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_4",
@@ -71,6 +78,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.preset_memory(4),
         cancel_movement=True,
         required_capability="supports_memory_presets",
+        memory_slot=4,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
@@ -128,6 +136,8 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(1),
         required_capability="supports_memory_presets",
+        memory_slot=1,
+        is_program_button=True,
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_2",
@@ -136,6 +146,8 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(2),
         required_capability="supports_memory_presets",
+        memory_slot=2,
+        is_program_button=True,
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_3",
@@ -144,6 +156,8 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(3),
         required_capability="supports_memory_presets",
+        memory_slot=3,
+        is_program_button=True,
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_4",
@@ -152,6 +166,8 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(4),
         required_capability="supports_memory_presets",
+        memory_slot=4,
+        is_program_button=True,
     ),
     # Stop button
     AdjustableBedButtonEntityDescription(
@@ -286,6 +302,15 @@ async def async_setup_entry(
                 continue
             if not getattr(controller, description.required_capability, False):
                 continue
+        # Check memory slot count for memory preset/program buttons
+        if description.memory_slot is not None and controller is not None:
+            slot_count = getattr(controller, "memory_slot_count", 4)  # Default to 4 for backward compat
+            if description.memory_slot > slot_count:
+                continue
+        # Skip program buttons if controller doesn't support memory programming
+        if description.is_program_button and controller is not None:
+            if not getattr(controller, "supports_memory_programming", False):
+                continue
         entities.append(AdjustableBedButton(coordinator, description))
 
     async_add_entities(entities)
@@ -341,6 +366,9 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
 
         try:
             _LOGGER.debug("Executing button action: %s", self.entity_description.key)
+            if self.entity_description.press_fn is None:
+                _LOGGER.warning("No press function defined for button: %s", self.entity_description.key)
+                return
             await self._coordinator.async_execute_controller_command(
                 self.entity_description.press_fn,
                 cancel_running=self.entity_description.cancel_movement,

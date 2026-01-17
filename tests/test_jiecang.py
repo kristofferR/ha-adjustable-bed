@@ -131,7 +131,7 @@ class TestJiecangController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            JIECANG_CHAR_UUID, command, response=False
+            JIECANG_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_with_repeat(

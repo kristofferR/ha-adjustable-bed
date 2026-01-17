@@ -106,6 +106,16 @@ class ReverieController(BedController):
         return True
 
     @property
+    def memory_slot_count(self) -> int:
+        """Return 4 - Reverie beds support memory slots 1-4."""
+        return 4
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True - Reverie beds support programming memory positions."""
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Reverie only supports toggle, not discrete on/off."""
         return False
@@ -202,16 +212,18 @@ class ReverieController(BedController):
             return
 
         # Map command type to motor name
+        # Use "back" and "legs" to match the sensor position_key expectations
+        # (sensors use "back" and "legs" for 2-motor beds)
         motor_map = {
-            0x51: "head",
-            0x52: "feet",
+            0x51: "back",   # head motor -> back position
+            0x52: "legs",   # feet motor -> legs position
         }
 
         motor_name = motor_map.get(cmd_type)
         if motor_name and self._notify_callback:
             # Convert position (0-100) to angle estimate
-            # Assume max angle of ~60 degrees for head, ~45 for feet
-            if motor_name == "head":
+            # Assume max angle of ~60 degrees for back (head), ~45 for legs (feet)
+            if motor_name == "back":
                 angle = position * 0.6  # 0-60 degrees
             else:
                 angle = position * 0.45  # 0-45 degrees

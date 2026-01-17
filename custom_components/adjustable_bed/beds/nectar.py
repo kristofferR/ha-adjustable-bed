@@ -141,7 +141,7 @@ class NectarController(BedController):
             if i < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
-    async def start_notify(self, _callback: Callable[[str, float], None]) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         # Nectar beds don't support position feedback
         _LOGGER.debug("Nectar beds don't support position notifications")
@@ -149,7 +149,7 @@ class NectarController(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
 
-    async def read_positions(self, _motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current motor positions."""
         # Not supported on Nectar beds
 
@@ -269,7 +269,7 @@ class NectarController(BedController):
         """Go to TV position (alias for lounge)."""
         await self.preset_lounge()
 
-    async def preset_memory(self, _slot: int) -> None:
+    async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position.
 
         Note: Nectar beds don't support user-programmable memory slots.
@@ -280,7 +280,7 @@ class NectarController(BedController):
         )
         raise NotImplementedError("Memory slots not supported on Nectar beds")
 
-    async def program_memory(self, _slot: int) -> None:
+    async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""
         raise NotImplementedError("Memory programming not supported on Nectar beds")
 

@@ -340,7 +340,7 @@ class MattressFirmController(BedController):
         """Go to TV position (alias for lounge)."""
         await self.preset_lounge()
 
-    async def preset_memory(self, slot: int) -> None:
+    async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position.
 
         Note: Mattress Firm 900 doesn't support user-programmable memory slots.
@@ -353,7 +353,7 @@ class MattressFirmController(BedController):
         )
         raise NotImplementedError("Memory slots not supported on Mattress Firm 900")
 
-    async def program_memory(self, slot: int) -> None:
+    async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""
         raise NotImplementedError("Memory programming not supported on Mattress Firm 900")
 

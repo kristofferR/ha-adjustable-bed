@@ -66,6 +66,16 @@ class JiecangController(BedController):
         """Return True - Jiecang beds support memory presets (slots 1-2)."""
         return True
 
+    @property
+    def memory_slot_count(self) -> int:
+        """Return 2 - Jiecang beds support memory slots 1-2."""
+        return 2
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return False - Jiecang beds don't support programming memory positions via BLE."""
+        return False
+
     async def write_command(
         self,
         command: bytes,

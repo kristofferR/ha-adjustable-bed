@@ -28,6 +28,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
@@ -200,6 +201,26 @@ class OkimatController(BedController):
         return self._remote.memory_1 is not None
 
     @property
+    def memory_slot_count(self) -> int:
+        """Return number of memory slots based on remote variant."""
+        count = 0
+        if self._remote.memory_1 is not None:
+            count = 1
+        if self._remote.memory_2 is not None:
+            count = 2
+        if self._remote.memory_3 is not None:
+            count = 3
+        if self._remote.memory_4 is not None:
+            count = 4
+        return count
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True if this remote supports programming memory positions."""
+        # Okimat remotes use a single memory_save command
+        return self._remote.memory_save is not None
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Okimat only supports toggle, not discrete on/off."""
         return False
@@ -279,7 +300,7 @@ class OkimatController(BedController):
                 err,
             )
 
-    def _handle_position_notification(self, _: int, data: bytearray) -> None:
+    def _handle_position_notification(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle position notification data from OKIN controller.
 
         Data format (7+ bytes):
@@ -352,7 +373,7 @@ class OkimatController(BedController):
             data = await self.client.read_gatt_char(OKIN_POSITION_NOTIFY_CHAR_UUID)
             if data:
                 _LOGGER.debug("Read Okin position data: %s", data.hex())
-                self._handle_position_notification(0, bytearray(data))
+                self._handle_position_notification(0, bytearray(data))  # type: ignore[arg-type]
         except BleakError as err:
             _LOGGER.debug("Could not read position data: %s", err)
 

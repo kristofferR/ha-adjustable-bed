@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/kristofferR/ha-adjustable-bed/releases"><img src="https://img.shields.io/github/v/release/kristofferR/ha-adjustable-bed" alt="GitHub Release"></a>
   <a href="https://github.com/kristofferR/ha-adjustable-bed/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/kristofferR/ha-adjustable-bed/validate.yml?label=validation" alt="Validation"></a>
-  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Default-blue.svg" alt="HACS"></a>
   <img src="https://img.shields.io/badge/Home%20Assistant-2025.10%2B-blue" alt="Home Assistant 2025.10+">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/kristofferR/ha-adjustable-bed" alt="License"></a>
 </p>
@@ -16,7 +16,7 @@
 
 ## Quick Start
 
-1. **Install** via [HACS](https://hacs.xyz): Menu → Custom repositories → add `https://github.com/kristofferR/ha-adjustable-bed` (Integration) → search "Adjustable Bed"
+1. **Install** via [HACS](https://hacs.xyz): Search for "Adjustable Bed" and install
 2. **Discover** your bed automatically, or add manually via Settings → Integrations
 3. **Control** your bed from Home Assistant dashboards, automations, and voice assistants!
 
@@ -37,23 +37,23 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 
 | Actuator | Status | Notes |
 |----------|--------|-------|
-| **[Linak](docs/SUPPORTED_ACTUATORS.md#linak)** | ✅ Fully tested | Full feature support including position feedback |
-| **[Keeson](docs/SUPPORTED_ACTUATORS.md#keeson)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
-| **[Richmat](docs/SUPPORTED_ACTUATORS.md#richmat)** | ✅ Works | Improvements in progress |
-| **[MotoSleep](docs/SUPPORTED_ACTUATORS.md#motosleep)** | ✅ Works | Improvements in progress |
+| **[Linak](docs/beds/linak.md)** | ✅ Fully tested | Full feature support including position feedback |
+| **[Keeson](docs/beds/keeson.md)** | ✅ Fully tested | Used in Member's Mark, Purple, Ergomotion beds |
+| **[Richmat](docs/beds/richmat.md)** | ✅ Works | Improvements in progress |
+| **[MotoSleep](docs/beds/motosleep.md)** | ✅ Works | Improvements in progress |
 
 ### Implemented, Need Testers
 
-[Solace](docs/SUPPORTED_ACTUATORS.md#solace) ·
-[Leggett & Platt](docs/SUPPORTED_ACTUATORS.md#leggett--platt) ·
-[Reverie](docs/SUPPORTED_ACTUATORS.md#reverie) ·
-[Okimat/Okin](docs/SUPPORTED_ACTUATORS.md#okimatokin) ·
-[Jiecang](docs/SUPPORTED_ACTUATORS.md#jiecang) ·
-[DewertOkin](docs/SUPPORTED_ACTUATORS.md#dewertokin) ·
-[Serta](docs/SUPPORTED_ACTUATORS.md#serta) ·
-[Octo](docs/SUPPORTED_ACTUATORS.md#octo) ·
-[Mattress Firm 900](docs/SUPPORTED_ACTUATORS.md#mattress-firm-900) ·
-[Nectar](docs/SUPPORTED_ACTUATORS.md#nectar)
+[Solace](docs/beds/solace.md) ·
+[Leggett & Platt](docs/beds/leggett-platt.md) ·
+[Reverie](docs/beds/reverie.md) ·
+[Okimat/Okin](docs/beds/okimat.md) ·
+[Jiecang](docs/beds/jiecang.md) ·
+[DewertOkin](docs/beds/dewertokin.md) ·
+[Serta](docs/beds/serta.md) ·
+[Octo](docs/beds/octo.md) ·
+[Mattress Firm 900](docs/beds/mattressfirm.md) ·
+[Nectar](docs/beds/nectar.md)
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) if it works!
 
@@ -72,10 +72,9 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 ### HACS (Recommended)
 
 1. Open HACS in Home Assistant
-2. Click the three dots menu → "Custom repositories"
-3. Add `https://github.com/kristofferR/ha-adjustable-bed` with category "Integration"
-4. Search for "Adjustable Bed" and install
-5. Restart Home Assistant
+2. Search for "Adjustable Bed"
+3. Click Install
+4. Restart Home Assistant
 
 ### Manual
 
@@ -153,7 +152,7 @@ See the [Connection Guide](docs/CONNECTION_GUIDE.md) for setup help.
 3. Implement a controller in `beds/`
 4. Add detection to `config_flow.py`
 
-See [Technical Details](docs/CONNECTION_GUIDE.md#technical-details) for protocol documentation.
+See [Supported Actuators](docs/SUPPORTED_ACTUATORS.md) for protocol documentation.
 
 </details>
 

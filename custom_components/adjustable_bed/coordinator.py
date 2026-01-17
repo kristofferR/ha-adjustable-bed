@@ -9,6 +9,7 @@ import traceback
 from typing import TYPE_CHECKING, Any, Callable, Coroutine
 
 from bleak import BleakClient
+from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from bleak_retry_connector import establish_connection
 from homeassistant.components import bluetooth
@@ -127,6 +128,7 @@ class AdjustableBedCoordinator:
         self._connecting: bool = False  # Track if we're actively connecting
         self._intentional_disconnect: bool = False  # Track intentional disconnects to skip auto-reconnect
         self._cancel_command = asyncio.Event()  # Signal to cancel current command
+        self._stop_keepalive_task: asyncio.Task[None] | None = None  # Track keepalive stop task
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
@@ -355,14 +357,16 @@ class AdjustableBedCoordinator:
                         discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
                         for svc_info in discovered:
                             if svc_info.address.upper() == self._address.upper():
-                                rssi = getattr(svc_info, 'rssi', -999)
+                                rssi = getattr(svc_info, 'rssi', None)
+                                # Handle None RSSI by using a low default value
+                                rssi_value = rssi if rssi is not None else -999
                                 source = getattr(svc_info, 'source', 'unknown')
                                 _LOGGER.debug(
-                                    "Auto-select candidate: source=%s, rssi=%d",
-                                    source, rssi
+                                    "Auto-select candidate: source=%s, rssi=%s",
+                                    source, rssi_value
                                 )
-                                if rssi > best_rssi:
-                                    best_rssi = rssi
+                                if rssi_value > best_rssi:
+                                    best_rssi = rssi_value
                                     best_source = source
                     except Exception as err:
                         _LOGGER.debug("Error during auto adapter selection: %s", err)
@@ -407,7 +411,7 @@ class AdjustableBedCoordinator:
                     )
                     # Log what devices ARE visible
                     try:
-                        discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                        discovered = list(bluetooth.async_discovered_service_info(self.hass, connectable=True))
                         if discovered:
                             _LOGGER.debug(
                                 "Currently visible BLE devices (%d total):",
@@ -498,9 +502,9 @@ class AdjustableBedCoordinator:
                 )
                 
                 # Create a callback to get fresh device from preferred adapter on retries
-                ble_device_callback = None
+                ble_device_callback: Callable[[], BLEDevice] | None = None
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
-                    def _get_device_from_preferred_adapter():
+                    def _get_device_from_preferred_adapter() -> BLEDevice:
                         """Get a fresh BLEDevice from the preferred adapter."""
                         for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
                             if (svc_info.address.upper() == self._address and
@@ -516,9 +520,12 @@ class AdjustableBedCoordinator:
                             "Preferred adapter %s not available, falling back",
                             self._preferred_adapter,
                         )
-                        return bluetooth.async_ble_device_from_address(
+                        fallback = bluetooth.async_ble_device_from_address(
                             self.hass, self._address, connectable=True
                         )
+                        if fallback is None:
+                            raise BleakError(f"Device {self._address} not found")
+                        return fallback
                     ble_device_callback = _get_device_from_preferred_adapter
                 
                 # Mark that we're connecting to suppress spurious disconnect warnings
@@ -542,8 +549,9 @@ class AdjustableBedCoordinator:
                 actual_adapter = "unknown"
                 try:
                     # Try to get the actual connection source from the client
-                    if hasattr(self._client, '_backend') and hasattr(self._client._backend, '_device'):
-                        backend_device = self._client._backend._device
+                    # (accessing private bleak internals for diagnostic purposes)
+                    if hasattr(self._client, '_backend') and hasattr(self._client._backend, '_device'):  # type: ignore[union-attr]
+                        backend_device = self._client._backend._device  # type: ignore[union-attr]
                         if hasattr(backend_device, 'details') and isinstance(backend_device.details, dict):
                             actual_adapter = backend_device.details.get('source', 'unknown')
                 except Exception:
@@ -635,11 +643,11 @@ class AdjustableBedCoordinator:
                 if self._bed_type == BED_TYPE_OCTO:
                     # Discover features to detect PIN requirement
                     if hasattr(self._controller, 'discover_features'):
-                        await self._controller.discover_features()
+                        await self._controller.discover_features()  # type: ignore[union-attr]
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, 'send_pin'):
-                        await self._controller.send_pin()
-                        await self._controller.start_keepalive()
+                        await self._controller.send_pin()  # type: ignore[union-attr]
+                        await self._controller.start_keepalive()  # type: ignore[union-attr]
 
                 return True
 
@@ -738,7 +746,9 @@ class AdjustableBedCoordinator:
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
         if controller is not None and hasattr(controller, 'stop_keepalive'):
-            asyncio.create_task(controller.stop_keepalive())
+            self._stop_keepalive_task = asyncio.create_task(
+                controller.stop_keepalive()  # type: ignore[attr-defined]
+            )
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
@@ -986,7 +996,7 @@ class AdjustableBedCoordinator:
                         # Stop Octo keep-alive if running
                         if hasattr(self._controller, 'stop_keepalive'):
                             try:
-                                await self._controller.stop_keepalive()
+                                await self._controller.stop_keepalive()  # type: ignore[attr-defined]
                             except Exception as err:
                                 _LOGGER.debug("Error stopping keep-alive: %s", err)
                         try:

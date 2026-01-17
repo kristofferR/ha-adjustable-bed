@@ -240,7 +240,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Use the provided target address
             from .config_flow import is_valid_mac_address
 
-            address = target_address.upper().replace("-", ":")
+            address = str(target_address).upper().replace("-", ":")
             if not is_valid_mac_address(address):
                 _LOGGER.error(
                     "Invalid MAC address format for run_diagnostics: %s",
@@ -272,7 +272,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.error("No device_id or target_address provided for run_diagnostics service")
             return
 
-        # Run diagnostics
+        # Run diagnostics (address is guaranteed to be str at this point)
+        assert address is not None
         try:
             runner = BLEDiagnosticRunner(
                 hass,

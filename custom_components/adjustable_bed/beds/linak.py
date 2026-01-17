@@ -119,6 +119,16 @@ class LinakController(BedController):
         return True
 
     @property
+    def memory_slot_count(self) -> int:
+        """Return 2 - Linak beds support memory slots 1-2."""
+        return 2
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True - Linak beds support programming memory positions."""
+        return True
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return LINAK_CONTROL_CHAR_UUID

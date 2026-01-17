@@ -14,6 +14,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Callable
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
@@ -213,7 +214,7 @@ class OctoController(BedController):
         # Signal that we received at least one feature response
         self._features_loaded.set()
 
-    def _on_notification(self, _sender: int, data: bytearray) -> None:
+    def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notifications from the bed."""
         _LOGGER.debug("Received notification: %s", data.hex())
 

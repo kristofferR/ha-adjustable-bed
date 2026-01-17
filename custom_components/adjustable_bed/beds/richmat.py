@@ -164,6 +164,21 @@ class RichmatController(BedController):
         """Return True if this bed supports memory presets based on detected features."""
         return bool(self._features & (RichmatFeatures.PRESET_MEMORY_1 | RichmatFeatures.PRESET_MEMORY_2))
 
+    @property
+    def memory_slot_count(self) -> int:
+        """Return number of memory slots based on detected features."""
+        count = 0
+        if self._features & RichmatFeatures.PRESET_MEMORY_1:
+            count = 1
+        if self._features & RichmatFeatures.PRESET_MEMORY_2:
+            count = 2
+        return count
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True if this bed supports programming memory positions."""
+        return bool(self._features & (RichmatFeatures.PROGRAM_MEMORY_1 | RichmatFeatures.PROGRAM_MEMORY_2))
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
         if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:

@@ -157,7 +157,7 @@ class TestReverieController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, command, response=False
+            REVERIE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -252,7 +252,7 @@ class TestReverieMovement:
 
         expected = coordinator.controller._build_command(ReverieCommands.MOTOR_STOP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
 
@@ -364,7 +364,7 @@ class TestReveriePresets:
 
         expected = coordinator.controller._build_command(expected_command)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
 
@@ -386,7 +386,7 @@ class TestReverieLights:
 
         expected = coordinator.controller._build_command(ReverieCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
 
@@ -426,7 +426,7 @@ class TestReverieMassage:
         # Level should increment from 0 to 1
         expected = coordinator.controller._build_command(ReverieCommands.massage_head(1))
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_head_down(
@@ -445,7 +445,7 @@ class TestReverieMassage:
         # Level should stay at 0 (can't go negative)
         expected = coordinator.controller._build_command(ReverieCommands.massage_head(0))
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
     async def test_massage_mode_step(
@@ -464,7 +464,7 @@ class TestReverieMassage:
         # Wave level should increment from 0 to 1
         expected = coordinator.controller._build_command(ReverieCommands.massage_wave(1))
         mock_bleak_client.write_gatt_char.assert_called_with(
-            REVERIE_CHAR_UUID, expected, response=False
+            REVERIE_CHAR_UUID, expected, response=True
         )
 
 
@@ -505,10 +505,10 @@ class TestReveriePositionNotifications:
         data = bytearray([0x55, 0x51, 50, 0x55 ^ 0x51 ^ 50])
         coordinator.controller._parse_position_data(data)
 
-        # Callback should be called with head position
+        # Callback should be called with back position (0x51 maps to "back" in the implementation)
         callback.assert_called_once()
         args = callback.call_args[0]
-        assert args[0] == "head"
+        assert args[0] == "back"
 
     async def test_parse_position_data_invalid_header(
         self,

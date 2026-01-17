@@ -137,9 +137,10 @@ class TestButtonEntities:
             if state.entity_id.startswith("button.")
         ]
 
-        # Should have: memory presets (4) + save_to_memory (4) + flat (1) + stop_all (1) + connect (1) + disconnect (1) = 12
+        # Linak has memory_slot_count=2 and supports_memory_programming=True, but supports_preset_flat=False
+        # Should have: memory presets (2) + program_memory (2) + stop_all (1) + connect (1) + disconnect (1) = 7
         # Massage buttons are excluded because has_massage=False
-        assert len(button_states) == 12
+        assert len(button_states) == 7
 
     async def test_button_entities_with_massage(
         self,
@@ -171,9 +172,10 @@ class TestButtonEntities:
             if state.entity_id.startswith("button.")
         ]
 
-        # Should have: base (12) + massage buttons (11) = 23
-        # Base: memory presets (4) + save_to_memory (4) + flat (1) + stop_all (1) + connect (1) + disconnect (1)
-        assert len(button_states) == 23
+        # Should have: base (7) + massage buttons (11) = 18
+        # Base: memory presets (2) + program_memory (2) + stop_all (1) + connect (1) + disconnect (1) = 7
+        # (Linak has memory_slot_count=2, supports_memory_programming=True, supports_preset_flat=False)
+        assert len(button_states) == 18
 
     async def test_preset_button_press(
         self,
