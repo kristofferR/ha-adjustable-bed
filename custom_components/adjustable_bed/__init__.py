@@ -122,6 +122,16 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
+                # Check if controller supports memory presets
+                controller = coordinator.controller
+                if controller is None or not getattr(
+                    controller, "supports_memory_presets", False
+                ):
+                    _LOGGER.warning(
+                        "Device %s does not support memory presets",
+                        coordinator.name,
+                    )
+                    continue
                 await coordinator.async_execute_controller_command(
                     lambda ctrl, p=preset: ctrl.preset_memory(p)
                 )
@@ -139,6 +149,16 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
+                # Check if controller supports memory presets
+                controller = coordinator.controller
+                if controller is None or not getattr(
+                    controller, "supports_memory_presets", False
+                ):
+                    _LOGGER.warning(
+                        "Device %s does not support memory presets",
+                        coordinator.name,
+                    )
+                    continue
                 await coordinator.async_execute_controller_command(
                     lambda ctrl, p=preset: ctrl.program_memory(p),
                     cancel_running=False,

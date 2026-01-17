@@ -24,6 +24,7 @@ from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
+    BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
@@ -541,13 +542,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            # Get bed-specific defaults for motor pulse settings
+            pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
+                selected_bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            )
             try:
-                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or DEFAULT_MOTOR_PULSE_COUNT)
-                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or DEFAULT_MOTOR_PULSE_DELAY_MS)
+                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
+                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
             except (ValueError, TypeError):
                 _LOGGER.warning("Invalid number input for motor pulse settings")
-                motor_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
-                motor_pulse_delay_ms = DEFAULT_MOTOR_PULSE_DELAY_MS
+                motor_pulse_count = pulse_defaults[0]
+                motor_pulse_delay_ms = pulse_defaults[1]
             _LOGGER.info(
                 "User confirmed bed setup: name=%s, type=%s (detected: %s), variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                 user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
@@ -604,6 +609,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Default angle sensing to enabled for beds that support it
         default_disable_angle = bed_type not in BEDS_WITH_ANGLE_SENSING
 
+        # Get bed-type-specific motor pulse defaults
+        pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
+            bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+        )
+        default_pulse_count, default_pulse_delay = pulse_defaults
+
         # Build schema with optional variant selection
         schema_dict = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): vol.In(SUPPORTED_BED_TYPES),
@@ -616,10 +627,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
-            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
+            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)): TextSelector(
                 TextSelectorConfig()
             ),
-            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
+            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(default_pulse_delay)): TextSelector(
                 TextSelectorConfig()
             ),
             vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
@@ -692,9 +703,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(all_discovered),
         )
         
-        current_addresses = self._async_current_ids()
+        # Convert to upper-case for case-insensitive comparison
+        # (configured IDs are upper-case, but discovered addresses may be lower-case)
+        current_addresses = {addr.upper() for addr in self._async_current_ids()}
         for discovery_info in all_discovered:
-            if discovery_info.address in current_addresses:
+            if discovery_info.address.upper() in current_addresses:
                 _LOGGER.debug(
                     "Skipping already configured device: %s",
                     discovery_info.address,
@@ -749,9 +762,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             elif not errors:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+                # Get bed-specific defaults for motor pulse settings
+                pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
+                    bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                )
                 try:
-                    motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or DEFAULT_MOTOR_PULSE_COUNT)
-                    motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or DEFAULT_MOTOR_PULSE_DELAY_MS)
+                    motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
+                    motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
                 except (ValueError, TypeError):
                     errors["base"] = "invalid_number"
 
@@ -1029,12 +1046,16 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             )] = vol.In(RICHMAT_REMOTES)
 
         if user_input is not None:
+            # Get bed-specific defaults for motor pulse settings
+            pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
+                bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            )
             # Convert text values to integers
             try:
                 if CONF_MOTOR_PULSE_COUNT in user_input:
-                    user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT] or DEFAULT_MOTOR_PULSE_COUNT)
+                    user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT] or pulse_defaults[0])
                 if CONF_MOTOR_PULSE_DELAY_MS in user_input:
-                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS] or DEFAULT_MOTOR_PULSE_DELAY_MS)
+                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1])
             except (ValueError, TypeError):
                 return self.async_show_form(
                     step_id="init",

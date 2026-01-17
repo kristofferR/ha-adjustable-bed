@@ -1023,6 +1023,23 @@ class AdjustableBedCoordinator:
             self._disconnect_timer.cancel()
             self._disconnect_timer = None
 
+    def pause_disconnect_timer(self) -> None:
+        """Pause the disconnect timer (for external use like diagnostics).
+
+        Call resume_disconnect_timer() when done to restart the timer.
+        """
+        self._cancel_disconnect_timer()
+        _LOGGER.debug("Disconnect timer paused for %s", self._address)
+
+    def resume_disconnect_timer(self) -> None:
+        """Resume the disconnect timer after pausing.
+
+        This resets the timer, giving a full idle timeout from now.
+        """
+        if self._client is not None and self._client.is_connected:
+            self._reset_disconnect_timer()
+            _LOGGER.debug("Disconnect timer resumed for %s", self._address)
+
     async def _async_idle_disconnect(self) -> None:
         """Disconnect after idle timeout."""
         _LOGGER.info(

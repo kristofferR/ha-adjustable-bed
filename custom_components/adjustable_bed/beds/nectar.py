@@ -99,6 +99,11 @@ class NectarController(BedController):
         """Return True - Nectar beds support under-bed lighting."""
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return False - Nectar beds don't support programmable memory presets."""
+        return False
+
     async def write_command(
         self,
         command: bytes,

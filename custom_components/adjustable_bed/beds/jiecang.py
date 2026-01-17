@@ -61,6 +61,11 @@ class JiecangController(BedController):
         """Jiecang beds only support presets, not motor control."""
         return False
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Jiecang beds support memory presets (slots 1-2)."""
+        return True
+
     async def write_command(
         self,
         command: bytes,

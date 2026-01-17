@@ -118,6 +118,11 @@ class MattressFirmController(BedController):
         """Return True - Mattress Firm beds support under-bed lighting."""
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return False - Mattress Firm 900 doesn't support programmable memory slots."""
+        return False
+
     async def initialize(self) -> None:
         """Initialize the bed connection.
 

@@ -82,6 +82,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
         self._attr_is_on = False  # We don't have state feedback
 
+    def _supports_discrete_control(self) -> bool:
+        """Check if controller supports discrete on/off (vs toggle-only)."""
+        controller = self._coordinator.controller
+        if controller is None:
+            return True  # Assume discrete control if no controller
+        # Default to True for controllers that don't define this property
+        return getattr(controller, "supports_discrete_light_control", True)
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
         _LOGGER.info(
@@ -96,8 +104,16 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self.entity_description.turn_on_fn,
                 cancel_running=False,
             )
-            self._attr_is_on = True
-            self.async_write_ha_state()
+            # Only update assumed state if controller supports discrete on/off
+            # Toggle-only controllers can't reliably track state
+            if self._supports_discrete_control():
+                self._attr_is_on = True
+                self.async_write_ha_state()
+            else:
+                _LOGGER.debug(
+                    "Toggle-only controller - not updating assumed state for %s",
+                    self.entity_description.key,
+                )
             _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
         except NotImplementedError:
             _LOGGER.warning(
@@ -125,8 +141,16 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self.entity_description.turn_off_fn,
                 cancel_running=False,
             )
-            self._attr_is_on = False
-            self.async_write_ha_state()
+            # Only update assumed state if controller supports discrete on/off
+            # Toggle-only controllers can't reliably track state
+            if self._supports_discrete_control():
+                self._attr_is_on = False
+                self.async_write_ha_state()
+            else:
+                _LOGGER.debug(
+                    "Toggle-only controller - not updating assumed state for %s",
+                    self.entity_description.key,
+                )
             _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)
         except NotImplementedError:
             _LOGGER.warning(

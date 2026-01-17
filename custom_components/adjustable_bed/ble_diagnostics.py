@@ -216,6 +216,8 @@ class BLEDiagnosticRunner:
             _LOGGER.info("Using existing connection from coordinator")
             self._client = self.coordinator.client
             self._using_coordinator_connection = True
+            # Pause the disconnect timer while capturing - capture may exceed idle timeout
+            self.coordinator.pause_disconnect_timer()
             return
 
         # Otherwise, establish a new connection
@@ -249,6 +251,9 @@ class BLEDiagnosticRunner:
         # Don't disconnect if we're using the coordinator's connection
         if self._using_coordinator_connection:
             _LOGGER.debug("Leaving coordinator connection intact")
+            # Resume the disconnect timer now that capture is complete
+            if self.coordinator:
+                self.coordinator.resume_disconnect_timer()
             self._client = None
             return
 

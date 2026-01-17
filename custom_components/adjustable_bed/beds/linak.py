@@ -114,6 +114,11 @@ class LinakController(BedController):
         return True
 
     @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Linak beds support memory presets."""
+        return True
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return LINAK_CONTROL_CHAR_UUID

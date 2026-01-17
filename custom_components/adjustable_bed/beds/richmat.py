@@ -154,6 +154,16 @@ class RichmatController(BedController):
         """Return True if this bed supports under-bed lights."""
         return bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS)
 
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return False - Richmat only supports toggle, not discrete on/off."""
+        return False
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True if this bed supports memory presets based on detected features."""
+        return bool(self._features & (RichmatFeatures.PRESET_MEMORY_1 | RichmatFeatures.PRESET_MEMORY_2))
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
         if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:

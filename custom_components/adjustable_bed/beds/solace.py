@@ -87,6 +87,11 @@ class SolaceController(BedController):
     def supports_preset_tv(self) -> bool:
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Solace beds support memory presets (slots 1-4)."""
+        return True
+
     async def write_command(
         self,
         command: bytes,

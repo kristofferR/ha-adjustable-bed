@@ -100,6 +100,16 @@ class ReverieController(BedController):
     def supports_preset_anti_snore(self) -> bool:
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Reverie beds support memory presets (slots 1-4)."""
+        return True
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return False - Reverie only supports toggle, not discrete on/off."""
+        return False
+
     def _build_command(self, command_bytes: list[int]) -> bytes:
         """Build command with XOR checksum.
 

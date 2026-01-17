@@ -46,6 +46,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-1-box",
         press_fn=lambda ctrl: ctrl.preset_memory(1),
         cancel_movement=True,
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_2",
@@ -53,6 +54,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-2-box",
         press_fn=lambda ctrl: ctrl.preset_memory(2),
         cancel_movement=True,
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_3",
@@ -60,6 +62,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-3-box",
         press_fn=lambda ctrl: ctrl.preset_memory(3),
         cancel_movement=True,
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_memory_4",
@@ -67,6 +70,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:numeric-4-box",
         press_fn=lambda ctrl: ctrl.preset_memory(4),
         cancel_movement=True,
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
@@ -123,6 +127,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(1),
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_2",
@@ -130,6 +135,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(2),
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_3",
@@ -137,6 +143,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(3),
+        required_capability="supports_memory_presets",
     ),
     AdjustableBedButtonEntityDescription(
         key="program_memory_4",
@@ -144,6 +151,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         icon="mdi:content-save",
         entity_category=EntityCategory.CONFIG,
         press_fn=lambda ctrl: ctrl.program_memory(4),
+        required_capability="supports_memory_presets",
     ),
     # Stop button
     AdjustableBedButtonEntityDescription(

@@ -81,6 +81,11 @@ class SertaController(BedController):
     def supports_preset_tv(self) -> bool:
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return False - Serta beds don't support programmable memory presets."""
+        return False
+
     async def write_command(
         self,
         command: bytes,

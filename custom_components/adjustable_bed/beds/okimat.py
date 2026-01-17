@@ -193,6 +193,17 @@ class OkimatController(BedController):
         """Return the UUID of the control characteristic."""
         return OKIMAT_WRITE_CHAR_UUID
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True if this remote supports memory presets."""
+        # Check if at least memory_1 is available for this remote variant
+        return self._remote.memory_1 is not None
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return False - Okimat only supports toggle, not discrete on/off."""
+        return False
+
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes using build_okin_command: [0x04, 0x02, <4-byte>]."""
         return build_okin_command(command_value)

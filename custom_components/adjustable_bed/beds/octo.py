@@ -56,6 +56,7 @@ class OctoController(BedController):
         self._notify_callback: Callable[[str, float], None] | None = None
         self._pin: str = pin
         self._keepalive_task: asyncio.Task[None] | None = None
+        self._notifications_started: bool = False  # Track if BLE notifications are active
 
         # Feature discovery state
         self._has_pin: bool | None = None  # None = not yet discovered
@@ -292,6 +293,7 @@ class OctoController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""
+        self._notifications_started = False
         if self.client is not None and self.client.is_connected:
             try:
                 await self.client.stop_notify(OCTO_CHAR_UUID)
@@ -332,6 +334,11 @@ class OctoController(BedController):
         # Features not discovered - assume lights exist for backward compatibility
         return True
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return False - Octo beds don't support memory presets."""
+        return False
+
     async def discover_features(self) -> bool:
         """Discover bed features including PIN requirement and lights.
 
@@ -343,6 +350,25 @@ class OctoController(BedController):
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot discover features: not connected")
             return False
+
+        # Ensure notifications are started - required for receiving feature responses
+        # This is called explicitly here because coordinator.async_start_notify() may
+        # skip notification setup when disable_angle_sensing is true, but Octo still
+        # needs notifications for feature discovery (PIN/lights detection)
+        if not self._notifications_started:
+            try:
+                await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
+                self._notifications_started = True
+                _LOGGER.debug("Started Octo notifications for feature discovery")
+            except BleakError as err:
+                err_str = str(err).lower()
+                # Treat "already notifying" as success - notifications are already active
+                if "already notifying" in err_str or "already subscribed" in err_str:
+                    self._notifications_started = True
+                    _LOGGER.debug("Notifications already active, continuing with feature discovery")
+                else:
+                    _LOGGER.warning("Could not start notifications for feature discovery: %s", err)
+                    return False
 
         # Reset state
         self._features_loaded.clear()
@@ -654,6 +680,11 @@ class OctoStar2Controller(BedController):
     @property
     def supports_lights(self) -> bool:
         """Star2 protocol doesn't support light control."""
+        return False
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return False - Octo Star2 beds don't support memory presets."""
         return False
 
     @property
