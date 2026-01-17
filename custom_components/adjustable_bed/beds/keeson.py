@@ -295,7 +295,7 @@ class KeesonController(BedController):
         except BleakError:
             _LOGGER.warning("Failed to start notifications")
 
-    def _on_notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
+    def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle incoming BLE notifications (ergomotion variant)."""
         _LOGGER.debug("Received notification: %s", data.hex())
         self._parse_notification(bytes(data))

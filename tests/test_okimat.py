@@ -809,12 +809,11 @@ class TestOkimatMassage:
 class TestOkimatPositionNotifications:
     """Test Okimat position notification handling."""
 
+    @pytest.mark.usefixtures("mock_coordinator_connected", "mock_bleak_client")
     async def test_start_notify_supported(
         self,
         hass: HomeAssistant,
         mock_okimat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
         caplog,
     ):
         """Test that Okimat supports position notifications via Okin protocol."""

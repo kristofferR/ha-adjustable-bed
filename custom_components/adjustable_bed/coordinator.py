@@ -128,6 +128,7 @@ class AdjustableBedCoordinator:
         self._connecting: bool = False  # Track if we're actively connecting
         self._intentional_disconnect: bool = False  # Track intentional disconnects to skip auto-reconnect
         self._cancel_command = asyncio.Event()  # Signal to cancel current command
+        self._stop_keepalive_task: asyncio.Task[None] | None = None  # Track keepalive stop task
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
@@ -745,7 +746,9 @@ class AdjustableBedCoordinator:
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
         if controller is not None and hasattr(controller, 'stop_keepalive'):
-            asyncio.create_task(controller.stop_keepalive())  # type: ignore[attr-defined]
+            self._stop_keepalive_task = asyncio.create_task(
+                controller.stop_keepalive()  # type: ignore[attr-defined]
+            )
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
