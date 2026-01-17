@@ -176,6 +176,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="stop",
         icon="mdi:stop",
         press_fn=lambda ctrl: ctrl.stop_all(),
+        required_capability="supports_stop_all",
     ),
     # Connection control buttons (diagnostic)
     AdjustableBedButtonEntityDescription(

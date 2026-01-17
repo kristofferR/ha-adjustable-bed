@@ -17,7 +17,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT, DOMAIN
+from .const import (
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_KEESON,
+    CONF_MOTOR_COUNT,
+    DEFAULT_MOTOR_COUNT,
+    DOMAIN,
+)
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -35,6 +41,10 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     close_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     stop_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     min_motors: int = 2
+    # Key to look up in coordinator.position_data (defaults to key if not set)
+    position_key: str | None = None
+    # Maximum angle for percentage calculation (default 68 degrees)
+    max_angle: int = 68
 
 
 # Note: For Linak beds:
@@ -61,6 +71,7 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         close_fn=lambda ctrl: ctrl.move_legs_down(),
         stop_fn=lambda ctrl: ctrl.move_legs_stop(),
         min_motors=2,
+        max_angle=45,
     ),
     AdjustableBedCoverEntityDescription(
         key="head",
@@ -81,6 +92,7 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         close_fn=lambda ctrl: ctrl.move_feet_down(),
         stop_fn=lambda ctrl: ctrl.move_feet_stop(),
         min_motors=4,
+        max_angle=45,
     ),
     AdjustableBedCoverEntityDescription(
         key="lumbar",
@@ -91,6 +103,7 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         close_fn=lambda ctrl: ctrl.move_lumbar_down(),
         stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
         min_motors=2,  # Lumbar is independent of motor count
+        max_angle=30,
     ),
     AdjustableBedCoverEntityDescription(
         key="pillow",
@@ -101,6 +114,17 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         close_fn=lambda ctrl: ctrl.move_pillow_down(),
         stop_fn=lambda ctrl: ctrl.move_pillow_stop(),
         min_motors=2,  # Pillow is independent of motor count
+    ),
+    AdjustableBedCoverEntityDescription(
+        key="tilt",
+        translation_key="tilt",
+        icon="mdi:angle-acute",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_tilt_up(),
+        close_fn=lambda ctrl: ctrl.move_tilt_down(),
+        stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+        min_motors=2,  # Tilt is independent of motor count
+        max_angle=45,
     ),
 )
 
@@ -124,17 +148,86 @@ async def async_setup_entry(
         return
 
     entities = []
-    for description in COVER_DESCRIPTIONS:
-        # Special handling for lumbar - only add if controller supports it
-        if description.key == "lumbar":
-            if controller is not None and controller.has_lumbar_support:
+
+    # Keeson and Ergomotion beds use different motor naming:
+    # Head/Feet/Tilt/Lumbar instead of Back/Legs/Head/Feet
+    # Position data comes in as "back"/"legs", so we need position_key mapping
+    if coordinator.bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+        _LOGGER.debug(
+            "Setting up Keeson/Ergomotion covers for %s (motor_count=%d)",
+            coordinator.name,
+            motor_count,
+        )
+        # Find the specific descriptions we need
+        descriptions_by_key = {d.key: d for d in COVER_DESCRIPTIONS}
+
+        # Create Keeson-specific head description that maps to "back" position data
+        # Keeson "head" motor = upper body, position reported as "back"
+        head_desc = descriptions_by_key["head"]
+        keeson_head_desc = AdjustableBedCoverEntityDescription(
+            key=head_desc.key,
+            translation_key=head_desc.translation_key,
+            icon=head_desc.icon,
+            device_class=head_desc.device_class,
+            open_fn=head_desc.open_fn,
+            close_fn=head_desc.close_fn,
+            stop_fn=head_desc.stop_fn,
+            min_motors=2,
+            position_key="back",  # Map to "back" in position_data
+            max_angle=head_desc.max_angle,
+        )
+        entities.append(AdjustableBedCover(coordinator, keeson_head_desc))
+
+        # Create Keeson-specific feet description that maps to "legs" position data
+        # Keeson "feet" motor = lower body, position reported as "legs"
+        feet_desc = descriptions_by_key["feet"]
+        keeson_feet_desc = AdjustableBedCoverEntityDescription(
+            key=feet_desc.key,
+            translation_key=feet_desc.translation_key,
+            icon=feet_desc.icon,
+            device_class=feet_desc.device_class,
+            open_fn=feet_desc.open_fn,
+            close_fn=feet_desc.close_fn,
+            stop_fn=feet_desc.stop_fn,
+            min_motors=2,
+            position_key="legs",  # Map to "legs" in position_data
+            max_angle=feet_desc.max_angle,
+        )
+        entities.append(AdjustableBedCover(coordinator, keeson_feet_desc))
+
+        # Add tilt for 3+ motors if controller supports it
+        if (
+            motor_count >= 3
+            and "tilt" in descriptions_by_key
+            and controller is not None
+            and controller.has_tilt_support
+        ):
+            entities.append(AdjustableBedCover(coordinator, descriptions_by_key["tilt"]))
+
+        # Add lumbar for 4 motors if controller supports it
+        if (
+            motor_count >= 4
+            and "lumbar" in descriptions_by_key
+            and controller is not None
+            and controller.has_lumbar_support
+        ):
+            entities.append(AdjustableBedCover(coordinator, descriptions_by_key["lumbar"]))
+    else:
+        # Standard bed motor layout (Back/Legs/Head/Feet)
+        for description in COVER_DESCRIPTIONS:
+            # Skip tilt - only for Keeson/Ergomotion
+            if description.key == "tilt":
+                continue
+            # Special handling for lumbar - only add if controller supports it
+            if description.key == "lumbar":
+                if controller is not None and controller.has_lumbar_support:
+                    entities.append(AdjustableBedCover(coordinator, description))
+            # Special handling for pillow - only add if controller supports it
+            elif description.key == "pillow":
+                if controller is not None and controller.has_pillow_support:
+                    entities.append(AdjustableBedCover(coordinator, description))
+            elif motor_count >= description.min_motors:
                 entities.append(AdjustableBedCover(coordinator, description))
-        # Special handling for pillow - only add if controller supports it
-        elif description.key == "pillow":
-            if controller is not None and controller.has_pillow_support:
-                entities.append(AdjustableBedCover(coordinator, description))
-        elif motor_count >= description.min_motors:
-            entities.append(AdjustableBedCover(coordinator, description))
 
     async_add_entities(entities)
 
@@ -161,11 +254,16 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         self._movement_generation: int = 0  # Track active movement to handle cancellation
 
     @property
+    def _position_key(self) -> str:
+        """Return the key to look up in position_data."""
+        return self.entity_description.position_key or self.entity_description.key
+
+    @property
     def is_closed(self) -> bool | None:
         """Return if the cover is closed (flat position)."""
         # We don't have position feedback for all motor types
         # Return None to indicate unknown state
-        angle = self._coordinator.position_data.get(self.entity_description.key)
+        angle = self._coordinator.position_data.get(self._position_key)
         if angle is not None:
             # Use 1-degree tolerance for sensor noise/precision issues
             return angle < 1.0
@@ -185,19 +283,12 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     def current_cover_position(self) -> int | None:
         """Return current position of cover."""
         # Get angle from position data if available
-        angle = self._coordinator.position_data.get(self.entity_description.key)
+        angle = self._coordinator.position_data.get(self._position_key)
         if angle is None:
             return None
 
-        # Convert angle to percentage (0-100)
-        # Max angles vary by motor type, but we'll normalize
-        max_angles = {
-            "back": 68,
-            "legs": 45,
-            "head": 68,
-            "feet": 45,
-        }
-        max_angle = max_angles.get(self.entity_description.key, 68)
+        # Convert angle to percentage (0-100) using the description's max_angle
+        max_angle = self.entity_description.max_angle
         return min(100, int((angle / max_angle) * 100))
 
     async def async_open_cover(self, **kwargs: Any) -> None:

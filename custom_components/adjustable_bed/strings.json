@@ -258,6 +258,12 @@
       },
       "lumbar": {
         "name": "Lumbar"
+      },
+      "pillow": {
+        "name": "Pillow"
+      },
+      "tilt": {
+        "name": "Tilt"
       }
     },
     "sensor": {
