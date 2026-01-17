@@ -114,7 +114,8 @@
       "pairing_required": "This bed requires Bluetooth pairing. Pair it through your system's Bluetooth settings first.",
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
-      "invalid_number": "Please enter valid numbers for motor pulse count and delay."
+      "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pin": "PIN must be empty or exactly 4 digits."
     }
   },
   "options": {
@@ -150,7 +151,8 @@
       }
     },
     "error": {
-      "invalid_number": "Please enter valid numbers for motor pulse count and delay."
+      "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_pin": "PIN must be empty or exactly 4 digits."
     }
   },
   "entity": {
