@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS, __version__ as HA_VERSION
+from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
 from .const import (
@@ -43,7 +44,7 @@ async def generate_support_report(
     include_logs: bool = True,
 ) -> dict[str, Any]:
     """Generate a comprehensive support report."""
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     report: dict[str, Any] = {
         "report_version": "1.0",
@@ -205,7 +206,7 @@ def _get_recent_logs() -> list[dict[str, str]]:
                     ):
                         logs.append({
                             "timestamp": datetime.fromtimestamp(
-                                record.created, tz=timezone.utc
+                                record.created, tz=UTC
                             ).isoformat(),
                             "level": record.levelname,
                             "name": record.name,
@@ -214,7 +215,7 @@ def _get_recent_logs() -> list[dict[str, str]]:
     except Exception as err:
         _LOGGER.debug("Could not retrieve log entries: %s", err)
         logs.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": "INFO",
             "name": DOMAIN,
             "message": f"Could not retrieve historical logs: {err}. "
@@ -229,7 +230,7 @@ def save_support_report(
     hass: HomeAssistant, report: dict[str, Any], address: str
 ) -> Path:
     """Save support report to a JSON file in the config directory."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     address_safe = address.replace(":", "").lower()
     filename = f"adjustable_bed_support_report_{address_safe}_{timestamp}.json"
 

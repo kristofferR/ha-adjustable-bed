@@ -14,11 +14,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import MATTRESSFIRM_CHAR_UUID, MATTRESSFIRM_SERVICE_UUID
+from ..const import MATTRESSFIRM_CHAR_UUID
 from .base import BedController
 
 if TYPE_CHECKING:

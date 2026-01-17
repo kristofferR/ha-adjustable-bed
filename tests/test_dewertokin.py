@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bleak.exc import BleakError
@@ -12,7 +12,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.dewertokin import (
     DewertOkinCommands,
-    DewertOkinController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
@@ -32,31 +31,31 @@ class TestDewertOkinCommands:
 
     def test_preset_commands(self):
         """Test preset commands are correct."""
-        assert DewertOkinCommands.FLAT == bytes.fromhex("040210000000")
-        assert DewertOkinCommands.ZERO_G == bytes.fromhex("040200004000")
-        assert DewertOkinCommands.TV == bytes.fromhex("040200003000")
-        assert DewertOkinCommands.QUIET_SLEEP == bytes.fromhex("040200008000")
-        assert DewertOkinCommands.MEMORY_1 == bytes.fromhex("040200001000")
-        assert DewertOkinCommands.MEMORY_2 == bytes.fromhex("040200002000")
+        assert bytes.fromhex("040210000000") == DewertOkinCommands.FLAT
+        assert bytes.fromhex("040200004000") == DewertOkinCommands.ZERO_G
+        assert bytes.fromhex("040200003000") == DewertOkinCommands.TV
+        assert bytes.fromhex("040200008000") == DewertOkinCommands.QUIET_SLEEP
+        assert bytes.fromhex("040200001000") == DewertOkinCommands.MEMORY_1
+        assert bytes.fromhex("040200002000") == DewertOkinCommands.MEMORY_2
 
     def test_motor_commands(self):
         """Test motor movement commands are correct."""
-        assert DewertOkinCommands.HEAD_UP == bytes.fromhex("040200000001")
-        assert DewertOkinCommands.HEAD_DOWN == bytes.fromhex("040200000002")
-        assert DewertOkinCommands.FOOT_UP == bytes.fromhex("040200000004")
-        assert DewertOkinCommands.FOOT_DOWN == bytes.fromhex("040200000008")
-        assert DewertOkinCommands.STOP == bytes.fromhex("040200000000")
+        assert bytes.fromhex("040200000001") == DewertOkinCommands.HEAD_UP
+        assert bytes.fromhex("040200000002") == DewertOkinCommands.HEAD_DOWN
+        assert bytes.fromhex("040200000004") == DewertOkinCommands.FOOT_UP
+        assert bytes.fromhex("040200000008") == DewertOkinCommands.FOOT_DOWN
+        assert bytes.fromhex("040200000000") == DewertOkinCommands.STOP
 
     def test_massage_commands(self):
         """Test massage commands are correct."""
-        assert DewertOkinCommands.WAVE_MASSAGE == bytes.fromhex("040280000000")
-        assert DewertOkinCommands.HEAD_MASSAGE == bytes.fromhex("040200000800")
-        assert DewertOkinCommands.FOOT_MASSAGE == bytes.fromhex("040200400000")
-        assert DewertOkinCommands.MASSAGE_OFF == bytes.fromhex("040202000000")
+        assert bytes.fromhex("040280000000") == DewertOkinCommands.WAVE_MASSAGE
+        assert bytes.fromhex("040200000800") == DewertOkinCommands.HEAD_MASSAGE
+        assert bytes.fromhex("040200400000") == DewertOkinCommands.FOOT_MASSAGE
+        assert bytes.fromhex("040202000000") == DewertOkinCommands.MASSAGE_OFF
 
     def test_light_commands(self):
         """Test light commands are correct."""
-        assert DewertOkinCommands.UNDERLIGHT == bytes.fromhex("040200020000")
+        assert bytes.fromhex("040200020000") == DewertOkinCommands.UNDERLIGHT
 
     def test_command_lengths(self):
         """Test all commands are 6 bytes."""

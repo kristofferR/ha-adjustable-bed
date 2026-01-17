@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -116,6 +116,7 @@ class BLEDiagnosticRunner:
         self._notifications: list[CapturedNotification] = []
         self._errors: list[str] = []
         self._notification_lock = asyncio.Lock()
+        self._diagnostic_notifications_started: bool = False
 
     async def run_diagnostics(self) -> DiagnosticReport:
         """Run full diagnostic capture on the device."""
@@ -125,7 +126,7 @@ class BLEDiagnosticRunner:
             self.capture_duration,
         )
 
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         device_info: dict[str, Any] = {"address": self.address}
         advertisement_info: dict[str, Any] = {}
         services_info: list[ServiceInfo] = []
@@ -184,7 +185,7 @@ class BLEDiagnosticRunner:
         finally:
             await self._disconnect()
 
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
 
         return DiagnosticReport(
             metadata={
@@ -358,6 +359,15 @@ class BLEDiagnosticRunner:
                     "Registering raw notification callback with coordinator"
                 )
                 self.coordinator.set_raw_notify_callback(self._raw_notify_callback)
+
+                # If angle sensing is disabled, notifications aren't started by default.
+                # Start them now for diagnostic capture purposes.
+                if self.coordinator.disable_angle_sensing:
+                    _LOGGER.info(
+                        "Angle sensing disabled - starting notifications for diagnostic capture"
+                    )
+                    await self.coordinator.async_start_notify_for_diagnostics()
+                    self._diagnostic_notifications_started = True
             return
 
         for service in services:
@@ -390,6 +400,13 @@ class BLEDiagnosticRunner:
                     "Clearing raw notification callback from coordinator"
                 )
                 self.coordinator.set_raw_notify_callback(None)
+                # Stop notifications if we started them for diagnostics
+                if self._diagnostic_notifications_started and self.coordinator.controller is not None:
+                    _LOGGER.debug(
+                        "Stopping diagnostic notifications that were started for capture"
+                    )
+                    await self.coordinator.controller.stop_notify()
+                self._diagnostic_notifications_started = False
             return
 
         for service in services:
@@ -408,7 +425,7 @@ class BLEDiagnosticRunner:
         self, characteristic_uuid: str, data: bytes | bytearray
     ) -> None:
         """Handle an incoming notification."""
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
         async with self._notification_lock:
             notification = CapturedNotification(
@@ -447,7 +464,7 @@ def save_diagnostic_report(
     address: str,
 ) -> Path:
     """Save diagnostic report to a JSON file in the config directory."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     address_safe = address.replace(":", "").lower()
     filename = f"adjustable_bed_diagnostic_{address_safe}_{timestamp}.json"
 

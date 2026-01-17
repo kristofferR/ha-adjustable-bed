@@ -5,10 +5,9 @@ Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BL
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
-from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -35,39 +34,39 @@ class TestMattressFirmCommands:
 
     def test_init_commands(self):
         """Test initialization command values."""
-        assert MattressFirmCommands.INIT_1 == bytes.fromhex("09050A23050000")
-        assert MattressFirmCommands.INIT_2 == bytes.fromhex("5A0B00A5")
+        assert bytes.fromhex("09050A23050000") == MattressFirmCommands.INIT_1
+        assert bytes.fromhex("5A0B00A5") == MattressFirmCommands.INIT_2
 
     def test_motor_commands(self):
         """Test motor command values."""
-        assert MattressFirmCommands.HEAD_UP == bytes.fromhex("5A0103103000A5")
-        assert MattressFirmCommands.HEAD_DOWN == bytes.fromhex("5A0103103001A5")
-        assert MattressFirmCommands.FOOT_UP == bytes.fromhex("5A0103103002A5")
-        assert MattressFirmCommands.FOOT_DOWN == bytes.fromhex("5A0103103003A5")
-        assert MattressFirmCommands.LUMBAR_UP == bytes.fromhex("5A0103103006A5")
-        assert MattressFirmCommands.LUMBAR_DOWN == bytes.fromhex("5A0103103007A5")
+        assert bytes.fromhex("5A0103103000A5") == MattressFirmCommands.HEAD_UP
+        assert bytes.fromhex("5A0103103001A5") == MattressFirmCommands.HEAD_DOWN
+        assert bytes.fromhex("5A0103103002A5") == MattressFirmCommands.FOOT_UP
+        assert bytes.fromhex("5A0103103003A5") == MattressFirmCommands.FOOT_DOWN
+        assert bytes.fromhex("5A0103103006A5") == MattressFirmCommands.LUMBAR_UP
+        assert bytes.fromhex("5A0103103007A5") == MattressFirmCommands.LUMBAR_DOWN
 
     def test_preset_commands(self):
         """Test preset command values."""
-        assert MattressFirmCommands.FLAT == bytes.fromhex("5A0103103010A5")
-        assert MattressFirmCommands.ZERO_GRAVITY == bytes.fromhex("5A0103103013A5")
-        assert MattressFirmCommands.ANTI_SNORE == bytes.fromhex("5A0103103016A5")
-        assert MattressFirmCommands.LOUNGE == bytes.fromhex("5A0103103017A5")
-        assert MattressFirmCommands.INCLINE == bytes.fromhex("5A0103103018A5")
+        assert bytes.fromhex("5A0103103010A5") == MattressFirmCommands.FLAT
+        assert bytes.fromhex("5A0103103013A5") == MattressFirmCommands.ZERO_GRAVITY
+        assert bytes.fromhex("5A0103103016A5") == MattressFirmCommands.ANTI_SNORE
+        assert bytes.fromhex("5A0103103017A5") == MattressFirmCommands.LOUNGE
+        assert bytes.fromhex("5A0103103018A5") == MattressFirmCommands.INCLINE
 
     def test_massage_commands(self):
         """Test massage command values."""
-        assert MattressFirmCommands.MASSAGE_1 == bytes.fromhex("5A0103103052A5")
-        assert MattressFirmCommands.MASSAGE_2 == bytes.fromhex("5A0103103053A5")
-        assert MattressFirmCommands.MASSAGE_3 == bytes.fromhex("5A0103103054A5")
-        assert MattressFirmCommands.MASSAGE_STOP == bytes.fromhex("5A010310306FA5")
-        assert MattressFirmCommands.MASSAGE_UP == bytes.fromhex("5A0103104060A5")
-        assert MattressFirmCommands.MASSAGE_DOWN == bytes.fromhex("5A0103104063A5")
+        assert bytes.fromhex("5A0103103052A5") == MattressFirmCommands.MASSAGE_1
+        assert bytes.fromhex("5A0103103053A5") == MattressFirmCommands.MASSAGE_2
+        assert bytes.fromhex("5A0103103054A5") == MattressFirmCommands.MASSAGE_3
+        assert bytes.fromhex("5A010310306FA5") == MattressFirmCommands.MASSAGE_STOP
+        assert bytes.fromhex("5A0103104060A5") == MattressFirmCommands.MASSAGE_UP
+        assert bytes.fromhex("5A0103104063A5") == MattressFirmCommands.MASSAGE_DOWN
 
     def test_light_commands(self):
         """Test light command values."""
-        assert MattressFirmCommands.LIGHT_CYCLE == bytes.fromhex("5A0103103070A5")
-        assert MattressFirmCommands.LIGHT_OFF_HOLD == bytes.fromhex("5A0103103074A5")
+        assert bytes.fromhex("5A0103103070A5") == MattressFirmCommands.LIGHT_CYCLE
+        assert bytes.fromhex("5A0103103074A5") == MattressFirmCommands.LIGHT_OFF_HOLD
 
 
 @pytest.fixture

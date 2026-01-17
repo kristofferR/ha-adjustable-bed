@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.motosleep import (
     MotoSleepCommands,
-    MotoSleepController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
@@ -32,43 +30,43 @@ class TestMotoSleepCommands:
 
     def test_preset_commands(self):
         """Test preset command values (ASCII characters)."""
-        assert MotoSleepCommands.PRESET_HOME == ord('O')
-        assert MotoSleepCommands.PRESET_MEMORY_1 == ord('U')
-        assert MotoSleepCommands.PRESET_MEMORY_2 == ord('V')
-        assert MotoSleepCommands.PRESET_ANTI_SNORE == ord('R')
-        assert MotoSleepCommands.PRESET_TV == ord('S')
-        assert MotoSleepCommands.PRESET_ZERO_G == ord('T')
+        assert ord('O') == MotoSleepCommands.PRESET_HOME
+        assert ord('U') == MotoSleepCommands.PRESET_MEMORY_1
+        assert ord('V') == MotoSleepCommands.PRESET_MEMORY_2
+        assert ord('R') == MotoSleepCommands.PRESET_ANTI_SNORE
+        assert ord('S') == MotoSleepCommands.PRESET_TV
+        assert ord('T') == MotoSleepCommands.PRESET_ZERO_G
 
     def test_program_commands(self):
         """Test program command values."""
-        assert MotoSleepCommands.PROGRAM_MEMORY_1 == ord('Z')
-        assert MotoSleepCommands.PROGRAM_MEMORY_2 == ord('a')
-        assert MotoSleepCommands.PROGRAM_ANTI_SNORE == ord('W')
-        assert MotoSleepCommands.PROGRAM_TV == ord('X')
-        assert MotoSleepCommands.PROGRAM_ZERO_G == ord('Y')
+        assert ord('Z') == MotoSleepCommands.PROGRAM_MEMORY_1
+        assert ord('a') == MotoSleepCommands.PROGRAM_MEMORY_2
+        assert ord('W') == MotoSleepCommands.PROGRAM_ANTI_SNORE
+        assert ord('X') == MotoSleepCommands.PROGRAM_TV
+        assert ord('Y') == MotoSleepCommands.PROGRAM_ZERO_G
 
     def test_motor_commands(self):
         """Test motor command values."""
-        assert MotoSleepCommands.MOTOR_HEAD_UP == ord('K')
-        assert MotoSleepCommands.MOTOR_HEAD_DOWN == ord('L')
-        assert MotoSleepCommands.MOTOR_FEET_UP == ord('M')
-        assert MotoSleepCommands.MOTOR_FEET_DOWN == ord('N')
-        assert MotoSleepCommands.MOTOR_NECK_UP == ord('P')
-        assert MotoSleepCommands.MOTOR_NECK_DOWN == ord('Q')
+        assert ord('K') == MotoSleepCommands.MOTOR_HEAD_UP
+        assert ord('L') == MotoSleepCommands.MOTOR_HEAD_DOWN
+        assert ord('M') == MotoSleepCommands.MOTOR_FEET_UP
+        assert ord('N') == MotoSleepCommands.MOTOR_FEET_DOWN
+        assert ord('P') == MotoSleepCommands.MOTOR_NECK_UP
+        assert ord('Q') == MotoSleepCommands.MOTOR_NECK_DOWN
 
     def test_massage_commands(self):
         """Test massage command values."""
-        assert MotoSleepCommands.MASSAGE_HEAD_STEP == ord('C')
-        assert MotoSleepCommands.MASSAGE_FOOT_STEP == ord('B')
-        assert MotoSleepCommands.MASSAGE_STOP == ord('D')
-        assert MotoSleepCommands.MASSAGE_HEAD_UP == ord('G')
-        assert MotoSleepCommands.MASSAGE_HEAD_DOWN == ord('H')
-        assert MotoSleepCommands.MASSAGE_FOOT_UP == ord('E')
-        assert MotoSleepCommands.MASSAGE_FOOT_DOWN == ord('F')
+        assert ord('C') == MotoSleepCommands.MASSAGE_HEAD_STEP
+        assert ord('B') == MotoSleepCommands.MASSAGE_FOOT_STEP
+        assert ord('D') == MotoSleepCommands.MASSAGE_STOP
+        assert ord('G') == MotoSleepCommands.MASSAGE_HEAD_UP
+        assert ord('H') == MotoSleepCommands.MASSAGE_HEAD_DOWN
+        assert ord('E') == MotoSleepCommands.MASSAGE_FOOT_UP
+        assert ord('F') == MotoSleepCommands.MASSAGE_FOOT_DOWN
 
     def test_light_commands(self):
         """Test light command values."""
-        assert MotoSleepCommands.LIGHTS_TOGGLE == ord('A')
+        assert ord('A') == MotoSleepCommands.LIGHTS_TOGGLE
 
 
 @pytest.fixture

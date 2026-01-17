@@ -17,19 +17,7 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
-    BED_TYPE_ERGOMOTION,
-    BED_TYPE_JIECANG,
-    BED_TYPE_KEESON,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
-    BED_TYPE_MOTOSLEEP,
-    BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
-    BED_TYPE_REVERIE,
-    BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
-    BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -98,6 +86,7 @@ def mock_bleak_client() -> MagicMock:
     client.connect = AsyncMock(return_value=True)
     client.disconnect = AsyncMock()
     client.write_gatt_char = AsyncMock()
+    client.read_gatt_char = AsyncMock(return_value=b"")
     client.start_notify = AsyncMock()
     client.stop_notify = AsyncMock()
 
@@ -276,7 +265,7 @@ def mock_bluetooth_service_info_okimat() -> MagicMock:
 
 
 @pytest.fixture
-def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMock, None, None]:
+def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMock]:
     """Mock bleak_retry_connector.establish_connection."""
     with patch(
         "custom_components.adjustable_bed.coordinator.establish_connection",
@@ -287,7 +276,7 @@ def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMo
 
 
 @pytest.fixture
-def mock_async_ble_device_from_address() -> Generator[MagicMock, None, None]:
+def mock_async_ble_device_from_address() -> Generator[MagicMock]:
     """Mock bluetooth.async_ble_device_from_address."""
     with patch(
         "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address"
@@ -301,7 +290,7 @@ def mock_async_ble_device_from_address() -> Generator[MagicMock, None, None]:
 
 
 @pytest.fixture
-def mock_bluetooth_adapters() -> Generator[None, None, None]:
+def mock_bluetooth_adapters() -> Generator[None]:
     """Mock bluetooth adapter functions."""
     patches = [
         patch(
@@ -336,7 +325,7 @@ def mock_coordinator_connected(
     mock_establish_connection: AsyncMock,
     mock_async_ble_device_from_address: MagicMock,
     mock_bluetooth_adapters: None,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Provide all mocks needed for a connected coordinator."""
     yield
 

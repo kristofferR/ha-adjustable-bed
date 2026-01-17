@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -403,7 +404,7 @@ class OctoController(BedController):
                     self._has_lights,
                 )
                 return True
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 _LOGGER.debug(
                     "Feature discovery timed out - bed may not support feature query"
                 )

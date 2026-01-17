@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable, ClassVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ClassVar
 
 from bleak.exc import BleakError
 

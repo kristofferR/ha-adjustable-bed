@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+
+# Import enable_custom_integrations fixture
+from pytest_homeassistant_custom_component.plugins import enable_custom_integrations
 
 from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
@@ -14,10 +16,6 @@ from custom_components.adjustable_bed import (
     SERVICE_STOP_ALL,
 )
 from custom_components.adjustable_bed.const import DOMAIN
-
-
-# Import enable_custom_integrations fixture
-from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
 
 
 class TestIntegrationSetup:

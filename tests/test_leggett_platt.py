@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -25,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
-    LEGGETT_OKIN_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
