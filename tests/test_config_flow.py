@@ -485,22 +485,35 @@ class TestBluetoothDiscoveryFlow:
 class TestManualFlow:
     """Test manual configuration flow."""
 
-    async def test_manual_entry_no_devices_discovered(self, hass: HomeAssistant, enable_custom_integrations):
-        """Test manual entry when no devices are discovered."""
+    async def test_manual_select_shows_devices(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Test manual select step shows all BLE devices."""
+        # First go to user step and select manual
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
-            return_value=[],
+            return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": SOURCE_USER},
+            )
+
+            # Select manual from user step
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
             )
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
 
-    async def test_manual_entry_creates_entry(self, hass: HomeAssistant, enable_custom_integrations):
-        """Test manual entry creates a config entry."""
+    async def test_manual_no_devices_goes_to_entry(self, hass: HomeAssistant, enable_custom_integrations):
+        """Test manual step goes to manual_entry when no devices are found."""
+        # First go to user step (no beds discovered, but form still shown)
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
             return_value=[],
@@ -510,6 +523,35 @@ class TestManualFlow:
                 context={"source": SOURCE_USER},
             )
 
+            # Select manual from user step
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        # When no BLE devices, manual step redirects to manual_entry
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_entry"
+
+    async def test_manual_entry_creates_entry(self, hass: HomeAssistant, enable_custom_integrations):
+        """Test manual entry creates a config entry."""
+        # First go to user step
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+
+            # Select manual from user step - goes to manual_entry since no devices
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        # Now in manual_entry step, fill the form
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={
@@ -540,6 +582,12 @@ class TestManualFlow:
                 context={"source": SOURCE_USER},
             )
 
+            # Select manual from user step
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input={
@@ -565,6 +613,12 @@ class TestManualFlow:
             result = await hass.config_entries.flow.async_init(
                 DOMAIN,
                 context={"source": SOURCE_USER},
+            )
+
+            # Select manual from user step
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
             )
 
         result = await hass.config_entries.flow.async_configure(
@@ -622,10 +676,11 @@ class TestUserFlow:
                 context={"source": SOURCE_USER},
             )
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={CONF_ADDRESS: "manual"},
-        )
+            # Keep the patch active so manual step finds devices
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"

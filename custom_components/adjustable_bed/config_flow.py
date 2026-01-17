@@ -113,6 +113,14 @@ _LOGGER = logging.getLogger(__name__)
 # MAC address regex pattern (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
 MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
+
+def is_mac_like_name(name: str | None) -> bool:
+    """Check if name is None, empty, or looks like a MAC address."""
+    if not name:
+        return True
+    return bool(MAC_ADDRESS_PATTERN.match(name))
+
+
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
 SOLACE_NAME_PATTERN = re.compile(r"^s\d+-[a-z]-\d+-[a-z0-9]+$", re.IGNORECASE)
 
@@ -205,41 +213,29 @@ def get_available_adapters(hass) -> dict[str, str]:
     adapters: dict[str, str] = {ADAPTER_AUTO: "Automatic (let Home Assistant choose)"}
 
     try:
-        # Build a map of source -> friendly name from registered scanners
-        scanner_names: dict[str, str] = {}
-
         # Use the official API to get all active scanners with their names
+        # Populate adapters directly from registered scanners so they're always
+        # available even when no devices are currently visible
         try:
             from homeassistant.components.bluetooth import async_current_scanners
             for scanner in async_current_scanners(hass):
-                source = getattr(scanner, 'source', None)
-                name = getattr(scanner, 'name', None)
-                if source and name:
-                    scanner_names[source] = name
+                source = getattr(scanner, "source", None)
+                name = getattr(scanner, "name", None)
+                if not source:
+                    continue
+                if source not in adapters:
+                    if name and name != source:
+                        adapters[source] = f"{name} ({source})"
+                    elif ":" in source:
+                        # Looks like a MAC address - probably an ESPHome proxy
+                        adapters[source] = f"Bluetooth Proxy ({source})"
+                    else:
+                        # Might be a local adapter name like "hci0"
+                        adapters[source] = f"Local Adapter ({source})"
         except ImportError:
             _LOGGER.debug("async_current_scanners not available")
         except Exception as err:
             _LOGGER.debug("Could not get scanner names: %s", err)
-
-        # Collect unique sources from all discovered devices
-        seen_sources: set[str] = set()
-        for service_info in async_discovered_service_info(hass, connectable=True):
-            source = getattr(service_info, 'source', None)
-            if source and source not in seen_sources:
-                seen_sources.add(source)
-
-                # Try to get a friendly name from the scanner
-                friendly_name = scanner_names.get(source)
-
-                if friendly_name and friendly_name != source:
-                    # Use the scanner's friendly name with source in parentheses
-                    adapters[source] = f"{friendly_name} ({source})"
-                elif ':' in source:
-                    # Looks like a MAC address - probably an ESPHome proxy without name
-                    adapters[source] = f"Bluetooth Proxy ({source})"
-                else:
-                    # Might be a local adapter name like "hci0"
-                    adapters[source] = f"Local Adapter ({source})"
 
     except Exception as err:
         _LOGGER.debug("Error getting Bluetooth adapters: %s", err)
@@ -804,13 +800,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(self._discovered_devices),
         )
 
-        # Build device list - always show diagnostic and manual options
-        devices = {
+        # Build device list - manual first (default), then discovered beds (named first), then diagnostic
+        devices: dict[str, str] = {"manual": "Select Bed manually"}
+
+        # Sort discovered beds: named devices first (alphabetically), then MAC-only/unnamed
+        sorted_beds = sorted(
+            self._discovered_devices.items(),
+            key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
+        )
+        devices.update({
             address: f"{info.name or 'Unknown'} ({address})"
-            for address, info in self._discovered_devices.items()
-        }
+            for address, info in sorted_beds
+        })
         devices["diagnostic"] = "Diagnostic mode (unsupported device)"
-        devices["manual"] = "Select Bed manually"
 
         return self.async_show_form(
             step_id="user",
@@ -822,7 +824,196 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle manual address entry."""
+        """Handle manual bed selection - show all BLE devices.
+
+        Lists ALL visible BLE devices (not just recognized beds) so users can
+        select from available devices or enter an address manually.
+        """
+        if user_input is not None:
+            address = user_input[CONF_ADDRESS]
+            if address == "manual_entry":
+                _LOGGER.debug("User selected manual address entry")
+                return await self.async_step_manual_entry()
+
+            _LOGGER.info("User selected device for manual setup: %s", address)
+            # Normalize address to uppercase to match Bluetooth discovery
+            await self.async_set_unique_id(address.upper())
+            self._abort_if_unique_id_configured()
+
+            self._discovery_info = self._all_ble_devices[address]
+            return await self.async_step_manual_config()
+
+        # Get ALL BLE devices (not just beds)
+        _LOGGER.debug("Scanning for ALL BLE devices for manual selection...")
+
+        all_discovered = list(async_discovered_service_info(self.hass, connectable=True))
+        _LOGGER.debug(
+            "Total connectable BLE devices visible: %d",
+            len(all_discovered),
+        )
+
+        # Filter out already configured devices
+        current_addresses = {addr.upper() for addr in self._async_current_ids() if addr is not None}
+
+        self._all_ble_devices = {}
+        for discovery_info in all_discovered:
+            if discovery_info.address.upper() not in current_addresses:
+                self._all_ble_devices[discovery_info.address] = discovery_info
+
+        _LOGGER.info(
+            "Manual selection: found %d unconfigured BLE devices",
+            len(self._all_ble_devices),
+        )
+
+        if not self._all_ble_devices:
+            _LOGGER.info("No BLE devices found, showing manual entry form")
+            return await self.async_step_manual_entry()
+
+        # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
+        sorted_devices = sorted(
+            self._all_ble_devices.items(),
+            key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
+        )
+        devices = {
+            address: f"{info.name or 'Unknown'} ({address})"
+            for address, info in sorted_devices
+        }
+        devices["manual_entry"] = "Enter address manually"
+
+        return self.async_show_form(
+            step_id="manual",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_ADDRESS): vol.In(devices)}
+            ),
+        )
+
+    async def async_step_manual_config(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle manual bed configuration after device selection."""
+        errors: dict[str, str] = {}
+
+        # Get the address from discovery_info or manual_address
+        if self._discovery_info is not None:
+            address = self._discovery_info.address.upper()
+            device_name = self._discovery_info.name or "Unknown"
+            discovery_source = getattr(self._discovery_info, "source", None) or ADAPTER_AUTO
+        else:
+            # This shouldn't happen, but handle gracefully
+            return await self.async_step_manual_entry()
+
+        if user_input is not None:
+            bed_type = user_input[CONF_BED_TYPE]
+
+            preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, discovery_source)
+            protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            # Get bed-specific defaults for motor pulse settings
+            pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
+                bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            )
+            motor_pulse_count = pulse_defaults[0]
+            motor_pulse_delay_ms = pulse_defaults[1]
+            try:
+                motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
+                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
+            except (ValueError, TypeError):
+                errors["base"] = "invalid_number"
+
+            if not errors:
+                _LOGGER.info(
+                    "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
+                    address,
+                    bed_type,
+                    protocol_variant,
+                    user_input.get(CONF_NAME, "Adjustable Bed"),
+                    user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                    user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                    user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    preferred_adapter,
+                    motor_pulse_count,
+                    motor_pulse_delay_ms,
+                )
+
+                entry_data = {
+                    CONF_ADDRESS: address,
+                    CONF_BED_TYPE: bed_type,
+                    CONF_PROTOCOL_VARIANT: protocol_variant,
+                    CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
+                    CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                    CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    CONF_PREFERRED_ADAPTER: preferred_adapter,
+                    CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                    CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                }
+                # For Octo beds, collect PIN in a separate step
+                if bed_type == BED_TYPE_OCTO:
+                    self._manual_data = entry_data
+                    return await self.async_step_manual_octo()
+                # For Richmat beds, collect remote code in a separate step
+                if bed_type == BED_TYPE_RICHMAT:
+                    self._manual_data = entry_data
+                    return await self.async_step_manual_richmat()
+                return self.async_create_entry(
+                    title=user_input.get(CONF_NAME, "Adjustable Bed"),
+                    data=entry_data,
+                )
+
+        _LOGGER.debug("Showing manual config form for device: %s (%s)", device_name, address)
+
+        # Get available Bluetooth adapters
+        adapters = get_available_adapters(self.hass)
+
+        # Build base schema with bed type selector (alphabetically sorted)
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Required(CONF_BED_TYPE): SelectSelector(
+                SelectSelectorConfig(
+                    options=get_bed_type_options(),
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
+                ALL_PROTOCOL_VARIANTS
+            ),
+        }
+
+        # Add remaining fields
+        schema_dict.update({
+            vol.Optional(CONF_NAME, default=device_name if device_name != "Unknown" else "Adjustable Bed"): str,
+            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
+                [2, 3, 4]
+            ),
+            vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
+            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
+            vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
+            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
+                TextSelectorConfig()
+            ),
+            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
+                TextSelectorConfig()
+            ),
+            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
+            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
+                range(10, 301)
+            ),
+        })
+
+        return self.async_show_form(
+            step_id="manual_config",
+            data_schema=vol.Schema(schema_dict),
+            errors=errors,
+            description_placeholders={
+                "name": device_name,
+                "address": address,
+            },
+        )
+
+    async def async_step_manual_entry(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle manual address entry when user types in the MAC address."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -832,7 +1023,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Validate MAC address format
             if not is_valid_mac_address(address):
                 errors["base"] = "invalid_mac_address"
-            elif not errors:
+            else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
                 # Get bed-specific defaults for motor pulse settings
@@ -850,26 +1041,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 if not errors:
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
-
-                    # Handle diagnostic mode specially - skip motor/variant config
-                    if bed_type == BED_TYPE_DIAGNOSTIC:
-                        device_name = user_input.get(CONF_NAME, "Diagnostic Device")
-                        _LOGGER.info(
-                            "Creating diagnostic device entry (from manual): name=%s, address=%s",
-                            device_name,
-                            address,
-                        )
-                        return self.async_create_entry(
-                            title=device_name,
-                            data={
-                                CONF_ADDRESS: address,
-                                CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
-                                CONF_NAME: device_name,
-                                CONF_MOTOR_COUNT: 0,
-                                CONF_HAS_MASSAGE: False,
-                                CONF_DISABLE_ANGLE_SENSING: True,
-                            },
-                        )
 
                     _LOGGER.info(
                         "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
@@ -953,7 +1124,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         })
 
         return self.async_show_form(
-            step_id="manual",
+            step_id="manual_entry",
             data_schema=vol.Schema(schema_dict),
             errors=errors,
         )
@@ -1120,9 +1291,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.info("No BLE devices found, showing manual entry form")
             return await self.async_step_diagnostic_manual()
 
+        # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
+        sorted_devices = sorted(
+            self._all_ble_devices.items(),
+            key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
+        )
         devices = {
             address: f"{info.name or 'Unknown'} ({address})"
-            for address, info in self._all_ble_devices.items()
+            for address, info in sorted_devices
         }
         devices["manual"] = "Enter address manually"
 

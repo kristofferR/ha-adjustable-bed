@@ -19,6 +19,7 @@
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
           "protocol_variant": "Protocol variant",
+          "richmat_remote": "Richmat remote",
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
@@ -31,6 +32,7 @@
           "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working. Recommended for most users.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "protocol_variant": "Some beds have multiple protocol variants. Auto-detect usually works, but you can override if needed.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
@@ -39,6 +41,40 @@
         }
       },
       "manual": {
+        "title": "Select Bed Manually - Select Device",
+        "description": "Select a BLE device from the list or enter the address manually.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "manual_config": {
+        "title": "Configure Bed - {name}",
+        "description": "Configure the bed at {address}.",
+        "data": {
+          "bed_type": "Bed type",
+          "protocol_variant": "Protocol variant",
+          "name": "Name",
+          "motor_count": "Number of motors",
+          "has_massage": "Has massage feature",
+          "disable_angle_sensing": "Disable angle sensing",
+          "preferred_adapter": "Bluetooth adapter",
+          "motor_pulse_count": "Motor pulse count",
+          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
+          "disconnect_after_command": "Disconnect after each command",
+          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+        },
+        "data_description": {
+          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (older). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
+          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "disable_angle_sensing": "When enabled, position feedback is disabled but the physical remote will continue working. Recommended for most users.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
+          "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
+          "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
+          "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
+          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead."
+        }
+      },
+      "manual_entry": {
         "title": "Manual Configuration",
         "description": "Enter the bed's Bluetooth address manually.",
         "data": {
@@ -75,6 +111,36 @@
         },
         "data_description": {
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
+        }
+      },
+      "manual_richmat": {
+        "title": "Richmat Remote Configuration",
+        "description": "Select the remote code for your Richmat bed.",
+        "data": {
+          "richmat_remote": "Richmat remote"
+        },
+        "data_description": {
+          "richmat_remote": "Use 'auto' unless you know your remote code."
+        }
+      },
+      "bluetooth_octo": {
+        "title": "Octo PIN Configuration",
+        "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
+        "data": {
+          "octo_pin": "Octo PIN"
+        },
+        "data_description": {
+          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
+        }
+      },
+      "bluetooth_richmat": {
+        "title": "Richmat Remote Configuration",
+        "description": "Select the remote code for your Richmat bed.",
+        "data": {
+          "richmat_remote": "Richmat remote"
+        },
+        "data_description": {
+          "richmat_remote": "Use 'auto' unless you know your remote code."
         }
       },
       "diagnostic": {
@@ -130,6 +196,7 @@
           "position_mode": "Position update mode",
           "preferred_adapter": "Bluetooth adapter",
           "protocol_variant": "Protocol variant",
+          "richmat_remote": "Richmat remote",
           "motor_pulse_count": "Motor pulse count",
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
@@ -142,6 +209,7 @@
           "position_mode": "Speed: faster button response. Accuracy: extra position read after each command.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly.",
+          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote.",
