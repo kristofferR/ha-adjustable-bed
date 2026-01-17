@@ -4,44 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly, avoiding the ESPHome Native API compatibility issues that broke the old addon.
+This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** All major BLE bed types implemented. Linak beds fully tested. Other brands need community testing.
-
-## Why the Old Integration Broke
-
-The `smartbed-mqtt` addon (in the `smartbed-mqtt/` folder) broke due to:
-
-1. **ESPHome 2023.6.0+**: BLE proxy became single-client only - HA's ESPHome integration would block smartbed-mqtt from receiving BLE advertisements
-2. **ESPHome 2025.5.0+**: New Native API messages (especially `BluetoothScannerStateResponse` id 126) crash the `@2colors/esphome-native-api` JS library
-
-See `smartbed-mqtt-discord-chats/esphome-bug-llm-generated.md` for detailed documentation.
-
-**The new integration solves this** by using HA's native Bluetooth stack (bleak) instead of ESPHome's Native API.
+**Current status:** 15 bed types implemented. Linak, Keeson, Richmat, and MotoSleep tested. Other brands need community testing.
 
 ## Architecture
 
 ```
 custom_components/adjustable_bed/
-├── __init__.py          # Integration setup, platform loading
+├── __init__.py          # Integration setup, platform loading, service registration
 ├── config_flow.py       # Device discovery and setup wizard
 ├── coordinator.py       # BLE connection management (central hub)
-├── const.py             # Constants, UUIDs, bed type definitions
+├── const.py             # Constants, UUIDs, bed type definitions, feature flags
 ├── entity.py            # Base entity class
 ├── beds/                # Bed controller implementations
 │   ├── base.py          # Abstract base class (BedController)
 │   ├── linak.py         # Linak protocol (tested)
-│   ├── richmat.py       # Richmat Nordic/WiLinke protocols
-│   ├── keeson.py        # Keeson KSBT/BaseI4/I5 protocols
+│   ├── richmat.py       # Richmat Nordic/WiLinke protocols (tested)
+│   ├── keeson.py        # Keeson KSBT/BaseI4/I5/Ergomotion protocols (tested)
+│   ├── motosleep.py     # MotoSleep HHC ASCII protocol (tested)
 │   ├── solace.py        # Solace 11-byte packet protocol
-│   ├── motosleep.py     # MotoSleep HHC ASCII protocol
 │   ├── leggett_platt.py # Leggett & Platt Gen2/Okin protocols
 │   ├── reverie.py       # Reverie XOR checksum protocol
-│   └── okimat.py        # Okimat/Okin binary protocol
+│   ├── okimat.py        # Okimat/Okin binary protocol
+│   ├── jiecang.py       # Jiecang/Glide protocol
+│   ├── dewertokin.py    # DewertOkin handle-based protocol
+│   ├── serta.py         # Serta Motion Perfect III protocol
+│   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
+│   ├── mattressfirm.py  # Mattress Firm 900 7-byte protocol
+│   ├── nectar.py        # Nectar 7-byte protocol
+│   └── okin_protocol.py # Shared Okin protocol utilities
 ├── button.py            # Preset and massage button entities
 ├── cover.py             # Motor control entities (open=up, close=down)
 ├── sensor.py            # Position angle feedback entities
-└── switch.py            # Light control entities
+├── switch.py            # Light control entities
+├── diagnostics.py       # HA diagnostics download support
+├── ble_diagnostics.py   # BLE protocol capture for new bed support
+└── unsupported.py       # Unsupported device guidance (Repairs integration)
 ```
 
 ### Key Components
@@ -49,7 +48,7 @@ custom_components/adjustable_bed/
 **AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
 - Connection retry with progressive backoff (3 attempts, 5-7.5s delays)
-- Auto-disconnect after 40s idle (allows physical remote/app to connect)
+- Auto-disconnect after configurable idle time (default 40s)
 - Registers conservative BLE connection parameters (30-50ms intervals)
 - Supports preferred adapter selection for multi-proxy setups
 - Command serialization via `_command_lock` prevents concurrent BLE writes
@@ -67,26 +66,34 @@ custom_components/adjustable_bed/
 - Optional features: `lights_on()`, `massage_toggle()`, etc.
 
 **Config Flow** (`config_flow.py`):
-- Automatic discovery via BLE service UUIDs
+- Automatic discovery via BLE service UUIDs and device name patterns
 - Manual entry with bed type selection
 - Per-device Bluetooth adapter/proxy selection
+- Protocol variant selection where applicable
+- Options flow for reconfiguration
 
 ## Implemented Bed Types
 
-| Brand | Controller | Protocol | Detection |
-|-------|------------|----------|-----------|
-| Linak | `LinakController` | 2-byte commands, write-with-response | Service UUID `99fa0001-...` |
-| Richmat | `RichmatController` | Nordic (1-byte) or WiLinke (5-byte checksum) | Service UUIDs vary by variant |
-| Keeson | `KeesonController` | KSBT (6-byte) or BaseI4/I5 (8-byte XOR) | Service UUID `0000ffe5-...` |
-| Solace | `SolaceController` | 11-byte packets with built-in CRC | Service UUID `0000ffe0-...` |
-| MotoSleep | `MotoSleepController` | 2-byte ASCII `[$, char]` | Device name starts with "HHC" |
-| Leggett & Platt | `LeggettPlattController` | Gen2 (ASCII) or Okin (binary) | Service UUID `45e25100-...` (Gen2) |
-| Reverie | `ReverieController` | XOR checksum, position-based motors | Service UUID `1b1d9641-...` |
-| Okimat | `OkimatController` | Okin binary, requires BLE pairing | Service UUID `62741523-...` |
+| Brand | Controller | Protocol | Detection | Status |
+|-------|------------|----------|-----------|--------|
+| Linak | `LinakController` | 2-byte commands, write-with-response | Service UUID `99fa0001-...` | ✅ Tested |
+| Richmat | `RichmatController` | Nordic (1-byte) or WiLinke (5-byte checksum) | Service UUIDs vary by variant | ✅ Tested |
+| Keeson | `KeesonController` | KSBT (6-byte), BaseI4/I5 (8-byte XOR), or Ergomotion | Service UUID `0000ffe5-...` | ✅ Tested |
+| MotoSleep | `MotoSleepController` | 2-byte ASCII `[$, char]` | Device name starts with "HHC" | ✅ Tested |
+| Solace | `SolaceController` | 11-byte packets with built-in CRC | Service UUID `0000ffe0-...` | Needs testing |
+| Leggett & Platt | `LeggettPlattController` | Gen2 (ASCII) or Okin (binary) | Service UUID `45e25100-...` (Gen2) | Needs testing |
+| Reverie | `ReverieController` | XOR checksum, position-based motors | Service UUID `1b1d9641-...` | Needs testing |
+| Okimat | `OkimatController` | Okin binary, multiple remote variants | Service UUID `62741523-...` | Needs testing |
+| Jiecang | `JiecangController` | Glide beds, Dream Motion app | Char UUID `0000ff01-...` | Needs testing |
+| DewertOkin | `DewertOkinController` | Handle-based writes (0x0013) | Name patterns | Needs testing |
+| Serta | `SertaController` | Handle-based writes (0x0020) | Name patterns | Needs testing |
+| Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
+| Mattress Firm | `MattressFirmController` | 7-byte Nordic UART protocol | Service UUID `6e400001-...` | Needs testing |
+| Nectar | `NectarController` | 7-byte protocol (similar to MF900) | Service UUID `62741523-...` + name | Needs testing |
 
 ## Adding a New Bed Type
 
-1. **Document the BLE protocol** - Use nRF Connect or similar to capture GATT services, characteristics, and command bytes
+1. **Document the BLE protocol** - Use nRF Connect or the `run_diagnostics` service to capture GATT services, characteristics, and command bytes
 
 2. **Add constants to `const.py`**:
    ```python
@@ -118,6 +125,34 @@ custom_components/adjustable_bed/
 7. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
 
 8. **Update `beds/__init__.py`** to export the new controller
+
+9. **Create documentation** in `docs/beds/newbed.md`
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `motor_count` | 2, 3, or 4 motors | 2 |
+| `has_massage` | Enable massage entities | false |
+| `protocol_variant` | Protocol variant (bed-specific) | auto |
+| `disable_angle_sensing` | Disable position feedback | true |
+| `preferred_adapter` | Lock to specific BLE adapter | auto |
+| `motor_pulse_count` | Command repeat count | 25 |
+| `motor_pulse_delay_ms` | Delay between repeats | 50 |
+| `disconnect_after_command` | Disconnect immediately after commands | false |
+| `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
+| `position_mode` | Speed vs accuracy tradeoff | speed |
+| `octo_pin` | PIN for Octo beds | "" |
+| `richmat_remote` | Remote code for Richmat beds | auto |
+
+## Services
+
+| Service | Description |
+|---------|-------------|
+| `adjustable_bed.goto_preset` | Move bed to memory position 1-4 |
+| `adjustable_bed.save_preset` | Save current position to memory 1-4 |
+| `adjustable_bed.stop_all` | Immediately stop all motors |
+| `adjustable_bed.run_diagnostics` | Capture BLE protocol data for debugging |
 
 ## Linak BLE Protocol Reference
 
@@ -163,79 +198,7 @@ Position data format:
   - Angle = max_angle * (raw / max_raw)
 ```
 
-## Other Protocol References
-
-### Richmat
-```
-Nordic variant:
-  Service: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
-  Write:   6e400002-b5a3-f393-e0a9-e50e24dcca9e
-  Command: Single byte [cmd]
-
-WiLinke variant:
-  Service: Various (8ebd4f76-..., 0000fee9-..., 0000fff0-...)
-  Command: [110, 1, 0, cmd, checksum] where checksum = cmd + 111
-```
-
-### Keeson (Member's Mark, Purple, ErgoMotion)
-```
-BaseI4/I5 variant:
-  Service: 0000ffe5-0000-1000-8000-00805f9b34fb
-  Write:   0000ffe9-0000-1000-8000-00805f9b34fb
-  Command: [0xe5, 0xfe, 0x16, ...int_bytes_le, xor_checksum]
-
-Commands are 32-bit values with motor bits that can be combined:
-  Head up/down: 0x1/0x2, Feet up/down: 0x4/0x8
-  Tilt up/down: 0x10/0x20, Lumbar up/down: 0x40/0x80
-```
-
-### MotoSleep (HHC controllers)
-```
-Service: 0000ffe0-0000-1000-8000-00805f9b34fb
-Write:   0000ffe1-0000-1000-8000-00805f9b34fb
-Command: [0x24, ASCII_char] (0x24 = '$')
-
-Device identification: BLE name starts with "HHC"
-```
-
-### Leggett & Platt
-```
-Gen2 variant (ASCII commands):
-  Service: 45e25100-3171-4cfc-ae89-1d83cf8d8071
-  Write:   45e25101-3171-4cfc-ae89-1d83cf8d8071
-  Commands: ASCII strings like "MEM 0", "STOP", "MVI 0:5"
-
-Okin variant (binary, requires pairing):
-  Service: 62741523-52f9-8864-b1ab-3b3a8d65950b
-  Write:   62741525-52f9-8864-b1ab-3b3a8d65950b
-  Command: [0x04, 0x02, ...int_to_bytes(cmd)]
-```
-
-### Reverie
-```
-Service: 1b1d9641-b942-4da8-89cc-98e6a58fbd93
-Write:   6af87926-dc79-412e-a3e0-5f85c2d55de2
-Command: [0x55, ...bytes, xor_checksum]
-  Checksum = all bytes XOR'd together XOR 0x55
-
-Unique: Position-based motor control (0-100%)
-  Motor head: [0x51, position]
-  Motor feet: [0x52, position]
-```
-
-### Okimat (requires BLE pairing)
-```
-Service: 62741523-52f9-8864-b1ab-3b3a8d65950b
-Write:   62741525-52f9-8864-b1ab-3b3a8d65950b
-Command: [0x04, 0x02, ...int_to_bytes(cmd)]
-
-Same protocol as Leggett & Platt Okin variant.
-32-bit command values similar to Keeson.
-```
-
 ## Critical Implementation Details
-
-These details were discovered by comparing with the working smartbed-mqtt implementation:
 
 1. **Write with response** - Use `response=True` for all GATT writes. The bed expects write-with-response.
 
@@ -250,14 +213,6 @@ These details were discovered by comparing with the working smartbed-mqtt implem
 6. **Presets are long operations** - 100 repeats × 300ms = 30 seconds max. Idle timeout is 40s.
 
 7. **Intentional disconnect flag** - Set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect. Cleared in finally block since callback may not fire on clean disconnects.
-
-## Integration Features
-
-- **Options Flow** - Reconfigure bed settings without deleting the integration
-- **Diagnostics** - Download debug info from Settings > Devices > Adjustable Bed
-- **Custom Services** - `adjustable_bed.goto_preset`, `adjustable_bed.save_preset`, `adjustable_bed.stop_all`
-- **Auto-reconnection** - Automatically reconnects after unexpected disconnections
-- **MAC Validation** - Validates Bluetooth address format during manual setup
 
 ## Development
 
@@ -274,40 +229,32 @@ These details were discovered by comparing with the working smartbed-mqtt implem
        homeassistant.components.bluetooth: debug
    ```
 
-### Key Configuration Options
+### Using BLE Diagnostics
 
-- **motor_count**: 2, 3, or 4 motors
-- **has_massage**: Enable massage button entities
-- **disable_angle_sensing**: Default `true` - keeps physical remote working
-- **preferred_adapter**: Lock device to specific ESPHome proxy
+The `run_diagnostics` service captures protocol data for debugging and adding new bed support:
+1. Call the service with either a configured device or a raw MAC address
+2. Operate the physical remote during the capture period
+3. Find the JSON report in your HA config directory
+4. The report contains GATT services, characteristics, and captured notifications
 
 ### Common Issues
 
 - **Commands timeout**: Another device (app/remote) may be connected - beds only allow one BLE connection
 - **Position sensing breaks physical remote**: Enable `disable_angle_sensing` option
 - **Connection drops**: Move ESP32 proxy closer to bed, check for interference
+- **Octo beds disconnect after 30s**: Configure the PIN in options
 
-## Known Issues / Future Work
+## Documentation
 
-See `GEMINI_BUGS.md` for a detailed list of architectural improvements and known limitations. Key items by priority:
-
-**HIGH PRIORITY:**
-- Hardcoded max angles in `cover.py` → incorrect position % for non-Linak beds
-
-**MEDIUM PRIORITY:**
-- `async_connect` is ~400 lines → should be refactored into smaller methods
-- Detection order in `config_flow.py` → beds might be misidentified
-- Private HA Bluetooth manager attributes → could break in future HA versions
-
-**LOW PRIORITY (Design limitations):**
-- 30-second blocking preset loops (required by protocol)
-- Optimistic switch state (expected behavior)
-- Memory 1 = Flat assumption (Linak convention)
-- Unsynchronized massage state (no hardware feedback)
+| File | Content |
+|------|---------|
+| `docs/SUPPORTED_ACTUATORS.md` | Which beds use which actuators, brand lookup |
+| `docs/CONFIGURATION.md` | All configuration options explained |
+| `docs/CONNECTION_GUIDE.md` | Bluetooth setup, ESPHome proxy configuration |
+| `docs/TROUBLESHOOTING.md` | Common issues and solutions |
+| `docs/beds/*.md` | Per-actuator protocol documentation |
 
 ## Reference Materials
 
 - `smartbed-mqtt/` - Old Node.js addon (broken, but has protocol implementations for many bed types)
 - `smartbed-mqtt-discord-chats/` - Discord exports with reverse-engineering discussions and user reports
-- `docs/CONNECTION_GUIDE.md` - User-facing setup and troubleshooting guide
-- `GEMINI_BUGS.md` - Detailed known issues and recommendations
