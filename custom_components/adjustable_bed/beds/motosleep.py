@@ -173,32 +173,27 @@ class MotoSleepController(BedController):
         """Read current position data."""
         pass
 
-    async def _move_with_stop(self, command_char: int) -> None:
-        """Execute a movement command and always send STOP at the end."""
-        try:
-            await self.write_command(
-                self._build_command(command_char),
-                repeat_count=30,
-                repeat_delay_ms=50,
-            )
-        finally:
-            # Always send STOP with a fresh event so it's not affected by cancellation
-            try:
-                await self.write_command(
-                    self._build_command(MotoSleepCommands.MASSAGE_STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+    async def _move_motor(self, command_char: int) -> None:
+        """Execute a movement command.
+
+        MotoSleep motors stop automatically when commands stop being sent,
+        similar to releasing a button on a physical remote. No explicit stop
+        command is needed or available for motors.
+        """
+        await self.write_command(
+            self._build_command(command_char),
+            repeat_count=30,
+            repeat_delay_ms=50,
+        )
 
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_HEAD_UP)
+        await self._move_motor(MotoSleepCommands.MOTOR_HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_HEAD_DOWN)
+        await self._move_motor(MotoSleepCommands.MOTOR_HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
@@ -219,11 +214,11 @@ class MotoSleepController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up (same as feet for MotoSleep)."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_FEET_UP)
+        await self._move_motor(MotoSleepCommands.MOTOR_FEET_UP)
 
     async def move_legs_down(self) -> None:
         """Move legs down (same as feet for MotoSleep)."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_FEET_DOWN)
+        await self._move_motor(MotoSleepCommands.MOTOR_FEET_DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -231,23 +226,24 @@ class MotoSleepController(BedController):
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_FEET_UP)
+        await self._move_motor(MotoSleepCommands.MOTOR_FEET_UP)
 
     async def move_feet_down(self) -> None:
         """Move feet down."""
-        await self._move_with_stop(MotoSleepCommands.MOTOR_FEET_DOWN)
+        await self._move_motor(MotoSleepCommands.MOTOR_FEET_DOWN)
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
         pass
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
-        # Send massage stop which effectively stops movement
-        await self.write_command(
-            self._build_command(MotoSleepCommands.MASSAGE_STOP),
-            cancel_event=asyncio.Event(),
-        )
+        """Stop all motors.
+
+        MotoSleep has no universal stop command. Motors stop automatically
+        when movement commands stop being sent. This method signals cancellation
+        to interrupt any ongoing command sequences.
+        """
+        self._coordinator.cancel_command.set()
 
     # Preset methods
     async def preset_flat(self) -> None:
