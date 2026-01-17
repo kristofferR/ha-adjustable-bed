@@ -572,10 +572,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
                 CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
             }
-            # Add Octo PIN if configured
+            # Handle bed-type-specific configuration when user overrides detected type
+            # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
+            if selected_bed_type == BED_TYPE_OCTO and bed_type != BED_TYPE_OCTO:
+                self._manual_data = entry_data
+                return await self.async_step_bluetooth_octo()
+            # If user selected Richmat but detection wasn't Richmat, collect remote in follow-up step
+            if selected_bed_type == BED_TYPE_RICHMAT and bed_type != BED_TYPE_RICHMAT:
+                self._manual_data = entry_data
+                return await self.async_step_bluetooth_richmat()
+            # Add Octo PIN if configured (when detected as Octo, field was shown inline)
             if selected_bed_type == BED_TYPE_OCTO:
                 entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-            # Add Richmat remote code if configured
+            # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
             if selected_bed_type == BED_TYPE_RICHMAT:
                 entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
             return self.async_create_entry(
@@ -778,9 +787,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if bed_type == BED_TYPE_OCTO:
                         self._manual_data = entry_data
                         return await self.async_step_manual_octo()
-                    # Add Richmat remote code if configured
+                    # For Richmat beds, collect remote code in a separate step
                     if bed_type == BED_TYPE_RICHMAT:
-                        entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_richmat()
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
                         data=entry_data,
@@ -799,13 +809,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ALL_PROTOCOL_VARIANTS
             ),
         }
-
-        # Only show Richmat remote field when bed type is Richmat
-        selected_bed_type = user_input.get(CONF_BED_TYPE) if user_input else None
-        if selected_bed_type == BED_TYPE_RICHMAT:
-            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(
-                RICHMAT_REMOTES
-            )
 
         # Add remaining fields
         schema_dict.update({
@@ -858,6 +861,82 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
+    async def async_step_manual_richmat(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Richmat-specific configuration (remote code)."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
+                CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
+            )
+            return self.async_create_entry(
+                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                data=self._manual_data,
+            )
+
+        return self.async_show_form(
+            step_id="manual_richmat",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
+                        RICHMAT_REMOTES
+                    ),
+                }
+            ),
+        )
+
+    async def async_step_bluetooth_octo(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Octo-specific configuration (PIN) after Bluetooth discovery type override."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            self._manual_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
+            return self.async_create_entry(
+                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                data=self._manual_data,
+            )
+
+        return self.async_show_form(
+            step_id="bluetooth_octo",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
+                        str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+                    ),
+                }
+            ),
+        )
+
+    async def async_step_bluetooth_richmat(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Richmat-specific configuration (remote code) after Bluetooth discovery type override."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
+                CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
+            )
+            return self.async_create_entry(
+                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                data=self._manual_data,
+            )
+
+        return self.async_show_form(
+            step_id="bluetooth_richmat",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO): vol.In(
+                        RICHMAT_REMOTES
+                    ),
+                }
+            ),
+        )
+
 
 class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     """Handle Adjustable Bed options."""
@@ -873,6 +952,11 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
+        # Get current adapter, falling back to auto if stored adapter no longer exists
+        current_adapter = current_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+        if current_adapter not in adapters:
+            current_adapter = ADAPTER_AUTO
+
         # Build schema
         schema_dict = {
             vol.Optional(
@@ -885,7 +969,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ): bool,
             vol.Optional(
                 CONF_PREFERRED_ADAPTER,
-                default=current_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+                default=current_adapter,
             ): vol.In(adapters),
             vol.Optional(
                 CONF_MOTOR_PULSE_COUNT,

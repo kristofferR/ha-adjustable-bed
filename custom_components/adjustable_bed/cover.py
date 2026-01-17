@@ -112,9 +112,17 @@ async def async_setup_entry(
     """Set up Adjustable Bed cover entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    controller = coordinator.controller
+
+    # Skip motor cover entities if bed doesn't support motor control
+    if controller is not None and not controller.supports_motor_control:
+        _LOGGER.debug(
+            "Skipping motor covers for %s - bed only supports presets",
+            coordinator.name,
+        )
+        return
 
     entities = []
-    controller = coordinator.controller
     for description in COVER_DESCRIPTIONS:
         # Special handling for lumbar - only add if controller supports it
         if description.key == "lumbar":

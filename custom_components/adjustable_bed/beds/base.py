@@ -380,6 +380,15 @@ class BedController(ABC):
         """Return True if bed has pillow motor control."""
         return False
 
+    @property
+    def supports_motor_control(self) -> bool:
+        """Return True if bed supports direct motor control (up/down/stop).
+
+        Some beds (like Jiecang) only support preset positions, not
+        individual motor movement commands.
+        """
+        return True
+
     # Lumbar motor control (optional - only some beds have this)
 
     async def move_lumbar_up(self) -> None:

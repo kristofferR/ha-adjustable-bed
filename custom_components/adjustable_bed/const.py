@@ -489,6 +489,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
+    BED_TYPE_REVERIE,
 })
 
 # Default values
