@@ -394,7 +394,7 @@ class BLEDiagnosticRunner:
                         )
 
     async def _handle_notification(
-        self, characteristic_uuid: str, data: bytes
+        self, characteristic_uuid: str, data: bytes | bytearray
     ) -> None:
         """Handle an incoming notification."""
         timestamp = datetime.now(timezone.utc).isoformat()

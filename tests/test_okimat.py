@@ -15,8 +15,8 @@ from custom_components.adjustable_bed.beds.okimat import (
     OkimatComplexCommand,
     OkimatController,
     OkimatRemoteConfig,
-    int_to_bytes,
 )
+from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     CONF_BED_TYPE,
@@ -565,6 +565,9 @@ class TestOkimatPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_okimat_93329_config_entry)
         await coordinator.async_connect()
 
+        # Cancel the disconnect timer to prevent it from firing during the test
+        coordinator._cancel_disconnect_timer()
+
         remote = OKIMAT_REMOTES[OKIMAT_VARIANT_93329]
 
         for memory_num, expected_value in [
@@ -806,21 +809,23 @@ class TestOkimatMassage:
 class TestOkimatPositionNotifications:
     """Test Okimat position notification handling."""
 
-    async def test_start_notify_no_support(
+    async def test_start_notify_supported(
         self,
         hass: HomeAssistant,
         mock_okimat_config_entry,
         mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test that Okimat doesn't support position notifications."""
+        """Test that Okimat supports position notifications via Okin protocol."""
         coordinator = AdjustableBedCoordinator(hass, mock_okimat_config_entry)
         await coordinator.async_connect()
 
         callback = MagicMock()
         await coordinator.controller.start_notify(callback)
 
-        assert "don't support position notifications" in caplog.text
+        # Okimat uses OkinPositionMixin which supports position notifications
+        assert "Position notifications active for Okin bed" in caplog.text
 
     async def test_read_positions_noop(
         self,

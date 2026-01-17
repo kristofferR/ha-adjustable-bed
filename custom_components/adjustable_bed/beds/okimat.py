@@ -28,6 +28,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
@@ -299,7 +300,7 @@ class OkimatController(BedController):
                 err,
             )
 
-    def _handle_position_notification(self, _: int, data: bytearray) -> None:
+    def _handle_position_notification(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle position notification data from OKIN controller.
 
         Data format (7+ bytes):
@@ -372,7 +373,7 @@ class OkimatController(BedController):
             data = await self.client.read_gatt_char(OKIN_POSITION_NOTIFY_CHAR_UUID)
             if data:
                 _LOGGER.debug("Read Okin position data: %s", data.hex())
-                self._handle_position_notification(0, bytearray(data))
+                self._handle_position_notification(0, bytearray(data))  # type: ignore[arg-type]
         except BleakError as err:
             _LOGGER.debug("Could not read position data: %s", err)
 

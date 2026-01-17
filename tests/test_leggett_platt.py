@@ -14,8 +14,8 @@ from custom_components.adjustable_bed.beds.leggett_platt import (
     LeggettPlattController,
     LeggettPlattGen2Commands,
     LeggettPlattOkinCommands,
-    int_to_bytes,
 )
+from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     CONF_BED_TYPE,

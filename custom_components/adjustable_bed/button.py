@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Coroutine, Any
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -366,6 +366,9 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
 
         try:
             _LOGGER.debug("Executing button action: %s", self.entity_description.key)
+            if self.entity_description.press_fn is None:
+                _LOGGER.warning("No press function defined for button: %s", self.entity_description.key)
+                return
             await self._coordinator.async_execute_controller_command(
                 self.entity_description.press_fn,
                 cancel_running=self.entity_description.cancel_movement,

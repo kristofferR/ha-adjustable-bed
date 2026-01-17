@@ -125,6 +125,11 @@ class DewertOkinController(BedController):
         """Return 2 - DewertOkin beds support memory slots 1-2."""
         return 2
 
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return False - DewertOkin beds don't support programming memory positions via BLE."""
+        return False
+
     async def write_command(
         self,
         command: bytes,

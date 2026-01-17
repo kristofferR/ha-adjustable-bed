@@ -127,8 +127,10 @@ def is_valid_mac_address(address: str) -> bool:
     return bool(MAC_ADDRESS_PATTERN.match(address))
 
 
-def get_variants_for_bed_type(bed_type: str) -> dict[str, str] | None:
+def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
     """Get available protocol variants for a bed type, or None if no variants."""
+    if bed_type is None:
+        return None
     if bed_type == BED_TYPE_KEESON:
         return KEESON_VARIANTS
     if bed_type == BED_TYPE_LEGGETT_PLATT:
@@ -610,8 +612,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         default_disable_angle = bed_type not in BEDS_WITH_ANGLE_SENSING
 
         # Get bed-type-specific motor pulse defaults
-        pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
-            bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+        pulse_defaults = (
+            BED_MOTOR_PULSE_DEFAULTS.get(bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS))
+            if bed_type else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
         )
         default_pulse_count, default_pulse_delay = pulse_defaults
 
@@ -705,7 +708,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         
         # Convert to upper-case for case-insensitive comparison
         # (configured IDs are upper-case, but discovered addresses may be lower-case)
-        current_addresses = {addr.upper() for addr in self._async_current_ids()}
+        current_addresses = {addr.upper() for addr in self._async_current_ids() if addr is not None}
         for discovery_info in all_discovered:
             if discovery_info.address.upper() in current_addresses:
                 _LOGGER.debug(
@@ -766,6 +769,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
                     bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
                 )
+                motor_pulse_count = pulse_defaults[0]
+                motor_pulse_delay_ms = pulse_defaults[1]
                 try:
                     motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
                     motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
@@ -1047,8 +1052,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
 
         if user_input is not None:
             # Get bed-specific defaults for motor pulse settings
-            pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
-                bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            pulse_defaults = (
+                BED_MOTOR_PULSE_DEFAULTS.get(bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS))
+                if bed_type else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
             )
             # Convert text values to integers
             try:

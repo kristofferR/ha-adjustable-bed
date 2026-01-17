@@ -15,6 +15,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Callable
 
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
@@ -214,8 +215,8 @@ class KeesonController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True - Keeson beds support programming memory positions."""
-        return True
+        """Return False - Keeson beds don't support programming memory positions."""
+        return False
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -294,7 +295,7 @@ class KeesonController(BedController):
         except BleakError:
             _LOGGER.warning("Failed to start notifications")
 
-    def _on_notification(self, sender: int, data: bytearray) -> None:
+    def _on_notification(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle incoming BLE notifications (ergomotion variant)."""
         _LOGGER.debug("Received notification: %s", data.hex())
         self._parse_notification(bytes(data))

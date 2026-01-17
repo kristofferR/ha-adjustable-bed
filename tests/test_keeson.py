@@ -177,7 +177,7 @@ class TestKeesonController:
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, command, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
@@ -270,7 +270,7 @@ class TestKeesonMovement:
 
         expected_stop = coordinator.controller._build_command(0)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, expected_stop, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, expected_stop, response=True
         )
 
 
@@ -374,7 +374,7 @@ class TestKeesonLights:
 
         expected_cmd = coordinator.controller._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
 
@@ -396,7 +396,7 @@ class TestKeesonMassage:
 
         expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_STEP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_head_up(
@@ -414,7 +414,7 @@ class TestKeesonMassage:
 
         expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_HEAD_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
     async def test_massage_foot_down(
@@ -432,7 +432,7 @@ class TestKeesonMassage:
 
         expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_FOOT_DOWN)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=False
+            KEESON_BASE_WRITE_CHAR_UUID, expected_cmd, response=True
         )
 
 

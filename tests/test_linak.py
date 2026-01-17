@@ -145,19 +145,21 @@ class TestLinakMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head up sends repeated commands followed by stop."""
+        """Test move head up sends repeated commands (Linak auto-stops when commands stop)."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_up()
 
-        # Should have sent multiple HEAD_UP commands plus STOP
+        # Linak beds auto-stop when commands stop arriving, so no explicit STOP is sent
+        # Should have sent multiple HEAD_UP commands
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) > 1
 
-        # Last call should be stop
-        last_command = calls[-1][0][1]
-        assert last_command == LinakCommands.MOVE_STOP
+        # All calls should be HEAD_UP (no stop command for Linak)
+        for call in calls:
+            command = call[0][1]
+            assert command == LinakCommands.MOVE_HEAD_UP
 
     async def test_move_legs_down(
         self,
@@ -166,17 +168,20 @@ class TestLinakMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move legs down sends repeated commands followed by stop."""
+        """Test move legs down sends repeated commands (Linak auto-stops when commands stop)."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_legs_down()
 
+        # Linak beds auto-stop when commands stop arriving, so no explicit STOP is sent
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) > 1
 
-        last_command = calls[-1][0][1]
-        assert last_command == LinakCommands.MOVE_STOP
+        # All calls should be LEGS_DOWN (no stop command for Linak)
+        for call in calls:
+            command = call[0][1]
+            assert command == LinakCommands.MOVE_LEGS_DOWN
 
     async def test_stop_all(
         self,

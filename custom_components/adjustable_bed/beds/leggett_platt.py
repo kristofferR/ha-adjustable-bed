@@ -187,6 +187,19 @@ class LeggettPlattController(BedController):
         """Return True - Leggett & Platt beds support memory presets."""
         return True
 
+    @property
+    def memory_slot_count(self) -> int:
+        """Return 4 - Leggett & Platt beds support memory slots 1-4."""
+        return 4
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True only for Gen2 variant which has programming commands.
+
+        Okin variant doesn't support programming memory positions.
+        """
+        return self._variant == "gen2"
+
     def _build_okin_command(self, command_value: int) -> bytes:
         """Build Okin binary command by delegating to build_okin_command.
 

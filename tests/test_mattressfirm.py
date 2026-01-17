@@ -127,7 +127,7 @@ class TestMattressFirmController:
         """Test that write_command sends initialization sequence on first command."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
 
         # Send a motor command - should trigger init sequence
         await controller.write_command(MattressFirmCommands.HEAD_UP, repeat_count=1)
@@ -154,7 +154,7 @@ class TestMattressFirmController:
         """Test that subsequent commands don't re-send init sequence."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
 
         # Send first command (with init)
         await controller.write_command(MattressFirmCommands.HEAD_UP, repeat_count=1)
@@ -177,7 +177,7 @@ class TestMattressFirmController:
         """Test motor control commands."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
         controller._initialized = True  # Skip init for this test
 
         # Test head up
@@ -202,7 +202,7 @@ class TestMattressFirmController:
         """Test preset position commands."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
         controller._initialized = True
 
         # Test flat preset
@@ -233,7 +233,7 @@ class TestMattressFirmController:
         """Test massage control commands."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
         controller._initialized = True
 
         # Test massage on
@@ -254,7 +254,7 @@ class TestMattressFirmController:
         """Test light control commands."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
         mock_client = AsyncMock()
-        controller.client = mock_client
+        mock_mattressfirm_coordinator._client = mock_client
         controller._initialized = True
 
         # Test light cycle
@@ -288,7 +288,7 @@ class TestMattressFirmController:
     ):
         """Test write_command raises error when client is not connected."""
         controller = MattressFirmController(mock_mattressfirm_coordinator)
-        controller.client = None
+        # Client is None by default in coordinator, so no need to set it
 
         with pytest.raises(ConnectionError):
             await controller.write_command(MattressFirmCommands.HEAD_UP)
