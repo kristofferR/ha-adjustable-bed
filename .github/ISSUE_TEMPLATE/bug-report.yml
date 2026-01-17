@@ -1,0 +1,152 @@
+name: Bug Report
+description: Report a problem with the Adjustable Bed integration
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please fill out the form below to help us diagnose and fix the issue.
+
+        **Before submitting:**
+        - Check the [Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/TROUBLESHOOTING.md)
+        - Search [existing issues](https://github.com/kristofferR/ha-adjustable-bed/issues) to avoid duplicates
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I try to move the head of the bed up, nothing happens..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: "The head of the bed should move up when I press the button..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to the bed device page
+        2. Click "Head Up" button
+        3. Nothing happens
+    validations:
+      required: true
+
+  - type: input
+    id: bed_type
+    attributes:
+      label: Bed Type
+      description: Which bed type is configured in the integration?
+      placeholder: "e.g., Richmat, Keeson, Linak, Leggett & Platt"
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant Version
+      description: "Settings → About → Home Assistant version"
+      placeholder: "e.g., 2026.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration Version
+      description: "Settings → Integrations → Adjustable Bed → version shown"
+      placeholder: "e.g., 1.4.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: connection_method
+    attributes:
+      label: Bluetooth Connection Method
+      description: How is your Home Assistant connected to the bed?
+      options:
+        - Built-in Bluetooth adapter
+        - USB Bluetooth adapter
+        - ESPHome Bluetooth Proxy
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / Support Report
+      description: |
+        **Quick Method (recommended):** Generate a support report with logs included:
+        1. Go to Developer Tools → Services
+        2. Search for `adjustable_bed.generate_support_report`
+        3. Select your bed device and click "Call Service"
+        4. A notification will show the file location in your `/config/` folder
+        5. Drag and drop the JSON file here
+
+        **Alternative:** Download diagnostics from Settings → Integrations → Adjustable Bed → ⋮ → Download diagnostics
+
+        All files automatically redact sensitive data (MAC addresses are partially redacted, keeping the manufacturer prefix).
+      placeholder: "Drag and drop the diagnostics or support report JSON file here"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: |
+        **Copy relevant log entries:**
+        1. Go to Settings → System → Logs
+        2. Click "Load Full Logs"
+        3. Filter by "adjustable_bed"
+        4. Copy any error or warning messages
+
+        **For detailed logs**, enable debug logging first:
+        ```yaml
+        logger:
+          logs:
+            custom_components.adjustable_bed: debug
+        ```
+      render: text
+      placeholder: |
+        2026-01-15 10:30:00 ERROR (MainThread) [custom_components.adjustable_bed] ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context about the problem here:
+        - Does the physical remote work?
+        - Did this work before? What changed?
+        - Any error messages in the UI?
+        - Screenshots of the issue?
+      placeholder: "The physical remote still works fine..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm you've done the following
+      options:
+        - label: I have checked the [Troubleshooting Guide](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/TROUBLESHOOTING.md)
+          required: true
+        - label: I have searched for [existing issues](https://github.com/kristofferR/ha-adjustable-bed/issues)
+          required: true
+        - label: I have attached the diagnostics file
+          required: true

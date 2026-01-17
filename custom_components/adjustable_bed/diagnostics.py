@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import sys
 from typing import Any
 
-from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
 from .const import (
@@ -14,16 +15,18 @@ from .const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
-    CONF_OCTO_PIN,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
 from .coordinator import AdjustableBedCoordinator
-
-# Keys to redact from diagnostics (privacy-sensitive data)
-TO_REDACT = {CONF_ADDRESS, CONF_NAME, CONF_OCTO_PIN, "address"}
+from .redaction import (
+    KEYS_TO_REDACT,
+    MAC_ADDRESS_KEYS,
+    _redact_mac_address,
+    redact_data,
+)
 
 
 async def async_get_config_entry_diagnostics(
@@ -70,12 +73,34 @@ async def async_get_config_entry_diagnostics(
     # Get position data
     position_data = dict(coordinator.position_data)
 
-    return {
+    # Get advertisement data
+    advertisement_info: dict[str, Any] = {}
+    service_info = bluetooth.async_last_service_info(
+        hass, coordinator.address, connectable=True
+    )
+    if service_info:
+        advertisement_info = {
+            # Use "device_name" to avoid redaction (name is useful for debugging)
+            "device_name": service_info.name,
+            "rssi": getattr(service_info, "rssi", None),
+            "service_uuids": [str(uuid) for uuid in service_info.service_uuids],
+            "manufacturer_data_keys": list(service_info.manufacturer_data.keys()),
+            "connectable": service_info.connectable,
+        }
+        if hasattr(service_info, "source"):
+            advertisement_info["source"] = service_info.source
+
+    # Build the diagnostic data
+    data = {
+        "system": {
+            "home_assistant_version": HA_VERSION,
+            "python_version": sys.version.split()[0],
+        },
         "entry": {
             "entry_id": entry.entry_id,
             "version": entry.version,
             "title": entry.title,
-            "data": async_redact_data(dict(entry.data), TO_REDACT),
+            "data": dict(entry.data),
         },
         "config": {
             "bed_type": entry.data.get(CONF_BED_TYPE),
@@ -90,7 +115,11 @@ async def async_get_config_entry_diagnostics(
             "is_connecting": coordinator.is_connecting,
         },
         "ble": ble_info,
+        "advertisement": advertisement_info,
         "controller": controller_info,
         "position_data": position_data,
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
     }
+
+    # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
+    return redact_data(data)

@@ -297,6 +297,20 @@
           "description": "How long to capture notifications in seconds (10-300). Operate the physical remote during this time."
         }
       }
+    },
+    "generate_support_report": {
+      "name": "Generate Support Report",
+      "description": "Generate a comprehensive debug report for submitting bug reports.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device to generate the report for."
+        },
+        "include_logs": {
+          "name": "Include Recent Logs",
+          "description": "Include recent log entries related to the integration."
+        }
+      }
     }
   },
   "issues": {

@@ -21,9 +21,11 @@ SERVICE_GOTO_PRESET = "goto_preset"
 SERVICE_SAVE_PRESET = "save_preset"
 SERVICE_STOP_ALL = "stop_all"
 SERVICE_RUN_DIAGNOSTICS = "run_diagnostics"
+SERVICE_GENERATE_SUPPORT_REPORT = "generate_support_report"
 ATTR_PRESET = "preset"
 ATTR_TARGET_ADDRESS = "target_address"
 ATTR_CAPTURE_DURATION = "capture_duration"
+ATTR_INCLUDE_LOGS = "include_logs"
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
@@ -272,7 +274,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             _LOGGER.info("Diagnostic report saved to %s", filepath)
         except Exception as err:
-            _LOGGER.exception("Failed to run diagnostics for %s: %s", address, err)
+            _LOGGER.exception("Failed to run diagnostics for %s", address)
             async_create(
                 hass,
                 f"Failed to run BLE diagnostics for {address}:\n\n{err}",
@@ -291,6 +293,77 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_CAPTURE_DURATION, default=DEFAULT_CAPTURE_DURATION): vol.All(
                     vol.Coerce(int), vol.Range(min=MIN_CAPTURE_DURATION, max=MAX_CAPTURE_DURATION)
                 ),
+            }
+        ),
+    )
+
+    async def handle_generate_support_report(call: ServiceCall) -> None:
+        """Handle generate_support_report service call."""
+        from homeassistant.components.persistent_notification import async_create
+
+        from .support_report import generate_support_report, save_support_report
+
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        include_logs = call.data.get(ATTR_INCLUDE_LOGS, True)
+
+        if not device_ids:
+            _LOGGER.error("No device_id provided for generate_support_report service")
+            return
+
+        device_id = device_ids[0]
+        coordinator = await _get_coordinator_from_device(hass, device_id)
+        if not coordinator:
+            _LOGGER.error(
+                "Could not find Adjustable Bed device with ID %s for generate_support_report service",
+                device_id,
+            )
+            return
+
+        # Find the config entry for this coordinator
+        entry: ConfigEntry | None = None
+        for entry_id, coord in hass.data[DOMAIN].items():
+            if coord is coordinator:
+                entry = hass.config_entries.async_get_entry(entry_id)
+                break
+
+        if not entry:
+            _LOGGER.error("Could not find config entry for device %s", device_id)
+            return
+
+        try:
+            _LOGGER.info("Generating support report for %s", coordinator.name)
+            report = await generate_support_report(hass, entry, coordinator, include_logs)
+            filepath = save_support_report(hass, report, coordinator.address)
+
+            async_create(
+                hass,
+                f"Support report saved to:\n\n`{filepath}`\n\n"
+                "**How to submit a bug report:**\n"
+                "1. Go to [GitHub Issues](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml)\n"
+                "2. Fill out the form\n"
+                "3. Attach this JSON file to the issue\n\n"
+                "The report contains diagnostic information with sensitive data (MAC address) redacted.",
+                title="Adjustable Bed Support Report Ready",
+                notification_id=f"adjustable_bed_support_report_{coordinator.address.replace(':', '_').lower()}",
+            )
+            _LOGGER.info("Support report saved to %s", filepath)
+        except Exception as err:
+            _LOGGER.exception("Failed to generate support report")
+            async_create(
+                hass,
+                f"Failed to generate support report:\n\n{err}",
+                title="Adjustable Bed Support Report Error",
+                notification_id="adjustable_bed_support_report_error",
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GENERATE_SUPPORT_REPORT,
+        handle_generate_support_report,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Optional(ATTR_INCLUDE_LOGS, default=True): cv.boolean,
             }
         ),
     )
@@ -322,7 +395,13 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 def _async_unregister_services(hass: HomeAssistant) -> None:
     """Unregister Adjustable Bed services."""
-    for service in (SERVICE_GOTO_PRESET, SERVICE_SAVE_PRESET, SERVICE_STOP_ALL, SERVICE_RUN_DIAGNOSTICS):
+    for service in (
+        SERVICE_GOTO_PRESET,
+        SERVICE_SAVE_PRESET,
+        SERVICE_STOP_ALL,
+        SERVICE_RUN_DIAGNOSTICS,
+        SERVICE_GENERATE_SUPPORT_REPORT,
+    ):
         if hass.services.has_service(DOMAIN, service):
             hass.services.async_remove(DOMAIN, service)
     _LOGGER.debug("Unregistered Adjustable Bed services")

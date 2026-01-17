@@ -231,38 +231,64 @@ Some beds require Bluetooth pairing before they can be controlled.
 
 ## Getting Help
 
-### Before Asking for Help
+### Quick Method: Generate Support Report
 
-1. **Check logs:** Look at Home Assistant logs for error messages
-   - Settings → System → Logs → Filter by "adjustable_bed"
-   - **Tip:** If your bed isn't responding, the integration will log all discovered GATT services at INFO level. This helps us add support for new device variants.
+The easiest way to collect all the information needed for a bug report:
 
-2. **Download diagnostics:**
+1. **Go to Developer Tools → Services** in Home Assistant
+2. **Search for** `adjustable_bed.generate_support_report`
+3. **Select your bed device** and click "Call Service"
+4. **A notification will appear** with the file location (in your `/config/` folder)
+5. **Attach this file** to your GitHub issue
+
+The support report includes:
+- System info (HA version, Python version)
+- Integration configuration
+- Connection status and BLE info
+- Recent logs (if available)
+- All sensitive data (MAC address) is automatically redacted
+
+### Manual Method: Download Diagnostics
+
+If you prefer to gather information manually:
+
+1. **Download diagnostics:**
    - Settings → Integrations → Adjustable Bed → ⋮ → Download diagnostics
    - This includes config and connection info (MAC address is redacted)
 
-3. **Test with BLE scanner:**
-   - Use an app like "nRF Connect" to verify your bed is advertising
-   - Note the service UUIDs - these help identify the correct bed type
+2. **Check logs:** Look at Home Assistant logs for error messages
+   - Settings → System → Logs → Filter by "adjustable_bed"
+   - **Tip:** If your bed isn't responding, the integration will log all discovered GATT services at INFO level.
 
-4. **Enable debug logging** to see detailed GATT service information:
+3. **Enable debug logging** for detailed information:
+
    ```yaml
    logger:
      logs:
        custom_components.adjustable_bed: debug
    ```
 
-### Information to Include in Bug Reports
+4. **Test with BLE scanner:**
+   - Use an app like "nRF Connect" to verify your bed is advertising
+   - Note the service UUIDs - these help identify the correct bed type
 
-1. Bed brand and model (if known)
-2. Diagnostics file (downloaded from HA)
-3. Relevant log entries
-4. What you tried and what happened
-5. Screenshots of any error messages
+### Submitting a Bug Report
+
+1. **Go to:** [GitHub Issues - Bug Report](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml)
+
+2. **Fill out the form** with:
+   - Description of the problem
+   - Steps to reproduce
+   - Your bed type and HA version
+
+3. **Attach the diagnostics file** (from either method above)
+
+4. **Include relevant log entries** if you have them
 
 ### Where to Get Help
 
-- **GitHub Issues:** [ha-adjustable-bed/issues](https://github.com/kristofferR/ha-adjustable-bed/issues)
+- **Bug Reports:** [GitHub Issues](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml)
+- **New Bed Requests:** [Request New Bed Support](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=new-bed-support.yml)
 - **Home Assistant Community:** Search for "adjustable bed" discussions
 
 ---

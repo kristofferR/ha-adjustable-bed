@@ -81,3 +81,22 @@ run_diagnostics:
           max: 300
           unit_of_measurement: seconds
           mode: box
+
+generate_support_report:
+  name: Generate Support Report
+  description: Generate a comprehensive debug report for submitting bug reports. Collects diagnostics, logs, and system information into a single file.
+  fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device to generate the report for.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    include_logs:
+      name: Include Recent Logs
+      description: Include recent log entries related to the integration.
+      required: false
+      default: true
+      selector:
+        boolean:
