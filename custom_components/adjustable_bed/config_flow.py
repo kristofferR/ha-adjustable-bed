@@ -19,7 +19,14 @@ from homeassistant.config_entries import (
     OptionsFlowWithConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
+from homeassistant.helpers.selector import (
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+)
 
 from .const import (
     ADAPTER_AUTO,
@@ -122,6 +129,36 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     "skateboard",
     "hoverboard",
 )
+
+# Display names for bed types (sorted alphabetically by display name)
+BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    BED_TYPE_DEWERTOKIN: "DewertOkin",
+    BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
+    BED_TYPE_ERGOMOTION: "Ergomotion",
+    BED_TYPE_JIECANG: "Jiecang",
+    BED_TYPE_KEESON: "Keeson",
+    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt",
+    BED_TYPE_LINAK: "Linak",
+    BED_TYPE_MATTRESSFIRM: "MattressFirm",
+    BED_TYPE_MOTOSLEEP: "MotoSleep",
+    BED_TYPE_NECTAR: "Nectar",
+    BED_TYPE_OCTO: "Octo",
+    BED_TYPE_OKIMAT: "Okimat",
+    BED_TYPE_REVERIE: "Reverie",
+    BED_TYPE_RICHMAT: "Richmat",
+    BED_TYPE_SERTA: "Serta",
+    BED_TYPE_SOLACE: "Solace",
+}
+
+
+def get_bed_type_options() -> list[SelectOptionDict]:
+    """Get bed type options sorted alphabetically by display name."""
+    return [
+        SelectOptionDict(value=bed_type, label=display_name)
+        for bed_type, display_name in sorted(
+            BED_TYPE_DISPLAY_NAMES.items(), key=lambda x: x[1].lower()
+        )
+    ]
 
 
 def is_valid_mac_address(address: str) -> bool:
@@ -861,11 +898,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
-        # Build base schema - include diagnostic as a bed type option
-        manual_bed_types = [*SUPPORTED_BED_TYPES, BED_TYPE_DIAGNOSTIC]
+        # Build base schema with bed type selector (alphabetically sorted)
         schema_dict: dict[vol.Marker, Any] = {
             vol.Required(CONF_ADDRESS): str,
-            vol.Required(CONF_BED_TYPE): vol.In(manual_bed_types),
+            vol.Required(CONF_BED_TYPE): SelectSelector(
+                SelectSelectorConfig(
+                    options=get_bed_type_options(),
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
                 ALL_PROTOCOL_VARIANTS
             ),
