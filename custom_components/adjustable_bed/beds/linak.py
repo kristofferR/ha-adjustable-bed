@@ -109,6 +109,11 @@ class LinakController(BedController):
         return False
 
     @property
+    def supports_lights(self) -> bool:
+        """Return True - Linak beds support under-bed lighting."""
+        return True
+
+    @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return LINAK_CONTROL_CHAR_UUID

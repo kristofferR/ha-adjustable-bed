@@ -94,6 +94,11 @@ class NectarController(BedController):
     def has_lumbar_support(self) -> bool:
         return True
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - Nectar beds support under-bed lighting."""
+        return True
+
     async def write_command(
         self,
         command: bytes,

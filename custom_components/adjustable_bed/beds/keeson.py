@@ -346,17 +346,21 @@ class KeesonController(BedController):
         self._notify_position_update()
 
     def _notify_position_update(self) -> None:
-        """Notify callback with position updates."""
+        """Notify callback with position updates.
+
+        Note: Ergomotion positions are 0-100 (percentage), not angles in degrees.
+        We use "back"/"legs" keys to match 2-motor sensor/cover entity expectations.
+        """
         if self._notify_callback is None:
             return
 
-        # Notify head position
+        # Notify back (head) position - use "back" key for 2-motor compatibility
         if self._head_position is not None:
-            self._notify_callback("head", float(self._head_position))
+            self._notify_callback("back", float(self._head_position))
 
-        # Notify foot position
+        # Notify legs (foot) position - use "legs" key for 2-motor compatibility
         if self._foot_position is not None:
-            self._notify_callback("feet", float(self._foot_position))
+            self._notify_callback("legs", float(self._foot_position))
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""

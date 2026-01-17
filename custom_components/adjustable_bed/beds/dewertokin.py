@@ -105,6 +105,11 @@ class DewertOkinController(BedController):
     def supports_preset_tv(self) -> bool:
         return True
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - DewertOkin beds support under-bed lighting."""
+        return True
+
     async def write_command(
         self,
         command: bytes,

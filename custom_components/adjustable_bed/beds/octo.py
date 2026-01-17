@@ -609,9 +609,12 @@ class OctoController(BedController):
                 if self.client is not None and self.client.is_connected:
                     _LOGGER.debug("Sending keep-alive PIN")
                     # Use coordinator's command execution for proper locking
+                    # skip_disconnect=True to prevent disconnect_after_command from
+                    # tearing down the connection that the keep-alive is trying to maintain
                     await self._coordinator.async_execute_controller_command(
                         lambda c: c.send_pin(),
                         cancel_running=False,
+                        skip_disconnect=True,
                     )
                 else:
                     _LOGGER.debug("Keep-alive: not connected, skipping PIN send")

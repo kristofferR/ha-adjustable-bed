@@ -169,6 +169,11 @@ class LeggettPlattController(BedController):
         # Only Gen2 variant supports Anti-Snore
         return self._variant != "okin"
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - Leggett & Platt beds support lighting."""
+        return True
+
     def _build_okin_command(self, command_value: int) -> bytes:
         """Build Okin binary command by delegating to build_okin_command.
 

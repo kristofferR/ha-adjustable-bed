@@ -149,6 +149,11 @@ class RichmatController(BedController):
     def has_pillow_support(self) -> bool:
         return bool(self._features & RichmatFeatures.MOTOR_PILLOW)
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True if this bed supports under-bed lights."""
+        return bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS)
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
         if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:

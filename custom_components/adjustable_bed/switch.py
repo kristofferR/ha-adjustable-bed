@@ -58,7 +58,8 @@ async def async_setup_entry(
         if description.required_capability is not None:
             if controller is None:
                 continue
-            if not getattr(controller, description.required_capability, True):
+            # Default to False: only create entity if controller explicitly supports it
+            if not getattr(controller, description.required_capability, False):
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 

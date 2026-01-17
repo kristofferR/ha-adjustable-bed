@@ -93,6 +93,11 @@ class MotoSleepController(BedController):
     def supports_preset_tv(self) -> bool:
         return True
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - MotoSleep beds support under-bed lighting."""
+        return True
+
     def _build_command(self, char_code: int) -> bytes:
         """Build a 2-byte command: [0x24, char_code]."""
         return bytes([0x24, char_code])

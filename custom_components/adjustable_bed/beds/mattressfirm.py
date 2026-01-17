@@ -113,6 +113,11 @@ class MattressFirmController(BedController):
     def has_lumbar_support(self) -> bool:
         return True
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - Mattress Firm beds support under-bed lighting."""
+        return True
+
     async def initialize(self) -> None:
         """Initialize the bed connection.
 

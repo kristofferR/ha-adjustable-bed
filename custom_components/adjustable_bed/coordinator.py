@@ -1157,6 +1157,7 @@ class AdjustableBedCoordinator:
         self,
         command_fn: Callable[["BedController"], Coroutine[Any, Any, None]],
         cancel_running: bool = True,
+        skip_disconnect: bool = False,
     ) -> None:
         """Execute a controller command with proper serialization.
 
@@ -1165,6 +1166,9 @@ class AdjustableBedCoordinator:
 
         Args:
             command_fn: An async callable that takes the controller as argument.
+            cancel_running: If True, cancel any running command before executing.
+            skip_disconnect: If True, skip the disconnect_after_command behavior.
+                Use this for keep-alive commands that need the connection to persist.
         """
         if cancel_running:
             # Cancel any running command immediately
@@ -1223,8 +1227,8 @@ class AdjustableBedCoordinator:
                 raise
             finally:
                 if self._client is not None and self._client.is_connected:
-                    # Disconnect immediately if configured to do so
-                    if self._disconnect_after_command:
+                    # Disconnect immediately if configured to do so (unless skip_disconnect)
+                    if self._disconnect_after_command and not skip_disconnect:
                         _LOGGER.debug(
                             "Disconnecting after command (disconnect_after_command=True) for %s",
                             self._address,
