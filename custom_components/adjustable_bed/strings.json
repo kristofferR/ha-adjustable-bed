@@ -76,6 +76,31 @@
         "data_description": {
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection."
         }
+      },
+      "diagnostic": {
+        "title": "Diagnostic Mode - Select Device",
+        "description": "Select any BLE device to add for diagnostic capture. This allows you to run BLE diagnostics on unsupported devices to help add support for new bed models.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "diagnostic_confirm": {
+        "title": "Confirm Diagnostic Device",
+        "description": "Add {name} ({address}) as a diagnostic device?\n\nNo motor controls will be available - this device is only for running BLE diagnostics.",
+        "data": {
+          "name": "Device name"
+        }
+      },
+      "diagnostic_manual": {
+        "title": "Diagnostic Mode - Manual Entry",
+        "description": "Enter the Bluetooth MAC address of the device you want to diagnose.",
+        "data": {
+          "address": "Bluetooth address",
+          "name": "Device name"
+        },
+        "data_description": {
+          "address": "MAC address in format XX:XX:XX:XX:XX:XX"
+        }
       }
     },
     "abort": {

@@ -6,7 +6,8 @@ import asyncio
 import logging
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -22,6 +23,7 @@ from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_DEWERTOKIN,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
@@ -48,6 +50,7 @@ from .const import (
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
@@ -58,19 +61,16 @@ from .const import (
     DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
-    POSITION_MODE_ACCURACY,
     DOMAIN,
-    KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
-    LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STAR2,
+    POSITION_MODE_ACCURACY,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
-    CONF_RICHMAT_REMOTE,
 )
 
 if TYPE_CHECKING:
@@ -243,6 +243,7 @@ class AdjustableBedCoordinator:
             BED_TYPE_OCTO: "Octo",
             BED_TYPE_MATTRESSFIRM: "MattressFirm",
             BED_TYPE_NECTAR: "Nectar",
+            BED_TYPE_DIAGNOSTIC: "Unknown",
         }
         return manufacturers.get(self._bed_type, "Unknown")
 
@@ -284,7 +285,7 @@ class AdjustableBedCoordinator:
                     self._address,
                 )
                 await asyncio.sleep(pre_retry_delay)
-            
+
             try:
                 _LOGGER.debug(
                     "Connection attempt %d/%d: Looking up device %s via HA Bluetooth (preferred adapter: %s)",
@@ -293,7 +294,7 @@ class AdjustableBedCoordinator:
                     self._address,
                     self._preferred_adapter,
                 )
-                
+
                 # Log available Bluetooth adapters/scanners
                 try:
                     scanner_count = bluetooth.async_scanner_count(self.hass, connectable=True)
@@ -303,7 +304,7 @@ class AdjustableBedCoordinator:
                     )
                 except Exception as err:
                     _LOGGER.debug("Could not get scanner count: %s", err)
-                
+
                 # Try to get device info, optionally filtered by preferred adapter
                 device = None
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
@@ -313,7 +314,7 @@ class AdjustableBedCoordinator:
                         self._address,
                         self._preferred_adapter,
                     )
-                    
+
                     # Log all sources that can see this device
                     available_sources = []
                     try:
@@ -322,7 +323,7 @@ class AdjustableBedCoordinator:
                                 source = getattr(service_info, 'source', 'unknown')
                                 rssi = getattr(service_info, 'rssi', 'N/A')
                                 available_sources.append(f"{source} (RSSI: {rssi})")
-                                
+
                                 if source == self._preferred_adapter:
                                     device = service_info.device
                                     _LOGGER.info(
@@ -331,14 +332,14 @@ class AdjustableBedCoordinator:
                                         self._preferred_adapter,
                                         rssi,
                                     )
-                        
+
                         if available_sources:
                             _LOGGER.info(
                                 "Adapters that can see device %s: %s",
                                 self._address,
                                 ", ".join(available_sources),
                             )
-                        
+
                         if device is None and available_sources:
                             _LOGGER.warning(
                                 "⚠ Device %s not found via preferred adapter %s, falling back to automatic selection",
@@ -347,7 +348,7 @@ class AdjustableBedCoordinator:
                             )
                     except Exception as err:
                         _LOGGER.debug("Error looking up device from specific adapter: %s", err)
-                
+
                 # Fall back to auto selection if no preferred adapter or device not found
                 # Auto mode: pick the adapter with the best RSSI (strongest signal)
                 if device is None:
@@ -438,7 +439,7 @@ class AdjustableBedCoordinator:
                 device_source = None
                 if hasattr(device, 'details') and isinstance(device.details, dict):
                     device_source = device.details.get('source')
-                
+
                 lookup_elapsed = time.monotonic() - attempt_start
                 _LOGGER.info(
                     "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
@@ -453,7 +454,7 @@ class AdjustableBedCoordinator:
                     device.name,
                     getattr(device, 'details', 'N/A'),
                 )
-                
+
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if device_source == self._preferred_adapter:
                         _LOGGER.info(
@@ -466,7 +467,7 @@ class AdjustableBedCoordinator:
                             device_source,
                             self._preferred_adapter,
                         )
-                
+
                 # Try to get service info for more details about the source (proxy info)
                 try:
                     service_info = bluetooth.async_last_service_info(
@@ -500,7 +501,7 @@ class AdjustableBedCoordinator:
                     self._address,
                     CONNECTION_TIMEOUT,
                 )
-                
+
                 # Create a callback to get fresh device from preferred adapter on retries
                 ble_device_callback: Callable[[], BLEDevice] | None = None
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
@@ -527,7 +528,7 @@ class AdjustableBedCoordinator:
                             raise BleakError(f"Device {self._address} not found")
                         return fallback
                     ble_device_callback = _get_device_from_preferred_adapter
-                
+
                 # Mark that we're connecting to suppress spurious disconnect warnings
                 # during bleak's internal retry process
                 self._connecting = True
@@ -566,7 +567,7 @@ class AdjustableBedCoordinator:
                     connect_elapsed,
                     actual_adapter,
                 )
-                
+
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if actual_adapter == self._preferred_adapter:
                         _LOGGER.info(
@@ -579,7 +580,7 @@ class AdjustableBedCoordinator:
                             actual_adapter,
                             self._preferred_adapter,
                         )
-                
+
                 # Small delay to let connection stabilize before operations
                 await asyncio.sleep(POST_CONNECT_DELAY)
 
@@ -917,6 +918,11 @@ class AdjustableBedCoordinator:
 
             return NectarController(self)
 
+        if self._bed_type == BED_TYPE_DIAGNOSTIC:
+            from .beds.diagnostic import DiagnosticBedController
+
+            return DiagnosticBedController(self)
+
         raise ValueError(f"Unknown bed type: {self._bed_type}")
 
     async def _async_auto_reconnect(self) -> None:
@@ -1182,7 +1188,7 @@ class AdjustableBedCoordinator:
 
     async def async_execute_controller_command(
         self,
-        command_fn: Callable[["BedController"], Coroutine[Any, Any, None]],
+        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
         cancel_running: bool = True,
         skip_disconnect: bool = False,
     ) -> None:
@@ -1279,6 +1285,23 @@ class AdjustableBedCoordinator:
             return
 
         _LOGGER.info("Starting position notifications for %s", self._address)
+        await self._controller.start_notify(self._handle_position_update)
+
+    async def async_start_notify_for_diagnostics(self) -> None:
+        """Start notifications for diagnostic capture, bypassing angle sensing setting.
+
+        Unlike async_start_notify(), this always starts notifications regardless of
+        the disable_angle_sensing setting. Used by diagnostics to capture raw protocol
+        data from devices that have angle sensing disabled.
+        """
+        if self._controller is None:
+            _LOGGER.warning("Cannot start diagnostic notifications: no controller available")
+            return
+
+        _LOGGER.info(
+            "Starting notifications for diagnostic capture on %s (bypassing angle sensing setting)",
+            self._address,
+        )
         await self._controller.start_notify(self._handle_position_update)
 
     def set_raw_notify_callback(

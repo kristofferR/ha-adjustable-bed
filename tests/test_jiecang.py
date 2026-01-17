@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.jiecang import (
     JiecangCommands,
-    JiecangController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
@@ -32,10 +30,10 @@ class TestJiecangCommands:
 
     def test_preset_commands(self):
         """Test preset commands are correct."""
-        assert JiecangCommands.MEMORY_1 == bytes.fromhex("f1f10b01010d7e")
-        assert JiecangCommands.MEMORY_2 == bytes.fromhex("f1f10d01010f7e")
-        assert JiecangCommands.FLAT == bytes.fromhex("f1f10801010a7e")
-        assert JiecangCommands.ZERO_G == bytes.fromhex("f1f1070101097e")
+        assert bytes.fromhex("f1f10b01010d7e") == JiecangCommands.MEMORY_1
+        assert bytes.fromhex("f1f10d01010f7e") == JiecangCommands.MEMORY_2
+        assert bytes.fromhex("f1f10801010a7e") == JiecangCommands.FLAT
+        assert bytes.fromhex("f1f1070101097e") == JiecangCommands.ZERO_G
 
     def test_command_lengths(self):
         """Test all commands are 7 bytes."""

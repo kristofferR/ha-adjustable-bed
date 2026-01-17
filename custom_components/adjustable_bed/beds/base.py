@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak import BleakClient
 from bleak.exc import BleakError
@@ -279,6 +280,7 @@ class BedController(ABC):
         Default implementation does nothing. Override in subclasses where
         some motors support notifications and others don't.
         """
+        pass
 
     # Motor control methods
     # These move motors for a fixed duration (~1-2 seconds) then auto-stop.

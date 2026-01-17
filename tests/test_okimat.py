@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -14,7 +13,6 @@ from custom_components.adjustable_bed.beds.okimat import (
     OKIMAT_REMOTES,
     OkimatComplexCommand,
     OkimatController,
-    OkimatRemoteConfig,
 )
 from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
@@ -405,7 +403,6 @@ class TestOkimatMultiMotor:
         mock_okimat_config_entry,
     ):
         """Test combined command with no active motors."""
-        from custom_components.adjustable_bed.beds.okimat import OkimatController
 
         # Create controller without full coordinator setup
         class MockCoordinator:
@@ -420,7 +417,6 @@ class TestOkimatMultiMotor:
         mock_okimat_config_entry,
     ):
         """Test combined command with single motor."""
-        from custom_components.adjustable_bed.beds.okimat import OkimatController
 
         class MockCoordinator:
             address = "AA:BB:CC:DD:EE:FF"
@@ -438,7 +434,6 @@ class TestOkimatMultiMotor:
         mock_okimat_config_entry,
     ):
         """Test combined command sums multiple motor values."""
-        from custom_components.adjustable_bed.beds.okimat import OkimatController
 
         class MockCoordinator:
             address = "AA:BB:CC:DD:EE:FF"
@@ -459,7 +454,6 @@ class TestOkimatMultiMotor:
         hass: HomeAssistant,
     ):
         """Test combined command with all four motors on 93332 remote."""
-        from custom_components.adjustable_bed.beds.okimat import OkimatController
 
         class MockCoordinator:
             address = "AA:BB:CC:DD:EE:FF"

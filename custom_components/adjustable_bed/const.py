@@ -43,6 +43,7 @@ BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
 BED_TYPE_NECTAR: Final = "nectar"
+BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,

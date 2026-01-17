@@ -13,7 +13,6 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 
 from custom_components.adjustable_bed.config_flow import (
-    AdjustableBedConfigFlow,
     detect_bed_type,
     is_valid_mac_address,
 )

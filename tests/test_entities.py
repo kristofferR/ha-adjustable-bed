@@ -4,17 +4,15 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+
+# Import enable_custom_integrations fixture
+from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
 
 from custom_components.adjustable_bed.const import DOMAIN
 
 from .conftest import TEST_ADDRESS
-
-# Import enable_custom_integrations fixture
-from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
 
 
 class TestCoverEntities:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bleak.exc import BleakError
@@ -12,7 +12,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.serta import (
     SertaCommands,
-    SertaController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SERTA,
@@ -32,28 +31,28 @@ class TestSertaCommands:
 
     def test_preset_commands(self):
         """Test preset commands are correct."""
-        assert SertaCommands.FLAT == bytes.fromhex("e5fe1600000008fe")
-        assert SertaCommands.ZERO_G == bytes.fromhex("e5fe1600100000f6")
-        assert SertaCommands.TV == bytes.fromhex("e5fe1600400000c6")
-        assert SertaCommands.HEAD_UP_PRESET == bytes.fromhex("e5fe160080000086")
-        assert SertaCommands.LOUNGE == bytes.fromhex("e5fe1600200000e6")
+        assert bytes.fromhex("e5fe1600000008fe") == SertaCommands.FLAT
+        assert bytes.fromhex("e5fe1600100000f6") == SertaCommands.ZERO_G
+        assert bytes.fromhex("e5fe1600400000c6") == SertaCommands.TV
+        assert bytes.fromhex("e5fe160080000086") == SertaCommands.HEAD_UP_PRESET
+        assert bytes.fromhex("e5fe1600200000e6") == SertaCommands.LOUNGE
 
     def test_motor_commands(self):
         """Test motor movement commands are correct."""
-        assert SertaCommands.HEAD_UP == bytes.fromhex("e5fe160100000005")
-        assert SertaCommands.HEAD_DOWN == bytes.fromhex("e5fe160200000004")
-        assert SertaCommands.FOOT_UP == bytes.fromhex("e5fe160400000002")
-        assert SertaCommands.FOOT_DOWN == bytes.fromhex("e5fe1608000000fe")
-        assert SertaCommands.STOP == bytes.fromhex("e5fe160000000006")
+        assert bytes.fromhex("e5fe160100000005") == SertaCommands.HEAD_UP
+        assert bytes.fromhex("e5fe160200000004") == SertaCommands.HEAD_DOWN
+        assert bytes.fromhex("e5fe160400000002") == SertaCommands.FOOT_UP
+        assert bytes.fromhex("e5fe1608000000fe") == SertaCommands.FOOT_DOWN
+        assert bytes.fromhex("e5fe160000000006") == SertaCommands.STOP
 
     def test_massage_commands(self):
         """Test massage commands are correct."""
-        assert SertaCommands.MASSAGE_HEAD_ADD == bytes.fromhex("e5fe1600080000fe")
-        assert SertaCommands.MASSAGE_HEAD_MIN == bytes.fromhex("e5fe160000800086")
-        assert SertaCommands.MASSAGE_FOOT_ADD == bytes.fromhex("e5fe160004000002")
-        assert SertaCommands.MASSAGE_FOOT_MIN == bytes.fromhex("e5fe160000000105")
-        assert SertaCommands.MASSAGE_HEAD_FOOT_ON == bytes.fromhex("e5fe160001000005")
-        assert SertaCommands.MASSAGE_TIMER == bytes.fromhex("e5fe160002000004")
+        assert bytes.fromhex("e5fe1600080000fe") == SertaCommands.MASSAGE_HEAD_ADD
+        assert bytes.fromhex("e5fe160000800086") == SertaCommands.MASSAGE_HEAD_MIN
+        assert bytes.fromhex("e5fe160004000002") == SertaCommands.MASSAGE_FOOT_ADD
+        assert bytes.fromhex("e5fe160000000105") == SertaCommands.MASSAGE_FOOT_MIN
+        assert bytes.fromhex("e5fe160001000005") == SertaCommands.MASSAGE_HEAD_FOOT_ON
+        assert bytes.fromhex("e5fe160002000004") == SertaCommands.MASSAGE_TIMER
 
     def test_command_lengths(self):
         """Test all commands are 8 bytes."""

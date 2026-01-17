@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
@@ -12,7 +13,6 @@ from ..const import (
     LINAK_BACK_MAX_ANGLE,
     LINAK_BACK_MAX_POSITION,
     LINAK_CONTROL_CHAR_UUID,
-    LINAK_CONTROL_SERVICE_UUID,
     LINAK_FEET_MAX_ANGLE,
     LINAK_FEET_MAX_POSITION,
     LINAK_HEAD_MAX_ANGLE,
@@ -120,8 +120,8 @@ class LinakController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - Linak beds support memory slots 1-2."""
-        return 2
+        """Return 4 - Linak beds support memory slots 1-4."""
+        return 4
 
     @property
     def supports_memory_programming(self) -> bool:
