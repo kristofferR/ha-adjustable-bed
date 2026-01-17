@@ -166,6 +166,18 @@ def is_valid_mac_address(address: str) -> bool:
     return bool(MAC_ADDRESS_PATTERN.match(address))
 
 
+def normalize_octo_pin(pin: Any | None) -> str:
+    """Normalize Octo PIN input to a clean string."""
+    if pin is None:
+        return ""
+    return str(pin).strip()
+
+
+def is_valid_octo_pin(pin: str) -> bool:
+    """Return True if PIN is empty or exactly 4 digits."""
+    return pin == "" or (len(pin) == 4 and pin.isdigit())
+
+
 def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
     """Get available protocol variants for a bed type, or None if no variants."""
     if bed_type is None:
@@ -588,10 +600,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         assert self._discovery_info is not None
 
         bed_type = detect_bed_type(self._discovery_info)
+        errors: dict[str, str] = {}
 
         if user_input is not None:
             # Get user-selected bed type (may differ from auto-detected)
             selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
+            if selected_bed_type == BED_TYPE_OCTO and bed_type == BED_TYPE_OCTO:
+                if not is_valid_octo_pin(octo_pin):
+                    errors[CONF_OCTO_PIN] = "invalid_pin"
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             # Get bed-specific defaults for motor pulse settings
@@ -619,39 +636,40 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_count,
                 motor_pulse_delay_ms,
             )
-            entry_data = {
-                CONF_ADDRESS: self._discovery_info.address.upper(),
-                CONF_BED_TYPE: selected_bed_type,
-                CONF_PROTOCOL_VARIANT: protocol_variant,
-                CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
-                CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-                CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
-                CONF_PREFERRED_ADAPTER: preferred_adapter,
-                CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
-                CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            }
-            # Handle bed-type-specific configuration when user overrides detected type
-            # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
-            if selected_bed_type == BED_TYPE_OCTO and bed_type != BED_TYPE_OCTO:
-                self._manual_data = entry_data
-                return await self.async_step_bluetooth_octo()
-            # If user selected Richmat but detection wasn't Richmat, collect remote in follow-up step
-            if selected_bed_type == BED_TYPE_RICHMAT and bed_type != BED_TYPE_RICHMAT:
-                self._manual_data = entry_data
-                return await self.async_step_bluetooth_richmat()
-            # Add Octo PIN if configured (when detected as Octo, field was shown inline)
-            if selected_bed_type == BED_TYPE_OCTO:
-                entry_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-            # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
-            if selected_bed_type == BED_TYPE_RICHMAT:
-                entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
-            return self.async_create_entry(
-                title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
-                data=entry_data,
-            )
+            if not errors:
+                entry_data = {
+                    CONF_ADDRESS: self._discovery_info.address.upper(),
+                    CONF_BED_TYPE: selected_bed_type,
+                    CONF_PROTOCOL_VARIANT: protocol_variant,
+                    CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
+                    CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+                    CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
+                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    CONF_PREFERRED_ADAPTER: preferred_adapter,
+                    CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
+                    CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
+                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                }
+                # Handle bed-type-specific configuration when user overrides detected type
+                # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
+                if selected_bed_type == BED_TYPE_OCTO and bed_type != BED_TYPE_OCTO:
+                    self._manual_data = entry_data
+                    return await self.async_step_bluetooth_octo()
+                # If user selected Richmat but detection wasn't Richmat, collect remote in follow-up step
+                if selected_bed_type == BED_TYPE_RICHMAT and bed_type != BED_TYPE_RICHMAT:
+                    self._manual_data = entry_data
+                    return await self.async_step_bluetooth_richmat()
+                # Add Octo PIN if configured (when detected as Octo, field was shown inline)
+                if selected_bed_type == BED_TYPE_OCTO:
+                    entry_data[CONF_OCTO_PIN] = octo_pin
+                # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
+                if selected_bed_type == BED_TYPE_RICHMAT:
+                    entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+                return self.async_create_entry(
+                    title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
+                    data=entry_data,
+                )
 
         _LOGGER.debug("Showing bluetooth confirmation form for %s", self._discovery_info.address)
 
@@ -699,8 +717,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
-            schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = vol.All(
-                str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+            schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
+                TextSelectorConfig()
             )
 
         # Add remote selection for Richmat beds
@@ -710,6 +728,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
+            errors=errors,
             description_placeholders={
                 "name": self._discovery_info.name or self._discovery_info.address,
             },
@@ -945,22 +964,29 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle Octo-specific configuration (PIN)."""
         assert self._manual_data is not None
 
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            self._manual_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
-            )
+            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
+            if not is_valid_octo_pin(octo_pin):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
+            else:
+                self._manual_data[CONF_OCTO_PIN] = octo_pin
+                return self.async_create_entry(
+                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._manual_data,
+                )
 
         return self.async_show_form(
             step_id="manual_octo",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
-                        str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
+                        TextSelectorConfig()
                     ),
                 }
             ),
+            errors=errors,
         )
 
     async def async_step_manual_richmat(
@@ -995,22 +1021,29 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle Octo-specific configuration (PIN) after Bluetooth discovery type override."""
         assert self._manual_data is not None
 
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            self._manual_data[CONF_OCTO_PIN] = user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
-            )
+            octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
+            if not is_valid_octo_pin(octo_pin):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
+            else:
+                self._manual_data[CONF_OCTO_PIN] = octo_pin
+                return self.async_create_entry(
+                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._manual_data,
+                )
 
         return self.async_show_form(
             step_id="bluetooth_octo",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): vol.All(
-                        str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits")
+                    vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN): TextSelector(
+                        TextSelectorConfig()
                     ),
                 }
             ),
+            errors=errors,
         )
 
     async def async_step_bluetooth_richmat(
@@ -1284,7 +1317,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             schema_dict[vol.Optional(
                 CONF_OCTO_PIN,
                 default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-            )] = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
+            )] = TextSelector(TextSelectorConfig())
 
         # Add remote selection for Richmat beds
         if bed_type == BED_TYPE_RICHMAT:
@@ -1294,6 +1327,15 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             )] = vol.In(RICHMAT_REMOTES)
 
         if user_input is not None:
+            if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
+                octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
+                if not is_valid_octo_pin(octo_pin):
+                    return self.async_show_form(
+                        step_id="init",
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_OCTO_PIN: "invalid_pin"},
+                    )
+                user_input[CONF_OCTO_PIN] = octo_pin
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = (
                 BED_MOTOR_PULSE_DEFAULTS.get(bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS))
@@ -1323,4 +1365,3 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             step_id="init",
             data_schema=vol.Schema(schema_dict),
         )
-
