@@ -1301,14 +1301,21 @@ class AdjustableBedCoordinator:
         self._cancel_command.set()
         entry_cancel_count = self._cancel_counter
 
-        # Get current position
+        # Get current position, attempting a read if not available
         current_angle = self._position_data.get(position_key)
         if current_angle is None:
-            _LOGGER.warning(
-                "Cannot seek position for %s: no position data available",
+            _LOGGER.debug(
+                "No position data for %s, attempting one-shot read",
                 position_key,
             )
-            return
+            await self._async_read_positions()
+            current_angle = self._position_data.get(position_key)
+            if current_angle is None:
+                _LOGGER.warning(
+                    "Cannot seek position for %s: no position data available after read attempt",
+                    position_key,
+                )
+                return
 
         # Convert current angle to percentage
         controller = self._controller
