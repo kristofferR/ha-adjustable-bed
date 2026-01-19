@@ -7,6 +7,7 @@ import logging
 import time
 import traceback
 from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
@@ -79,6 +80,16 @@ if TYPE_CHECKING:
     from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class AdapterSelectionResult:
+    """Result from adapter selection process."""
+
+    device: BLEDevice | None
+    source: str | None
+    rssi: int | None
+    available_sources: list[str]
 
 # Retry settings
 MAX_RETRIES = 3
@@ -294,6 +305,218 @@ class AdjustableBedCoordinator:
 
         return True
 
+    async def _select_adapter(self) -> AdapterSelectionResult:
+        """Select the best Bluetooth adapter for connection.
+
+        This method handles adapter discovery and selection logic:
+        - If a preferred adapter is configured, looks for device from that adapter
+        - Otherwise, selects the adapter with the best RSSI (strongest signal)
+        - Falls back to default Home Assistant lookup if needed
+
+        Returns:
+            AdapterSelectionResult with device, source, rssi, and available sources
+        """
+        device: BLEDevice | None = None
+        source: str | None = None
+        rssi: int | None = None
+        available_sources: list[str] = []
+
+        if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
+            # Look for device from specific adapter/source
+            _LOGGER.info(
+                "Looking for device %s from preferred adapter: %s",
+                self._address,
+                self._preferred_adapter,
+            )
+
+            # Log all sources that can see this device
+            try:
+                for service_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
+                    if service_info.address.upper() == self._address:
+                        svc_source = getattr(service_info, 'source', 'unknown')
+                        svc_rssi = getattr(service_info, 'rssi', 'N/A')
+                        available_sources.append(f"{svc_source} (RSSI: {svc_rssi})")
+
+                        if svc_source == self._preferred_adapter:
+                            device = service_info.device
+                            source = svc_source
+                            rssi = svc_rssi if isinstance(svc_rssi, int) else None
+                            _LOGGER.info(
+                                "✓ Found device %s via preferred adapter %s (RSSI: %s)",
+                                self._address,
+                                self._preferred_adapter,
+                                svc_rssi,
+                            )
+
+                if available_sources:
+                    _LOGGER.info(
+                        "Adapters that can see device %s: %s",
+                        self._address,
+                        ", ".join(available_sources),
+                    )
+
+                if device is None and available_sources:
+                    _LOGGER.warning(
+                        "⚠ Device %s not found via preferred adapter %s, falling back to automatic selection",
+                        self._address,
+                        self._preferred_adapter,
+                    )
+            except Exception as err:
+                _LOGGER.debug("Error looking up device from specific adapter: %s", err)
+
+        # Fall back to auto selection if no preferred adapter or device not found
+        # Auto mode: pick the adapter with the best RSSI (strongest signal)
+        if device is None:
+            best_rssi = -999
+            best_source: str | None = None
+            try:
+                discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                for svc_info in discovered:
+                    if svc_info.address.upper() == self._address.upper():
+                        svc_rssi = getattr(svc_info, 'rssi', None)
+                        # Handle None RSSI by using a low default value
+                        rssi_value = svc_rssi if svc_rssi is not None else -999
+                        svc_source = getattr(svc_info, 'source', 'unknown')
+                        _LOGGER.debug(
+                            "Auto-select candidate: source=%s, rssi=%s",
+                            svc_source, rssi_value
+                        )
+                        if rssi_value > best_rssi:
+                            best_rssi = rssi_value
+                            best_source = svc_source
+            except Exception as err:
+                _LOGGER.debug("Error during auto adapter selection: %s", err)
+
+            if best_source:
+                _LOGGER.info(
+                    "Auto-selected adapter %s with best RSSI %d",
+                    best_source, best_rssi
+                )
+                # Get device from the best adapter
+                try:
+                    for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
+                        if (svc_info.address.upper() == self._address.upper() and
+                            getattr(svc_info, 'source', None) == best_source):
+                            device = svc_info.device
+                            source = best_source
+                            rssi = best_rssi if best_rssi != -999 else None
+                            break
+                except Exception:
+                    pass
+
+            # Final fallback to default lookup
+            if device is None:
+                device = bluetooth.async_ble_device_from_address(
+                    self.hass, self._address, connectable=True
+                )
+                if device:
+                    fallback_source = "unknown"
+                    if hasattr(device, 'details') and isinstance(device.details, dict):
+                        fallback_source = device.details.get('source', 'unknown')
+                    source = fallback_source
+                    _LOGGER.info(
+                        "Using fallback adapter selection, device found via: %s",
+                        fallback_source,
+                    )
+
+        return AdapterSelectionResult(
+            device=device,
+            source=source,
+            rssi=rssi,
+            available_sources=available_sources,
+        )
+
+    def _detect_esphome_proxy(self) -> bool:
+        """Detect if connection is through an ESPHome Bluetooth proxy.
+
+        Returns:
+            True if ESPHome proxy detected, False otherwise
+        """
+        try:
+            service_info = bluetooth.async_last_service_info(
+                self.hass, self._address, connectable=True
+            )
+            if service_info:
+                _LOGGER.debug(
+                    "Service info: source=%s, rssi=%s, connectable=%s, service_uuids=%s",
+                    getattr(service_info, 'source', 'N/A'),
+                    getattr(service_info, 'rssi', 'N/A'),
+                    getattr(service_info, 'connectable', 'N/A'),
+                    getattr(service_info, 'service_uuids', []),
+                )
+                # Check if this is from an ESPHome proxy
+                info_source = getattr(service_info, 'source', '')
+                if info_source and 'esphome' in info_source.lower():
+                    _LOGGER.info(
+                        "Device discovered via ESPHome Bluetooth proxy: %s",
+                        info_source,
+                    )
+                    return True
+        except Exception as err:
+            _LOGGER.debug("Could not get detailed service info: %s", err)
+
+        return False
+
+    async def _discover_services(self) -> bool:
+        """Explicitly discover BLE services and log the hierarchy.
+
+        Some backends don't auto-discover services, so this ensures
+        services are available before we try to use them.
+
+        Returns:
+            True if services were discovered successfully, False otherwise
+        """
+        if self._client is None:
+            return False
+
+        # Explicitly discover services
+        _LOGGER.debug("Discovering BLE services...")
+        try:
+            await self._client.get_services()
+        except Exception as svc_err:
+            _LOGGER.warning(
+                "Service discovery failed for %s: %s",
+                self._address,
+                svc_err,
+            )
+            return False
+
+        # Log discovered services in detail
+        if self._client.services:
+            services_list = list(self._client.services)
+            _LOGGER.debug(
+                "Discovered %d BLE services on %s:",
+                len(services_list),
+                self._address,
+            )
+            for service in self._client.services:
+                _LOGGER.debug(
+                    "  Service: %s (handle: %s)",
+                    service.uuid,
+                    getattr(service, 'handle', 'N/A'),
+                )
+                for char in service.characteristics:
+                    props = ", ".join(char.properties)
+                    _LOGGER.debug(
+                        "    Characteristic: %s [%s] (handle: %s)",
+                        char.uuid,
+                        props,
+                        getattr(char, 'handle', 'N/A'),
+                    )
+                    for desc in char.descriptors:
+                        _LOGGER.debug(
+                            "      Descriptor: %s (handle: %s)",
+                            desc.uuid,
+                            getattr(desc, 'handle', 'N/A'),
+                        )
+            return True
+        else:
+            _LOGGER.warning(
+                "No BLE services discovered on %s - this may indicate a connection issue",
+                self._address,
+            )
+            return False
+
     async def _read_ble_device_info(self) -> None:
         """Read manufacturer and model from BLE Device Information Service.
 
@@ -398,101 +621,10 @@ class AdjustableBedCoordinator:
                 except Exception as err:
                     _LOGGER.debug("Could not get scanner count: %s", err)
 
-                # Try to get device info, optionally filtered by preferred adapter
-                device = None
-                if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
-                    # Look for device from specific adapter/source
-                    _LOGGER.info(
-                        "Looking for device %s from preferred adapter: %s",
-                        self._address,
-                        self._preferred_adapter,
-                    )
+                # Select best adapter and get device
+                adapter_result = await self._select_adapter()
+                device = adapter_result.device
 
-                    # Log all sources that can see this device
-                    available_sources = []
-                    try:
-                        for service_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                            if service_info.address.upper() == self._address:
-                                source = getattr(service_info, 'source', 'unknown')
-                                rssi = getattr(service_info, 'rssi', 'N/A')
-                                available_sources.append(f"{source} (RSSI: {rssi})")
-
-                                if source == self._preferred_adapter:
-                                    device = service_info.device
-                                    _LOGGER.info(
-                                        "✓ Found device %s via preferred adapter %s (RSSI: %s)",
-                                        self._address,
-                                        self._preferred_adapter,
-                                        rssi,
-                                    )
-
-                        if available_sources:
-                            _LOGGER.info(
-                                "Adapters that can see device %s: %s",
-                                self._address,
-                                ", ".join(available_sources),
-                            )
-
-                        if device is None and available_sources:
-                            _LOGGER.warning(
-                                "⚠ Device %s not found via preferred adapter %s, falling back to automatic selection",
-                                self._address,
-                                self._preferred_adapter,
-                            )
-                    except Exception as err:
-                        _LOGGER.debug("Error looking up device from specific adapter: %s", err)
-
-                # Fall back to auto selection if no preferred adapter or device not found
-                # Auto mode: pick the adapter with the best RSSI (strongest signal)
-                if device is None:
-                    best_rssi = -999
-                    best_source = None
-                    try:
-                        discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
-                        for svc_info in discovered:
-                            if svc_info.address.upper() == self._address.upper():
-                                rssi = getattr(svc_info, 'rssi', None)
-                                # Handle None RSSI by using a low default value
-                                rssi_value = rssi if rssi is not None else -999
-                                source = getattr(svc_info, 'source', 'unknown')
-                                _LOGGER.debug(
-                                    "Auto-select candidate: source=%s, rssi=%s",
-                                    source, rssi_value
-                                )
-                                if rssi_value > best_rssi:
-                                    best_rssi = rssi_value
-                                    best_source = source
-                    except Exception as err:
-                        _LOGGER.debug("Error during auto adapter selection: %s", err)
-
-                    if best_source:
-                        _LOGGER.info(
-                            "Auto-selected adapter %s with best RSSI %d",
-                            best_source, best_rssi
-                        )
-                        # Get device from the best adapter
-                        try:
-                            for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                                if (svc_info.address.upper() == self._address.upper() and
-                                    getattr(svc_info, 'source', None) == best_source):
-                                    device = svc_info.device
-                                    break
-                        except Exception:
-                            pass
-
-                    # Final fallback to default lookup
-                    if device is None:
-                        device = bluetooth.async_ble_device_from_address(
-                            self.hass, self._address, connectable=True
-                        )
-                        if device:
-                            fallback_source = "unknown"
-                            if hasattr(device, 'details') and isinstance(device.details, dict):
-                                fallback_source = device.details.get('source', 'unknown')
-                            _LOGGER.info(
-                                "Using fallback adapter selection, device found via: %s",
-                                fallback_source,
-                            )
                 if device is None:
                     lookup_elapsed = time.monotonic() - attempt_start
                     _LOGGER.warning(
@@ -561,28 +693,8 @@ class AdjustableBedCoordinator:
                             self._preferred_adapter,
                         )
 
-                # Try to get service info for more details about the source (proxy info)
-                try:
-                    service_info = bluetooth.async_last_service_info(
-                        self.hass, self._address, connectable=True
-                    )
-                    if service_info:
-                        _LOGGER.debug(
-                            "Service info: source=%s, rssi=%s, connectable=%s, service_uuids=%s",
-                            getattr(service_info, 'source', 'N/A'),
-                            getattr(service_info, 'rssi', 'N/A'),
-                            getattr(service_info, 'connectable', 'N/A'),
-                            getattr(service_info, 'service_uuids', []),
-                        )
-                        # Log if this is from an ESPHome proxy
-                        source = getattr(service_info, 'source', '')
-                        if source and 'esphome' in source.lower():
-                            _LOGGER.info(
-                                "Device discovered via ESPHome Bluetooth proxy: %s",
-                                source,
-                            )
-                except Exception as err:
-                    _LOGGER.debug("Could not get detailed service info: %s", err)
+                # Detect ESPHome proxy (logs info if detected)
+                self._detect_esphome_proxy()
 
                 # Use bleak-retry-connector for reliable connection establishment
                 # This handles ESPHome Bluetooth proxy connections properly
@@ -684,52 +796,8 @@ class AdjustableBedCoordinator:
                     getattr(self._client, 'mtu_size', 'N/A'),
                 )
 
-                # Explicitly discover services - not all backends auto-discover
-                _LOGGER.debug("Discovering BLE services...")
-                client = self._client  # Local reference for type narrowing
-                if client is not None:
-                    try:
-                        await client.get_services()
-                    except Exception as svc_err:
-                        _LOGGER.warning(
-                            "Service discovery failed for %s: %s",
-                            self._address,
-                            svc_err,
-                        )
-
-                # Log discovered services in detail
-                if client is not None and client.services:
-                    services_list = list(client.services)
-                    _LOGGER.debug(
-                        "Discovered %d BLE services on %s:",
-                        len(services_list),
-                        self._address,
-                    )
-                    for service in client.services:
-                        _LOGGER.debug(
-                            "  Service: %s (handle: %s)",
-                            service.uuid,
-                            getattr(service, 'handle', 'N/A'),
-                        )
-                        for char in service.characteristics:
-                            props = ", ".join(char.properties)
-                            _LOGGER.debug(
-                                "    Characteristic: %s [%s] (handle: %s)",
-                                char.uuid,
-                                props,
-                                getattr(char, 'handle', 'N/A'),
-                            )
-                            for desc in char.descriptors:
-                                _LOGGER.debug(
-                                    "      Descriptor: %s (handle: %s)",
-                                    desc.uuid,
-                                    getattr(desc, 'handle', 'N/A'),
-                                )
-                else:
-                    _LOGGER.warning(
-                        "No BLE services discovered on %s - this may indicate a connection issue",
-                        self._address,
-                    )
+                # Discover services and log hierarchy
+                await self._discover_services()
 
                 # Read BLE Device Information Service for manufacturer/model
                 await self._read_ble_device_info()
