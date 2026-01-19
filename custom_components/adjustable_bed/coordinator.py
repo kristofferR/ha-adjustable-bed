@@ -9,7 +9,7 @@ import traceback
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -503,12 +503,10 @@ class AdjustableBedCoordinator:
         # Explicitly discover services
         _LOGGER.debug("Discovering BLE services...")
         # Note: In recent Bleak versions, service discovery is automatic on connection.
-        # We just check if services are populated.
-        if self._client.services:
-            pass
-        elif hasattr(self._client, 'get_services'):
-             # Fallback for older bleak versions if needed (though we require >=0.21)
-             await self._client.get_services()  # type: ignore[attr-defined]
+        # Only call get_services as fallback if services aren't populated.
+        if not self._client.services and hasattr(self._client, 'get_services'):
+            # Fallback for older bleak versions if needed (though we require >=0.21)
+            await self._client.get_services()  # type: ignore[attr-defined]
 
         # Log discovered services in detail
         if self._client.services:
@@ -1218,7 +1216,6 @@ class AdjustableBedCoordinator:
                         if hasattr(self._controller, 'stop_keepalive'):
                             try:
                                 # Cast to Any to avoid mypy error about BedController not having stop_keepalive
-                                from typing import cast, Any
                                 await cast(Any, self._controller).stop_keepalive()
                             except Exception as err:
                                 _LOGGER.debug("Error stopping keep-alive: %s", err)

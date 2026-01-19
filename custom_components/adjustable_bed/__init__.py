@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -112,7 +113,6 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         for entry_id in device.config_entries:
             if entry_id in hass.data.get(DOMAIN, {}):
-                from typing import cast
                 return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
         return None
 

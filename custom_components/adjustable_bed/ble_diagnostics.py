@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import logging
 from dataclasses import dataclass, field
@@ -367,17 +368,20 @@ class BLEDiagnosticRunner:
             for char in service.characteristics:
                 if "notify" in char.properties or "indicate" in char.properties:
                     try:
-                        # Define helper to capture loop variable 'uuid'
-                        uuid = char.uuid
-                        def notification_handler(sender: Any, data: bytearray) -> None:
-                            asyncio.create_task(self._handle_notification(uuid, data))
-
-                        await self._client.start_notify(char.uuid, notification_handler)
+                        # Use functools.partial to properly capture uuid per-characteristic
+                        handler = functools.partial(self._notification_handler_sync, char.uuid)
+                        await self._client.start_notify(char.uuid, handler)
                         _LOGGER.debug("Subscribed to notifications on %s", char.uuid)
                     except Exception as err:
                         error = f"Failed to subscribe to {char.uuid}: {err}"
                         _LOGGER.debug(error)
                         self._errors.append(error)
+
+    def _notification_handler_sync(
+        self, uuid: str, sender: object, data: bytearray
+    ) -> None:
+        """Synchronous notification handler that schedules async processing."""
+        self.hass.async_create_task(self._handle_notification(uuid, data))
 
     async def _unsubscribe_from_notifications(
         self, services: list[ServiceInfo]
