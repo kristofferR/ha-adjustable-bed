@@ -7,10 +7,14 @@ from dataclasses import dataclass
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 
 from .const import ADAPTER_AUTO, DEVICE_INFO_CHARS, DEVICE_INFO_SERVICE_UUID
+
+# Sentinel value indicating RSSI is unavailable
+RSSI_UNAVAILABLE = -999
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,6 +80,7 @@ async def select_adapter(
                             preferred_adapter,
                             svc_rssi,
                         )
+                        break
 
             if available_sources:
                 _LOGGER.info(
@@ -96,12 +101,12 @@ async def select_adapter(
     # Fall back to auto selection if no preferred adapter or device not found
     # Auto mode: pick the adapter with the best RSSI (strongest signal)
     if device is None:
-        best_rssi = -999
+        best_rssi = RSSI_UNAVAILABLE
         best_source: str | None = None
         # Capture discovery snapshot once and reuse for both RSSI selection and device lookup
         try:
             discovered_services = list(bluetooth.async_discovered_service_info(hass, connectable=True))
-        except Exception as err:
+        except (OSError, TimeoutError) as err:
             _LOGGER.debug("Error during auto adapter selection: %s", err)
             discovered_services = []
 
@@ -111,9 +116,9 @@ async def select_adapter(
                 svc_rssi = getattr(svc_info, 'rssi', None)
                 # Safely coerce RSSI to int, handling None/malformed values
                 try:
-                    rssi_value = int(svc_rssi) if svc_rssi is not None else -999
+                    rssi_value = int(svc_rssi) if svc_rssi is not None else RSSI_UNAVAILABLE
                 except (ValueError, TypeError):
-                    rssi_value = -999
+                    rssi_value = RSSI_UNAVAILABLE
                 svc_source = getattr(svc_info, 'source', 'unknown')
                 _LOGGER.debug(
                     "Auto-select candidate: source=%s, rssi=%s",
@@ -134,7 +139,7 @@ async def select_adapter(
                     getattr(svc_info, 'source', None) == best_source):
                     device = svc_info.device
                     source = best_source
-                    rssi = best_rssi if best_rssi != -999 else None
+                    rssi = best_rssi if best_rssi != RSSI_UNAVAILABLE else None
                     break
 
         # Final fallback to default lookup
@@ -211,11 +216,7 @@ async def discover_services(client: BleakClient, address: str) -> bool:
     """
     # Explicitly discover services
     _LOGGER.debug("Discovering BLE services...")
-    # Note: In recent Bleak versions, service discovery is automatic on connection.
-    # Only call get_services as fallback if services aren't populated.
-    if not client.services and hasattr(client, 'get_services'):
-        # Fallback for older bleak versions if needed (though we require >=0.21)
-        await client.get_services()
+    # Note: In Bleak >=0.21 (which we require), service discovery is automatic on connection.
 
     # Log discovered services in detail
     if client.services:
@@ -300,7 +301,7 @@ async def read_ble_device_info(
             _LOGGER.debug("BLE manufacturer: %s", manufacturer)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode manufacturer name as UTF-8")
-    except Exception as err:
+    except (BleakError, TimeoutError) as err:
         _LOGGER.debug("Could not read manufacturer name: %s", err)
 
     # Read model number
@@ -312,7 +313,7 @@ async def read_ble_device_info(
             _LOGGER.debug("BLE model: %s", model)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode model number as UTF-8")
-    except Exception as err:
+    except (BleakError, TimeoutError) as err:
         _LOGGER.debug("Could not read model number: %s", err)
 
     return manufacturer, model
