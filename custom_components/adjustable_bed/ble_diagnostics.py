@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import logging
 from dataclasses import dataclass, field
@@ -231,7 +232,9 @@ class BLEDiagnosticRunner:
             )
             _LOGGER.info("Connected to %s", self.address)
             # Explicitly discover services - not all backends auto-discover on connect
-            await self._client.get_services()
+            # In recent Bleak versions, service discovery is automatic.
+            if hasattr(self._client, 'get_services'):
+                 await self._client.get_services()
             _LOGGER.debug("Service discovery completed for %s", self.address)
         except Exception as err:
             error = f"Failed to connect: {err}"
@@ -365,17 +368,20 @@ class BLEDiagnosticRunner:
             for char in service.characteristics:
                 if "notify" in char.properties or "indicate" in char.properties:
                     try:
-                        await self._client.start_notify(
-                            char.uuid,
-                            lambda sender, data, uuid=char.uuid: asyncio.create_task(
-                                self._handle_notification(uuid, data)
-                            ),
-                        )
+                        # Use functools.partial to properly capture uuid per-characteristic
+                        handler = functools.partial(self._notification_handler_sync, char.uuid)
+                        await self._client.start_notify(char.uuid, handler)
                         _LOGGER.debug("Subscribed to notifications on %s", char.uuid)
                     except Exception as err:
                         error = f"Failed to subscribe to {char.uuid}: {err}"
                         _LOGGER.debug(error)
                         self._errors.append(error)
+
+    def _notification_handler_sync(
+        self, uuid: str, sender: object, data: bytearray
+    ) -> None:
+        """Synchronous notification handler that schedules async processing."""
+        self.hass.async_create_task(self._handle_notification(uuid, data))
 
     async def _unsubscribe_from_notifications(
         self, services: list[ServiceInfo]

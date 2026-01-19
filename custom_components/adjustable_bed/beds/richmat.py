@@ -14,6 +14,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from bleak import BleakClient
 from bleak.exc import BleakError
 
 from ..const import (
@@ -434,7 +435,7 @@ class RichmatController(BedController):
         await self.write_command(self._build_command(RichmatCommands.MASSAGE_PATTERN_STEP))
 
 
-async def detect_richmat_variant(client) -> tuple[bool, str | None]:
+async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]:
     """Detect which Richmat variant this device is.
 
     Returns:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -39,6 +40,7 @@ SETUP_TIMEOUT = 45.0
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.COVER,
     Platform.SENSOR,
@@ -111,7 +113,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         for entry_id in device.config_entries:
             if entry_id in hass.data.get(DOMAIN, {}):
-                return hass.data[DOMAIN][entry_id]
+                return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
         return None
 
     async def handle_goto_preset(call: ServiceCall) -> None:
@@ -143,7 +145,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     )
                     continue
                 await coordinator.async_execute_controller_command(
-                    lambda ctrl, p=preset: ctrl.preset_memory(p)
+                    lambda ctrl, p=preset: ctrl.preset_memory(p)  # type: ignore[misc]
                 )
             else:
                 _LOGGER.warning(
@@ -180,7 +182,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     )
                     continue
                 await coordinator.async_execute_controller_command(
-                    lambda ctrl, p=preset: ctrl.program_memory(p),
+                    lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
                     cancel_running=False,
                 )
             else:

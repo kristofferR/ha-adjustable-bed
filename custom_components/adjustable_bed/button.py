@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -117,7 +117,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="preset_lounge",
         translation_key="preset_lounge",
         icon="mdi:seat-recline-normal",
-        press_fn=lambda ctrl: ctrl.preset_lounge(),
+        press_fn=lambda ctrl: cast(Any, ctrl).preset_lounge(),
         cancel_movement=True,
         required_capability="supports_preset_lounge",
     ),
@@ -125,7 +125,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="preset_incline",
         translation_key="preset_incline",
         icon="mdi:angle-acute",
-        press_fn=lambda ctrl: ctrl.preset_incline(),
+        press_fn=lambda ctrl: cast(Any, ctrl).preset_incline(),
         cancel_movement=True,
         required_capability="supports_preset_incline",
     ),

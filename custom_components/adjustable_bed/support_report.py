@@ -62,7 +62,7 @@ async def generate_support_report(
         report["recent_logs"] = _get_recent_logs()
 
     # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
-    return redact_data(report)
+    return redact_data(report)  # type: ignore[no-any-return]
 
 
 def _get_system_info(hass: HomeAssistant) -> dict[str, Any]:
@@ -127,11 +127,11 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
 
         # Add variant info for controllers that have it
         if hasattr(controller, "_is_wilinke"):
-            info["richmat_is_wilinke"] = controller._is_wilinke  # type: ignore[attr-defined]
+            info["richmat_is_wilinke"] = controller._is_wilinke
         if hasattr(controller, "_variant"):
-            info["variant"] = controller._variant  # type: ignore[attr-defined]
+            info["variant"] = controller._variant
         if hasattr(controller, "_char_uuid"):
-            info["char_uuid"] = controller._char_uuid  # type: ignore[attr-defined]
+            info["char_uuid"] = controller._char_uuid
 
     return info
 
@@ -172,7 +172,7 @@ async def _get_bluetooth_info(
 
     # Get adapter info if available
     try:
-        adapters = bluetooth.async_get_adapters(hass)
+        adapters = bluetooth.async_get_adapters(hass)  # type: ignore[attr-defined]
         info["adapters"] = [
             {
                 "address": adapter.get("address"),
@@ -198,7 +198,7 @@ def _get_recent_logs() -> list[dict[str, str]]:
         for handler in root_logger.handlers:
             if hasattr(handler, "buffer"):
                 # MemoryHandler or similar
-                for record in list(handler.buffer)[-500:]:  # type: ignore[attr-defined]
+                for record in list(handler.buffer)[-500:]:
                     if (
                         DOMAIN in record.name
                         or "bluetooth" in record.name.lower()

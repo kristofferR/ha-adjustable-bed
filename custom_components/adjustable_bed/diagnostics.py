@@ -121,4 +121,4 @@ async def async_get_config_entry_diagnostics(
     }
 
     # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
-    return redact_data(data)
+    return redact_data(data)  # type: ignore[no-any-return]

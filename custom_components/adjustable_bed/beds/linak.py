@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
 
@@ -219,8 +219,8 @@ class LinakController(BedController):
                 uuid,
             )
             try:
-                def make_handler(n: str, mp: int, ma: float, char_uuid: str):
-                    def handler(_, data: bytearray) -> None:
+                def make_handler(n: str, mp: int, ma: float, char_uuid: str) -> Callable[[Any, bytearray], None]:
+                    def handler(_: Any, data: bytearray) -> None:
                         _LOGGER.debug(
                             "Notification received for %s: raw_data=%s (%d bytes)",
                             n,

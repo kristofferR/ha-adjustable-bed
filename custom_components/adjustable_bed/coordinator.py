@@ -8,7 +8,8 @@ import time
 import traceback
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -147,6 +148,15 @@ class AdjustableBedCoordinator:
         self._position_data: dict[str, float] = {}
         self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
 
+        # Connection state callbacks
+        self._connection_state_callbacks: set[Callable[[bool], None]] = set()
+
+        # Connection metadata for binary sensor attributes
+        self._last_connected: datetime | None = None
+        self._last_disconnected: datetime | None = None
+        self._connection_source: str | None = None
+        self._connection_rssi: int | None = None
+
         # BLE Device Information Service data
         self._ble_manufacturer: str | None = None
         self._ble_model: str | None = None
@@ -221,6 +231,26 @@ class AdjustableBedCoordinator:
     def is_connecting(self) -> bool:
         """Return whether we are currently connecting to the bed."""
         return self._connecting
+
+    @property
+    def last_connected(self) -> datetime | None:
+        """Return the last connection timestamp."""
+        return self._last_connected
+
+    @property
+    def last_disconnected(self) -> datetime | None:
+        """Return the last disconnection timestamp."""
+        return self._last_disconnected
+
+    @property
+    def connection_source(self) -> str | None:
+        """Return the adapter/source used for the current connection."""
+        return self._connection_source
+
+    @property
+    def connection_rssi(self) -> int | None:
+        """Return the RSSI at connection time."""
+        return self._connection_rssi
 
     @property
     def client(self) -> BleakClient | None:
@@ -369,40 +399,44 @@ class AdjustableBedCoordinator:
         if device is None:
             best_rssi = -999
             best_source: str | None = None
+            # Capture discovery snapshot once and reuse for both RSSI selection and device lookup
             try:
-                discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
-                for svc_info in discovered:
-                    if svc_info.address.upper() == self._address.upper():
-                        svc_rssi = getattr(svc_info, 'rssi', None)
-                        # Handle None RSSI by using a low default value
-                        rssi_value = svc_rssi if svc_rssi is not None else -999
-                        svc_source = getattr(svc_info, 'source', 'unknown')
-                        _LOGGER.debug(
-                            "Auto-select candidate: source=%s, rssi=%s",
-                            svc_source, rssi_value
-                        )
-                        if rssi_value > best_rssi:
-                            best_rssi = rssi_value
-                            best_source = svc_source
+                discovered_services = list(bluetooth.async_discovered_service_info(self.hass, connectable=True))
             except Exception as err:
                 _LOGGER.debug("Error during auto adapter selection: %s", err)
+                discovered_services = []
+
+            # Find the adapter with best RSSI
+            for svc_info in discovered_services:
+                if svc_info.address.upper() == self._address.upper():
+                    svc_rssi = getattr(svc_info, 'rssi', None)
+                    # Safely coerce RSSI to int, handling None/malformed values
+                    try:
+                        rssi_value = int(svc_rssi) if svc_rssi is not None else -999
+                    except (ValueError, TypeError):
+                        rssi_value = -999
+                    svc_source = getattr(svc_info, 'source', 'unknown')
+                    _LOGGER.debug(
+                        "Auto-select candidate: source=%s, rssi=%s",
+                        svc_source, rssi_value
+                    )
+                    if rssi_value > best_rssi:
+                        best_rssi = rssi_value
+                        best_source = svc_source
 
             if best_source:
                 _LOGGER.info(
                     "Auto-selected adapter %s with best RSSI %d",
                     best_source, best_rssi
                 )
-                # Get device from the best adapter
-                try:
-                    for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                        if (svc_info.address.upper() == self._address.upper() and
-                            getattr(svc_info, 'source', None) == best_source):
-                            device = svc_info.device
-                            source = best_source
-                            rssi = best_rssi if best_rssi != -999 else None
-                            break
-                except Exception as err:
-                    _LOGGER.debug("Error getting device from best adapter: %s", err)
+                # Get device from the best adapter using the same snapshot
+                for svc_info in discovered_services:
+                    if (svc_info.address.upper() == self._address.upper() and
+                        getattr(svc_info, 'source', None) == best_source):
+                        device = svc_info.device
+                        source = best_source
+                        rssi = best_rssi if best_rssi != -999 else None
+                        break
 
             # Final fallback to default lookup
             if device is None:
@@ -471,15 +505,11 @@ class AdjustableBedCoordinator:
 
         # Explicitly discover services
         _LOGGER.debug("Discovering BLE services...")
-        try:
-            await self._client.get_services()
-        except Exception as svc_err:
-            _LOGGER.warning(
-                "Service discovery failed for %s: %s",
-                self._address,
-                svc_err,
-            )
-            return False
+        # Note: In recent Bleak versions, service discovery is automatic on connection.
+        # Only call get_services as fallback if services aren't populated.
+        if not self._client.services and hasattr(self._client, 'get_services'):
+            # Fallback for older bleak versions if needed (though we require >=0.21)
+            await self._client.get_services()  # type: ignore[attr-defined]
 
         # Log discovered services in detail
         if self._client.services:
@@ -820,8 +850,14 @@ class AdjustableBedCoordinator:
                         await self._controller.discover_features()  # type: ignore[union-attr]
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, 'send_pin'):
-                        await self._controller.send_pin()  # type: ignore[union-attr]
-                        await self._controller.start_keepalive()  # type: ignore[union-attr]
+                        await self._controller.send_pin()  # type: ignore[attr-defined]
+                        await self._controller.start_keepalive()  # type: ignore[attr-defined]
+
+                # Store connection metadata for binary sensor
+                self._last_connected = datetime.now(UTC)
+                self._connection_source = actual_adapter
+                self._connection_rssi = adapter_result.rssi
+                self._notify_connection_state_change(True)
 
                 return True
 
@@ -916,6 +952,9 @@ class AdjustableBedCoordinator:
             )
             return
 
+        # Store disconnect timestamp for binary sensor
+        self._last_disconnected = datetime.now(UTC)
+
         # Stop keepalive task before clearing controller to prevent task leak
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
@@ -934,6 +973,7 @@ class AdjustableBedCoordinator:
             self._controller = None
             # Keep _position_data for last known state; entity availability handles offline
             # Flag is reset in _async_connect_locked when reconnecting
+            self._notify_connection_state_change(False)
             return
 
         _LOGGER.warning(
@@ -950,6 +990,7 @@ class AdjustableBedCoordinator:
         self._controller = None
         # Keep _position_data for last known state; entity availability handles offline
         self._cancel_disconnect_timer()
+        self._notify_connection_state_change(False)
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
 
         # Schedule automatic reconnection attempt
@@ -981,6 +1022,8 @@ class AdjustableBedCoordinator:
             else:
                 # Auto-detect variant based on available services
                 _LOGGER.debug("Auto-detecting Richmat variant...")
+                if self._client is None:
+                    raise ConnectionError("Cannot detect variant: no client")
                 is_wilinke, char_uuid = await detect_richmat_variant(self._client)
                 return RichmatController(
                     self,
@@ -1175,7 +1218,8 @@ class AdjustableBedCoordinator:
                         # Stop Octo keep-alive if running
                         if hasattr(self._controller, 'stop_keepalive'):
                             try:
-                                await self._controller.stop_keepalive()  # type: ignore[attr-defined]
+                                # Cast to Any to avoid mypy error about BedController not having stop_keepalive
+                                await cast(Any, self._controller).stop_keepalive()
                             except Exception as err:
                                 _LOGGER.debug("Error stopping keep-alive: %s", err)
                         try:
@@ -1560,3 +1604,22 @@ class AdjustableBedCoordinator:
             self._position_callbacks.discard(callback_fn)  # Safe removal, no error if missing
 
         return unregister
+
+    def register_connection_state_callback(
+        self, callback_fn: Callable[[bool], None]
+    ) -> Callable[[], None]:
+        """Register a callback for connection state changes."""
+        self._connection_state_callbacks.add(callback_fn)
+
+        def unregister() -> None:
+            self._connection_state_callbacks.discard(callback_fn)
+
+        return unregister
+
+    def _notify_connection_state_change(self, connected: bool) -> None:
+        """Notify all registered callbacks of a connection state change."""
+        for callback_fn in list(self._connection_state_callbacks):
+            try:
+                callback_fn(connected)
+            except Exception as err:
+                _LOGGER.warning("Connection state callback error: %s", err)

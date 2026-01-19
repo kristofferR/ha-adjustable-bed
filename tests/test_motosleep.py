@@ -249,16 +249,14 @@ class TestMotoSleepMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test stop all sends massage stop command."""
+        """Test stop all cancels commands but sends no BLE data."""
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.stop_all()
 
-        expected = coordinator.controller._build_command(MotoSleepCommands.MASSAGE_STOP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            MOTOSLEEP_CHAR_UUID, expected, response=True
-        )
+        # MotoSleep stop_all only cancels the running loop, doesn't send data
+        mock_bleak_client.write_gatt_char.assert_not_called()
 
 
 class TestMotoSleepPresets:
