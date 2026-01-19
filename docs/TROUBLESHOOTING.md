@@ -9,7 +9,9 @@ This guide covers common issues and their solutions when using the Adjustable Be
 - [Position Feedback Issues](#position-feedback-issues)
 - [Physical Remote Conflicts](#physical-remote-conflicts)
 - [Protocol/Variant Issues](#protocolvariant-issues)
+- [Pairing Required (Okimat/Leggett Okin)](#pairing-required-okimatleggett-okin)
 - [Getting Help](#getting-help)
+- [Quick Reference: Service UUIDs](#quick-reference-service-uuids)
 
 ---
 
@@ -41,6 +43,23 @@ This guide covers common issues and their solutions when using the Adjustable Be
 1. **Reduce distance:** Move Bluetooth adapter or proxy closer to the bed
 2. **Remove interference:** Move away from WiFi routers, microwaves, or other 2.4GHz devices
 3. **Wait and retry:** Wait a minute and try again - the bed may have been processing a command
+
+### Bed is discovered but won't connect
+
+**Possible Causes:**
+1. Physical remote is connected to the bed
+2. Bed controller is not in pairing mode
+3. Previous connection attempt left the bed in a bad state
+
+**Solutions:**
+1. **Put the bed in pairing mode:**
+   - Remove the batteries from the physical remote (or move it out of Bluetooth range)
+   - Unplug the bed from power
+   - Wait 30 seconds
+   - Plug the bed back in
+   - Wait 15 seconds for the controller to initialize
+   - Then add the bed in Home Assistant
+2. **After successful setup:** The remote can be used normally again - this procedure is typically only needed for initial setup
 
 ### "Device not found"
 
@@ -111,7 +130,7 @@ This guide covers common issues and their solutions when using the Adjustable Be
 **Solutions:**
 1. **Check settings:** Position feedback is disabled by default to prevent remote conflicts
 2. **Enable angle sensing:** If you want position data, disable "Disable angle sensing" in options
-3. **Note:** Most beds except Linak don't support position feedback
+3. **Note:** Only Linak, Okimat, Reverie, and some Keeson/Ergomotion variants support position feedback
 
 ### Position values seem incorrect
 
@@ -215,8 +234,8 @@ Some beds require Bluetooth pairing before they can be controlled.
    ```
 
 2. **On Home Assistant OS:**
-   - Use the Bluetooth adapter's built-in pairing (if supported)
-   - Or pair from another device first, then transfer
+   - SSH into your Home Assistant OS and use `bluetoothctl` (same as Linux)
+   - Note: ESPHome Bluetooth proxies don't support OS-level pairing - use a local Bluetooth adapter for beds that require pairing
 
 3. **On Windows/macOS (for testing):**
    - Go to Bluetooth settings
@@ -224,8 +243,10 @@ Some beds require Bluetooth pairing before they can be controlled.
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work
-- Bed shows in BLE scan but won't connect
+- Bed specifically requires PIN entry or pairing confirmation
 - "Pairing required" error message
+
+**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds (Okimat, Leggett Okin).
 
 ---
 
