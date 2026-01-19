@@ -94,6 +94,16 @@ class BedController(ABC):
         """Return the BLE client."""
         return self._coordinator.client
 
+    @property
+    def auto_stops_on_idle(self) -> bool:
+        """Return True if motors auto-stop when commands stop arriving.
+
+        Controllers that auto-stop (like Linak) should override this to return True.
+        This allows the coordinator to skip explicit STOP commands which can cause
+        brief reverse movements on some bed types.
+        """
+        return False
+
     def log_discovered_services(self, level: int = logging.DEBUG) -> None:
         """Log all discovered GATT services and characteristics.
 

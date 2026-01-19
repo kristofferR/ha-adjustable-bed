@@ -122,6 +122,16 @@ class LinakController(BedController):
         return True
 
     @property
+    def auto_stops_on_idle(self) -> bool:
+        """Return True - Linak motors auto-stop when commands stop arriving.
+
+        Linak beds auto-stop within 200-500ms when commands stop. Sending an
+        explicit STOP command (0x00) can cause a brief reverse movement.
+        See: https://github.com/kristofferR/ha-adjustable-bed/issues/45
+        """
+        return True
+
+    @property
     def memory_slot_count(self) -> int:
         """Return 4 - Linak beds support memory slots 1-4."""
         return 4

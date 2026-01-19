@@ -847,6 +847,10 @@ class AdjustableBedCoordinator:
                 finally:
                     self._client = None
                     self._controller = None
+                    # Update disconnect timestamp and notify state change
+                    # (don't rely on _on_disconnect callback which may not fire on clean disconnect)
+                    self._last_disconnected = datetime.now(UTC)
+                    self._notify_connection_state_change(False)
                     # Note: _intentional_disconnect is NOT cleared here
                     # It persists until an explicit reconnect to handle late disconnect callbacks
 
@@ -1459,32 +1463,40 @@ class AdjustableBedCoordinator:
                             await move_up_fn(self._controller)
                             moving_up = True
 
-                        # Stall detection
+                        # Stall detection - re-issue movement if motor stopped prematurely
                         movement = abs(current_percentage - last_percentage)
                         if movement < POSITION_STALL_THRESHOLD:
                             stall_count += 1
                             if stall_count >= POSITION_STALL_COUNT:
-                                _LOGGER.warning(
-                                    "Position seek stalled for %s at %.1f%% (target: %.1f%%)",
+                                # Motor appears stalled - re-issue movement command
+                                # This handles pulse-based protocols where motors auto-stop
+                                _LOGGER.debug(
+                                    "Position %s stalled at %.1f%%, re-issuing movement command",
                                     position_key,
                                     current_percentage,
-                                    target_percentage,
                                 )
-                                break
+                                if moving_up:
+                                    await move_up_fn(self._controller)
+                                else:
+                                    await move_down_fn(self._controller)
+                                stall_count = 0  # Reset stall count after re-issue
                         else:
                             stall_count = 0
 
                         last_percentage = current_percentage
                 finally:
-                    # Always stop the motor, even on cancellation or error
-                    try:
-                        await move_stop_fn(self._controller)
-                    except Exception:
-                        _LOGGER.exception(
-                            "CRITICAL: Failed to stop motor %s - manual intervention may be required",
-                            position_key,
-                        )
-                        raise
+                    # Stop the motor unless it auto-stops on idle
+                    # Some controllers (e.g., Linak) auto-stop and sending explicit
+                    # STOP can cause brief reverse movement
+                    if not getattr(self._controller, 'auto_stops_on_idle', False):
+                        try:
+                            await move_stop_fn(self._controller)
+                        except Exception:
+                            _LOGGER.exception(
+                                "CRITICAL: Failed to stop motor %s - manual intervention may be required",
+                                position_key,
+                            )
+                            raise
 
             finally:
                 if self._client is not None and self._client.is_connected:
