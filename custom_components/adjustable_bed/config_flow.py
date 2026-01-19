@@ -177,7 +177,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
-                selected_bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                str(selected_bed_type) if selected_bed_type else "",
+                (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS),
             )
             try:
                 motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
