@@ -641,7 +641,7 @@ class OctoController(BedController):
                     # skip_disconnect=True to prevent disconnect_after_command from
                     # tearing down the connection that the keep-alive is trying to maintain
                     await self._coordinator.async_execute_controller_command(
-                        lambda c: c.send_pin(),
+                        lambda c: c.send_pin(),  # type: ignore[attr-defined]
                         cancel_running=False,
                         skip_disconnect=True,
                     )

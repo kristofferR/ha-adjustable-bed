@@ -127,11 +127,11 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
 
         # Add variant info for controllers that have it
         if hasattr(controller, "_is_wilinke"):
-            info["richmat_is_wilinke"] = controller._is_wilinke
+            info["richmat_is_wilinke"] = controller._is_wilinke  # type: ignore[attr-defined]
         if hasattr(controller, "_variant"):
-            info["variant"] = controller._variant
+            info["variant"] = controller._variant  # type: ignore[attr-defined]
         if hasattr(controller, "_char_uuid"):
-            info["char_uuid"] = controller._char_uuid
+            info["char_uuid"] = controller._char_uuid  # type: ignore[attr-defined]
 
     return info
 
@@ -198,7 +198,7 @@ def _get_recent_logs() -> list[dict[str, str]]:
         for handler in root_logger.handlers:
             if hasattr(handler, "buffer"):
                 # MemoryHandler or similar
-                for record in list(handler.buffer)[-500:]:
+                for record in list(handler.buffer)[-500:]:  # type: ignore[attr-defined]
                     if (
                         DOMAIN in record.name
                         or "bluetooth" in record.name.lower()
