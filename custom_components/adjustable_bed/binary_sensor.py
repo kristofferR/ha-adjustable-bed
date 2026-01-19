@@ -82,7 +82,7 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_connection_state_change(self, connected: bool) -> None:
+    def _handle_connection_state_change(self, _connected: bool) -> None:
         """Handle connection state change."""
         self.async_write_ha_state()
 
