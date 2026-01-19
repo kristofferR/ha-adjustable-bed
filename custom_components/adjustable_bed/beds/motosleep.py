@@ -13,8 +13,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
 from ..const import MOTOSLEEP_CHAR_UUID
 from .base import BedController
 
@@ -131,34 +129,19 @@ class MotoSleepController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
         _LOGGER.debug(
             "Writing command to MotoSleep bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
             repeat_count,
             repeat_delay_ms,
         )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            try:
-                await self.client.write_gatt_char(
-                    MOTOSLEEP_CHAR_UUID, command, response=True
-                )
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
+        await self._write_gatt_with_retry(
+            MOTOSLEEP_CHAR_UUID,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+        )
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""

@@ -140,59 +140,20 @@ class LinakController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a command to the bed.
-
-        Args:
-            command: The command bytes to send
-            repeat_count: Number of times to repeat the command
-            repeat_delay_ms: Delay between repeats in milliseconds
-            cancel_event: Optional event that signals cancellation (e.g., stop pressed).
-                          If not provided, uses the coordinator's cancel event.
-        """
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error(
-                "Cannot write command: BLE client not connected (client=%s, is_connected=%s)",
-                self.client,
-                getattr(self.client, 'is_connected', 'N/A') if self.client else 'N/A',
-            )
-            raise ConnectionError("Not connected to bed")
-
-        # Use coordinator's cancel event if none provided
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
+        """Write a command to the bed."""
         _LOGGER.debug(
-            "Writing command to Linak bed: %s (repeat: %d, delay: %dms) via characteristic %s",
+            "Writing command to Linak bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
             repeat_count,
             repeat_delay_ms,
-            LINAK_CONTROL_CHAR_UUID,
         )
-
-        for i in range(repeat_count):
-            # Check for cancellation before each write
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            try:
-                # Use response=True for reliable BLE writes (write-with-response)
-                # This ensures commands are acknowledged by the device
-                # Acquire BLE lock to prevent conflicts with concurrent position reads
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        LINAK_CONTROL_CHAR_UUID, command, response=True
-                    )
-            except BleakError:
-                _LOGGER.exception(
-                    "Failed to write command %s to characteristic %s",
-                    command.hex(),
-                    LINAK_CONTROL_CHAR_UUID,
-                )
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
-
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+        )
         _LOGGER.debug("Command sequence complete (%d writes)", repeat_count)
 
     async def start_notify(
