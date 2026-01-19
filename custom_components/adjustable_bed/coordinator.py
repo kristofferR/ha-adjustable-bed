@@ -401,8 +401,8 @@ class AdjustableBedCoordinator:
                             source = best_source
                             rssi = best_rssi if best_rssi != -999 else None
                             break
-                except Exception:
-                    pass
+                except Exception as err:
+                    _LOGGER.debug("Error getting device from best adapter: %s", err)
 
             # Final fallback to default lookup
             if device is None:
