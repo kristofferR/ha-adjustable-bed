@@ -215,9 +215,11 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             if coordinator:
                 await coordinator.async_stop_command()
             else:
-                _LOGGER.warning(
-                    "Could not find Adjustable Bed device with ID %s for stop_all service",
-                    device_id,
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
                 )
 
     hass.services.async_register(
@@ -242,7 +244,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=4)
+                    vol.Coerce(int), vol.Range(min=1)
                 ),
             }
         ),
@@ -283,6 +285,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     "Invalid MAC address format for run_diagnostics: %s",
                     target_address,
                 )
+                async_create(
+                    hass,
+                    f"**Diagnostics Failed**\n\n"
+                    f"Invalid MAC address format: `{target_address}`\n\n"
+                    f"Please provide a valid MAC address in the format "
+                    f"`XX:XX:XX:XX:XX:XX` or `XX-XX-XX-XX-XX-XX`.",
+                    title="Adjustable Bed Diagnostics Error",
+                    notification_id="adjustable_bed_diagnostics_error",
+                )
                 return
             _LOGGER.info(
                 "Running diagnostics on unconfigured device at %s",
@@ -304,9 +315,25 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     "Could not find Adjustable Bed device with ID %s for run_diagnostics service",
                     device_id,
                 )
+                async_create(
+                    hass,
+                    f"**Diagnostics Failed**\n\n"
+                    f"Could not find Adjustable Bed device with ID: `{device_id}`\n\n"
+                    f"Please verify the device is configured and try again.",
+                    title="Adjustable Bed Diagnostics Error",
+                    notification_id="adjustable_bed_diagnostics_error",
+                )
                 return
         else:
             _LOGGER.error("No device_id or target_address provided for run_diagnostics service")
+            async_create(
+                hass,
+                "**Diagnostics Failed**\n\n"
+                "No `device_id` or `target_address` was provided.\n\n"
+                "Please specify either a configured device or a target MAC address.",
+                title="Adjustable Bed Diagnostics Error",
+                notification_id="adjustable_bed_diagnostics_error",
+            )
             return
 
         # Run diagnostics (address is guaranteed to be str at this point)
@@ -346,8 +373,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         handle_run_diagnostics,
         schema=vol.Schema(
             {
-                vol.Optional(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Optional(ATTR_TARGET_ADDRESS): cv.string,
+                vol.Exclusive(CONF_DEVICE_ID, "target"): cv.ensure_list,
+                vol.Exclusive(ATTR_TARGET_ADDRESS, "target"): cv.string,
                 vol.Optional(ATTR_CAPTURE_DURATION, default=DEFAULT_CAPTURE_DURATION): vol.All(
                     vol.Coerce(int), vol.Range(min=MIN_CAPTURE_DURATION, max=MAX_CAPTURE_DURATION)
                 ),
