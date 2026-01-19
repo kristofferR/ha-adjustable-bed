@@ -1286,6 +1286,12 @@ class AdjustableBedCoordinator:
             move_stop_fn: Async function to stop motor
             max_angle: Maximum angle for this motor (for angle-to-percentage conversion)
         """
+        # Cancel any running command FIRST (before tolerance check)
+        # This ensures any in-flight seek is cancelled even if new target is already satisfied
+        self._cancel_counter += 1
+        self._cancel_command.set()
+        entry_cancel_count = self._cancel_counter
+
         # Get current position
         current_angle = self._position_data.get(position_key)
         if current_angle is None:
@@ -1320,11 +1326,6 @@ class AdjustableBedCoordinator:
             current_percentage,
             target_percentage,
         )
-
-        # Cancel any running command
-        self._cancel_counter += 1
-        self._cancel_command.set()
-        entry_cancel_count = self._cancel_counter
 
         async with self._command_lock:
             # Cancel disconnect timer during seeking
@@ -1419,16 +1420,20 @@ class AdjustableBedCoordinator:
                             break
 
                         # Check for overshoot (passed the target)
+                        # Overshoot reversal is a safety correction - clear cancel event
+                        # to ensure reversal completes even if user cancelled
                         if moving_up and current_percentage > target_percentage + POSITION_TOLERANCE:
                             _LOGGER.debug("Position %s overshot target (up), reversing", position_key)
                             await move_stop_fn(self._controller)
-                            await asyncio.sleep(0.2)  # Allow stop to complete before reversal
+                            await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_down_fn(self._controller)
                             moving_up = False
                         elif not moving_up and current_percentage < target_percentage - POSITION_TOLERANCE:
                             _LOGGER.debug("Position %s overshot target (down), reversing", position_key)
                             await move_stop_fn(self._controller)
-                            await asyncio.sleep(0.2)  # Allow stop to complete before reversal
+                            await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_up_fn(self._controller)
                             moving_up = True
 
@@ -1453,7 +1458,12 @@ class AdjustableBedCoordinator:
                     try:
                         await move_stop_fn(self._controller)
                     except Exception as stop_err:
-                        _LOGGER.warning("Failed to stop motor during position seek: %s", stop_err)
+                        _LOGGER.error(
+                            "CRITICAL: Failed to stop motor %s: %s - manual intervention may be required",
+                            position_key,
+                            stop_err,
+                        )
+                        raise
 
             finally:
                 if self._client is not None and self._client.is_connected:
