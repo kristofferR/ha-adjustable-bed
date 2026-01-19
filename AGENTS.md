@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 15 bed types implemented. Linak, Keeson, Richmat, and MotoSleep tested. Other brands need community testing.
+**Current status:** 16 bed types implemented. Linak, Keeson, Richmat, and MotoSleep tested. Other brands need community testing.
 
 ## Architecture
 
@@ -17,6 +17,12 @@ custom_components/adjustable_bed/
 ├── coordinator.py       # BLE connection management (central hub)
 ├── const.py             # Constants, UUIDs, bed type definitions, feature flags
 ├── entity.py            # Base entity class
+├── adapter.py           # BLE adapter selection, device lookup
+├── detection.py         # Bed type auto-detection from BLE services/names
+├── controller_factory.py # Factory for creating bed controller instances
+├── validators.py        # Config validation (MAC addresses, PIN, variants)
+├── redaction.py         # Data redaction for diagnostics
+├── support_report.py    # Support report generation
 ├── beds/                # Bed controller implementations
 │   ├── base.py          # Abstract base class (BedController)
 │   ├── linak.py         # Linak protocol (tested)
@@ -33,7 +39,9 @@ custom_components/adjustable_bed/
 │   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
 │   ├── mattressfirm.py  # Mattress Firm 900 7-byte protocol
 │   ├── nectar.py        # Nectar 7-byte protocol
-│   └── okin_protocol.py # Shared Okin protocol utilities
+│   ├── okin_protocol.py # Shared Okin protocol utilities
+│   └── diagnostic.py    # Debug controller for unsupported beds
+├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
 ├── cover.py             # Motor control entities (open=up, close=down)
 ├── sensor.py            # Position angle feedback entities
@@ -72,6 +80,11 @@ custom_components/adjustable_bed/
 - Protocol variant selection where applicable
 - Options flow for reconfiguration
 
+**BLE Connection Binary Sensor** (`binary_sensor.py`):
+- Shows real-time BLE connection state (device class: connectivity)
+- Attributes: `last_connected`, `last_disconnected`, `connection_source`, `rssi`, `state_detail`
+- Updates automatically when connection state changes
+
 ## Implemented Bed Types
 
 | Brand | Controller | Protocol | Detection | Status |
@@ -90,6 +103,7 @@ custom_components/adjustable_bed/
 | Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
 | Mattress Firm | `MattressFirmController` | 7-byte Nordic UART protocol | Service UUID `6e400001-...` | Needs testing |
 | Nectar | `NectarController` | 7-byte protocol (similar to MF900) | Service UUID `62741523-...` + name | Needs testing |
+| Diagnostic | `DiagnosticController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
 
@@ -153,6 +167,7 @@ custom_components/adjustable_bed/
 | `adjustable_bed.save_preset` | Save current position to memory 1-4 |
 | `adjustable_bed.stop_all` | Immediately stop all motors |
 | `adjustable_bed.run_diagnostics` | Capture BLE protocol data for debugging |
+| `adjustable_bed.generate_support_report` | Generate JSON support report with diagnostics (params: device_id, include_logs) |
 
 ## Linak BLE Protocol Reference
 
