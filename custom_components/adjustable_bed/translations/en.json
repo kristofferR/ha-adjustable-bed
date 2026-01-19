@@ -419,6 +419,20 @@
       }
     }
   },
+  "exceptions": {
+    "memory_presets_not_supported": {
+      "message": "Device '{device_name}' does not support memory presets."
+    },
+    "memory_programming_not_supported": {
+      "message": "Device '{device_name}' does not support programming memory presets."
+    },
+    "invalid_preset_number": {
+      "message": "Device '{device_name}' only supports memory presets 1-{max_preset}. Preset {requested_preset} is not available for this bed type."
+    },
+    "device_not_found": {
+      "message": "Could not find Adjustable Bed device with ID {device_id}."
+    }
+  },
   "issues": {
     "unsupported_device": {
       "title": "Unsupported BLE device: {name}",

@@ -10,7 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
@@ -129,28 +129,35 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 if controller is None or not getattr(
                     controller, "supports_memory_presets", False
                 ):
-                    _LOGGER.warning(
-                        "Device %s does not support memory presets",
-                        coordinator.name,
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' does not support memory presets",
+                        translation_domain=DOMAIN,
+                        translation_key="memory_presets_not_supported",
+                        translation_placeholders={"device_name": coordinator.name},
                     )
-                    continue
                 # Validate preset against controller's memory slot count
                 slot_count = getattr(controller, "memory_slot_count", 4)
                 if preset > slot_count:
-                    _LOGGER.warning(
-                        "Device %s only supports %d memory slots, preset %d is invalid",
-                        coordinator.name,
-                        slot_count,
-                        preset,
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
+                        f"Preset {preset} is not available for this bed type.",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_preset_number",
+                        translation_placeholders={
+                            "device_name": coordinator.name,
+                            "max_preset": str(slot_count),
+                            "requested_preset": str(preset),
+                        },
                     )
-                    continue
                 await coordinator.async_execute_controller_command(
                     lambda ctrl, p=preset: ctrl.preset_memory(p)  # type: ignore[misc]
                 )
             else:
-                _LOGGER.warning(
-                    "Could not find Adjustable Bed device with ID %s for goto_preset service",
-                    device_id,
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
                 )
 
     async def handle_save_preset(call: ServiceCall) -> None:
@@ -166,29 +173,36 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 if controller is None or not getattr(
                     controller, "supports_memory_programming", False
                 ):
-                    _LOGGER.warning(
-                        "Device %s does not support programming memory presets",
-                        coordinator.name,
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' does not support programming memory presets",
+                        translation_domain=DOMAIN,
+                        translation_key="memory_programming_not_supported",
+                        translation_placeholders={"device_name": coordinator.name},
                     )
-                    continue
                 # Validate preset against controller's memory slot count
                 slot_count = getattr(controller, "memory_slot_count", 4)
                 if preset > slot_count:
-                    _LOGGER.warning(
-                        "Device %s only supports %d memory slots, preset %d is invalid",
-                        coordinator.name,
-                        slot_count,
-                        preset,
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
+                        f"Preset {preset} is not available for this bed type.",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_preset_number",
+                        translation_placeholders={
+                            "device_name": coordinator.name,
+                            "max_preset": str(slot_count),
+                            "requested_preset": str(preset),
+                        },
                     )
-                    continue
                 await coordinator.async_execute_controller_command(
                     lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
                     cancel_running=False,
                 )
             else:
-                _LOGGER.warning(
-                    "Could not find Adjustable Bed device with ID %s for save_preset service",
-                    device_id,
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
                 )
 
     async def handle_stop_all(call: ServiceCall) -> None:
