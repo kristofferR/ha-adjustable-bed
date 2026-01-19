@@ -519,8 +519,8 @@ class AdjustableBedCoordinator:
                 try:
                     # Try to get the actual connection source from the client
                     # (accessing private bleak internals for diagnostic purposes)
-                    if hasattr(self._client, '_backend') and hasattr(self._client._backend, '_device'):  # type: ignore[union-attr]
-                        backend_device = self._client._backend._device  # type: ignore[union-attr]
+                    if hasattr(self._client, '_backend') and hasattr(self._client._backend, '_device'):
+                        backend_device = self._client._backend._device
                         if hasattr(backend_device, 'details') and isinstance(backend_device.details, dict):
                             actual_adapter = backend_device.details.get('source', 'unknown')
                 except Exception:
@@ -591,10 +591,10 @@ class AdjustableBedCoordinator:
                 if self._bed_type == BED_TYPE_OCTO:
                     # Discover features to detect PIN requirement
                     if hasattr(self._controller, 'discover_features'):
-                        await self._controller.discover_features()  # type: ignore[union-attr]
+                        await self._controller.discover_features()
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, 'send_pin'):
-                        await self._controller.send_pin()  # type: ignore[attr-defined]
+                        await self._controller.send_pin()
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
 
                 # Store connection metadata for binary sensor
@@ -704,7 +704,7 @@ class AdjustableBedCoordinator:
         controller = self._controller
         if controller is not None and hasattr(controller, 'stop_keepalive'):
             self._stop_keepalive_task = asyncio.create_task(
-                controller.stop_keepalive()  # type: ignore[attr-defined]
+                controller.stop_keepalive()
             )
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
@@ -1352,105 +1352,116 @@ class AdjustableBedCoordinator:
                 # Determine initial direction
                 moving_up = target_percentage > current_percentage
 
-                # Start movement
-                if moving_up:
-                    await move_up_fn(self._controller)
-                else:
-                    await move_down_fn(self._controller)
-
-                # Tracking variables
-                start_time = time.monotonic()
-                stall_count = 0
-                last_percentage = current_percentage
-
-                # Position seeking loop
-                while True:
-                    # Check for timeout
-                    if time.monotonic() - start_time > POSITION_SEEK_TIMEOUT:
-                        _LOGGER.warning(
-                            "Position seek timeout for %s after %.0fs",
-                            position_key,
-                            POSITION_SEEK_TIMEOUT,
-                        )
-                        break
-
-                    # Check for cancellation
-                    if self._cancel_command.is_set():
-                        _LOGGER.debug("Position seek cancelled for %s", position_key)
-                        break
-
-                    # Wait and poll position
-                    await asyncio.sleep(POSITION_CHECK_INTERVAL)
-
-                    # Read current position
-                    await self._async_read_positions()
-
-                    # Get updated position
-                    current_angle = self._position_data.get(position_key)
-                    if current_angle is None:
-                        _LOGGER.warning(
-                            "Lost position data for %s during seek",
-                            position_key,
-                        )
-                        break
-
-                    # Convert to percentage
-                    if controller is not None and getattr(controller, "reports_percentage_position", False):
-                        current_percentage = current_angle
+                # Start movement in try-finally to guarantee stop is sent
+                try:
+                    if moving_up:
+                        await move_up_fn(self._controller)
                     else:
-                        current_percentage = (current_angle / max_angle) * 100 if max_angle > 0 else 0
+                        await move_down_fn(self._controller)
 
-                    _LOGGER.debug(
-                        "Position seek %s: current=%.1f%%, target=%.1f%%",
-                        position_key,
-                        current_percentage,
-                        target_percentage,
-                    )
+                    # Tracking variables
+                    start_time = time.monotonic()
+                    stall_count = 0
+                    last_percentage = current_percentage
 
-                    # Check if at target
-                    if abs(current_percentage - target_percentage) <= POSITION_TOLERANCE:
-                        _LOGGER.info(
-                            "Position %s reached target: %.1f%% (target: %.1f%%)",
+                    # Position seeking loop
+                    while True:
+                        # Check for timeout
+                        if time.monotonic() - start_time > POSITION_SEEK_TIMEOUT:
+                            _LOGGER.warning(
+                                "Position seek timeout for %s after %.0fs",
+                                position_key,
+                                POSITION_SEEK_TIMEOUT,
+                            )
+                            break
+
+                        # Check for cancellation
+                        if self._cancel_command.is_set():
+                            _LOGGER.debug("Position seek cancelled for %s", position_key)
+                            break
+
+                        # Wait and poll position
+                        await asyncio.sleep(POSITION_CHECK_INTERVAL)
+
+                        # Read current position
+                        await self._async_read_positions()
+
+                        # Get updated position
+                        current_angle = self._position_data.get(position_key)
+                        if current_angle is None:
+                            _LOGGER.warning(
+                                "Lost position data for %s during seek",
+                                position_key,
+                            )
+                            break
+
+                        # Convert to percentage
+                        if controller is not None and getattr(controller, "reports_percentage_position", False):
+                            current_percentage = current_angle
+                        else:
+                            current_percentage = (current_angle / max_angle) * 100 if max_angle > 0 else 0
+
+                        _LOGGER.debug(
+                            "Position seek %s: current=%.1f%%, target=%.1f%%",
                             position_key,
                             current_percentage,
                             target_percentage,
                         )
-                        break
 
-                    # Check for overshoot (passed the target)
-                    if moving_up and current_percentage > target_percentage + POSITION_TOLERANCE:
-                        _LOGGER.debug("Position %s overshot target (up), reversing", position_key)
-                        await move_stop_fn(self._controller)
-                        await asyncio.sleep(0.1)
-                        await move_down_fn(self._controller)
-                        moving_up = False
-                    elif not moving_up and current_percentage < target_percentage - POSITION_TOLERANCE:
-                        _LOGGER.debug("Position %s overshot target (down), reversing", position_key)
-                        await move_stop_fn(self._controller)
-                        await asyncio.sleep(0.1)
-                        await move_up_fn(self._controller)
-                        moving_up = True
-
-                    # Stall detection
-                    movement = abs(current_percentage - last_percentage)
-                    if movement < POSITION_STALL_THRESHOLD:
-                        stall_count += 1
-                        if stall_count >= POSITION_STALL_COUNT:
-                            _LOGGER.warning(
-                                "Position seek stalled for %s at %.1f%% (target: %.1f%%)",
+                        # Check if at target
+                        if abs(current_percentage - target_percentage) <= POSITION_TOLERANCE:
+                            _LOGGER.info(
+                                "Position %s reached target: %.1f%% (target: %.1f%%)",
                                 position_key,
                                 current_percentage,
                                 target_percentage,
                             )
                             break
-                    else:
-                        stall_count = 0
 
-                    last_percentage = current_percentage
+                        # Check for overshoot (passed the target)
+                        if moving_up and current_percentage > target_percentage + POSITION_TOLERANCE:
+                            _LOGGER.debug("Position %s overshot target (up), reversing", position_key)
+                            await move_stop_fn(self._controller)
+                            await asyncio.sleep(0.2)  # Allow stop to complete before reversal
+                            await move_down_fn(self._controller)
+                            moving_up = False
+                        elif not moving_up and current_percentage < target_percentage - POSITION_TOLERANCE:
+                            _LOGGER.debug("Position %s overshot target (down), reversing", position_key)
+                            await move_stop_fn(self._controller)
+                            await asyncio.sleep(0.2)  # Allow stop to complete before reversal
+                            await move_up_fn(self._controller)
+                            moving_up = True
 
-                # Stop the motor
-                await move_stop_fn(self._controller)
+                        # Stall detection
+                        movement = abs(current_percentage - last_percentage)
+                        if movement < POSITION_STALL_THRESHOLD:
+                            stall_count += 1
+                            if stall_count >= POSITION_STALL_COUNT:
+                                _LOGGER.warning(
+                                    "Position seek stalled for %s at %.1f%% (target: %.1f%%)",
+                                    position_key,
+                                    current_percentage,
+                                    target_percentage,
+                                )
+                                break
+                        else:
+                            stall_count = 0
+
+                        last_percentage = current_percentage
+                finally:
+                    # Always stop the motor, even on cancellation or error
+                    try:
+                        await move_stop_fn(self._controller)
+                    except Exception as stop_err:
+                        _LOGGER.warning("Failed to stop motor during position seek: %s", stop_err)
 
             finally:
                 if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
+                    if self._disconnect_after_command:
+                        _LOGGER.debug(
+                            "Disconnecting after seek (disconnect_after_command=True) for %s",
+                            self._address,
+                        )
+                        await self.async_disconnect()
+                    else:
+                        self._reset_disconnect_timer()

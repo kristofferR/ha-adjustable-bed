@@ -215,7 +215,7 @@ async def discover_services(client: BleakClient, address: str) -> bool:
     # Only call get_services as fallback if services aren't populated.
     if not client.services and hasattr(client, 'get_services'):
         # Fallback for older bleak versions if needed (though we require >=0.21)
-        await client.get_services()  # type: ignore[attr-defined]
+        await client.get_services()
 
     # Log discovered services in detail
     if client.services:

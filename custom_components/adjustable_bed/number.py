@@ -247,7 +247,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_position_update(self, position_data: dict[str, float]) -> None:
+    def _handle_position_update(self, _position_data: dict[str, float]) -> None:
         """Handle position data update."""
         self.async_write_ha_state()
 
