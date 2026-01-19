@@ -165,7 +165,7 @@ class SolaceController(BedController):
                     SolaceCommands.MOTOR_STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
+            except BleakError:
                 _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods

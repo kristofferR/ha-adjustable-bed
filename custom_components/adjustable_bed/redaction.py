@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -13,6 +14,9 @@ KEYS_TO_REDACT = {CONF_NAME, CONF_OCTO_PIN, "title"}
 
 # Keys containing MAC addresses (partial redaction - keep OUI)
 MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}
+
+# Regex pattern for MAC addresses (colon or hyphen separated)
+MAC_ADDRESS_PATTERN = re.compile(r"([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}")
 
 
 def _redact_mac_address(mac: str | None | Any) -> str | Any:
@@ -44,6 +48,15 @@ def _redact_mac_address(mac: str | None | Any) -> str | Any:
     return f"{parts[0]}{sep}{parts[1]}{sep}{parts[2]}{sep}**{sep}**{sep}**"
 
 
+def redact_string(text: str) -> str:
+    """Redact MAC addresses found within a string."""
+
+    def replace_mac(match: re.Match[str]) -> str:
+        return _redact_mac_address(match.group(0))
+
+    return MAC_ADDRESS_PATTERN.sub(replace_mac, text)
+
+
 def redact_data(data: Any, depth: int = 0) -> Any:
     """Recursively redact sensitive data from a dictionary.
 
@@ -73,5 +86,7 @@ def redact_data(data: Any, depth: int = 0) -> Any:
         return result
     elif isinstance(data, list):
         return [redact_data(item, depth + 1) for item in data]
+    elif isinstance(data, str):
+        return redact_string(data)
     else:
         return data

@@ -111,7 +111,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self._attr_is_on = True
                 self.async_write_ha_state()
             else:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Toggle-only controller - state tracking unreliable for %s",
                     self.entity_description.key,
                 )
@@ -148,7 +148,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 self._attr_is_on = False
                 self.async_write_ha_state()
             else:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Toggle-only controller - state tracking unreliable for %s",
                     self.entity_description.key,
                 )

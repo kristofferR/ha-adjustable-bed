@@ -445,6 +445,9 @@
     },
     "device_not_found": {
       "message": "Could not find Adjustable Bed device with ID {device_id}."
+    },
+    "devices_not_found": {
+      "message": "Could not find Adjustable Bed device(s) with ID(s): {device_ids}."
     }
   },
   "issues": {

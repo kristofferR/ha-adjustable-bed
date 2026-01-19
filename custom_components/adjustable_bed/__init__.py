@@ -209,18 +209,22 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        missing_device_ids: list[str] = []
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 await coordinator.async_stop_command()
             else:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
+                missing_device_ids.append(device_id)
+
+        if missing_device_ids:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device(s) with ID(s): {', '.join(missing_device_ids)}",
+                translation_domain=DOMAIN,
+                translation_key="devices_not_found",
+                translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
+            )
 
     hass.services.async_register(
         DOMAIN,
@@ -230,7 +234,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=4)
+                    vol.Coerce(int), vol.Range(min=1)
                 ),
             }
         ),
