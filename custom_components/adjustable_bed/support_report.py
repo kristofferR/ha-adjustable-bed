@@ -204,13 +204,15 @@ def _get_recent_logs() -> list[dict[str, str]]:
                         or "bluetooth" in record.name.lower()
                         or "bleak" in record.name.lower()
                     ):
+                        # Apply redaction to log messages to protect sensitive data
+                        redacted_message = redact_data({"msg": record.getMessage()})["msg"]
                         logs.append({
                             "timestamp": datetime.fromtimestamp(
                                 record.created, tz=UTC
                             ).isoformat(),
                             "level": record.levelname,
                             "name": record.name,
-                            "message": record.getMessage(),
+                            "message": redacted_message,
                         })
     except Exception as err:
         _LOGGER.debug("Could not retrieve log entries: %s", err)

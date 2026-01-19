@@ -167,9 +167,11 @@ class BLEDiagnosticRunner:
                 # Unsubscribe from notifications
                 await self._unsubscribe_from_notifications(services_info)
 
+        except asyncio.CancelledError:
+            raise
         except Exception as err:
             error_msg = f"Diagnostic error: {err}"
-            _LOGGER.error(error_msg)
+            _LOGGER.exception(error_msg)
             self._errors.append(error_msg)
         finally:
             await self._disconnect()

@@ -86,8 +86,8 @@ async def create_controller(
         else:
             # Auto-detect variant based on available services
             _LOGGER.debug("Auto-detecting Richmat variant...")
-            if client is None:
-                raise ConnectionError("Cannot detect variant: no client")
+            if client is None or not client.is_connected:
+                raise ConnectionError("Cannot detect variant: client not connected")
             is_wilinke, char_uuid = await detect_richmat_variant(client)
             return RichmatController(
                 coordinator,
