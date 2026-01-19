@@ -410,8 +410,11 @@ class AdjustableBedCoordinator:
             for svc_info in discovered_services:
                 if svc_info.address.upper() == self._address.upper():
                     svc_rssi = getattr(svc_info, 'rssi', None)
-                    # Handle None RSSI by using a low default value
-                    rssi_value = svc_rssi if svc_rssi is not None else -999
+                    # Safely coerce RSSI to int, handling None/malformed values
+                    try:
+                        rssi_value = int(svc_rssi) if svc_rssi is not None else -999
+                    except (ValueError, TypeError):
+                        rssi_value = -999
                     svc_source = getattr(svc_info, 'source', 'unknown')
                     _LOGGER.debug(
                         "Auto-select candidate: source=%s, rssi=%s",
