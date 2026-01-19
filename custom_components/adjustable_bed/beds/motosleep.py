@@ -141,6 +141,7 @@ class MotoSleepController(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=True,
         )
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:

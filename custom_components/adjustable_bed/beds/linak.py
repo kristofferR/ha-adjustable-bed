@@ -154,7 +154,7 @@ class LinakController(BedController):
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
         )
-        _LOGGER.debug("Command sequence complete (%d writes)", repeat_count)
+        _LOGGER.debug("Command sequence ended (%d writes attempted)", repeat_count)
 
     async def start_notify(
         self, callback: Callable[[str, float], None]
