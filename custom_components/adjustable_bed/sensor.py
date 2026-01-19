@@ -147,7 +147,13 @@ class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
 
     @callback
     def _handle_position_update(self, position_data: dict[str, float]) -> None:
-        """Handle position data update."""
+        """Handle position data update.
+
+        The position_data parameter is provided by the callback interface but not
+        used here since we read from the coordinator's position_data in native_value.
+        """
+        # position_data is intentionally unused - we read from coordinator in native_value
+        del position_data  # Mark as intentionally unused
         self.async_write_ha_state()
 
     @property
