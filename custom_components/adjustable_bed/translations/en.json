@@ -359,6 +359,20 @@
       "ble_connection": {
         "name": "BLE Connection"
       }
+    },
+    "number": {
+      "back_position": {
+        "name": "Back Position"
+      },
+      "legs_position": {
+        "name": "Legs Position"
+      },
+      "head_position": {
+        "name": "Head Position"
+      },
+      "feet_position": {
+        "name": "Feet Position"
+      }
     }
   },
   "services": {

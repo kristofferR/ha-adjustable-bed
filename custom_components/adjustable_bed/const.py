@@ -509,6 +509,23 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_REVERIE,
 })
 
+# Bed types that support position feedback (for Number entities with position seeking)
+# Includes all angle sensing beds plus beds that report percentage positions
+BEDS_WITH_POSITION_FEEDBACK: Final = frozenset({
+    BED_TYPE_LINAK,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_REVERIE,
+    BED_TYPE_KEESON,
+    BED_TYPE_ERGOMOTION,
+})
+
+# Position seeking constants
+POSITION_TOLERANCE: Final = 2.0  # Percentage tolerance for position seeking
+POSITION_SEEK_TIMEOUT: Final = 60.0  # Maximum time in seconds for position seeking
+POSITION_CHECK_INTERVAL: Final = 0.3  # Interval between position checks in seconds
+POSITION_STALL_THRESHOLD: Final = 0.5  # Minimum movement percentage to not be considered stalled
+POSITION_STALL_COUNT: Final = 3  # Number of consecutive stall detections before stopping
+
 # Default values
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
