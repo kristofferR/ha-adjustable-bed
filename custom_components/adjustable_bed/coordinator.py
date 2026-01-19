@@ -84,6 +84,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+
+class NotConnectedError(Exception):
+    """Raised when bed is not connected."""
+
+
+class NoControllerError(Exception):
+    """Raised when no controller is available."""
+
+
 # Retry settings
 MAX_RETRIES = 3
 RETRY_DELAY = 5.0  # Increased delay between retries for BLE stability
@@ -1318,6 +1327,12 @@ class AdjustableBedCoordinator:
                 current_percentage,
                 target_percentage,
             )
+            # Handle disconnect timer/command same as other exit paths
+            if self._client is not None and self._client.is_connected:
+                if self._disconnect_after_command:
+                    await self.async_disconnect()
+                else:
+                    self._reset_disconnect_timer()
             return
 
         _LOGGER.info(
@@ -1344,11 +1359,11 @@ class AdjustableBedCoordinator:
 
                 if not await self.async_ensure_connected(reset_timer=False):
                     _LOGGER.error("Cannot seek position: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
+                    raise NotConnectedError("Not connected to bed")
 
                 if self._controller is None:
                     _LOGGER.error("Cannot seek position: no controller available")
-                    raise RuntimeError("No controller available")
+                    raise NoControllerError("No controller available")
 
                 # Determine initial direction
                 moving_up = target_percentage > current_percentage
@@ -1457,11 +1472,10 @@ class AdjustableBedCoordinator:
                     # Always stop the motor, even on cancellation or error
                     try:
                         await move_stop_fn(self._controller)
-                    except Exception as stop_err:
-                        _LOGGER.error(
-                            "CRITICAL: Failed to stop motor %s: %s - manual intervention may be required",
+                    except Exception:
+                        _LOGGER.exception(
+                            "CRITICAL: Failed to stop motor %s - manual intervention may be required",
                             position_key,
-                            stop_err,
                         )
                         raise
 
