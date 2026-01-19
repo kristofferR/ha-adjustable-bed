@@ -30,6 +30,7 @@ from .const import (
     KEESON_NAME_PATTERNS,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
+    LEGGETT_RICHMAT_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
@@ -211,6 +212,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.address,
         )
         return BED_TYPE_OKIMAT
+
+    # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
+    # Must be before generic Richmat WiLinke check
+    # Variant detection (mlrm) happens at controller instantiation
+    if any(device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS):
+        for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
+            if wilinke_uuid.lower() in service_uuids:
+                _LOGGER.info(
+                    "Detected Leggett & Platt MlRM bed at %s (name: %s)",
+                    service_info.address,
+                    service_info.name,
+                )
+                return BED_TYPE_LEGGETT_PLATT
 
     # Check for Richmat WiLinke variants
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:

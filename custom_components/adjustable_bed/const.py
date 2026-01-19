@@ -163,6 +163,11 @@ LEGGETT_GEN2_READ_CHAR_UUID: Final = "45e25103-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_OKIN_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 LEGGETT_OKIN_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 
+# Leggett & Platt Richmat variant (WiLinke protocol, discrete massage commands)
+# Uses same service/char as Richmat WiLinke but with L&P-specific features
+LEGGETT_RICHMAT_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+LEGGETT_RICHMAT_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
+
 # Reverie specific UUIDs
 REVERIE_SERVICE_UUID: Final = "1b1d9641-b942-4da8-89cc-98e6a58fbd93"
 REVERIE_CHAR_UUID: Final = "6af87926-dc79-412e-a3e0-5f85c2d55de2"
@@ -235,6 +240,7 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # - Leggett & Platt Okin variant (6-byte protocol, same as Okimat)
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
+LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
 # Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", or "OKIN-XXXXXX" (e.g., OKIN-346311)
 OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-")
 
@@ -277,10 +283,12 @@ KEESON_VARIANTS: Final = {
 # Leggett & Platt variants
 LEGGETT_VARIANT_GEN2: Final = "gen2"
 LEGGETT_VARIANT_OKIN: Final = "okin"
+LEGGETT_VARIANT_MLRM: Final = "mlrm"
 LEGGETT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     LEGGETT_VARIANT_GEN2: "Gen2 (Richmat-based, most common)",
     LEGGETT_VARIANT_OKIN: "Okin (requires BLE pairing)",
+    LEGGETT_VARIANT_MLRM: "MlRM (WiLinke protocol, discrete massage control)",
 }
 
 # Richmat protocol variants (auto-detected, but can be overridden)
@@ -488,6 +496,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_ERGOMOTION,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
+    LEGGETT_VARIANT_MLRM,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     OCTO_VARIANT_STANDARD,

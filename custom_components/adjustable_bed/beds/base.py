@@ -452,6 +452,17 @@ class BedController(ABC):
         return True
 
     @property
+    def has_discrete_motor_control(self) -> bool:
+        """Return True if bed uses discrete (button-press) motor control.
+
+        Discrete motor control means each command moves the motor a small
+        amount (like pressing a button), rather than continuous movement
+        that requires a stop command. Beds with discrete control should
+        expose button entities instead of cover entities for motor control.
+        """
+        return False
+
+    @property
     def supports_stop_all(self) -> bool:
         """Return True if bed supports a stop-all command.
 

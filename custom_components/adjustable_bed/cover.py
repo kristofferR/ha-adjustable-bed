@@ -147,6 +147,14 @@ async def async_setup_entry(
         )
         return
 
+    # Skip motor cover entities if bed uses discrete motor control (buttons instead)
+    if controller is not None and controller.has_discrete_motor_control:
+        _LOGGER.debug(
+            "Skipping motor covers for %s - bed uses discrete motor control (buttons instead)",
+            coordinator.name,
+        )
+        return
+
     entities = []
 
     # Keeson and Ergomotion beds use different motor naming:

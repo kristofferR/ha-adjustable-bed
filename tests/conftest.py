@@ -517,3 +517,27 @@ def mock_bluetooth_service_info_octo_star2() -> MagicMock:
     service_info.time = 0
     service_info.tx_power = None
     return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_leggett_platt_richmat() -> MagicMock:
+    """Return mock Bluetooth service info for a Leggett & Platt MlRM variant bed.
+
+    These beds use Richmat WiLinke hardware with the "MlRM" name prefix.
+    They are detected as BED_TYPE_LEGGETT_PLATT; variant (mlrm) is detected
+    at controller instantiation time based on the WiLinke service UUID.
+    """
+    service_info = MagicMock()
+    service_info.name = "MlRM157052"  # Name starts with MlRM prefix
+    service_info.address = "FF:11:22:33:44:55"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [RICHMAT_WILINKE_SERVICE_UUIDS[1]]  # fee9 UUID
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info

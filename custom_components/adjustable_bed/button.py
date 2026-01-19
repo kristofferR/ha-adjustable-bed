@@ -281,6 +281,39 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.lights_on(),
         required_capability="supports_light_cycle",
     ),
+    # Motor movement buttons (for discrete motor control beds)
+    AdjustableBedButtonEntityDescription(
+        key="head_up",
+        translation_key="head_up",
+        icon="mdi:arrow-up",
+        press_fn=lambda ctrl: ctrl.move_head_up(),
+        cancel_movement=True,
+        required_capability="has_discrete_motor_control",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="head_down",
+        translation_key="head_down",
+        icon="mdi:arrow-down",
+        press_fn=lambda ctrl: ctrl.move_head_down(),
+        cancel_movement=True,
+        required_capability="has_discrete_motor_control",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="legs_up",
+        translation_key="legs_up",
+        icon="mdi:arrow-up",
+        press_fn=lambda ctrl: ctrl.move_legs_up(),
+        cancel_movement=True,
+        required_capability="has_discrete_motor_control",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="legs_down",
+        translation_key="legs_down",
+        icon="mdi:arrow-down",
+        press_fn=lambda ctrl: ctrl.move_legs_down(),
+        cancel_movement=True,
+        required_capability="has_discrete_motor_control",
+    ),
 )
 
 

@@ -311,6 +311,18 @@
       },
       "connect": {
         "name": "Connect"
+      },
+      "head_up": {
+        "name": "Head Up"
+      },
+      "head_down": {
+        "name": "Head Down"
+      },
+      "legs_up": {
+        "name": "Legs Up"
+      },
+      "legs_down": {
+        "name": "Legs Down"
       }
     },
     "cover": {

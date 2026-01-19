@@ -4,6 +4,7 @@ smartbed-mqtt-discord-chats/
 
 # Python build artifacts
 *.egg-info/
+__pycache__/
 
 # Lock files
 uv.lock

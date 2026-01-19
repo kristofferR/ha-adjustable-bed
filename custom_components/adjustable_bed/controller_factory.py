@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from .adapter import discover_services
 from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
@@ -24,11 +25,13 @@ from .const import (
     BED_TYPE_SOLACE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
+    LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STAR2,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
+    RICHMAT_WILINKE_SERVICE_UUIDS,
 )
 
 if TYPE_CHECKING:
@@ -122,15 +125,55 @@ async def create_controller(
         return MotoSleepController(coordinator)
 
     if bed_type == BED_TYPE_LEGGETT_PLATT:
-        from .beds.leggett_platt import LeggettPlattController
+        # Use configured variant or auto-detect
+        if protocol_variant == LEGGETT_VARIANT_MLRM:
+            from .beds.leggett_platt_mlrm import LeggettPlattMlrmController
 
-        # Use configured variant or default to gen2
-        if protocol_variant == LEGGETT_VARIANT_OKIN:
+            _LOGGER.debug("Using MlRM Leggett & Platt variant (configured)")
+            return LeggettPlattMlrmController(coordinator)
+        elif protocol_variant == LEGGETT_VARIANT_OKIN:
+            from .beds.leggett_platt import LeggettPlattController
+
             _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
             return LeggettPlattController(coordinator, variant="okin")
+        elif protocol_variant in (None, "", "auto"):
+            # Auto-detect: check if WiLinke service UUID is available (indicates MlRM)
+            if client is None:
+                raise ConnectionError(
+                    "Cannot auto-detect Leggett & Platt variant: no BLE client provided"
+                )
+
+            # Ensure services are discovered
+            if not client.services:
+                _LOGGER.debug("Services not populated, attempting discovery...")
+                address = getattr(client, "address", "unknown")
+                discovered = await discover_services(client, address)
+                if not discovered or not client.services:
+                    raise ConnectionError(
+                        "Cannot auto-detect Leggett & Platt variant: "
+                        "failed to discover BLE services. "
+                        "Please manually select a protocol variant in settings."
+                    )
+
+            # Check for WiLinke service UUID (indicates MlRM variant)
+            wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
+            for service in client.services:
+                if service.uuid.lower() in wilinke_uuids_lower:
+                    from .beds.leggett_platt_mlrm import LeggettPlattMlrmController
+
+                    _LOGGER.debug("Using MlRM Leggett & Platt variant (auto-detected)")
+                    return LeggettPlattMlrmController(coordinator)
+
+            # Default to gen2 variant (most common L&P variant)
+            from .beds.leggett_platt import LeggettPlattController
+
+            _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
+            return LeggettPlattController(coordinator, variant="gen2")
         else:
-            # Auto or gen2 variant
-            _LOGGER.debug("Using Gen2 Leggett & Platt variant")
+            # Explicit gen2 variant
+            from .beds.leggett_platt import LeggettPlattController
+
+            _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
             return LeggettPlattController(coordinator, variant="gen2")
 
     if bed_type == BED_TYPE_REVERIE:
