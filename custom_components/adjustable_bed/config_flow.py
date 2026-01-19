@@ -755,6 +755,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Discover devices
         _LOGGER.debug("Scanning for BLE devices...")
+        self._discovered_devices.clear()  # Clear stale devices from previous scans
 
         # Log Bluetooth scanner status
         try:
