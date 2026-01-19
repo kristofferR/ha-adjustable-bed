@@ -70,6 +70,7 @@ class NectarController(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Nectar controller."""
         super().__init__(coordinator)
+        self._notify_callback: Callable[[str, float], None] | None = None
         _LOGGER.debug("NectarController initialized")
 
     @property
@@ -144,10 +145,12 @@ class NectarController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         # Nectar beds don't support position feedback
+        self._notify_callback = callback
         _LOGGER.debug("Nectar beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
+        self._notify_callback = None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current motor positions."""

@@ -187,7 +187,11 @@ class JiecangController(BedController):
         pass
 
     async def stop_all(self) -> None:
-        """Stop all motors by cancelling any in-flight preset commands."""
+        """Stop all motors by cancelling any in-flight preset commands.
+
+        Note: Jiecang protocol does not have a dedicated STOP command, so we
+        signal the coordinator to cancel any running movement commands instead.
+        """
         self._coordinator.cancel_command.set()
 
     # Preset methods

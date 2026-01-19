@@ -160,10 +160,13 @@ class SolaceController(BedController):
         try:
             await self.write_command(command, repeat_count=30, repeat_delay_ms=50)
         finally:
-            await self.write_command(
-                SolaceCommands.MOTOR_STOP,
-                cancel_event=asyncio.Event(),
-            )
+            try:
+                await self.write_command(
+                    SolaceCommands.MOTOR_STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -243,6 +246,8 @@ class SolaceController(BedController):
         }
         if command := commands.get(memory_num):
             await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
+        else:
+            _LOGGER.warning("Invalid memory preset number: %d (valid: 1-4)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -254,6 +259,8 @@ class SolaceController(BedController):
         }
         if command := commands.get(memory_num):
             await self.write_command(command)
+        else:
+            _LOGGER.warning("Invalid memory program number: %d (valid: 1-4)", memory_num)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""

@@ -30,6 +30,7 @@ from ..const import (
     KEESON_VARIANT_ERGOMOTION,
 )
 from .base import BedController
+from .okin_protocol import int_to_bytes
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -73,16 +74,6 @@ class KeesonCommands:
     # Lights
     TOGGLE_SAFETY_LIGHTS = 0x20000
     TOGGLE_LIGHTS = 0x20000  # Alias for Ergomotion compatibility
-
-
-def int_to_bytes(value: int) -> list[int]:
-    """Convert an integer to 4 bytes (big-endian)."""
-    return [
-        (value >> 24) & 0xFF,
-        (value >> 16) & 0xFF,
-        (value >> 8) & 0xFF,
-        value & 0xFF,
-    ]
 
 
 class KeesonController(BedController):

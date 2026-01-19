@@ -197,9 +197,9 @@ class ReverieController(BedController):
         - Byte 0: 0x55 (header)
         - Byte 1: Command type (0x51 = head, 0x52 = feet)
         - Byte 2: Position (0-100)
-        - Byte 3: Checksum
+        - Byte 3: XOR checksum
         """
-        if len(data) < 3:
+        if len(data) < 4:
             return
 
         # Verify header
@@ -209,6 +209,17 @@ class ReverieController(BedController):
 
         cmd_type = data[1]
         position = data[2]
+        checksum = data[3]
+
+        # Verify XOR checksum (XOR of bytes 0-2 should equal byte 3)
+        calculated_checksum = data[0] ^ data[1] ^ data[2]
+        if checksum != calculated_checksum:
+            _LOGGER.debug(
+                "Invalid Reverie checksum: expected %02x, got %02x",
+                calculated_checksum,
+                checksum,
+            )
+            return
 
         # Validate position is in range
         if position > 100:

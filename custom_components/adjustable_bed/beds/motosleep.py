@@ -183,8 +183,8 @@ class MotoSleepController(BedController):
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
-        # MotoSleep doesn't have a dedicated stop - releasing the button stops
-        pass
+        # MotoSleep doesn't have a dedicated stop command - signal cancellation
+        self._coordinator.cancel_command.set()
 
     async def move_back_up(self) -> None:
         """Move back up (same as head for MotoSleep)."""
@@ -196,7 +196,7 @@ class MotoSleepController(BedController):
 
     async def move_back_stop(self) -> None:
         """Stop back motor."""
-        pass
+        self._coordinator.cancel_command.set()
 
     async def move_legs_up(self) -> None:
         """Move legs up (same as feet for MotoSleep)."""
@@ -208,7 +208,7 @@ class MotoSleepController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        pass
+        self._coordinator.cancel_command.set()
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -220,7 +220,7 @@ class MotoSleepController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        pass
+        self._coordinator.cancel_command.set()
 
     async def stop_all(self) -> None:
         """Stop all motors.

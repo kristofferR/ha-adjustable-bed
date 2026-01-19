@@ -78,6 +78,7 @@ class MattressFirmController(BedController):
         """Initialize the Mattress Firm controller."""
         super().__init__(coordinator)
         self._initialized = False
+        self._notify_callback: Callable[[str, float], None] | None = None
         _LOGGER.debug("MattressFirmController initialized")
 
     @property
@@ -198,11 +199,12 @@ class MattressFirmController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         # Mattress Firm 900 beds don't support position feedback
+        self._notify_callback = callback
         _LOGGER.debug("Mattress Firm 900 beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        self._notify_callback = None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current motor positions."""

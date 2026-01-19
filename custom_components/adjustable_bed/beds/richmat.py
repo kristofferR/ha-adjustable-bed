@@ -173,9 +173,9 @@ class RichmatController(BedController):
         """Return number of memory slots based on detected features."""
         count = 0
         if self._features & RichmatFeatures.PRESET_MEMORY_1:
-            count = 1
+            count += 1
         if self._features & RichmatFeatures.PRESET_MEMORY_2:
-            count = 2
+            count += 1
         return count
 
     @property
