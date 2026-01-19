@@ -404,14 +404,14 @@ class LeggettPlattController(BedController):
                     repeat_delay_ms=300,
                 )
         else:
-            commands = {
+            gen2_commands = {
                 1: LeggettPlattGen2Commands.PRESET_UNWIND,
                 2: LeggettPlattGen2Commands.PRESET_SLEEP,
                 3: LeggettPlattGen2Commands.PRESET_WAKE_UP,
                 4: LeggettPlattGen2Commands.PRESET_RELAX,
             }
-            if command := commands.get(memory_num):
-                await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
+            if gen2_command := gen2_commands.get(memory_num):
+                await self.write_command(gen2_command, repeat_count=100, repeat_delay_ms=300)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""

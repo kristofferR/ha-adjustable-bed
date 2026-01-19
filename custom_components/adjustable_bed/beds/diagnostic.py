@@ -11,6 +11,7 @@ diagnostic data capture.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -64,7 +65,7 @@ class DiagnosticBedController(BedController):
         command: bytes,
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
-        cancel_event=None,
+        cancel_event: asyncio.Event | None = None,
     ) -> None:
         """No-op - diagnostic devices don't accept commands."""
         if cancel_event is not None and cancel_event.is_set():

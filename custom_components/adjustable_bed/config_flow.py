@@ -11,6 +11,7 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -208,7 +209,7 @@ def bed_type_has_variants(bed_type: str) -> bool:
     return bed_type in (BED_TYPE_KEESON, BED_TYPE_LEGGETT_PLATT, BED_TYPE_OCTO, BED_TYPE_OKIMAT, BED_TYPE_RICHMAT)
 
 
-def get_available_adapters(hass) -> dict[str, str]:
+def get_available_adapters(hass: HomeAssistant) -> dict[str, str]:
     """Get available Bluetooth adapters/proxies."""
     adapters: dict[str, str] = {ADAPTER_AUTO: "Automatic (let Home Assistant choose)"}
 
@@ -906,7 +907,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             bed_type = user_input[CONF_BED_TYPE]
 
-            preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, discovery_source)
+            preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(

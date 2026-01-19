@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from bleak.exc import BleakError
 
@@ -180,7 +180,7 @@ class ReverieController(BedController):
             return
 
         try:
-            def handler(_, data: bytearray) -> None:
+            def handler(_: Any, data: bytearray) -> None:
                 _LOGGER.debug("Reverie notification: %s", data.hex())
                 self.forward_raw_notification(REVERIE_CHAR_UUID, bytes(data))
                 self._parse_position_data(data)

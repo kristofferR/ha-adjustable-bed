@@ -231,7 +231,9 @@ class BLEDiagnosticRunner:
             )
             _LOGGER.info("Connected to %s", self.address)
             # Explicitly discover services - not all backends auto-discover on connect
-            await self._client.get_services()
+            # In recent Bleak versions, service discovery is automatic.
+            if hasattr(self._client, 'get_services'):
+                 await self._client.get_services()
             _LOGGER.debug("Service discovery completed for %s", self.address)
         except Exception as err:
             error = f"Failed to connect: {err}"
@@ -365,12 +367,12 @@ class BLEDiagnosticRunner:
             for char in service.characteristics:
                 if "notify" in char.properties or "indicate" in char.properties:
                     try:
-                        await self._client.start_notify(
-                            char.uuid,
-                            lambda sender, data, uuid=char.uuid: asyncio.create_task(
-                                self._handle_notification(uuid, data)
-                            ),
-                        )
+                        # Define helper to capture loop variable 'uuid'
+                        uuid = char.uuid
+                        def notification_handler(sender: Any, data: bytearray) -> None:
+                            asyncio.create_task(self._handle_notification(uuid, data))
+
+                        await self._client.start_notify(char.uuid, notification_handler)
                         _LOGGER.debug("Subscribed to notifications on %s", char.uuid)
                     except Exception as err:
                         error = f"Failed to subscribe to {char.uuid}: {err}"
