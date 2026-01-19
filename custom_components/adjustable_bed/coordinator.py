@@ -399,40 +399,41 @@ class AdjustableBedCoordinator:
         if device is None:
             best_rssi = -999
             best_source: str | None = None
+            # Capture discovery snapshot once and reuse for both RSSI selection and device lookup
             try:
-                discovered = bluetooth.async_discovered_service_info(self.hass, connectable=True)
-                for svc_info in discovered:
-                    if svc_info.address.upper() == self._address.upper():
-                        svc_rssi = getattr(svc_info, 'rssi', None)
-                        # Handle None RSSI by using a low default value
-                        rssi_value = svc_rssi if svc_rssi is not None else -999
-                        svc_source = getattr(svc_info, 'source', 'unknown')
-                        _LOGGER.debug(
-                            "Auto-select candidate: source=%s, rssi=%s",
-                            svc_source, rssi_value
-                        )
-                        if rssi_value > best_rssi:
-                            best_rssi = rssi_value
-                            best_source = svc_source
+                discovered_services = list(bluetooth.async_discovered_service_info(self.hass, connectable=True))
             except Exception as err:
                 _LOGGER.debug("Error during auto adapter selection: %s", err)
+                discovered_services = []
+
+            # Find the adapter with best RSSI
+            for svc_info in discovered_services:
+                if svc_info.address.upper() == self._address.upper():
+                    svc_rssi = getattr(svc_info, 'rssi', None)
+                    # Handle None RSSI by using a low default value
+                    rssi_value = svc_rssi if svc_rssi is not None else -999
+                    svc_source = getattr(svc_info, 'source', 'unknown')
+                    _LOGGER.debug(
+                        "Auto-select candidate: source=%s, rssi=%s",
+                        svc_source, rssi_value
+                    )
+                    if rssi_value > best_rssi:
+                        best_rssi = rssi_value
+                        best_source = svc_source
 
             if best_source:
                 _LOGGER.info(
                     "Auto-selected adapter %s with best RSSI %d",
                     best_source, best_rssi
                 )
-                # Get device from the best adapter
-                try:
-                    for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                        if (svc_info.address.upper() == self._address.upper() and
-                            getattr(svc_info, 'source', None) == best_source):
-                            device = svc_info.device
-                            source = best_source
-                            rssi = best_rssi if best_rssi != -999 else None
-                            break
-                except Exception as err:
-                    _LOGGER.debug("Error getting device from best adapter: %s", err)
+                # Get device from the best adapter using the same snapshot
+                for svc_info in discovered_services:
+                    if (svc_info.address.upper() == self._address.upper() and
+                        getattr(svc_info, 'source', None) == best_source):
+                        device = svc_info.device
+                        source = best_source
+                        rssi = best_rssi if best_rssi != -999 else None
+                        break
 
             # Final fallback to default lookup
             if device is None:
