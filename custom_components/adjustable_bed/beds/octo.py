@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -641,7 +641,7 @@ class OctoController(BedController):
                     # skip_disconnect=True to prevent disconnect_after_command from
                     # tearing down the connection that the keep-alive is trying to maintain
                     await self._coordinator.async_execute_controller_command(
-                        lambda c: c.send_pin(),  # type: ignore[attr-defined]
+                        lambda c: cast("OctoController", c).send_pin(),
                         cancel_running=False,
                         skip_disconnect=True,
                     )
