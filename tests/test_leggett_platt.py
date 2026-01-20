@@ -10,10 +10,10 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.leggett_platt import (
-    LeggettPlattController,
     LeggettPlattGen2Commands,
     LeggettPlattOkinCommands,
 )
+from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
 from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
@@ -175,11 +175,11 @@ class TestLeggettPlattControllerOkin:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        # Create an Okin controller directly
-        controller = LeggettPlattController(coordinator, variant="okin")
+        # Create an Okin controller directly (using the new protocol-based class)
+        controller = LeggettOkinController(coordinator)
 
         # Okin format: [0x04, 0x02, ...int_bytes]
-        command = controller._build_okin_command(LeggettPlattOkinCommands.MOTOR_HEAD_UP)
+        command = controller._build_command(LeggettPlattOkinCommands.MOTOR_HEAD_UP)
 
         assert len(command) == 6
         assert command[:2] == bytes([0x04, 0x02])

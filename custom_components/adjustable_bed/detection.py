@@ -9,6 +9,15 @@ from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.helpers.selector import SelectOptionDict
 
 from .const import (
+    # Protocol-based bed types (new)
+    BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_UUID,
+    BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_WILINKE,
+    # Legacy/brand-specific bed types
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -25,6 +34,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
+    # Detection constants
     ERGOMOTION_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
@@ -75,24 +85,67 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     "hoverboard",
 )
 
-# Display names for bed types (sorted alphabetically by display name)
+# Display names for bed types (includes both protocol-based and legacy names)
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
-    BED_TYPE_DEWERTOKIN: "DewertOkin",
-    BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
+    # Protocol-based types (new naming - clearer for users)
+    BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
+    BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
+    BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar, others)",
+    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
+    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (ASCII)",
+    BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
+    BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
+    # Brand-specific types
     BED_TYPE_ERGOMOTION: "Ergomotion",
-    BED_TYPE_JIECANG: "Jiecang",
-    BED_TYPE_KEESON: "Keeson",
-    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt",
+    BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
+    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple)",
     BED_TYPE_LINAK: "Linak",
-    BED_TYPE_MATTRESSFIRM: "MattressFirm",
     BED_TYPE_MOTOSLEEP: "MotoSleep",
-    BED_TYPE_NECTAR: "Nectar",
     BED_TYPE_OCTO: "Octo",
-    BED_TYPE_OKIMAT: "Okimat",
     BED_TYPE_REVERIE: "Reverie",
     BED_TYPE_RICHMAT: "Richmat",
-    BED_TYPE_SERTA: "Serta",
+    BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SOLACE: "Solace",
+    # Legacy aliases (for backwards compatibility, shown at end)
+    BED_TYPE_DEWERTOKIN: "DewertOkin (legacy - use Okin Handle)",
+    BED_TYPE_OKIMAT: "Okimat (legacy - use Okin UUID)",
+    BED_TYPE_NECTAR: "Nectar (legacy - use Okin 7-Byte)",
+    BED_TYPE_MATTRESSFIRM: "MattressFirm (legacy - use Okin Nordic)",
+    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt (legacy - use specific variant)",
+    BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
+}
+
+# Manufacturer groups for organized UI selection
+# Groups related bed types together by manufacturer or protocol family
+MANUFACTURER_GROUPS: dict[str, list[str]] = {
+    "Leggett & Platt": [
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_OKIN,
+        BED_TYPE_LEGGETT_WILINKE,
+    ],
+    "Okin Protocol Family": [
+        BED_TYPE_OKIN_HANDLE,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIN_7BYTE,
+        BED_TYPE_OKIN_NORDIC,
+    ],
+    "Richmat Protocol Family": [
+        BED_TYPE_RICHMAT,
+    ],
+    "Other Brands": [
+        BED_TYPE_ERGOMOTION,
+        BED_TYPE_JIECANG,
+        BED_TYPE_KEESON,
+        BED_TYPE_LINAK,
+        BED_TYPE_MOTOSLEEP,
+        BED_TYPE_OCTO,
+        BED_TYPE_REVERIE,
+        BED_TYPE_SERTA,
+        BED_TYPE_SOLACE,
+    ],
+    "Diagnostic": [
+        BED_TYPE_DIAGNOSTIC,
+    ],
 }
 
 

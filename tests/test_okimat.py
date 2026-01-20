@@ -818,7 +818,7 @@ class TestOkimatPositionNotifications:
         await coordinator.controller.start_notify(callback)
 
         # Okimat uses OkinPositionMixin which supports position notifications
-        assert "Position notifications active for Okin bed" in caplog.text
+        assert "Position notifications active for Okin UUID bed" in caplog.text
 
     async def test_read_positions_noop(
         self,
