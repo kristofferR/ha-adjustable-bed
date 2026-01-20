@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/kristofferR/ha-adjustable-bed/releases"><img src="https://img.shields.io/github/v/release/kristofferR/ha-adjustable-bed" alt="GitHub Release"></a>
   <a href="https://github.com/kristofferR/ha-adjustable-bed/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/kristofferR/ha-adjustable-bed/validate.yml?label=validation" alt="Validation"></a>
-  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS"></a>
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Default-blue.svg" alt="HACS"></a>
   <img src="https://img.shields.io/badge/Home%20Assistant-2025.10%2B-blue" alt="Home Assistant 2025.10+">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/kristofferR/ha-adjustable-bed" alt="License"></a>
 </p>
@@ -16,7 +16,7 @@
 
 ## Quick Start
 
-1. **Install** via [HACS](https://hacs.xyz): Add as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/), then install
+1. **Install** via [HACS](https://hacs.xyz): Search for "Adjustable Bed" and install
 2. **Discover** your bed automatically, or add manually via Settings → Integrations
 3. **Control** your bed from Home Assistant dashboards, automations, and voice assistants!
 
@@ -72,10 +72,9 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 ### HACS (Recommended)
 
 1. Open HACS in Home Assistant
-2. Click the three dots menu (top right) → **Custom repositories**
-3. Add `https://github.com/kristofferR/ha-adjustable-bed/` with category **Integration**
-4. Search for "Adjustable Bed" and install
-5. Restart Home Assistant
+2. Search for "Adjustable Bed"
+3. Click Install
+4. Restart Home Assistant
 
 ### Manual
 
