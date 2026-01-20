@@ -52,6 +52,42 @@ stop_all:
         device:
           integration: adjustable_bed
 
+set_position:
+  name: Set Motor Position
+  description: Move a motor to a specific position and stop when reached. Only works for beds with position feedback (Linak, Okimat, Reverie, Keeson, Ergomotion).
+  fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    motor:
+      name: Motor
+      description: The motor to move.
+      required: true
+      selector:
+        select:
+          options:
+            - label: Back
+              value: back
+            - label: Legs
+              value: legs
+            - label: Head
+              value: head
+            - label: Feet
+              value: feet
+    position:
+      name: Position
+      description: Target position (0-68° for back/head, 0-45° for legs/feet, 0-100% for Keeson/Ergomotion).
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: slider
+
 run_diagnostics:
   name: Run BLE Diagnostics
   description: Capture BLE protocol data from a device for troubleshooting and adding support for new bed models. Either provide a configured device or a target MAC address.

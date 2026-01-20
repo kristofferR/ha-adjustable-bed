@@ -14,7 +14,16 @@ from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import CONF_BED_TYPE, CONF_HAS_MASSAGE, CONF_MOTOR_COUNT, DOMAIN
+from .const import (
+    BED_TYPE_ERGOMOTION,
+    BED_TYPE_KEESON,
+    BEDS_WITH_POSITION_FEEDBACK,
+    CONF_BED_TYPE,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    DEFAULT_MOTOR_COUNT,
+    DOMAIN,
+)
 from .coordinator import AdjustableBedCoordinator
 
 # Service constants
@@ -23,7 +32,10 @@ SERVICE_SAVE_PRESET = "save_preset"
 SERVICE_STOP_ALL = "stop_all"
 SERVICE_RUN_DIAGNOSTICS = "run_diagnostics"
 SERVICE_GENERATE_SUPPORT_REPORT = "generate_support_report"
+SERVICE_SET_POSITION = "set_position"
 ATTR_PRESET = "preset"
+ATTR_MOTOR = "motor"
+ATTR_POSITION = "position"
 ATTR_TARGET_ADDRESS = "target_address"
 ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
@@ -261,6 +273,184 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+            }
+        ),
+    )
+
+    async def handle_set_position(call: ServiceCall) -> None:
+        """Handle set_position service call."""
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        motor = call.data[ATTR_MOTOR]
+        position = call.data[ATTR_POSITION]
+
+        for device_id in device_ids:
+            coordinator = await _get_coordinator_from_device(hass, device_id)
+            if not coordinator:
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
+                )
+
+            # Get config entry for bed type and motor count
+            entry: ConfigEntry | None = None
+            for entry_id, coord in hass.data[DOMAIN].items():
+                if coord is coordinator:
+                    entry = hass.config_entries.async_get_entry(entry_id)
+                    break
+
+            if not entry:
+                raise ServiceValidationError(
+                    f"Could not find config entry for device {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
+                )
+
+            bed_type = entry.data.get(CONF_BED_TYPE)
+            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+
+            # Validate bed supports position feedback
+            if bed_type not in BEDS_WITH_POSITION_FEEDBACK:
+                raise ServiceValidationError(
+                    f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
+                    translation_domain=DOMAIN,
+                    translation_key="position_feedback_not_supported",
+                    translation_placeholders={
+                        "device_name": coordinator.name,
+                        "bed_type": bed_type or "unknown",
+                    },
+                )
+
+            # Validate angle sensing is enabled
+            if coordinator.disable_angle_sensing:
+                raise ServiceValidationError(
+                    f"Angle sensing is disabled for device '{coordinator.name}'",
+                    translation_domain=DOMAIN,
+                    translation_key="angle_sensing_disabled",
+                    translation_placeholders={"device_name": coordinator.name},
+                )
+
+            # Define motor configurations
+            # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys
+            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet)
+            is_keeson_ergomotion = bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION)
+
+            if is_keeson_ergomotion:
+                # Keeson/Ergomotion only have head and feet motors
+                valid_motors = {"head", "feet"}
+                motor_configs = {
+                    "head": {
+                        "position_key": "back",  # Maps to "back" in position_data
+                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                        "max_value": 100.0,  # Percentage
+                    },
+                    "feet": {
+                        "position_key": "legs",  # Maps to "legs" in position_data
+                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                        "max_value": 100.0,  # Percentage
+                    },
+                }
+            else:
+                # Standard beds: motor availability depends on motor_count
+                motor_configs = {
+                    "back": {
+                        "position_key": "back",
+                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                        "max_value": 68.0,  # Degrees
+                        "min_motors": 2,
+                    },
+                    "legs": {
+                        "position_key": "legs",
+                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                        "max_value": 45.0,  # Degrees
+                        "min_motors": 2,
+                    },
+                    "head": {
+                        "position_key": "head",
+                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                        "max_value": 68.0,  # Degrees
+                        "min_motors": 3,
+                    },
+                    "feet": {
+                        "position_key": "feet",
+                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                        "max_value": 45.0,  # Degrees
+                        "min_motors": 4,
+                    },
+                }
+                # Filter to valid motors based on motor_count
+                valid_motors = {
+                    m for m, cfg in motor_configs.items()
+                    if motor_count >= cfg.get("min_motors", 2)
+                }
+
+            # Validate motor is valid for this bed
+            if motor not in valid_motors:
+                raise ServiceValidationError(
+                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                    f"Valid motors: {', '.join(sorted(valid_motors))}",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_motor_for_bed_type",
+                    translation_placeholders={
+                        "motor": motor,
+                        "device_name": coordinator.name,
+                        "valid_motors": ", ".join(sorted(valid_motors)),
+                    },
+                )
+
+            config = motor_configs[motor]
+            max_value = config["max_value"]
+
+            # Validate position is in range
+            if position < 0 or position > max_value:
+                unit = "%" if is_keeson_ergomotion else "°"
+                raise ServiceValidationError(
+                    f"Position {position} is out of range for motor '{motor}'. "
+                    f"Valid range: 0-{max_value}{unit}",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_position_range",
+                    translation_placeholders={
+                        "position": str(position),
+                        "motor": motor,
+                        "max_value": str(max_value),
+                        "unit": unit,
+                    },
+                )
+
+            # Call async_seek_position
+            await coordinator.async_seek_position(
+                position_key=config["position_key"],
+                target_angle=position,
+                move_up_fn=config["move_up_fn"],
+                move_down_fn=config["move_down_fn"],
+                move_stop_fn=config["move_stop_fn"],
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_POSITION,
+        handle_set_position,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                vol.Required(ATTR_POSITION): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
             }
         ),
     )
@@ -506,6 +696,7 @@ def _async_unregister_services(hass: HomeAssistant) -> None:
         SERVICE_GOTO_PRESET,
         SERVICE_SAVE_PRESET,
         SERVICE_STOP_ALL,
+        SERVICE_SET_POSITION,
         SERVICE_RUN_DIAGNOSTICS,
         SERVICE_GENERATE_SUPPORT_REPORT,
     ):

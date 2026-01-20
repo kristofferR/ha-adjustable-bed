@@ -431,6 +431,24 @@
           "description": "Include recent log entries related to the integration."
         }
       }
+    },
+    "set_position": {
+      "name": "Set Motor Position",
+      "description": "Move a motor to a specific position and stop when reached.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "motor": {
+          "name": "Motor",
+          "description": "The motor to move (back, legs, head, or feet)."
+        },
+        "position": {
+          "name": "Position",
+          "description": "Target position (degrees or percentage depending on bed type)."
+        }
+      }
     }
   },
   "exceptions": {
@@ -448,6 +466,18 @@
     },
     "devices_not_found": {
       "message": "Could not find Adjustable Bed device(s) with ID(s): {device_ids}."
+    },
+    "position_feedback_not_supported": {
+      "message": "Device \"{device_name}\" (type: {bed_type}) does not support position feedback. Only Linak, Okimat, Reverie, Keeson, and Ergomotion beds support this feature."
+    },
+    "angle_sensing_disabled": {
+      "message": "Angle sensing is disabled for device \"{device_name}\". Enable angle sensing in the device configuration to use position control."
+    },
+    "invalid_motor_for_bed_type": {
+      "message": "Motor \"{motor}\" is not valid for device \"{device_name}\". Valid motors: {valid_motors}."
+    },
+    "invalid_position_range": {
+      "message": "Position {position} is out of range for motor \"{motor}\". Valid range: 0-{max_value}{unit}."
     }
   },
   "issues": {
