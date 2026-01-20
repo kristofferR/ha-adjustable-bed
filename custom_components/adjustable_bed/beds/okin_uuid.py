@@ -667,10 +667,3 @@ class OkinUuidController(BedController):
     async def massage_mode_step(self) -> None:
         """Step through massage modes/timer."""
         await self.write_command(self._build_command(0x200))
-
-
-# Backwards compatibility aliases
-OkimatComplexCommand = OkinUuidComplexCommand
-OkimatRemoteConfig = OkinUuidRemoteConfig
-OKIMAT_REMOTES = OKIN_UUID_REMOTES
-OkimatController = OkinUuidController

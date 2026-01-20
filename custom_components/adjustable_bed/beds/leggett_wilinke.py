@@ -433,8 +433,3 @@ class LeggettWilinkeController(BedController):
     async def massage_wave_toggle(self) -> None:
         """Toggle wave massage mode."""
         await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_WAVE))
-
-
-# Backwards compatibility aliases
-LeggettPlattMlrmCommands = LeggettWilinkeCommands
-LeggettPlattMlrmController = LeggettWilinkeController

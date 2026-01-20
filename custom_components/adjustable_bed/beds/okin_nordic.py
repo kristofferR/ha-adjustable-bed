@@ -313,14 +313,19 @@ class OkinNordicController(BedController):
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position."""
         _LOGGER.warning(
-            "Okin Nordic beds don't support programmable memory slots. "
-            "Use preset positions instead."
+            "Okin Nordic beds don't support programmable memory slots (requested: %d). "
+            "Use preset positions instead.",
+            memory_num,
         )
-        raise NotImplementedError("Memory slots not supported on Okin Nordic beds")
+        raise NotImplementedError(
+            f"Memory slot {memory_num} not supported on Okin Nordic beds"
+        )
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""
-        raise NotImplementedError("Memory programming not supported on Okin Nordic beds")
+        raise NotImplementedError(
+            f"Memory programming (slot {memory_num}) not supported on Okin Nordic beds"
+        )
 
     async def stop_all(self) -> None:
         """Stop all movement."""

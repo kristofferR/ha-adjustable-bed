@@ -195,10 +195,10 @@ async def create_controller(
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         # Use configured variant or auto-detect
         if protocol_variant == LEGGETT_VARIANT_MLRM:
-            from .beds.leggett_platt_mlrm import LeggettPlattMlrmController
+            from .beds.leggett_wilinke import LeggettWilinkeController
 
             _LOGGER.debug("Using MlRM Leggett & Platt variant (configured)")
-            return LeggettPlattMlrmController(coordinator)
+            return LeggettWilinkeController(coordinator)
         elif protocol_variant == LEGGETT_VARIANT_OKIN:
             from .beds.leggett_okin import LeggettOkinController
 
@@ -227,10 +227,10 @@ async def create_controller(
             wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]
             for service in client.services:
                 if service.uuid.lower() in wilinke_uuids_lower:
-                    from .beds.leggett_platt_mlrm import LeggettPlattMlrmController
+                    from .beds.leggett_wilinke import LeggettWilinkeController
 
                     _LOGGER.debug("Using MlRM Leggett & Platt variant (auto-detected)")
-                    return LeggettPlattMlrmController(coordinator)
+                    return LeggettWilinkeController(coordinator)
 
             # Default to gen2 variant (most common L&P variant)
             from .beds.leggett_gen2 import LeggettGen2Controller
@@ -250,12 +250,12 @@ async def create_controller(
         return ReverieController(coordinator)
 
     if bed_type == BED_TYPE_OKIMAT:
-        from .beds.okimat import OkimatController
+        from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
         variant = protocol_variant or "auto"
-        _LOGGER.debug("Using Okimat variant: %s", variant)
-        return OkimatController(coordinator, variant=variant)
+        _LOGGER.debug("Using Okin UUID variant: %s", variant)
+        return OkinUuidController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_ERGOMOTION:
         # Ergomotion uses the same protocol as Keeson with position feedback
@@ -269,9 +269,9 @@ async def create_controller(
         return JiecangController(coordinator)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
-        from .beds.dewertokin import DewertOkinController
+        from .beds.okin_handle import OkinHandleController
 
-        return DewertOkinController(coordinator)
+        return OkinHandleController(coordinator)
 
     if bed_type == BED_TYPE_SERTA:
         from .beds.serta import SertaController
@@ -301,14 +301,14 @@ async def create_controller(
             return OctoController(coordinator, pin=octo_pin)
 
     if bed_type == BED_TYPE_MATTRESSFIRM:
-        from .beds.mattressfirm import MattressFirmController
+        from .beds.okin_nordic import OkinNordicController
 
-        return MattressFirmController(coordinator)
+        return OkinNordicController(coordinator)
 
     if bed_type == BED_TYPE_NECTAR:
-        from .beds.nectar import NectarController
+        from .beds.okin_7byte import Okin7ByteController
 
-        return NectarController(coordinator)
+        return Okin7ByteController(coordinator)
 
     if bed_type == BED_TYPE_DIAGNOSTIC:
         from .beds.diagnostic import DiagnosticBedController

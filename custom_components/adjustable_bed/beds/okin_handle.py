@@ -182,8 +182,9 @@ class OkinHandleController(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
+        _ = motor_count  # Unused - this bed doesn't support position feedback
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
@@ -273,7 +274,7 @@ class OkinHandleController(BedController):
         await self.write_command(
             OkinHandleCommands.FLAT,
             repeat_count=100,
-            repeat_delay_ms=150,
+            repeat_delay_ms=300,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -283,14 +284,15 @@ class OkinHandleController(BedController):
             2: OkinHandleCommands.MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(command, repeat_count=100, repeat_delay_ms=150)
+            await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
         else:
             _LOGGER.warning("Okin handle beds only support memory presets 1 and 2")
 
-    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
+    async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
         _LOGGER.warning(
-            "Okin handle beds don't support programming memory presets via BLE"
+            "Okin handle beds don't support programming memory presets via BLE (requested slot: %d)",
+            memory_num,
         )
 
     async def preset_zero_g(self) -> None:
@@ -298,7 +300,7 @@ class OkinHandleController(BedController):
         await self.write_command(
             OkinHandleCommands.ZERO_G,
             repeat_count=100,
-            repeat_delay_ms=150,
+            repeat_delay_ms=300,
         )
 
     async def preset_tv(self) -> None:
@@ -306,7 +308,7 @@ class OkinHandleController(BedController):
         await self.write_command(
             OkinHandleCommands.TV,
             repeat_count=100,
-            repeat_delay_ms=150,
+            repeat_delay_ms=300,
         )
 
     async def preset_anti_snore(self) -> None:
@@ -314,7 +316,7 @@ class OkinHandleController(BedController):
         await self.write_command(
             OkinHandleCommands.QUIET_SLEEP,
             repeat_count=100,
-            repeat_delay_ms=150,
+            repeat_delay_ms=300,
         )
 
     # Light methods
@@ -354,8 +356,3 @@ class OkinHandleController(BedController):
     async def massage_foot_toggle(self) -> None:
         """Toggle foot massage."""
         await self.write_command(OkinHandleCommands.FOOT_MASSAGE)
-
-
-# Backwards compatibility alias
-DewertOkinCommands = OkinHandleCommands
-DewertOkinController = OkinHandleController

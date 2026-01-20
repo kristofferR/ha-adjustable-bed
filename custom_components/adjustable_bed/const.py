@@ -576,6 +576,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
     BED_TYPE_REVERIE,
 })
 
@@ -584,6 +585,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset({
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset({
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
     BED_TYPE_REVERIE,
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,

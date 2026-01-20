@@ -163,10 +163,8 @@ class Okin7ByteController(BedController):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
-            pulse_count = self._coordinator.motor_pulse_count
-            pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
-                command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
+                command, repeat_count=15, repeat_delay_ms=100
             )
         finally:
             try:
@@ -242,35 +240,59 @@ class Okin7ByteController(BedController):
     # Preset positions
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            Okin7ByteCommands.FLAT,
-            repeat_count=100,  # Presets need longer duration
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                Okin7ByteCommands.FLAT,
+                repeat_count=100,  # Presets need longer duration
+                repeat_delay_ms=300,
+            )
+        finally:
+            await self.write_command(
+                Okin7ByteCommands.STOP,
+                cancel_event=asyncio.Event(),
+            )
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self.write_command(
-            Okin7ByteCommands.ZERO_GRAVITY,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                Okin7ByteCommands.ZERO_GRAVITY,
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            await self.write_command(
+                Okin7ByteCommands.STOP,
+                cancel_event=asyncio.Event(),
+            )
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(
-            Okin7ByteCommands.ANTI_SNORE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                Okin7ByteCommands.ANTI_SNORE,
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            await self.write_command(
+                Okin7ByteCommands.STOP,
+                cancel_event=asyncio.Event(),
+            )
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(
-            Okin7ByteCommands.LOUNGE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                Okin7ByteCommands.LOUNGE,
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            await self.write_command(
+                Okin7ByteCommands.STOP,
+                cancel_event=asyncio.Event(),
+            )
 
     async def preset_tv(self) -> None:
         """Go to TV position (alias for lounge)."""
@@ -282,14 +304,19 @@ class Okin7ByteController(BedController):
         Note: These beds don't support user-programmable memory slots.
         """
         _LOGGER.warning(
-            "Okin 7-byte beds don't support programmable memory slots. "
-            "Use preset positions instead."
+            "Okin 7-byte beds don't support programmable memory slots (requested: %d). "
+            "Use preset positions instead.",
+            memory_num,
         )
-        raise NotImplementedError("Memory slots not supported on Okin 7-byte beds")
+        raise NotImplementedError(
+            f"Memory slot {memory_num} not supported on Okin 7-byte beds"
+        )
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""
-        raise NotImplementedError("Memory programming not supported on Okin 7-byte beds")
+        raise NotImplementedError(
+            f"Memory programming (slot {memory_num}) not supported on Okin 7-byte beds"
+        )
 
     async def stop_all(self) -> None:
         """Stop all movement."""
@@ -333,8 +360,3 @@ class Okin7ByteController(BedController):
     async def lights_toggle(self) -> None:
         """Cycle lights (sends on command - use switch entity for true toggle)."""
         await self.lights_on()
-
-
-# Backwards compatibility aliases
-NectarCommands = Okin7ByteCommands
-NectarController = Okin7ByteController

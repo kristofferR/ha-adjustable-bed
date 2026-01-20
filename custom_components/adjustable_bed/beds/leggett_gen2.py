@@ -170,8 +170,9 @@ class LeggettGen2Controller(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
+        _ = motor_count  # Unused - this bed doesn't support position feedback
 
     # Motor control methods - Gen2 variant doesn't have motor control via BLE
     # (uses position-based control instead)
@@ -333,7 +334,3 @@ class LeggettGen2Controller(BedController):
     async def massage_toggle(self) -> None:
         """Toggle massage."""
         await self.write_command(LeggettGen2Commands.MASSAGE_WAVE_ON)
-
-
-# Backwards compatibility aliases
-LeggettPlattGen2Commands = LeggettGen2Commands

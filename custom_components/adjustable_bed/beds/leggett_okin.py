@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from ..const import LEGGETT_OKIN_CHAR_UUID
@@ -69,6 +70,14 @@ class LeggettOkinCommands:
     TOGGLE_LIGHTS = 0x20000
 
 
+class MotorDirection(Enum):
+    """Direction for motor movement."""
+
+    UP = "up"
+    DOWN = "down"
+    STOP = "stop"
+
+
 class LeggettOkinController(BedController):
     """Controller for Leggett & Platt beds using Okin protocol.
 
@@ -80,7 +89,7 @@ class LeggettOkinController(BedController):
         """Initialize the Leggett & Platt Okin controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        self._motor_state: dict[str, bool | None] = {}
+        self._motor_state: dict[str, MotorDirection] = {}
         _LOGGER.debug("LeggettOkinController initialized")
 
     @property
@@ -163,26 +172,30 @@ class LeggettOkinController(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
+        _ = motor_count  # Unused - this bed doesn't support position feedback
 
     def _get_move_command(self) -> int:
         """Calculate the combined motor movement command."""
         command = 0
         state = self._motor_state
-        if state.get("head") is True:
+        if state.get("head") == MotorDirection.UP:
             command += LeggettOkinCommands.MOTOR_HEAD_UP
-        elif state.get("head") is False:
+        elif state.get("head") == MotorDirection.DOWN:
             command += LeggettOkinCommands.MOTOR_HEAD_DOWN
-        if state.get("feet") is True:
+        if state.get("feet") == MotorDirection.UP:
             command += LeggettOkinCommands.MOTOR_FEET_UP
-        elif state.get("feet") is False:
+        elif state.get("feet") == MotorDirection.DOWN:
             command += LeggettOkinCommands.MOTOR_FEET_DOWN
         return command
 
-    async def _move_motor(self, motor: str, direction: bool | None) -> None:
+    async def _move_motor(self, motor: str, direction: MotorDirection) -> None:
         """Move a motor in a direction or stop it."""
-        self._motor_state[motor] = direction
+        if direction == MotorDirection.STOP:
+            self._motor_state.pop(motor, None)
+        else:
+            self._motor_state[motor] = direction
         command = self._get_move_command()
 
         try:
@@ -206,15 +219,15 @@ class LeggettOkinController(BedController):
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_motor("head", True)
+        await self._move_motor("head", MotorDirection.UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_motor("head", False)
+        await self._move_motor("head", MotorDirection.DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
-        await self._move_motor("head", None)
+        await self._move_motor("head", MotorDirection.STOP)
 
     async def move_back_up(self) -> None:
         """Move back up (same as head)."""
@@ -230,15 +243,15 @@ class LeggettOkinController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._move_motor("feet", True)
+        await self._move_motor("feet", MotorDirection.UP)
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._move_motor("feet", False)
+        await self._move_motor("feet", MotorDirection.DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self._move_motor("feet", None)
+        await self._move_motor("feet", MotorDirection.STOP)
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -284,9 +297,12 @@ class LeggettOkinController(BedController):
                 repeat_delay_ms=300,
             )
 
-    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
+    async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Okin)."""
-        _LOGGER.warning("Okin beds don't support programming memory presets")
+        _LOGGER.warning(
+            "Okin beds don't support programming memory presets (requested slot: %d)",
+            memory_num,
+        )
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -352,7 +368,3 @@ class LeggettOkinController(BedController):
         await self.write_command(
             self._build_command(LeggettOkinCommands.MASSAGE_STEP)
         )
-
-
-# Backwards compatibility aliases
-LeggettPlattOkinCommands = LeggettOkinCommands

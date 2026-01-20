@@ -30,16 +30,18 @@ custom_components/adjustable_bed/
 │   ├── keeson.py        # Keeson KSBT/BaseI4/I5/Ergomotion protocols (tested)
 │   ├── motosleep.py     # MotoSleep HHC ASCII protocol (tested)
 │   ├── solace.py        # Solace 11-byte packet protocol
-│   ├── leggett_platt.py # Leggett & Platt Gen2/Okin protocols
+│   ├── leggett_gen2.py  # Leggett & Platt Gen2 ASCII protocol
+│   ├── leggett_okin.py  # Leggett & Platt Okin binary protocol
+│   ├── leggett_wilinke.py # Leggett & Platt WiLinke 5-byte protocol
 │   ├── reverie.py       # Reverie XOR checksum protocol
-│   ├── okimat.py        # Okimat/Okin binary protocol
+│   ├── okin_uuid.py     # Okin 6-byte via UUID protocol
+│   ├── okin_handle.py   # Okin 6-byte via handle protocol
+│   ├── okin_7byte.py    # Okin 7-byte protocol
+│   ├── okin_nordic.py   # Okin 7-byte via Nordic UART
+│   ├── okin_protocol.py # Shared Okin protocol utilities
 │   ├── jiecang.py       # Jiecang/Glide protocol
-│   ├── dewertokin.py    # DewertOkin handle-based protocol
 │   ├── serta.py         # Serta Motion Perfect III protocol
 │   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
-│   ├── mattressfirm.py  # Mattress Firm 900 7-byte protocol
-│   ├── nectar.py        # Nectar 7-byte protocol
-│   ├── okin_protocol.py # Shared Okin protocol utilities
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
@@ -94,15 +96,17 @@ custom_components/adjustable_bed/
 | Keeson | `KeesonController` | KSBT (6-byte), BaseI4/I5 (8-byte XOR), or Ergomotion | Service UUID `0000ffe5-...` | ✅ Tested |
 | MotoSleep | `MotoSleepController` | 2-byte ASCII `[$, char]` | Device name starts with "HHC" | ✅ Tested |
 | Solace | `SolaceController` | 11-byte packets with built-in CRC | Service UUID `0000ffe0-...` | Needs testing |
-| Leggett & Platt | `LeggettPlattController` | Gen2 (ASCII) or Okin (binary) | Service UUID `45e25100-...` (Gen2) | Needs testing |
+| Leggett & Platt Gen2 | `LeggettGen2Controller` | Gen2 ASCII commands | Service UUID `45e25100-...` | Needs testing |
+| Leggett & Platt Okin | `LeggettOkinController` | Okin binary protocol | Service UUID `62741523-...` + name | Needs testing |
+| Leggett & Platt WiLinke | `LeggettWilinkeController` | WiLinke 5-byte protocol | Name prefix "MlRM*" | Needs testing |
 | Reverie | `ReverieController` | XOR checksum, position-based motors | Service UUID `1b1d9641-...` | Needs testing |
-| Okimat | `OkimatController` | Okin binary, multiple remote variants | Service UUID `62741523-...` | Needs testing |
-| Jiecang | `JiecangController` | Glide beds, Dream Motion app | Char UUID `0000ff01-...` | Needs testing |
-| DewertOkin | `DewertOkinController` | Handle-based writes (0x0013) | Name patterns | Needs testing |
+| Okin UUID | `OkinUuidController` | Okin 6-byte via UUID, requires pairing | Service UUID `62741523-...` | Needs testing |
+| Okin Handle | `OkinHandleController` | Okin 6-byte via handle (0x0013) | Name patterns | Needs testing |
+| Okin 7-byte | `Okin7ByteController` | 7-byte via Okin service UUID | Service UUID `62741523-...` + name | Needs testing |
+| Okin Nordic | `OkinNordicController` | 7-byte via Nordic UART | Service UUID `6e400001-...` | Needs testing |
 | Serta | `SertaController` | Handle-based writes (0x0020) | Name patterns | Needs testing |
+| Jiecang | `JiecangController` | Glide beds, Dream Motion app | Char UUID `0000ff01-...` | Needs testing |
 | Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
-| Mattress Firm | `MattressFirmController` | 7-byte Nordic UART protocol | Service UUID `6e400001-...` | Needs testing |
-| Nectar | `NectarController` | 7-byte protocol (similar to MF900) | Service UUID `62741523-...` + name | Needs testing |
 | Diagnostic | `DiagnosticController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
