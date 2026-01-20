@@ -136,6 +136,9 @@ class OkinNordicController(BedController):
 
         # Send init sequence on first command
         if not self._initialized:
+            if effective_cancel is not None and effective_cancel.is_set():
+                _LOGGER.info("Command cancelled before init sequence")
+                return
             _LOGGER.debug("Sending init sequence before first command")
             try:
                 await self.client.write_gatt_char(

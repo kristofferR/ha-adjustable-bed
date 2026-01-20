@@ -276,11 +276,20 @@ class LeggettOkinController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.PRESET_FLAT),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                self._build_command(LeggettOkinCommands.PRESET_FLAT),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -291,11 +300,20 @@ class LeggettOkinController(BedController):
             4: LeggettOkinCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
+            try:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=100,
+                    repeat_delay_ms=300,
+                )
+            finally:
+                try:
+                    await self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
+                except Exception:
+                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Okin)."""
@@ -306,11 +324,20 @@ class LeggettOkinController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.PRESET_ZERO_G),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                self._build_command(LeggettOkinCommands.PRESET_ZERO_G),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during preset_zero_g cleanup")
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (not supported on Okin)."""

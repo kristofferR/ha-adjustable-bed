@@ -397,11 +397,7 @@ class TestOkinUuidMovement:
 class TestOkinUuidMultiMotor:
     """Test Okin UUID multi-motor command support."""
 
-    def test_get_move_command_empty_state(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-    ):
+    def test_get_move_command_empty_state(self):
         """Test combined command with no active motors."""
 
         # Create controller without full coordinator setup
@@ -411,11 +407,7 @@ class TestOkinUuidMultiMotor:
         controller = OkinUuidController(MockCoordinator(), OKIMAT_VARIANT_82417)
         assert controller._get_move_command() == 0
 
-    def test_get_move_command_single_motor(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
-    ):
+    def test_get_move_command_single_motor(self):
         """Test combined command with single motor."""
 
         class MockCoordinator:

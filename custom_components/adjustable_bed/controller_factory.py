@@ -91,7 +91,7 @@ async def create_controller(
 
         return OkinHandleController(coordinator)
 
-    if bed_type == BED_TYPE_OKIN_UUID:
+    if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
         from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
@@ -248,14 +248,6 @@ async def create_controller(
         from .beds.reverie import ReverieController
 
         return ReverieController(coordinator)
-
-    if bed_type == BED_TYPE_OKIMAT:
-        from .beds.okin_uuid import OkinUuidController
-
-        # Pass the configured variant (remote code) to the controller
-        variant = protocol_variant or "auto"
-        _LOGGER.debug("Using Okin UUID variant: %s", variant)
-        return OkinUuidController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_ERGOMOTION:
         # Ergomotion uses the same protocol as Keeson with position feedback

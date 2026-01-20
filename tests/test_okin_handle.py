@@ -360,7 +360,7 @@ class TestOkinHandlePresets:
         assert first_call[0][1] == OkinHandleCommands.QUIET_SLEEP
 
     @pytest.mark.parametrize(
-        "memory_num,expected_command",
+        ("memory_num", "expected_command"),
         [
             (1, OkinHandleCommands.MEMORY_1),
             (2, OkinHandleCommands.MEMORY_2),
