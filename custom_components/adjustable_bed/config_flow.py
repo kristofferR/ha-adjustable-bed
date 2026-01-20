@@ -81,6 +81,7 @@ from .validators import (
     get_variants_for_bed_type,
     is_valid_mac_address,
     is_valid_octo_pin,
+    is_valid_variant_for_bed_type,
     normalize_octo_pin,
 )
 
@@ -477,6 +478,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+
+            # Validate protocol variant is valid for bed type
+            if not is_valid_variant_for_bed_type(bed_type, protocol_variant):
+                errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
                 bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
@@ -600,6 +606,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+
+                # Validate protocol variant is valid for bed type
+                if not is_valid_variant_for_bed_type(bed_type, protocol_variant):
+                    errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
+
                 # Get bed-specific defaults for motor pulse settings
                 pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
                     bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
@@ -1109,6 +1120,8 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 self.config_entry,
                 data=new_data,
             )
+            # Reload integration to apply changes immediately
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(

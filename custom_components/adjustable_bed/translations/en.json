@@ -181,7 +181,8 @@
       "wrong_variant": "Failed to communicate with bed. Try selecting a different protocol variant.",
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
-      "invalid_pin": "PIN must be empty or exactly 4 digits."
+      "invalid_pin": "PIN must be empty or exactly 4 digits.",
+      "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type."
     }
   },
   "options": {

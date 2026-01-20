@@ -697,6 +697,14 @@ class AdjustableBedCoordinator:
 
     def _on_disconnect(self, client: BleakClient) -> None:
         """Handle disconnection callback."""
+        # Ignore stale disconnect callbacks from old clients
+        if client is not self._client:
+            _LOGGER.debug(
+                "Ignoring stale disconnect callback from old client for %s",
+                self._address,
+            )
+            return
+
         # If we're in the middle of connecting, this is likely bleak's internal retry
         # for le-connection-abort-by-local - don't log warnings or clear references
         if self._connecting:

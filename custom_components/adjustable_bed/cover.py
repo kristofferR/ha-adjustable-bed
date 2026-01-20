@@ -305,7 +305,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         # Convert angle to percentage (0-100) using the description's max_angle
         max_angle = self.entity_description.max_angle
-        return min(100, int((position / max_angle) * 100))
+        return max(0, min(100, int((position / max_angle) * 100)))
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (raise the motor)."""

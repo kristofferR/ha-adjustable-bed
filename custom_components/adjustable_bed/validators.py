@@ -20,6 +20,7 @@ from .const import (
     OCTO_VARIANTS,
     OKIMAT_VARIANTS,
     RICHMAT_VARIANTS,
+    VARIANT_AUTO,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,6 +66,14 @@ def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
 def bed_type_has_variants(bed_type: str) -> bool:
     """Check if a bed type has multiple protocol variants."""
     return bed_type in VARIANTS_BY_BED_TYPE
+
+
+def is_valid_variant_for_bed_type(bed_type: str, variant: str) -> bool:
+    """Check if a protocol variant is valid for a given bed type."""
+    if variant == VARIANT_AUTO:
+        return True
+    valid_variants = get_variants_for_bed_type(bed_type)
+    return valid_variants is not None and variant in valid_variants
 
 
 def get_available_adapters(hass: HomeAssistant) -> dict[str, str]:
