@@ -15,6 +15,8 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 
 Some beds require OS-level Bluetooth pairing before the integration can communicate:
 
+> **Note:** The table below mixes brand names, protocol variants, and generation names. "Okimat/Okin" refers to Okimat-branded beds using the Okin protocol. Leggett & Platt appears multiple times because different models use different protocols/generations. Check your bed's label, remote, or manufacturer manual to determine which row applies to your specific model.
+
 | Bed Type | Pairing Required |
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
