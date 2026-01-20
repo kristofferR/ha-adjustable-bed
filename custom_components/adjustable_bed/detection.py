@@ -65,6 +65,46 @@ _LOGGER = logging.getLogger(__name__)
 # MAC address regex pattern (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
 MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
+# Richmat remote code pattern (e.g., QRRM, V1RM, BURM, ZR10, ZR60)
+# Matches: 2 alphanumeric + "R" + "M" or "N" (like QRRM, V1RM, BURM, A0RN)
+# Or: "ZR" + 2 digits (like ZR10, ZR60)
+# Case-insensitive via re.IGNORECASE
+RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[0-9]{2})", re.IGNORECASE)
+
+
+def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
+    """Extract Richmat remote code from device name.
+
+    Richmat devices typically have names like:
+    - "QRRM157052" -> extracts "qrrm"
+    - "V1RM123456" -> extracts "v1rm"
+    - "Sleep Function 2.0" -> returns "i7rm" (known alias)
+    - "X1RM...." -> extracts "x1rm"
+
+    Args:
+        device_name: The BLE device name
+
+    Returns:
+        The detected remote code (lowercase) or None if not detected.
+    """
+    if not device_name:
+        return None
+
+    name_lower = device_name.lower()
+
+    # Special aliases that map to known remote codes
+    if "sleep function" in name_lower:
+        return "i7rm"
+
+    # Try to extract the 4-character code prefix
+    match = RICHMAT_CODE_PATTERN.match(name_lower)
+    if match:
+        code = match.group(1)
+        _LOGGER.debug("Detected Richmat remote code '%s' from name '%s'", code, device_name)
+        return code
+
+    return None
+
 
 def is_mac_like_name(name: str | None) -> bool:
     """Check if name is None, empty, or looks like a MAC address."""
