@@ -43,16 +43,25 @@ _LOGGER = logging.getLogger(__name__)
 class KeesonCommands:
     """Keeson command constants (32-bit values)."""
 
-    # Presets
+    # Presets - common
     PRESET_FLAT = 0x8000000
     PRESET_ZERO_G = 0x1000
-    PRESET_MEMORY_1 = 0x2000
-    PRESET_MEMORY_2 = 0x4000
-    PRESET_MEMORY_3 = 0x8000
-    PRESET_MEMORY_4 = 0x10000
-    # Preset aliases (for Ergomotion compatibility)
-    PRESET_LOUNGE = 0x2000  # Same as Memory 1
-    PRESET_TV = 0x4000  # Same as Memory 2
+
+    # KSBT-specific presets (not available on BaseI4/I5)
+    PRESET_MEMORY_1 = 0x2000  # KSBT "M" button
+    PRESET_TV = 0x4000  # KSBT only
+    PRESET_ANTI_SNORE = 0x8000  # KSBT only
+
+    # BaseI4/I5-specific presets (0x8000 means Memory 3 on BaseI4/I5, Snore on KSBT)
+    PRESET_MEMORY_3_BASE = 0x8000  # BaseI4/I5 only
+    PRESET_MEMORY_3 = 0x8000  # Alias for backward compatibility
+
+    # Memory presets (availability varies by variant)
+    PRESET_MEMORY_2 = 0x4000  # Same as TV on KSBT
+    PRESET_MEMORY_4 = 0x10000  # May work on some beds
+
+    # Aliases
+    PRESET_LOUNGE = 0x2000  # Same as Memory 1 / KSBT "M" button
 
     # Motors
     MOTOR_HEAD_UP = 0x1
@@ -247,11 +256,18 @@ class KeesonController(BedController):
 
     @property
     def supports_preset_lounge(self) -> bool:
-        return True
+        """KSBT and Ergomotion have the Lounge preset; BaseI4/I5 does not."""
+        return self._variant != "base"
 
     @property
     def supports_preset_tv(self) -> bool:
-        return True
+        """KSBT and Ergomotion have TV preset; BaseI4/I5 does not."""
+        return self._variant != "base"
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        """KSBT and Ergomotion have anti-snore preset; BaseI4/I5 does not."""
+        return self._variant != "base"
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -260,8 +276,20 @@ class KeesonController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 4 - Keeson beds support memory slots 1-4."""
-        return 4
+        """Return memory slot count based on variant.
+
+        KSBT: Slots 1-2 (M button = slot 1, TV = slot 2)
+        BaseI4/I5: Slot 3 only (from APK analysis)
+        Ergomotion: 4 slots (needs verification)
+        """
+        if self._variant == "ksbt":
+            return 2  # Memory 1 (M button) and Memory 2 (TV button)
+        elif self._variant == "ergomotion":
+            return 4  # Ergomotion may support all 4
+        else:
+            # BaseI4/I5 - the APK only shows Memory 3 button
+            # But we'll expose all 4 as they may work
+            return 4
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -637,7 +665,25 @@ class KeesonController(BedController):
         await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT))
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
+        """Go to memory preset.
+
+        Note: Command values vary by protocol variant:
+        - KSBT: Memory 1 (0x2000) = M button, Memory 2 (0x4000) = TV button
+        - BaseI4/I5: Memory 3 (0x8000) is the only confirmed memory preset
+        - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
+        """
+        # Warn about variant-specific behavior
+        if self._variant != "base" and memory_num == 3:
+            _LOGGER.warning(
+                "Memory 3 on KSBT/Ergomotion beds triggers anti-snore, not a memory preset. "
+                "Use Memory 1 or Memory 2 instead."
+            )
+        elif self._variant == "base" and memory_num in (1, 2):
+            _LOGGER.debug(
+                "Memory %d may not work on BaseI4/I5 beds. Memory 3 is more reliable.",
+                memory_num,
+            )
+
         commands = {
             1: KeesonCommands.PRESET_MEMORY_1,
             2: KeesonCommands.PRESET_MEMORY_2,
@@ -658,12 +704,25 @@ class KeesonController(BedController):
         await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position (Memory 1)."""
+        """Go to lounge position (KSBT/Ergomotion 'M' button / Memory 1)."""
+        if self._variant == "base":
+            _LOGGER.warning("Lounge preset is not available on BaseI4/I5 beds")
+            return
         await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE))
 
     async def preset_tv(self) -> None:
-        """Go to TV position (Memory 2)."""
+        """Go to TV position (KSBT/Ergomotion only)."""
+        if self._variant == "base":
+            _LOGGER.warning("TV preset is not available on BaseI4/I5 beds")
+            return
         await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
+
+    async def preset_anti_snore(self) -> None:
+        """Go to anti-snore position (KSBT/Ergomotion only)."""
+        if self._variant == "base":
+            _LOGGER.warning("Anti-snore preset is not available on BaseI4/I5 beds")
+            return
+        await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
 
     # Light methods
     async def lights_on(self) -> None:

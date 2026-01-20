@@ -27,14 +27,17 @@ Brands using Keeson/Ergomotion actuators:
 
 ## Features
 
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ |
-| Position Feedback | ✅ (Ergomotion variant only) |
-| Memory Presets | ✅ (4 slots) |
-| Massage | ✅ |
-| Safety Lights | ✅ |
-| Zero-G | ✅ |
+| Feature | BaseI4/I5 | KSBT | Ergomotion |
+|---------|-----------|------|------------|
+| Motor Control | ✅ | ✅ | ✅ |
+| Position Feedback | ❌ | ❌ | ✅ |
+| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) |
+| TV Preset | ❌ | ✅ | ✅ |
+| Anti-Snore Preset | ❌ | ✅ | ✅ |
+| Lounge Preset | ❌ | ✅ | ✅ |
+| Massage | ✅ | ✅ | ✅ |
+| Safety Lights | ✅ | ✅ | ✅ |
+| Zero-G | ✅ | ✅ | ✅ |
 
 ## Protocol Variants
 
@@ -84,8 +87,8 @@ Position data includes:
 | Head Down | `0x00000002` | Lower head |
 | Feet Up | `0x00000004` | Raise feet |
 | Feet Down | `0x00000008` | Lower feet |
-| Tilt Up | `0x00000010` | Raise tilt |
-| Tilt Down | `0x00000020` | Lower tilt |
+| Tilt Up | `0x00000010` | Raise tilt (pillow area) |
+| Tilt Down | `0x00000020` | Lower tilt (pillow area) |
 | Lumbar Up | `0x00000040` | Raise lumbar |
 | Lumbar Down | `0x00000080` | Lower lumbar |
 | Massage Step | `0x00000100` | Cycle massage mode |
@@ -93,12 +96,18 @@ Position data includes:
 | Massage Foot Up | `0x00000400` | Increase foot massage |
 | Massage Head Up | `0x00000800` | Increase head massage |
 | Zero-G | `0x00001000` | Zero-G preset |
-| Memory 1 | `0x00002000` | Go to memory 1 |
-| Memory 2 | `0x00004000` | Go to memory 2 |
-| Memory 3 | `0x00008000` | Go to memory 3 |
+| Memory 1 / Lounge | `0x00002000` | KSBT "M" button (not available on BaseI4/I5) |
+| Memory 2 / TV | `0x00004000` | KSBT TV button (not available on BaseI4/I5) |
+| Memory 3 / Anti-Snore | `0x00008000` | Memory 3 on BaseI4/I5, Anti-Snore on KSBT |
 | Memory 4 | `0x00010000` | Go to memory 4 |
 | Toggle Lights | `0x00020000` | Toggle safety lights |
 | Massage Head Down | `0x00800000` | Decrease head massage |
 | Massage Foot Down | `0x01000000` | Decrease foot massage |
 | Flat | `0x08000000` | Flat preset |
 | Massage Wave | `0x10000000` | Cycle wave massage |
+
+> **Note:** Command `0x00008000` has different meanings depending on the protocol variant:
+> - On **BaseI4/I5**: This is Memory 3 preset
+> - On **KSBT**: This is Anti-Snore preset
+>
+> The TV, Lounge, and Anti-Snore presets are only available on KSBT beds. BaseI4/I5 beds (like Member's Mark) use different button layouts and may not support these commands.
