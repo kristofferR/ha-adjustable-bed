@@ -171,6 +171,7 @@ class LeggettOkinController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
+        self._notify_callback = None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""

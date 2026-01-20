@@ -269,37 +269,38 @@ class OkinNordicController(BedController):
         await self.write_command(OkinNordicCommands.STOP, cancel_event=asyncio.Event())
 
     # Preset positions
+    async def _preset_with_stop(self, command: bytes) -> None:
+        """Execute a preset command and always send STOP at the end."""
+        try:
+            await self.write_command(
+                command,
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    OkinNordicCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup")
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            OkinNordicCommands.FLAT,
-            repeat_count=100,  # Presets need longer duration
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(OkinNordicCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self.write_command(
-            OkinNordicCommands.ZERO_GRAVITY,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(OkinNordicCommands.ZERO_GRAVITY)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(
-            OkinNordicCommands.ANTI_SNORE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(OkinNordicCommands.ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(
-            OkinNordicCommands.LOUNGE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(OkinNordicCommands.LOUNGE)
 
     async def preset_tv(self) -> None:
         """Go to TV position (alias for lounge)."""
@@ -307,11 +308,7 @@ class OkinNordicController(BedController):
 
     async def preset_incline(self) -> None:
         """Go to incline position."""
-        await self.write_command(
-            OkinNordicCommands.INCLINE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(OkinNordicCommands.INCLINE)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position."""

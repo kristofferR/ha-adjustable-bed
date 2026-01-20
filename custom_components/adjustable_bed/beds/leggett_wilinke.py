@@ -330,9 +330,26 @@ class LeggettWilinkeController(BedController):
         )
 
     # Preset methods
+    async def _preset_with_end(self, command_byte: int) -> None:
+        """Execute a preset command and always send END at the end."""
+        try:
+            await self.write_command(
+                self._build_command(command_byte),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(LeggettWilinkeCommands.END),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send END command during preset cleanup")
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.PRESET_FLAT))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -341,7 +358,7 @@ class LeggettWilinkeController(BedController):
             2: LeggettWilinkeCommands.PRESET_MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
+            await self._preset_with_end(command)
         else:
             _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
@@ -358,19 +375,19 @@ class LeggettWilinkeController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.PRESET_ZERO_G))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.PRESET_ANTI_SNORE))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.PRESET_TV))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_TV)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.PRESET_LOUNGE))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_LOUNGE)
 
     # Light methods
     async def lights_toggle(self) -> None:

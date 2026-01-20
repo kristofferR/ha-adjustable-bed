@@ -558,11 +558,20 @@ class OkinUuidController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            self._build_command(self._remote.flat),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                self._build_command(self._remote.flat),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -574,11 +583,20 @@ class OkinUuidController(BedController):
         }
         command = commands.get(memory_num)
         if command is not None:
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
+            try:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=100,
+                    repeat_delay_ms=300,
+                )
+            finally:
+                try:
+                    await self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
+                except Exception:
+                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
         else:
             _LOGGER.warning(
                 "Memory %d not available on remote %s", memory_num, self._variant
