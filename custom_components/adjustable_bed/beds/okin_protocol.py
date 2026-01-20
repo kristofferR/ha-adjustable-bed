@@ -29,9 +29,7 @@ def int_to_bytes(value: int) -> list[int]:
     if not isinstance(value, int):
         raise TypeError(f"Command value must be an integer, got {type(value).__name__}")
     if value < 0 or value > 0xFFFFFFFF:
-        raise ValueError(
-            f"Command value must be 0 <= value <= 0xFFFFFFFF, got {value:#x}"
-        )
+        raise ValueError(f"Command value must be 0 <= value <= 0xFFFFFFFF, got {value:#x}")
     return [
         (value >> 24) & 0xFF,
         (value >> 16) & 0xFF,

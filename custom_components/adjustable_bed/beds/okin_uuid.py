@@ -176,9 +176,7 @@ class OkinUuidController(BedController):
     - Full remotes (93332): Head, Back, Legs, Feet + 2 memory presets
     """
 
-    def __init__(
-        self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO
-    ) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO) -> None:
         """Initialize the Okin UUID controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
@@ -445,8 +443,8 @@ class OkinUuidController(BedController):
         combined_command = self._get_move_command()
 
         # Use configurable pulse settings from coordinator
-        pulse_count = getattr(self._coordinator, 'motor_pulse_count', 25)
-        pulse_delay = getattr(self._coordinator, 'motor_pulse_delay_ms', 200)
+        pulse_count = getattr(self._coordinator, "motor_pulse_count", 25)
+        pulse_delay = getattr(self._coordinator, "motor_pulse_delay_ms", 200)
 
         try:
             if combined_command:
@@ -570,8 +568,10 @@ class OkinUuidController(BedController):
                     self._build_command(0),
                     cancel_event=asyncio.Event(),
                 )
-            except (BleakError, asyncio.TimeoutError):
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup", exc_info=True)
+            except (TimeoutError, BleakError):
+                _LOGGER.debug(
+                    "Failed to send STOP command during preset_flat cleanup", exc_info=True
+                )
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -595,12 +595,12 @@ class OkinUuidController(BedController):
                         self._build_command(0),
                         cancel_event=asyncio.Event(),
                     )
-                except (BleakError, asyncio.TimeoutError):
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup", exc_info=True)
+                except (TimeoutError, BleakError):
+                    _LOGGER.debug(
+                        "Failed to send STOP command during preset_memory cleanup", exc_info=True
+                    )
         else:
-            _LOGGER.warning(
-                "Memory %d not available on remote %s", memory_num, self._variant
-            )
+            _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
 
     async def _execute_command(
         self,
@@ -642,9 +642,7 @@ class OkinUuidController(BedController):
             )
             await self._execute_command(cmd, default_count=10, default_delay_ms=200)
         else:
-            _LOGGER.warning(
-                "Memory save not available on remote %s", self._variant
-            )
+            _LOGGER.warning("Memory save not available on remote %s", self._variant)
 
     # Light methods
     async def lights_on(self) -> None:

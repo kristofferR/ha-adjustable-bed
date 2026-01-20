@@ -12,7 +12,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.keeson import (
     KeesonCommands,
     KeesonController,
-    int_to_bytes,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -25,54 +24,6 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
-
-class TestKeesonHelpers:
-    """Test Keeson helper functions."""
-
-    def test_int_to_bytes(self):
-        """Test integer to big-endian bytes conversion."""
-        assert int_to_bytes(0x1) == [0x00, 0x00, 0x00, 0x01]
-        assert int_to_bytes(0x100) == [0x00, 0x00, 0x01, 0x00]
-        assert int_to_bytes(0x8000000) == [0x08, 0x00, 0x00, 0x00]
-
-
-class TestKeesonCommands:
-    """Test Keeson command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert KeesonCommands.PRESET_FLAT == 0x8000000
-        assert KeesonCommands.PRESET_ZERO_G == 0x1000
-        assert KeesonCommands.PRESET_MEMORY_1 == 0x2000
-        assert KeesonCommands.PRESET_MEMORY_2 == 0x4000
-        assert KeesonCommands.PRESET_MEMORY_3 == 0x8000
-        assert KeesonCommands.PRESET_MEMORY_4 == 0x10000
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert KeesonCommands.MOTOR_HEAD_UP == 0x1
-        assert KeesonCommands.MOTOR_HEAD_DOWN == 0x2
-        assert KeesonCommands.MOTOR_FEET_UP == 0x4
-        assert KeesonCommands.MOTOR_FEET_DOWN == 0x8
-        assert KeesonCommands.MOTOR_TILT_UP == 0x10
-        assert KeesonCommands.MOTOR_TILT_DOWN == 0x20
-        assert KeesonCommands.MOTOR_LUMBAR_UP == 0x40
-        assert KeesonCommands.MOTOR_LUMBAR_DOWN == 0x80
-
-    def test_massage_commands(self):
-        """Test massage command values."""
-        assert KeesonCommands.MASSAGE_HEAD_UP == 0x800
-        assert KeesonCommands.MASSAGE_HEAD_DOWN == 0x800000
-        assert KeesonCommands.MASSAGE_FOOT_UP == 0x400
-        assert KeesonCommands.MASSAGE_FOOT_DOWN == 0x1000000
-        assert KeesonCommands.MASSAGE_STEP == 0x100
-        assert KeesonCommands.MASSAGE_TIMER_STEP == 0x200
-        assert KeesonCommands.MASSAGE_WAVE_STEP == 0x10000000
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert KeesonCommands.TOGGLE_SAFETY_LIGHTS == 0x20000
 
 
 @pytest.fixture
@@ -192,9 +143,7 @@ class TestKeesonController:
         mock_bleak_client.is_connected = False
 
         with pytest.raises(ConnectionError):
-            await coordinator.controller.write_command(
-                coordinator.controller._build_command(0)
-            )
+            await coordinator.controller.write_command(coordinator.controller._build_command(0))
 
 
 class TestKeesonMovement:

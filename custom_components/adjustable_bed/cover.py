@@ -297,9 +297,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         # Check if controller reports percentage directly (e.g., Keeson/Ergomotion)
         controller = self._coordinator.controller
-        if controller is not None and getattr(
-            controller, "reports_percentage_position", False
-        ):
+        if controller is not None and getattr(controller, "reports_percentage_position", False):
             # Position is already 0-100 percentage
             return min(100, max(0, int(position)))
 
@@ -390,4 +388,3 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             self._is_moving = False
             self._move_direction = None
             self.async_write_ha_state()
-

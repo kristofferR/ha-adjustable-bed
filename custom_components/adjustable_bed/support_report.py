@@ -102,10 +102,12 @@ def _get_connection_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
     }
 
     if client and is_connected:
-        info.update({
-            "mtu_size": getattr(client, "mtu_size", None),
-            "services_discovered": len(list(client.services)) if client.services else 0,
-        })
+        info.update(
+            {
+                "mtu_size": getattr(client, "mtu_size", None),
+                "services_discovered": len(list(client.services)) if client.services else 0,
+            }
+        )
 
         # Get service UUIDs
         if client.services:
@@ -120,10 +122,12 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
 
     if coordinator.controller:
         controller = coordinator.controller
-        info.update({
-            "class": type(controller).__name__,
-            "characteristic_uuid": controller.control_characteristic_uuid,
-        })
+        info.update(
+            {
+                "class": type(controller).__name__,
+                "characteristic_uuid": controller.control_characteristic_uuid,
+            }
+        )
 
         # Add variant info for controllers that have it
         if hasattr(controller, "_is_wilinke"):
@@ -143,9 +147,7 @@ async def _get_bluetooth_info(
     info: dict[str, Any] = {}
 
     # Get last known advertisement data
-    service_info = bluetooth.async_last_service_info(
-        hass, coordinator.address, connectable=True
-    )
+    service_info = bluetooth.async_last_service_info(hass, coordinator.address, connectable=True)
     if service_info:
         # Guard against None values for optional BLE advertisement fields
         service_uuids = service_info.service_uuids or []
@@ -156,12 +158,8 @@ async def _get_bluetooth_info(
             "device_name": service_info.name,
             "rssi": getattr(service_info, "rssi", None),
             "service_uuids": [str(uuid) for uuid in service_uuids],
-            "manufacturer_data": {
-                str(k): bytes(v).hex() for k, v in manufacturer_data.items()
-            },
-            "service_data": {
-                str(k): bytes(v).hex() for k, v in service_data.items()
-            },
+            "manufacturer_data": {str(k): bytes(v).hex() for k, v in manufacturer_data.items()},
+            "service_data": {str(k): bytes(v).hex() for k, v in service_data.items()},
             "connectable": service_info.connectable,
         }
         # Include source info (adapter/proxy)
@@ -206,31 +204,33 @@ def _get_recent_logs() -> list[dict[str, str]]:
                     ):
                         # Apply redaction to log messages to protect sensitive data
                         redacted_message = redact_data({"msg": record.getMessage()})["msg"]
-                        logs.append({
-                            "timestamp": datetime.fromtimestamp(
-                                record.created, tz=UTC
-                            ).isoformat(),
-                            "level": record.levelname,
-                            "name": record.name,
-                            "message": redacted_message,
-                        })
+                        logs.append(
+                            {
+                                "timestamp": datetime.fromtimestamp(
+                                    record.created, tz=UTC
+                                ).isoformat(),
+                                "level": record.levelname,
+                                "name": record.name,
+                                "message": redacted_message,
+                            }
+                        )
     except Exception as err:
         _LOGGER.debug("Could not retrieve log entries: %s", err)
-        logs.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "level": "INFO",
-            "name": DOMAIN,
-            "message": f"Could not retrieve historical logs: {err}. "
-            "Enable debug logging and reproduce the issue to capture logs.",
-        })
+        logs.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "level": "INFO",
+                "name": DOMAIN,
+                "message": f"Could not retrieve historical logs: {err}. "
+                "Enable debug logging and reproduce the issue to capture logs.",
+            }
+        )
 
     # Limit and return most recent
     return logs[-MAX_LOG_ENTRIES:]
 
 
-def save_support_report(
-    hass: HomeAssistant, report: dict[str, Any], address: str
-) -> Path:
+def save_support_report(hass: HomeAssistant, report: dict[str, Any], address: str) -> Path:
     """Save support report to a JSON file in the config directory."""
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     address_safe = address.replace(":", "").lower()

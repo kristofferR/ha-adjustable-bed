@@ -9,27 +9,27 @@ from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.helpers.selector import SelectOptionDict
 
 from .const import (
-    # Protocol-based bed types (new)
-    BED_TYPE_OKIN_HANDLE,
-    BED_TYPE_OKIN_UUID,
-    BED_TYPE_OKIN_7BYTE,
-    BED_TYPE_OKIN_NORDIC,
-    BED_TYPE_LEGGETT_GEN2,
-    BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_WILINKE,
     # Legacy/brand-specific bed types
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
+    # Protocol-based bed types (new)
+    BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
@@ -188,7 +188,10 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
 
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
-    if LINAK_CONTROL_SERVICE_UUID.lower() in service_uuids or LINAK_POSITION_SERVICE_UUID.lower() in service_uuids:
+    if (
+        LINAK_CONTROL_SERVICE_UUID.lower() in service_uuids
+        or LINAK_POSITION_SERVICE_UUID.lower() in service_uuids
+    ):
         _LOGGER.info(
             "Detected Linak bed at %s (name: %s)",
             service_info.address,
@@ -199,7 +202,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     # Check for Linak by name pattern (e.g., "Bed 1696")
     # Some Linak beds don't advertise service UUIDs in their BLE beacon
     for pattern in LINAK_NAME_PATTERNS:
-        if device_name.startswith(pattern) and device_name[len(pattern):].isdigit():
+        if device_name.startswith(pattern) and device_name[len(pattern) :].isdigit():
             _LOGGER.info(
                 "Detected Linak bed at %s (name: %s) by name pattern",
                 service_info.address,

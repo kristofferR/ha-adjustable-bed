@@ -14,9 +14,11 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 pytest_plugins = "pytest_homeassistant_custom_component"
 
 # Re-export enable_custom_integrations fixture so it's available in tests
-from pytest_homeassistant_custom_component.plugins import enable_custom_integrations  # noqa: F401
+from pytest_homeassistant_custom_component.plugins import (  # noqa: E402
+    enable_custom_integrations,  # noqa: F401
+)
 
-from custom_components.adjustable_bed.const import (
+from custom_components.adjustable_bed.const import (  # noqa: E402
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,

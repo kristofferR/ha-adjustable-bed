@@ -37,25 +37,27 @@ async def async_get_config_entry_diagnostics(
     # Get BLE device info if connected
     ble_info: dict[str, Any] = {"connected": is_connected}
     if client and is_connected:
-        ble_info.update({
-            "mtu_size": getattr(client, "mtu_size", None),
-            "services_discovered": len(list(client.services)) if client.services else 0,
-        })
+        ble_info.update(
+            {
+                "mtu_size": getattr(client, "mtu_size", None),
+                "services_discovered": len(list(client.services)) if client.services else 0,
+            }
+        )
 
         # Get service UUIDs (useful for debugging detection issues)
         if client.services:
-            ble_info["service_uuids"] = [
-                str(service.uuid) for service in client.services
-            ]
+            ble_info["service_uuids"] = [str(service.uuid) for service in client.services]
 
     # Get controller info
     controller_info: dict[str, Any] = {"initialized": coordinator.controller is not None}
     if coordinator.controller:
         controller = coordinator.controller
-        controller_info.update({
-            "class": type(controller).__name__,
-            "characteristic_uuid": controller.control_characteristic_uuid,
-        })
+        controller_info.update(
+            {
+                "class": type(controller).__name__,
+                "characteristic_uuid": controller.control_characteristic_uuid,
+            }
+        )
 
         # Add variant info for controllers that have it
         if hasattr(controller, "_is_wilinke"):
@@ -70,9 +72,7 @@ async def async_get_config_entry_diagnostics(
 
     # Get advertisement data
     advertisement_info: dict[str, Any] = {}
-    service_info = bluetooth.async_last_service_info(
-        hass, coordinator.address, connectable=True
-    )
+    service_info = bluetooth.async_last_service_info(hass, coordinator.address, connectable=True)
     if service_info:
         advertisement_info = {
             # Use "device_name" to avoid redaction (name is useful for debugging)

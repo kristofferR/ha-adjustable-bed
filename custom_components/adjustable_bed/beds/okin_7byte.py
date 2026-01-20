@@ -136,9 +136,7 @@ class Okin7ByteController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    NECTAR_WRITE_CHAR_UUID, command, response=True
-                )
+                await self.client.write_gatt_char(NECTAR_WRITE_CHAR_UUID, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -165,9 +163,7 @@ class Okin7ByteController(BedController):
         try:
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
-            await self.write_command(
-                command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
-            )
+            await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:
                 await self.write_command(
@@ -287,9 +283,7 @@ class Okin7ByteController(BedController):
             "Use preset positions instead.",
             memory_num,
         )
-        raise NotImplementedError(
-            f"Memory slot {memory_num} not supported on Okin 7-byte beds"
-        )
+        raise NotImplementedError(f"Memory slot {memory_num} not supported on Okin 7-byte beds")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""

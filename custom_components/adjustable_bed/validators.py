@@ -13,8 +13,8 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     KEESON_VARIANTS,
     LEGGETT_VARIANTS,
@@ -84,6 +84,7 @@ def get_available_adapters(hass: HomeAssistant) -> dict[str, str]:
 
     try:
         from homeassistant.components.bluetooth import async_current_scanners
+
         for scanner in async_current_scanners(hass):
             source = getattr(scanner, "source", None)
             name = getattr(scanner, "name", None)

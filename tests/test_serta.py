@@ -88,7 +88,9 @@ class TestSertaCommands:
             SertaCommands.STOP,
         ]
         for cmd in commands:
-            assert cmd[:3] == bytes.fromhex("e5fe16"), f"Command {cmd.hex()} should have e5fe16 prefix"
+            assert cmd[:3] == bytes.fromhex("e5fe16"), (
+                f"Command {cmd.hex()} should have e5fe16 prefix"
+            )
 
 
 @pytest.fixture
@@ -168,9 +170,7 @@ class TestSertaController:
         await coordinator.async_connect()
 
         command = SertaCommands.HEAD_UP
-        await coordinator.controller.write_command(
-            command, repeat_count=3, repeat_delay_ms=50
-        )
+        await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=50)
 
         assert mock_bleak_client.write_gatt_char.call_count == 3
 

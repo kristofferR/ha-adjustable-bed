@@ -18,21 +18,21 @@ Brand-specific controllers:
 
 from .base import BedController
 
-# Protocol-based controllers
-from .okin_handle import OkinHandleController
-from .okin_uuid import OkinUuidController
-from .okin_7byte import Okin7ByteController
-from .okin_nordic import OkinNordicController
-from .leggett_gen2 import LeggettGen2Controller
-from .leggett_okin import LeggettOkinController
-from .leggett_wilinke import LeggettWilinkeController
-
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
 from .keeson import KeesonController
+from .leggett_gen2 import LeggettGen2Controller
+from .leggett_okin import LeggettOkinController
+from .leggett_wilinke import LeggettWilinkeController
 from .linak import LinakController
 from .motosleep import MotoSleepController
 from .octo import OctoController
+from .okin_7byte import Okin7ByteController
+
+# Protocol-based controllers
+from .okin_handle import OkinHandleController
+from .okin_nordic import OkinNordicController
+from .okin_uuid import OkinUuidController
 from .reverie import ReverieController
 from .richmat import RichmatController
 from .serta import SertaController

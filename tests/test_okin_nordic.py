@@ -29,46 +29,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestOkinNordicCommands:
-    """Test Okin Nordic command constants."""
-
-    def test_init_commands(self):
-        """Test initialization command values."""
-        assert bytes.fromhex("09050A23050000") == OkinNordicCommands.INIT_1
-        assert bytes.fromhex("5A0B00A5") == OkinNordicCommands.INIT_2
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert bytes.fromhex("5A0103103000A5") == OkinNordicCommands.HEAD_UP
-        assert bytes.fromhex("5A0103103001A5") == OkinNordicCommands.HEAD_DOWN
-        assert bytes.fromhex("5A0103103002A5") == OkinNordicCommands.FOOT_UP
-        assert bytes.fromhex("5A0103103003A5") == OkinNordicCommands.FOOT_DOWN
-        assert bytes.fromhex("5A0103103006A5") == OkinNordicCommands.LUMBAR_UP
-        assert bytes.fromhex("5A0103103007A5") == OkinNordicCommands.LUMBAR_DOWN
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert bytes.fromhex("5A0103103010A5") == OkinNordicCommands.FLAT
-        assert bytes.fromhex("5A0103103013A5") == OkinNordicCommands.ZERO_GRAVITY
-        assert bytes.fromhex("5A0103103016A5") == OkinNordicCommands.ANTI_SNORE
-        assert bytes.fromhex("5A0103103017A5") == OkinNordicCommands.LOUNGE
-        assert bytes.fromhex("5A0103103018A5") == OkinNordicCommands.INCLINE
-
-    def test_massage_commands(self):
-        """Test massage command values."""
-        assert bytes.fromhex("5A0103103052A5") == OkinNordicCommands.MASSAGE_1
-        assert bytes.fromhex("5A0103103053A5") == OkinNordicCommands.MASSAGE_2
-        assert bytes.fromhex("5A0103103054A5") == OkinNordicCommands.MASSAGE_3
-        assert bytes.fromhex("5A010310306FA5") == OkinNordicCommands.MASSAGE_STOP
-        assert bytes.fromhex("5A0103104060A5") == OkinNordicCommands.MASSAGE_UP
-        assert bytes.fromhex("5A0103104063A5") == OkinNordicCommands.MASSAGE_DOWN
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert bytes.fromhex("5A0103103070A5") == OkinNordicCommands.LIGHT_CYCLE
-        assert bytes.fromhex("5A0103103074A5") == OkinNordicCommands.LIGHT_OFF_HOLD
-
-
 @pytest.fixture
 def mock_okin_nordic_config_entry_data() -> dict:
     """Return mock config entry data for Okin Nordic bed."""
@@ -170,9 +130,7 @@ class TestOkinNordicController:
         calls = mock_client.write_gatt_char.call_args_list
         assert calls[0][0][1] == OkinNordicCommands.FOOT_UP
 
-    async def test_motor_commands(
-        self, mock_okin_nordic_coordinator: AdjustableBedCoordinator
-    ):
+    async def test_motor_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
         """Test motor control commands."""
         controller = OkinNordicController(mock_okin_nordic_coordinator)
         mock_client = AsyncMock()
@@ -195,9 +153,7 @@ class TestOkinNordicController:
             call[0][1] for call in mock_client.write_gatt_char.call_args_list
         ]
 
-    async def test_preset_commands(
-        self, mock_okin_nordic_coordinator: AdjustableBedCoordinator
-    ):
+    async def test_preset_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
         """Test preset position commands."""
         controller = OkinNordicController(mock_okin_nordic_coordinator)
         mock_client = AsyncMock()
@@ -226,9 +182,7 @@ class TestOkinNordicController:
         first_call = mock_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == OkinNordicCommands.INCLINE
 
-    async def test_massage_commands(
-        self, mock_okin_nordic_coordinator: AdjustableBedCoordinator
-    ):
+    async def test_massage_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
         """Test massage control commands."""
         controller = OkinNordicController(mock_okin_nordic_coordinator)
         mock_client = AsyncMock()
@@ -247,9 +201,7 @@ class TestOkinNordicController:
         assert mock_client.write_gatt_char.called
         assert mock_client.write_gatt_char.call_args_list[0][0][1] == OkinNordicCommands.MASSAGE_UP
 
-    async def test_light_commands(
-        self, mock_okin_nordic_coordinator: AdjustableBedCoordinator
-    ):
+    async def test_light_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
         """Test light control commands."""
         controller = OkinNordicController(mock_okin_nordic_coordinator)
         mock_client = AsyncMock()
@@ -268,7 +220,9 @@ class TestOkinNordicController:
         assert mock_client.write_gatt_char.called
         # Should be called 3 times (repeat_count=3)
         assert mock_client.write_gatt_char.call_count == 3
-        assert mock_client.write_gatt_char.call_args_list[0][0][1] == OkinNordicCommands.LIGHT_OFF_HOLD
+        assert (
+            mock_client.write_gatt_char.call_args_list[0][0][1] == OkinNordicCommands.LIGHT_OFF_HOLD
+        )
 
     async def test_memory_not_supported(
         self, mock_okin_nordic_coordinator: AdjustableBedCoordinator

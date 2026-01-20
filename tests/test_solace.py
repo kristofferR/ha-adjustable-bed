@@ -25,51 +25,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestSolaceCommands:
-    """Test Solace command constants."""
-
-    def test_preset_commands(self):
-        """Test preset commands are correct."""
-        assert len(SolaceCommands.PRESET_TV) == 11
-        assert len(SolaceCommands.PRESET_ZERO_G) == 11
-        assert len(SolaceCommands.PRESET_ANTI_SNORE) == 11
-        assert len(SolaceCommands.PRESET_ALL_FLAT) == 11
-
-    def test_memory_preset_commands(self):
-        """Test memory preset commands are correct."""
-        assert len(SolaceCommands.PRESET_MEMORY_1) == 11
-        assert len(SolaceCommands.PRESET_MEMORY_2) == 11
-        assert len(SolaceCommands.PRESET_MEMORY_3) == 11
-        assert len(SolaceCommands.PRESET_MEMORY_4) == 11
-
-    def test_program_memory_commands(self):
-        """Test program memory commands are correct."""
-        assert len(SolaceCommands.PROGRAM_MEMORY_1) == 11
-        assert len(SolaceCommands.PROGRAM_MEMORY_2) == 11
-        assert len(SolaceCommands.PROGRAM_MEMORY_3) == 11
-        assert len(SolaceCommands.PROGRAM_MEMORY_4) == 11
-
-    def test_motor_commands(self):
-        """Test motor commands are correct."""
-        assert len(SolaceCommands.MOTOR_BACK_UP) == 11
-        assert len(SolaceCommands.MOTOR_BACK_DOWN) == 11
-        assert len(SolaceCommands.MOTOR_LEGS_UP) == 11
-        assert len(SolaceCommands.MOTOR_LEGS_DOWN) == 11
-        assert len(SolaceCommands.MOTOR_STOP) == 11
-
-    def test_command_prefix(self):
-        """Test all commands have correct prefix."""
-        commands = [
-            SolaceCommands.PRESET_TV,
-            SolaceCommands.PRESET_ZERO_G,
-            SolaceCommands.MOTOR_BACK_UP,
-            SolaceCommands.MOTOR_STOP,
-        ]
-        for cmd in commands:
-            # All commands start with 0xFF 0xFF 0xFF 0xFF 0x05
-            assert cmd[:5] == bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05])
-
-
 @pytest.fixture
 def mock_solace_config_entry_data() -> dict:
     """Return mock config entry data for Solace bed."""

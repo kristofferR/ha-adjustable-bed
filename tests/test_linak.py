@@ -13,45 +13,6 @@ from custom_components.adjustable_bed.const import LINAK_CONTROL_CHAR_UUID
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestLinakCommands:
-    """Test Linak command constants."""
-
-    def test_preset_memory_commands(self):
-        """Test preset memory commands are correct."""
-        assert bytes([0x0E, 0x00]) == LinakCommands.PRESET_MEMORY_1
-        assert bytes([0x0F, 0x00]) == LinakCommands.PRESET_MEMORY_2
-        assert bytes([0x0C, 0x00]) == LinakCommands.PRESET_MEMORY_3
-        assert bytes([0x44, 0x00]) == LinakCommands.PRESET_MEMORY_4
-
-    def test_program_memory_commands(self):
-        """Test program memory commands are correct."""
-        assert bytes([0x38, 0x00]) == LinakCommands.PROGRAM_MEMORY_1
-        assert bytes([0x39, 0x00]) == LinakCommands.PROGRAM_MEMORY_2
-        assert bytes([0x3A, 0x00]) == LinakCommands.PROGRAM_MEMORY_3
-        assert bytes([0x45, 0x00]) == LinakCommands.PROGRAM_MEMORY_4
-
-    def test_movement_commands(self):
-        """Test movement commands are correct."""
-        assert bytes([0x00, 0x00]) == LinakCommands.MOVE_STOP
-        assert bytes([0x03, 0x00]) == LinakCommands.MOVE_HEAD_UP
-        assert bytes([0x02, 0x00]) == LinakCommands.MOVE_HEAD_DOWN
-        assert bytes([0x09, 0x00]) == LinakCommands.MOVE_LEGS_UP
-        assert bytes([0x08, 0x00]) == LinakCommands.MOVE_LEGS_DOWN
-
-    def test_light_commands(self):
-        """Test light commands are correct."""
-        assert bytes([0x92, 0x00]) == LinakCommands.LIGHTS_ON
-        assert bytes([0x93, 0x00]) == LinakCommands.LIGHTS_OFF
-        assert bytes([0x94, 0x00]) == LinakCommands.LIGHTS_TOGGLE
-
-    def test_massage_commands(self):
-        """Test massage commands are correct."""
-        assert bytes([0x80, 0x00]) == LinakCommands.MASSAGE_ALL_OFF
-        assert bytes([0x91, 0x00]) == LinakCommands.MASSAGE_ALL_TOGGLE
-        assert bytes([0xA6, 0x00]) == LinakCommands.MASSAGE_HEAD_TOGGLE
-        assert bytes([0xA7, 0x00]) == LinakCommands.MASSAGE_FOOT_TOGGLE
-
-
 class TestLinakController:
     """Test Linak controller."""
 

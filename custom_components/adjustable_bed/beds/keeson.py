@@ -339,7 +339,9 @@ class KeesonController(BedController):
         self._notify_callback = callback
 
         if self._variant != KEESON_VARIANT_ERGOMOTION:
-            _LOGGER.debug("Keeson beds don't support position notifications (variant: %s)", self._variant)
+            _LOGGER.debug(
+                "Keeson beds don't support position notifications (variant: %s)", self._variant
+            )
             return
 
         if self.client is None or not self.client.is_connected:
@@ -647,7 +649,9 @@ class KeesonController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Keeson)."""
-        _LOGGER.warning("Keeson beds don't support programming memory presets (requested: %d)", memory_num)
+        _LOGGER.warning(
+            "Keeson beds don't support programming memory presets (requested: %d)", memory_num
+        )
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -672,9 +676,7 @@ class KeesonController(BedController):
 
     async def lights_toggle(self) -> None:
         """Toggle safety lights."""
-        await self.write_command(
-            self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS)
-        )
+        await self.write_command(self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS))
 
     # Massage methods
     async def massage_toggle(self) -> None:
@@ -699,6 +701,4 @@ class KeesonController(BedController):
 
     async def massage_mode_step(self) -> None:
         """Step through massage modes."""
-        await self.write_command(
-            self._build_command(KeesonCommands.MASSAGE_TIMER_STEP)
-        )
+        await self.write_command(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP))

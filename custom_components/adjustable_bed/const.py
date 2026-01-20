@@ -424,90 +424,204 @@ _F = RichmatFeatures  # Shorthand for readability
 RICHMAT_REMOTE_FEATURES: Final = {
     RICHMAT_REMOTE_AUTO: (
         # All features enabled for auto mode
-        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_LOUNGE | _F.PRESET_MEMORY_1 |
-        _F.PRESET_MEMORY_2 | _F.PRESET_TV | _F.PRESET_ZERO_G |
-        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
-        _F.PROGRAM_MEMORY_2 | _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_LOUNGE
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_LOUNGE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_MEMORY_2
+        | _F.PROGRAM_TV
+        | _F.PROGRAM_ZERO_G
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_LUMBAR
     ),
     RICHMAT_REMOTE_AZRN: (
-        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 | _F.PRESET_MEMORY_2 |
-        _F.PRESET_TV | _F.PRESET_ZERO_G |
-        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
-        _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
-        _F.MOTOR_HEAD | _F.MOTOR_PILLOW | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_LOUNGE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_TV
+        | _F.PROGRAM_ZERO_G
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_BURM: (
-        _F.PRESET_FLAT | _F.PRESET_MEMORY_1 | _F.PRESET_MEMORY_2 |
-        _F.PRESET_TV | _F.PRESET_ZERO_G |
-        _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 | _F.PROGRAM_MEMORY_2 | _F.PROGRAM_TV |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_LOUNGE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_MEMORY_2
+        | _F.PROGRAM_TV
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_BVRM: (
-        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 | _F.PRESET_MEMORY_2 |
-        _F.PRESET_TV | _F.PRESET_ZERO_G |
-        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 | _F.PROGRAM_MEMORY_2 |
-        _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_MEMORY_2
+        | _F.PROGRAM_TV
+        | _F.PROGRAM_ZERO_G
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_VIRM: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_LUMBAR
     ),
     RICHMAT_REMOTE_V1RM: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_W6RM: (
-        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_LOUNGE | _F.PRESET_MEMORY_1 |
-        _F.PRESET_MEMORY_2 | _F.PRESET_TV | _F.PRESET_ZERO_G |
-        _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_LOUNGE | _F.PROGRAM_MEMORY_1 |
-        _F.PROGRAM_MEMORY_2 | _F.PROGRAM_TV | _F.PROGRAM_ZERO_G |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_LOUNGE
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_LOUNGE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_MEMORY_2
+        | _F.PROGRAM_TV
+        | _F.PROGRAM_ZERO_G
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_X1RM: (
-        _F.PRESET_FLAT | _F.PRESET_ANTI_SNORE | _F.PRESET_ZERO_G | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_ZR10: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.UNDER_BED_LIGHTS |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.UNDER_BED_LIGHTS
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     RICHMAT_REMOTE_ZR60: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.UNDER_BED_LIGHTS |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.UNDER_BED_LIGHTS
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
     ),
     # I7RM - same features as VIRM (full-featured remote)
     RICHMAT_REMOTE_I7RM: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_FEET | _F.MOTOR_PILLOW | _F.MOTOR_LUMBAR
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_LUMBAR
     ),
     # 190-0055 - Has Pillow but NOT Lumbar
     RICHMAT_REMOTE_190_0055: (
-        _F.PRESET_FLAT | _F.PRESET_ZERO_G | _F.PRESET_ANTI_SNORE | _F.PRESET_MEMORY_1 |
-        _F.PROGRAM_ZERO_G | _F.PROGRAM_ANTI_SNORE | _F.PROGRAM_MEMORY_1 |
-        _F.UNDER_BED_LIGHTS |
-        _F.MASSAGE_HEAD_STEP | _F.MASSAGE_FOOT_STEP | _F.MASSAGE_MODE | _F.MASSAGE_TOGGLE |
-        _F.MOTOR_HEAD | _F.MOTOR_PILLOW | _F.MOTOR_FEET
+        _F.PRESET_FLAT
+        | _F.PRESET_ZERO_G
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PROGRAM_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_FEET
     ),
 }
 
@@ -573,27 +687,33 @@ ALL_PROTOCOL_VARIANTS: Final = [
 ]
 
 # Bed types that support angle sensing (position feedback)
-BEDS_WITH_ANGLE_SENSING: Final = frozenset({
-    BED_TYPE_LINAK,
-    BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
-    BED_TYPE_REVERIE,
-})
+BEDS_WITH_ANGLE_SENSING: Final = frozenset(
+    {
+        BED_TYPE_LINAK,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
+        BED_TYPE_REVERIE,
+    }
+)
 
 # Bed types that support position feedback (for Number entities with position seeking)
 # Includes all angle sensing beds plus beds that report percentage positions
-BEDS_WITH_POSITION_FEEDBACK: Final = frozenset({
-    BED_TYPE_LINAK,
-    BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
-    BED_TYPE_REVERIE,
-    BED_TYPE_KEESON,
-    BED_TYPE_ERGOMOTION,
-})
+BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
+    {
+        BED_TYPE_LINAK,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
+        BED_TYPE_REVERIE,
+        BED_TYPE_KEESON,
+        BED_TYPE_ERGOMOTION,
+    }
+)
 
 # Position seeking constants
 POSITION_TOLERANCE: Final = 3.0  # Angle tolerance in degrees for target reached
-POSITION_OVERSHOOT_TOLERANCE: Final = 6.0  # Larger tolerance for overshoot detection (prevents oscillation)
+POSITION_OVERSHOOT_TOLERANCE: Final = (
+    6.0  # Larger tolerance for overshoot detection (prevents oscillation)
+)
 POSITION_SEEK_TIMEOUT: Final = 60.0  # Maximum time in seconds for position seeking
 POSITION_CHECK_INTERVAL: Final = 0.3  # Interval between position checks in seconds
 POSITION_STALL_THRESHOLD: Final = 0.5  # Minimum movement in degrees to not be considered stalled
@@ -622,4 +742,3 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Keeson: 25 repeats, 200ms delay (original hardcoded values)
     BED_TYPE_KEESON: (25, 200),
 }
-

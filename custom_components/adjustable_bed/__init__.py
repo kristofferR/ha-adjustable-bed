@@ -139,9 +139,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             if coordinator:
                 # Check if controller supports memory presets
                 controller = coordinator.controller
-                if controller is None or not getattr(
-                    controller, "supports_memory_presets", False
-                ):
+                if controller is None or not getattr(controller, "supports_memory_presets", False):
                     raise ServiceValidationError(
                         f"Device '{coordinator.name}' does not support memory presets",
                         translation_domain=DOMAIN,
@@ -245,9 +243,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(
-                    vol.Coerce(int), vol.Range(min=1)
-                ),
+                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
             }
         ),
     )
@@ -259,9 +255,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(
-                    vol.Coerce(int), vol.Range(min=1)
-                ),
+                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
             }
         ),
     )
@@ -394,8 +388,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 }
                 # Filter to valid motors based on motor_count
                 valid_motors = {
-                    m for m, cfg in motor_configs.items()
-                    if motor_count >= cfg.get("min_motors", 2)
+                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
                 }
 
             # Validate motor is valid for this bed
@@ -448,9 +441,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
-                vol.Required(ATTR_POSITION): vol.All(
-                    vol.Coerce(float), vol.Range(min=0, max=100)
-                ),
+                vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
             }
         ),
     )

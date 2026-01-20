@@ -103,9 +103,7 @@ async def async_setup_entry(
     # Skip angle sensors for beds that report percentage instead of angles
     # (Keeson/Ergomotion report 0-100% position, not degrees)
     if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-        _LOGGER.debug(
-            "Skipping angle sensors for %s - reports percentage, not angle", bed_type
-        )
+        _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
         return
 
     entities = []
@@ -159,7 +157,4 @@ class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the sensor value."""
-        return self._coordinator.position_data.get(
-            self.entity_description.position_key
-        )
-
+        return self._coordinator.position_data.get(self.entity_description.position_key)

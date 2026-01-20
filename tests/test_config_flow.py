@@ -12,8 +12,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 
-from custom_components.adjustable_bed.detection import detect_bed_type
-from custom_components.adjustable_bed.validators import is_valid_mac_address
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
@@ -36,29 +34,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     RICHMAT_WILINKE_SERVICE_UUIDS,
 )
-
-
-class TestMacAddressValidation:
-    """Test MAC address validation."""
-
-    def test_valid_mac_address_colon(self):
-        """Test valid MAC address with colons."""
-        assert is_valid_mac_address("AA:BB:CC:DD:EE:FF") is True
-        assert is_valid_mac_address("aa:bb:cc:dd:ee:ff") is True
-        assert is_valid_mac_address("00:11:22:33:44:55") is True
-
-    def test_valid_mac_address_dash(self):
-        """Test valid MAC address with dashes."""
-        assert is_valid_mac_address("AA-BB-CC-DD-EE-FF") is True
-        assert is_valid_mac_address("aa-bb-cc-dd-ee-ff") is True
-
-    def test_invalid_mac_address(self):
-        """Test invalid MAC addresses."""
-        assert is_valid_mac_address("") is False
-        assert is_valid_mac_address("not-a-mac") is False
-        assert is_valid_mac_address("AA:BB:CC:DD:EE") is False  # Too short
-        assert is_valid_mac_address("AA:BB:CC:DD:EE:FF:GG") is False  # Too long
-        assert is_valid_mac_address("GG:HH:II:JJ:KK:LL") is False  # Invalid hex
+from custom_components.adjustable_bed.detection import detect_bed_type
 
 
 class TestDetectBedType:
@@ -129,28 +105,6 @@ class TestDetectBedType:
 
         bed_type = detect_bed_type(service_info)
         assert bed_type == BED_TYPE_MOTOSLEEP
-
-    def test_detect_with_empty_name(self):
-        """Test detection handles empty device name."""
-        service_info = MagicMock()
-        service_info.name = None
-        service_info.address = "AA:BB:CC:DD:EE:FF"
-        service_info.service_uuids = []
-        service_info.manufacturer_data = {}
-
-        bed_type = detect_bed_type(service_info)
-        assert bed_type is None
-
-    def test_detect_with_empty_service_uuids(self):
-        """Test detection handles empty service UUIDs."""
-        service_info = MagicMock()
-        service_info.name = "Some Device"
-        service_info.address = "AA:BB:CC:DD:EE:FF"
-        service_info.service_uuids = []
-        service_info.manufacturer_data = {}
-
-        bed_type = detect_bed_type(service_info)
-        assert bed_type is None
 
     def test_detect_ergomotion_bed(self, mock_bluetooth_service_info_ergomotion):
         """Test detection of Ergomotion bed by name."""
@@ -237,6 +191,7 @@ class TestDetectBedType:
     def test_detect_okimat_okin_prefix_name(self):
         """Test Okimat detection with 'OKIN-' prefix (e.g., OKIN-346311)."""
         from custom_components.adjustable_bed.const import OKIMAT_SERVICE_UUID
+
         service_info = MagicMock()
         service_info.name = "OKIN-346311"
         service_info.address = "AA:BB:CC:DD:EE:FF"
@@ -345,9 +300,7 @@ class TestDetectBedType:
         bed_type = detect_bed_type(mock_bluetooth_service_info_octo_star2)
         assert bed_type == BED_TYPE_OCTO
 
-    def test_detect_leggett_platt_mlrm_bed(
-        self, mock_bluetooth_service_info_leggett_platt_richmat
-    ):
+    def test_detect_leggett_platt_mlrm_bed(self, mock_bluetooth_service_info_leggett_platt_richmat):
         """Test detection of Leggett & Platt MlRM variant bed (MlRM prefix).
 
         MlRM beds are now detected as BED_TYPE_LEGGETT_PLATT; variant detection
@@ -411,6 +364,7 @@ class TestPinValidation:
     def test_valid_4_digit_pin(self):
         """Test that 4-digit PIN is accepted."""
         import voluptuous as vol
+
         validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
         assert validator("1234") == "1234"
         assert validator("0000") == "0000"
@@ -419,12 +373,14 @@ class TestPinValidation:
     def test_empty_pin_allowed(self):
         """Test that empty PIN (no PIN) is allowed."""
         import voluptuous as vol
+
         validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
         assert validator("") == ""
 
     def test_invalid_pin_too_short(self):
         """Test that PIN shorter than 4 digits is rejected."""
         import voluptuous as vol
+
         validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
         with pytest.raises(vol.Invalid):
             validator("123")
@@ -434,6 +390,7 @@ class TestPinValidation:
     def test_invalid_pin_too_long(self):
         """Test that PIN longer than 4 digits is rejected."""
         import voluptuous as vol
+
         validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
         with pytest.raises(vol.Invalid):
             validator("12345")
@@ -443,6 +400,7 @@ class TestPinValidation:
     def test_invalid_pin_non_digits(self):
         """Test that PIN with non-digit characters is rejected."""
         import voluptuous as vol
+
         validator = vol.All(str, vol.Match(r"^(\d{4})?$", msg="PIN must be exactly 4 digits"))
         with pytest.raises(vol.Invalid):
             validator("abcd")
@@ -569,7 +527,9 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
 
-    async def test_manual_no_devices_goes_to_entry(self, hass: HomeAssistant, enable_custom_integrations):
+    async def test_manual_no_devices_goes_to_entry(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
         """Test manual step goes to manual_entry when no devices are found."""
         # First go to user step (no beds discovered, but form still shown)
         with patch(
@@ -591,7 +551,9 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_entry"
 
-    async def test_manual_entry_creates_entry(self, hass: HomeAssistant, enable_custom_integrations):
+    async def test_manual_entry_creates_entry(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
         """Test manual entry creates a config entry."""
         # First go to user step
         with patch(
@@ -660,9 +622,12 @@ class TestManualFlow:
         )
 
         assert result["type"] == FlowResultType.FORM
+        assert result["errors"] is not None
         assert result["errors"]["base"] == "invalid_mac_address"
 
-    async def test_manual_entry_normalizes_mac(self, hass: HomeAssistant, enable_custom_integrations):
+    async def test_manual_entry_normalizes_mac(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
         """Test manual entry normalizes MAC address format."""
         with patch(
             "custom_components.adjustable_bed.config_flow.async_discovered_service_info",

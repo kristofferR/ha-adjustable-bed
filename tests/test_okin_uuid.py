@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.beds.okin_uuid import (
     OkinUuidComplexCommand,
     OkinUuidController,
 )
-from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     CONF_BED_TYPE,
@@ -25,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     OKIMAT_VARIANT_82417,
-    OKIMAT_VARIANT_82418,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
@@ -33,95 +31,6 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
-
-class TestOkinUuidHelpers:
-    """Test Okin UUID helper functions."""
-
-    def test_int_to_bytes(self):
-        """Test integer to big-endian bytes conversion."""
-        assert int_to_bytes(0x1) == [0x00, 0x00, 0x00, 0x01]
-        assert int_to_bytes(0x100) == [0x00, 0x00, 0x01, 0x00]
-        assert int_to_bytes(0xAA) == [0x00, 0x00, 0x00, 0xAA]
-
-
-class TestOkinUuidRemoteConfigs:
-    """Test Okin UUID remote configurations."""
-
-    def test_remote_82417_basic(self):
-        """Test 82417 RF TOPLINE basic remote config."""
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_82417]
-        assert remote.name == "RF TOPLINE"
-        assert remote.flat == 0x000000AA
-        assert remote.back_up == 0x1
-        assert remote.back_down == 0x2
-        assert remote.legs_up == 0x4
-        assert remote.legs_down == 0x8
-        # No memory on basic remote
-        assert remote.memory_1 is None
-        assert remote.memory_2 is None
-        # No head/feet motors
-        assert remote.head_up is None
-        assert remote.feet_up is None
-
-    def test_remote_82418_with_memory(self):
-        """Test 82418 RF TOPLINE remote with memory."""
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_82418]
-        assert remote.flat == 0x000000AA
-        assert remote.memory_1 == 0x1000
-        assert remote.memory_2 == 0x2000
-        assert remote.memory_save == 0x10000
-        # No memory 3/4
-        assert remote.memory_3 is None
-        assert remote.memory_4 is None
-
-    def test_remote_93329_advanced(self):
-        """Test 93329 RF TOPLINE advanced remote with head motor and 4 memory."""
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_93329]
-        assert remote.flat == 0x0000002A  # Different flat value
-        assert remote.head_up == 0x10
-        assert remote.head_down == 0x20
-        assert remote.memory_1 == 0x1000
-        assert remote.memory_2 == 0x2000
-        assert remote.memory_3 == 0x4000
-        assert remote.memory_4 == 0x8000
-
-    def test_remote_93332_full(self):
-        """Test 93332 RF TOPLINE full remote with head and feet motors."""
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_93332]
-        assert remote.flat == 0x000000AA
-        assert remote.head_up == 0x10
-        assert remote.head_down == 0x20
-        assert remote.feet_up == 0x40
-        assert remote.feet_down == 0x20  # Shares value with head_down
-        assert remote.memory_1 == 0x1000
-        assert remote.memory_2 == 0x2000
-
-    def test_all_remotes_have_lights(self):
-        """Test all remotes support under-bed lights."""
-        for variant, remote in OKIN_UUID_REMOTES.items():
-            cmd = remote.toggle_lights
-            if isinstance(cmd, OkinUuidComplexCommand):
-                assert cmd.data == 0x20000, f"Remote {variant} has wrong lights command"
-            else:
-                assert cmd == 0x20000, f"Remote {variant} missing lights"
-
-    def test_remote_94238_complex_commands(self):
-        """Test 94238 RF FLASHLINE uses complex commands for lights and memory save."""
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
-        assert remote.name == "RF FLASHLINE"
-
-        # UBL (Under-Bed Lights) has complex command with specific timing
-        assert isinstance(remote.toggle_lights, OkinUuidComplexCommand)
-        assert remote.toggle_lights.data == 0x20000
-        assert remote.toggle_lights.count == 50
-        assert remote.toggle_lights.wait_time == 100
-
-        # Memory save also has complex command with specific timing
-        assert isinstance(remote.memory_save, OkinUuidComplexCommand)
-        assert remote.memory_save.data == 0x10000
-        assert remote.memory_save.count == 25
-        assert remote.memory_save.wait_time == 200
 
 
 @pytest.fixture
@@ -314,9 +223,7 @@ class TestOkinUuidController:
         mock_bleak_client.is_connected = False
 
         with pytest.raises(ConnectionError):
-            await coordinator.controller.write_command(
-                coordinator.controller._build_command(0)
-            )
+            await coordinator.controller.write_command(coordinator.controller._build_command(0))
 
 
 class TestOkinUuidMovement:

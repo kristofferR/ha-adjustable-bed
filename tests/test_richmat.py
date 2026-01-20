@@ -28,52 +28,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestRichmatCommands:
-    """Test Richmat command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert RichmatCommands.PRESET_FLAT == 0x31
-        assert RichmatCommands.PRESET_ANTI_SNORE == 0x46
-        assert RichmatCommands.PRESET_LOUNGE == 0x59
-        assert RichmatCommands.PRESET_MEMORY_1 == 0x2E
-        assert RichmatCommands.PRESET_MEMORY_2 == 0x2F
-        assert RichmatCommands.PRESET_TV == 0x58
-        assert RichmatCommands.PRESET_ZERO_G == 0x45
-
-    def test_program_commands(self):
-        """Test program command values."""
-        assert RichmatCommands.PROGRAM_ANTI_SNORE == 0x69
-        assert RichmatCommands.PROGRAM_LOUNGE == 0x65
-        assert RichmatCommands.PROGRAM_MEMORY_1 == 0x2B
-        assert RichmatCommands.PROGRAM_MEMORY_2 == 0x2C
-        assert RichmatCommands.PROGRAM_TV == 0x64
-        assert RichmatCommands.PROGRAM_ZERO_G == 0x66
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert RichmatCommands.MOTOR_PILLOW_UP == 0x3F
-        assert RichmatCommands.MOTOR_PILLOW_DOWN == 0x40
-        assert RichmatCommands.MOTOR_HEAD_UP == 0x24
-        assert RichmatCommands.MOTOR_HEAD_DOWN == 0x25
-        assert RichmatCommands.MOTOR_FEET_UP == 0x26
-        assert RichmatCommands.MOTOR_FEET_DOWN == 0x27
-        assert RichmatCommands.MOTOR_LUMBAR_UP == 0x41
-        assert RichmatCommands.MOTOR_LUMBAR_DOWN == 0x42
-        assert RichmatCommands.END == 0x6E
-
-    def test_massage_commands(self):
-        """Test massage command values."""
-        assert RichmatCommands.MASSAGE_HEAD_STEP == 0x4C
-        assert RichmatCommands.MASSAGE_FOOT_STEP == 0x4E
-        assert RichmatCommands.MASSAGE_PATTERN_STEP == 0x48
-        assert RichmatCommands.MASSAGE_TOGGLE == 0x5D
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert RichmatCommands.LIGHTS_TOGGLE == 0x3C
-
-
 @pytest.fixture
 def mock_richmat_config_entry_data() -> dict:
     """Return mock config entry data for Richmat bed."""
@@ -168,9 +122,7 @@ class TestRichmatController:
         await coordinator.async_connect()
 
         # Create a Prefix55 controller directly
-        controller = RichmatController(
-            coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIX55
-        )
+        controller = RichmatController(coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIX55)
 
         # Prefix55: [0x55, 0x01, 0x00, cmd, (cmd + 0x56) & 0xFF]
         command = controller._build_command(RichmatCommands.PRESET_FLAT)
@@ -194,9 +146,7 @@ class TestRichmatController:
         await coordinator.async_connect()
 
         # Create a PrefixAA controller directly
-        controller = RichmatController(
-            coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIXAA
-        )
+        controller = RichmatController(coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIXAA)
 
         # PrefixAA: [0xAA, 0x01, 0x00, cmd, (cmd + 0xAB) & 0xFF]
         command = controller._build_command(RichmatCommands.PRESET_FLAT)

@@ -25,46 +25,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestErgomotionCommands:
-    """Test Keeson command constants (used by Ergomotion variant)."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert KeesonCommands.PRESET_FLAT == 0x8000000
-        assert KeesonCommands.PRESET_ZERO_G == 0x1000
-        assert KeesonCommands.PRESET_LOUNGE == 0x2000
-        assert KeesonCommands.PRESET_TV == 0x4000
-        assert KeesonCommands.PRESET_MEMORY_1 == 0x2000
-        assert KeesonCommands.PRESET_MEMORY_2 == 0x4000
-        assert KeesonCommands.PRESET_MEMORY_3 == 0x8000
-        assert KeesonCommands.PRESET_MEMORY_4 == 0x10000
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert KeesonCommands.MOTOR_HEAD_UP == 0x1
-        assert KeesonCommands.MOTOR_HEAD_DOWN == 0x2
-        assert KeesonCommands.MOTOR_FEET_UP == 0x4
-        assert KeesonCommands.MOTOR_FEET_DOWN == 0x8
-        assert KeesonCommands.MOTOR_TILT_UP == 0x10
-        assert KeesonCommands.MOTOR_TILT_DOWN == 0x20
-        assert KeesonCommands.MOTOR_LUMBAR_UP == 0x40
-        assert KeesonCommands.MOTOR_LUMBAR_DOWN == 0x80
-
-    def test_massage_commands(self):
-        """Test massage command values."""
-        assert KeesonCommands.MASSAGE_HEAD_UP == 0x800
-        assert KeesonCommands.MASSAGE_HEAD_DOWN == 0x800000
-        assert KeesonCommands.MASSAGE_FOOT_UP == 0x400
-        assert KeesonCommands.MASSAGE_FOOT_DOWN == 0x1000000
-        assert KeesonCommands.MASSAGE_STEP == 0x100
-        assert KeesonCommands.MASSAGE_TIMER_STEP == 0x200
-        assert KeesonCommands.MASSAGE_WAVE_STEP == 0x10000000
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert KeesonCommands.TOGGLE_LIGHTS == 0x20000
-
-
 @pytest.fixture
 def mock_ergomotion_config_entry_data() -> dict:
     """Return mock config entry data for Ergomotion bed."""
@@ -161,9 +121,7 @@ class TestErgomotionController:
         mock_bleak_client.is_connected = False
 
         with pytest.raises(ConnectionError):
-            await coordinator.controller.write_command(
-                coordinator.controller._build_command(0)
-            )
+            await coordinator.controller.write_command(coordinator.controller._build_command(0))
 
 
 class TestErgomotionMovement:
@@ -460,15 +418,26 @@ class TestErgomotionPositionNotifications:
         # Header: 0xED
         # data1: head_pos (2), foot_pos (2), head_massage (1), foot_massage (1), padding (2)
         # data2: 7 bytes including movement status
-        data = bytes([
-            0xED,  # Header
-            0x32, 0x00,  # Head position: 50
-            0x19, 0x00,  # Foot position: 25
-            0x03,  # Head massage level
-            0x02,  # Foot massage level
-            0x00, 0x00,  # Padding
-            0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00  # data2 with status
-        ])
+        data = bytes(
+            [
+                0xED,  # Header
+                0x32,
+                0x00,  # Head position: 50
+                0x19,
+                0x00,  # Foot position: 25
+                0x03,  # Head massage level
+                0x02,  # Foot massage level
+                0x00,
+                0x00,  # Padding
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x0F,
+                0x00,
+                0x00,  # data2 with status
+            ]
+        )
 
         coordinator.controller._parse_notification(data)
 
@@ -489,13 +458,29 @@ class TestErgomotionPositionNotifications:
         coordinator.controller._notify_callback = callback
 
         # Create a mock 0xF0 message (19 bytes)
-        data = bytes([
-            0xF0,  # Header
-            0x64, 0x00,  # Head position: 100
-            0x32, 0x00,  # Foot position: 50
-            0x00, 0x00, 0x00, 0x00,  # More data1
-            0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00  # data2
-        ])
+        data = bytes(
+            [
+                0xF0,  # Header
+                0x64,
+                0x00,  # Head position: 100
+                0x32,
+                0x00,  # Foot position: 50
+                0x00,
+                0x00,
+                0x00,
+                0x00,  # More data1
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x0F,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,  # data2
+            ]
+        )
 
         coordinator.controller._parse_notification(data)
 

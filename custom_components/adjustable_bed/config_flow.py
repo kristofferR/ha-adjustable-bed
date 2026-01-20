@@ -152,9 +152,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
         self._discovery_info = discovery_info
-        self.context["title_placeholders"] = {
-            "name": discovery_info.name or discovery_info.address
-        }
+        self.context["title_placeholders"] = {"name": discovery_info.name or discovery_info.address}
 
         return await self.async_step_bluetooth_confirm()
 
@@ -171,9 +169,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Get user-selected bed type (may differ from auto-detected)
             selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
-            if selected_bed_type == BED_TYPE_OCTO and bed_type == BED_TYPE_OCTO:
-                if not is_valid_octo_pin(octo_pin):
-                    errors[CONF_OCTO_PIN] = "invalid_pin"
+            if (
+                selected_bed_type == BED_TYPE_OCTO
+                and bed_type == BED_TYPE_OCTO
+                and not is_valid_octo_pin(octo_pin)
+            ):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
             # Get bed-specific defaults for motor pulse settings
@@ -183,7 +184,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             try:
                 motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
-                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
+                motor_pulse_delay_ms = int(
+                    user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1]
+                )
             except (ValueError, TypeError):
                 _LOGGER.warning("Invalid number input for motor pulse settings")
                 motor_pulse_count = pulse_defaults[0]
@@ -210,12 +213,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_NAME: user_input.get(CONF_NAME, self._discovery_info.name),
                     CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    CONF_DISABLE_ANGLE_SENSING: user_input.get(
+                        CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+                    ),
                     CONF_PREFERRED_ADAPTER: preferred_adapter,
                     CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                     CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(
+                        CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+                    ),
+                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(
+                        CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+                    ),
                 }
                 # Handle bed-type-specific configuration when user overrides detected type
                 # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
@@ -231,7 +240,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     entry_data[CONF_OCTO_PIN] = octo_pin
                 # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
                 if selected_bed_type == BED_TYPE_RICHMAT:
-                    entry_data[CONF_RICHMAT_REMOTE] = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+                    entry_data[CONF_RICHMAT_REMOTE] = user_input.get(
+                        CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
+                    )
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                     data=entry_data,
@@ -247,20 +258,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Get bed-type-specific motor pulse defaults
         pulse_defaults = (
-            BED_MOTOR_PULSE_DEFAULTS.get(bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS))
-            if bed_type else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            BED_MOTOR_PULSE_DEFAULTS.get(
+                bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+            )
+            if bed_type
+            else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
         )
         default_pulse_count, default_pulse_delay = pulse_defaults
 
         # Build schema with optional variant selection
         schema_dict = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): vol.In(SUPPORTED_BED_TYPES),
-            vol.Optional(
-                CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"
-            ): str,
-            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
-                [2, 3, 4]
-            ),
+            vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
+            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
@@ -270,16 +280,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(default_pulse_delay)): TextSelector(
                 TextSelectorConfig()
             ),
-            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
-            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.All(
-                vol.Coerce(int), vol.Range(min=10, max=300)
-            ),
+            vol.Optional(
+                CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND
+            ): bool,
+            vol.Optional(
+                CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
+            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
         }
 
         # Add variant selection if the bed type has variants
         variants = get_variants_for_bed_type(bed_type)
         if variants:
-            schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(variants)
+            schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(
+                variants
+            )
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
@@ -289,7 +303,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Add remote selection for Richmat beds
         if bed_type == BED_TYPE_RICHMAT:
-            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(RICHMAT_REMOTES)
+            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(
+                RICHMAT_REMOTES
+            )
 
         return self.async_show_form(
             step_id="bluetooth_confirm",
@@ -300,9 +316,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             },
         )
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the user step to pick discovered device or manual entry."""
         _LOGGER.debug("async_step_user called with input: %s", user_input)
 
@@ -330,6 +344,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Log Bluetooth scanner status
         try:
             from homeassistant.components.bluetooth import async_scanner_count
+
             scanner_count = async_scanner_count(self.hass, connectable=True)
             _LOGGER.debug(
                 "Bluetooth scanners available (connectable): %d",
@@ -379,22 +394,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._discovered_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices.update({
-            address: f"{info.name or 'Unknown'} ({address})"
-            for address, info in sorted_beds
-        })
+        devices.update(
+            {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
+        )
         devices["diagnostic"] = "Diagnostic mode (unsupported device)"
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_ADDRESS): vol.In(devices)}
-            ),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
         )
 
-    async def async_step_manual(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle manual bed selection - show all BLE devices.
 
         Lists ALL visible BLE devices (not just recognized beds) so users can
@@ -446,16 +456,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
         devices = {
-            address: f"{info.name or 'Unknown'} ({address})"
-            for address, info in sorted_devices
+            address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_devices
         }
         devices["manual_entry"] = "Enter address manually"
 
         return self.async_show_form(
             step_id="manual",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_ADDRESS): vol.In(devices)}
-            ),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
         )
 
     async def async_step_manual_config(
@@ -491,7 +498,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             motor_pulse_delay_ms = pulse_defaults[1]
             try:
                 motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
-                motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
+                motor_pulse_delay_ms = int(
+                    user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1]
+                )
             except (ValueError, TypeError):
                 errors["base"] = "invalid_number"
 
@@ -517,12 +526,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
                     CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                     CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                    CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                    CONF_DISABLE_ANGLE_SENSING: user_input.get(
+                        CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+                    ),
                     CONF_PREFERRED_ADAPTER: preferred_adapter,
                     CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                     CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                    CONF_DISCONNECT_AFTER_COMMAND: user_input.get(
+                        CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+                    ),
+                    CONF_IDLE_DISCONNECT_SECONDS: user_input.get(
+                        CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+                    ),
                 }
                 # For Octo beds, collect PIN in a separate step
                 if bed_type == BED_TYPE_OCTO:
@@ -560,25 +575,31 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
         # Add remaining fields
-        schema_dict.update({
-            vol.Optional(CONF_NAME, default=device_name if device_name != "Unknown" else "Adjustable Bed"): str,
-            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
-                [2, 3, 4]
-            ),
-            vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
-            vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
-            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
-                TextSelectorConfig()
-            ),
-            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
-                TextSelectorConfig()
-            ),
-            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
-            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
-                range(10, 301)
-            ),
-        })
+        schema_dict.update(
+            {
+                vol.Optional(
+                    CONF_NAME, default=device_name if device_name != "Unknown" else "Adjustable Bed"
+                ): str,
+                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
+                vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
+                vol.Optional(
+                    CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING
+                ): bool,
+                vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
+                vol.Optional(
+                    CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)
+                ): TextSelector(TextSelectorConfig()),
+                vol.Optional(
+                    CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)
+                ): TextSelector(TextSelectorConfig()),
+                vol.Optional(
+                    CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND
+                ): bool,
+                vol.Optional(
+                    CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
+                ): vol.In(range(10, 301)),
+            }
+        )
 
         return self.async_show_form(
             step_id="manual_config",
@@ -618,8 +639,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_count = pulse_defaults[0]
                 motor_pulse_delay_ms = pulse_defaults[1]
                 try:
-                    motor_pulse_count = int(user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0])
-                    motor_pulse_delay_ms = int(user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1])
+                    motor_pulse_count = int(
+                        user_input.get(CONF_MOTOR_PULSE_COUNT) or pulse_defaults[0]
+                    )
+                    motor_pulse_delay_ms = int(
+                        user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1]
+                    )
                 except (ValueError, TypeError):
                     errors["base"] = "invalid_number"
 
@@ -648,12 +673,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_NAME: user_input.get(CONF_NAME, "Adjustable Bed"),
                         CONF_MOTOR_COUNT: user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
                         CONF_HAS_MASSAGE: user_input.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
-                        CONF_DISABLE_ANGLE_SENSING: user_input.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
+                        CONF_DISABLE_ANGLE_SENSING: user_input.get(
+                            CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+                        ),
                         CONF_PREFERRED_ADAPTER: preferred_adapter,
                         CONF_MOTOR_PULSE_COUNT: motor_pulse_count,
                         CONF_MOTOR_PULSE_DELAY_MS: motor_pulse_delay_ms,
-                        CONF_DISCONNECT_AFTER_COMMAND: user_input.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
-                        CONF_IDLE_DISCONNECT_SECONDS: user_input.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                        CONF_DISCONNECT_AFTER_COMMAND: user_input.get(
+                            CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+                        ),
+                        CONF_IDLE_DISCONNECT_SECONDS: user_input.get(
+                            CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+                        ),
                     }
                     # For Octo beds, collect PIN in a separate step
                     if bed_type == BED_TYPE_OCTO:
@@ -688,25 +719,29 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
         # Add remaining fields
-        schema_dict.update({
-            vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
-            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In(
-                [2, 3, 4]
-            ),
-            vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-            vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING): bool,
-            vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
-            vol.Optional(CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)): TextSelector(
-                TextSelectorConfig()
-            ),
-            vol.Optional(CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)): TextSelector(
-                TextSelectorConfig()
-            ),
-            vol.Optional(CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND): bool,
-            vol.Optional(CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS): vol.In(
-                range(10, 301)
-            ),
-        })
+        schema_dict.update(
+            {
+                vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
+                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
+                vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
+                vol.Optional(
+                    CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING
+                ): bool,
+                vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
+                vol.Optional(
+                    CONF_MOTOR_PULSE_COUNT, default=str(DEFAULT_MOTOR_PULSE_COUNT)
+                ): TextSelector(TextSelectorConfig()),
+                vol.Optional(
+                    CONF_MOTOR_PULSE_DELAY_MS, default=str(DEFAULT_MOTOR_PULSE_DELAY_MS)
+                ): TextSelector(TextSelectorConfig()),
+                vol.Optional(
+                    CONF_DISCONNECT_AFTER_COMMAND, default=DEFAULT_DISCONNECT_AFTER_COMMAND
+                ): bool,
+                vol.Optional(
+                    CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
+                ): vol.In(range(10, 301)),
+            }
+        )
 
         return self.async_show_form(
             step_id="manual_entry",
@@ -882,16 +917,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
         devices = {
-            address: f"{info.name or 'Unknown'} ({address})"
-            for address, info in sorted_devices
+            address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_devices
         }
         devices["manual"] = "Enter address manually"
 
         return self.async_show_form(
             step_id="diagnostic",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_ADDRESS): vol.In(devices)}
-            ),
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
         )
 
     async def async_step_diagnostic_confirm(
@@ -905,7 +937,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, discovery_source)
-            device_name = user_input.get(CONF_NAME, self._discovery_info.name or "Diagnostic Device")
+            device_name = user_input.get(
+                CONF_NAME, self._discovery_info.name or "Diagnostic Device"
+            )
             _LOGGER.info(
                 "Creating diagnostic device entry: name=%s, address=%s, adapter=%s",
                 device_name,
@@ -936,9 +970,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(
                         CONF_NAME, default=self._discovery_info.name or "Diagnostic Device"
                     ): str,
-                    vol.Optional(
-                        CONF_PREFERRED_ADAPTER, default=discovery_source
-                    ): vol.In(adapters),
+                    vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(
+                        adapters
+                    ),
                 }
             ),
             description_placeholders={
@@ -1004,9 +1038,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     """Handle Adjustable Bed options."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         # Get current values from config entry
         current_data = self.config_entry.data
@@ -1040,52 +1072,64 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ): TextSelector(TextSelectorConfig()),
             vol.Optional(
                 CONF_MOTOR_PULSE_DELAY_MS,
-                default=str(current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)),
+                default=str(
+                    current_data.get(CONF_MOTOR_PULSE_DELAY_MS, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                ),
             ): TextSelector(TextSelectorConfig()),
             vol.Optional(
                 CONF_DISCONNECT_AFTER_COMMAND,
-                default=current_data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND),
+                default=current_data.get(
+                    CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+                ),
             ): bool,
             vol.Optional(
                 CONF_IDLE_DISCONNECT_SECONDS,
-                default=current_data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
+                default=current_data.get(
+                    CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+                ),
             ): vol.In(range(10, 301)),
             vol.Optional(
                 CONF_DISABLE_ANGLE_SENSING,
-                default=current_data.get(
-                    CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-                ),
+                default=current_data.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),
             ): bool,
             vol.Optional(
                 CONF_POSITION_MODE,
                 default=current_data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE),
-            ): vol.In({
-                POSITION_MODE_SPEED: "Speed (recommended)",
-                POSITION_MODE_ACCURACY: "Accuracy",
-            }),
+            ): vol.In(
+                {
+                    POSITION_MODE_SPEED: "Speed (recommended)",
+                    POSITION_MODE_ACCURACY: "Accuracy",
+                }
+            ),
         }
 
         # Add variant selection if the bed type has variants
         variants = get_variants_for_bed_type(bed_type)
         if variants:
-            schema_dict[vol.Optional(
-                CONF_PROTOCOL_VARIANT,
-                default=current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
-            )] = vol.In(variants)
+            schema_dict[
+                vol.Optional(
+                    CONF_PROTOCOL_VARIANT,
+                    default=current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
+                )
+            ] = vol.In(variants)
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
-            schema_dict[vol.Optional(
-                CONF_OCTO_PIN,
-                default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
-            )] = TextSelector(TextSelectorConfig())
+            schema_dict[
+                vol.Optional(
+                    CONF_OCTO_PIN,
+                    default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+                )
+            ] = TextSelector(TextSelectorConfig())
 
         # Add remote selection for Richmat beds
         if bed_type == BED_TYPE_RICHMAT:
-            schema_dict[vol.Optional(
-                CONF_RICHMAT_REMOTE,
-                default=current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
-            )] = vol.In(RICHMAT_REMOTES)
+            schema_dict[
+                vol.Optional(
+                    CONF_RICHMAT_REMOTE,
+                    default=current_data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO),
+                )
+            ] = vol.In(RICHMAT_REMOTES)
 
         if user_input is not None:
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
@@ -1099,15 +1143,22 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 user_input[CONF_OCTO_PIN] = octo_pin
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = (
-                BED_MOTOR_PULSE_DEFAULTS.get(bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS))
-                if bed_type else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                BED_MOTOR_PULSE_DEFAULTS.get(
+                    bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                )
+                if bed_type
+                else (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
             )
             # Convert text values to integers
             try:
                 if CONF_MOTOR_PULSE_COUNT in user_input:
-                    user_input[CONF_MOTOR_PULSE_COUNT] = int(user_input[CONF_MOTOR_PULSE_COUNT] or pulse_defaults[0])
+                    user_input[CONF_MOTOR_PULSE_COUNT] = int(
+                        user_input[CONF_MOTOR_PULSE_COUNT] or pulse_defaults[0]
+                    )
                 if CONF_MOTOR_PULSE_DELAY_MS in user_input:
-                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1])
+                    user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(
+                        user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1]
+                    )
             except (ValueError, TypeError):
                 return self.async_show_form(
                     step_id="init",

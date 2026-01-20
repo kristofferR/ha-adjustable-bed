@@ -164,9 +164,7 @@ class OkinHandleController(BedController):
 
             try:
                 # Write to handle directly (Bleak supports integer handles)
-                await self.client.write_gatt_char(
-                    DEWERTOKIN_WRITE_HANDLE, command, response=True
-                )
+                await self.client.write_gatt_char(DEWERTOKIN_WRITE_HANDLE, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -192,9 +190,7 @@ class OkinHandleController(BedController):
         try:
             pulse_count = self._coordinator.motor_pulse_count
             pulse_delay = self._coordinator.motor_pulse_delay_ms
-            await self.write_command(
-                command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
-            )
+            await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:
                 await self.write_command(

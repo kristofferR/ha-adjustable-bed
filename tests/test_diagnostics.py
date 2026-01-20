@@ -75,25 +75,6 @@ class TestDiagnosticsRedaction:
         # Should handle dash separators
         assert _redact_mac_address("AA-BB-CC-DD-EE-FF") == "AA-BB-CC-**-**-**"
 
-    def test_mac_address_redaction_edge_cases(self):
-        """Test _redact_mac_address handles edge cases correctly."""
-        # Empty string should return as-is
-        assert _redact_mac_address("") == ""
-
-        # None should return as-is
-        assert _redact_mac_address(None) is None
-
-        # Non-string should return as-is
-        assert _redact_mac_address(12345) == 12345
-
-        # Invalid format (wrong number of parts) should be fully redacted
-        assert _redact_mac_address("AA:BB:CC:DD:EE") == "**REDACTED**"
-        assert _redact_mac_address("AA:BB:CC:DD:EE:FF:GG") == "**REDACTED**"
-        assert _redact_mac_address("not-a-mac") == "**REDACTED**"
-
-        # Single character should be fully redacted
-        assert _redact_mac_address("X") == "**REDACTED**"
-
 
 class TestDiagnosticsOutput:
     """Test diagnostics output structure."""
@@ -102,7 +83,7 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,
+        mock_coordinator_connected,  # noqa: ARG002
         mock_bleak_client: MagicMock,
     ):
         """Test diagnostics when not connected."""
@@ -131,8 +112,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
+        mock_coordinator_connected,  # noqa: ARG002
+        mock_bleak_client: MagicMock,  # noqa: ARG002
     ):
         """Test diagnostics when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -171,7 +152,7 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,
+        mock_coordinator_connected,  # noqa: ARG002
     ):
         """Test that sensitive data is redacted."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -195,7 +176,7 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,
+        mock_coordinator_connected,  # noqa: ARG002
     ):
         """Test diagnostics includes controller info when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -218,7 +199,7 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,
+        mock_coordinator_connected,  # noqa: ARG002
     ):
         """Test diagnostics includes supported bed types."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

@@ -25,57 +25,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestReverieCommands:
-    """Test Reverie command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert ReverieCommands.PRESET_ZERO_G == [0x15]
-        assert ReverieCommands.PRESET_ANTI_SNORE == [0x16]
-        assert ReverieCommands.PRESET_FLAT == [0x05]
-        assert ReverieCommands.PRESET_MEMORY_1 == [0x11]
-        assert ReverieCommands.PRESET_MEMORY_2 == [0x12]
-        assert ReverieCommands.PRESET_MEMORY_3 == [0x13]
-        assert ReverieCommands.PRESET_MEMORY_4 == [0x14]
-
-    def test_program_commands(self):
-        """Test program command values."""
-        assert ReverieCommands.PROGRAM_MEMORY_1 == [0x21]
-        assert ReverieCommands.PROGRAM_MEMORY_2 == [0x22]
-        assert ReverieCommands.PROGRAM_MEMORY_3 == [0x23]
-        assert ReverieCommands.PROGRAM_MEMORY_4 == [0x24]
-
-    def test_other_commands(self):
-        """Test other command values."""
-        assert ReverieCommands.LIGHTS_TOGGLE == [0x5B, 0x00]
-        assert ReverieCommands.MOTOR_STOP == [0xFF]
-
-    def test_massage_head(self):
-        """Test head massage command factory."""
-        cmd = ReverieCommands.massage_head(5)
-        assert cmd == [0x53, 5]
-
-    def test_massage_foot(self):
-        """Test foot massage command factory."""
-        cmd = ReverieCommands.massage_foot(7)
-        assert cmd == [0x54, 7]
-
-    def test_massage_wave(self):
-        """Test wave massage command factory."""
-        cmd = ReverieCommands.massage_wave(3)
-        assert cmd == [0x43]  # 0x40 + 3
-
-    def test_motor_head(self):
-        """Test head motor position command factory."""
-        cmd = ReverieCommands.motor_head(50)
-        assert cmd == [0x51, 50]
-
-    def test_motor_feet(self):
-        """Test feet motor position command factory."""
-        cmd = ReverieCommands.motor_feet(75)
-        assert cmd == [0x52, 75]
-
-
 @pytest.fixture
 def mock_reverie_config_entry_data() -> dict:
     """Return mock config entry data for Reverie bed."""

@@ -34,6 +34,18 @@ line-length = 100
 select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 ignore = ["E501"]
 
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+reportTypedDictNotRequiredAccess = "none"  # Tests assert on known state
+reportOptionalMemberAccess = "none"  # Tests use coordinator.controller after setup
+reportAttributeAccessIssue = "none"  # Tests access private methods
+reportOperatorIssue = "none"  # Tests use "in" on optional strings
+reportArgumentType = "none"  # Tests use mock objects for type parameters
+reportOptionalOperand = "none"  # Tests use optional remote values that are known set
+reportIncompatibleVariableOverride = "none"  # HA entities use @property over cached_property
+reportUnusedImport = "none"  # Some imports used only for type checking
+
 [tool.mypy]
 python_version = "3.13"
 platform = "linux"

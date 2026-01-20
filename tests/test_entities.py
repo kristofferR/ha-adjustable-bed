@@ -8,11 +8,7 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 
 # Import enable_custom_integrations fixture
-from pytest_homeassistant_custom_component.plugins import enable_custom_integrations
-
 from custom_components.adjustable_bed.const import DOMAIN
-
-from .conftest import TEST_ADDRESS
 
 
 class TestCoverEntities:
@@ -29,16 +25,10 @@ class TestCoverEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        # With 2 motors, should have back and legs covers
-        back_state = hass.states.get(f"cover.{TEST_ADDRESS.replace(':', '_').lower()}_back")
-        legs_state = hass.states.get(f"cover.{TEST_ADDRESS.replace(':', '_').lower()}_legs")
-
         # Note: Entity names may be different based on translation
         # Check we have the expected number of cover entities
         cover_states = [
-            state
-            for state in hass.states.async_all()
-            if state.entity_id.startswith("cover.")
+            state for state in hass.states.async_all() if state.entity_id.startswith("cover.")
         ]
         assert len(cover_states) == 2  # back and legs for 2-motor bed
 
@@ -130,9 +120,7 @@ class TestButtonEntities:
         await hass.async_block_till_done()
 
         button_states = [
-            state
-            for state in hass.states.async_all()
-            if state.entity_id.startswith("button.")
+            state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
         # Linak has memory_slot_count=4 and supports_memory_programming=True, but supports_preset_flat=False
@@ -165,9 +153,7 @@ class TestButtonEntities:
         await hass.async_block_till_done()
 
         button_states = [
-            state
-            for state in hass.states.async_all()
-            if state.entity_id.startswith("button.")
+            state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
         # Should have: base (11) + massage buttons (11) = 22
@@ -222,9 +208,7 @@ class TestSwitchEntities:
         await hass.async_block_till_done()
 
         switch_states = [
-            state
-            for state in hass.states.async_all()
-            if state.entity_id.startswith("switch.")
+            state for state in hass.states.async_all() if state.entity_id.startswith("switch.")
         ]
 
         # Should have under-bed lights switch
@@ -345,9 +329,7 @@ class TestEntityAvailability:
 
         # All entities should be available (not STATE_UNAVAILABLE)
         cover_entities = [
-            state
-            for state in hass.states.async_all()
-            if state.entity_id.startswith("cover.")
+            state for state in hass.states.async_all() if state.entity_id.startswith("cover.")
         ]
 
         for state in cover_entities:

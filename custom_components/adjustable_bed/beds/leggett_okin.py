@@ -300,7 +300,9 @@ class LeggettOkinController(BedController):
             except asyncio.CancelledError:
                 raise
             except BleakError:
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup", exc_info=True)
+                _LOGGER.debug(
+                    "Failed to send STOP command during preset_flat cleanup", exc_info=True
+                )
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -328,7 +330,9 @@ class LeggettOkinController(BedController):
                 except asyncio.CancelledError:
                     raise
                 except BleakError:
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup", exc_info=True)
+                    _LOGGER.debug(
+                        "Failed to send STOP command during preset_memory cleanup", exc_info=True
+                    )
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Okin)."""
@@ -356,7 +360,9 @@ class LeggettOkinController(BedController):
             except asyncio.CancelledError:
                 raise
             except BleakError:
-                _LOGGER.debug("Failed to send STOP command during preset_zero_g cleanup", exc_info=True)
+                _LOGGER.debug(
+                    "Failed to send STOP command during preset_zero_g cleanup", exc_info=True
+                )
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (not supported on Okin)."""
@@ -365,9 +371,7 @@ class LeggettOkinController(BedController):
     # Light methods
     async def lights_toggle(self) -> None:
         """Toggle lights."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.TOGGLE_LIGHTS)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.TOGGLE_LIGHTS))
 
     async def lights_on(self) -> None:
         """Turn on lights (via toggle - no discrete control)."""
@@ -387,30 +391,20 @@ class LeggettOkinController(BedController):
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.MASSAGE_HEAD_UP)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_HEAD_UP))
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.MASSAGE_HEAD_DOWN)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_HEAD_DOWN))
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.MASSAGE_FOOT_UP)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_FOOT_UP))
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.MASSAGE_FOOT_DOWN)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_FOOT_DOWN))
 
     async def massage_toggle(self) -> None:
         """Toggle massage / step through modes."""
-        await self.write_command(
-            self._build_command(LeggettOkinCommands.MASSAGE_STEP)
-        )
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_STEP))

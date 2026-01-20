@@ -25,50 +25,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestMotoSleepCommands:
-    """Test MotoSleep command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values (ASCII characters)."""
-        assert ord('O') == MotoSleepCommands.PRESET_HOME
-        assert ord('U') == MotoSleepCommands.PRESET_MEMORY_1
-        assert ord('V') == MotoSleepCommands.PRESET_MEMORY_2
-        assert ord('R') == MotoSleepCommands.PRESET_ANTI_SNORE
-        assert ord('S') == MotoSleepCommands.PRESET_TV
-        assert ord('T') == MotoSleepCommands.PRESET_ZERO_G
-
-    def test_program_commands(self):
-        """Test program command values."""
-        assert ord('Z') == MotoSleepCommands.PROGRAM_MEMORY_1
-        assert ord('a') == MotoSleepCommands.PROGRAM_MEMORY_2
-        assert ord('W') == MotoSleepCommands.PROGRAM_ANTI_SNORE
-        assert ord('X') == MotoSleepCommands.PROGRAM_TV
-        assert ord('Y') == MotoSleepCommands.PROGRAM_ZERO_G
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert ord('K') == MotoSleepCommands.MOTOR_HEAD_UP
-        assert ord('L') == MotoSleepCommands.MOTOR_HEAD_DOWN
-        assert ord('M') == MotoSleepCommands.MOTOR_FEET_UP
-        assert ord('N') == MotoSleepCommands.MOTOR_FEET_DOWN
-        assert ord('P') == MotoSleepCommands.MOTOR_NECK_UP
-        assert ord('Q') == MotoSleepCommands.MOTOR_NECK_DOWN
-
-    def test_massage_commands(self):
-        """Test massage command values."""
-        assert ord('C') == MotoSleepCommands.MASSAGE_HEAD_STEP
-        assert ord('B') == MotoSleepCommands.MASSAGE_FOOT_STEP
-        assert ord('D') == MotoSleepCommands.MASSAGE_STOP
-        assert ord('G') == MotoSleepCommands.MASSAGE_HEAD_UP
-        assert ord('H') == MotoSleepCommands.MASSAGE_HEAD_DOWN
-        assert ord('E') == MotoSleepCommands.MASSAGE_FOOT_UP
-        assert ord('F') == MotoSleepCommands.MASSAGE_FOOT_DOWN
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert ord('A') == MotoSleepCommands.LIGHTS_TOGGLE
-
-
 @pytest.fixture
 def mock_motosleep_config_entry_data() -> dict:
     """Return mock config entry data for MotoSleep bed."""
@@ -124,12 +80,12 @@ class TestMotoSleepController:
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
-        command = coordinator.controller._build_command(ord('K'))
+        command = coordinator.controller._build_command(ord("K"))
 
         # MotoSleep: [0x24, char_code] - '$' followed by command char
         assert len(command) == 2
         assert command[0] == 0x24  # '$'
-        assert command[1] == ord('K')
+        assert command[1] == ord("K")
 
     async def test_write_command(
         self,

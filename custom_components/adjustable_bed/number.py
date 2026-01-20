@@ -249,9 +249,7 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
     @property
     def native_value(self) -> float | None:
         """Return the current position (angle in degrees, or percentage for Keeson/Ergomotion)."""
-        position = self._coordinator.position_data.get(
-            self.entity_description.position_key
-        )
+        position = self._coordinator.position_data.get(self.entity_description.position_key)
         if position is None:
             return None
 

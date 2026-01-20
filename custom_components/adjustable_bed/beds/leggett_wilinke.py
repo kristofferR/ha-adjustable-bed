@@ -62,11 +62,11 @@ class LeggettWilinkeCommands:
     PROGRAM_ZERO_G = 0x66
 
     # Massage - discrete UP/DOWN commands (from LP app decompilation)
-    MASSAGE_HEAD_UP = 0x4C      # Increase head massage intensity
-    MASSAGE_HEAD_DOWN = 0x4D    # Decrease head massage intensity
-    MASSAGE_FOOT_UP = 0x4E      # Increase foot massage intensity
-    MASSAGE_FOOT_DOWN = 0x4F    # Decrease foot massage intensity
-    MASSAGE_MOTOR_STOP = 0x47   # Stop massage motors
+    MASSAGE_HEAD_UP = 0x4C  # Increase head massage intensity
+    MASSAGE_HEAD_DOWN = 0x4D  # Decrease head massage intensity
+    MASSAGE_FOOT_UP = 0x4E  # Increase foot massage intensity
+    MASSAGE_FOOT_DOWN = 0x4F  # Decrease foot massage intensity
+    MASSAGE_MOTOR_STOP = 0x47  # Stop massage motors
 
     # Massage - additional commands
     MASSAGE_MOTOR1_ON_OFF = 0x32  # Toggle head massage
@@ -76,7 +76,7 @@ class LeggettWilinkeCommands:
     MASSAGE_INCREASE_SPEED = 0x36
     MASSAGE_DECREASE_SPEED = 0x37
     MASSAGE_PATTERN_STEP = 0x38  # Cycle massage patterns
-    MASSAGE_WAVE = 0x39          # Wave massage mode
+    MASSAGE_WAVE = 0x39  # Wave massage mode
     MASSAGE_ALWAYS_ON = 0x3A
 
     # Massage timers
@@ -223,9 +223,7 @@ class LeggettWilinkeController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    self._char_uuid, command, response=True
-                )
+                await self.client.write_gatt_char(self._char_uuid, command, response=True)
             except BleakError as err:
                 _LOGGER.exception("Failed to write command")
                 if "not found" in str(err).lower() or "invalid" in str(err).lower():
@@ -437,11 +435,15 @@ class LeggettWilinkeController(BedController):
 
     async def massage_intensity_up(self) -> None:
         """Increase overall massage intensity."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_INCREASE_INTENSITY))
+        await self.write_command(
+            self._build_command(LeggettWilinkeCommands.MASSAGE_INCREASE_INTENSITY)
+        )
 
     async def massage_intensity_down(self) -> None:
         """Decrease overall massage intensity."""
-        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_DECREASE_INTENSITY))
+        await self.write_command(
+            self._build_command(LeggettWilinkeCommands.MASSAGE_DECREASE_INTENSITY)
+        )
 
     async def massage_mode_step(self) -> None:
         """Step through massage patterns."""

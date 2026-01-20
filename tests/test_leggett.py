@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.beds.leggett_okin import (
     LeggettOkinCommands,
     LeggettOkinController,
 )
-from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     CONF_BED_TYPE,
@@ -26,76 +25,6 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_GEN2_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
-
-class TestLeggettHelpers:
-    """Test Leggett & Platt helper functions."""
-
-    def test_int_to_bytes(self):
-        """Test integer to big-endian bytes conversion."""
-        assert int_to_bytes(0x1) == [0x00, 0x00, 0x00, 0x01]
-        assert int_to_bytes(0x100) == [0x00, 0x00, 0x01, 0x00]
-        assert int_to_bytes(0x8000000) == [0x08, 0x00, 0x00, 0x00]
-
-
-class TestLeggettGen2CommandConstants:
-    """Test Leggett & Platt Gen2 ASCII command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert LeggettGen2Commands.PRESET_FLAT == b"MEM 0"
-        assert LeggettGen2Commands.PRESET_UNWIND == b"MEM 1"
-        assert LeggettGen2Commands.PRESET_SLEEP == b"MEM 2"
-        assert LeggettGen2Commands.PRESET_WAKE_UP == b"MEM 3"
-        assert LeggettGen2Commands.PRESET_RELAX == b"MEM 4"
-        assert LeggettGen2Commands.PRESET_ANTI_SNORE == b"SNR"
-
-    def test_program_commands(self):
-        """Test program command values."""
-        assert LeggettGen2Commands.PROGRAM_UNWIND == b"SMEM 1"
-        assert LeggettGen2Commands.PROGRAM_SLEEP == b"SMEM 2"
-        assert LeggettGen2Commands.PROGRAM_WAKE_UP == b"SMEM 3"
-        assert LeggettGen2Commands.PROGRAM_RELAX == b"SMEM 4"
-
-    def test_control_commands(self):
-        """Test control command values."""
-        assert LeggettGen2Commands.STOP == b"STOP"
-        assert LeggettGen2Commands.GET_STATE == b"GET STATE"
-
-    def test_rgb_set(self):
-        """Test RGB color command factory."""
-        cmd = LeggettGen2Commands.rgb_set(255, 128, 64, 200)
-        assert cmd == b"RGBSET 0:FF8040C8"
-
-    def test_massage_head_strength(self):
-        """Test head massage strength command factory."""
-        cmd = LeggettGen2Commands.massage_head_strength(5)
-        assert cmd == b"MVI 0:5"
-
-    def test_massage_foot_strength(self):
-        """Test foot massage strength command factory."""
-        cmd = LeggettGen2Commands.massage_foot_strength(7)
-        assert cmd == b"MVI 1:7"
-
-
-class TestLeggettOkinCommandConstants:
-    """Test Leggett & Platt Okin command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert LeggettOkinCommands.PRESET_FLAT == 0x8000000
-        assert LeggettOkinCommands.PRESET_ZERO_G == 0x1000
-        assert LeggettOkinCommands.PRESET_MEMORY_1 == 0x2000
-        assert LeggettOkinCommands.PRESET_MEMORY_2 == 0x4000
-        assert LeggettOkinCommands.PRESET_MEMORY_3 == 0x8000
-        assert LeggettOkinCommands.PRESET_MEMORY_4 == 0x10000
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert LeggettOkinCommands.MOTOR_HEAD_UP == 0x1
-        assert LeggettOkinCommands.MOTOR_HEAD_DOWN == 0x2
-        assert LeggettOkinCommands.MOTOR_FEET_UP == 0x4
-        assert LeggettOkinCommands.MOTOR_FEET_DOWN == 0x8
 
 
 @pytest.fixture

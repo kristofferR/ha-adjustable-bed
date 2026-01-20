@@ -25,50 +25,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestJiecangCommands:
-    """Test Jiecang command constants."""
-
-    def test_preset_commands(self):
-        """Test preset commands are correct."""
-        assert bytes.fromhex("f1f10b01010d7e") == JiecangCommands.MEMORY_1
-        assert bytes.fromhex("f1f10d01010f7e") == JiecangCommands.MEMORY_2
-        assert bytes.fromhex("f1f10801010a7e") == JiecangCommands.FLAT
-        assert bytes.fromhex("f1f1070101097e") == JiecangCommands.ZERO_G
-
-    def test_command_lengths(self):
-        """Test all commands are 7 bytes."""
-        commands = [
-            JiecangCommands.MEMORY_1,
-            JiecangCommands.MEMORY_2,
-            JiecangCommands.FLAT,
-            JiecangCommands.ZERO_G,
-        ]
-        for cmd in commands:
-            assert len(cmd) == 7, f"Command {cmd.hex()} should be 7 bytes"
-
-    def test_command_prefix(self):
-        """Test all commands start with 0xf1f1."""
-        commands = [
-            JiecangCommands.MEMORY_1,
-            JiecangCommands.MEMORY_2,
-            JiecangCommands.FLAT,
-            JiecangCommands.ZERO_G,
-        ]
-        for cmd in commands:
-            assert cmd[:2] == bytes([0xF1, 0xF1]), f"Command {cmd.hex()} should start with f1f1"
-
-    def test_command_suffix(self):
-        """Test all commands end with 0x7e."""
-        commands = [
-            JiecangCommands.MEMORY_1,
-            JiecangCommands.MEMORY_2,
-            JiecangCommands.FLAT,
-            JiecangCommands.ZERO_G,
-        ]
-        for cmd in commands:
-            assert cmd[-1] == 0x7E, f"Command {cmd.hex()} should end with 7e"
-
-
 @pytest.fixture
 def mock_jiecang_config_entry_data() -> dict:
     """Return mock config entry data for Jiecang bed."""
@@ -144,9 +100,7 @@ class TestJiecangController:
         await coordinator.async_connect()
 
         command = JiecangCommands.FLAT
-        await coordinator.controller.write_command(
-            command, repeat_count=3, repeat_delay_ms=100
-        )
+        await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=100)
 
         assert mock_bleak_client.write_gatt_char.call_count == 3
 

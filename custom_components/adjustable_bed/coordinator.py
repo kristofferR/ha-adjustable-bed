@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 import traceback
@@ -110,11 +111,15 @@ class AdjustableBedCoordinator:
         self.entry = entry
         self._address: str = entry.data[CONF_ADDRESS].upper()
         self._bed_type: str = entry.data[CONF_BED_TYPE]
-        self._protocol_variant: str = entry.data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+        self._protocol_variant: str = entry.data.get(
+            CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
+        )
         self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
         self._motor_count: int = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
-        self._disable_angle_sensing: bool = entry.data.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING)
+        self._disable_angle_sensing: bool = entry.data.get(
+            CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+        )
         self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
 
@@ -123,11 +128,17 @@ class AdjustableBedCoordinator:
             self._bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
         )
         self._motor_pulse_count: int = entry.data.get(CONF_MOTOR_PULSE_COUNT, bed_pulse_defaults[0])
-        self._motor_pulse_delay_ms: int = entry.data.get(CONF_MOTOR_PULSE_DELAY_MS, bed_pulse_defaults[1])
+        self._motor_pulse_delay_ms: int = entry.data.get(
+            CONF_MOTOR_PULSE_DELAY_MS, bed_pulse_defaults[1]
+        )
 
         # Disconnect behavior configuration
-        self._disconnect_after_command: bool = entry.data.get(CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND)
-        self._idle_disconnect_seconds: int = entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
+        self._disconnect_after_command: bool = entry.data.get(
+            CONF_DISCONNECT_AFTER_COMMAND, DEFAULT_DISCONNECT_AFTER_COMMAND
+        )
+        self._idle_disconnect_seconds: int = entry.data.get(
+            CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+        )
 
         # Octo-specific configuration
         self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
@@ -142,7 +153,9 @@ class AdjustableBedCoordinator:
         self._lock = asyncio.Lock()
         self._command_lock = asyncio.Lock()  # Separate lock for command serialization
         self._connecting: bool = False  # Track if we're actively connecting
-        self._intentional_disconnect: bool = False  # Track intentional disconnects to skip auto-reconnect
+        self._intentional_disconnect: bool = (
+            False  # Track intentional disconnects to skip auto-reconnect
+        )
         self._cancel_command = asyncio.Event()  # Signal to cancel current command
         self._cancel_counter: int = 0  # Track cancellation requests to handle queued commands
         self._stop_keepalive_task: asyncio.Task[None] | None = None  # Track keepalive stop task
@@ -321,22 +334,36 @@ class AdjustableBedCoordinator:
 
         # Generic/placeholder strings
         generic_values = {
-            "unknown", "n/a", "na", "none", "null", "undefined",
-            "ble device", "bluetooth device", "generic",
+            "unknown",
+            "n/a",
+            "na",
+            "none",
+            "null",
+            "undefined",
+            "ble device",
+            "bluetooth device",
+            "generic",
         }
         if normalized in generic_values:
             return False
 
         # Chipset manufacturers (not the actual bed manufacturer)
         chipset_manufacturers = {
-            "nordic semiconductor", "nordic", "texas instruments", "ti",
-            "realtek", "qualcomm", "broadcom", "espressif", "silicon labs",
-            "dialog semiconductor", "cypress", "microchip", "stmicroelectronics",
+            "nordic semiconductor",
+            "nordic",
+            "texas instruments",
+            "ti",
+            "realtek",
+            "qualcomm",
+            "broadcom",
+            "espressif",
+            "silicon labs",
+            "dialog semiconductor",
+            "cypress",
+            "microchip",
+            "stmicroelectronics",
         }
-        if normalized in chipset_manufacturers:
-            return False
-
-        return True
+        return normalized not in chipset_manufacturers
 
     async def async_connect(self) -> bool:
         """Connect to the bed."""
@@ -356,7 +383,9 @@ class AdjustableBedCoordinator:
                 self._reset_disconnect_timer()
             return True
 
-        _LOGGER.info("Initiating BLE connection to %s (max %d attempts)", self._address, MAX_RETRIES)
+        _LOGGER.info(
+            "Initiating BLE connection to %s (max %d attempts)", self._address, MAX_RETRIES
+        )
         overall_start = time.monotonic()
 
         for attempt in range(MAX_RETRIES):
@@ -410,7 +439,9 @@ class AdjustableBedCoordinator:
                     )
                     # Log what devices ARE visible
                     try:
-                        discovered = list(bluetooth.async_discovered_service_info(self.hass, connectable=True))
+                        discovered = list(
+                            bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                        )
                         if discovered:
                             _LOGGER.debug(
                                 "Currently visible BLE devices (%d total):",
@@ -421,8 +452,8 @@ class AdjustableBedCoordinator:
                                     "  - %s (name: %s, rssi: %s, source: %s)",
                                     svc_info.address,
                                     svc_info.name or "Unknown",
-                                    getattr(svc_info, 'rssi', 'N/A'),
-                                    getattr(svc_info, 'source', 'N/A'),
+                                    getattr(svc_info, "rssi", "N/A"),
+                                    getattr(svc_info, "source", "N/A"),
                                 )
                             if len(discovered) > 10:
                                 _LOGGER.debug("  ... and %d more devices", len(discovered) - 10)
@@ -435,8 +466,8 @@ class AdjustableBedCoordinator:
 
                 # Log detailed device info including which adapter discovered it
                 device_source = None
-                if hasattr(device, 'details') and isinstance(device.details, dict):
-                    device_source = device.details.get('source')
+                if hasattr(device, "details") and isinstance(device.details, dict):
+                    device_source = device.details.get("source")
 
                 lookup_elapsed = time.monotonic() - attempt_start
                 _LOGGER.info(
@@ -450,7 +481,7 @@ class AdjustableBedCoordinator:
                     "Device details: address=%s, name=%s, details=%s",
                     device.address,
                     device.name,
-                    getattr(device, 'details', 'N/A'),
+                    getattr(device, "details", "N/A"),
                 )
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
@@ -483,15 +514,20 @@ class AdjustableBedCoordinator:
                 # Create a callback to get fresh device from preferred adapter on retries
                 ble_device_callback: Callable[[], BLEDevice] | None = None
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
+
                     def _get_device_from_preferred_adapter() -> BLEDevice:
                         """Get a fresh BLEDevice from the preferred adapter."""
-                        for svc_info in bluetooth.async_discovered_service_info(self.hass, connectable=True):
-                            if (svc_info.address.upper() == self._address and
-                                getattr(svc_info, 'source', None) == self._preferred_adapter):
+                        for svc_info in bluetooth.async_discovered_service_info(
+                            self.hass, connectable=True
+                        ):
+                            if (
+                                svc_info.address.upper() == self._address
+                                and getattr(svc_info, "source", None) == self._preferred_adapter
+                            ):
                                 _LOGGER.debug(
                                     "ble_device_callback returning device from %s (RSSI: %s)",
                                     self._preferred_adapter,
-                                    getattr(svc_info, 'rssi', 'N/A'),
+                                    getattr(svc_info, "rssi", "N/A"),
                                 )
                                 return svc_info.device
                         # Fall back to any source if preferred not available
@@ -505,6 +541,7 @@ class AdjustableBedCoordinator:
                         if fallback is None:
                             raise BleakError(f"Device {self._address} not found")
                         return fallback
+
                     ble_device_callback = _get_device_from_preferred_adapter
 
                 # Mark that we're connecting to suppress spurious disconnect warnings
@@ -529,10 +566,14 @@ class AdjustableBedCoordinator:
                 try:
                     # Try to get the actual connection source from the client
                     # (accessing private bleak internals for diagnostic purposes)
-                    if hasattr(self._client, '_backend') and hasattr(self._client._backend, '_device'):
+                    if hasattr(self._client, "_backend") and hasattr(
+                        self._client._backend, "_device"
+                    ):
                         backend_device = self._client._backend._device
-                        if hasattr(backend_device, 'details') and isinstance(backend_device.details, dict):
-                            actual_adapter = backend_device.details.get('source', 'unknown')
+                        if hasattr(backend_device, "details") and isinstance(
+                            backend_device.details, dict
+                        ):
+                            actual_adapter = backend_device.details.get("source", "unknown")
                 except Exception:
                     _LOGGER.debug("Could not determine actual connection adapter")
 
@@ -566,7 +607,7 @@ class AdjustableBedCoordinator:
                 _LOGGER.debug(
                     "BleakClient connected: is_connected=%s, mtu_size=%s",
                     self._client.is_connected,
-                    getattr(self._client, 'mtu_size', 'N/A'),
+                    getattr(self._client, "mtu_size", "N/A"),
                 )
 
                 # Discover services and log hierarchy
@@ -600,10 +641,10 @@ class AdjustableBedCoordinator:
                 # For Octo beds: discover features and handle PIN if needed
                 if self._bed_type == BED_TYPE_OCTO:
                     # Discover features to detect PIN requirement
-                    if hasattr(self._controller, 'discover_features'):
+                    if hasattr(self._controller, "discover_features"):
                         await self._controller.discover_features()
                     # Send initial PIN and start keep-alive if bed requires it
-                    if hasattr(self._controller, 'send_pin'):
+                    if hasattr(self._controller, "send_pin"):
                         await self._controller.send_pin()
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
 
@@ -720,10 +761,8 @@ class AdjustableBedCoordinator:
         # Stop keepalive task before clearing controller to prevent task leak
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
-        if controller is not None and hasattr(controller, 'stop_keepalive'):
-            self._stop_keepalive_task = asyncio.create_task(
-                controller.stop_keepalive()
-            )
+        if controller is not None and hasattr(controller, "stop_keepalive"):
+            self._stop_keepalive_task = asyncio.create_task(controller.stop_keepalive())
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
@@ -741,8 +780,8 @@ class AdjustableBedCoordinator:
         _LOGGER.warning(
             "Unexpectedly disconnected from %s. Client details: is_connected=%s, address=%s",
             self._address,
-            getattr(client, 'is_connected', 'N/A'),
-            getattr(client, 'address', 'N/A'),
+            getattr(client, "is_connected", "N/A"),
+            getattr(client, "address", "N/A"),
         )
         _LOGGER.debug(
             "Disconnect callback triggered - clearing client and controller references for %s",
@@ -820,7 +859,9 @@ class AdjustableBedCoordinator:
         except TimeoutError:
             _LOGGER.debug("Initial position read timed out - sensors will update on first command")
         except Exception as err:
-            _LOGGER.debug("Initial position read failed: %s - sensors will update on first command", err)
+            _LOGGER.debug(
+                "Initial position read failed: %s - sensors will update on first command", err
+            )
 
     async def async_disconnect(self) -> None:
         """Disconnect from the bed."""
@@ -839,7 +880,7 @@ class AdjustableBedCoordinator:
                     # Stop keep-alive and notifications before disconnecting
                     if self._controller is not None:
                         # Stop Octo keep-alive if running
-                        if hasattr(self._controller, 'stop_keepalive'):
+                        if hasattr(self._controller, "stop_keepalive"):
                             try:
                                 # Cast to Any to avoid mypy error about BedController not having stop_keepalive
                                 await cast(Any, self._controller).stop_keepalive()
@@ -988,10 +1029,8 @@ class AdjustableBedCoordinator:
                         poll_stop.set()
                     if poll_task is not None:
                         poll_task.cancel()
-                        try:
+                        with contextlib.suppress(asyncio.CancelledError):
                             await poll_task
-                        except asyncio.CancelledError:
-                            pass
 
                 # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
@@ -1082,7 +1121,11 @@ class AdjustableBedCoordinator:
             if self._cancel_counter > entry_cancel_count:
                 _LOGGER.debug("Controller command cancelled while waiting for lock")
                 # Reset disconnect timer since we're bailing out
-                if self._client is not None and self._client.is_connected and not self._disconnect_after_command:
+                if (
+                    self._client is not None
+                    and self._client.is_connected
+                    and not self._disconnect_after_command
+                ):
                     self._reset_disconnect_timer()
                 return
 
@@ -1115,10 +1158,8 @@ class AdjustableBedCoordinator:
                         poll_stop.set()
                     if poll_task is not None:
                         poll_task.cancel()
-                        try:
+                        with contextlib.suppress(asyncio.CancelledError):
                             await poll_task
-                        except asyncio.CancelledError:
-                            pass
 
                 # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
@@ -1130,7 +1171,11 @@ class AdjustableBedCoordinator:
                         self.hass.async_create_task(self._async_read_positions())
             except (ConnectionError, RuntimeError):
                 # On connection/controller errors, reset timer if not disconnecting after commands
-                if self._client is not None and self._client.is_connected and not self._disconnect_after_command:
+                if (
+                    self._client is not None
+                    and self._client.is_connected
+                    and not self._disconnect_after_command
+                ):
                     self._reset_disconnect_timer()
                 raise
             finally:
@@ -1179,9 +1224,7 @@ class AdjustableBedCoordinator:
         )
         await self._controller.start_notify(self._handle_position_update)
 
-    def set_raw_notify_callback(
-        self, callback: Callable[[str, bytes], None] | None
-    ) -> None:
+    def set_raw_notify_callback(self, callback: Callable[[str, bytes], None] | None) -> None:
         """Set a callback to receive raw notification data.
 
         Used by diagnostics to capture raw BLE notifications from the controller
@@ -1210,9 +1253,7 @@ class AdjustableBedCoordinator:
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
 
-    async def _async_poll_positions_during_movement(
-        self, stop_event: asyncio.Event
-    ) -> None:
+    async def _async_poll_positions_during_movement(self, stop_event: asyncio.Event) -> None:
         """Poll positions periodically during movement.
 
         Some motors (like Linak back) don't send notifications, only support reads.
@@ -1441,15 +1482,25 @@ class AdjustableBedCoordinator:
                         # Overshoot reversal is a safety correction - clear cancel event
                         # to ensure reversal completes even if user cancelled
                         # Use larger overshoot tolerance to prevent oscillation
-                        if moving_up and current_angle > target_angle + POSITION_OVERSHOOT_TOLERANCE:
-                            _LOGGER.debug("Position %s overshot target (up), reversing", position_key)
+                        if (
+                            moving_up
+                            and current_angle > target_angle + POSITION_OVERSHOOT_TOLERANCE
+                        ):
+                            _LOGGER.debug(
+                                "Position %s overshot target (up), reversing", position_key
+                            )
                             await move_stop_fn(self._controller)
                             await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_down_fn(self._controller)
                             moving_up = False
-                        elif not moving_up and current_angle < target_angle - POSITION_OVERSHOOT_TOLERANCE:
-                            _LOGGER.debug("Position %s overshot target (down), reversing", position_key)
+                        elif (
+                            not moving_up
+                            and current_angle < target_angle - POSITION_OVERSHOOT_TOLERANCE
+                        ):
+                            _LOGGER.debug(
+                                "Position %s overshot target (down), reversing", position_key
+                            )
                             await move_stop_fn(self._controller)
                             await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
@@ -1481,7 +1532,7 @@ class AdjustableBedCoordinator:
                     # Stop the motor unless it auto-stops on idle
                     # Some controllers (e.g., Linak) auto-stop and sending explicit
                     # STOP can cause brief reverse movement
-                    if not getattr(self._controller, 'auto_stops_on_idle', False):
+                    if not getattr(self._controller, "auto_stops_on_idle", False):
                         try:
                             await move_stop_fn(self._controller)
                         except Exception:

@@ -174,7 +174,9 @@ class RichmatController(BedController):
     @property
     def supports_memory_presets(self) -> bool:
         """Return True if this bed supports memory presets based on detected features."""
-        return bool(self._features & (RichmatFeatures.PRESET_MEMORY_1 | RichmatFeatures.PRESET_MEMORY_2))
+        return bool(
+            self._features & (RichmatFeatures.PRESET_MEMORY_1 | RichmatFeatures.PRESET_MEMORY_2)
+        )
 
     @property
     def memory_slot_count(self) -> int:
@@ -189,7 +191,9 @@ class RichmatController(BedController):
     @property
     def supports_memory_programming(self) -> bool:
         """Return True if this bed supports programming memory positions."""
-        return bool(self._features & (RichmatFeatures.PROGRAM_MEMORY_1 | RichmatFeatures.PROGRAM_MEMORY_2))
+        return bool(
+            self._features & (RichmatFeatures.PROGRAM_MEMORY_1 | RichmatFeatures.PROGRAM_MEMORY_2)
+        )
 
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
@@ -459,9 +463,7 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]
     """
     # Guard against missing service discovery
     if client.services is None:
-        _LOGGER.warning(
-            "BLE services not discovered, falling back to Nordic Richmat variant"
-        )
+        _LOGGER.warning("BLE services not discovered, falling back to Nordic Richmat variant")
         return False, RICHMAT_NORDIC_CHAR_UUID
 
     # Try WiLinke variants first

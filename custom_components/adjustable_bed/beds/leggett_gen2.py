@@ -314,9 +314,7 @@ class LeggettGen2Controller(BedController):
 
     async def lights_on(self) -> None:
         """Turn on lights (white at full brightness)."""
-        await self.write_command(
-            LeggettGen2Commands.rgb_set(255, 255, 255, 255)
-        )
+        await self.write_command(LeggettGen2Commands.rgb_set(255, 255, 255, 255))
 
     async def lights_off(self) -> None:
         """Turn off lights."""

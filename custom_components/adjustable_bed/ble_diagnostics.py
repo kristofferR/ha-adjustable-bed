@@ -137,8 +137,7 @@ class BLEDiagnosticRunner:
                     for k, v in (service_info.manufacturer_data or {}).items()
                 }
                 advertisement_info["service_data"] = {
-                    str(k): bytes(v).hex()
-                    for k, v in (service_info.service_data or {}).items()
+                    str(k): bytes(v).hex() for k, v in (service_info.service_data or {}).items()
                 }
             else:
                 self._errors.append("No advertisement data available")
@@ -216,9 +215,7 @@ class BLEDiagnosticRunner:
         _LOGGER.info("Establishing new BLE connection to %s", self.address)
         self._using_coordinator_connection = False
 
-        device = bluetooth.async_ble_device_from_address(
-            self.hass, self.address, connectable=True
-        )
+        device = bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
         if device is None:
             error = f"Device {self.address} not found in Bluetooth scanner"
             self._errors.append(error)
@@ -235,8 +232,8 @@ class BLEDiagnosticRunner:
             _LOGGER.info("Connected to %s", self.address)
             # Explicitly discover services - not all backends auto-discover on connect
             # In recent Bleak versions, service discovery is automatic.
-            if hasattr(self._client, 'get_services'):
-                 await self._client.get_services()
+            if hasattr(self._client, "get_services"):
+                await self._client.get_services()
             _LOGGER.debug("Service discovery completed for %s", self.address)
         except Exception as err:
             error = f"Failed to connect: {err}"
@@ -340,9 +337,7 @@ class BLEDiagnosticRunner:
         """
         asyncio.create_task(self._handle_notification(characteristic_uuid, data))
 
-    async def _subscribe_to_notifications(
-        self, services: list[ServiceInfo]
-    ) -> None:
+    async def _subscribe_to_notifications(self, services: list[ServiceInfo]) -> None:
         """Subscribe to all notifiable characteristics."""
         if not self._client:
             return
@@ -351,9 +346,7 @@ class BLEDiagnosticRunner:
         # of subscribing directly (which would replace coordinator callbacks)
         if self._using_coordinator_connection:
             if self.coordinator is not None:
-                _LOGGER.debug(
-                    "Registering raw notification callback with coordinator"
-                )
+                _LOGGER.debug("Registering raw notification callback with coordinator")
                 self.coordinator.set_raw_notify_callback(self._raw_notify_callback)
 
                 # If angle sensing is disabled, notifications aren't started by default.
@@ -379,15 +372,11 @@ class BLEDiagnosticRunner:
                         _LOGGER.debug(error)
                         self._errors.append(error)
 
-    def _notification_handler_sync(
-        self, uuid: str, sender: object, data: bytearray
-    ) -> None:
+    def _notification_handler_sync(self, uuid: str, sender: object, data: bytearray) -> None:
         """Synchronous notification handler that schedules async processing."""
         self.hass.async_create_task(self._handle_notification(uuid, data))
 
-    async def _unsubscribe_from_notifications(
-        self, services: list[ServiceInfo]
-    ) -> None:
+    async def _unsubscribe_from_notifications(self, services: list[ServiceInfo]) -> None:
         """Unsubscribe from all notifiable characteristics."""
         if not self._client or not self._client.is_connected:
             return
@@ -395,15 +384,14 @@ class BLEDiagnosticRunner:
         # When using coordinator's connection, clear the raw callback
         if self._using_coordinator_connection:
             if self.coordinator is not None:
-                _LOGGER.debug(
-                    "Clearing raw notification callback from coordinator"
-                )
+                _LOGGER.debug("Clearing raw notification callback from coordinator")
                 self.coordinator.set_raw_notify_callback(None)
                 # Stop notifications if we started them for diagnostics
-                if self._diagnostic_notifications_started and self.coordinator.controller is not None:
-                    _LOGGER.debug(
-                        "Stopping diagnostic notifications that were started for capture"
-                    )
+                if (
+                    self._diagnostic_notifications_started
+                    and self.coordinator.controller is not None
+                ):
+                    _LOGGER.debug("Stopping diagnostic notifications that were started for capture")
                     await self.coordinator.controller.stop_notify()
                 self._diagnostic_notifications_started = False
             return
@@ -420,9 +408,7 @@ class BLEDiagnosticRunner:
                             err,
                         )
 
-    async def _handle_notification(
-        self, characteristic_uuid: str, data: bytes | bytearray
-    ) -> None:
+    async def _handle_notification(self, characteristic_uuid: str, data: bytes | bytearray) -> None:
         """Handle an incoming notification."""
         timestamp = datetime.now(UTC).isoformat()
 

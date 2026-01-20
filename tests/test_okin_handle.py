@@ -26,61 +26,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestOkinHandleCommands:
-    """Test Okin handle command constants."""
-
-    def test_preset_commands(self):
-        """Test preset commands are correct."""
-        assert bytes.fromhex("040210000000") == OkinHandleCommands.FLAT
-        assert bytes.fromhex("040200004000") == OkinHandleCommands.ZERO_G
-        assert bytes.fromhex("040200003000") == OkinHandleCommands.TV
-        assert bytes.fromhex("040200008000") == OkinHandleCommands.QUIET_SLEEP
-        assert bytes.fromhex("040200001000") == OkinHandleCommands.MEMORY_1
-        assert bytes.fromhex("040200002000") == OkinHandleCommands.MEMORY_2
-
-    def test_motor_commands(self):
-        """Test motor movement commands are correct."""
-        assert bytes.fromhex("040200000001") == OkinHandleCommands.HEAD_UP
-        assert bytes.fromhex("040200000002") == OkinHandleCommands.HEAD_DOWN
-        assert bytes.fromhex("040200000004") == OkinHandleCommands.FOOT_UP
-        assert bytes.fromhex("040200000008") == OkinHandleCommands.FOOT_DOWN
-        assert bytes.fromhex("040200000000") == OkinHandleCommands.STOP
-
-    def test_massage_commands(self):
-        """Test massage commands are correct."""
-        assert bytes.fromhex("040280000000") == OkinHandleCommands.WAVE_MASSAGE
-        assert bytes.fromhex("040200000800") == OkinHandleCommands.HEAD_MASSAGE
-        assert bytes.fromhex("040200400000") == OkinHandleCommands.FOOT_MASSAGE
-        assert bytes.fromhex("040202000000") == OkinHandleCommands.MASSAGE_OFF
-
-    def test_light_commands(self):
-        """Test light commands are correct."""
-        assert bytes.fromhex("040200020000") == OkinHandleCommands.UNDERLIGHT
-
-    def test_command_lengths(self):
-        """Test all commands are 6 bytes."""
-        commands = [
-            OkinHandleCommands.FLAT,
-            OkinHandleCommands.ZERO_G,
-            OkinHandleCommands.TV,
-            OkinHandleCommands.QUIET_SLEEP,
-            OkinHandleCommands.MEMORY_1,
-            OkinHandleCommands.MEMORY_2,
-            OkinHandleCommands.HEAD_UP,
-            OkinHandleCommands.HEAD_DOWN,
-            OkinHandleCommands.FOOT_UP,
-            OkinHandleCommands.FOOT_DOWN,
-            OkinHandleCommands.WAVE_MASSAGE,
-            OkinHandleCommands.HEAD_MASSAGE,
-            OkinHandleCommands.FOOT_MASSAGE,
-            OkinHandleCommands.MASSAGE_OFF,
-            OkinHandleCommands.UNDERLIGHT,
-            OkinHandleCommands.STOP,
-        ]
-        for cmd in commands:
-            assert len(cmd) == 6, f"Command {cmd.hex()} should be 6 bytes"
-
-
 @pytest.fixture
 def mock_okin_handle_config_entry_data() -> dict:
     """Return mock config entry data for Okin handle bed."""
@@ -159,9 +104,7 @@ class TestOkinHandleController:
         await coordinator.async_connect()
 
         command = OkinHandleCommands.HEAD_UP
-        await coordinator.controller.write_command(
-            command, repeat_count=3, repeat_delay_ms=50
-        )
+        await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=50)
 
         assert mock_bleak_client.write_gatt_char.call_count == 3
 

@@ -17,6 +17,7 @@ Response packets use 0x80 as the first byte for checksum calculation.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
@@ -71,7 +72,9 @@ class OctoController(BedController):
         self._pin_locked: bool | None = None
         self._has_lights: bool | None = None  # None = not yet discovered
         self._features_loaded: asyncio.Event = asyncio.Event()
-        self._features_complete: asyncio.Event = asyncio.Event()  # Set when 0xFFFFFF sentinel received
+        self._features_complete: asyncio.Event = (
+            asyncio.Event()
+        )  # Set when 0xFFFFFF sentinel received
 
         _LOGGER.debug(
             "OctoController initialized (PIN %s)",
@@ -264,9 +267,7 @@ class OctoController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    OCTO_CHAR_UUID, command, response=True
-                )
+                await self.client.write_gatt_char(OCTO_CHAR_UUID, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -304,10 +305,8 @@ class OctoController(BedController):
         """Stop listening for notifications."""
         self._notifications_started = False
         if self.client is not None and self.client.is_connected:
-            try:
+            with contextlib.suppress(BleakError):
                 await self.client.stop_notify(OCTO_CHAR_UUID)
-            except BleakError:
-                pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
@@ -411,9 +410,7 @@ class OctoController(BedController):
                 )
                 return True
             except TimeoutError:
-                _LOGGER.debug(
-                    "Feature discovery timed out - bed may not support feature query"
-                )
+                _LOGGER.debug("Feature discovery timed out - bed may not support feature query")
                 # Set defaults for beds that don't respond to feature query
                 self._has_pin = bool(self._pin)  # Assume PIN needed if configured
                 self._pin_locked = bool(self._pin)
@@ -629,10 +626,8 @@ class OctoController(BedController):
 
         _LOGGER.debug("Stopping PIN keep-alive")
         self._keepalive_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await self._keepalive_task
-        except asyncio.CancelledError:
-            pass
         self._keepalive_task = None
         _LOGGER.debug("PIN keep-alive stopped")
 
@@ -673,12 +668,24 @@ class OctoStar2Controller(BedController):
     # Protocol reverse-engineered by goedh452
     # (https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10)
     # Format: starts with 0x68, ends with 0x16
-    CMD_HEAD_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x36, 0x31, 0x38, 0x16])
-    CMD_HEAD_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x39, 0x31, 0x3B, 0x16])
-    CMD_FEET_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x34, 0x31, 0x36, 0x16])
-    CMD_FEET_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x37, 0x31, 0x39, 0x16])
-    CMD_BOTH_UP = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x37, 0x31, 0x3B, 0x16])
-    CMD_BOTH_DOWN = bytes([0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x38, 0x31, 0x3C, 0x16])
+    CMD_HEAD_UP = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x36, 0x31, 0x38, 0x16]
+    )
+    CMD_HEAD_DOWN = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x39, 0x31, 0x3B, 0x16]
+    )
+    CMD_FEET_UP = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x34, 0x31, 0x36, 0x16]
+    )
+    CMD_FEET_DOWN = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x30, 0x37, 0x31, 0x39, 0x16]
+    )
+    CMD_BOTH_UP = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x37, 0x31, 0x3B, 0x16]
+    )
+    CMD_BOTH_DOWN = bytes(
+        [0x68, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x38, 0x31, 0x3C, 0x16]
+    )
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Octo Star2 controller."""
@@ -728,9 +735,7 @@ class OctoStar2Controller(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    OCTO_STAR2_CHAR_UUID, command, response=True
-                )
+                await self.client.write_gatt_char(OCTO_STAR2_CHAR_UUID, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -743,16 +748,12 @@ class OctoStar2Controller(BedController):
 
         Star2 doesn't support position notifications, so this only stores the callback.
         """
-        _LOGGER.debug(
-            "start_notify called for OctoStar2Controller - notifications not supported"
-        )
+        _LOGGER.debug("start_notify called for OctoStar2Controller - notifications not supported")
         self._notify_callback = callback
 
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""
-        _LOGGER.debug(
-            "stop_notify called for OctoStar2Controller - notifications not supported"
-        )
+        _LOGGER.debug("stop_notify called for OctoStar2Controller - notifications not supported")
         self._notify_callback = None
 
     async def read_positions(self, motor_count: int = 2) -> None:
@@ -903,7 +904,6 @@ class OctoStar2Controller(BedController):
             memory_num: Memory slot number (unused - feature not supported).
         """
         _LOGGER.warning(
-            "Octo Star2 beds don't support programming memory presets "
-            "(requested memory_num=%d)",
+            "Octo Star2 beds don't support programming memory presets (requested memory_num=%d)",
             memory_num,
         )

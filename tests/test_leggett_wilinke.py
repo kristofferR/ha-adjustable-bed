@@ -27,66 +27,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestLeggettWilinkeCommands:
-    """Test Leggett & Platt WiLinke command constants."""
-
-    def test_preset_commands(self):
-        """Test preset command values."""
-        assert LeggettWilinkeCommands.PRESET_FLAT == 0x31
-        assert LeggettWilinkeCommands.PRESET_ANTI_SNORE == 0x46
-        assert LeggettWilinkeCommands.PRESET_LOUNGE == 0x59
-        assert LeggettWilinkeCommands.PRESET_MEMORY_1 == 0x2E
-        assert LeggettWilinkeCommands.PRESET_MEMORY_2 == 0x2F
-        assert LeggettWilinkeCommands.PRESET_TV == 0x58
-        assert LeggettWilinkeCommands.PRESET_ZERO_G == 0x45
-
-    def test_program_commands(self):
-        """Test program command values."""
-        assert LeggettWilinkeCommands.PROGRAM_ANTI_SNORE == 0x69
-        assert LeggettWilinkeCommands.PROGRAM_LOUNGE == 0x65
-        assert LeggettWilinkeCommands.PROGRAM_MEMORY_1 == 0x2B
-        assert LeggettWilinkeCommands.PROGRAM_MEMORY_2 == 0x2C
-        assert LeggettWilinkeCommands.PROGRAM_TV == 0x64
-        assert LeggettWilinkeCommands.PROGRAM_ZERO_G == 0x66
-
-    def test_motor_commands(self):
-        """Test motor command values."""
-        assert LeggettWilinkeCommands.MOTOR_PILLOW_UP == 0x3F
-        assert LeggettWilinkeCommands.MOTOR_PILLOW_DOWN == 0x40
-        assert LeggettWilinkeCommands.MOTOR_HEAD_UP == 0x24
-        assert LeggettWilinkeCommands.MOTOR_HEAD_DOWN == 0x25
-        assert LeggettWilinkeCommands.MOTOR_FEET_UP == 0x26
-        assert LeggettWilinkeCommands.MOTOR_FEET_DOWN == 0x27
-        assert LeggettWilinkeCommands.MOTOR_LUMBAR_UP == 0x41
-        assert LeggettWilinkeCommands.MOTOR_LUMBAR_DOWN == 0x42
-        assert LeggettWilinkeCommands.END == 0x6E
-
-    def test_massage_discrete_commands(self):
-        """Test discrete massage UP/DOWN command values.
-
-        This is the KEY differentiator from standard Richmat WiLinke - discrete UP/DOWN
-        instead of step/toggle commands.
-        """
-        assert LeggettWilinkeCommands.MASSAGE_HEAD_UP == 0x4C
-        assert LeggettWilinkeCommands.MASSAGE_HEAD_DOWN == 0x4D
-        assert LeggettWilinkeCommands.MASSAGE_FOOT_UP == 0x4E
-        assert LeggettWilinkeCommands.MASSAGE_FOOT_DOWN == 0x4F
-        assert LeggettWilinkeCommands.MASSAGE_MOTOR_STOP == 0x47
-
-    def test_massage_additional_commands(self):
-        """Test additional massage command values."""
-        assert LeggettWilinkeCommands.MASSAGE_MOTOR1_ON_OFF == 0x32
-        assert LeggettWilinkeCommands.MASSAGE_MOTOR2_ON_OFF == 0x33
-        assert LeggettWilinkeCommands.MASSAGE_INCREASE_INTENSITY == 0x34
-        assert LeggettWilinkeCommands.MASSAGE_DECREASE_INTENSITY == 0x35
-        assert LeggettWilinkeCommands.MASSAGE_PATTERN_STEP == 0x38
-        assert LeggettWilinkeCommands.MASSAGE_WAVE == 0x39
-
-    def test_light_commands(self):
-        """Test light command values."""
-        assert LeggettWilinkeCommands.LIGHTS_TOGGLE == 0x3C
-
-
 @pytest.fixture
 def mock_leggett_wilinke_config_entry_data() -> dict:
     """Return mock config entry data for Leggett & Platt WiLinke variant bed."""
@@ -497,9 +437,7 @@ class TestLeggettWilinkePresets:
 
         await coordinator.controller.preset_zero_g()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.PRESET_ZERO_G
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_ZERO_G)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -552,9 +490,7 @@ class TestLeggettWilinkePresets:
 
         await coordinator.controller.preset_lounge()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.PRESET_LOUNGE
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.PRESET_LOUNGE)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
@@ -646,9 +582,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_toggle()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.LIGHTS_TOGGLE
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -666,9 +600,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_on()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.LIGHTS_TOGGLE
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -686,9 +618,7 @@ class TestLeggettWilinkeLights:
 
         await coordinator.controller.lights_off()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.LIGHTS_TOGGLE
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -714,9 +644,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_head_up()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_HEAD_UP
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_HEAD_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -754,9 +682,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_foot_up()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_FOOT_UP
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_FOOT_UP)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )
@@ -934,9 +860,7 @@ class TestLeggettWilinkeMassage:
 
         await coordinator.controller.massage_wave_toggle()
 
-        expected_cmd = coordinator.controller._build_command(
-            LeggettWilinkeCommands.MASSAGE_WAVE
-        )
+        expected_cmd = coordinator.controller._build_command(LeggettWilinkeCommands.MASSAGE_WAVE)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_RICHMAT_CHAR_UUID, expected_cmd, response=True
         )

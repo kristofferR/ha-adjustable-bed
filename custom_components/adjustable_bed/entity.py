@@ -30,4 +30,3 @@ class AdjustableBedEntity(Entity):
         during command execution indicate a problem.
         """
         return True
-

@@ -40,9 +40,7 @@ class UnsupportedDeviceInfo:
             f"Service UUIDs: {self.service_uuids or 'None'}",
         ]
         if self.manufacturer_data:
-            mfr_lines = [
-                f"  {hex(k)}: {v.hex()}" for k, v in self.manufacturer_data.items()
-            ]
+            mfr_lines = [f"  {hex(k)}: {v.hex()}" for k, v in self.manufacturer_data.items()]
             lines.append("Manufacturer data:")
             lines.extend(mfr_lines)
         else:
@@ -53,10 +51,7 @@ class UnsupportedDeviceInfo:
         """Format device info for GitHub issue body."""
         mfr_str = ""
         if self.manufacturer_data:
-            mfr_items = [
-                f"  - `{hex(k)}`: `{v.hex()}`"
-                for k, v in self.manufacturer_data.items()
-            ]
+            mfr_items = [f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()]
             mfr_str = "\n".join(mfr_items)
         else:
             mfr_str = "  None"
@@ -75,8 +70,8 @@ class UnsupportedDeviceInfo:
 | Property | Value |
 |----------|-------|
 | Address | `{self.address}` |
-| Name | `{self.name or 'Unknown'}` |
-| RSSI | {self.rssi or 'N/A'} |
+| Name | `{self.name or "Unknown"}` |
+| RSSI | {self.rssi or "N/A"} |
 
 ### Service UUIDs
 {uuid_str}
@@ -110,9 +105,9 @@ def capture_device_info(
         address=discovery_info.address,
         name=discovery_info.name,
         service_uuids=[str(uuid) for uuid in service_uuids] if service_uuids else [],
-        manufacturer_data={
-            k: bytes(v) for k, v in discovery_info.manufacturer_data.items()
-        } if discovery_info.manufacturer_data else {},
+        manufacturer_data={k: bytes(v) for k, v in discovery_info.manufacturer_data.items()}
+        if discovery_info.manufacturer_data
+        else {},
         rssi=getattr(discovery_info, "rssi", None),
     )
 

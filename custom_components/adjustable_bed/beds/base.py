@@ -59,9 +59,7 @@ class BedController(ABC):
         """
         return self._ble_lock
 
-    def set_raw_notify_callback(
-        self, callback: Callable[[str, bytes], None] | None
-    ) -> None:
+    def set_raw_notify_callback(self, callback: Callable[[str, bytes], None] | None) -> None:
         """Set a callback to receive raw notification data.
 
         This is used by diagnostics to capture raw BLE notifications without
@@ -239,9 +237,7 @@ class BedController(ABC):
         """
 
     @abstractmethod
-    async def start_notify(
-        self, callback: Callable[[str, float], None]
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications.
 
         Subscribe to BLE notifications for position updates. When the bed
@@ -281,7 +277,7 @@ class BedController(ABC):
             don't support this should return immediately without error.
         """
 
-    async def read_non_notifying_positions(self) -> None:
+    async def read_non_notifying_positions(self) -> None:  # noqa: B027
         """Read positions only for motors that don't support notifications.
 
         Used for efficient polling during movement - only reads motors that
@@ -290,7 +286,6 @@ class BedController(ABC):
         Default implementation does nothing. Override in subclasses where
         some motors support notifications and others don't.
         """
-        pass
 
     # Motor control methods
     # These move motors for a fixed duration (~1-2 seconds) then auto-stop.
@@ -709,4 +704,3 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support massage modes
         """
         raise NotImplementedError("Massage modes not supported on this bed")
-

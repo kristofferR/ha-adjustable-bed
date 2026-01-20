@@ -12,6 +12,7 @@ Reverie supports position-based motor control (0-100%).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -161,9 +162,7 @@ class ReverieController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    REVERIE_CHAR_UUID, command, response=True
-                )
+                await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -180,6 +179,7 @@ class ReverieController(BedController):
             return
 
         try:
+
             def handler(_: Any, data: bytearray) -> None:
                 _LOGGER.debug("Reverie notification: %s", data.hex())
                 self.forward_raw_notification(REVERIE_CHAR_UUID, bytes(data))
@@ -230,18 +230,15 @@ class ReverieController(BedController):
         # Use "back" and "legs" to match the sensor position_key expectations
         # (sensors use "back" and "legs" for 2-motor beds)
         motor_map = {
-            0x51: "back",   # head motor -> back position
-            0x52: "legs",   # feet motor -> legs position
+            0x51: "back",  # head motor -> back position
+            0x52: "legs",  # feet motor -> legs position
         }
 
         motor_name = motor_map.get(cmd_type)
         if motor_name and self._notify_callback:
             # Convert position (0-100) to angle estimate
             # Assume max angle of ~60 degrees for back (head), ~45 for legs (feet)
-            if motor_name == "back":
-                angle = position * 0.6  # 0-60 degrees
-            else:
-                angle = position * 0.45  # 0-45 degrees
+            angle = position * 0.6 if motor_name == "back" else position * 0.45
 
             _LOGGER.debug(
                 "Reverie position update: %s = %d%% (%.1f°)",
@@ -255,10 +252,8 @@ class ReverieController(BedController):
         """Stop listening for position notifications."""
         if self.client is None or not self.client.is_connected:
             return
-        try:
+        with contextlib.suppress(BleakError):
             await self.client.stop_notify(REVERIE_CHAR_UUID)
-        except BleakError:
-            pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.
@@ -396,12 +391,8 @@ class ReverieController(BedController):
         self._massage_head_level = 0
         self._massage_foot_level = 0
         self._massage_wave_level = 0
-        await self.write_command(
-            self._build_command(ReverieCommands.massage_head(0))
-        )
-        await self.write_command(
-            self._build_command(ReverieCommands.massage_foot(0))
-        )
+        await self.write_command(self._build_command(ReverieCommands.massage_head(0)))
+        await self.write_command(self._build_command(ReverieCommands.massage_foot(0)))
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""

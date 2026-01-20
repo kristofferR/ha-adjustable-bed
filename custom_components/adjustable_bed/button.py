@@ -33,7 +33,9 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     press_fn: Callable[[BedController], Coroutine[Any, Any, None]] | None = None
     requires_massage: bool = False
     entity_category: EntityCategory | None = None
-    is_coordinator_action: bool = False  # If True, this is a coordinator-level action (connect/disconnect)
+    is_coordinator_action: bool = (
+        False  # If True, this is a coordinator-level action (connect/disconnect)
+    )
     cancel_movement: bool = False  # If True, cancels any running motor command
     # Capability property name to check on controller (e.g., "supports_preset_zero_g")
     required_capability: str | None = None
@@ -339,13 +341,18 @@ async def async_setup_entry(
                 continue
         # Check memory slot count for memory preset/program buttons
         if description.memory_slot is not None and controller is not None:
-            slot_count = getattr(controller, "memory_slot_count", 4)  # Default to 4 for backward compat
+            slot_count = getattr(
+                controller, "memory_slot_count", 4
+            )  # Default to 4 for backward compat
             if description.memory_slot > slot_count:
                 continue
         # Skip program buttons if controller doesn't support memory programming
-        if description.is_program_button and controller is not None:
-            if not getattr(controller, "supports_memory_programming", False):
-                continue
+        if (
+            description.is_program_button
+            and controller is not None
+            and not getattr(controller, "supports_memory_programming", False)
+        ):
+            continue
         entities.append(AdjustableBedButton(coordinator, description))
 
     async_add_entities(entities)
@@ -402,7 +409,9 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         try:
             _LOGGER.debug("Executing button action: %s", self.entity_description.key)
             if self.entity_description.press_fn is None:
-                _LOGGER.warning("No press function defined for button: %s", self.entity_description.key)
+                _LOGGER.warning(
+                    "No press function defined for button: %s", self.entity_description.key
+                )
                 return
             await self._coordinator.async_execute_controller_command(
                 self.entity_description.press_fn,

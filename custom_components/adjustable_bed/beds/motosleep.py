@@ -28,43 +28,43 @@ class MotoSleepCommands:
     """MotoSleep command constants (ASCII characters)."""
 
     # Presets
-    PRESET_HOME = ord('O')
-    PRESET_MEMORY_1 = ord('U')
-    PRESET_MEMORY_2 = ord('V')
-    PRESET_ANTI_SNORE = ord('R')
-    PRESET_TV = ord('S')
-    PRESET_ZERO_G = ord('T')
+    PRESET_HOME = ord("O")
+    PRESET_MEMORY_1 = ord("U")
+    PRESET_MEMORY_2 = ord("V")
+    PRESET_ANTI_SNORE = ord("R")
+    PRESET_TV = ord("S")
+    PRESET_ZERO_G = ord("T")
 
     # Programming
-    PROGRAM_MEMORY_1 = ord('Z')
-    PROGRAM_MEMORY_2 = ord('a')
-    PROGRAM_ANTI_SNORE = ord('W')
-    PROGRAM_TV = ord('X')
-    PROGRAM_ZERO_G = ord('Y')
+    PROGRAM_MEMORY_1 = ord("Z")
+    PROGRAM_MEMORY_2 = ord("a")
+    PROGRAM_ANTI_SNORE = ord("W")
+    PROGRAM_TV = ord("X")
+    PROGRAM_ZERO_G = ord("Y")
 
     # Motors
-    MOTOR_HEAD_UP = ord('K')
-    MOTOR_HEAD_DOWN = ord('L')
-    MOTOR_FEET_UP = ord('M')
-    MOTOR_FEET_DOWN = ord('N')
-    MOTOR_NECK_UP = ord('P')
-    MOTOR_NECK_DOWN = ord('Q')
-    MOTOR_LUMBAR_UP = ord('p')  # lowercase for some models
-    MOTOR_LUMBAR_DOWN = ord('q')
+    MOTOR_HEAD_UP = ord("K")
+    MOTOR_HEAD_DOWN = ord("L")
+    MOTOR_FEET_UP = ord("M")
+    MOTOR_FEET_DOWN = ord("N")
+    MOTOR_NECK_UP = ord("P")
+    MOTOR_NECK_DOWN = ord("Q")
+    MOTOR_LUMBAR_UP = ord("p")  # lowercase for some models
+    MOTOR_LUMBAR_DOWN = ord("q")
 
     # Massage
-    MASSAGE_HEAD_STEP = ord('C')
-    MASSAGE_FOOT_STEP = ord('B')
-    MASSAGE_STOP = ord('D')
-    MASSAGE_HEAD_UP = ord('G')
-    MASSAGE_HEAD_DOWN = ord('H')
-    MASSAGE_FOOT_UP = ord('E')
-    MASSAGE_FOOT_DOWN = ord('F')
-    MASSAGE_HEAD_OFF = ord('J')
-    MASSAGE_FOOT_OFF = ord('I')
+    MASSAGE_HEAD_STEP = ord("C")
+    MASSAGE_FOOT_STEP = ord("B")
+    MASSAGE_STOP = ord("D")
+    MASSAGE_HEAD_UP = ord("G")
+    MASSAGE_HEAD_DOWN = ord("H")
+    MASSAGE_FOOT_UP = ord("E")
+    MASSAGE_FOOT_DOWN = ord("F")
+    MASSAGE_HEAD_OFF = ord("J")
+    MASSAGE_FOOT_OFF = ord("I")
 
     # Lighting
-    LIGHTS_TOGGLE = ord('A')
+    LIGHTS_TOGGLE = ord("A")
 
 
 class MotoSleepController(BedController):

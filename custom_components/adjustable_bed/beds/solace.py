@@ -132,9 +132,7 @@ class SolaceController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(
-                    SOLACE_CHAR_UUID, command, response=True
-                )
+                await self.client.write_gatt_char(SOLACE_CHAR_UUID, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

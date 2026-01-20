@@ -6,6 +6,7 @@ Reverse engineering by jascdk and Richard Hopton (smartbed-mqtt).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -169,9 +170,7 @@ class LinakController(BedController):
         )
         _LOGGER.debug("Command sequence ended (%d writes attempted)", repeat_count)
 
-    async def start_notify(
-        self, callback: Callable[[str, float], None]
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         self._notify_callback = callback
 
@@ -179,7 +178,7 @@ class LinakController(BedController):
             _LOGGER.warning(
                 "Cannot start position notifications: BLE client not connected (client=%s, is_connected=%s)",
                 self.client,
-                getattr(self.client, 'is_connected', 'N/A') if self.client else 'N/A',
+                getattr(self.client, "is_connected", "N/A") if self.client else "N/A",
             )
             return
 
@@ -192,7 +191,7 @@ class LinakController(BedController):
         _LOGGER.debug(
             "Client state: is_connected=%s, mtu_size=%s",
             self.client.is_connected,
-            getattr(self.client, 'mtu_size', 'N/A'),
+            getattr(self.client, "mtu_size", "N/A"),
         )
 
         # Set up notification handlers for position characteristics
@@ -229,7 +228,10 @@ class LinakController(BedController):
                 uuid,
             )
             try:
-                def make_handler(n: str, mp: int, ma: float, char_uuid: str) -> Callable[[Any, bytearray], None]:
+
+                def make_handler(
+                    n: str, mp: int, ma: float, char_uuid: str
+                ) -> Callable[[Any, bytearray], None]:
                     def handler(_: Any, data: bytearray) -> None:
                         _LOGGER.debug(
                             "Notification received for %s: raw_data=%s (%d bytes)",
@@ -239,6 +241,7 @@ class LinakController(BedController):
                         )
                         self.forward_raw_notification(char_uuid, bytes(data))
                         self._handle_position_data(n, data, mp, ma)
+
                     return handler
 
                 await self.client.start_notify(uuid, make_handler(name, max_pos, max_angle, uuid))
@@ -330,10 +333,8 @@ class LinakController(BedController):
         ]
 
         for uuid in uuids:
-            try:
+            with contextlib.suppress(BleakError):
                 await self.client.stop_notify(uuid)
-            except BleakError:
-                pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Actively read position data from all motor position characteristics.
@@ -546,4 +547,3 @@ class LinakController(BedController):
     async def massage_mode_step(self) -> None:
         """Step through massage modes."""
         await self.write_command(LinakCommands.MASSAGE_MODE_STEP)
-
