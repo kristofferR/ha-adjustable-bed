@@ -50,6 +50,17 @@ OCTO_FEATURE_END = 0xFFFFFF  # End-of-features sentinel
 # Feature discovery timeout
 OCTO_FEATURE_TIMEOUT = 5.0
 
+# Byte stuffing constants
+OCTO_PACKET_CHAR = 0x40
+OCTO_ESCAPE_CHAR = 0x3C
+OCTO_ESCAPE_MAP: dict[int, int] = {
+    0x40: 0x01,
+    0x3C: 0x02,
+    0x4F: 0x03,
+    0x41: 0x04,
+}
+OCTO_UNESCAPE_MAP: dict[int, int] = {v: k for k, v in OCTO_ESCAPE_MAP.items()}
+
 
 class OctoController(BedController):
     """Controller for Octo beds."""
@@ -94,50 +105,94 @@ class OctoController(BedController):
         total = sum(packet) & 0xFF
         return ((total ^ 0xFF) + 1) & 0xFF
 
-    def _build_packet(self, command: list[int], data: list[int] | None = None) -> bytes:
-        """Build an Octo command packet.
+    def _escape_bytes(self, data: list[int]) -> list[int]:
+        """Apply byte stuffing to escape special characters.
 
-        Format: [0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
+        Bytes 0x40, 0x3C, 0x4F, 0x41 are escaped as 0x3C followed by mapped value.
+        """
+        result: list[int] = []
+        for byte in data:
+            if byte in OCTO_ESCAPE_MAP:
+                result.append(OCTO_ESCAPE_CHAR)
+                result.append(OCTO_ESCAPE_MAP[byte])
+            else:
+                result.append(byte)
+        return result
+
+    def _unescape_bytes(self, data: list[int]) -> list[int]:
+        """Remove byte stuffing from escaped data.
+
+        Escape sequences (0x3C followed by mapped value) are converted back.
+        """
+        result: list[int] = []
+        i = 0
+        while i < len(data):
+            if data[i] == OCTO_ESCAPE_CHAR and i + 1 < len(data):
+                next_byte = data[i + 1]
+                if next_byte in OCTO_UNESCAPE_MAP:
+                    result.append(OCTO_UNESCAPE_MAP[next_byte])
+                    i += 2
+                    continue
+            result.append(data[i])
+            i += 1
+        return result
+
+    def _build_packet(self, command: list[int], data: list[int] | None = None) -> bytes:
+        """Build an Octo command packet with byte stuffing.
+
+        Format: [0x40, escaped(cmd[0], cmd[1], len_hi, len_lo, checksum, ...data), 0x40]
+
+        The checksum is calculated on unescaped data, then the entire payload
+        (excluding start/end markers) is escaped before transmission.
         """
         data = data or []
         data_len = len(data)
 
-        # Build packet without checksum first
-        packet = [
-            0x40,  # Start byte
+        # Build unescaped packet for checksum calculation
+        unescaped = [
+            OCTO_PACKET_CHAR,  # Start byte (included in checksum)
             command[0],
             command[1],
-            (data_len >> 8) & 0xFF,  # Length high byte
-            data_len & 0xFF,  # Length low byte
+            (data_len >> 8) & 0xFF,
+            data_len & 0xFF,
             0x00,  # Placeholder for checksum
             *data,
-            0x40,  # End byte
+            OCTO_PACKET_CHAR,  # End byte (included in checksum)
         ]
 
-        # Calculate and insert checksum at position 5
-        packet[5] = self._calculate_checksum(packet)
+        # Calculate checksum on unescaped data
+        unescaped[5] = self._calculate_checksum(unescaped)
 
-        return bytes(packet)
+        # Escape the payload (everything except start/end markers)
+        payload = unescaped[1:-1]  # cmd, len, checksum, data
+        escaped_payload = self._escape_bytes(payload)
+
+        # Build final packet with unescaped delimiters
+        return bytes([OCTO_PACKET_CHAR, *escaped_payload, OCTO_PACKET_CHAR])
 
     def _parse_response_packet(self, message: bytes) -> dict | None:
         """Parse a response packet from the bed.
 
-        Format: [0x40, cmd[0], cmd[1], len_hi, len_lo, checksum, ...data, 0x40]
-        Response checksum is calculated with 0x80 as the first byte.
-
-        Returns:
-            Dict with 'command' and 'data' keys, or None if invalid.
+        Format: [0x40, escaped(...), 0x40]
+        Response checksum is calculated with 0x80 as the first byte on unescaped data.
         """
         if len(message) < 7:
             return None
 
-        if message[0] != 0x40 or message[-1] != 0x40:
+        if message[0] != OCTO_PACKET_CHAR or message[-1] != OCTO_PACKET_CHAR:
             return None
 
-        command = [message[1], message[2]]
-        data_len = (message[3] << 8) + message[4]
-        checksum = message[5]
-        data = list(message[6:-1])
+        # Unescape the payload (everything between start/end markers)
+        escaped_payload = list(message[1:-1])
+        payload = self._unescape_bytes(escaped_payload)
+
+        if len(payload) < 5:
+            return None
+
+        command = [payload[0], payload[1]]
+        data_len = (payload[2] << 8) + payload[3]
+        checksum = payload[4]
+        data = payload[5:]
 
         if len(data) != data_len:
             _LOGGER.debug(
@@ -147,8 +202,8 @@ class OctoController(BedController):
             )
             return None
 
-        # Verify checksum (response uses 0x80 as first byte)
-        check_data = [0x80, *command, message[3], message[4], *data]
+        # Verify checksum on unescaped data (response uses 0x80 as first byte)
+        check_data = [0x80, *command, payload[2], payload[3], *data]
         expected_checksum = self._calculate_checksum(check_data)
         if checksum != expected_checksum:
             _LOGGER.debug(
