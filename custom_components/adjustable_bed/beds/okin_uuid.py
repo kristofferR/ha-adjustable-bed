@@ -63,6 +63,9 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Error message constant for connection checks
+_NOT_CONNECTED_MSG = "Not connected to bed"
+
 
 @dataclass
 class OkinUuidComplexCommand:
@@ -251,7 +254,7 @@ class OkinUuidController(BedController):
         """Write a command to the bed."""
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
+            raise ConnectionError(_NOT_CONNECTED_MSG)
 
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
@@ -375,7 +378,7 @@ class OkinUuidController(BedController):
         except BleakError:
             pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data.
 
         Note: OKIN beds typically use notifications rather than reads for
@@ -453,7 +456,7 @@ class OkinUuidController(BedController):
                     repeat_delay_ms=pulse_delay,
                 )
         finally:
-            # Clear this motor's state after command completes
+            # Cleanup: always clear motor state and send stop if no motors active
             self._motor_state.pop(motor, None)
 
             # Send stop command only if no other motors are active

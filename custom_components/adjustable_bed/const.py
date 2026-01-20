@@ -92,8 +92,8 @@ LEGACY_BED_TYPE_MAPPING: Final = {
     BED_TYPE_OKIMAT: BED_TYPE_OKIN_UUID,
     BED_TYPE_NECTAR: BED_TYPE_OKIN_7BYTE,
     BED_TYPE_MATTRESSFIRM: BED_TYPE_OKIN_NORDIC,
-    # leggett_platt requires variant to determine the correct protocol
-    # gen2 is the most common, mlrm is handled by leggett_wilinke
+    # Note: leggett_platt not mapped here - requires variant detection in
+    # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
 }
 
 # Standard BLE Device Information Service UUIDs

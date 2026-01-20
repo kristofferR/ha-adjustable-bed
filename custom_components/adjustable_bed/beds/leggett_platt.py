@@ -24,9 +24,10 @@ from .leggett_okin import (
 LeggettPlattGen2Commands = LeggettGen2Commands
 LeggettPlattOkinCommands = LeggettOkinCommands
 
-# The original LeggettPlattController was variant-aware; for backwards compatibility
-# we provide both specific controllers. Users should migrate to the specific one.
-LeggettPlattController = LeggettGen2Controller  # Default to Gen2 for backwards compat
+# LeggettPlattController defaults to Gen2 for backwards compatibility.
+# Users with Okin-variant beds should use LeggettOkinController directly:
+#   from .leggett_okin import LeggettOkinController
+LeggettPlattController = LeggettGen2Controller
 
 __all__ = [
     # Legacy names

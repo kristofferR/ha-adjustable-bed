@@ -169,11 +169,9 @@ class LeggettGen2Controller(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data."""
-        pass
 
     # Motor control methods - Gen2 variant doesn't have motor control via BLE
     # (uses position-based control instead)

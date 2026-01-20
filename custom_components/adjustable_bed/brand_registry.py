@@ -62,6 +62,8 @@ class BrandInfo:
         requires_pairing: Whether BLE pairing is required before use.
         has_variants: Whether this bed type has protocol variants.
         variant_mapping: Dict mapping variant names to (protocol_file, controller_class).
+
+    Note: variant_mapping must be treated as immutable after construction.
     """
 
     protocol_file: str
@@ -280,13 +282,11 @@ BRANDS: dict[str, BrandInfo] = {
 }
 
 
-# Legacy aliases for backwards compatibility
-# Maps old bed_type values to the current bed_type constant
-LEGACY_ALIASES: dict[str, str] = {
-    # These map old/alternative names to the canonical bed_type
-    # No changes needed for now since we're keeping the same bed_type constants
-    # This dict is here for future use if we ever rename bed_type values
-}
+# Legacy aliases for backwards compatibility.
+# Maps old bed_type string values to canonical BED_TYPE_* constants.
+# Currently empty - reserved for future bed_type renames.
+# Example: {"old_bed_name": BED_TYPE_NEW_NAME}
+LEGACY_ALIASES: dict[str, str] = {}
 
 
 # Module name mapping for the new protocol files
@@ -299,6 +299,39 @@ MODULE_ALIASES: dict[str, str] = {
     "leggett_platt": PROTOCOL_LEGGETT_GEN2,
     "leggett_platt_mlrm": PROTOCOL_LEGGETT_WILINKE,
 }
+
+
+def _resolve_brand_info(
+    bed_type: str, variant: str | None
+) -> tuple[BrandInfo, str | None]:
+    """Resolve brand info and variant for a bed type.
+
+    Args:
+        bed_type: The bed type constant (e.g., BED_TYPE_DEWERTOKIN)
+        variant: Optional protocol variant for beds with multiple protocols
+
+    Returns:
+        Tuple of (brand_info, resolved_variant_key) where variant_key
+        is the key into variant_mapping or None if using default.
+
+    Raises:
+        ValueError: If bed_type is unknown
+    """
+    canonical_type = LEGACY_ALIASES.get(bed_type, bed_type)
+
+    if canonical_type not in BRANDS:
+        raise ValueError(f"Unknown bed type: {bed_type}")
+
+    brand_info = BRANDS[canonical_type]
+    resolved_variant = None
+
+    if variant and brand_info.has_variants and brand_info.variant_mapping:
+        if variant in brand_info.variant_mapping:
+            resolved_variant = variant
+        elif VARIANT_AUTO in brand_info.variant_mapping:
+            resolved_variant = VARIANT_AUTO
+
+    return brand_info, resolved_variant
 
 
 def resolve_protocol_file(bed_type: str, variant: str | None = None) -> str:
@@ -314,22 +347,9 @@ def resolve_protocol_file(bed_type: str, variant: str | None = None) -> str:
     Raises:
         ValueError: If bed_type is unknown
     """
-    # Check legacy aliases first
-    canonical_type = LEGACY_ALIASES.get(bed_type, bed_type)
-
-    if canonical_type not in BRANDS:
-        raise ValueError(f"Unknown bed type: {bed_type}")
-
-    brand_info = BRANDS[canonical_type]
-
-    # Handle variants for beds with multiple protocols
-    if variant and brand_info.has_variants and brand_info.variant_mapping:
-        if variant in brand_info.variant_mapping:
-            return brand_info.variant_mapping[variant][0]
-        # Fall back to default for unknown variants
-        if VARIANT_AUTO in brand_info.variant_mapping:
-            return brand_info.variant_mapping[VARIANT_AUTO][0]
-
+    brand_info, resolved_variant = _resolve_brand_info(bed_type, variant)
+    if resolved_variant:
+        return brand_info.variant_mapping[resolved_variant][0]
     return brand_info.protocol_file
 
 
@@ -346,22 +366,9 @@ def resolve_controller_class(bed_type: str, variant: str | None = None) -> str:
     Raises:
         ValueError: If bed_type is unknown
     """
-    # Check legacy aliases first
-    canonical_type = LEGACY_ALIASES.get(bed_type, bed_type)
-
-    if canonical_type not in BRANDS:
-        raise ValueError(f"Unknown bed type: {bed_type}")
-
-    brand_info = BRANDS[canonical_type]
-
-    # Handle variants for beds with multiple protocols
-    if variant and brand_info.has_variants and brand_info.variant_mapping:
-        if variant in brand_info.variant_mapping:
-            return brand_info.variant_mapping[variant][1]
-        # Fall back to default for unknown variants
-        if VARIANT_AUTO in brand_info.variant_mapping:
-            return brand_info.variant_mapping[VARIANT_AUTO][1]
-
+    brand_info, resolved_variant = _resolve_brand_info(bed_type, variant)
+    if resolved_variant:
+        return brand_info.variant_mapping[resolved_variant][1]
     return brand_info.controller_class
 
 

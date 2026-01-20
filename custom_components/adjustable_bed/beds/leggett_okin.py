@@ -162,11 +162,9 @@ class LeggettOkinController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data."""
-        pass
 
     def _get_move_command(self) -> int:
         """Calculate the combined motor movement command."""
@@ -286,7 +284,7 @@ class LeggettOkinController(BedController):
                 repeat_delay_ms=300,
             )
 
-    async def program_memory(self, memory_num: int) -> None:
+    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
         """Program current position to memory (not supported on Okin)."""
         _LOGGER.warning("Okin beds don't support programming memory presets")
 
@@ -319,9 +317,11 @@ class LeggettOkinController(BedController):
 
     # Massage methods
     async def massage_off(self) -> None:
-        """Turn off massage."""
-        # No direct off command, step through modes
-        pass
+        """Turn off massage (not directly supported on Okin beds)."""
+        raise NotImplementedError(
+            "Okin beds don't have a direct massage-off command. "
+            "Use massage_toggle to cycle through modes."
+        )
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""

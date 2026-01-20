@@ -139,10 +139,10 @@ class OkinNordicController(BedController):
             _LOGGER.debug("Sending init sequence before first command")
             try:
                 await self.client.write_gatt_char(
-                    MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_1, response=False
+                    MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_1, response=True
                 )
                 await self.client.write_gatt_char(
-                    MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_2, response=False
+                    MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_2, response=True
                 )
                 self._initialized = True
             except BleakError:
@@ -163,7 +163,7 @@ class OkinNordicController(BedController):
 
             try:
                 await self.client.write_gatt_char(
-                    MATTRESSFIRM_WRITE_CHAR_UUID, command, response=False
+                    MATTRESSFIRM_WRITE_CHAR_UUID, command, response=True
                 )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
@@ -328,7 +328,7 @@ class OkinNordicController(BedController):
 
     # Massage controls
     async def massage_toggle(self) -> None:
-        """Toggle massage on/off."""
+        """Cycle massage (sends on command - use massage_on/massage_off for explicit control)."""
         await self.write_command(OkinNordicCommands.MASSAGE_ON, repeat_count=1)
 
     async def massage_on(self) -> None:
@@ -370,12 +370,5 @@ class OkinNordicController(BedController):
         await self.write_command(OkinNordicCommands.LIGHT_OFF_HOLD, repeat_count=3)
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        # Has separate on/off, so we'll just turn on
-        # The user should use the switch entity for proper on/off control
+        """Cycle lights (sends on command - use switch entity for true toggle)."""
         await self.lights_on()
-
-
-# Backwards compatibility aliases
-MattressFirmCommands = OkinNordicCommands
-MattressFirmController = OkinNordicController

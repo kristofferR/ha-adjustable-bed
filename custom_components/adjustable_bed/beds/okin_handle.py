@@ -181,11 +181,9 @@ class OkinHandleController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data."""
-        pass
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
@@ -289,7 +287,7 @@ class OkinHandleController(BedController):
         else:
             _LOGGER.warning("Okin handle beds only support memory presets 1 and 2")
 
-    async def program_memory(self, memory_num: int) -> None:
+    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
         """Program current position to memory (not supported)."""
         _LOGGER.warning(
             "Okin handle beds don't support programming memory presets via BLE"

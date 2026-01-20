@@ -331,9 +331,7 @@ class Okin7ByteController(BedController):
         await self.write_command(Okin7ByteCommands.LIGHT_OFF, repeat_count=1)
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        # Has separate on/off, so we'll just turn on
-        # The user should use the switch entity for proper on/off control
+        """Cycle lights (sends on command - use switch entity for true toggle)."""
         await self.lights_on()
 
 
