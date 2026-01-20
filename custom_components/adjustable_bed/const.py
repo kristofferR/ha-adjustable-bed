@@ -284,8 +284,9 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
 LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
-# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN-XXXXXX" (e.g., OKIN-346311), or "OKIN luis"
-OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin luis")
+# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN-XXXXXX" (e.g., OKIN-346311), "OKIN luis",
+# or "Smartbed" (Malouf/Lucid/CVB beds using OKIN protocol)
+OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin luis", "smartbed")
 
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
@@ -297,8 +298,8 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt")
 
-# Richmat Nordic name patterns (e.g., QRRM157052, Sleep Function 2.0)
-RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function")
+# Richmat Nordic name patterns (e.g., QRRM157052, Sleep Function 2.0, X1RM beds)
+RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function", "x1rm")
 
 # Ergomotion name patterns
 # - "ergomotion", "ergo" (generic)
