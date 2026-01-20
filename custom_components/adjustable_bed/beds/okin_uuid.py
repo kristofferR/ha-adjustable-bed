@@ -1,11 +1,16 @@
-"""Okimat bed controller implementation.
+"""Okin UUID-based bed controller implementation.
 
 Reverse engineering by david_nagy, corne, PT, and Richard Hopton (smartbed-mqtt).
 
-Okimat beds use the Okin protocol with 6-byte commands: [0x04, 0x02, ...int_to_bytes(command)]
+This controller handles beds that use the Okin 6-byte protocol via BLE UUID writes.
+Known brands using this protocol:
+- Okimat
+- Various Okin-based OEM beds
+
+These beds use the Okin protocol with 6-byte commands: [0x04, 0x02, ...int_to_bytes(command)]
 They require BLE pairing before use.
 
-Note: Okimat shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b) with
+Note: This shares the same BLE service UUID (62741523-52f9-8864-b1ab-3b3a8d65950b) with
 Leggett & Platt Okin variant and Nectar beds. Detection uses device name patterns to
 distinguish between these bed types. See okin_protocol.py for shared protocol details.
 
@@ -58,12 +63,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Error message constant for connection checks
+_NOT_CONNECTED_MSG = "Not connected to bed"
+
 
 @dataclass
-class OkimatComplexCommand:
+class OkinUuidComplexCommand:
     """A command with specific timing requirements.
 
-    Some Okimat commands require specific repeat count and delay timing.
+    Some commands require specific repeat count and delay timing.
     Reference: https://github.com/richardhopton/smartbed-mqtt/commit/6b18011
     """
 
@@ -73,8 +81,8 @@ class OkimatComplexCommand:
 
 
 @dataclass
-class OkimatRemoteConfig:
-    """Configuration for a specific Okimat remote model."""
+class OkinUuidRemoteConfig:
+    """Configuration for a specific remote model."""
 
     name: str
     flat: int
@@ -90,36 +98,36 @@ class OkimatRemoteConfig:
     memory_2: int | None = None
     memory_3: int | None = None
     memory_4: int | None = None
-    memory_save: int | OkimatComplexCommand | None = None
-    toggle_lights: int | OkimatComplexCommand = 0x20000  # UBL (under-bed lights)
+    memory_save: int | OkinUuidComplexCommand | None = None
+    toggle_lights: int | OkinUuidComplexCommand = 0x20000  # UBL (under-bed lights)
 
 
 # Remote configurations based on smartbed-mqtt supportedRemotes.ts
-OKIMAT_REMOTES: dict[str, OkimatRemoteConfig] = {
-    OKIMAT_VARIANT_80608: OkimatRemoteConfig(
+OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
+    OKIMAT_VARIANT_80608: OkinUuidRemoteConfig(
         name="RFS ELLIPSE",
         flat=0x100000AA,
     ),
-    OKIMAT_VARIANT_82417: OkimatRemoteConfig(
+    OKIMAT_VARIANT_82417: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x000000AA,
     ),
-    OKIMAT_VARIANT_82418: OkimatRemoteConfig(
+    OKIMAT_VARIANT_82418: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x000000AA,
         memory_1=0x1000,
         memory_2=0x2000,
         memory_save=0x10000,
     ),
-    OKIMAT_VARIANT_88875: OkimatRemoteConfig(
+    OKIMAT_VARIANT_88875: OkinUuidRemoteConfig(
         name="RF LITELINE",
         flat=0x100000AA,
     ),
-    OKIMAT_VARIANT_91244: OkimatRemoteConfig(
+    OKIMAT_VARIANT_91244: OkinUuidRemoteConfig(
         name="RF-FLASHLINE",
         flat=0x100000AA,
     ),
-    OKIMAT_VARIANT_93329: OkimatRemoteConfig(
+    OKIMAT_VARIANT_93329: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x0000002A,
         head_up=0x10,
@@ -130,7 +138,7 @@ OKIMAT_REMOTES: dict[str, OkimatRemoteConfig] = {
         memory_4=0x8000,
         memory_save=0x10000,
     ),
-    OKIMAT_VARIANT_93332: OkimatRemoteConfig(
+    OKIMAT_VARIANT_93332: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x000000AA,
         head_up=0x10,
@@ -141,13 +149,13 @@ OKIMAT_REMOTES: dict[str, OkimatRemoteConfig] = {
         memory_2=0x2000,
         memory_save=0x10000,
     ),
-    OKIMAT_VARIANT_94238: OkimatRemoteConfig(
+    OKIMAT_VARIANT_94238: OkinUuidRemoteConfig(
         name="RF FLASHLINE",
         flat=0x10000000,
         memory_1=0x1000,
         memory_2=0x2000,
-        memory_save=OkimatComplexCommand(data=0x10000, count=25, wait_time=200),
-        toggle_lights=OkimatComplexCommand(data=0x20000, count=50, wait_time=100),
+        memory_save=OkinUuidComplexCommand(data=0x10000, count=25, wait_time=200),
+        toggle_lights=OkinUuidComplexCommand(data=0x20000, count=50, wait_time=100),
     ),
 }
 
@@ -155,10 +163,10 @@ OKIMAT_REMOTES: dict[str, OkimatRemoteConfig] = {
 DEFAULT_REMOTE = OKIMAT_VARIANT_82417
 
 
-class OkimatController(BedController):
-    """Controller for Okimat beds.
+class OkinUuidController(BedController):
+    """Controller for beds using Okin UUID-based protocol.
 
-    Note: Okimat beds require BLE pairing before they can be controlled.
+    Note: These beds require BLE pairing before they can be controlled.
     The pairing must be done through the coordinator during connection.
 
     Different remote codes have different capabilities:
@@ -171,7 +179,7 @@ class OkimatController(BedController):
     def __init__(
         self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO
     ) -> None:
-        """Initialize the Okimat controller."""
+        """Initialize the Okin UUID controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         # Motor state stores command values per motor (head, back, legs, feet)
@@ -180,13 +188,13 @@ class OkimatController(BedController):
         self._motor_state: dict[str, int] = {}
 
         # Resolve variant to remote config
-        if variant == VARIANT_AUTO or variant not in OKIMAT_REMOTES:
+        if variant == VARIANT_AUTO or variant not in OKIN_UUID_REMOTES:
             variant = DEFAULT_REMOTE
         self._variant = variant
-        self._remote = OKIMAT_REMOTES[variant]
+        self._remote = OKIN_UUID_REMOTES[variant]
 
         _LOGGER.debug(
-            "OkimatController initialized with remote %s (%s)",
+            "OkinUuidController initialized with remote %s (%s)",
             variant,
             self._remote.name,
         )
@@ -219,17 +227,17 @@ class OkimatController(BedController):
     @property
     def supports_memory_programming(self) -> bool:
         """Return True if this remote supports programming memory positions."""
-        # Okimat remotes use a single memory_save command
+        # Remotes use a single memory_save command
         return self._remote.memory_save is not None
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Okimat remotes support under-bed lighting."""
+        """Return True - these remotes support under-bed lighting."""
         return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False - Okimat only supports toggle, not discrete on/off."""
+        """Return False - only supports toggle, not discrete on/off."""
         return False
 
     def _build_command(self, command_value: int) -> bytes:
@@ -246,12 +254,12 @@ class OkimatController(BedController):
         """Write a command to the bed."""
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
+            raise ConnectionError(_NOT_CONNECTED_MSG)
 
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Okimat bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin UUID bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -289,7 +297,7 @@ class OkimatController(BedController):
             return
 
         _LOGGER.info(
-            "Setting up position notifications for Okin bed at %s",
+            "Setting up position notifications for Okin UUID bed at %s",
             self._coordinator.address,
         )
 
@@ -299,12 +307,12 @@ class OkimatController(BedController):
                 self._handle_position_notification,
             )
             _LOGGER.info(
-                "Position notifications active for Okin bed (UUID: %s)",
+                "Position notifications active for Okin UUID bed (UUID: %s)",
                 OKIN_POSITION_NOTIFY_CHAR_UUID,
             )
         except BleakError as err:
             _LOGGER.debug(
-                "Could not start position notifications for Okin bed: %s "
+                "Could not start position notifications for Okin UUID bed: %s "
                 "(bed may not support position feedback)",
                 err,
             )
@@ -318,8 +326,8 @@ class OkimatController(BedController):
         - Bytes 5-6: Foot position (little-endian uint16)
 
         Position values are normalized:
-        - Head: 0-16000 raw → 0-60 degrees
-        - Foot: 0-12000 raw → 0-45 degrees
+        - Head: 0-16000 raw -> 0-60 degrees
+        - Foot: 0-12000 raw -> 0-45 degrees
         """
         self.forward_raw_notification(OKIN_POSITION_NOTIFY_CHAR_UUID, bytes(data))
 
@@ -330,7 +338,7 @@ class OkimatController(BedController):
             )
             return
 
-        _LOGGER.debug("Okin position notification: %s", data.hex())
+        _LOGGER.debug("Okin UUID position notification: %s", data.hex())
 
         # Extract head position (bytes 3-4, little-endian)
         head_raw = data[3] | (data[4] << 8)
@@ -345,7 +353,7 @@ class OkimatController(BedController):
         foot_angle = min(foot_angle, OKIN_FOOT_MAX_ANGLE)
 
         _LOGGER.debug(
-            "Okin position: head=%d raw (%.1f°), foot=%d raw (%.1f°)",
+            "Okin UUID position: head=%d raw (%.1f deg), foot=%d raw (%.1f deg)",
             head_raw,
             head_angle,
             foot_raw,
@@ -366,11 +374,11 @@ class OkimatController(BedController):
 
         try:
             await self.client.stop_notify(OKIN_POSITION_NOTIFY_CHAR_UUID)
-            _LOGGER.debug("Stopped position notifications for Okin bed")
+            _LOGGER.debug("Stopped position notifications for Okin UUID bed")
         except BleakError:
             pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position data.
 
         Note: OKIN beds typically use notifications rather than reads for
@@ -385,7 +393,7 @@ class OkimatController(BedController):
             async with self._ble_lock:
                 data = await self.client.read_gatt_char(OKIN_POSITION_NOTIFY_CHAR_UUID)
             if data:
-                _LOGGER.debug("Read Okin position data: %s", data.hex())
+                _LOGGER.debug("Read Okin UUID position data: %s", data.hex())
                 self._handle_position_notification(0, bytearray(data))  # type: ignore[arg-type]
         except BleakError as err:
             _LOGGER.debug("Could not read position data: %s", err)
@@ -448,7 +456,7 @@ class OkimatController(BedController):
                     repeat_delay_ms=pulse_delay,
                 )
         finally:
-            # Clear this motor's state after command completes
+            # Cleanup: always clear motor state and send stop if no motors active
             self._motor_state.pop(motor, None)
 
             # Send stop command only if no other motors are active
@@ -550,11 +558,20 @@ class OkimatController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            self._build_command(self._remote.flat),
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        try:
+            await self.write_command(
+                self._build_command(self._remote.flat),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except (BleakError, asyncio.TimeoutError):
+                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup", exc_info=True)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -566,11 +583,20 @@ class OkimatController(BedController):
         }
         command = commands.get(memory_num)
         if command is not None:
-            await self.write_command(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
+            try:
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=100,
+                    repeat_delay_ms=300,
+                )
+            finally:
+                try:
+                    await self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
+                except (BleakError, asyncio.TimeoutError):
+                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup", exc_info=True)
         else:
             _LOGGER.warning(
                 "Memory %d not available on remote %s", memory_num, self._variant
@@ -578,16 +604,16 @@ class OkimatController(BedController):
 
     async def _execute_command(
         self,
-        cmd: int | OkimatComplexCommand,
+        cmd: int | OkinUuidComplexCommand,
         default_count: int,
         default_delay_ms: int,
     ) -> None:
         """Execute a command with appropriate timing.
 
         Handles both simple int commands (using default timing) and
-        OkimatComplexCommand objects (using their embedded timing).
+        OkinUuidComplexCommand objects (using their embedded timing).
         """
-        if isinstance(cmd, OkimatComplexCommand):
+        if isinstance(cmd, OkinUuidComplexCommand):
             await self.write_command(
                 self._build_command(cmd.data),
                 repeat_count=cmd.count,
@@ -603,7 +629,7 @@ class OkimatController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory.
 
-        Note: Okimat remotes use a single memory_save command that saves to the
+        Note: These remotes use a single memory_save command that saves to the
         last-used memory slot. The memory_num parameter is logged but the actual
         slot saved depends on the remote's internal state.
         """
@@ -635,7 +661,7 @@ class OkimatController(BedController):
             self._remote.toggle_lights, default_count=50, default_delay_ms=100
         )
 
-    # Massage methods (may not work on all Okimat remotes - inherited from Keeson)
+    # Massage methods (may not work on all remotes - inherited from Keeson)
     async def massage_toggle(self) -> None:
         """Toggle massage."""
         await self.write_command(self._build_command(0x100))

@@ -1,8 +1,10 @@
-"""DewertOkin bed controller implementation.
+"""Okin handle-based bed controller implementation.
 
 Reverse engineering by Richard Hopton (smartbed-mqtt).
 
-DewertOkin beds (A H Beard, HankookGallery) use handle-based BLE writes.
+This controller handles beds that use the Okin 6-byte protocol via BLE handle writes.
+Known brands using this protocol:
+- DewertOkin (A H Beard, HankookGallery)
 
 Protocol details:
     Write handle: 0x0013 (not UUID-based)
@@ -22,7 +24,7 @@ Preset timing:
     No debounce required between preset commands
 
 Position feedback: Not supported
-    DewertOkin beds do not report motor positions.
+    These beds do not report motor positions.
     The 4-byte command payload is output-only (motor commands, not position data).
 
 Detection: By device name patterns ("dewertokin", "dewert", "a h beard", "hankook"),
@@ -47,8 +49,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class DewertOkinCommands:
-    """DewertOkin command constants (6-byte arrays)."""
+class OkinHandleCommands:
+    """Okin handle-based command constants (6-byte arrays)."""
 
     # Presets
     FLAT = bytes.fromhex("040210000000")
@@ -77,18 +79,18 @@ class DewertOkinCommands:
     STOP = bytes.fromhex("040200000000")
 
 
-class DewertOkinController(BedController):
-    """Controller for DewertOkin beds.
+class OkinHandleController(BedController):
+    """Controller for beds using Okin handle-based protocol.
 
-    DewertOkin beds use handle-based writes to handle 0x0013.
+    These beds use handle-based writes to handle 0x0013.
     They support motor control, presets, massage, and under-bed lighting.
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the DewertOkin controller."""
+        """Initialize the Okin handle controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        _LOGGER.debug("DewertOkinController initialized")
+        _LOGGER.debug("OkinHandleController initialized")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -110,27 +112,27 @@ class DewertOkinController(BedController):
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - DewertOkin beds support under-bed lighting."""
+        """Return True - these beds support under-bed lighting."""
         return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False - DewertOkin only supports toggle, not discrete on/off."""
+        """Return False - only supports toggle, not discrete on/off."""
         return False
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - DewertOkin beds support memory presets (slots 1-2)."""
+        """Return True - these beds support memory presets (slots 1-2)."""
         return True
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - DewertOkin beds support memory slots 1-2."""
+        """Return 2 - these beds support memory slots 1-2."""
         return 2
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - DewertOkin beds don't support programming memory positions via BLE."""
+        """Return False - these beds don't support programming memory positions via BLE."""
         return False
 
     async def write_command(
@@ -148,7 +150,7 @@ class DewertOkinController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to DewertOkin bed (handle 0x%04x): %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin handle bed (handle 0x%04x): %s (repeat: %d, delay: %dms)",
             DEWERTOKIN_WRITE_HANDLE,
             command.hex(),
             repeat_count,
@@ -175,15 +177,15 @@ class DewertOkinController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         self._notify_callback = callback
-        _LOGGER.debug("DewertOkin beds don't support position notifications")
+        _LOGGER.debug("Okin handle beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        self._notify_callback = None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
-        pass
+        _ = motor_count  # Unused - this bed doesn't support position feedback
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
@@ -196,25 +198,47 @@ class DewertOkinController(BedController):
         finally:
             try:
                 await self.write_command(
-                    DewertOkinCommands.STOP,
+                    OkinHandleCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
+
+    async def _preset_with_stop(
+        self,
+        command: bytes,
+        repeat_count: int = 100,
+        repeat_delay_ms: int = 300,
+    ) -> None:
+        """Execute a preset command and always send STOP at the end."""
+        try:
+            await self.write_command(
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    OkinHandleCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(DewertOkinCommands.HEAD_UP)
+        await self._move_with_stop(OkinHandleCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(DewertOkinCommands.HEAD_DOWN)
+        await self._move_with_stop(OkinHandleCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
         await self.write_command(
-            DewertOkinCommands.STOP,
+            OkinHandleCommands.STOP,
             cancel_event=asyncio.Event(),
         )
 
@@ -232,95 +256,80 @@ class DewertOkinController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up (same as feet)."""
-        await self._move_with_stop(DewertOkinCommands.FOOT_UP)
+        await self._move_with_stop(OkinHandleCommands.FOOT_UP)
 
     async def move_legs_down(self) -> None:
         """Move legs down (same as feet)."""
-        await self._move_with_stop(DewertOkinCommands.FOOT_DOWN)
+        await self._move_with_stop(OkinHandleCommands.FOOT_DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
         await self.write_command(
-            DewertOkinCommands.STOP,
+            OkinHandleCommands.STOP,
             cancel_event=asyncio.Event(),
         )
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
-        await self._move_with_stop(DewertOkinCommands.FOOT_UP)
+        await self._move_with_stop(OkinHandleCommands.FOOT_UP)
 
     async def move_feet_down(self) -> None:
         """Move feet down."""
-        await self._move_with_stop(DewertOkinCommands.FOOT_DOWN)
+        await self._move_with_stop(OkinHandleCommands.FOOT_DOWN)
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
         await self.write_command(
-            DewertOkinCommands.STOP,
+            OkinHandleCommands.STOP,
             cancel_event=asyncio.Event(),
         )
 
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self.write_command(
-            DewertOkinCommands.STOP,
+            OkinHandleCommands.STOP,
             cancel_event=asyncio.Event(),
         )
 
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            DewertOkinCommands.FLAT,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._preset_with_stop(OkinHandleCommands.FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         commands = {
-            1: DewertOkinCommands.MEMORY_1,
-            2: DewertOkinCommands.MEMORY_2,
+            1: OkinHandleCommands.MEMORY_1,
+            2: OkinHandleCommands.MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(command, repeat_count=100, repeat_delay_ms=150)
+            await self._preset_with_stop(command)
         else:
-            _LOGGER.warning("DewertOkin beds only support memory presets 1 and 2")
+            _LOGGER.warning("Okin handle beds only support memory presets 1 and 2")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
         _LOGGER.warning(
-            "DewertOkin beds don't support programming memory presets via BLE"
+            "Okin handle beds don't support programming memory presets via BLE (requested slot: %d)",
+            memory_num,
         )
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(
-            DewertOkinCommands.ZERO_G,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._preset_with_stop(OkinHandleCommands.ZERO_G)
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        await self.write_command(
-            DewertOkinCommands.TV,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._preset_with_stop(OkinHandleCommands.TV)
 
     async def preset_anti_snore(self) -> None:
         """Go to quiet sleep/anti-snore position."""
-        await self.write_command(
-            DewertOkinCommands.QUIET_SLEEP,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._preset_with_stop(OkinHandleCommands.QUIET_SLEEP)
 
     # Light methods
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
-        await self.write_command(DewertOkinCommands.UNDERLIGHT)
+        await self.write_command(OkinHandleCommands.UNDERLIGHT)
 
     async def lights_on(self) -> None:
         """Turn lights on.
@@ -341,16 +350,16 @@ class DewertOkinController(BedController):
     # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle wave massage."""
-        await self.write_command(DewertOkinCommands.WAVE_MASSAGE)
+        await self.write_command(OkinHandleCommands.WAVE_MASSAGE)
 
     async def massage_off(self) -> None:
         """Turn massage off."""
-        await self.write_command(DewertOkinCommands.MASSAGE_OFF)
+        await self.write_command(OkinHandleCommands.MASSAGE_OFF)
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage."""
-        await self.write_command(DewertOkinCommands.HEAD_MASSAGE)
+        await self.write_command(OkinHandleCommands.HEAD_MASSAGE)
 
     async def massage_foot_toggle(self) -> None:
         """Toggle foot massage."""
-        await self.write_command(DewertOkinCommands.FOOT_MASSAGE)
+        await self.write_command(OkinHandleCommands.FOOT_MASSAGE)

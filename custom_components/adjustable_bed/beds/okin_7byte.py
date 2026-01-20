@@ -1,13 +1,17 @@
-"""Nectar bed controller implementation.
+"""Okin 7-byte protocol bed controller implementation.
 
 Protocol reverse-engineered and documented by MaximumWorf (https://github.com/MaximumWorf)
 Source: https://github.com/MaximumWorf/homeassistant-nectar
 
-Nectar beds (and other OKIN beds with similar protocol) use a 7-byte command format
-over the OKIN BLE service. Commands follow the format: 5A 01 03 10 30 [XX] A5
+This controller handles beds that use the 7-byte command format over the OKIN BLE service.
+Known brands using this protocol:
+- Nectar
+- Other OKIN beds with similar protocol
 
-This is similar to Mattress Firm 900 but uses the OKIN service UUID and has
-slightly different command bytes for some functions.
+Commands follow the format: 5A 01 03 10 30 [XX] A5
+
+This is similar to the Nordic UART protocol (okin_nordic.py) but uses the OKIN service UUID
+and has slightly different command bytes for some functions.
 """
 
 from __future__ import annotations
@@ -28,8 +32,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class NectarCommands:
-    """Nectar bed command constants.
+class Okin7ByteCommands:
+    """Okin 7-byte protocol command constants.
 
     Commands reverse-engineered by MaximumWorf.
     Source: https://github.com/MaximumWorf/homeassistant-nectar
@@ -60,18 +64,18 @@ class NectarCommands:
     LIGHT_OFF = bytes.fromhex("5A0103103074A5")
 
 
-class NectarController(BedController):
-    """Controller for Nectar beds using OKIN protocol.
+class Okin7ByteController(BedController):
+    """Controller for beds using Okin 7-byte protocol.
 
     Protocol implementation based on MaximumWorf's reverse engineering work.
     https://github.com/MaximumWorf/homeassistant-nectar
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Nectar controller."""
+        """Initialize the Okin 7-byte controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        _LOGGER.debug("NectarController initialized")
+        _LOGGER.debug("Okin7ByteController initialized")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -97,12 +101,12 @@ class NectarController(BedController):
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Nectar beds support under-bed lighting."""
+        """Return True - these beds support under-bed lighting."""
         return True
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return False - Nectar beds don't support programmable memory presets."""
+        """Return False - these beds don't support programmable memory presets."""
         return False
 
     async def write_command(
@@ -120,7 +124,7 @@ class NectarController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Nectar bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin 7-byte bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -144,9 +148,9 @@ class NectarController(BedController):
 
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
-        # Nectar beds don't support position feedback
+        # These beds don't support position feedback
         self._notify_callback = callback
-        _LOGGER.debug("Nectar beds don't support position notifications")
+        _LOGGER.debug("Okin 7-byte beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
@@ -154,7 +158,7 @@ class NectarController(BedController):
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current motor positions."""
-        # Not supported on Nectar beds
+        # Not supported on these beds
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
@@ -167,36 +171,36 @@ class NectarController(BedController):
         finally:
             try:
                 await self.write_command(
-                    NectarCommands.STOP,
+                    Okin7ByteCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(NectarCommands.HEAD_UP)
+        await self._move_with_stop(Okin7ByteCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(NectarCommands.HEAD_DOWN)
+        await self._move_with_stop(Okin7ByteCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head movement."""
-        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
+        await self.write_command(Okin7ByteCommands.STOP, cancel_event=asyncio.Event())
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
-        await self._move_with_stop(NectarCommands.FOOT_UP)
+        await self._move_with_stop(Okin7ByteCommands.FOOT_UP)
 
     async def move_feet_down(self) -> None:
         """Move feet down."""
-        await self._move_with_stop(NectarCommands.FOOT_DOWN)
+        await self._move_with_stop(Okin7ByteCommands.FOOT_DOWN)
 
     async def move_feet_stop(self) -> None:
         """Stop feet movement."""
-        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
+        await self.write_command(Okin7ByteCommands.STOP, cancel_event=asyncio.Event())
 
     async def move_back_up(self) -> None:
         """Move back up (use head for 2-motor beds)."""
@@ -225,48 +229,49 @@ class NectarController(BedController):
     # Lumbar control
     async def move_lumbar_up(self) -> None:
         """Move lumbar up."""
-        await self._move_with_stop(NectarCommands.LUMBAR_UP)
+        await self._move_with_stop(Okin7ByteCommands.LUMBAR_UP)
 
     async def move_lumbar_down(self) -> None:
         """Move lumbar down."""
-        await self._move_with_stop(NectarCommands.LUMBAR_DOWN)
+        await self._move_with_stop(Okin7ByteCommands.LUMBAR_DOWN)
 
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar movement."""
-        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
+        await self.write_command(Okin7ByteCommands.STOP, cancel_event=asyncio.Event())
 
     # Preset positions
+    async def _preset_with_stop(self, command: bytes) -> None:
+        """Execute a preset command and always send STOP at the end."""
+        try:
+            await self.write_command(
+                command,
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    Okin7ByteCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            NectarCommands.FLAT,
-            repeat_count=100,  # Presets need longer duration
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(Okin7ByteCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self.write_command(
-            NectarCommands.ZERO_GRAVITY,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(Okin7ByteCommands.ZERO_GRAVITY)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(
-            NectarCommands.ANTI_SNORE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(Okin7ByteCommands.ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(
-            NectarCommands.LOUNGE,
-            repeat_count=100,
-            repeat_delay_ms=300,
-        )
+        await self._preset_with_stop(Okin7ByteCommands.LOUNGE)
 
     async def preset_tv(self) -> None:
         """Go to TV position (alias for lounge)."""
@@ -275,42 +280,47 @@ class NectarController(BedController):
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory position.
 
-        Note: Nectar beds don't support user-programmable memory slots.
+        Note: These beds don't support user-programmable memory slots.
         """
         _LOGGER.warning(
-            "Nectar beds don't support programmable memory slots. "
-            "Use preset positions instead."
+            "Okin 7-byte beds don't support programmable memory slots (requested: %d). "
+            "Use preset positions instead.",
+            memory_num,
         )
-        raise NotImplementedError("Memory slots not supported on Nectar beds")
+        raise NotImplementedError(
+            f"Memory slot {memory_num} not supported on Okin 7-byte beds"
+        )
 
     async def program_memory(self, memory_num: int) -> None:
         """Program memory position."""
-        raise NotImplementedError("Memory programming not supported on Nectar beds")
+        raise NotImplementedError(
+            f"Memory programming (slot {memory_num}) not supported on Okin 7-byte beds"
+        )
 
     async def stop_all(self) -> None:
         """Stop all movement."""
-        await self.write_command(NectarCommands.STOP, cancel_event=asyncio.Event())
+        await self.write_command(Okin7ByteCommands.STOP, cancel_event=asyncio.Event())
 
     # Massage controls
     async def massage_toggle(self) -> None:
         """Toggle massage on/off."""
-        await self.write_command(NectarCommands.MASSAGE_ON, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.MASSAGE_ON, repeat_count=1)
 
     async def massage_on(self) -> None:
         """Turn massage on."""
-        await self.write_command(NectarCommands.MASSAGE_ON, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.MASSAGE_ON, repeat_count=1)
 
     async def massage_off(self) -> None:
         """Turn massage off."""
-        await self.write_command(NectarCommands.MASSAGE_OFF, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.MASSAGE_OFF, repeat_count=1)
 
     async def massage_mode_step(self) -> None:
         """Step through massage modes (wave pattern)."""
-        await self.write_command(NectarCommands.MASSAGE_WAVE, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.MASSAGE_WAVE, repeat_count=1)
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage."""
-        # Nectar uses global massage control
+        # Uses global massage control
         await self.massage_toggle()
 
     async def massage_foot_toggle(self) -> None:
@@ -320,14 +330,12 @@ class NectarController(BedController):
     # Light controls
     async def lights_on(self) -> None:
         """Turn lights on."""
-        await self.write_command(NectarCommands.LIGHT_ON, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.LIGHT_ON, repeat_count=1)
 
     async def lights_off(self) -> None:
         """Turn lights off."""
-        await self.write_command(NectarCommands.LIGHT_OFF, repeat_count=1)
+        await self.write_command(Okin7ByteCommands.LIGHT_OFF, repeat_count=1)
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        # Nectar has separate on/off, so we'll just turn on
-        # The user should use the switch entity for proper on/off control
+        """Cycle lights (sends on command - use switch entity for true toggle)."""
         await self.lights_on()

@@ -27,41 +27,74 @@ POSITION_MODE_ACCURACY: Final = "accuracy"
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
 
-# Bed types
+# Bed types - Protocol-based naming (new)
+# These are the canonical names organized by protocol characteristics
+BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
+BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairing)
+BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
+BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
+BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
+BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
+BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
+
+# Bed types - Legacy naming (backwards compatibility)
+# These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
 BED_TYPE_REVERIE: Final = "reverie"
-BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"
-BED_TYPE_OKIMAT: Final = "okimat"
+BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
+BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
-BED_TYPE_DEWERTOKIN: Final = "dewertokin"
+BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
-BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"
-BED_TYPE_NECTAR: Final = "nectar"
+BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
+BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
+# All supported bed types (includes both protocol-based and legacy names)
 SUPPORTED_BED_TYPES: Final = [
+    # Protocol-based types (new naming)
+    BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_UUID,
+    BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_WILINKE,
+    # Brand-specific types
     BED_TYPE_LINAK,
     BED_TYPE_RICHMAT,
     BED_TYPE_SOLACE,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_REVERIE,
-    BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_OKIMAT,
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_SERTA,
     BED_TYPE_OCTO,
+    # Legacy aliases (for backwards compatibility with existing configs)
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_DEWERTOKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
 ]
+
+# Mapping from legacy bed types to their protocol-based equivalents
+# Used by controller_factory to resolve the correct controller
+LEGACY_BED_TYPE_MAPPING: Final = {
+    BED_TYPE_DEWERTOKIN: BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIMAT: BED_TYPE_OKIN_UUID,
+    BED_TYPE_NECTAR: BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_MATTRESSFIRM: BED_TYPE_OKIN_NORDIC,
+    # Note: leggett_platt not mapped here - requires variant detection in
+    # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
+}
 
 # Standard BLE Device Information Service UUIDs
 DEVICE_INFO_SERVICE_UUID: Final = "0000180a-0000-1000-8000-00805f9b34fb"
@@ -228,11 +261,12 @@ OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
 OCTO_VARIANT_STANDARD: Final = "standard"
 OCTO_VARIANT_STAR2: Final = "star2"
 
-# Mattress Firm 900 specific UUIDs
+# Mattress Firm 900 / Okin Nordic specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
 # Uses Nordic UART Service with custom 7-byte command format
 MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
 
 # Nectar specific UUIDs
 # Protocol reverse-engineered by MaximumWorf (https://github.com/MaximumWorf/homeassistant-nectar)
@@ -542,6 +576,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 BEDS_WITH_ANGLE_SENSING: Final = frozenset({
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
     BED_TYPE_REVERIE,
 })
 
@@ -550,6 +585,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset({
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset({
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
     BED_TYPE_REVERIE,
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,

@@ -11,6 +11,35 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 - **Single Connection**: Most beds only accept ONE Bluetooth connection at a time - disconnect manufacturer apps first
 - **Idle Disconnect**: The integration disconnects after 40 seconds of idle time to allow other devices to connect
 
+### Beds Requiring Bluetooth Pairing
+
+Some beds require OS-level Bluetooth pairing before the integration can communicate:
+
+> **Understanding the table below:** The entries mix brand names, protocol variants, and generation names because manufacturers often use different communication protocols across their product lines. For example:
+>
+> - **Okimat/Okin** refers to Okimat-branded beds that use the Okin protocol (requires pairing).
+> - **Leggett & Platt** appears in multiple rows because different models use different protocols/generations (Gen2, Okin variant, MlRM/WiLinke).
+>
+> To determine which row applies to your bed, check the label on your bed frame or controller, look at your remote's branding, or consult your manufacturer's manual.
+
+| Bed Type | Pairing Required |
+|----------|-----------------|
+| Okimat/Okin | ✅ Yes |
+| Leggett & Platt Okin variant | ✅ Yes |
+| Leggett & Platt Gen2 | ❌ No |
+| Leggett & Platt MlRM | ❌ No |
+| Nectar | ❌ No |
+| DewertOkin | ❌ No |
+| All other beds | ❌ No |
+
+**How to pair (if required):**
+1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
+2. On your Home Assistant host or phone, open Bluetooth settings
+3. Pair with the bed (may appear as "OKIN", "Okimat", or similar)
+4. Then add the integration in Home Assistant
+
+**Note:** If you're using an ESPHome Bluetooth Proxy, you may need to pair on the device running Home Assistant, not on your phone.
+
 ---
 
 ## Connection Methods

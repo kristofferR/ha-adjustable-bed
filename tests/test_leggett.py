@@ -9,10 +9,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_platt import (
-    LeggettPlattController,
-    LeggettPlattGen2Commands,
-    LeggettPlattOkinCommands,
+from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
+from custom_components.adjustable_bed.beds.leggett_okin import (
+    LeggettOkinCommands,
+    LeggettOkinController,
 )
 from custom_components.adjustable_bed.beds.okin_protocol import int_to_bytes
 from custom_components.adjustable_bed.const import (
@@ -28,7 +28,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestLeggettPlattHelpers:
+class TestLeggettHelpers:
     """Test Leggett & Platt helper functions."""
 
     def test_int_to_bytes(self):
@@ -38,64 +38,64 @@ class TestLeggettPlattHelpers:
         assert int_to_bytes(0x8000000) == [0x08, 0x00, 0x00, 0x00]
 
 
-class TestLeggettPlattGen2Commands:
+class TestLeggettGen2CommandConstants:
     """Test Leggett & Platt Gen2 ASCII command constants."""
 
     def test_preset_commands(self):
         """Test preset command values."""
-        assert LeggettPlattGen2Commands.PRESET_FLAT == b"MEM 0"
-        assert LeggettPlattGen2Commands.PRESET_UNWIND == b"MEM 1"
-        assert LeggettPlattGen2Commands.PRESET_SLEEP == b"MEM 2"
-        assert LeggettPlattGen2Commands.PRESET_WAKE_UP == b"MEM 3"
-        assert LeggettPlattGen2Commands.PRESET_RELAX == b"MEM 4"
-        assert LeggettPlattGen2Commands.PRESET_ANTI_SNORE == b"SNR"
+        assert LeggettGen2Commands.PRESET_FLAT == b"MEM 0"
+        assert LeggettGen2Commands.PRESET_UNWIND == b"MEM 1"
+        assert LeggettGen2Commands.PRESET_SLEEP == b"MEM 2"
+        assert LeggettGen2Commands.PRESET_WAKE_UP == b"MEM 3"
+        assert LeggettGen2Commands.PRESET_RELAX == b"MEM 4"
+        assert LeggettGen2Commands.PRESET_ANTI_SNORE == b"SNR"
 
     def test_program_commands(self):
         """Test program command values."""
-        assert LeggettPlattGen2Commands.PROGRAM_UNWIND == b"SMEM 1"
-        assert LeggettPlattGen2Commands.PROGRAM_SLEEP == b"SMEM 2"
-        assert LeggettPlattGen2Commands.PROGRAM_WAKE_UP == b"SMEM 3"
-        assert LeggettPlattGen2Commands.PROGRAM_RELAX == b"SMEM 4"
+        assert LeggettGen2Commands.PROGRAM_UNWIND == b"SMEM 1"
+        assert LeggettGen2Commands.PROGRAM_SLEEP == b"SMEM 2"
+        assert LeggettGen2Commands.PROGRAM_WAKE_UP == b"SMEM 3"
+        assert LeggettGen2Commands.PROGRAM_RELAX == b"SMEM 4"
 
     def test_control_commands(self):
         """Test control command values."""
-        assert LeggettPlattGen2Commands.STOP == b"STOP"
-        assert LeggettPlattGen2Commands.GET_STATE == b"GET STATE"
+        assert LeggettGen2Commands.STOP == b"STOP"
+        assert LeggettGen2Commands.GET_STATE == b"GET STATE"
 
     def test_rgb_set(self):
         """Test RGB color command factory."""
-        cmd = LeggettPlattGen2Commands.rgb_set(255, 128, 64, 200)
+        cmd = LeggettGen2Commands.rgb_set(255, 128, 64, 200)
         assert cmd == b"RGBSET 0:FF8040C8"
 
     def test_massage_head_strength(self):
         """Test head massage strength command factory."""
-        cmd = LeggettPlattGen2Commands.massage_head_strength(5)
+        cmd = LeggettGen2Commands.massage_head_strength(5)
         assert cmd == b"MVI 0:5"
 
     def test_massage_foot_strength(self):
         """Test foot massage strength command factory."""
-        cmd = LeggettPlattGen2Commands.massage_foot_strength(7)
+        cmd = LeggettGen2Commands.massage_foot_strength(7)
         assert cmd == b"MVI 1:7"
 
 
-class TestLeggettPlattOkinCommands:
+class TestLeggettOkinCommandConstants:
     """Test Leggett & Platt Okin command constants."""
 
     def test_preset_commands(self):
         """Test preset command values."""
-        assert LeggettPlattOkinCommands.PRESET_FLAT == 0x8000000
-        assert LeggettPlattOkinCommands.PRESET_ZERO_G == 0x1000
-        assert LeggettPlattOkinCommands.PRESET_MEMORY_1 == 0x2000
-        assert LeggettPlattOkinCommands.PRESET_MEMORY_2 == 0x4000
-        assert LeggettPlattOkinCommands.PRESET_MEMORY_3 == 0x8000
-        assert LeggettPlattOkinCommands.PRESET_MEMORY_4 == 0x10000
+        assert LeggettOkinCommands.PRESET_FLAT == 0x8000000
+        assert LeggettOkinCommands.PRESET_ZERO_G == 0x1000
+        assert LeggettOkinCommands.PRESET_MEMORY_1 == 0x2000
+        assert LeggettOkinCommands.PRESET_MEMORY_2 == 0x4000
+        assert LeggettOkinCommands.PRESET_MEMORY_3 == 0x8000
+        assert LeggettOkinCommands.PRESET_MEMORY_4 == 0x10000
 
     def test_motor_commands(self):
         """Test motor command values."""
-        assert LeggettPlattOkinCommands.MOTOR_HEAD_UP == 0x1
-        assert LeggettPlattOkinCommands.MOTOR_HEAD_DOWN == 0x2
-        assert LeggettPlattOkinCommands.MOTOR_FEET_UP == 0x4
-        assert LeggettPlattOkinCommands.MOTOR_FEET_DOWN == 0x8
+        assert LeggettOkinCommands.MOTOR_HEAD_UP == 0x1
+        assert LeggettOkinCommands.MOTOR_HEAD_DOWN == 0x2
+        assert LeggettOkinCommands.MOTOR_FEET_UP == 0x4
+        assert LeggettOkinCommands.MOTOR_FEET_DOWN == 0x8
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def mock_leggett_gen2_config_entry(
     return entry
 
 
-class TestLeggettPlattControllerGen2:
+class TestLeggettGen2Controller:
     """Test Leggett & Platt Gen2 controller."""
 
     async def test_control_characteristic_uuid(
@@ -154,7 +154,7 @@ class TestLeggettPlattControllerGen2:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        command = LeggettPlattGen2Commands.STOP
+        command = LeggettGen2Commands.STOP
         await coordinator.controller.write_command(command)
 
         mock_bleak_client.write_gatt_char.assert_called_with(
@@ -162,7 +162,7 @@ class TestLeggettPlattControllerGen2:
         )
 
 
-class TestLeggettPlattControllerOkin:
+class TestLeggettOkinController:
     """Test Leggett & Platt Okin controller variant."""
 
     async def test_build_okin_command(
@@ -175,11 +175,11 @@ class TestLeggettPlattControllerOkin:
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        # Create an Okin controller directly
-        controller = LeggettPlattController(coordinator, variant="okin")
+        # Create an Okin controller directly (using the new protocol-based class)
+        controller = LeggettOkinController(coordinator)
 
         # Okin format: [0x04, 0x02, ...int_bytes]
-        command = controller._build_okin_command(LeggettPlattOkinCommands.MOTOR_HEAD_UP)
+        command = controller._build_command(LeggettOkinCommands.MOTOR_HEAD_UP)
 
         assert len(command) == 6
         assert command[:2] == bytes([0x04, 0x02])
@@ -187,7 +187,7 @@ class TestLeggettPlattControllerOkin:
         assert command[2:] == bytes([0x00, 0x00, 0x00, 0x01])
 
 
-class TestLeggettPlattMovement:
+class TestLeggettMovement:
     """Test Leggett & Platt movement commands."""
 
     async def test_move_head_up_gen2_warns(
@@ -220,7 +220,7 @@ class TestLeggettPlattMovement:
         await coordinator.controller.move_head_stop()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.STOP, response=True
         )
 
     async def test_stop_all_gen2(
@@ -237,11 +237,11 @@ class TestLeggettPlattMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.STOP, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.STOP, response=True
         )
 
 
-class TestLeggettPlattPresets:
+class TestLeggettPresets:
     """Test Leggett & Platt preset commands."""
 
     async def test_preset_flat_gen2(
@@ -258,7 +258,7 @@ class TestLeggettPlattPresets:
         await coordinator.controller.preset_flat()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == LeggettPlattGen2Commands.PRESET_FLAT
+        assert first_call[0][1] == LeggettGen2Commands.PRESET_FLAT
 
     async def test_preset_anti_snore_gen2(
         self,
@@ -274,15 +274,15 @@ class TestLeggettPlattPresets:
         await coordinator.controller.preset_anti_snore()
 
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == LeggettPlattGen2Commands.PRESET_ANTI_SNORE
+        assert first_call[0][1] == LeggettGen2Commands.PRESET_ANTI_SNORE
 
     @pytest.mark.parametrize(
         "memory_num,expected_command",
         [
-            (1, LeggettPlattGen2Commands.PRESET_UNWIND),
-            (2, LeggettPlattGen2Commands.PRESET_SLEEP),
-            (3, LeggettPlattGen2Commands.PRESET_WAKE_UP),
-            (4, LeggettPlattGen2Commands.PRESET_RELAX),
+            (1, LeggettGen2Commands.PRESET_UNWIND),
+            (2, LeggettGen2Commands.PRESET_SLEEP),
+            (3, LeggettGen2Commands.PRESET_WAKE_UP),
+            (4, LeggettGen2Commands.PRESET_RELAX),
         ],
     )
     async def test_preset_memory_gen2(
@@ -306,10 +306,10 @@ class TestLeggettPlattPresets:
     @pytest.mark.parametrize(
         "memory_num,expected_command",
         [
-            (1, LeggettPlattGen2Commands.PROGRAM_UNWIND),
-            (2, LeggettPlattGen2Commands.PROGRAM_SLEEP),
-            (3, LeggettPlattGen2Commands.PROGRAM_WAKE_UP),
-            (4, LeggettPlattGen2Commands.PROGRAM_RELAX),
+            (1, LeggettGen2Commands.PROGRAM_UNWIND),
+            (2, LeggettGen2Commands.PROGRAM_SLEEP),
+            (3, LeggettGen2Commands.PROGRAM_WAKE_UP),
+            (4, LeggettGen2Commands.PROGRAM_RELAX),
         ],
     )
     async def test_program_memory_gen2(
@@ -332,7 +332,7 @@ class TestLeggettPlattPresets:
         )
 
 
-class TestLeggettPlattLights:
+class TestLeggettLights:
     """Test Leggett & Platt light commands."""
 
     async def test_lights_toggle_gen2(
@@ -349,7 +349,7 @@ class TestLeggettPlattLights:
         await coordinator.controller.lights_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.RGB_OFF, response=True
         )
 
     async def test_lights_on_gen2(
@@ -365,7 +365,7 @@ class TestLeggettPlattLights:
 
         await coordinator.controller.lights_on()
 
-        expected = LeggettPlattGen2Commands.rgb_set(255, 255, 255, 255)
+        expected = LeggettGen2Commands.rgb_set(255, 255, 255, 255)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
         )
@@ -384,11 +384,11 @@ class TestLeggettPlattLights:
         await coordinator.controller.lights_off()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.RGB_OFF, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.RGB_OFF, response=True
         )
 
 
-class TestLeggettPlattMassage:
+class TestLeggettMassage:
     """Test Leggett & Platt massage commands."""
 
     async def test_massage_off_gen2(
@@ -422,7 +422,7 @@ class TestLeggettPlattMassage:
         await coordinator.controller.massage_head_up()
 
         # Level should increment to 1
-        expected = LeggettPlattGen2Commands.massage_head_strength(1)
+        expected = LeggettGen2Commands.massage_head_strength(1)
         mock_bleak_client.write_gatt_char.assert_called_with(
             LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
         )
@@ -441,11 +441,11 @@ class TestLeggettPlattMassage:
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettPlattGen2Commands.MASSAGE_WAVE_ON, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MASSAGE_WAVE_ON, response=True
         )
 
 
-class TestLeggettPlattPositionNotifications:
+class TestLeggettPositionNotifications:
     """Test Leggett & Platt position notification handling."""
 
     async def test_start_notify_no_support(

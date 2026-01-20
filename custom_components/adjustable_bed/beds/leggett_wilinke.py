@@ -1,13 +1,22 @@
-"""Leggett & Platt MlRM variant bed controller implementation.
+"""Leggett & Platt WiLinke protocol bed controller implementation.
 
-This is the "mlrm" variant of the Leggett & Platt bed controller, for beds that use
-Richmat WiLinke BLE hardware. These beds advertise with "MlRM*" name prefix.
+This controller handles Leggett & Platt beds that use Richmat WiLinke BLE hardware.
+These beds advertise with "MlRM*" name prefix.
 
 Key difference from standard Richmat: This controller has discrete massage UP/DOWN
 commands (0x4c/0x4d for head, 0x4e/0x4f for foot) rather than just cycling "step" commands.
 
-Command format: [0x6e, 0x01, 0x00, command_byte, checksum]
-Where checksum = sum of first 4 bytes (truncated to 8 bits)
+Protocol details:
+    Service UUID: 0000fee9-0000-1000-8000-00805f9b34fb or 8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7
+    Command format: [0x6e, 0x01, 0x00, command_byte, checksum]
+    Where checksum = sum of first 4 bytes (truncated to 8 bits)
+
+Features:
+    - Position presets (Flat, Zero-G, Anti-Snore, TV, Lounge)
+    - Memory presets 1-2 with programming support
+    - Under-bed lighting (toggle only)
+    - Discrete massage intensity control per motor
+    - Motor control for head and feet
 """
 
 from __future__ import annotations
@@ -28,8 +37,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class LeggettPlattMlrmCommands:
-    """Command constants for Leggett & Platt MlRM beds.
+class LeggettWilinkeCommands:
+    """Command constants for Leggett & Platt WiLinke beds.
 
     These were reverse-engineered from the LP Adjustable Bed Control app.
     Commands are the last byte of a 5-byte WiLinke packet.
@@ -92,8 +101,12 @@ class LeggettPlattMlrmCommands:
     END = 0x6E
 
 
-class LeggettPlattMlrmController(BedController):
-    """Controller for Leggett & Platt MlRM variant beds (WiLinke hardware)."""
+class LeggettWilinkeController(BedController):
+    """Controller for Leggett & Platt beds using WiLinke protocol.
+
+    These beds have discrete massage intensity control (up/down commands)
+    rather than just cycling through intensity levels.
+    """
 
     def __init__(
         self,
@@ -111,7 +124,7 @@ class LeggettPlattMlrmController(BedController):
         self._notify_callback: Callable[[str, float], None] | None = None
 
         _LOGGER.debug(
-            "LeggettPlattMlrmController initialized (variant: mlrm, char: %s)",
+            "LeggettWilinkeController initialized (char: %s)",
             self._char_uuid,
         )
 
@@ -138,11 +151,11 @@ class LeggettPlattMlrmController(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
-        return False  # Most L&P MlRM beds don't have lumbar
+        return False  # Most L&P WiLinke beds don't have lumbar
 
     @property
     def has_pillow_support(self) -> bool:
-        return False  # Most L&P MlRM beds don't have pillow tilt
+        return False  # Most L&P WiLinke beds don't have pillow tilt
 
     @property
     def supports_lights(self) -> bool:
@@ -198,7 +211,7 @@ class LeggettPlattMlrmController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to L&P MlRM bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to L&P WiLinke bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -229,7 +242,7 @@ class LeggettPlattMlrmController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         self._notify_callback = callback
-        _LOGGER.debug("L&P MlRM beds don't support position notifications")
+        _LOGGER.debug("L&P WiLinke beds don't support position notifications")
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
@@ -251,7 +264,7 @@ class LeggettPlattMlrmController(BedController):
         finally:
             try:
                 await self.write_command(
-                    self._build_command(LeggettPlattMlrmCommands.END),
+                    self._build_command(LeggettWilinkeCommands.END),
                     cancel_event=asyncio.Event(),
                 )
             except Exception:
@@ -260,16 +273,16 @@ class LeggettPlattMlrmController(BedController):
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_HEAD_UP)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_HEAD_DOWN)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
         await self.write_command(
-            self._build_command(LeggettPlattMlrmCommands.END),
+            self._build_command(LeggettWilinkeCommands.END),
             cancel_event=asyncio.Event(),
         )
 
@@ -287,11 +300,11 @@ class LeggettPlattMlrmController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_FEET_UP)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_FEET_UP)
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_FEET_DOWN)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_FEET_DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -299,11 +312,11 @@ class LeggettPlattMlrmController(BedController):
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_FEET_UP)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_FEET_UP)
 
     async def move_feet_down(self) -> None:
         """Move feet down."""
-        await self._move_with_stop(LeggettPlattMlrmCommands.MOTOR_FEET_DOWN)
+        await self._move_with_stop(LeggettWilinkeCommands.MOTOR_FEET_DOWN)
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
@@ -312,31 +325,48 @@ class LeggettPlattMlrmController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self.write_command(
-            self._build_command(LeggettPlattMlrmCommands.END),
+            self._build_command(LeggettWilinkeCommands.END),
             cancel_event=asyncio.Event(),
         )
 
     # Preset methods
+    async def _preset_with_end(self, command_byte: int) -> None:
+        """Execute a preset command and always send END at the end."""
+        try:
+            await self.write_command(
+                self._build_command(command_byte),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(LeggettWilinkeCommands.END),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send END command during preset cleanup")
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.PRESET_FLAT))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         commands = {
-            1: LeggettPlattMlrmCommands.PRESET_MEMORY_1,
-            2: LeggettPlattMlrmCommands.PRESET_MEMORY_2,
+            1: LeggettWilinkeCommands.PRESET_MEMORY_1,
+            2: LeggettWilinkeCommands.PRESET_MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
+            await self._preset_with_end(command)
         else:
             _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
         commands = {
-            1: LeggettPlattMlrmCommands.PROGRAM_MEMORY_1,
-            2: LeggettPlattMlrmCommands.PROGRAM_MEMORY_2,
+            1: LeggettWilinkeCommands.PROGRAM_MEMORY_1,
+            2: LeggettWilinkeCommands.PROGRAM_MEMORY_2,
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
@@ -345,24 +375,24 @@ class LeggettPlattMlrmController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.PRESET_ZERO_G))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.PRESET_ANTI_SNORE))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.PRESET_TV))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_TV)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.PRESET_LOUNGE))
+        await self._preset_with_end(LeggettWilinkeCommands.PRESET_LOUNGE)
 
     # Light methods
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.LIGHTS_TOGGLE))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.LIGHTS_TOGGLE))
 
     async def lights_on(self) -> None:
         """Turn on under-bed lights (toggle-only)."""
@@ -375,48 +405,48 @@ class LeggettPlattMlrmController(BedController):
     # Massage methods - DISCRETE UP/DOWN (the key feature of this controller!)
     async def massage_off(self) -> None:
         """Turn off all massage."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_MOTOR_STOP))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_MOTOR_STOP))
 
     async def massage_toggle(self) -> None:
         """Toggle massage (head motor)."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_MOTOR1_ON_OFF))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_MOTOR1_ON_OFF))
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_MOTOR1_ON_OFF))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_MOTOR1_ON_OFF))
 
     async def massage_foot_toggle(self) -> None:
         """Toggle foot massage."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_MOTOR2_ON_OFF))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_MOTOR2_ON_OFF))
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_HEAD_UP))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_HEAD_UP))
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_HEAD_DOWN))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_HEAD_DOWN))
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_FOOT_UP))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_FOOT_UP))
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_FOOT_DOWN))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_FOOT_DOWN))
 
     async def massage_intensity_up(self) -> None:
         """Increase overall massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_INCREASE_INTENSITY))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_INCREASE_INTENSITY))
 
     async def massage_intensity_down(self) -> None:
         """Decrease overall massage intensity."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_DECREASE_INTENSITY))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_DECREASE_INTENSITY))
 
     async def massage_mode_step(self) -> None:
         """Step through massage patterns."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_PATTERN_STEP))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_PATTERN_STEP))
 
     async def massage_wave_toggle(self) -> None:
         """Toggle wave massage mode."""
-        await self.write_command(self._build_command(LeggettPlattMlrmCommands.MASSAGE_WAVE))
+        await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_WAVE))
