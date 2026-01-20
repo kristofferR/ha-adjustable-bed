@@ -486,6 +486,16 @@ class BedController(ABC):
         """
         return False
 
+    @property
+    def motor_translation_keys(self) -> dict[str, str] | None:
+        """Return custom translation keys for motor cover entities, or None for defaults.
+
+        Override in subclasses where motor labels differ from the standard naming.
+        The dict maps motor key (e.g., "head", "feet", "tilt") to a translation key
+        (e.g., "keeson_back", "keeson_legs", "keeson_head").
+        """
+        return None
+
     # Lumbar motor control (optional - only some beds have this)
 
     async def move_lumbar_up(self) -> None:

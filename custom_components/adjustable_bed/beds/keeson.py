@@ -326,6 +326,21 @@ class KeesonController(BedController):
         """Return True - Keeson/Ergomotion report 0-100 percentage, not angle degrees."""
         return True
 
+    @property
+    def motor_translation_keys(self) -> dict[str, str] | None:
+        """Return Keeson-specific translation keys for motor cover entities.
+
+        Keeson motor naming differs from standard naming:
+        - "head" motor → controls back/upper body → use "keeson_back"
+        - "tilt" motor → controls head/pillow → use "keeson_head"
+        - "feet" motor → controls legs → use "keeson_legs"
+        """
+        return {
+            "head": "keeson_back",
+            "tilt": "keeson_head",
+            "feet": "keeson_legs",
+        }
+
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
         if self._variant == "ksbt":

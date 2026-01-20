@@ -169,12 +169,17 @@ async def async_setup_entry(
         # Find the specific descriptions we need
         descriptions_by_key = {d.key: d for d in COVER_DESCRIPTIONS}
 
+        # Get translation key overrides from controller
+        translation_overrides = (
+            controller.motor_translation_keys if controller is not None else None
+        ) or {}
+
         # Create Keeson-specific head description that maps to "back" position data
         # Keeson "head" motor = upper body, position reported as "back"
         head_desc = descriptions_by_key["head"]
         keeson_head_desc = AdjustableBedCoverEntityDescription(
             key=head_desc.key,
-            translation_key=head_desc.translation_key,
+            translation_key=translation_overrides.get("head", head_desc.translation_key),
             icon=head_desc.icon,
             device_class=head_desc.device_class,
             open_fn=head_desc.open_fn,
@@ -191,7 +196,7 @@ async def async_setup_entry(
         feet_desc = descriptions_by_key["feet"]
         keeson_feet_desc = AdjustableBedCoverEntityDescription(
             key=feet_desc.key,
-            translation_key=feet_desc.translation_key,
+            translation_key=translation_overrides.get("feet", feet_desc.translation_key),
             icon=feet_desc.icon,
             device_class=feet_desc.device_class,
             open_fn=feet_desc.open_fn,
@@ -210,7 +215,20 @@ async def async_setup_entry(
             and controller is not None
             and controller.has_tilt_support
         ):
-            entities.append(AdjustableBedCover(coordinator, descriptions_by_key["tilt"]))
+            tilt_desc = descriptions_by_key["tilt"]
+            keeson_tilt_desc = AdjustableBedCoverEntityDescription(
+                key=tilt_desc.key,
+                translation_key=translation_overrides.get("tilt", tilt_desc.translation_key),
+                icon=tilt_desc.icon,
+                device_class=tilt_desc.device_class,
+                open_fn=tilt_desc.open_fn,
+                close_fn=tilt_desc.close_fn,
+                stop_fn=tilt_desc.stop_fn,
+                min_motors=tilt_desc.min_motors,
+                position_key=tilt_desc.position_key,
+                max_angle=tilt_desc.max_angle,
+            )
+            entities.append(AdjustableBedCover(coordinator, keeson_tilt_desc))
 
         # Add lumbar for 4 motors if controller supports it
         if (

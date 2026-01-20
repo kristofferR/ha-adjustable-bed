@@ -335,6 +335,15 @@
       },
       "tilt": {
         "name": "Tilt"
+      },
+      "keeson_back": {
+        "name": "Back"
+      },
+      "keeson_head": {
+        "name": "Head"
+      },
+      "keeson_legs": {
+        "name": "Legs"
       }
     },
     "sensor": {
