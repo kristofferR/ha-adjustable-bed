@@ -20,6 +20,7 @@ Supported remote codes (configured via variant):
 - 82418: RF TOPLINE (Back, Legs, 2 Memory)
 - 88875: RF LITELINE (Back, Legs)
 - 91244: RF-FLASHLINE (Back, Legs)
+- 92471: RF TOPLINE (Back, Legs)
 - 93329: RF TOPLINE (Head, Back, Legs, 4 Memory)
 - 93332: RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)
 - 94238: RF FLASHLINE (Back, Legs, 2 Memory)
@@ -44,6 +45,7 @@ from ..const import (
     OKIMAT_VARIANT_82418,
     OKIMAT_VARIANT_88875,
     OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_92471,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
@@ -126,6 +128,10 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
     OKIMAT_VARIANT_91244: OkinUuidRemoteConfig(
         name="RF-FLASHLINE",
         flat=0x100000AA,
+    ),
+    OKIMAT_VARIANT_92471: OkinUuidRemoteConfig(
+        name="RF TOPLINE",
+        flat=0x000000AA,
     ),
     OKIMAT_VARIANT_93329: OkinUuidRemoteConfig(
         name="RF TOPLINE",

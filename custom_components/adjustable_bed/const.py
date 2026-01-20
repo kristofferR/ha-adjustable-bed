@@ -284,8 +284,8 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
 LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
-# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", or "OKIN-XXXXXX" (e.g., OKIN-346311)
-OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-")
+# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN-XXXXXX" (e.g., OKIN-346311), or "OKIN luis"
+OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin luis")
 
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
@@ -646,6 +646,7 @@ OKIMAT_VARIANT_82417: Final = "82417"
 OKIMAT_VARIANT_82418: Final = "82418"
 OKIMAT_VARIANT_88875: Final = "88875"
 OKIMAT_VARIANT_91244: Final = "91244"
+OKIMAT_VARIANT_92471: Final = "92471"
 OKIMAT_VARIANT_93329: Final = "93329"
 OKIMAT_VARIANT_93332: Final = "93332"
 OKIMAT_VARIANT_94238: Final = "94238"
@@ -656,6 +657,7 @@ OKIMAT_VARIANTS: Final = {
     OKIMAT_VARIANT_82418: "82418 - RF TOPLINE (Back, Legs, 2 Memory)",
     OKIMAT_VARIANT_88875: "88875 - RF LITELINE (Back, Legs)",
     OKIMAT_VARIANT_91244: "91244 - RF-FLASHLINE (Back, Legs)",
+    OKIMAT_VARIANT_92471: "92471 - RF TOPLINE (Back, Legs)",
     OKIMAT_VARIANT_93329: "93329 - RF TOPLINE (Head, Back, Legs, 4 Memory)",
     OKIMAT_VARIANT_93332: "93332 - RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)",
     OKIMAT_VARIANT_94238: "94238 - RF FLASHLINE (Back, Legs, 2 Memory)",
@@ -681,6 +683,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIMAT_VARIANT_82418,
     OKIMAT_VARIANT_88875,
     OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_92471,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
