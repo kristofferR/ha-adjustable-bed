@@ -25,6 +25,15 @@
 **Write Characteristic:** `6e400002-b5a3-f393-e0a9-e50e24dcca9e`
 **Format:** 7-byte commands: `5A 01 03 10 [XX] [YY] A5`
 
+## Protocol Family
+
+Mattress Firm 900 is part of the [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family), though it uses:
+- **Nordic UART Service** (not the Okin service UUID)
+- **7-byte command format** (similar to Nectar)
+- **Initialization sequence** required on first connection
+
+This means it won't be confused with other Okin beds during auto-detection.
+
 **Initialization Required:** Two-step initialization sequence must be sent on first connection.
 
 ### Initialization Commands

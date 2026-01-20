@@ -8,13 +8,13 @@
 
 - Nectar Split King Luxe Adjustable Foundation
 - Nectar adjustable bases
-- Other beds using OKIN controllers with 7-byte command format
+- Other beds using Okin controllers with 7-byte command format
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (Head, Foot, Lumbar) |
+| Motor Control | ✅ (Head, Feet, Lumbar) |
 | Position Feedback | ❌ |
 | Memory Presets | ❌ |
 | Massage | ✅ |
@@ -27,7 +27,7 @@
 **Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
 **Format:** 7-byte commands: `5A 01 03 10 30 [XX] A5`
 
-**Note:** Nectar uses the same service UUID as Okimat but with a different command protocol. The 7-byte format is similar to Mattress Firm 900 but with different command values.
+**Note:** Nectar beds share the Okin service UUID with Okimat but use a **7-byte command format** (vs Okimat's 6-byte format). This means commands are not interchangeable - if your bed is detected as the wrong type, change it in integration settings.
 
 ### Motor Commands
 
@@ -67,13 +67,21 @@
 
 ## Detection
 
-Detected by device name containing: `nectar` (case-insensitive) AND OKIN service UUID present
+Detected by device name containing: `nectar` (case-insensitive) AND Okin service UUID present
 
 Or manually configured with bed type: `nectar`
 
+## Protocol Family
+
+Nectar is part of the [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family). Key differences from other Okin beds:
+
+- Uses **7-byte** command format (similar to Mattress Firm 900)
+- Does **not** require Bluetooth pairing
+- No position feedback support
+
 ## Notes
 
-- Nectar beds share the OKIN service UUID with Okimat beds but use a different command protocol
-- Detection requires both the "nectar" device name AND the OKIN service UUID to avoid false positives
+- Nectar beds share the Okin service UUID with Okimat beds but use a different command protocol
+- Detection requires both the "nectar" device name AND the Okin service UUID to avoid false positives
 - Massage control is global (no separate head/foot control)
 - Lights have separate on/off commands (no toggle)

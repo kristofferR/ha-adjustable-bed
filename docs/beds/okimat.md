@@ -22,15 +22,17 @@
 > [!NOTE]
 > **Okin Protocol Family**
 >
-> This bed type is part of the Okin protocol family - several bed brands that use Okin-based BLE protocols with the same service UUID (`62741523-...`). While they share common roots, each has implementation differences requiring separate code:
+> Okimat is part of a family of beds using Okin-based BLE protocols. While they share the same service UUID, they use different command formats:
 >
-> | Bed Type | Protocol Difference |
-> |----------|-------------------|
-> | [DewertOkin](dewertokin.md) | Same 6-byte format, uses handle-based writes |
-> | [Nectar](nectar.md) | Different 7-byte command format |
-> | [Leggett & Platt](leggett-platt.md) | Has an Okin variant option |
+> | Bed Type | Format | Key Difference |
+> |----------|--------|----------------|
+> | **Okimat** | 6-byte | UUID-based writes, has position feedback |
+> | [Leggett & Platt Okin](leggett-platt.md) | 6-byte | Same protocol, different name detection |
+> | [Nectar](nectar.md) | 7-byte | Different command structure |
+> | [DewertOkin](dewertokin.md) | 6-byte | Handle-based writes (not UUID) |
+> | [Mattress Firm 900](mattressfirm.md) | 7-byte | Uses Nordic UART service |
 >
-> Common functionality is shared via `okin_protocol.py`. See [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for the full overview.
+> See [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for detection priority and troubleshooting.
 
 ## Detection
 

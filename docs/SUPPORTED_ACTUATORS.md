@@ -35,24 +35,28 @@ For detailed configuration options including motor pulse settings, protocol vari
 
 ## Okin Protocol Family
 
-Multiple bed brands use controllers based on OKIN technology (now part of DewertOkin GmbH). These beds share similar protocols and sometimes even the same BLE service UUID, which can cause detection ambiguity.
+Several bed brands use Okin-based BLE controllers. While they share common roots, each uses a different command format or write method:
 
-### Beds Using OKIN Service UUID (`62741523-...`)
+| Bed Type | Command Format | Write Method | Pairing Required | Detection |
+|----------|---------------|--------------|------------------|-----------|
+| [Okimat](beds/okimat.md) | 6-byte binary | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
+| [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte binary | UUID `62741525-...` | ✅ Yes | Name patterns |
+| [Nectar](beds/nectar.md) | 7-byte binary | UUID `62741525-...` | ❌ No | Name contains "nectar" |
+| [DewertOkin](beds/dewertokin.md) | 6-byte binary | Handle `0x0013` | ❌ No | Name patterns |
+| [Mattress Firm 900](beds/mattressfirm.md) | 7-byte binary | Nordic UART | ❌ No | Name starts with "iflex" |
 
-| Bed Type | Command Format | Detection Method |
-|----------|---------------|------------------|
-| [Okimat](beds/okimat.md) | 6-byte binary | Name patterns or fallback |
-| [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte binary | Name patterns |
-| [Nectar](beds/nectar.md) | 7-byte binary | Name contains "nectar" |
+**Key differences:**
+- **6-byte vs 7-byte**: Different command structures - not interchangeable
+- **UUID vs Handle**: DewertOkin writes to a BLE handle instead of a characteristic UUID
+- **Nordic UART**: Mattress Firm uses a completely different BLE service
 
-### Beds Using OKIN Protocol with Different UUIDs
+**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type.
 
-| Bed Type | Write Method | Detection Method |
-|----------|-------------|------------------|
-| [DewertOkin](beds/dewertokin.md) | Handle 0x0013 | Name patterns |
-| [Leggett & Platt Gen2](beds/leggett-platt.md) | UUID `45e25100-...` | Service UUID |
-
-**If auto-detection fails:** These beds can be manually configured. If your bed uses the OKIN service UUID but is detected as the wrong type, change the bed type in the integration settings.
+**Detection priority** (for beds with Okin service UUID):
+1. Name contains "nectar" → Nectar
+2. Name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt Okin
+3. Name contains "okimat", "okin rf", or "okin ble" → Okimat
+4. Fallback → Okimat (with warning logged)
 
 ---
 
