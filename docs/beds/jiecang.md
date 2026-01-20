@@ -5,8 +5,13 @@
 **Credit:** Reverse engineering by [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
+
+Brands using Jiecang actuators:
+
+- Comfort Motion
+- Dream Motion / Dreamotion Smart
+- ERGOBALANCE
 - Glide adjustable beds
-- Beds using Dream Motion app
 - Jiecang-branded controllers
 
 ## Features

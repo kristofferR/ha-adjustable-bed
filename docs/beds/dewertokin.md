@@ -5,10 +5,36 @@
 **Credit:** Reverse engineering by [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
+
+Brands using DewertOkin actuators:
+
+- Mattress Firm / Sleepy's Elite
+- Resident Adjustable Base
+- Rize (multiple models: Home, Remedy, Clarity, Contemporary, Aviada)
+- SIMMONS
+- Nectar Move
+- Power Bob Ultra
+- Dynasty Bases
+- Glideaway Motion
+- AdjustaMattress
+- Eshine Sleep
+- CHERISH SMART
+- OrmatekTechnoSmart
+- Smart Comfort by Synergy
+- INNOVA
+- Symphony Sleep
+- Jordan's (multiple models: Restful, Serenity, Tranquil, Sanctuary, Carefree, Clarity)
+- Ultramatic Smart Bed
+- M line
+- MaxCoil Una
+- AVANTI BASES
+- Bedsense Bases
+- RÖWA
+- Simon Li
+- Flexsteel Pulse
 - A H Beard adjustable beds
 - HankookGallery beds
 - Beds with DewertOkin HE150 controller
-- "Comfort Enhancement 2" / "Comfort Plus" app beds
 
 ## Features
 
