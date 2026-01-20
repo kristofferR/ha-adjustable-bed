@@ -291,14 +291,34 @@ async def create_controller(
             return OctoStar2Controller(coordinator)
         elif protocol_variant in (None, "", "auto"):
             # Auto-detect: check if Star2 service UUID is available
+            star2_detected = False
+
+            # Ensure services are discovered
+            if client and not client.services:
+                _LOGGER.debug("Services not populated for Octo bed, attempting discovery...")
+                address = getattr(client, "address", "unknown")
+                await discover_services(client, address)
+
             if client and client.services:
-                for service in client.services:
-                    if service.uuid.lower() == OCTO_STAR2_SERVICE_UUID.lower():
-                        _LOGGER.debug("Using Star2 Octo variant (auto-detected)")
-                        return OctoStar2Controller(coordinator)
-            # Default to standard Octo
-            _LOGGER.debug("Using standard Octo variant")
-            return OctoController(coordinator, pin=octo_pin)
+                service_uuids = [s.uuid.lower() for s in client.services]
+                _LOGGER.debug(
+                    "Auto-detecting Octo variant, found services: %s",
+                    service_uuids,
+                )
+                if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
+                    star2_detected = True
+            else:
+                _LOGGER.debug(
+                    "No services available for auto-detection, "
+                    "defaulting to standard Octo variant"
+                )
+
+            if star2_detected:
+                _LOGGER.debug("Using Star2 Octo variant (auto-detected)")
+                return OctoStar2Controller(coordinator)
+            else:
+                _LOGGER.debug("Using standard Octo variant (auto-detected)")
+                return OctoController(coordinator, pin=octo_pin)
         else:
             # Explicit standard variant
             _LOGGER.debug("Using standard Octo variant (configured)")
