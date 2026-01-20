@@ -201,8 +201,30 @@ class OkinHandleController(BedController):
                     OkinHandleCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
+
+    async def _preset_with_stop(
+        self,
+        command: bytes,
+        repeat_count: int = 100,
+        repeat_delay_ms: int = 300,
+    ) -> None:
+        """Execute a preset command and always send STOP at the end."""
+        try:
+            await self.write_command(
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    OkinHandleCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -272,20 +294,7 @@ class OkinHandleController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        try:
-            await self.write_command(
-                OkinHandleCommands.FLAT,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    OkinHandleCommands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
+        await self._preset_with_stop(OkinHandleCommands.FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -294,16 +303,7 @@ class OkinHandleController(BedController):
             2: OkinHandleCommands.MEMORY_2,
         }
         if command := commands.get(memory_num):
-            try:
-                await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
-            finally:
-                try:
-                    await self.write_command(
-                        OkinHandleCommands.STOP,
-                        cancel_event=asyncio.Event(),
-                    )
-                except Exception:
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
+            await self._preset_with_stop(command)
         else:
             _LOGGER.warning("Okin handle beds only support memory presets 1 and 2")
 
@@ -316,54 +316,15 @@ class OkinHandleController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        try:
-            await self.write_command(
-                OkinHandleCommands.ZERO_G,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    OkinHandleCommands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_zero_g cleanup")
+        await self._preset_with_stop(OkinHandleCommands.ZERO_G)
 
     async def preset_tv(self) -> None:
         """Go to TV position."""
-        try:
-            await self.write_command(
-                OkinHandleCommands.TV,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    OkinHandleCommands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_tv cleanup")
+        await self._preset_with_stop(OkinHandleCommands.TV)
 
     async def preset_anti_snore(self) -> None:
         """Go to quiet sleep/anti-snore position."""
-        try:
-            await self.write_command(
-                OkinHandleCommands.QUIET_SLEEP,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            try:
-                await self.write_command(
-                    OkinHandleCommands.STOP,
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_anti_snore cleanup")
+        await self._preset_with_stop(OkinHandleCommands.QUIET_SLEEP)
 
     # Light methods
     async def lights_toggle(self) -> None:

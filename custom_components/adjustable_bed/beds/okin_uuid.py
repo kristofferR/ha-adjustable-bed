@@ -570,8 +570,8 @@ class OkinUuidController(BedController):
                     self._build_command(0),
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
+            except (BleakError, asyncio.TimeoutError):
+                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup", exc_info=True)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -595,8 +595,8 @@ class OkinUuidController(BedController):
                         self._build_command(0),
                         cancel_event=asyncio.Event(),
                     )
-                except Exception:
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
+                except (BleakError, asyncio.TimeoutError):
+                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup", exc_info=True)
         else:
             _LOGGER.warning(
                 "Memory %d not available on remote %s", memory_num, self._variant

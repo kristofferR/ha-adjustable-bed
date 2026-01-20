@@ -8,7 +8,7 @@ Protocol details:
     Service UUID: 62741523-52f9-8864-b1ab-3b3a8d65950b (shared with Okimat/Nectar)
     Write characteristic: 62741525-52f9-8864-b1ab-3b3a8d65950b
     Command format: 6-byte binary [0x04, 0x02, <4-byte-command-big-endian>]
-    Motor timing: 25 pulses at 200ms intervals for continuous movement
+    Motor timing: 15 pulses at 100ms intervals for continuous movement
     Position feedback: Not supported
     Pairing: Required before first use; handled by coordinator
 
@@ -24,6 +24,8 @@ import logging
 from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING
+
+from bleak.exc import BleakError
 
 from ..const import LEGGETT_OKIN_CHAR_UUID
 from .base import BedController
@@ -203,19 +205,23 @@ class LeggettOkinController(BedController):
             if command:
                 await self.write_command(
                     self._build_command(command),
-                    repeat_count=25,
-                    repeat_delay_ms=200,
+                    repeat_count=15,
+                    repeat_delay_ms=100,
                 )
         finally:
             self._motor_state = {}
-            # Wrap in try-except to prevent masking the original exception
+            # Shield the STOP command to ensure it runs even if cancelled
             try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
+                await asyncio.shield(
+                    self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send stop command during cleanup")
+            except asyncio.CancelledError:
+                raise
+            except BleakError:
+                _LOGGER.debug("Failed to send stop command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -285,12 +291,16 @@ class LeggettOkinController(BedController):
             )
         finally:
             try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
+                await asyncio.shield(
+                    self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup")
+            except asyncio.CancelledError:
+                raise
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset_flat cleanup", exc_info=True)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -309,12 +319,16 @@ class LeggettOkinController(BedController):
                 )
             finally:
                 try:
-                    await self.write_command(
-                        self._build_command(0),
-                        cancel_event=asyncio.Event(),
+                    await asyncio.shield(
+                        self.write_command(
+                            self._build_command(0),
+                            cancel_event=asyncio.Event(),
+                        )
                     )
-                except Exception:
-                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup")
+                except asyncio.CancelledError:
+                    raise
+                except BleakError:
+                    _LOGGER.debug("Failed to send STOP command during preset_memory cleanup", exc_info=True)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Okin)."""
@@ -333,12 +347,16 @@ class LeggettOkinController(BedController):
             )
         finally:
             try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
+                await asyncio.shield(
+                    self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset_zero_g cleanup")
+            except asyncio.CancelledError:
+                raise
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset_zero_g cleanup", exc_info=True)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (not supported on Okin)."""

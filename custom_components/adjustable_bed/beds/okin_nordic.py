@@ -203,8 +203,8 @@ class OkinNordicController(BedController):
                     OkinNordicCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -283,8 +283,8 @@ class OkinNordicController(BedController):
                     OkinNordicCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during preset cleanup")
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
 
     async def preset_flat(self) -> None:
         """Go to flat position."""
