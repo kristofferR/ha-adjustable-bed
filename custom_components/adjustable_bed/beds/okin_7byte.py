@@ -163,8 +163,10 @@ class Okin7ByteController(BedController):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
+            pulse_count = self._coordinator.motor_pulse_count
+            pulse_delay = self._coordinator.motor_pulse_delay_ms
             await self.write_command(
-                command, repeat_count=15, repeat_delay_ms=100
+                command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay
             )
         finally:
             try:
@@ -172,8 +174,8 @@ class Okin7ByteController(BedController):
                     Okin7ByteCommands.STOP,
                     cancel_event=asyncio.Event(),
                 )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -238,61 +240,38 @@ class Okin7ByteController(BedController):
         await self.write_command(Okin7ByteCommands.STOP, cancel_event=asyncio.Event())
 
     # Preset positions
-    async def preset_flat(self) -> None:
-        """Go to flat position."""
+    async def _preset_with_stop(self, command: bytes) -> None:
+        """Execute a preset command and always send STOP at the end."""
         try:
             await self.write_command(
-                Okin7ByteCommands.FLAT,
-                repeat_count=100,  # Presets need longer duration
+                command,
+                repeat_count=100,
                 repeat_delay_ms=300,
             )
         finally:
-            await self.write_command(
-                Okin7ByteCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+            try:
+                await self.write_command(
+                    Okin7ByteCommands.STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup", exc_info=True)
+
+    async def preset_flat(self) -> None:
+        """Go to flat position."""
+        await self._preset_with_stop(Okin7ByteCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        try:
-            await self.write_command(
-                Okin7ByteCommands.ZERO_GRAVITY,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            await self.write_command(
-                Okin7ByteCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+        await self._preset_with_stop(Okin7ByteCommands.ZERO_GRAVITY)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        try:
-            await self.write_command(
-                Okin7ByteCommands.ANTI_SNORE,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            await self.write_command(
-                Okin7ByteCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+        await self._preset_with_stop(Okin7ByteCommands.ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        try:
-            await self.write_command(
-                Okin7ByteCommands.LOUNGE,
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            await self.write_command(
-                Okin7ByteCommands.STOP,
-                cancel_event=asyncio.Event(),
-            )
+        await self._preset_with_stop(Okin7ByteCommands.LOUNGE)
 
     async def preset_tv(self) -> None:
         """Go to TV position (alias for lounge)."""

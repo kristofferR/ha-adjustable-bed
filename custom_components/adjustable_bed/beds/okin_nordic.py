@@ -107,12 +107,25 @@ class OkinNordicController(BedController):
         return True
 
     @property
+    def supports_preset_tv(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_incline(self) -> bool:
+        return True
+
+    @property
     def has_lumbar_support(self) -> bool:
         return True
 
     @property
     def supports_lights(self) -> bool:
         """Return True - these beds support under-bed lighting."""
+        return True
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True - these beds support discrete on/off light control."""
         return True
 
     @property
@@ -144,6 +157,7 @@ class OkinNordicController(BedController):
                 await self.client.write_gatt_char(
                     MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_1, response=True
                 )
+                await asyncio.sleep(0.1)  # 100ms delay between init commands
                 await self.client.write_gatt_char(
                     MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_2, response=True
                 )
