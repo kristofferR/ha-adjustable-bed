@@ -54,6 +54,8 @@ BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
 BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
+BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
+BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -83,6 +85,9 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_NECTAR,
+    # Malouf protocols
+    BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -276,6 +281,19 @@ NECTAR_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
+# Malouf NEW_OKIN specific UUIDs
+# Protocol reverse-engineered from Malouf Base app
+# Uses a unique advertised service UUID for detection plus Nordic UART for commands
+MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID: Final = "01000001-0000-1000-8000-00805f9b34fb"
+MALOUF_NEW_OKIN_WRITE_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+MALOUF_NEW_OKIN_NOTIFY_CHAR_UUID: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+
+# Malouf LEGACY_OKIN specific UUIDs
+# Uses FFE5 service (similar to Keeson) but with different 9-byte command format
+MALOUF_LEGACY_OKIN_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
+MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
+MALOUF_LEGACY_OKIN_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+
 # Detection name patterns for beds sharing the OKIN service UUID
 # Multiple bed types share the same UUID (62741523-...), so name patterns help disambiguate:
 # - Nectar (7-byte protocol)
@@ -309,6 +327,10 @@ ERGOMOTION_NAME_PATTERNS: Final = ("ergomotion", "ergo", "serta-i")
 # Octo name patterns
 # - "da1458x" - Dialog Semiconductor BLE SoC used in some Octo receivers
 OCTO_NAME_PATTERNS: Final = ("da1458x",)
+
+# Malouf name patterns
+# Malouf beds typically have "malouf" in the device name
+MALOUF_NAME_PATTERNS: Final = ("malouf",)
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"

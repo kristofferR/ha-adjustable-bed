@@ -20,6 +20,8 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
@@ -44,6 +46,9 @@ from .const import (
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
+    MALOUF_LEGACY_OKIN_SERVICE_UUID,
+    MALOUF_NAME_PATTERNS,
+    MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_PATTERNS,
@@ -106,6 +111,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT: "Richmat",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SOLACE: "Solace",
+    # Malouf protocols
+    BED_TYPE_MALOUF_NEW_OKIN: "Malouf NEW_OKIN (via Nordic UART)",
+    BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf LEGACY_OKIN (via FFE5)",
     # Legacy aliases (for backwards compatibility, shown at end)
     BED_TYPE_DEWERTOKIN: "DewertOkin (legacy - use Okin Handle)",
     BED_TYPE_OKIMAT: "Okimat (legacy - use Okin UUID)",
@@ -131,6 +139,10 @@ MANUFACTURER_GROUPS: dict[str, list[str]] = {
     ],
     "Richmat Protocol Family": [
         BED_TYPE_RICHMAT,
+    ],
+    "Malouf": [
+        BED_TYPE_MALOUF_NEW_OKIN,
+        BED_TYPE_MALOUF_LEGACY_OKIN,
     ],
     "Other Brands": [
         BED_TYPE_ERGOMOTION,
@@ -185,6 +197,15 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
                 pattern,
             )
             return None
+
+    # Check for Malouf NEW_OKIN - unique advertised service UUID (most specific first)
+    if MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Malouf NEW_OKIN bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_MALOUF_NEW_OKIN
 
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
@@ -310,6 +331,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_ERGOMOTION
+
+    # Check for Malouf LEGACY_OKIN - name pattern + FFE5 service (before Keeson)
+    # Malouf LEGACY_OKIN uses FFE5 service UUID but different 9-byte command format
+    if (
+        any(pattern in device_name for pattern in MALOUF_NAME_PATTERNS)
+        and MALOUF_LEGACY_OKIN_SERVICE_UUID.lower() in service_uuids
+    ):
+        _LOGGER.info(
+            "Detected Malouf LEGACY_OKIN bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_MALOUF_LEGACY_OKIN
 
     # Check for Keeson by name patterns (e.g., base-i4.XXXX, base-i5.XXXX, KSBTXXXX)
     # This catches devices that may not advertise the specific service UUID

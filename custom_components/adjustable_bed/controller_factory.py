@@ -18,6 +18,8 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_NECTAR,
@@ -108,6 +110,16 @@ async def create_controller(
         from .beds.okin_nordic import OkinNordicController
 
         return OkinNordicController(coordinator)
+
+    if bed_type == BED_TYPE_MALOUF_NEW_OKIN:
+        from .beds.malouf import MaloufNewOkinController
+
+        return MaloufNewOkinController(coordinator)
+
+    if bed_type == BED_TYPE_MALOUF_LEGACY_OKIN:
+        from .beds.malouf import MaloufLegacyOkinController
+
+        return MaloufLegacyOkinController(coordinator)
 
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         from .beds.leggett_gen2 import LeggettGen2Controller
