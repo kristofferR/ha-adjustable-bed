@@ -1062,8 +1062,8 @@ class AdjustableBedCoordinator:
                         # Accuracy mode: wait for read to complete
                         await self._async_read_positions()
                     else:
-                        # Speed mode: fire-and-forget (no blocking)
-                        self.hass.async_create_task(self._async_read_positions())
+                        # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
+                        self.hass.async_create_task(self._async_read_positions_background())
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -1191,8 +1191,8 @@ class AdjustableBedCoordinator:
                         # Accuracy mode: wait for read to complete
                         await self._async_read_positions()
                     else:
-                        # Speed mode: fire-and-forget (no blocking)
-                        self.hass.async_create_task(self._async_read_positions())
+                        # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
+                        self.hass.async_create_task(self._async_read_positions_background())
             except (ConnectionError, RuntimeError):
                 # On connection/controller errors, reset timer if not disconnecting after commands
                 if (
@@ -1265,6 +1265,10 @@ class AdjustableBedCoordinator:
 
         Called after movement commands to ensure position data is up to date.
         Uses a short timeout to avoid blocking commands.
+
+        Note: This method does NOT acquire the command lock. When called from
+        within a command (which already holds the lock), this is correct.
+        For fire-and-forget background reads, use _async_read_positions_background().
         """
         if self._controller is None:
             return
@@ -1276,6 +1280,16 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Position read timed out")
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
+
+    async def _async_read_positions_background(self) -> None:
+        """Read positions in background with proper lock serialization.
+
+        This method acquires the command lock to prevent concurrent GATT operations.
+        Use this for fire-and-forget position reads (speed mode) to avoid
+        "operation in progress" errors from overlapping BLE operations.
+        """
+        async with self._command_lock:
+            await self._async_read_positions()
 
     async def _async_poll_positions_during_movement(self, stop_event: asyncio.Event) -> None:
         """Poll positions periodically during movement.

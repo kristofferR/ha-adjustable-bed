@@ -880,6 +880,16 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     }
 )
 
+# Bed types that report positions as 0-100 percentages (not angle degrees)
+# These bed types return percentage values directly, so no angle-to-percent conversion is needed
+BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
+    {
+        BED_TYPE_KEESON,
+        BED_TYPE_ERGOMOTION,
+        BED_TYPE_SERTA,
+    }
+)
+
 # Position seeking constants
 POSITION_TOLERANCE: Final = 3.0  # Angle tolerance in degrees for target reached
 POSITION_OVERSHOOT_TOLERANCE: Final = (

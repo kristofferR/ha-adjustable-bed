@@ -20,6 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
+    BEDS_WITH_PERCENTAGE_POSITIONS,
     CONF_MOTOR_COUNT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
@@ -313,9 +314,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         if position is None:
             return None
 
-        # Check if controller reports percentage directly (e.g., Keeson/Ergomotion)
-        controller = self._coordinator.controller
-        if controller is not None and getattr(controller, "reports_percentage_position", False):
+        # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion/Serta)
+        # Use bed_type constant check instead of controller to handle disconnected state
+        if self._coordinator.bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
             # Position is already 0-100 percentage
             return min(100, max(0, int(position)))
 
