@@ -165,7 +165,7 @@
       },
       "bluetooth_pairing": {
         "title": "Bluetooth Pairing Required",
-        "description": "This bed requires Bluetooth pairing before it can be controlled.\n\n**Before continuing, you must pair the bed:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host device, open Bluetooth settings\n3. Find and pair with '{name}'\n4. Once paired, check the box below and submit\n\n**Note:** The pairing must be done on the device running Home Assistant (or on the Bluetooth proxy if using one).",
+        "description": "This bed requires Bluetooth pairing before it can be controlled.\n\n**Before continuing, you must pair the bed:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host device, open Bluetooth settings\n3. Find and pair with **{name}**\n4. Once paired, check the box below and submit\n\n**Note:** The pairing must be done on the device running Home Assistant (or on the Bluetooth proxy if using one).",
         "data": {
           "pairing_confirmed": "I have paired the bed via Bluetooth settings"
         }
