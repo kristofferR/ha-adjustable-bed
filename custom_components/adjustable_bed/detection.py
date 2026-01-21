@@ -59,6 +59,7 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    SERTA_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
 )
 
@@ -413,11 +414,18 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_OCTO
 
-    # Check for OKIN FFE (13/15 series) - must check before Keeson since same UUID
-    # OKIN FFE beds use FFE5 service UUID with 0xE6 command prefix (vs Keeson's 0xE5)
-    # Detection: FFE5 UUID + OKIN-like name patterns (but not Keeson patterns)
+    # Check for beds using FFE5 service UUID (Keeson, OKIN FFE, Serta)
+    # Priority: Serta > OKIN FFE > Keeson (most specific to least specific patterns)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
-        # Check for OKIN FFE name patterns first
+        # Check for Serta name patterns first (big-endian variant)
+        if any(pattern in device_name for pattern in SERTA_NAME_PATTERNS):
+            _LOGGER.info(
+                "Detected Serta bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_SERTA
+        # Check for OKIN FFE name patterns (0xE6 prefix variant)
         if any(pattern in device_name for pattern in OKIN_FFE_NAME_PATTERNS):
             _LOGGER.info(
                 "Detected OKIN FFE bed at %s (name: %s)",

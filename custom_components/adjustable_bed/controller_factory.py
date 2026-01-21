@@ -39,6 +39,7 @@ from .const import (
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_SERTA,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
@@ -194,6 +195,9 @@ async def create_controller(
         elif protocol_variant == KEESON_VARIANT_OKIN:
             _LOGGER.debug("Using OKIN FFE Keeson variant (0xE6 prefix)")
             return KeesonController(coordinator, variant="okin")
+        elif protocol_variant == KEESON_VARIANT_SERTA:
+            _LOGGER.debug("Using Serta Keeson variant (big-endian)")
+            return KeesonController(coordinator, variant="serta")
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")
@@ -205,6 +209,13 @@ async def create_controller(
         # OKIN FFE uses Keeson protocol with 0xE6 prefix
         _LOGGER.debug("Using OKIN FFE controller (Keeson protocol with 0xE6 prefix)")
         return KeesonController(coordinator, variant="okin")
+
+    if bed_type == BED_TYPE_SERTA:
+        from .beds.keeson import KeesonController
+
+        # Serta uses Keeson protocol with big-endian byte order
+        _LOGGER.debug("Using Serta controller (Keeson protocol with big-endian)")
+        return KeesonController(coordinator, variant="serta")
 
     if bed_type == BED_TYPE_SOLACE:
         from .beds.solace import SolaceController

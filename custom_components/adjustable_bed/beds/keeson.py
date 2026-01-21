@@ -31,6 +31,7 @@ from ..const import (
     KEESON_KSBT_SERVICE_UUID,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_SERTA,
 )
 from .base import BedController
 from .okin_protocol import int_to_bytes
@@ -348,10 +349,12 @@ class KeesonController(BedController):
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
         else:
-            # BaseI4/I5/OKIN: [prefix, 0xfe, 0x16, ...reversed_int_bytes, checksum]
-            # OKIN FFE (13/15 series) uses 0xE6 prefix, Keeson uses 0xE5
+            # BaseI4/I5/OKIN/Serta: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
+            # OKIN FFE (13/15 series) uses 0xE6 prefix, Keeson/Serta use 0xE5
+            # Serta uses big-endian byte order, others use little-endian
             int_bytes = int_to_bytes(command_value)
-            int_bytes.reverse()  # Little-endian
+            if self._variant != KEESON_VARIANT_SERTA:
+                int_bytes.reverse()  # Little-endian for non-Serta variants
             prefix = 0xE6 if self._variant == KEESON_VARIANT_OKIN else 0xE5
             data = [prefix, 0xFE, 0x16] + int_bytes
             checksum = sum(data) ^ 0xFF

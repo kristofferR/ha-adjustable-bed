@@ -314,9 +314,10 @@ OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin l
 # Note: Generic "okin" pattern should match OKIN devices that don't match OKIMAT patterns
 OKIN_FFE_NAME_PATTERNS: Final = ("okin", "cb-", "cb.")
 
-# Serta name patterns (Serta MP Remote protocol - big-endian variant of Keeson)
+# Serta/Ergomotion name patterns (big-endian variant of Keeson protocol)
 # Uses same FFE5 service UUID as Keeson but with big-endian byte order
-SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect")
+# Covers: Serta MP Remote, Ergomotion 4.0, and related OEM beds
+SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect", "ergomotion", "hump")
 
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
