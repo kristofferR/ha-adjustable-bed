@@ -1,12 +1,13 @@
 """Jiecang bed controller implementation.
 
 Reverse engineering by Richard Hopton (smartbed-mqtt).
+Extended with full Comfort Motion protocol from BluetoothLeService.java and MainActivity.java.
 
-Jiecang beds (Glide beds, Dream Motion app) use simple hex command packets.
+Jiecang beds (Glide beds, Dream Motion app) use hex command packets.
 Commands are sent to characteristic UUID 0000ff01-0000-1000-8000-00805f9b34fb.
 
-Note: This controller only supports preset positions - no motor movement commands
-are available for Jiecang beds.
+Command format: F1F1 + data bytes + checksum + 7E
+Checksum = SUM of data bytes
 """
 
 from __future__ import annotations
@@ -28,25 +29,82 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class JiecangCommands:
-    """Jiecang command constants (pre-built byte arrays)."""
+    """Jiecang command constants (pre-built byte arrays).
 
-    MEMORY_1 = bytes.fromhex("f1f10b01010d7e")
-    MEMORY_2 = bytes.fromhex("f1f10d01010f7e")
-    FLAT = bytes.fromhex("f1f10801010a7e")
+    Verified from MainActivity.java - Command format: F1F1 + data + checksum + 7E
+    """
+
+    # Motor control
+    HEAD_UP = bytes.fromhex("f1f1010101037e")
+    HEAD_DOWN = bytes.fromhex("f1f1020101047e")
+    LEG_UP = bytes.fromhex("f1f1030101057e")
+    LEG_DOWN = bytes.fromhex("f1f1040101067e")
+    BOTH_UP = bytes.fromhex("f1f1050101077e")
+    BOTH_DOWN = bytes.fromhex("f1f1060101087e")
+
+    # 4-motor variants (head and waist separate from back)
+    HEAD_UP_ALT = bytes.fromhex("f1f11901011b7e")
+    HEAD_DOWN_ALT = bytes.fromhex("f1f11a01011c7e")
+    WAIST_UP = bytes.fromhex("f1f11b01011d7e")
+    WAIST_DOWN = bytes.fromhex("f1f11c01011e7e")
+
+    # Presets
     ZERO_G = bytes.fromhex("f1f1070101097e")
+    FLAT = bytes.fromhex("f1f10801010a7e")
+    ANTI_SNORE = bytes.fromhex("f1f10901010b7e")
+
+    # Memory presets - Go to position
+    MEMORY_1 = bytes.fromhex("f1f10b01010d7e")  # Memory A
+    MEMORY_2 = bytes.fromhex("f1f10d01010f7e")  # Memory B
+    MEMORY_3 = bytes.fromhex("f1f11801011a7e")  # Memory C
+
+    # Memory presets - Set/Program position
+    MEMORY_1_SET = bytes.fromhex("f1f10a01010c7e")  # Set Memory A
+    MEMORY_2_SET = bytes.fromhex("f1f10c01010e7e")  # Set Memory B
+    MEMORY_3_SET = bytes.fromhex("f1f1170101197e")  # Set Memory C
+
+    # Other features
+    LIGHT_TOGGLE = bytes.fromhex("f1f10f000f7e")
+    TIMER = bytes.fromhex("f1f10e000e7e")
+    BUTTON_RELEASE = bytes.fromhex("f1f14e004e7e")  # STOP command
+
+    # Massage - Back (data format: 0x12, 0x02, 0x08, level, checksum)
+    BACK_MASSAGE_OFF = bytes.fromhex("f1f1120208001c7e")
+
+    # Massage - Leg (data format: 0x14, 0x02, 0x08, level, checksum)
+    LEG_MASSAGE_OFF = bytes.fromhex("f1f1140208001e7e")
+
+    @staticmethod
+    def back_massage(level: int) -> bytes:
+        """Create back massage command for level 0-10."""
+        level = max(0, min(10, level))
+        # Command bytes: 0x12, 0x02, 0x08, level
+        data = [0x12, 0x02, 0x08, level]
+        checksum = sum(data) & 0xFF
+        return bytes([0xF1, 0xF1] + data + [checksum, 0x7E])
+
+    @staticmethod
+    def leg_massage(level: int) -> bytes:
+        """Create leg massage command for level 0-10."""
+        level = max(0, min(10, level))
+        # Command bytes: 0x14, 0x02, 0x08, level
+        data = [0x14, 0x02, 0x08, level]
+        checksum = sum(data) & 0xFF
+        return bytes([0xF1, 0xF1] + data + [checksum, 0x7E])
 
 
 class JiecangController(BedController):
     """Controller for Jiecang beds.
 
-    Note: Jiecang beds only support preset positions, not direct motor control.
-    Motor movement commands will log a warning and do nothing.
+    Full Comfort Motion protocol with motor control, presets, massage, and lights.
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Jiecang controller."""
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
+        self._massage_back_level = 0
+        self._massage_leg_level = 0
         _LOGGER.debug("JiecangController initialized")
 
     @property
@@ -60,24 +118,28 @@ class JiecangController(BedController):
         return True
 
     @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
     def supports_motor_control(self) -> bool:
-        """Jiecang beds only support presets, not motor control."""
-        return False
+        """Jiecang beds support motor control (full Comfort Motion protocol)."""
+        return True
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Jiecang beds support memory presets (slots 1-2)."""
+        """Return True - Jiecang beds support memory presets (slots 1-3)."""
         return True
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - Jiecang beds support memory slots 1-2."""
-        return 2
+        """Return 3 - Jiecang beds support memory slots 1-3 (A, B, C)."""
+        return 3
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Jiecang beds don't support programming memory positions via BLE."""
-        return False
+        """Return True - Jiecang beds support programming memory positions via BLE."""
+        return True
 
     async def write_command(
         self,
@@ -127,70 +189,74 @@ class JiecangController(BedController):
         """Read current position data."""
         pass
 
-    def _warn_preset_only(self, action: str) -> None:
-        """Log warning that Jiecang only supports presets."""
-        _LOGGER.warning(
-            "Jiecang beds only support preset positions. "
-            "Cannot %s - use preset_flat, preset_zero_g, or preset_memory instead.",
-            action,
-        )
+    async def _move_motor(self, command: bytes, repeat_count: int = 25) -> None:
+        """Move a motor with the given command, then send stop."""
+        try:
+            await self.write_command(command, repeat_count=repeat_count, repeat_delay_ms=50)
+        finally:
+            # Always send BUTTON_RELEASE (stop) with fresh event
+            await self.write_command(
+                JiecangCommands.BUTTON_RELEASE, cancel_event=asyncio.Event()
+            )
 
-    # Motor control methods - not supported, use presets instead
+    # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up (not supported)."""
-        self._warn_preset_only("move head up")
+        """Move head/back up."""
+        await self._move_motor(JiecangCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
-        """Move head down (not supported)."""
-        self._warn_preset_only("move head down")
+        """Move head/back down."""
+        await self._move_motor(JiecangCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
-        """Stop head motor (not supported)."""
-        pass
+        """Stop head motor."""
+        await self.write_command(
+            JiecangCommands.BUTTON_RELEASE, cancel_event=asyncio.Event()
+        )
 
     async def move_back_up(self) -> None:
-        """Move back up (not supported)."""
-        self._warn_preset_only("move back up")
+        """Move back up (same as head)."""
+        await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (not supported)."""
-        self._warn_preset_only("move back down")
+        """Move back down (same as head)."""
+        await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor (not supported)."""
-        pass
+        """Stop back motor."""
+        await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (not supported)."""
-        self._warn_preset_only("move legs up")
+        """Move legs up."""
+        await self._move_motor(JiecangCommands.LEG_UP)
 
     async def move_legs_down(self) -> None:
-        """Move legs down (not supported)."""
-        self._warn_preset_only("move legs down")
+        """Move legs down."""
+        await self._move_motor(JiecangCommands.LEG_DOWN)
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor (not supported)."""
-        pass
+        """Stop legs motor."""
+        await self.write_command(
+            JiecangCommands.BUTTON_RELEASE, cancel_event=asyncio.Event()
+        )
 
     async def move_feet_up(self) -> None:
-        """Move feet up (not supported)."""
-        self._warn_preset_only("move feet up")
+        """Move feet up (same as legs)."""
+        await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down (not supported)."""
-        self._warn_preset_only("move feet down")
+        """Move feet down (same as legs)."""
+        await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor (not supported)."""
-        pass
+        """Stop feet motor."""
+        await self.move_legs_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors by cancelling any in-flight preset commands.
-
-        Note: Jiecang protocol does not have a dedicated STOP command, so we
-        signal the coordinator to cancel any running movement commands instead.
-        """
-        self._coordinator.cancel_command.set()
+        """Stop all motors using BUTTON_RELEASE command."""
+        await self.write_command(
+            JiecangCommands.BUTTON_RELEASE, cancel_event=asyncio.Event()
+        )
 
     # Preset methods
     async def preset_flat(self) -> None:
@@ -201,21 +267,6 @@ class JiecangController(BedController):
             repeat_delay_ms=100,
         )
 
-    async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        commands = {
-            1: JiecangCommands.MEMORY_1,
-            2: JiecangCommands.MEMORY_2,
-        }
-        if command := commands.get(memory_num):
-            await self.write_command(command, repeat_count=3, repeat_delay_ms=100)
-        else:
-            _LOGGER.warning("Jiecang beds only support memory presets 1 and 2")
-
-    async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning("Jiecang beds don't support programming memory presets via BLE")
-
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
         await self.write_command(
@@ -223,3 +274,68 @@ class JiecangController(BedController):
             repeat_count=3,
             repeat_delay_ms=100,
         )
+
+    async def preset_anti_snore(self) -> None:
+        """Go to anti-snore position."""
+        await self.write_command(
+            JiecangCommands.ANTI_SNORE,
+            repeat_count=3,
+            repeat_delay_ms=100,
+        )
+
+    async def preset_memory(self, memory_num: int) -> None:
+        """Go to memory preset (1-3)."""
+        commands = {
+            1: JiecangCommands.MEMORY_1,
+            2: JiecangCommands.MEMORY_2,
+            3: JiecangCommands.MEMORY_3,
+        }
+        if command := commands.get(memory_num):
+            await self.write_command(command, repeat_count=3, repeat_delay_ms=100)
+        else:
+            _LOGGER.warning("Jiecang beds support memory presets 1-3 only")
+
+    async def program_memory(self, memory_num: int) -> None:
+        """Program current position to memory (1-3)."""
+        commands = {
+            1: JiecangCommands.MEMORY_1_SET,
+            2: JiecangCommands.MEMORY_2_SET,
+            3: JiecangCommands.MEMORY_3_SET,
+        }
+        if command := commands.get(memory_num):
+            await self.write_command(command)
+        else:
+            _LOGGER.warning("Jiecang beds support memory presets 1-3 only")
+
+    # Light methods
+    async def lights_toggle(self) -> None:
+        """Toggle under-bed lights."""
+        await self.write_command(JiecangCommands.LIGHT_TOGGLE)
+
+    # Massage methods
+    async def massage_off(self) -> None:
+        """Turn off massage."""
+        self._massage_back_level = 0
+        self._massage_leg_level = 0
+        await self.write_command(JiecangCommands.BACK_MASSAGE_OFF)
+        await self.write_command(JiecangCommands.LEG_MASSAGE_OFF)
+
+    async def massage_head_up(self) -> None:
+        """Increase back massage intensity (0-10)."""
+        self._massage_back_level = min(10, self._massage_back_level + 1)
+        await self.write_command(JiecangCommands.back_massage(self._massage_back_level))
+
+    async def massage_head_down(self) -> None:
+        """Decrease back massage intensity (0-10)."""
+        self._massage_back_level = max(0, self._massage_back_level - 1)
+        await self.write_command(JiecangCommands.back_massage(self._massage_back_level))
+
+    async def massage_foot_up(self) -> None:
+        """Increase leg massage intensity (0-10)."""
+        self._massage_leg_level = min(10, self._massage_leg_level + 1)
+        await self.write_command(JiecangCommands.leg_massage(self._massage_leg_level))
+
+    async def massage_foot_down(self) -> None:
+        """Decrease leg massage intensity (0-10)."""
+        self._massage_leg_level = max(0, self._massage_leg_level - 1)
+        await self.write_command(JiecangCommands.leg_massage(self._massage_leg_level))
