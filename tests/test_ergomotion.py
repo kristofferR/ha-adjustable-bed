@@ -86,8 +86,8 @@ class TestErgomotionController:
         # Should be 8 bytes: header (3) + command (4) + checksum (1)
         assert len(command) == 8
         assert command[:3] == bytes([0xE5, 0xFE, 0x16])
-        # Command 0x1 in little-endian
-        assert command[3:7] == bytes([0x01, 0x00, 0x00, 0x00])
+        # Command 0x1 in big-endian (same as Serta - confirmed from APK analysis)
+        assert command[3:7] == bytes([0x00, 0x00, 0x00, 0x01])
 
     async def test_write_command(
         self,

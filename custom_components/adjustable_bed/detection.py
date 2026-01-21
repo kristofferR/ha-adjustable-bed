@@ -35,7 +35,6 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     # Detection constants
     ERGOMOTION_NAME_PATTERNS,
@@ -151,7 +150,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     # Brand-specific types
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
-    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple)",
+    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, Serta)",
     BED_TYPE_LINAK: "Linak",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
@@ -159,7 +158,6 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OCTO: "Octo",
     BED_TYPE_REVERIE: "Reverie",
     BED_TYPE_RICHMAT: "Richmat",
-    BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SOLACE: "Solace",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
@@ -387,14 +385,14 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_DEWERTOKIN
 
-    # Check for Serta Motion Perfect - name-based detection
+    # Check for Serta Motion Perfect - name-based detection (uses Keeson protocol)
     if any(x in device_name for x in ["serta", "motion perfect"]):
         _LOGGER.info(
-            "Detected Serta bed at %s (name: %s)",
+            "Detected Serta bed at %s (name: %s) - uses Keeson protocol with serta variant",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_SERTA
+        return BED_TYPE_KEESON
 
     # Check for Octo by name pattern (e.g., DA1458x BLE chip used in some receivers)
     if any(device_name.startswith(pattern) for pattern in OCTO_NAME_PATTERNS):
@@ -414,17 +412,17 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_OCTO
 
-    # Check for beds using FFE5 service UUID (Keeson, OKIN FFE, Serta)
-    # Priority: Serta > OKIN FFE > Keeson (most specific to least specific patterns)
+    # Check for beds using FFE5 service UUID (Keeson, OKIN FFE)
+    # Priority: Serta/Keeson name patterns > OKIN FFE > Keeson (default)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
-        # Check for Serta name patterns first (big-endian variant)
+        # Check for Serta name patterns (uses Keeson protocol with serta variant)
         if any(pattern in device_name for pattern in SERTA_NAME_PATTERNS):
             _LOGGER.info(
-                "Detected Serta bed at %s (name: %s)",
+                "Detected Serta bed at %s (name: %s) - uses Keeson protocol",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_SERTA
+            return BED_TYPE_KEESON
         # Check for OKIN FFE name patterns (0xE6 prefix variant)
         if any(pattern in device_name for pattern in OKIN_FFE_NAME_PATTERNS):
             _LOGGER.info(

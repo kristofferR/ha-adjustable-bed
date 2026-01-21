@@ -33,7 +33,6 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
@@ -210,13 +209,6 @@ async def create_controller(
         _LOGGER.debug("Using OKIN FFE controller (Keeson protocol with 0xE6 prefix)")
         return KeesonController(coordinator, variant="okin")
 
-    if bed_type == BED_TYPE_SERTA:
-        from .beds.keeson import KeesonController
-
-        # Serta uses Keeson protocol with big-endian byte order
-        _LOGGER.debug("Using Serta controller (Keeson protocol with big-endian)")
-        return KeesonController(coordinator, variant="serta")
-
     if bed_type == BED_TYPE_SOLACE:
         from .beds.solace import SolaceController
 
@@ -299,11 +291,6 @@ async def create_controller(
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
-
-    if bed_type == BED_TYPE_SERTA:
-        from .beds.serta import SertaController
-
-        return SertaController(coordinator)
 
     if bed_type == BED_TYPE_OCTO:
         from .beds.octo import OctoController, OctoStar2Controller

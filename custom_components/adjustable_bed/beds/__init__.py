@@ -12,7 +12,7 @@ Protocol-based controllers:
 - LeggettWilinkeController: Leggett & Platt WiLinke 5-byte protocol
 
 Brand-specific controllers:
-- RichmatController, KeesonController, SertaController, LinakController,
+- RichmatController, KeesonController, LinakController,
   ReverieController, JiecangController, SolaceController, MotoSleepController, OctoController
 """
 
@@ -35,7 +35,6 @@ from .okin_nordic import OkinNordicController
 from .okin_uuid import OkinUuidController
 from .reverie import ReverieController
 from .richmat import RichmatController
-from .serta import SertaController
 from .solace import SolaceController
 
 __all__ = [
@@ -57,6 +56,5 @@ __all__ = [
     "OctoController",
     "ReverieController",
     "RichmatController",
-    "SertaController",
     "SolaceController",
 ]

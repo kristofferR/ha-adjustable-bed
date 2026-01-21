@@ -27,10 +27,10 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_SERTA,
 )
 
 
@@ -101,7 +101,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "keeson": {
         "display": "Keeson",
-        "description": "Purple, Member's Mark, GhostBed, ErgoSportive",
+        "description": "Purple, Member's Mark, GhostBed, Serta Motion Perfect, ErgoSportive",
         "variants": [
             {
                 "type": BED_TYPE_KEESON,
@@ -116,6 +116,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "KSBT (older remotes)",
                 "description": "Older Keeson remotes with KSBT prefix",
                 "hint": "Device name starts with 'KSBT'",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_SERTA,
+                "label": "Serta Motion Perfect",
+                "description": "Serta Motion Perfect III beds",
+                "hint": "Device name contains 'Serta' or 'Motion Perfect'",
             },
         ],
     },
@@ -173,11 +180,6 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "description": "Glideaway, Dream Motion beds",
         "variants": None,  # Single protocol
     },
-    "serta": {
-        "display": "Serta Motion Perfect",
-        "description": "Serta Motion Perfect III standalone protocol",
-        "variants": None,  # Single protocol
-    },
     "octo": {
         "display": "Octo",
         "description": "Octo beds (may require PIN)",
@@ -212,7 +214,6 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "solace": BED_TYPE_SOLACE,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "jiecang": BED_TYPE_JIECANG,
-    "serta": BED_TYPE_SERTA,
     "octo": BED_TYPE_OCTO,
 }
 

@@ -50,7 +50,6 @@ BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
-BED_TYPE_SERTA: Final = "serta"
 BED_TYPE_OCTO: Final = "octo"
 BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
 BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
@@ -78,7 +77,6 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_KEESON,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
-    BED_TYPE_SERTA,
     BED_TYPE_OCTO,
     # Legacy aliases (for backwards compatibility with existing configs)
     BED_TYPE_LEGGETT_PLATT,

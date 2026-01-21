@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
-    BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -256,12 +255,12 @@ class TestDetectBedType:
         assert bed_type == BED_TYPE_DEWERTOKIN
 
     def test_detect_serta_bed(self, mock_bluetooth_service_info_serta):
-        """Test detection of Serta bed by name."""
+        """Test detection of Serta bed by name - routes to Keeson protocol."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_serta)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_KEESON
 
     def test_detect_serta_motion_perfect_name(self):
-        """Test Serta detection with 'motion perfect' in name."""
+        """Test Serta detection with 'motion perfect' in name - routes to Keeson."""
         service_info = MagicMock()
         service_info.name = "Motion Perfect III"
         service_info.address = "AA:BB:CC:DD:EE:FF"
@@ -269,7 +268,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_SERTA
+        assert bed_type == BED_TYPE_KEESON
 
     def test_detect_octo_bed(self, mock_bluetooth_service_info_octo):
         """Test detection of Octo bed by name containing 'octo'."""
