@@ -1104,50 +1104,111 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_bluetooth_pairing(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle Bluetooth pairing instructions for beds that require pairing."""
+        """Handle Bluetooth pairing for beds that require it."""
         assert self._manual_data is not None
 
         errors: dict[str, str] = {}
+        description_placeholders = {
+            "name": self._manual_data.get(CONF_NAME, "Unknown"),
+            "error": "",
+        }
 
         if user_input is not None:
-            pairing_confirmed = user_input.get("pairing_confirmed", False)
-            if not pairing_confirmed:
-                errors["pairing_confirmed"] = "pairing_not_confirmed"
-            else:
+            action = user_input.get("action")
+
+            if action == "pair_now":
+                # Attempt pairing
+                address = self._manual_data.get(CONF_ADDRESS)
+                try:
+                    paired = await self._attempt_pairing(address)
+                    if paired:
+                        _LOGGER.info("Pairing successful for %s", address)
+                        return self.async_create_entry(
+                            title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                            data=self._manual_data,
+                        )
+                    else:
+                        errors["base"] = "pairing_failed"
+                        description_placeholders["error"] = "Pairing rejected by device"
+                except NotImplementedError:
+                    errors["base"] = "pairing_not_supported"
+                    description_placeholders["error"] = (
+                        "Pairing not supported by this Bluetooth adapter. "
+                        "If using ESPHome proxy, update to ESPHome >= 2024.3.0"
+                    )
+                except Exception as err:
+                    _LOGGER.warning("Pairing failed for %s: %s", address, err)
+                    errors["base"] = "pairing_failed"
+                    description_placeholders["error"] = str(err)
+
+            elif action == "skip_pairing":
+                # User wants to try without pairing (maybe already paired manually)
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                     data=self._manual_data,
                 )
 
-        # Get the device name for the description
-        device_name = self._manual_data.get(CONF_NAME, "Unknown")
-
         return self.async_show_form(
             step_id="bluetooth_pairing",
             data_schema=vol.Schema(
                 {
-                    vol.Required("pairing_confirmed", default=False): bool,
+                    vol.Required("action"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                {"value": "pair_now", "label": "Pair Now"},
+                                {"value": "skip_pairing", "label": "Skip (already paired)"},
+                            ],
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    ),
                 }
             ),
             errors=errors,
-            description_placeholders={
-                "name": device_name,
-            },
+            description_placeholders=description_placeholders,
         )
 
     async def async_step_manual_pairing(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle Bluetooth pairing instructions for manually selected beds that require pairing."""
+        """Handle Bluetooth pairing for manually selected beds that require it."""
         assert self._manual_data is not None
 
         errors: dict[str, str] = {}
+        description_placeholders = {
+            "name": self._manual_data.get(CONF_NAME, "Unknown"),
+            "error": "",
+        }
 
         if user_input is not None:
-            pairing_confirmed = user_input.get("pairing_confirmed", False)
-            if not pairing_confirmed:
-                errors["pairing_confirmed"] = "pairing_not_confirmed"
-            else:
+            action = user_input.get("action")
+
+            if action == "pair_now":
+                # Attempt pairing
+                address = self._manual_data.get(CONF_ADDRESS)
+                try:
+                    paired = await self._attempt_pairing(address)
+                    if paired:
+                        _LOGGER.info("Pairing successful for %s", address)
+                        return self.async_create_entry(
+                            title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                            data=self._manual_data,
+                        )
+                    else:
+                        errors["base"] = "pairing_failed"
+                        description_placeholders["error"] = "Pairing rejected by device"
+                except NotImplementedError:
+                    errors["base"] = "pairing_not_supported"
+                    description_placeholders["error"] = (
+                        "Pairing not supported by this Bluetooth adapter. "
+                        "If using ESPHome proxy, update to ESPHome >= 2024.3.0"
+                    )
+                except Exception as err:
+                    _LOGGER.warning("Pairing failed for %s: %s", address, err)
+                    errors["base"] = "pairing_failed"
+                    description_placeholders["error"] = str(err)
+
+            elif action == "skip_pairing":
+                # User wants to try without pairing (maybe already paired manually)
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                     data=self._manual_data,
@@ -1157,11 +1218,52 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="manual_pairing",
             data_schema=vol.Schema(
                 {
-                    vol.Required("pairing_confirmed", default=False): bool,
+                    vol.Required("action"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                {"value": "pair_now", "label": "Pair Now"},
+                                {"value": "skip_pairing", "label": "Skip (already paired)"},
+                            ],
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    ),
                 }
             ),
             errors=errors,
+            description_placeholders=description_placeholders,
         )
+
+    async def _attempt_pairing(self, address: str | None) -> bool:
+        """Attempt to pair with the device.
+
+        Returns:
+            True if pairing succeeded, False otherwise
+
+        Raises:
+            NotImplementedError: If the Bluetooth backend doesn't support pairing
+            Exception: If pairing fails for other reasons
+        """
+        from bleak import BleakClient
+        from homeassistant.components import bluetooth
+
+        if not address:
+            raise ValueError("No address provided for pairing")
+
+        _LOGGER.info("Attempting to pair with %s...", address)
+
+        device = bluetooth.async_ble_device_from_address(
+            self.hass, address, connectable=True
+        )
+        if not device:
+            raise ValueError(f"Device {address} not found in Bluetooth scan")
+
+        async with BleakClient(device) as client:
+            # Connect first
+            _LOGGER.debug("Connected to %s, attempting pair...", address)
+            # The pair() method raises NotImplementedError if not supported
+            result = await client.pair()
+            _LOGGER.info("Pairing result for %s: %s", address, result)
+            return result
 
     async def async_step_diagnostic(
         self, user_input: dict[str, Any] | None = None

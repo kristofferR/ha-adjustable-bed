@@ -90,6 +90,7 @@ from .const import (
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
     RICHMAT_REMOTE_AUTO,
+    requires_pairing,
 )
 from .controller_factory import create_controller
 
@@ -568,6 +569,16 @@ class AdjustableBedCoordinator:
 
                     ble_device_callback = _get_device_from_preferred_adapter
 
+                # Determine if this bed type needs pairing
+                needs_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+                if needs_pairing:
+                    _LOGGER.info(
+                        "Pairing enabled for %s (bed type: %s, variant: %s)",
+                        self._name,
+                        self._bed_type,
+                        self._protocol_variant,
+                    )
+
                 # Mark that we're connecting to suppress spurious disconnect warnings
                 # during bleak's internal retry process
                 self._connecting = True
@@ -575,15 +586,38 @@ class AdjustableBedCoordinator:
                 self._notify_connection_state_change(False)
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
-                    self._client = await establish_connection(
-                        BleakClient,
-                        device,
-                        self._name,
-                        disconnected_callback=self._on_disconnect,
-                        max_attempts=1,
-                        timeout=CONNECTION_TIMEOUT,
-                        ble_device_callback=ble_device_callback,
-                    )
+                    try:
+                        self._client = await establish_connection(
+                            BleakClient,
+                            device,
+                            self._name,
+                            disconnected_callback=self._on_disconnect,
+                            max_attempts=1,
+                            timeout=CONNECTION_TIMEOUT,
+                            ble_device_callback=ble_device_callback,
+                            pair=needs_pairing,
+                        )
+                    except NotImplementedError as pair_err:
+                        # ESPHome < 2024.3.0 doesn't support pairing
+                        if needs_pairing:
+                            _LOGGER.warning(
+                                "Pairing not supported by Bluetooth adapter: %s. "
+                                "If using ESPHome proxy, update to ESPHome >= 2024.3.0. "
+                                "Retrying connection without pairing...",
+                                pair_err,
+                            )
+                            # Retry without pairing
+                            self._client = await establish_connection(
+                                BleakClient,
+                                device,
+                                self._name,
+                                disconnected_callback=self._on_disconnect,
+                                max_attempts=1,
+                                timeout=CONNECTION_TIMEOUT,
+                                ble_device_callback=ble_device_callback,
+                            )
+                        else:
+                            raise
                 finally:
                     self._connecting = False
                     # Don't notify here - the connect success/failure paths will notify
