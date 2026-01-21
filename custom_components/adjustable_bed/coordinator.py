@@ -571,6 +571,8 @@ class AdjustableBedCoordinator:
                 # Mark that we're connecting to suppress spurious disconnect warnings
                 # during bleak's internal retry process
                 self._connecting = True
+                # Notify callbacks so binary sensor can show "connecting" state
+                self._notify_connection_state_change(False)
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
                     self._client = await establish_connection(
@@ -584,6 +586,7 @@ class AdjustableBedCoordinator:
                     )
                 finally:
                     self._connecting = False
+                    # Don't notify here - the connect success/failure paths will notify
 
                 # Determine which adapter was actually used for connection
                 actual_adapter = "unknown"
@@ -1144,13 +1147,16 @@ class AdjustableBedCoordinator:
             # Check if we were cancelled while waiting for the lock
             if self._cancel_counter > entry_cancel_count:
                 _LOGGER.debug("Controller command cancelled while waiting for lock")
-                # Reset disconnect timer since we're bailing out
-                if (
-                    self._client is not None
-                    and self._client.is_connected
-                    and not self._disconnect_after_command
-                ):
-                    self._reset_disconnect_timer()
+                # Handle disconnect timer since we're bailing out without executing
+                if self._client is not None and self._client.is_connected:
+                    if self._disconnect_after_command:
+                        # Configured to disconnect after commands - disconnect now since
+                        # no command was executed (avoids leaving connection open indefinitely)
+                        _LOGGER.debug("Disconnecting after cancelled command (disconnect_after_command=True)")
+                        await self.async_disconnect()
+                    else:
+                        # Not configured for immediate disconnect - reset idle timer
+                        self._reset_disconnect_timer()
                 return
 
             try:

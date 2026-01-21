@@ -392,6 +392,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             self._coordinator.name,
         )
 
+        # Capture generation at stop start to avoid clearing state from a newer movement
+        # that started after this stop was called (rapid stop→move sequence)
+        stop_generation = self._movement_generation
+
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
             await self._coordinator.async_execute_controller_command(
@@ -404,6 +408,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
         finally:
-            self._is_moving = False
-            self._move_direction = None
-            self.async_write_ha_state()
+            # Only clear state if no newer movement has started since stop was called
+            if self._movement_generation == stop_generation:
+                self._is_moving = False
+                self._move_direction = None
+                self.async_write_ha_state()
