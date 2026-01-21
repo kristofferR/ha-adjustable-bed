@@ -167,3 +167,37 @@ async def create_unsupported_device_issue(
         "Created Repairs issue for unsupported device %s",
         device_info.address,
     )
+
+
+async def create_pairing_required_issue(
+    hass: HomeAssistant,
+    address: str,
+    name: str,
+) -> None:
+    """Create a persistent issue for beds that require Bluetooth pairing.
+
+    This is shown when a bed requiring pairing fails to connect at runtime,
+    to guide users through the pairing process.
+    """
+    # Use address as unique identifier (normalized to avoid duplicates)
+    issue_id = f"pairing_required_{address.replace(':', '_').lower()}"
+
+    async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        is_persistent=True,
+        severity=IssueSeverity.ERROR,
+        translation_key="pairing_required",
+        translation_placeholders={
+            "name": name,
+            "address": address,
+        },
+    )
+
+    _LOGGER.debug(
+        "Created Repairs issue for bed requiring pairing: %s (%s)",
+        name,
+        address,
+    )

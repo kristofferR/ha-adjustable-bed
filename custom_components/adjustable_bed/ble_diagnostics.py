@@ -152,19 +152,21 @@ class BLEDiagnosticRunner:
                 # Read Device Information Service
                 device_information = await self._read_device_information()
 
-                # Subscribe to all notifiable characteristics
-                await self._subscribe_to_notifications(services_info)
+                # Subscribe to all notifiable characteristics and capture notifications
+                # Use try/finally to ensure unsubscribe runs even on timeout/cancellation
+                try:
+                    await self._subscribe_to_notifications(services_info)
 
-                # Capture notifications for the specified duration
-                _LOGGER.info(
-                    "Capturing notifications for %d seconds. "
-                    "Operate the physical remote to generate data.",
-                    self.capture_duration,
-                )
-                await asyncio.sleep(self.capture_duration)
-
-                # Unsubscribe from notifications
-                await self._unsubscribe_from_notifications(services_info)
+                    # Capture notifications for the specified duration
+                    _LOGGER.info(
+                        "Capturing notifications for %d seconds. "
+                        "Operate the physical remote to generate data.",
+                        self.capture_duration,
+                    )
+                    await asyncio.sleep(self.capture_duration)
+                finally:
+                    # Unsubscribe from notifications (cleanup even on error)
+                    await self._unsubscribe_from_notifications(services_info)
 
         except asyncio.CancelledError:
             raise

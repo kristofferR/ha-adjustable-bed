@@ -1351,45 +1351,6 @@ class AdjustableBedCoordinator:
         self._cancel_command.set()
         entry_cancel_count = self._cancel_counter
 
-        # Get current position, attempting a read if not available
-        current_angle = self._position_data.get(position_key)
-        if current_angle is None:
-            _LOGGER.debug(
-                "No position data for %s, attempting one-shot read",
-                position_key,
-            )
-            await self._async_read_positions()
-            current_angle = self._position_data.get(position_key)
-            if current_angle is None:
-                _LOGGER.warning(
-                    "Cannot seek position for %s: no position data available after read attempt",
-                    position_key,
-                )
-                return
-
-        # Check if already at target (within tolerance)
-        if abs(current_angle - target_angle) <= POSITION_TOLERANCE:
-            _LOGGER.debug(
-                "Position %s already at target: %.1f (target: %.1f)",
-                position_key,
-                current_angle,
-                target_angle,
-            )
-            # Handle disconnect timer/command same as other exit paths
-            if self._client is not None and self._client.is_connected:
-                if self._disconnect_after_command:
-                    await self.async_disconnect()
-                else:
-                    self._reset_disconnect_timer()
-            return
-
-        _LOGGER.info(
-            "Seeking position %s from %.1f to %.1f",
-            position_key,
-            current_angle,
-            target_angle,
-        )
-
         async with self._command_lock:
             # Cancel disconnect timer during seeking
             self._cancel_disconnect_timer()
@@ -1412,6 +1373,38 @@ class AdjustableBedCoordinator:
                 if self._controller is None:
                     _LOGGER.error("Cannot seek position: no controller available")
                     raise NoControllerError("No controller available")
+
+                # Get current position, attempting a read if not available
+                # This must be done INSIDE the lock after ensuring connection
+                current_angle = self._position_data.get(position_key)
+                if current_angle is None:
+                    _LOGGER.debug(
+                        "No position data for %s, attempting one-shot read",
+                        position_key,
+                    )
+                    await self._async_read_positions()
+                    current_angle = self._position_data.get(position_key)
+                    if current_angle is None:
+                        raise NotConnectedError(
+                            f"Cannot seek {position_key}: no position data available"
+                        )
+
+                # Check if already at target (within tolerance)
+                if abs(current_angle - target_angle) <= POSITION_TOLERANCE:
+                    _LOGGER.debug(
+                        "Position %s already at target: %.1f (target: %.1f)",
+                        position_key,
+                        current_angle,
+                        target_angle,
+                    )
+                    return  # finally block handles disconnect
+
+                _LOGGER.info(
+                    "Seeking position %s from %.1f to %.1f",
+                    position_key,
+                    current_angle,
+                    target_angle,
+                )
 
                 # Determine initial direction
                 moving_up = target_angle > current_angle
@@ -1487,8 +1480,11 @@ class AdjustableBedCoordinator:
                             _LOGGER.debug(
                                 "Position %s overshot target (up), reversing", position_key
                             )
-                            await move_stop_fn(self._controller)
-                            await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            # Only send explicit stop for controllers that don't auto-stop
+                            # (Linak auto-stops and explicit STOP can cause reverse blips)
+                            if not getattr(self._controller, "auto_stops_on_idle", False):
+                                await move_stop_fn(self._controller)
+                                await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_down_fn(self._controller)
                             moving_up = False
@@ -1499,8 +1495,11 @@ class AdjustableBedCoordinator:
                             _LOGGER.debug(
                                 "Position %s overshot target (down), reversing", position_key
                             )
-                            await move_stop_fn(self._controller)
-                            await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            # Only send explicit stop for controllers that don't auto-stop
+                            # (Linak auto-stops and explicit STOP can cause reverse blips)
+                            if not getattr(self._controller, "auto_stops_on_idle", False):
+                                await move_stop_fn(self._controller)
+                                await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_up_fn(self._controller)
                             moving_up = True

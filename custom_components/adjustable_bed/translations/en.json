@@ -163,6 +163,20 @@
           "richmat_remote": "Use 'auto' unless you know your remote code."
         }
       },
+      "bluetooth_pairing": {
+        "title": "Bluetooth Pairing Required",
+        "description": "This bed requires Bluetooth pairing before it can be controlled.\n\n**Before continuing, you must pair the bed:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host device, open Bluetooth settings\n3. Find and pair with **{name}**\n4. Once paired, check the box below and submit\n\n**Note:** The pairing must be done on the device running Home Assistant (or on the Bluetooth proxy if using one).",
+        "data": {
+          "pairing_confirmed": "I have paired the bed via Bluetooth settings"
+        }
+      },
+      "manual_pairing": {
+        "title": "Bluetooth Pairing Required",
+        "description": "This bed requires Bluetooth pairing before it can be controlled.\n\n**Before continuing, you must pair the bed:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host device, open Bluetooth settings\n3. Find and pair with the bed\n4. Once paired, check the box below and submit\n\n**Note:** The pairing must be done on the device running Home Assistant (or on the Bluetooth proxy if using one).",
+        "data": {
+          "pairing_confirmed": "I have paired the bed via Bluetooth settings"
+        }
+      },
       "diagnostic": {
         "title": "Diagnostic Mode - Select Device",
         "description": "Select any BLE device to add for diagnostic capture. This allows you to run BLE diagnostics on unsupported devices to help add support for new bed models.",
@@ -202,7 +216,8 @@
       "device_busy": "The bed is busy or another device is connected. Try disconnecting other controllers first.",
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
-      "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type."
+      "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
+      "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing."
     }
   },
   "options": {
@@ -493,6 +508,10 @@
     "unsupported_device": {
       "title": "Unsupported BLE device: {name}",
       "description": "A Bluetooth device was detected that could not be identified as a supported adjustable bed.\n\n**Device:** {name}\n**Address:** `{address}`\n**Reason:** {reason}\n\nIf this is an adjustable bed that you'd like to see supported, please [report it on GitHub]({github_url}) with as much information as possible about your bed model.\n\nYou can also run the **Run BLE Diagnostics** service with this device's address to capture protocol data that can help us add support."
+    },
+    "pairing_required": {
+      "title": "Bluetooth pairing required for {name}",
+      "description": "The bed at `{address}` requires Bluetooth pairing before it can be controlled.\n\n**To fix this:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host (or Bluetooth proxy device), go to Bluetooth settings\n3. Find and pair with the bed\n4. Return here and reload the integration\n\n**Note:** The pairing must be done on the device running Home Assistant's Bluetooth stack, not your phone."
     }
   }
 }

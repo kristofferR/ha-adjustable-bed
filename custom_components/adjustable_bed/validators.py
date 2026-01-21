@@ -92,7 +92,11 @@ def get_available_adapters(hass: HomeAssistant) -> dict[str, str]:
                 continue
             if source not in adapters:
                 if name and name != source:
-                    adapters[source] = f"{name} ({source})"
+                    # Avoid duplicating MAC if it's already in the name
+                    if source in name:
+                        adapters[source] = name
+                    else:
+                        adapters[source] = f"{name} ({source})"
                 elif ":" in source:
                     adapters[source] = f"Bluetooth Proxy ({source})"
                 else:
