@@ -1446,6 +1446,20 @@ class AdjustableBedCoordinator:
                     target_angle,
                 )
 
+                # Check if controller supports direct position control (e.g., Reverie)
+                # This bypasses the incremental seek loop for beds that can set positions directly
+                if self._controller.supports_direct_position_control:
+                    native_position = self._controller.angle_to_native_position(
+                        position_key, target_angle
+                    )
+                    _LOGGER.debug(
+                        "Using direct position control: %s -> %d",
+                        position_key,
+                        native_position,
+                    )
+                    await self._controller.set_motor_position(position_key, native_position)
+                    return  # finally block handles disconnect timer
+
                 # Determine initial direction
                 moving_up = target_angle > current_angle
 

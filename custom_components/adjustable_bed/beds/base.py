@@ -287,6 +287,50 @@ class BedController(ABC):
         some motors support notifications and others don't.
         """
 
+    # Direct position control (optional)
+    # Beds that can command motors to specific positions should override these
+
+    @property
+    def supports_direct_position_control(self) -> bool:
+        """Return True if the bed supports setting motor positions directly.
+
+        Beds that can command motors to specific positions (0-100%) should
+        override this to return True and implement set_motor_position().
+        This allows the coordinator to skip the incremental seek loop.
+        """
+        return False
+
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
+        """Convert an angle value to the bed's native position format.
+
+        Override in subclasses that use a different position format.
+        Default implementation assumes angle IS the position (for percentage beds).
+
+        Args:
+            motor: Motor name ("head", "back", "legs", "feet")
+            angle: Angle in degrees (or percentage for some bed types)
+
+        Returns:
+            Position in the bed's native format (typically 0-100)
+        """
+        return int(angle)
+
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Set a motor to a specific position (0-100).
+
+        Override in subclasses that support direct position control.
+
+        Args:
+            motor: Motor name ("head", "back", "legs", "feet")
+            position: Target position as percentage (0=flat, 100=max)
+
+        Raises:
+            NotImplementedError: If the bed doesn't support direct position control
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support direct position control"
+        )
+
     # Motor control methods
     # These move motors for a fixed duration (~1-2 seconds) then auto-stop.
     # Implementations should use try/finally to ensure stop is always sent.

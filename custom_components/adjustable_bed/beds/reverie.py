@@ -124,6 +124,63 @@ class ReverieController(BedController):
         """Return False - Reverie only supports toggle, not discrete on/off."""
         return False
 
+    @property
+    def supports_direct_position_control(self) -> bool:
+        """Return True - Reverie beds support direct position commands."""
+        return True
+
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
+        """Convert angle to Reverie's native 0-100 position.
+
+        Reverses the angle conversion from _parse_position_data:
+        - back: angle = position * 0.6, so position = angle / 0.6
+        - legs: angle = position * 0.45, so position = angle / 0.45
+        """
+        if motor in ("head", "back"):
+            position = angle / 0.6
+        elif motor in ("feet", "legs"):
+            position = angle / 0.45
+        else:
+            position = angle  # Fallback: assume 1:1
+
+        # Clamp to valid range
+        return max(0, min(100, int(round(position))))
+
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Set a motor to a specific position (0-100).
+
+        Reverie supports direct position control via motor_head/motor_feet commands.
+        This is more efficient than incremental seeking for position number entities.
+
+        Args:
+            motor: Motor name ("head", "back", "legs", "feet")
+            position: Target position as percentage (0=flat, 100=max)
+        """
+        # Normalize motor names: back->head, legs->feet for Reverie
+        if motor in ("head", "back"):
+            cmd = ReverieCommands.motor_head(position)
+        elif motor in ("feet", "legs"):
+            cmd = ReverieCommands.motor_feet(position)
+        else:
+            _LOGGER.warning("Unknown motor %s for Reverie position control", motor)
+            return
+
+        try:
+            await self.write_command(
+                self._build_command(cmd),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            # Always send STOP to ensure motor stops at target position
+            try:
+                await self.write_command(
+                    self._build_command(ReverieCommands.MOTOR_STOP),
+                    cancel_event=asyncio.Event(),
+                )
+            except Exception:
+                _LOGGER.debug("Failed to send STOP command during cleanup")
+
     def _build_command(self, command_bytes: list[int]) -> bytes:
         """Build command with XOR checksum.
 
