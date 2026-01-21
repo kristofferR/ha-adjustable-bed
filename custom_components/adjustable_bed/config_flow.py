@@ -1121,7 +1121,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     paired = await self._attempt_pairing(address)
                     if paired:
-                        _LOGGER.info("Pairing successful for %s", address)
                         return self.async_create_entry(
                             title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                             data=self._manual_data,
@@ -1183,7 +1182,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     paired = await self._attempt_pairing(address)
                     if paired:
-                        _LOGGER.info("Pairing successful for %s", address)
                         return self.async_create_entry(
                             title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                             data=self._manual_data,
@@ -1285,17 +1283,22 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             getattr(matching_service_info, "source", "unknown"),
         )
 
-        # Use establish_connection with pair=True for proper HA BLE integration
+        # Connect first, then pair explicitly to check the result
         client = await establish_connection(
             BleakClient,
             device,
             address,
             max_attempts=1,
-            pair=True,
+            timeout=30.0,  # Match coordinator's CONNECTION_TIMEOUT
         )
         try:
-            _LOGGER.info("Pairing successful for %s", address)
-            return True
+            # Call pair() explicitly so we can check the result
+            result = await client.pair()
+            if result:
+                _LOGGER.info("Pairing successful for %s", address)
+            else:
+                _LOGGER.warning("Pairing returned False for %s", address)
+            return result
         finally:
             await client.disconnect()
 

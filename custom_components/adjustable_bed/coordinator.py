@@ -190,6 +190,9 @@ class AdjustableBedCoordinator:
         self._ble_manufacturer: str | None = None
         self._ble_model: str | None = None
 
+        # Track if pairing is supported by the Bluetooth adapter (None = unknown)
+        self._pairing_supported: bool | None = None
+
         _LOGGER.debug(
             "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s)",
             self._name,
@@ -569,9 +572,12 @@ class AdjustableBedCoordinator:
 
                     ble_device_callback = _get_device_from_preferred_adapter
 
-                # Determine if this bed type needs pairing
-                needs_pairing = requires_pairing(self._bed_type, self._protocol_variant)
-                if needs_pairing:
+                # Determine if this bed type needs pairing and if pairing is supported
+                bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+                # Only attempt pairing if bed requires it AND we haven't already
+                # determined that pairing is unsupported by this adapter
+                use_pairing = bed_requires_pairing and self._pairing_supported is not False
+                if use_pairing:
                     _LOGGER.info(
                         "Pairing enabled for %s (bed type: %s, variant: %s)",
                         self._name,
@@ -595,12 +601,15 @@ class AdjustableBedCoordinator:
                             max_attempts=1,
                             timeout=CONNECTION_TIMEOUT,
                             ble_device_callback=ble_device_callback,
-                            pair=needs_pairing,
+                            pair=use_pairing,
                         )
+                        # If we get here with pairing enabled, mark it as supported
+                        if use_pairing:
+                            self._pairing_supported = True
                     except (NotImplementedError, TypeError) as pair_err:
                         # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
                         # TypeError: older bleak-retry-connector doesn't have pair kwarg
-                        if needs_pairing:
+                        if use_pairing:
                             _LOGGER.warning(
                                 "Pairing not supported by Bluetooth adapter: %s. "
                                 "If using ESPHome proxy, update to ESPHome >= 2024.3.0. "
@@ -608,7 +617,7 @@ class AdjustableBedCoordinator:
                                 pair_err,
                             )
                             # Remember that pairing isn't supported to avoid repeated warnings
-                            needs_pairing = False
+                            self._pairing_supported = False
                             # Retry without pairing
                             self._client = await establish_connection(
                                 BleakClient,
