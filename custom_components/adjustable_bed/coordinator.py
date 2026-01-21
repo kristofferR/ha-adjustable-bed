@@ -597,8 +597,9 @@ class AdjustableBedCoordinator:
                             ble_device_callback=ble_device_callback,
                             pair=needs_pairing,
                         )
-                    except NotImplementedError as pair_err:
-                        # ESPHome < 2024.3.0 doesn't support pairing
+                    except (NotImplementedError, TypeError) as pair_err:
+                        # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
+                        # TypeError: older bleak-retry-connector doesn't have pair kwarg
                         if needs_pairing:
                             _LOGGER.warning(
                                 "Pairing not supported by Bluetooth adapter: %s. "
@@ -606,6 +607,8 @@ class AdjustableBedCoordinator:
                                 "Retrying connection without pairing...",
                                 pair_err,
                             )
+                            # Remember that pairing isn't supported to avoid repeated warnings
+                            needs_pairing = False
                             # Retry without pairing
                             self._client = await establish_connection(
                                 BleakClient,

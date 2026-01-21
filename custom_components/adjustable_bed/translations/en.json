@@ -218,8 +218,8 @@
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
-      "pairing_failed": "Pairing failed: {error}. Make sure the bed is in pairing mode and try again.",
-      "pairing_not_supported": "Pairing not supported: {error}"
+      "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
+      "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0."
     }
   },
   "options": {

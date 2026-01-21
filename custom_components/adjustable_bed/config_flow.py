@@ -1110,7 +1110,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
-            "error": "",
         }
 
         if user_input is not None:
@@ -1129,17 +1128,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         )
                     else:
                         errors["base"] = "pairing_failed"
-                        description_placeholders["error"] = "Pairing rejected by device"
-                except NotImplementedError:
+                except (NotImplementedError, TypeError) as err:
+                    # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
+                    # TypeError: older bleak-retry-connector doesn't have pair kwarg
+                    _LOGGER.warning("Pairing not supported: %s", err)
                     errors["base"] = "pairing_not_supported"
-                    description_placeholders["error"] = (
-                        "Pairing not supported by this Bluetooth adapter. "
-                        "If using ESPHome proxy, update to ESPHome >= 2024.3.0"
-                    )
                 except Exception as err:
                     _LOGGER.warning("Pairing failed for %s: %s", address, err)
                     errors["base"] = "pairing_failed"
-                    description_placeholders["error"] = str(err)
 
             elif action == "skip_pairing":
                 # User wants to try without pairing (maybe already paired manually)
@@ -1176,7 +1172,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
-            "error": "",
         }
 
         if user_input is not None:
@@ -1195,17 +1190,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         )
                     else:
                         errors["base"] = "pairing_failed"
-                        description_placeholders["error"] = "Pairing rejected by device"
-                except NotImplementedError:
+                except (NotImplementedError, TypeError) as err:
+                    # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
+                    # TypeError: older bleak-retry-connector doesn't have pair kwarg
+                    _LOGGER.warning("Pairing not supported: %s", err)
                     errors["base"] = "pairing_not_supported"
-                    description_placeholders["error"] = (
-                        "Pairing not supported by this Bluetooth adapter. "
-                        "If using ESPHome proxy, update to ESPHome >= 2024.3.0"
-                    )
                 except Exception as err:
                     _LOGGER.warning("Pairing failed for %s: %s", address, err)
                     errors["base"] = "pairing_failed"
-                    description_placeholders["error"] = str(err)
 
             elif action == "skip_pairing":
                 # User wants to try without pairing (maybe already paired manually)
@@ -1234,7 +1226,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _attempt_pairing(self, address: str | None) -> bool:
-        """Attempt to pair with the device.
+        """Attempt to pair with the device using establish_connection with pair=True.
 
         Returns:
             True if pairing succeeded, False otherwise
@@ -1244,26 +1236,68 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             Exception: If pairing fails for other reasons
         """
         from bleak import BleakClient
-        from homeassistant.components import bluetooth
+        from bleak_retry_connector import establish_connection
 
         if not address:
             raise ValueError("No address provided for pairing")
 
-        _LOGGER.info("Attempting to pair with %s...", address)
+        # Get preferred adapter from config data
+        preferred_adapter = ADAPTER_AUTO
+        if self._manual_data:
+            preferred_adapter = self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
 
-        device = bluetooth.async_ble_device_from_address(
-            self.hass, address, connectable=True
+        _LOGGER.info(
+            "Attempting to pair with %s (preferred adapter: %s)...",
+            address,
+            preferred_adapter,
         )
-        if not device:
+
+        # Find the device from discovered service info, respecting preferred adapter
+        address_upper = address.upper()
+        matching_service_info = None
+
+        for service_info in async_discovered_service_info(self.hass, connectable=True):
+            if service_info.address.upper() != address_upper:
+                continue
+            # Check adapter preference
+            source = getattr(service_info, "source", None)
+            if preferred_adapter == ADAPTER_AUTO:
+                # Accept any adapter
+                matching_service_info = service_info
+                break
+            elif source == preferred_adapter:
+                # Exact match for preferred adapter
+                matching_service_info = service_info
+                break
+
+        if not matching_service_info:
+            if preferred_adapter != ADAPTER_AUTO:
+                raise ValueError(
+                    f"Device {address} not found via adapter '{preferred_adapter}'. "
+                    "Try setting adapter to 'auto' or ensure the device is in range of the preferred adapter."
+                )
             raise ValueError(f"Device {address} not found in Bluetooth scan")
 
-        async with BleakClient(device) as client:
-            # Connect first
-            _LOGGER.debug("Connected to %s, attempting pair...", address)
-            # The pair() method raises NotImplementedError if not supported
-            result = await client.pair()
-            _LOGGER.info("Pairing result for %s: %s", address, result)
-            return result
+        device = matching_service_info.device
+        _LOGGER.debug(
+            "Found device %s via adapter %s",
+            address,
+            getattr(matching_service_info, "source", "unknown"),
+        )
+
+        # Use establish_connection with pair=True for proper HA BLE integration
+        client = await establish_connection(
+            BleakClient,
+            device,
+            address,
+            max_attempts=1,
+            pair=True,
+        )
+        try:
+            _LOGGER.info("Pairing successful for %s", address)
+            return True
+        finally:
+            await client.disconnect()
 
     async def async_step_diagnostic(
         self, user_input: dict[str, Any] | None = None
