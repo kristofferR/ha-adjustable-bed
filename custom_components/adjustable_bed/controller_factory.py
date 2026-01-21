@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from .adapter import discover_services
 from .const import (
     # Legacy/brand-specific bed types
+    BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -32,6 +33,7 @@ from .const import (
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SOLACE,
     # Variants and UUIDs
@@ -275,6 +277,17 @@ async def create_controller(
         from .beds.reverie import ReverieController
 
         return ReverieController(coordinator)
+
+    if bed_type == BED_TYPE_REVERIE_NIGHTSTAND:
+        from .beds.reverie_nightstand import ReverieNightstandController
+
+        return ReverieNightstandController(coordinator)
+
+    if bed_type == BED_TYPE_COMFORT_MOTION:
+        # Comfort Motion uses the enhanced Jiecang controller
+        from .beds.jiecang import JiecangController
+
+        return JiecangController(coordinator)
 
     if bed_type == BED_TYPE_ERGOMOTION:
         # Ergomotion uses the same protocol as Keeson with position feedback

@@ -10,6 +10,7 @@ from homeassistant.helpers.selector import SelectOptionDict
 
 from .const import (
     # Legacy/brand-specific bed types
+    BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -34,9 +35,11 @@ from .const import (
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SOLACE,
     # Detection constants
+    COMFORT_MOTION_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
@@ -54,6 +57,7 @@ from .const import (
     OKIN_FFE_NAME_PATTERNS,
     OKIMAT_NAME_PATTERNS,
     OKIMAT_SERVICE_UUID,
+    REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
@@ -156,8 +160,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep",
     BED_TYPE_OCTO: "Octo",
-    BED_TYPE_REVERIE: "Reverie",
+    BED_TYPE_REVERIE: "Reverie (Protocol 108)",
+    BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat",
+    BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
+    BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SOLACE: "Solace",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
@@ -243,7 +250,16 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_LEGGETT_PLATT
 
-    # Check for Reverie
+    # Check for Reverie Nightstand (Protocol 110) - more specific UUID
+    if REVERIE_NIGHTSTAND_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Reverie Nightstand bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_REVERIE_NIGHTSTAND
+
+    # Check for Reverie (Protocol 108)
     if REVERIE_SERVICE_UUID.lower() in service_uuids:
         _LOGGER.info(
             "Detected Reverie bed at %s (name: %s)",
@@ -367,8 +383,18 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_RICHMAT
 
+    # Check for Comfort Motion / Lierda - service UUID detection
+    # Uses FF12 service UUID (more specific than generic Jiecang detection)
+    if COMFORT_MOTION_SERVICE_UUID.lower() in service_uuids:
+        _LOGGER.info(
+            "Detected Comfort Motion bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_COMFORT_MOTION
+
     # Check for Jiecang - name-based detection (Glide beds, Dream Motion app)
-    if any(x in device_name for x in ["jiecang", "jc-", "dream motion", "glide"]):
+    if any(x in device_name for x in ["jiecang", "jc-", "dream motion", "glide", "comfort motion", "lierda"]):
         _LOGGER.info(
             "Detected Jiecang bed at %s (name: %s)",
             service_info.address,

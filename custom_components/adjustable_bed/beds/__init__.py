@@ -34,6 +34,7 @@ from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
 from .okin_uuid import OkinUuidController
 from .reverie import ReverieController
+from .reverie_nightstand import ReverieNightstandController
 from .richmat import RichmatController
 from .solace import SolaceController
 
@@ -55,6 +56,7 @@ __all__ = [
     "MotoSleepController",
     "OctoController",
     "ReverieController",
+    "ReverieNightstandController",
     "RichmatController",
     "SolaceController",
 ]

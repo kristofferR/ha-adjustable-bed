@@ -56,6 +56,8 @@ BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
+BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
+BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -89,6 +91,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_MALOUF_LEGACY_OKIN,
     # OKIN FFE series
     BED_TYPE_OKIN_FFE,
+    # Reverie Nightstand (Protocol 110)
+    BED_TYPE_REVERIE_NIGHTSTAND,
+    # Comfort Motion / Lierda protocol
+    BED_TYPE_COMFORT_MOTION,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -216,9 +222,25 @@ LEGGETT_OKIN_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 LEGGETT_RICHMAT_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 LEGGETT_RICHMAT_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 
-# Reverie specific UUIDs
+# Reverie specific UUIDs (Protocol 108 - XOR checksum)
 REVERIE_SERVICE_UUID: Final = "1b1d9641-b942-4da8-89cc-98e6a58fbd93"
 REVERIE_CHAR_UUID: Final = "6af87926-dc79-412e-a3e0-5f85c2d55de2"
+
+# Reverie Nightstand specific UUIDs (Protocol 110 - direct writes)
+# Verified from ReverieBLEProtocolV1.java and PositionController.java
+REVERIE_NIGHTSTAND_SERVICE_UUID: Final = "db801000-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_HEAD_POSITION_UUID: Final = "db801041-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_FOOT_POSITION_UUID: Final = "db801042-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_LUMBAR_UUID: Final = "db801040-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID: Final = "db801021-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_LINEAR_FOOT_UUID: Final = "db801022-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID: Final = "db801020-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_HEAD_WAVE_UUID: Final = "db801061-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_FOOT_WAVE_UUID: Final = "db801060-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID: Final = "db801080-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_LED_UUID: Final = "db8010a0-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_RGB_UUID: Final = "db8010a7-f324-29c3-38d1-85c0c2e86885"
+REVERIE_NIGHTSTAND_PRESETS_UUID: Final = "db8010d0-f324-29c3-38d1-85c0c2e86885"
 
 # Okimat specific UUIDs (same as Leggett Okin - requires pairing)
 OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
@@ -241,6 +263,16 @@ OKIN_FOOT_MAX_ANGLE: Final = 45.0
 
 # Jiecang specific UUIDs (Glide beds, Dream Motion app)
 JIECANG_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
+
+# Comfort Motion / Lierda specific UUIDs (Full Jiecang protocol)
+# Verified from BluetoothLeService.java and MainActivity.java
+COMFORT_MOTION_SERVICE_UUID: Final = "0000ff12-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_WRITE_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_READ_CHAR_UUID: Final = "0000ff02-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_BTNAME_CHAR_UUID: Final = "0000ff06-0000-1000-8000-00805f9b34fb"
+# Peilin variant (secondary protocol)
+COMFORT_MOTION_PEILIN_SERVICE_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16800"
+COMFORT_MOTION_PEILIN_CHAR_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16801"
 
 # DewertOkin specific (A H Beard, HankookGallery beds)
 # Uses handle-based writes rather than UUID
