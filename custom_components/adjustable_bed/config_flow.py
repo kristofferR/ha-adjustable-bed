@@ -712,8 +712,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Build base schema with bed type selector (alphabetically sorted)
         if preselected_bed_type:
-            # Bed type was pre-selected - show a read-only field with the selected type
-            # and use the pre-selected variant
+            # Bed type was pre-selected from two-tier actuator selection.
+            # Use it as the default value in the SelectSelector, but the field
+            # remains editable so users can override if needed.
             schema_dict: dict[vol.Marker, Any] = {
                 vol.Required(CONF_BED_TYPE, default=preselected_bed_type): SelectSelector(
                     SelectSelectorConfig(

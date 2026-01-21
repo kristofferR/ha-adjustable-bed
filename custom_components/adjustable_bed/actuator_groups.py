@@ -273,8 +273,15 @@ def get_friendly_display_name(bed_type: str) -> str:
     group_display = group["display"]
 
     if variant_label:
-        # Extract short label (remove "most common" etc. in parentheses)
-        short_label = variant_label.split(" (")[0]
+        # Extract short label from variant_label.
+        # Variant labels in ACTUATOR_GROUPS typically follow the pattern
+        # "Short Name (extra info)" - e.g., "Standard (most common)".
+        # We extract just the prefix before the parenthesis for display.
+        # If no parenthesis exists, use the full label as-is.
+        if " (" in variant_label:
+            short_label = variant_label.split(" (")[0]
+        else:
+            short_label = variant_label.strip()
         return f"{group_display} ({short_label})"
 
     return group_display
