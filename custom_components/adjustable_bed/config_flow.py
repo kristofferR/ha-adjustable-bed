@@ -37,7 +37,8 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
-    BEDS_WITH_ANGLE_SENSING,
+    BEDS_REQUIRING_PAIRING,
+    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
@@ -265,6 +266,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                             entry_data[CONF_RICHMAT_REMOTE] = RICHMAT_REMOTE_AUTO
                     else:
                         entry_data[CONF_RICHMAT_REMOTE] = user_selected_remote
+                # If bed requires pairing, show pairing instructions
+                if selected_bed_type in BEDS_REQUIRING_PAIRING:
+                    self._manual_data = entry_data
+                    return await self.async_step_bluetooth_pairing()
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                     data=entry_data,
@@ -275,8 +280,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
-        # Default angle sensing to enabled for beds that support it
-        default_disable_angle = bed_type not in BEDS_WITH_ANGLE_SENSING
+        # Default angle sensing to enabled for beds that support position feedback
+        default_disable_angle = bed_type not in BEDS_WITH_POSITION_FEEDBACK
 
         # Get bed-type-specific motor pulse defaults
         pulse_defaults = (
@@ -692,6 +697,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 if bed_type == BED_TYPE_RICHMAT:
                     self._manual_data = entry_data
                     return await self.async_step_manual_richmat()
+                # If bed requires pairing, show pairing instructions
+                if bed_type in BEDS_REQUIRING_PAIRING:
+                    self._manual_data = entry_data
+                    return await self.async_step_manual_pairing()
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, "Adjustable Bed"),
                     data=entry_data,
@@ -739,6 +748,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
 
+        # Determine smart default for angle sensing based on preselected bed type
+        if preselected_bed_type:
+            default_disable_angle = preselected_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+        else:
+            default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
+
         # Add remaining fields
         schema_dict.update(
             {
@@ -748,7 +763,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING
+                    CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle
                 ): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
                 vol.Optional(
@@ -859,6 +874,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if bed_type == BED_TYPE_RICHMAT:
                         self._manual_data = entry_data
                         return await self.async_step_manual_richmat()
+                    # If bed requires pairing, show pairing instructions
+                    if bed_type in BEDS_REQUIRING_PAIRING:
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_pairing()
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
                         data=entry_data,
@@ -901,6 +920,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
 
+        # Determine smart default for angle sensing based on preselected bed type
+        if preselected_bed_type:
+            default_disable_angle = preselected_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+        else:
+            default_disable_angle = DEFAULT_DISABLE_ANGLE_SENSING
+
         # Add remaining fields
         schema_dict.update(
             {
@@ -908,7 +933,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=DEFAULT_DISABLE_ANGLE_SENSING
+                    CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle
                 ): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
                 vol.Optional(
@@ -1044,6 +1069,68 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+        )
+
+    async def async_step_bluetooth_pairing(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Bluetooth pairing instructions for beds that require pairing."""
+        assert self._manual_data is not None
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            pairing_confirmed = user_input.get("pairing_confirmed", False)
+            if not pairing_confirmed:
+                errors["pairing_confirmed"] = "pairing_not_confirmed"
+            else:
+                return self.async_create_entry(
+                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._manual_data,
+                )
+
+        # Get the device name for the description
+        device_name = self._manual_data.get(CONF_NAME, "Unknown")
+
+        return self.async_show_form(
+            step_id="bluetooth_pairing",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("pairing_confirmed", default=False): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "name": device_name,
+            },
+        )
+
+    async def async_step_manual_pairing(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle Bluetooth pairing instructions for manually selected beds that require pairing."""
+        assert self._manual_data is not None
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            pairing_confirmed = user_input.get("pairing_confirmed", False)
+            if not pairing_confirmed:
+                errors["pairing_confirmed"] = "pairing_not_confirmed"
+            else:
+                return self.async_create_entry(
+                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._manual_data,
+                )
+
+        return self.async_show_form(
+            step_id="manual_pairing",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("pairing_confirmed", default=False): bool,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_diagnostic(

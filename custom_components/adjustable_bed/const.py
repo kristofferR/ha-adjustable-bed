@@ -58,6 +58,7 @@ BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
+BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -95,6 +96,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_REVERIE_NIGHTSTAND,
     # Comfort Motion / Lierda protocol
     BED_TYPE_COMFORT_MOTION,
+    # Serta Motion Perfect
+    BED_TYPE_SERTA,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -824,6 +827,10 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
 ]
+
+# Bed types that require BLE pairing before they can be controlled
+# These beds use encrypted connections and must be paired at the OS level
+BEDS_REQUIRING_PAIRING: Final[set[str]] = {BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIMAT}
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(

@@ -17,6 +17,7 @@ from homeassistant.helpers import device_registry as dr
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
+    BEDS_REQUIRING_PAIRING,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -25,6 +26,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import AdjustableBedCoordinator
+from .unsupported import create_pairing_required_issue
 
 # Service constants
 SERVICE_GOTO_PRESET = "goto_preset"
@@ -81,12 +83,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
+        # If this bed requires pairing, create a Repairs issue with pairing instructions
+        bed_type = entry.data.get(CONF_BED_TYPE)
+        if bed_type in BEDS_REQUIRING_PAIRING:
+            await create_pairing_required_issue(
+                hass,
+                entry.data.get(CONF_ADDRESS, "Unknown"),
+                entry.data.get("name", entry.title),
+            )
         raise ConfigEntryNotReady(
             f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after {SETUP_TIMEOUT:.0f}s. "
             "The integration will retry automatically."
         ) from None
 
     if not connected:
+        # If this bed requires pairing, create a Repairs issue with pairing instructions
+        bed_type = entry.data.get(CONF_BED_TYPE)
+        if bed_type in BEDS_REQUIRING_PAIRING:
+            await create_pairing_required_issue(
+                hass,
+                entry.data.get(CONF_ADDRESS, "Unknown"),
+                entry.data.get("name", entry.title),
+            )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
