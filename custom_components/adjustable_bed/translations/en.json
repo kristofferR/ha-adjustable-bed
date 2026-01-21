@@ -3,9 +3,29 @@
     "step": {
       "user": {
         "title": "Select Adjustable Bed",
-        "description": "Select a discovered bed or enter manually.",
+        "description": "Select a discovered bed or choose how to add your bed.",
         "data": {
           "address": "Device"
+        }
+      },
+      "select_actuator": {
+        "title": "Select Actuator Brand",
+        "description": "Check the label on your bed's actuator (motor) or remote control for the brand name.",
+        "data": {
+          "actuator_brand": "Actuator brand"
+        },
+        "data_description": {
+          "actuator_brand": "Select the brand shown on your bed's motor or remote. Common brands include Okin, Richmat, Keeson, Linak, and Leggett & Platt."
+        }
+      },
+      "select_variant": {
+        "title": "Select {actuator} Variant",
+        "description": "Choose the variant that matches your bed. Check your Bluetooth device name in your phone's Bluetooth settings for hints.",
+        "data": {
+          "variant": "Variant"
+        },
+        "data_description": {
+          "variant": "Different beds use different protocols. The hints describe what the Bluetooth device name typically looks like for each variant."
         }
       },
       "bluetooth_confirm": {
