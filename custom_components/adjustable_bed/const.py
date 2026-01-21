@@ -314,6 +314,10 @@ OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin l
 # Note: Generic "okin" pattern should match OKIN devices that don't match OKIMAT patterns
 OKIN_FFE_NAME_PATTERNS: Final = ("okin", "cb-", "cb.")
 
+# Serta name patterns (Serta MP Remote protocol - big-endian variant of Keeson)
+# Uses same FFE5 service UUID as Keeson but with big-endian byte order
+SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect")
+
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
 LINAK_NAME_PATTERNS: Final = ("bed ",)
@@ -348,12 +352,14 @@ KEESON_VARIANT_BASE: Final = "base"
 KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
 KEESON_VARIANT_OKIN: Final = "okin"
+KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark, Purple)",
     KEESON_VARIANT_KSBT: "KSBT (older Keeson remotes)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
+    KEESON_VARIANT_SERTA: "Serta (big-endian, Serta MP Remote)",
 }
 
 # Leggett & Platt variants
@@ -767,6 +773,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_SERTA,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,

@@ -26,6 +26,10 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
 )
 
+from .actuator_groups import (
+    ACTUATOR_GROUPS,
+    SINGLE_TYPE_GROUPS,
+)
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -107,6 +111,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._all_ble_devices: dict[str, BluetoothServiceInfoBleak] = {}
         self._manual_data: dict[str, Any] | None = None
+        # For two-tier actuator selection
+        self._selected_actuator: str | None = None
+        self._selected_bed_type: str | None = None
+        self._selected_protocol_variant: str | None = None
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     async def async_step_bluetooth(
@@ -367,8 +375,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
             if address == "manual":
-                _LOGGER.debug("User selected manual entry")
+                _LOGGER.debug("User selected manual entry (full list)")
+                # Reset two-tier selection state - show all BLE devices with full bed type dropdown
+                self._selected_actuator = None
+                self._selected_bed_type = None
+                self._selected_protocol_variant = None
                 return await self.async_step_manual()
+            if address == "select_by_brand":
+                _LOGGER.debug("User selected two-tier brand selection")
+                return await self.async_step_select_actuator()
             if address == "diagnostic":
                 _LOGGER.debug("User selected diagnostic mode")
                 return await self.async_step_diagnostic()
@@ -430,8 +445,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(self._discovered_devices),
         )
 
-        # Build device list - manual first (default), then discovered beds (named first), then diagnostic
-        devices: dict[str, str] = {"manual": "Select Bed manually"}
+        # Build device list - manual options first, then discovered beds, then diagnostic
+        devices: dict[str, str] = {
+            "select_by_brand": "Select by actuator brand (recommended)",
+            "manual": "Show all BLE devices",
+        }
 
         # Sort discovered beds: named devices first (alphabetically), then MAC-only/unnamed
         sorted_beds = sorted(
@@ -446,6 +464,89 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+        )
+
+    async def async_step_select_actuator(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Select actuator brand from label (first tier of two-tier selection)."""
+        if user_input is not None:
+            selected = user_input["actuator_brand"]
+            group = ACTUATOR_GROUPS[selected]
+
+            if group["variants"] is not None:
+                # Has variants - go to variant selection
+                self._selected_actuator = selected
+                return await self.async_step_select_variant()
+            else:
+                # Single protocol - go directly to device selection
+                self._selected_bed_type = SINGLE_TYPE_GROUPS[selected]
+                self._selected_protocol_variant = None
+                return await self.async_step_manual()
+
+        # Build options for actuator brand selection
+        options = [
+            {
+                "value": key,
+                "label": f"{group['display']} - {group['description']}",
+            }
+            for key, group in ACTUATOR_GROUPS.items()
+        ]
+
+        return self.async_show_form(
+            step_id="select_actuator",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("actuator_brand"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_select_variant(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Select variant within actuator brand (second tier of two-tier selection)."""
+        assert self._selected_actuator is not None
+        group = ACTUATOR_GROUPS[self._selected_actuator]
+        variants = group["variants"]
+        assert variants is not None
+
+        if user_input is not None:
+            selected_idx = int(user_input["variant"])
+            variant = variants[selected_idx]
+            self._selected_bed_type = variant["type"]
+            self._selected_protocol_variant = variant.get("variant")
+            return await self.async_step_manual()
+
+        # Build options for variant selection
+        options = [
+            {
+                "value": str(i),
+                "label": f"{v['label']} - {v['description']}",
+            }
+            for i, v in enumerate(variants)
+        ]
+
+        return self.async_show_form(
+            step_id="select_variant",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("variant"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+            description_placeholders={
+                "actuator": group["display"],
+            },
         )
 
     async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -605,18 +706,38 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if discovery_source not in adapters:
             discovery_source = ADAPTER_AUTO
 
+        # Check if bed type was pre-selected from two-tier actuator selection
+        preselected_bed_type = self._selected_bed_type
+        preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
+
         # Build base schema with bed type selector (alphabetically sorted)
-        schema_dict: dict[vol.Marker, Any] = {
-            vol.Required(CONF_BED_TYPE): SelectSelector(
-                SelectSelectorConfig(
-                    options=get_bed_type_options(),
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
-                ALL_PROTOCOL_VARIANTS
-            ),
-        }
+        if preselected_bed_type:
+            # Bed type was pre-selected from two-tier actuator selection.
+            # Use it as the default value in the SelectSelector, but the field
+            # remains editable so users can override if needed.
+            schema_dict: dict[vol.Marker, Any] = {
+                vol.Required(CONF_BED_TYPE, default=preselected_bed_type): SelectSelector(
+                    SelectSelectorConfig(
+                        options=get_bed_type_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
+                    ALL_PROTOCOL_VARIANTS
+                ),
+            }
+        else:
+            schema_dict = {
+                vol.Required(CONF_BED_TYPE): SelectSelector(
+                    SelectSelectorConfig(
+                        options=get_bed_type_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
+                    ALL_PROTOCOL_VARIANTS
+                ),
+            }
 
         # Add remaining fields
         schema_dict.update(
@@ -748,19 +869,37 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get available Bluetooth adapters
         adapters = get_available_adapters(self.hass)
 
+        # Check if bed type was pre-selected from two-tier actuator selection
+        preselected_bed_type = self._selected_bed_type
+        preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
+
         # Build base schema with bed type selector (alphabetically sorted)
-        schema_dict: dict[vol.Marker, Any] = {
-            vol.Required(CONF_ADDRESS): str,
-            vol.Required(CONF_BED_TYPE): SelectSelector(
-                SelectSelectorConfig(
-                    options=get_bed_type_options(),
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
-                ALL_PROTOCOL_VARIANTS
-            ),
-        }
+        if preselected_bed_type:
+            schema_dict: dict[vol.Marker, Any] = {
+                vol.Required(CONF_ADDRESS): str,
+                vol.Required(CONF_BED_TYPE, default=preselected_bed_type): SelectSelector(
+                    SelectSelectorConfig(
+                        options=get_bed_type_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_PROTOCOL_VARIANT, default=preselected_protocol_variant): vol.In(
+                    ALL_PROTOCOL_VARIANTS
+                ),
+            }
+        else:
+            schema_dict = {
+                vol.Required(CONF_ADDRESS): str,
+                vol.Required(CONF_BED_TYPE): SelectSelector(
+                    SelectSelectorConfig(
+                        options=get_bed_type_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO): vol.In(
+                    ALL_PROTOCOL_VARIANTS
+                ),
+            }
 
         # Add remaining fields
         schema_dict.update(

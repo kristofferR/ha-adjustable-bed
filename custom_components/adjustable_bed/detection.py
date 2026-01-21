@@ -132,14 +132,19 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     "hoverboard",
 )
 
-# Display names for bed types (includes both protocol-based and legacy names)
+# Display names for bed types shown in the UI selector
+# Note: Legacy types (dewertokin, okimat, nectar, mattressfirm, leggett_platt)
+# are NOT included here - they're only kept for backward compatibility with
+# existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
-    # Protocol-based types (new naming - clearer for users)
+    # Protocol-based types (Okin family)
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
     BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
-    BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar, others)",
+    BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
     BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
-    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (ASCII)",
+    BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
+    # Protocol-based types (Leggett & Platt family)
+    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
     BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
@@ -147,62 +152,16 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
     BED_TYPE_KEESON: "Keeson (Member's Mark, Purple)",
     BED_TYPE_LINAK: "Linak",
+    BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
+    BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
     BED_TYPE_MOTOSLEEP: "MotoSleep",
     BED_TYPE_OCTO: "Octo",
     BED_TYPE_REVERIE: "Reverie",
     BED_TYPE_RICHMAT: "Richmat",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SOLACE: "Solace",
-    # Malouf protocols
-    BED_TYPE_MALOUF_NEW_OKIN: "Malouf NEW_OKIN (via Nordic UART)",
-    BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf LEGACY_OKIN (via FFE5)",
-    # OKIN FFE protocols
-    BED_TYPE_OKIN_FFE: "OKIN FFE (13/15 series via FFE5)",
-    # Legacy aliases (for backwards compatibility, shown at end)
-    BED_TYPE_DEWERTOKIN: "DewertOkin (legacy - use Okin Handle)",
-    BED_TYPE_OKIMAT: "Okimat (legacy - use Okin UUID)",
-    BED_TYPE_NECTAR: "Nectar (legacy - use Okin 7-Byte)",
-    BED_TYPE_MATTRESSFIRM: "MattressFirm (legacy - use Okin Nordic)",
-    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt (legacy - use specific variant)",
+    # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
-}
-
-# Manufacturer groups for organized UI selection
-# Groups related bed types together by manufacturer or protocol family
-MANUFACTURER_GROUPS: dict[str, list[str]] = {
-    "Leggett & Platt": [
-        BED_TYPE_LEGGETT_GEN2,
-        BED_TYPE_LEGGETT_OKIN,
-        BED_TYPE_LEGGETT_WILINKE,
-    ],
-    "Okin Protocol Family": [
-        BED_TYPE_OKIN_HANDLE,
-        BED_TYPE_OKIN_UUID,
-        BED_TYPE_OKIN_7BYTE,
-        BED_TYPE_OKIN_NORDIC,
-        BED_TYPE_OKIN_FFE,
-    ],
-    "Richmat Protocol Family": [
-        BED_TYPE_RICHMAT,
-    ],
-    "Malouf": [
-        BED_TYPE_MALOUF_NEW_OKIN,
-        BED_TYPE_MALOUF_LEGACY_OKIN,
-    ],
-    "Other Brands": [
-        BED_TYPE_ERGOMOTION,
-        BED_TYPE_JIECANG,
-        BED_TYPE_KEESON,
-        BED_TYPE_LINAK,
-        BED_TYPE_MOTOSLEEP,
-        BED_TYPE_OCTO,
-        BED_TYPE_REVERIE,
-        BED_TYPE_SERTA,
-        BED_TYPE_SOLACE,
-    ],
-    "Diagnostic": [
-        BED_TYPE_DIAGNOSTIC,
-    ],
 }
 
 
