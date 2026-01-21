@@ -44,7 +44,6 @@ from .const import (
     KEESON_VARIANT_SERTA,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
-    OCTO_STAR2_SERVICE_UUID,
     OCTO_VARIANT_STAR2,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
@@ -313,51 +312,18 @@ async def create_controller(
 
         return OkinHandleController(coordinator)
 
-    if bed_type == BED_TYPE_SERTA:
-        from .beds.serta import SertaController
-
-        return SertaController(coordinator)
-
     if bed_type == BED_TYPE_OCTO:
         from .beds.octo import OctoController, OctoStar2Controller
 
-        # Use configured variant or auto-detect
+        # Use configured variant - no auto-detection
+        # DA1458x devices have Star2 service UUID but use standard Octo protocol,
+        # so auto-detection based on service UUID is unreliable
         if protocol_variant == OCTO_VARIANT_STAR2:
             _LOGGER.debug("Using Star2 Octo variant (configured)")
             return OctoStar2Controller(coordinator)
-        elif protocol_variant in (None, "", "auto"):
-            # Auto-detect: check if Star2 service UUID is available
-            star2_detected = False
-
-            # Ensure services are discovered
-            if client and not client.services:
-                _LOGGER.debug("Services not populated for Octo bed, attempting discovery...")
-                address = getattr(client, "address", "unknown")
-                await discover_services(client, address)
-
-            if client and client.services:
-                service_uuids = [s.uuid.lower() for s in client.services]
-                _LOGGER.debug(
-                    "Auto-detecting Octo variant, found services: %s",
-                    service_uuids,
-                )
-                if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
-                    star2_detected = True
-            else:
-                _LOGGER.debug(
-                    "No services available for auto-detection, "
-                    "defaulting to standard Octo variant"
-                )
-
-            if star2_detected:
-                _LOGGER.debug("Using Star2 Octo variant (auto-detected)")
-                return OctoStar2Controller(coordinator)
-            else:
-                _LOGGER.debug("Using standard Octo variant (auto-detected)")
-                return OctoController(coordinator, pin=octo_pin)
         else:
-            # Explicit standard variant
-            _LOGGER.debug("Using standard Octo variant (configured)")
+            # Default to standard Octo for all other cases
+            _LOGGER.debug("Using standard Octo variant")
             return OctoController(coordinator, pin=octo_pin)
 
     if bed_type == BED_TYPE_MATTRESSFIRM:

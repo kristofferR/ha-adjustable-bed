@@ -290,7 +290,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_LEGGETT_PLATT
+            return BED_TYPE_LEGGETT_OKIN
 
         # Check for Okimat-specific name patterns
         if any(pattern in device_name for pattern in OKIMAT_NAME_PATTERNS):

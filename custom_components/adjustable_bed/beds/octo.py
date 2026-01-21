@@ -491,8 +491,8 @@ class OctoController(BedController):
         await self._write_octo_command(
             command=[0x02, direction_byte],
             data=[motor_bits],
-            repeat_count=25,
-            repeat_delay_ms=200,
+            repeat_count=12,
+            repeat_delay_ms=350,
             cancel_event=cancel_event,
         )
 
@@ -842,8 +842,8 @@ class OctoStar2Controller(BedController):
         try:
             await self.write_command(
                 self.CMD_HEAD_UP,
-                repeat_count=25,
-                repeat_delay_ms=200,
+                repeat_count=12,
+                repeat_delay_ms=350,
             )
         finally:
             await self._send_stop()
@@ -853,8 +853,8 @@ class OctoStar2Controller(BedController):
         try:
             await self.write_command(
                 self.CMD_HEAD_DOWN,
-                repeat_count=25,
-                repeat_delay_ms=200,
+                repeat_count=12,
+                repeat_delay_ms=350,
             )
         finally:
             await self._send_stop()
@@ -883,8 +883,8 @@ class OctoStar2Controller(BedController):
         try:
             await self.write_command(
                 self.CMD_FEET_UP,
-                repeat_count=25,
-                repeat_delay_ms=200,
+                repeat_count=12,
+                repeat_delay_ms=350,
             )
         finally:
             await self._send_stop()
@@ -894,8 +894,8 @@ class OctoStar2Controller(BedController):
         try:
             await self.write_command(
                 self.CMD_FEET_DOWN,
-                repeat_count=25,
-                repeat_delay_ms=200,
+                repeat_count=12,
+                repeat_delay_ms=350,
             )
         finally:
             await self._send_stop()
@@ -931,8 +931,8 @@ class OctoStar2Controller(BedController):
         try:
             await self.write_command(
                 self.CMD_BOTH_DOWN,
-                repeat_count=25,
-                repeat_delay_ms=200,
+                repeat_count=12,
+                repeat_delay_ms=350,
             )
         finally:
             await self._send_stop()
