@@ -28,6 +28,7 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -51,6 +52,7 @@ from .const import (
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
+    OKIN_FFE_NAME_PATTERNS,
     OKIMAT_NAME_PATTERNS,
     OKIMAT_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
@@ -154,6 +156,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     # Malouf protocols
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf NEW_OKIN (via Nordic UART)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf LEGACY_OKIN (via FFE5)",
+    # OKIN FFE protocols
+    BED_TYPE_OKIN_FFE: "OKIN FFE (13/15 series via FFE5)",
     # Legacy aliases (for backwards compatibility, shown at end)
     BED_TYPE_DEWERTOKIN: "DewertOkin (legacy - use Okin Handle)",
     BED_TYPE_OKIMAT: "Okimat (legacy - use Okin UUID)",
@@ -176,6 +180,7 @@ MANUFACTURER_GROUPS: dict[str, list[str]] = {
         BED_TYPE_OKIN_UUID,
         BED_TYPE_OKIN_7BYTE,
         BED_TYPE_OKIN_NORDIC,
+        BED_TYPE_OKIN_FFE,
     ],
     "Richmat Protocol Family": [
         BED_TYPE_RICHMAT,
@@ -449,8 +454,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_OCTO
 
-    # Check for Keeson BaseI4/I5 (must check before generic UUIDs)
+    # Check for OKIN FFE (13/15 series) - must check before Keeson since same UUID
+    # OKIN FFE beds use FFE5 service UUID with 0xE6 command prefix (vs Keeson's 0xE5)
+    # Detection: FFE5 UUID + OKIN-like name patterns (but not Keeson patterns)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
+        # Check for OKIN FFE name patterns first
+        if any(pattern in device_name for pattern in OKIN_FFE_NAME_PATTERNS):
+            _LOGGER.info(
+                "Detected OKIN FFE bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_OKIN_FFE
+        # Default to Keeson Base for other FFE5 devices
         _LOGGER.info(
             "Detected Keeson Base bed at %s (name: %s)",
             service_info.address,

@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -37,6 +38,7 @@ from .const import (
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     OCTO_STAR2_SERVICE_UUID,
@@ -189,10 +191,20 @@ async def create_controller(
         elif protocol_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
+        elif protocol_variant == KEESON_VARIANT_OKIN:
+            _LOGGER.debug("Using OKIN FFE Keeson variant (0xE6 prefix)")
+            return KeesonController(coordinator, variant="okin")
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")
             return KeesonController(coordinator, variant="base")
+
+    if bed_type == BED_TYPE_OKIN_FFE:
+        from .beds.keeson import KeesonController
+
+        # OKIN FFE uses Keeson protocol with 0xE6 prefix
+        _LOGGER.debug("Using OKIN FFE controller (Keeson protocol with 0xE6 prefix)")
+        return KeesonController(coordinator, variant="okin")
 
     if bed_type == BED_TYPE_SOLACE:
         from .beds.solace import SolaceController

@@ -56,6 +56,7 @@ BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
 BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
+BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -88,6 +89,8 @@ SUPPORTED_BED_TYPES: Final = [
     # Malouf protocols
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MALOUF_LEGACY_OKIN,
+    # OKIN FFE series
+    BED_TYPE_OKIN_FFE,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -306,6 +309,11 @@ LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
 # or "Smartbed" (Malouf/Lucid/CVB beds using OKIN protocol)
 OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin luis", "smartbed")
 
+# OKIN FFE name patterns (OKIN 13/15 series using FFE5 service with 0xE6 prefix)
+# These use the same FFE5 service UUID as Keeson but with different command prefix
+# Note: Generic "okin" pattern should match OKIN devices that don't match OKIMAT patterns
+OKIN_FFE_NAME_PATTERNS: Final = ("okin", "cb-", "cb.")
+
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
 LINAK_NAME_PATTERNS: Final = ("bed ",)
@@ -339,11 +347,13 @@ VARIANT_AUTO: Final = "auto"
 KEESON_VARIANT_BASE: Final = "base"
 KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
+KEESON_VARIANT_OKIN: Final = "okin"
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark, Purple)",
     KEESON_VARIANT_KSBT: "KSBT (older Keeson remotes)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
+    KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
 }
 
 # Leggett & Platt variants
@@ -756,6 +766,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_OKIN,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
