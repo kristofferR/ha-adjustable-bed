@@ -64,9 +64,12 @@ from .const import (
     RICHMAT_REMOTES,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
+    get_richmat_features,
+    get_richmat_motor_count,
 )
 from .detection import (
     detect_bed_type,
+    detect_richmat_remote_from_name,
     determine_unsupported_reason,
     get_bed_type_options,
     is_mac_like_name,
@@ -240,9 +243,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     entry_data[CONF_OCTO_PIN] = octo_pin
                 # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
                 if selected_bed_type == BED_TYPE_RICHMAT:
-                    entry_data[CONF_RICHMAT_REMOTE] = user_input.get(
-                        CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
-                    )
+                    user_selected_remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+                    # If user selected "auto", try to use auto-detected code instead
+                    if user_selected_remote == RICHMAT_REMOTE_AUTO:
+                        detected_code = detect_richmat_remote_from_name(self._discovery_info.name)
+                        if detected_code:
+                            _LOGGER.info(
+                                "Using auto-detected remote code '%s' for Richmat bed",
+                                detected_code,
+                            )
+                            entry_data[CONF_RICHMAT_REMOTE] = detected_code
+                        else:
+                            entry_data[CONF_RICHMAT_REMOTE] = RICHMAT_REMOTE_AUTO
+                    else:
+                        entry_data[CONF_RICHMAT_REMOTE] = user_selected_remote
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                     data=entry_data,
@@ -266,11 +280,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         default_pulse_count, default_pulse_delay = pulse_defaults
 
+        # Auto-detect motor count for Richmat beds based on remote code features
+        default_motor_count = DEFAULT_MOTOR_COUNT
+        if bed_type == BED_TYPE_RICHMAT:
+            detected_remote = detect_richmat_remote_from_name(self._discovery_info.name)
+            if detected_remote:
+                features = get_richmat_features(detected_remote)
+                default_motor_count = get_richmat_motor_count(features)
+
         # Build schema with optional variant selection
         schema_dict = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): vol.In(SUPPORTED_BED_TYPES),
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
-            vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
+            vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.In([2, 3, 4]),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
@@ -301,10 +323,32 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 TextSelectorConfig()
             )
 
-        # Add remote selection for Richmat beds
+        # Add remote selection for Richmat beds with auto-detected default
         if bed_type == BED_TYPE_RICHMAT:
-            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=RICHMAT_REMOTE_AUTO)] = vol.In(
-                RICHMAT_REMOTES
+            # Try to auto-detect remote code from device name
+            detected_remote = detect_richmat_remote_from_name(self._discovery_info.name)
+            if detected_remote:
+                _LOGGER.info(
+                    "Auto-detected Richmat remote code '%s' from device name '%s'",
+                    detected_remote,
+                    self._discovery_info.name,
+                )
+            # Only use detected code as default if it's in the dropdown options
+            # Otherwise, "auto" will be used and the detected code stored when saving
+            default_remote = (
+                detected_remote.upper()
+                if detected_remote and detected_remote.upper() in RICHMAT_REMOTES
+                else RICHMAT_REMOTE_AUTO
+            )
+            # Create modified remotes dict with auto-detected info in the label
+            remotes_options = dict(RICHMAT_REMOTES)
+            if detected_remote and detected_remote.upper() not in RICHMAT_REMOTES:
+                # Modify "Auto" label to show detected code
+                remotes_options[RICHMAT_REMOTE_AUTO] = (
+                    f"Auto (detected: {detected_remote.upper()})"
+                )
+            schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=default_remote)] = vol.In(
+                remotes_options
             )
 
         return self.async_show_form(

@@ -26,10 +26,10 @@ from ..const import (
     RICHMAT_PROTOCOL_SINGLE,
     RICHMAT_PROTOCOL_WILINKE,
     RICHMAT_REMOTE_AUTO,
-    RICHMAT_REMOTE_FEATURES,
     RICHMAT_WILINKE_CHAR_UUIDS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RichmatFeatures,
+    get_richmat_features,
 )
 from .base import BedController
 
@@ -107,9 +107,9 @@ class RichmatController(BedController):
         self._char_uuid = char_uuid or RICHMAT_NORDIC_CHAR_UUID
         self._notify_callback: Callable[[str, float], None] | None = None
         self._remote_code = remote_code or RICHMAT_REMOTE_AUTO
-        self._features = RICHMAT_REMOTE_FEATURES.get(
-            self._remote_code, RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
-        )
+        # Use get_richmat_features which looks up from both manual overrides
+        # and the comprehensive 456-code generated mapping
+        self._features = get_richmat_features(self._remote_code)
 
         # Determine command protocol: explicit override > is_wilinke flag > default
         if command_protocol:
