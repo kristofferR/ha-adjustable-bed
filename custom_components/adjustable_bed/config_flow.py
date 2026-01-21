@@ -1283,22 +1283,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             getattr(matching_service_info, "source", "unknown"),
         )
 
-        # Connect first, then pair explicitly to check the result
+        # Connect with pairing enabled - this handles both built-in HA Bluetooth
+        # (pairing during connection) and ESPHome proxy (pairing after connection)
         client = await establish_connection(
             BleakClient,
             device,
             address,
             max_attempts=1,
             timeout=30.0,  # Match coordinator's CONNECTION_TIMEOUT
+            pair=True,
         )
         try:
-            # Call pair() explicitly so we can check the result
-            result = await client.pair()
-            if result:
-                _LOGGER.info("Pairing successful for %s", address)
-            else:
-                _LOGGER.warning("Pairing returned False for %s", address)
-            return result
+            # Connection with pair=True succeeded - pairing is complete
+            _LOGGER.info("Pairing successful for %s", address)
+            return True
         finally:
             await client.disconnect()
 
