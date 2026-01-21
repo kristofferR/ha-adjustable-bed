@@ -6,3 +6,12 @@ contact_links:
   - name: Getting Help Guide
     url: https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md
     about: How to get support, generate diagnostics, and what info we need
+  - name: Ask a Question
+    url: https://github.com/kristofferR/ha-adjustable-bed/discussions/new?category=q-a
+    about: Get help from the community with setup, configuration, or troubleshooting
+  - name: Suggest an Idea
+    url: https://github.com/kristofferR/ha-adjustable-bed/discussions/new?category=ideas
+    about: Share feature requests and improvement ideas
+  - name: Praise and Feedback
+    url: https://github.com/kristofferR/ha-adjustable-bed/discussions/131
+    about: Share your experience, say thanks, or provide general feedback

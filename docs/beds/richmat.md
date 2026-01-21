@@ -11,6 +11,7 @@ Brands using Richmat actuators:
 - L&P Adjustable Base (Leggett & Platt)
 - SVEN & SON
 - Casper Base
+- Galaxy (e.g., Galaxy 26W-N)
 - MLILY
 - Luuna / Luuna Rise
 - Bed Tech
@@ -32,7 +33,6 @@ Brands using Richmat actuators:
 - Dynasty DM9000
 - Thomas Cole Sleep
 - Forty Winks ActivFlex
-- Power Bob
 - Richmat HJA5 series
 - Saatva
 - Lucid L300

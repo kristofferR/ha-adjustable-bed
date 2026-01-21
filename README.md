@@ -35,10 +35,10 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 
 | Actuator | Example Brands |
 |----------|----------------|
-| ✅ [Linak](docs/beds/linak.md) | IKEA Malm, Tempur-Pedic |
+| ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | ✅ [Keeson](docs/beds/keeson.md) | Member's Mark, Purple, GhostBed, ErgoSportive |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
-| ✅ [MotoSleep](docs/beds/motosleep.md) | HHC |
+| ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
 | ✅ [Solace](docs/beds/solace.md) | Solace |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |

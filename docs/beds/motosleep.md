@@ -6,6 +6,7 @@
 
 ## Known Models
 - Beds with HHC (Hangzhou Huaci) controllers
+- Power Bob
 - Device names start with "HHC" (e.g., `HHC3611243CDEF`)
 
 ## Features

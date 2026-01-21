@@ -153,7 +153,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "linak": {
         "display": "Linak",
-        "description": "IKEA MALM, Tempur-Pedic, high-end European beds",
+        "description": "Tempur-Pedic, Jensen, Carpe Diem, high-end European beds",
         "variants": None,  # Single protocol
     },
     "ergomotion": {

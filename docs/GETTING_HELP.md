@@ -158,10 +158,3 @@ After you submit an issue:
 4. **For new beds** - We'll analyze the protocol and may ask you to test
 
 **Note:** This is a community-maintained integration. Response times vary based on contributor availability.
-
----
-
-## Community Resources
-
-- **[Home Assistant Community](https://community.home-assistant.io/)** - Search for "adjustable bed" discussions
-- **[smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)** - The project that pioneered many of these protocols

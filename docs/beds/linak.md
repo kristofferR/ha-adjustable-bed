@@ -6,7 +6,6 @@
 
 ## Known Models
 - Linak DPG1M (OEM controller used in many beds)
-- IKEA PRAKTVÄDD / VARDÖ
 - Bedre Nætter
 - Jensen
 - Auping
