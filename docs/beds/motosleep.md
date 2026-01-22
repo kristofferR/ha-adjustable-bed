@@ -9,6 +9,12 @@
 - Power Bob
 - Device names start with "HHC" (e.g., `HHC3611243CDEF`)
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [MotoSleep](https://play.google.com/store/apps/details?id=com.motosleep.app) | `com.motosleep.app` |
+
 ## Features
 | Feature | Supported |
 |---------|-----------|

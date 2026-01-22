@@ -9,7 +9,11 @@
 - Reverie 9T / 8Q / 7S
 - Various Reverie adjustable bases
 
-Uses the **Reverie Nightstand** app.
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [Reverie Nightstand](https://play.google.com/store/apps/details?id=com.reverie.nightstand) | `com.reverie.nightstand` |
 
 ## Features
 

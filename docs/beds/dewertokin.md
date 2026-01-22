@@ -36,6 +36,12 @@ Brands using DewertOkin actuators:
 - HankookGallery beds
 - Beds with DewertOkin HE150 controller
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | Okin Smart Remote | `com.okin.smartremote` |
+
 ## Features
 
 | Feature | Supported |

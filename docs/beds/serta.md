@@ -8,6 +8,12 @@
 - Serta Motion Perfect III
 - Serta adjustable bases (BLE-enabled, non-cloud)
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [Serta Sleep](https://play.google.com/store/apps/details?id=com.smarthome.serta) | `com.smarthome.serta` |
+
 ## Features
 
 | Feature | Supported |

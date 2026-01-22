@@ -14,6 +14,12 @@ Brands using Jiecang actuators:
 - Glide adjustable beds
 - Jiecang-branded controllers
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [Jiecang Smart](https://play.google.com/store/apps/details?id=com.jiecang.android) | `com.jiecang.android` |
+
 ## Features
 
 | Feature | Supported |

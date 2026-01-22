@@ -9,6 +9,12 @@
 - Beka
 - Some OEM beds with Octo controllers
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [Octo Control](https://play.google.com/store/apps/details?id=nl.octocontrol.octocontrol) | `nl.octocontrol.octocontrol` |
+
 ## PIN Configuration
 
 Some Octo beds require a 4-digit PIN to maintain the Bluetooth connection. Without the PIN, the bed will disconnect after ~30 seconds.

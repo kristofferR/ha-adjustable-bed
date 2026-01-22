@@ -10,6 +10,12 @@
 - Nectar adjustable bases
 - Other beds using Okin controllers with 7-byte command format
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | Nectar Adjustable | (no longer available) |
+
 ## Features
 
 | Feature | Supported |

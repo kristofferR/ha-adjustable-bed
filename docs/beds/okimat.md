@@ -9,6 +9,13 @@
 - Lucid L600
 - Other beds with Okin motors
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | Okin Smart Remote | `com.okin.smartremote` |
+| ❌ | [Lucid Smart Base](https://play.google.com/store/apps/details?id=com.lucidmattress.android) | `com.lucidmattress.android` |
+
 ## Features
 
 | Feature | Supported |

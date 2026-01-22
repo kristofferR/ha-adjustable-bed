@@ -8,6 +8,12 @@
 - Mattress Firm 900 Adjustable Base (iFlex)
 - iFlex-branded adjustable beds
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | M900 | (no longer available) |
+
 ## Features
 
 | Feature | Supported |

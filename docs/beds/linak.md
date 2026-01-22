@@ -12,6 +12,12 @@
 - Carpe Diem
 - Many OEM adjustable beds with Linak motors
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [Linak Bed Control](https://play.google.com/store/apps/details?id=com.linak.bedcontrol) | `com.linak.bedcontrol` |
+
 ## Features
 | Feature | Supported |
 |---------|-----------|

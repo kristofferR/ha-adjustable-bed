@@ -38,6 +38,15 @@ Brands using Richmat actuators:
 - Lucid L300
 - Classic Brands
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=app.vxhome.lp) | `app.vxhome.lp` |
+| ❌ | [Richmat Smart](https://play.google.com/store/apps/details?id=com.richmat.smartbed) | `com.richmat.smartbed` |
+| ❌ | [Casper Base](https://play.google.com/store/apps/details?id=com.casper.base) | `com.casper.base` |
+| ❌ | [Saatva](https://play.google.com/store/apps/details?id=com.saatva.app) | `com.saatva.app` |
+
 ## Features
 
 | Feature | Supported |

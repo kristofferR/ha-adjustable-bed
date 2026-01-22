@@ -10,6 +10,12 @@
 - Some Tempur-Pedic bases (non-Ergo)
 - Fashion Bed Group bases
 
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ❌ | [LP Adjustable Bed Control](https://play.google.com/store/apps/details?id=com.leggettandplatt.wirelessremote) | `com.leggettandplatt.wirelessremote` |
+
 ## Features
 
 | Feature | Gen2 | Okin | MlRM |
