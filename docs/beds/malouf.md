@@ -14,7 +14,7 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Malouf Base](https://play.google.com/store/apps/details?id=com.malouf.bedbase) | `com.malouf.bedbase` |
-| ⬜ | [Lucid Bed Base](https://play.google.com/store/apps/details?id=com.lucid.bedbase) | `com.lucid.bedbase` |
+| ✅ | [Lucid Base](https://play.google.com/store/apps/details?id=com.lucid.bedbase) | `com.lucid.bedbase` |
 
 ## Features
 

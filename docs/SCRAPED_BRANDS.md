@@ -97,7 +97,6 @@ Use this information to identify which bed brands use which actuator systems.
 | Resident Adjustable Base | 5K+ | `com.okin.resident.release` |
 | OKIN Comfort Bed | 5K+ | `com.ore.okincomfortbed` |
 | Mattress Firm 900 - O | 5K+ | `com.okin.bedding.rizemf900` |
-| Smart Comfort by Synergy | 5K+ | `com.synergy.okin` |
 | Resident Adjustable Bed | 5K+ | `com.okin.bedding.rizeResident` |
 | OKIN Smart Bed | 5K+ | `com.okin.bedding.smartbedwifi` |
 | INNOVA | 5K+ | `com.ore.sfm` |

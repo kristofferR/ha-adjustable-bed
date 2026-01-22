@@ -12,7 +12,7 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ⬜ | [Mattress Firm 900 - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) | `com.okin.bedding.rizemf900` |
+| ✅ | [Mattress Firm 900 - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) | `com.okin.bedding.rizemf900` |
 
 ## Features
 

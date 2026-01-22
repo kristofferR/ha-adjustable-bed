@@ -10,13 +10,15 @@
 - Jensen
 - Auping
 - Carpe Diem
+- Wonderland
+- Svane
 - Many OEM adjustable beds with Linak motors
 
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ⬜ | [Linak Bed Control](https://play.google.com/store/apps/details?id=com.linak.bedcontrol) | `com.linak.bedcontrol` |
+| ✅ | [Linak Bed Control](https://play.google.com/store/apps/details?id=com.linak.linakbed.ble.memory) | `com.linak.linakbed.ble.memory` |
 
 ## Features
 | Feature | Supported |

@@ -13,10 +13,10 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ⬜ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` |
+| ✅ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` |
 | ⬜ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` |
-| ⬜ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` |
-| ⬜ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) | `com.okin.bedding.adjustbed` |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` |
+| ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) | `com.okin.bedding.adjustbed` |
 
 ## Features
 
