@@ -374,6 +374,24 @@ ERGOMOTION_NAME_PATTERNS: Final = ("ergomotion", "ergo", "serta-i")
 # - "da1458x" - Dialog Semiconductor BLE SoC used in some Octo receivers
 OCTO_NAME_PATTERNS: Final = ("da1458x",)
 
+# Solace/Motion Bed name patterns (from Motion Bed app reverse engineering)
+# These help distinguish Solace beds from Octo beds which share the same UUID
+# - QMS-* (QMS-IQ, QMS-I06, QMS-I16, QMS-L04, QMS-NQ, QMS-MQ, QMS-KQ-H, QMS-DFQ, QMS-DQ, etc.)
+# - QMS2, QMS3, QMS4 (no hyphen variants)
+# - S3-*, S4-*, S5-*, S6-* (model series)
+# - SealyMF (Sealy Motion Flex)
+SOLACE_NAME_PATTERNS: Final = (
+    "qms-",
+    "qms2",
+    "qms3",
+    "qms4",
+    "s3-",
+    "s4-",
+    "s5-",
+    "s6-",
+    "sealymf",
+)
+
 # Malouf name patterns
 # Malouf beds typically have "malouf" in the device name
 MALOUF_NAME_PATTERNS: Final = ("malouf",)

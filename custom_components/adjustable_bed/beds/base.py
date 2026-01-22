@@ -462,6 +462,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_yoga(self) -> bool:
+        """Return True if bed supports yoga preset."""
+        return False
+
+    @property
     def supports_light_cycle(self) -> bool:
         """Return True if bed supports light cycle control."""
         return False
@@ -644,6 +649,14 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support this preset
         """
         raise NotImplementedError("TV preset not supported on this bed")
+
+    async def preset_yoga(self) -> None:
+        """Move bed to yoga position.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support this preset
+        """
+        raise NotImplementedError("Yoga preset not supported on this bed")
 
     # Feature methods (may not be available on all beds)
 

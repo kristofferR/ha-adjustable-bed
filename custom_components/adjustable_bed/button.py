@@ -131,6 +131,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         cancel_movement=True,
         required_capability="supports_preset_incline",
     ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_yoga",
+        translation_key="preset_yoga",
+        icon="mdi:yoga",
+        press_fn=lambda ctrl: ctrl.preset_yoga(),
+        cancel_movement=True,
+        required_capability="supports_preset_yoga",
+    ),
     # Program buttons (config category)
     AdjustableBedButtonEntityDescription(
         key="program_memory_1",

@@ -31,6 +31,7 @@ class SolaceCommands:
     PRESET_TV = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x05, 0x17, 0x03])
     PRESET_ZERO_G = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x09, 0x17, 0x06])
     PRESET_ANTI_SNORE = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x0F, 0x97, 0x04])
+    PRESET_YOGA = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x4E, 0x57, 0x34])
     PRESET_RISE = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x21, 0x17, 0x18])
     PRESET_TILT_FORWARD = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x28, 0xD7, 0x1E])
     PRESET_FLAT_BED = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x08, 0xD6, 0xC6])
@@ -62,6 +63,15 @@ class SolaceCommands:
 
     MOTOR_STOP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0xD7, 0x00])
 
+    # Massage controls
+    MASSAGE_HEAD_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x10, 0xD6, 0xCC])
+    MASSAGE_HEAD_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x11, 0x17, 0x0C])
+    MASSAGE_FOOT_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x12, 0x57, 0x0D])
+    MASSAGE_FOOT_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x13, 0x96, 0xCD])
+    MASSAGE_FREQUENCY_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x14, 0xD7, 0x0F])
+    MASSAGE_FREQUENCY_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x15, 0x16, 0xCF])
+    MASSAGE_STOP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x1C, 0xD6, 0xC9])
+
 
 class SolaceController(BedController):
     """Controller for Solace beds."""
@@ -88,6 +98,10 @@ class SolaceController(BedController):
 
     @property
     def supports_preset_tv(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_yoga(self) -> bool:
         return True
 
     @property
@@ -283,3 +297,40 @@ class SolaceController(BedController):
             repeat_count=100,
             repeat_delay_ms=150,
         )
+
+    async def preset_yoga(self) -> None:
+        """Go to yoga position."""
+        await self.write_command(
+            SolaceCommands.PRESET_YOGA,
+            repeat_count=100,
+            repeat_delay_ms=150,
+        )
+
+    # Massage methods
+    async def massage_head_up(self) -> None:
+        """Increase head massage intensity."""
+        await self.write_command(SolaceCommands.MASSAGE_HEAD_UP)
+
+    async def massage_head_down(self) -> None:
+        """Decrease head massage intensity."""
+        await self.write_command(SolaceCommands.MASSAGE_HEAD_DOWN)
+
+    async def massage_foot_up(self) -> None:
+        """Increase foot massage intensity."""
+        await self.write_command(SolaceCommands.MASSAGE_FOOT_UP)
+
+    async def massage_foot_down(self) -> None:
+        """Decrease foot massage intensity."""
+        await self.write_command(SolaceCommands.MASSAGE_FOOT_DOWN)
+
+    async def massage_intensity_up(self) -> None:
+        """Increase massage frequency."""
+        await self.write_command(SolaceCommands.MASSAGE_FREQUENCY_UP)
+
+    async def massage_intensity_down(self) -> None:
+        """Decrease massage frequency."""
+        await self.write_command(SolaceCommands.MASSAGE_FREQUENCY_DOWN)
+
+    async def massage_off(self) -> None:
+        """Stop all massage."""
+        await self.write_command(SolaceCommands.MASSAGE_STOP)

@@ -281,6 +281,9 @@
       "preset_incline": {
         "name": "Incline"
       },
+      "preset_yoga": {
+        "name": "Yoga"
+      },
       "preset_memory_1": {
         "name": "Memory 1"
       },
