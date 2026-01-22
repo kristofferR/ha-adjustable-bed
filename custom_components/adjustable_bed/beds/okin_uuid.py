@@ -132,6 +132,9 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
     OKIMAT_VARIANT_92471: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x000000AA,
+        memory_1=0x1000,
+        memory_2=0x2000,
+        memory_save=0x10000,
     ),
     OKIMAT_VARIANT_93329: OkinUuidRemoteConfig(
         name="RF TOPLINE",

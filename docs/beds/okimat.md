@@ -13,8 +13,8 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` |
-| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` |
+| ⬜ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` |
+| ⬜ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` |
 | ⬜ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` |
 | ⬜ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) | `com.okin.bedding.adjustbed` |
 
@@ -71,6 +71,7 @@ Different Okimat remotes have varying capabilities. The remote code is typically
 | 82418 | RF TOPLINE | Back, Legs | 2 |
 | 88875 | RF LITELINE | Back, Legs | None |
 | 91244 | RF-FLASHLINE | Back, Legs | None |
+| 92471 | RF TOPLINE | Back, Legs | 2 |
 | 93329 | RF TOPLINE | Head, Back, Legs | 4 |
 | 93332 | RF TOPLINE | Head, Back, Legs, Feet | 2 |
 | 94238 | RF FLASHLINE | Back, Legs | 2 |
