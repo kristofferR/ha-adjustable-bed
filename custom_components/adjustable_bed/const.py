@@ -939,10 +939,46 @@ DEFAULT_OCTO_PIN: Final = ""
 DEFAULT_MOTOR_PULSE_COUNT: Final = 25  # Default for most beds
 DEFAULT_MOTOR_PULSE_DELAY_MS: Final = 50  # Default for most beds
 
-# Per-bed-type motor pulse defaults (to preserve original behavior)
+# Per-bed-type motor pulse defaults based on app disassembly analysis
+# Target: ~1.5 second total motor movement duration (repeat_count = 1500ms / delay_ms)
 BED_MOTOR_PULSE_DEFAULTS: Final = {
-    # Richmat: 30 repeats, 50ms delay (original hardcoded values)
-    BED_TYPE_RICHMAT: (30, 50),
-    # Keeson: 25 repeats, 200ms delay (original hardcoded values)
-    BED_TYPE_KEESON: (25, 200),
+    # Richmat: 150ms delay → 10 repeats = 1.5s total
+    # Source: com.richmat.sleepfunction ANALYSIS.md
+    BED_TYPE_RICHMAT: (10, 150),
+    # Keeson: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.sfd.ergomotion ANALYSIS.md
+    BED_TYPE_KEESON: (15, 100),
+    # Ergomotion: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.sfd.ergomotion ANALYSIS.md
+    BED_TYPE_ERGOMOTION: (15, 100),
+    # Serta: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.ore.serta330 ANALYSIS.md
+    BED_TYPE_SERTA: (15, 100),
+    # Malouf Legacy OKIN: 150ms delay → 10 repeats = 1.5s total
+    # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
+    BED_TYPE_MALOUF_LEGACY_OKIN: (10, 150),
+    # Malouf New OKIN (Nordic): 100ms delay → 15 repeats = 1.5s total
+    # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
+    BED_TYPE_MALOUF_NEW_OKIN: (15, 100),
+    # OKIN FFE: 150ms delay → 10 repeats = 1.5s total
+    # Source: com.lucid.bedbase ANALYSIS.md
+    BED_TYPE_OKIN_FFE: (10, 150),
+    # OKIN Nordic: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.lucid.bedbase ANALYSIS.md
+    BED_TYPE_OKIN_NORDIC: (15, 100),
+    # Leggett WiLinke: 150ms delay → 10 repeats = 1.5s total
+    # Source: com.richmat.sleepfunction ANALYSIS.md - WiLinke protocol variant
+    BED_TYPE_LEGGETT_WILINKE: (10, 150),
+    # OCTO: 350ms delay → 4 repeats = 1.4s total
+    # Source: de.octoactuators.octosmartcontrolapp ANALYSIS.md
+    BED_TYPE_OCTO: (4, 350),
+    # Jiecang: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
+    BED_TYPE_JIECANG: (15, 100),
+    # Comfort Motion: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
+    BED_TYPE_COMFORT_MOTION: (15, 100),
+    # Linak: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.linak.linakbed.ble.memory ANALYSIS.md
+    BED_TYPE_LINAK: (15, 100),
 }
