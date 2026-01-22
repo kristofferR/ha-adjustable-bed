@@ -90,3 +90,18 @@ Both protocols use the same command values (32-bit integers):
 | Massage Foot - | `0x1000000` |
 | Massage Timer | `0x200` |
 | Massage Off | `0x2000000` |
+
+## Command Timing
+
+From app disassembly analysis (Malouf Base / Lucid Base):
+
+| Protocol | Repeat Interval | Max Repeats |
+|----------|----------------|-------------|
+| Legacy OKIN (FFE5) | 150ms | 85 |
+| New OKIN (Nordic) | 100ms | 55 |
+
+The app supports multiple protocols with automatic detection:
+1. **Legacy OKIN (FFE5/FFE9)** - 9-byte packets
+2. **Custom OKIN (62741523)** - 10-byte packets
+3. **New OKIN (Nordic UART)** - 8-byte packets
+4. **Richmat WiLinke (FEE9)** - 5-byte packets

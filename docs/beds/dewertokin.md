@@ -112,6 +112,23 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 |---------|-------------|-------------|
 | Underlight | `04 02 00 02 00 00` | Toggle under-bed light |
 
+## Command Timing
+
+From app disassembly analysis (FurniMove):
+
+- **Repeat Interval:** 100ms (`Thread.sleep(100L)`)
+- **Pattern:** Continuous while button held
+- **Stop Required:** Yes, explicit stop after motor release
+
+### RF Gateway Variant
+
+Some DewertOkin devices use an RF Gateway with an 8-byte protocol:
+```
+[0xE5, 0xFE, 0x16, data0, data1, data2, data3, checksum]
+```
+
+This variant uses the Keeson-style checksum (one's complement of byte sum).
+
 ## Detection
 
 Detected by device name containing: `dewertokin`, `dewert`, `a h beard`, or `hankook`

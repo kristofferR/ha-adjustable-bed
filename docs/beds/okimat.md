@@ -130,3 +130,28 @@ Position notifications are 7+ bytes:
 | Foot/Legs | 12000 | 45° |
 
 Formula: `angle = (raw_value / max_raw) * max_angle`
+
+## Command Timing
+
+From app disassembly analysis:
+
+- **Repeat Interval:** ~100-150ms
+- **Pattern:** Continuous while button held
+- **Stop Required:** Yes
+
+## Protocol Variants (from OKIN ComfortBed II-N app)
+
+The app supports multiple protocol versions based on device name:
+
+| Device Prefix | Protocol | Packet Format |
+|---------------|----------|---------------|
+| `okin-ble` | CB.13/CB.15 (FFE5) | 9-byte: `[0xE6, 0xFE, 0x16, cmd(4), side, checksum]` |
+| `smartbed` | CB.24 (Nordic UART) | 7-byte: `[0x05, 0x02, cmd(4), 0x00]` (no checksum) |
+
+### Additional Motors Supported
+
+| Motor | Up | Down |
+|-------|-----|------|
+| Neck | `0x00000010` | `0x00000020` |
+| Lumbar | `0x00000040` | `0x00000080` |
+| Hips (CB.24) | `0x40000000` | `0x80000000` |

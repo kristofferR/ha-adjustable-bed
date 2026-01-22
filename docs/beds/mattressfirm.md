@@ -94,6 +94,23 @@ Detected by device name starting with: `iflex` (case-insensitive)
 
 Or manually configured with bed type: `mattressfirm`
 
+## Command Timing
+
+From app disassembly analysis:
+
+- **Repeat Interval:** 100ms
+- **Pattern:** Continuous while button held
+- **Stop Required:** Yes, sends stop twice (at 100ms and 200ms) after release
+
+### Alternative Packet Format (from app analysis)
+
+The official app uses a 14-byte format:
+```
+[0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]
+```
+
+Device detection uses device name prefix: "okin" (case-insensitive).
+
 ## Notes
 
 - The Mattress Firm 900 does not support user-programmable memory positions

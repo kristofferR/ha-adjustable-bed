@@ -65,3 +65,28 @@
 | Head Massage | `0x53 {level}` (0-10) |
 | Foot Massage | `0x54 {level}` (0-10) |
 | Wave Massage | `0x40 + level` (0-10) |
+
+## Protocol 110 (Characteristic-Based)
+
+Some Reverie beds use a different service with characteristic-based commands:
+
+**Service UUID:** `db801000-f324-29c3-38d1-85c0c2e86885`
+
+### Position Characteristics
+
+| Function | UUID | Values |
+|----------|------|--------|
+| Head Position | `db801041-...` | 0x00-0x64 (0-100%) |
+| Foot Position | `db801042-...` | 0x00-0x64 (0-100%) |
+| Lumbar Position | `db801040-...` | 0x00-0x64 (0-100%) |
+| Linear Head | `db801021-...` | 0x01 (up), 0x00 (stop), 0x02 (down) |
+| Linear Foot | `db801022-...` | 0x01 (up), 0x00 (stop), 0x02 (down) |
+| LED | `db8010a0-...` | 0x00-0x64 (brightness) |
+| Presets | `db8010d0-...` | 0x01-0x07 (preset/memory selection) |
+
+## Command Timing
+
+From app disassembly analysis:
+
+- **Motor commands:** Write 0x01/0x02 to start movement, 0x00 to stop
+- **Position commands:** Single write (bed handles movement to target)

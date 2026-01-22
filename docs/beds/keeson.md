@@ -120,3 +120,38 @@ Position data includes:
 > - On **KSBT**: This is Anti-Snore preset
 >
 > The TV, Lounge, and Anti-Snore presets are only available on KSBT beds. BaseI4/I5 beds (like Member's Mark) use different button layouts and may not support these commands.
+
+## Command Timing
+
+From app disassembly analysis:
+
+| App | Motor Command Interval | Source |
+|-----|------------------------|--------|
+| Ergomotion | 100ms | `handler.postDelayed(this, 100)` |
+| Ergomotion 4.0 | 100ms | Same as Ergomotion |
+| Tempur Zero G | 100ms | Same as Ergomotion |
+| Member's Mark | 400ms | `scheduleWithFixedDelay(..., 400L, TimeUnit.MILLISECONDS)` |
+
+Motor commands are sent repeatedly while the button is held. A stop command (`0x00000000`) is sent on button release.
+
+## Split-Bed Support (Member's Mark)
+
+Member's Mark beds support independent control of left and right sides using a 9-byte packet:
+
+```
+[0xE6, 0xFE, 0x16, cmd_lo, cmd_mid_lo, cmd_mid_hi, cmd_hi, side, checksum]
+```
+
+| Side Byte | Meaning |
+|-----------|---------|
+| `0x00` | Default |
+| `0x01` | Side A (Right) |
+| `0x02` | Side B (Left) |
+
+## Device Detection
+
+| Device Name Prefix | Protocol |
+|-------------------|----------|
+| `base` | Standard FFE5/FFE9 (8-byte) |
+| `KSBT03C` | Nordic UART with 6-byte packets |
+| `EH` | Mattress variant (E0FF service) |

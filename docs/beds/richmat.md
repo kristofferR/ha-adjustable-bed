@@ -52,12 +52,13 @@ Brands using Richmat actuators:
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ |
+| Motor Control | ✅ (up to 7 motors) |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (2 slots) |
+| Memory Presets | ✅ (3 slots) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
-| Zero-G / Anti-Snore | ✅ |
+| Zero-G / Anti-Snore / TV / Lounge | ✅ |
+| Yoga / Read Presets | ✅ (some models) |
 
 ## Protocol Variants
 
@@ -109,3 +110,38 @@ Brands using Richmat actuators:
 | Massage Head Step | `0x4C` | Cycle head massage |
 | Massage Foot Step | `0x4E` | Cycle foot massage |
 | Massage Pattern Step | `0x48` | Cycle massage pattern |
+| Yoga | `0xF0` | Yoga preset |
+| Read | `0xF2` | Read preset |
+| Memory 3 | `0x30` | Go to memory 3 |
+| Save Memory 3 | `0x2D` | Save memory 3 |
+
+## Command Timing
+
+From app disassembly analysis (SleepFunction):
+
+| Device Name Prefix | Interval | Notes |
+|-------------------|----------|-------|
+| `6BRM` (Nordic) | 170ms | Nordic vendor |
+| `TWRM`, `MLRM` | 110ms | Faster repeat |
+| Default | **150ms** | Most devices |
+
+Motor commands are sent continuously while the button is held. A stop byte (`0x6E`) is sent on release.
+
+## Service Detection Order
+
+The app tries BLE services in this order:
+
+1. **WiLinke 1**: `0000FEE9-0000-1000-8000-00805F9B34FB`
+2. **WiLinke 2**: `0000FEE9-0000-1000-8000-00805F9B34BB`
+3. **Nordic UART**: `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
+4. **FFF0**: `0000FFF0-0000-1000-8000-00805F9B34FB`
+5. **FFE0**: `0000FFE0-0000-1000-8000-00805F9B34FB`
+
+## Device Detection
+
+| Device Name Prefix | Features |
+|-------------------|----------|
+| `WFRM`, `FWRM` | Table/Lift with height control |
+| `6BRM` | Nordic variant (170ms timing) |
+| `TWRM`, `MLRM` | Fast timing (110ms) |
+| `YGRM`, `BRRM` | Extended presets |

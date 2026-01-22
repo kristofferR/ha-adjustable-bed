@@ -137,3 +137,13 @@ Device names starting with:
 | Light Timer 8 hours | `FF FF FF FF 05 00 00 00 1A 56 CB` |
 | Light Timer 10 hours | `FF FF FF FF 05 00 00 00 1B 97 0B` |
 | Query Light Status | `FF FF FF FF 05 00 05 FF 23 C7 28` |
+
+## Command Timing
+
+From app disassembly analysis (Motion Bed):
+
+- **Motor Commands:** Single command per button press (controller latches state)
+- **Stop Required:** Yes, explicit stop command on button release
+- **No continuous sending** - the bed controller maintains motor movement until a stop command is received
+
+Unlike other protocols that send repeated commands while the button is held, Solace/Motion Bed motors are latched - send move command on press, stop command on release.

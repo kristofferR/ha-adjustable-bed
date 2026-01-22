@@ -23,11 +23,13 @@
 ## Features
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ |
+| Motor Control | ✅ (up to 8 motors) |
 | Position Feedback | ✅ |
-| Memory Presets | ✅ (4 slots) |
+| Memory Presets | ✅ (6 slots) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
+| Battery Level | ✅ |
+| WiFi (some models) | ✅ |
 
 ## Protocol Details
 
@@ -93,3 +95,25 @@ Position data available via notify characteristics:
 - Leg: `99fa0027-...` (max 548 → 45°)
 - Head: `99fa0026-...` (3+ motors)
 - Feet: `99fa0025-...` (4 motors)
+
+### Additional Memory Commands (from app analysis)
+
+| Command | Bytes |
+|---------|-------|
+| Memory 5 | `0x83 0x00` |
+| Memory 6 | `0x84 0x00` |
+| Save Memory 5 | `0x85 0x00` |
+| Save Memory 6 | `0x86 0x00` |
+
+### Battery Characteristic
+
+Battery level available via: `99fa0061-338a-1024-8a49-009c0215f78a`
+
+## Command Timing
+
+From app disassembly analysis:
+
+- **Repeat Interval:** 100ms (`f2148f = 100L` in source)
+- **Stop Command:** `0xFF 0x00` (use this, not `0x00 0x00` which can cause reverse jerk)
+
+Motor commands are sent continuously while the button is held.

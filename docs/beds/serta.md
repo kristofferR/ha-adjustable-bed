@@ -62,6 +62,15 @@
 | Head+Foot On | `e5 fe 16 00 01 00 00 05` | Turn on both massage |
 | Massage Timer | `e5 fe 16 00 02 00 00 04` | Cycle massage timer |
 
+## Command Timing
+
+From app disassembly analysis:
+
+- **Repeat Interval:** 100ms (same as Ergomotion/INNOVA protocol)
+- **Protocol:** Same Keeson-style FFE5/FFE9 protocol as INNOVA
+
+Also supports classic Bluetooth (SPP UUID: `00001101-0000-1000-8000-00805F9B34FB`).
+
 ## Detection
 
 Detected by device name containing: `serta` or `motion perfect`
