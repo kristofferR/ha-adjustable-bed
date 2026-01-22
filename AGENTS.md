@@ -236,3 +236,18 @@ The `run_diagnostics` service captures protocol data for debugging and adding ne
 
 - `smartbed-mqtt/` - Old Node.js addon (broken, but has protocol implementations for many bed types)
 - `smartbed-mqtt-discord-chats/` - Discord exports with reverse-engineering discussions and user reports
+
+## APK Reverse Engineering
+
+The `disassembly/` folder contains tools and output from reverse engineering bed controller Android apps to extract BLE protocols.
+
+See **[disassembly/AGENTS.md](disassembly/AGENTS.md)** for detailed instructions on:
+- Decompiling APKs with jadx
+- Analyzing Flutter apps with blutter
+- Finding BLE UUIDs and command bytes
+- Documenting protocol findings
+
+**Folder structure:**
+- `disassembly/apk/analyzed/` - APKs that have been analyzed
+- `disassembly/apk/not-analyzed/` - APKs pending analysis
+- `disassembly/output/<package_id>/` - Decompilation output per app (jadx/, blutter/, ANALYSIS.md)
