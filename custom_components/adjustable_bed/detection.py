@@ -64,6 +64,7 @@ from .const import (
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SERTA_NAME_PATTERNS,
+    SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
 )
 
@@ -469,9 +470,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     # Check for Solace/Octo (same UUID, different protocols)
     # Octo is more common, so default to Octo unless name indicates Solace
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
-        # Check for explicit Solace name patterns:
+        # Check for Solace name patterns from Motion Bed app reverse engineering:
+        # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
+        # - S3-*, S4-*, S5-*, S6-* (S-series)
+        # - SealyMF (Sealy Motion Flex)
         # - Contains "solace"
-        # - Matches Solace naming convention like "S4-Y-192-461000AD"
+        # - Matches legacy Solace naming convention like "S4-Y-192-461000AD"
+        if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
+            _LOGGER.info(
+                "Detected Solace bed at %s (name: %s) by name pattern",
+                service_info.address,
+                service_info.name,
+            )
+            return BED_TYPE_SOLACE
         if "solace" in device_name or SOLACE_NAME_PATTERN.match(device_name):
             _LOGGER.info(
                 "Detected Solace bed at %s (name: %s)",
