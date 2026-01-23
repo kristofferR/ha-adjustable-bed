@@ -834,6 +834,15 @@ OKIMAT_VARIANTS: Final = {
     OKIMAT_VARIANT_94238: "94238 - RF FLASHLINE (Back, Legs, 2 Memory)",
 }
 
+# OKIN 64-bit protocol variants (10-byte commands with 64-bit bitmasks)
+OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
+OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
+OKIN_64BIT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Nordic UART)",
+    OKIN_64BIT_VARIANT_NORDIC: "Nordic UART (fire-and-forget)",
+    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN (wait-for-response)",
+}
+
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
@@ -860,6 +869,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
+    OKIN_64BIT_VARIANT_NORDIC,
+    OKIN_64BIT_VARIANT_CUSTOM,
 ]
 
 # Bed types that require BLE pairing before they can be controlled

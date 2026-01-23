@@ -10,6 +10,11 @@ from homeassistant.helpers.selector import SelectOptionDict
 
 from .const import (
     # Legacy/brand-specific bed types
+    # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT are imported for BED_TYPE_DISPLAY_NAMES
+    # but are NOT auto-detected in detect_bed_type() because:
+    # - BedTech shares the FEE9 service UUID with Richmat WiLinke
+    # - OKIN 64-bit uses UUIDs common to other OKIN protocols (Nordic UART or 62741523)
+    # Both require manual selection as they can't be reliably distinguished at the UUID level.
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,

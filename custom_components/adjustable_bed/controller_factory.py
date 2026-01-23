@@ -350,8 +350,9 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController
 
-        # Default to Nordic UART variant (fire-and-forget)
-        # Custom OKIN variant would require service detection
-        return Okin64BitController(coordinator, variant="nordic")
+        # Use configured variant, default to Nordic UART (fire-and-forget)
+        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else "nordic"
+        _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
+        return Okin64BitController(coordinator, variant=variant)
 
     raise ValueError(f"Unknown bed type: {bed_type}")

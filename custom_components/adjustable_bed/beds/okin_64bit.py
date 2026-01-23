@@ -229,12 +229,12 @@ class Okin64BitController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        return None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
         # OKIN 64-bit beds don't support position reading
-        pass
+        return None
 
     async def _send_command(self, cmd_bytes: bytes, repeat: int | None = None) -> None:
         """Send a command to the bed."""
@@ -343,7 +343,7 @@ class Okin64BitController(BedController):
         else:
             _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
 
-    async def program_memory(self, memory_num: int) -> None:
+    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
         """Program current position to memory (not supported - use set commands)."""
         _LOGGER.warning(
             "OKIN 64-bit beds don't support programming memory presets directly. "

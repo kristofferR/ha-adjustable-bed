@@ -241,12 +241,12 @@ class BedTechController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        return None
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
         # BedTech beds don't support position reading
-        pass
+        return None
 
     async def _send_command(self, cmd_char: str, repeat: int | None = None) -> None:
         """Send a command to the bed."""
