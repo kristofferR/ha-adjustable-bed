@@ -2,7 +2,7 @@
 
 **Status:** ⚠️ Untested
 
-**Credit:** Protocol reverse-engineered by [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)
 
 ## Known Models
 - Mattress Firm 900 Adjustable Base (iFlex)

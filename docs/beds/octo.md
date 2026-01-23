@@ -1,13 +1,12 @@
 # Octo
 
-**Status:** ✅ Works
+**Status:** ✅ Tested
 
-**Credit:** Reverse engineering by [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
 ## Known Models
 - Octo-branded adjustable beds
 - Beka
-- Some OEM beds with Octo controllers
 
 ## Apps
 
@@ -95,7 +94,7 @@ To configure PIN, enter your 4-digit PIN during setup or in the integration opti
 
 ### Star2 Variant (Octo Remote Star2)
 
-**Credit:** Protocol reverse-engineered by [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed). Protocol reverse-engineered by [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10)
 
 **Service UUID:** `0000aa5c-0000-1000-8000-00805f9b34fb`
 **Write Characteristic:** `00005a55-0000-1000-8000-00805f9b34fb`

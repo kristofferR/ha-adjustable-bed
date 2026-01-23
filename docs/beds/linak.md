@@ -2,7 +2,7 @@
 
 **Status:** ✅ Tested
 
-**Credit:** Reverse engineering by jascdk and [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), jascdk and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
 - Linak DPG1M (OEM controller used in many beds)

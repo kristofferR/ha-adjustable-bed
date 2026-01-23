@@ -1,8 +1,8 @@
 # Jiecang
 
-**Status:** ⚠️ Untested
+**Status:** ❓ Untested
 
-**Credit:** Reverse engineering by [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
 

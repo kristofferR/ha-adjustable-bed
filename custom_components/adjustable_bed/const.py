@@ -59,6 +59,8 @@ BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
+BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
+BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -98,6 +100,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_COMFORT_MOTION,
     # Serta Motion Perfect
     BED_TYPE_SERTA,
+    # BedTech
+    BED_TYPE_BEDTECH,
+    # OKIN 64-bit
+    BED_TYPE_OKIN_64BIT,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -143,10 +149,20 @@ LINAK_HEAD_MAX_ANGLE: Final = 68
 LINAK_FEET_MAX_POSITION: Final = 548
 LINAK_FEET_MAX_ANGLE: Final = 45
 
+# Nordic UART Service UUIDs (used by multiple protocols)
+NORDIC_UART_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+NORDIC_UART_WRITE_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+NORDIC_UART_READ_CHAR_UUID: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+
 # Richmat specific UUIDs
 # Nordic variant (simple single-byte commands)
-RICHMAT_NORDIC_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
-RICHMAT_NORDIC_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+RICHMAT_NORDIC_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
+RICHMAT_NORDIC_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
+
+# BedTech specific UUIDs (FEE9 service with d44bc439 characteristic)
+# Note: Shares FEE9 service with Richmat WiLinke but uses different packet format
+BEDTECH_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 
 # WiLinke variants (5-byte commands with checksum)
 RICHMAT_WILINKE_SERVICE_UUIDS: Final = [

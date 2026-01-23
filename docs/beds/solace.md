@@ -2,7 +2,7 @@
 
 **Status:** ⚠️ Untested
 
-**Credit:** Reverse engineering by Bonopaws and [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
 - Solace hospital/care beds

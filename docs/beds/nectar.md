@@ -1,8 +1,8 @@
 # Nectar
 
-**Status:** ⚠️ Untested
+**Status:** ❓ Untested
 
-**Credit:** Protocol reverse-engineered by [MaximumWorf](https://github.com/MaximumWorf) - [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)
+**Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) - [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)
 
 ## Known Models
 

@@ -1,8 +1,8 @@
 # Leggett & Platt
 
-**Status:** ⚠️ Needs more testers
+**Status:** ❓ Needs more testers
 
-**Credit:** Reverse engineering by MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton/smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
 - Leggett & Platt Prodigy 2.0 / S-Cape 2.0
@@ -106,7 +106,7 @@ Uses same 32-bit command values as Keeson - see [Keeson commands](keeson.md#comm
 
 ## MlRM Variant (WiLinke)
 
-**Credit:** Reverse engineered by [Josh Pearce](https://github.com/joshpearce) from the LP Adjustable Bed Control app.
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Josh Pearce](https://github.com/joshpearce) from the LP Adjustable Bed Control app.
 
 **Characteristic UUID:** `fee1`
 **Format:** 5 bytes `[0x6E, 0x01, 0x00, command, checksum]`

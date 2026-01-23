@@ -81,6 +81,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | Mattress Firm, iFlex |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
+| ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

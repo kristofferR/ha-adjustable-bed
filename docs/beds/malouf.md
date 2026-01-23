@@ -1,12 +1,13 @@
-# Malouf
+# Malouf/Lucid
 
-**Status:** ❓ Untested
+**Status:** ✅ Tested
 
-**Credit:** Reverse-engineered from Malouf Base app v2.4.3
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
 - Malouf
+- Lucid
 - Structures
 
 ## Apps
