@@ -4,17 +4,22 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import TYPE_CHECKING
 
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.helpers.selector import SelectOptionDict
 
+if TYPE_CHECKING:
+    from bleak import BleakClient
+
+from bleak.exc import BleakError
+
 from .const import (
     # Legacy/brand-specific bed types
-    # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT are imported for BED_TYPE_DISPLAY_NAMES
-    # but are NOT auto-detected in detect_bed_type() because:
-    # - BedTech shares the FEE9 service UUID with Richmat WiLinke
-    # - OKIN 64-bit uses UUIDs common to other OKIN protocols (Nordic UART or 62741523)
-    # Both require manual selection as they can't be reliably distinguished at the UUID level.
+    # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
+    # - BedTech: By name pattern ("bedtech") or post-connection characteristic check
+    # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
+    # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
@@ -24,7 +29,6 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -46,8 +50,15 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
+    # Detection result type
+    DetectionResult,
     # Detection constants
+    BEDTECH_NAME_PATTERNS,
+    BEDTECH_SERVICE_UUID,
+    BEDTECH_WRITE_CHAR_UUID,
     COMFORT_MOTION_SERVICE_UUID,
+    DEWERTOKIN_NAME_PATTERNS,
+    DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
@@ -60,10 +71,12 @@ from .const import (
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
     MALOUF_NAME_PATTERNS,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
+    MANUFACTURER_ID_DEWERTOKIN,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIN_FFE_NAME_PATTERNS,
     OKIMAT_NAME_PATTERNS,
+    OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
@@ -126,6 +139,28 @@ def is_mac_like_name(name: str | None) -> bool:
     if not name:
         return True
     return bool(MAC_ADDRESS_PATTERN.match(name))
+
+
+def _check_manufacturer_data(
+    manufacturer_data: dict[int, bytes] | None,
+) -> tuple[str | None, float, int | None]:
+    """Check manufacturer data for bed identification.
+
+    Args:
+        manufacturer_data: Dictionary mapping Company ID to data bytes
+
+    Returns:
+        Tuple of (bed_type, confidence, manufacturer_id) or (None, 0.0, None)
+    """
+    if not manufacturer_data:
+        return None, 0.0, None
+
+    # DewertOkin: Company ID 1643 (0x066B)
+    # Source: com.dewertokin.okinsmartcomfort app disassembly
+    if MANUFACTURER_ID_DEWERTOKIN in manufacturer_data:
+        return BED_TYPE_DEWERTOKIN, 0.95, MANUFACTURER_ID_DEWERTOKIN
+
+    return None, 0.0, None
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
@@ -193,11 +228,29 @@ def get_bed_type_options() -> list[SelectOptionDict]:
 
 
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
-    """Detect bed type from service info."""
+    """Detect bed type from service info.
+
+    Returns:
+        The detected bed type constant, or None if not detected.
+        For detailed detection with confidence scores, use detect_bed_type_detailed().
+    """
+    result = detect_bed_type_detailed(service_info)
+    return result.bed_type
+
+
+def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
+    """Detect bed type from service info with detailed confidence scoring.
+
+    Returns:
+        DetectionResult with bed_type, confidence score, and detection signals.
+        Use requires_characteristic_check to determine if post-connection
+        detection can improve confidence (for ambiguous UUID cases).
+    """
     # Handle devices that report None for service_uuids
     raw_uuids = service_info.service_uuids
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
     device_name = (service_info.name or "").lower()
+    signals: list[str] = []
 
     _LOGGER.debug(
         "Detecting bed type for device %s (name: %s)",
@@ -217,16 +270,49 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
                 service_info.name,
                 pattern,
             )
-            return None
+            return DetectionResult(bed_type=None, confidence=0.0, signals=["excluded:" + pattern])
+
+    # Priority 1: Check manufacturer data (highest confidence, unique signal)
+    mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
+    if mfr_bed_type:
+        signals.append(f"manufacturer_id:{mfr_id}")
+        _LOGGER.info(
+            "Detected %s bed at %s (name: %s) by manufacturer ID %s",
+            mfr_bed_type,
+            service_info.address,
+            service_info.name,
+            mfr_id,
+        )
+        return DetectionResult(
+            bed_type=mfr_bed_type,
+            confidence=mfr_confidence,
+            signals=signals,
+            manufacturer_id=mfr_id,
+        )
+
+    # Priority 2: Check for DewertOkin unique service UUID
+    if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:dewertokin")
+        _LOGGER.info(
+            "Detected DewertOkin bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_DEWERTOKIN,
+            confidence=0.9,
+            signals=signals,
+        )
 
     # Check for Malouf NEW_OKIN - unique advertised service UUID (most specific first)
     if MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:malouf_new_okin")
         _LOGGER.info(
             "Detected Malouf NEW_OKIN bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_MALOUF_NEW_OKIN
+        return DetectionResult(bed_type=BED_TYPE_MALOUF_NEW_OKIN, confidence=1.0, signals=signals)
 
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
@@ -234,91 +320,122 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         LINAK_CONTROL_SERVICE_UUID.lower() in service_uuids
         or LINAK_POSITION_SERVICE_UUID.lower() in service_uuids
     ):
+        signals.append("uuid:linak")
         _LOGGER.info(
             "Detected Linak bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_LINAK
+        return DetectionResult(bed_type=BED_TYPE_LINAK, confidence=1.0, signals=signals)
 
     # Check for Linak by name pattern (e.g., "Bed 1696")
     # Some Linak beds don't advertise service UUIDs in their BLE beacon
     for pattern in LINAK_NAME_PATTERNS:
         if device_name.startswith(pattern) and device_name[len(pattern) :].isdigit():
+            signals.append("name:linak")
             _LOGGER.info(
                 "Detected Linak bed at %s (name: %s) by name pattern",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_LINAK
+            return DetectionResult(bed_type=BED_TYPE_LINAK, confidence=0.9, signals=signals)
 
     # Check for Leggett & Platt Gen2 (must check before generic UUIDs)
     if LEGGETT_GEN2_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:leggett_gen2")
         _LOGGER.info(
             "Detected Leggett & Platt Gen2 bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_LEGGETT_PLATT
+        return DetectionResult(bed_type=BED_TYPE_LEGGETT_GEN2, confidence=1.0, signals=signals)
 
     # Check for Reverie Nightstand (Protocol 110) - more specific UUID
     if REVERIE_NIGHTSTAND_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:reverie_nightstand")
         _LOGGER.info(
             "Detected Reverie Nightstand bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_REVERIE_NIGHTSTAND
+        return DetectionResult(bed_type=BED_TYPE_REVERIE_NIGHTSTAND, confidence=1.0, signals=signals)
 
     # Check for Reverie (Protocol 108)
     if REVERIE_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:reverie")
         _LOGGER.info(
             "Detected Reverie bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_REVERIE
+        return DetectionResult(bed_type=BED_TYPE_REVERIE, confidence=1.0, signals=signals)
 
     # Check for Nectar - name-based detection (before Okimat since same UUID)
     # Nectar beds use OKIN service UUID but different command protocol
     if "nectar" in device_name and OKIMAT_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:okin")
+        signals.append("name:nectar")
         _LOGGER.info(
             "Detected Nectar bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_NECTAR
+        return DetectionResult(bed_type=BED_TYPE_NECTAR, confidence=0.9, signals=signals)
 
-    # Check for beds using OKIN service UUID (Okimat, Leggett Okin, Nectar)
+    # Check for beds using OKIN service UUID (Okimat, Leggett Okin, Nectar, OKIN 64-bit)
     # Nectar is already handled above by name check
     # Use name patterns to disambiguate between Okimat and Leggett Okin
+    # Note: OKIN 64-bit cannot be reliably detected without connecting
     if OKIMAT_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:okin")
         # Check for Leggett & Platt Okin by name patterns
         if any(pattern in device_name for pattern in LEGGETT_OKIN_NAME_PATTERNS):
+            signals.append("name:leggett")
             _LOGGER.info(
                 "Detected Leggett & Platt Okin bed at %s (name: %s)",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_LEGGETT_OKIN
+            return DetectionResult(bed_type=BED_TYPE_LEGGETT_OKIN, confidence=0.9, signals=signals)
 
         # Check for Okimat-specific name patterns
         if any(pattern in device_name for pattern in OKIMAT_NAME_PATTERNS):
+            signals.append("name:okimat")
             _LOGGER.info(
                 "Detected Okimat bed at %s (name: %s)",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_OKIMAT
+            return DetectionResult(bed_type=BED_TYPE_OKIMAT, confidence=0.9, signals=signals)
 
         # Fallback: default to Okimat with warning about ambiguity
+        # This UUID is shared by Okimat, Leggett Okin, and OKIN 64-bit
         _LOGGER.warning(
             "Okin UUID detected but device name '%s' at %s doesn't match known patterns. "
-            "Defaulting to Okimat. Change to Leggett & Platt in settings if needed.",
+            "Defaulting to Okimat. Change to Leggett & Platt or OKIN 64-bit in settings if needed.",
             service_info.name,
             service_info.address,
         )
-        return BED_TYPE_OKIMAT
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIMAT,
+            confidence=0.5,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT],
+            requires_characteristic_check=True,
+        )
+
+    # Check for BedTech - name-based detection (before Richmat WiLinke since same UUID)
+    # BedTech shares FEE9 service UUID with Richmat WiLinke
+    if any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS):
+        if BEDTECH_SERVICE_UUID.lower() in service_uuids:
+            signals.append(f"uuid:{BEDTECH_SERVICE_UUID.lower()}")
+            signals.append("name:bedtech")
+            _LOGGER.info(
+                "Detected BedTech bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_BEDTECH, confidence=0.9, signals=signals)
 
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check
@@ -326,41 +443,62 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     if any(device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS):
         for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
             if wilinke_uuid.lower() in service_uuids:
+                signals.append("uuid:wilinke")
+                signals.append("name:mlrm")
                 _LOGGER.info(
                     "Detected Leggett & Platt MlRM bed at %s (name: %s)",
                     service_info.address,
                     service_info.name,
                 )
-                return BED_TYPE_LEGGETT_PLATT
+                return DetectionResult(
+                    bed_type=BED_TYPE_LEGGETT_WILINKE, confidence=0.9, signals=signals
+                )
 
-    # Check for Richmat WiLinke variants
+    # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
         if wilinke_uuid.lower() in service_uuids:
+            signals.append("uuid:wilinke")
+            # FEE9 is ambiguous - could be Richmat or BedTech
+            if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():
+                _LOGGER.info(
+                    "Detected Richmat WiLinke bed at %s (name: %s) - FEE9 UUID (also used by BedTech)",
+                    service_info.address,
+                    service_info.name,
+                )
+                return DetectionResult(
+                    bed_type=BED_TYPE_RICHMAT,
+                    confidence=0.5,
+                    signals=signals,
+                    ambiguous_types=[BED_TYPE_BEDTECH],
+                    requires_characteristic_check=True,
+                )
             _LOGGER.info(
                 "Detected Richmat WiLinke bed at %s (name: %s)",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_RICHMAT
+            return DetectionResult(bed_type=BED_TYPE_RICHMAT, confidence=0.8, signals=signals)
 
     # Check for MotoSleep - name-based detection (HHC prefix)
     if device_name.startswith("hhc"):
+        signals.append("name:motosleep")
         _LOGGER.info(
             "Detected MotoSleep bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_MOTOSLEEP
+        return DetectionResult(bed_type=BED_TYPE_MOTOSLEEP, confidence=0.9, signals=signals)
 
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)
     # Includes "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
     if any(pattern in device_name for pattern in ERGOMOTION_NAME_PATTERNS):
+        signals.append("name:ergomotion")
         _LOGGER.info(
             "Detected Ergomotion bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_ERGOMOTION
+        return DetectionResult(bed_type=BED_TYPE_ERGOMOTION, confidence=0.9, signals=signals)
 
     # Check for Malouf LEGACY_OKIN - name pattern + FFE5 service (before Keeson)
     # Malouf LEGACY_OKIN uses FFE5 service UUID but different 9-byte command format
@@ -368,117 +506,149 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         any(pattern in device_name for pattern in MALOUF_NAME_PATTERNS)
         and MALOUF_LEGACY_OKIN_SERVICE_UUID.lower() in service_uuids
     ):
+        signals.append("uuid:ffe5")
+        signals.append("name:malouf")
         _LOGGER.info(
             "Detected Malouf LEGACY_OKIN bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_MALOUF_LEGACY_OKIN
+        return DetectionResult(
+            bed_type=BED_TYPE_MALOUF_LEGACY_OKIN, confidence=0.9, signals=signals
+        )
 
     # Check for Keeson by name patterns (e.g., base-i4.XXXX, base-i5.XXXX, KSBTXXXX)
     # This catches devices that may not advertise the specific service UUID
     if any(device_name.startswith(pattern) for pattern in KEESON_NAME_PATTERNS):
+        signals.append("name:keeson")
         _LOGGER.info(
             "Detected Keeson bed at %s (name: %s) by name pattern",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_KEESON
+        return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.9, signals=signals)
 
     # Check for Richmat by name pattern (e.g., QRRM157052)
+    # Also extract remote code for feature detection
     if any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS):
+        signals.append("name:richmat")
+        detected_remote = detect_richmat_remote_from_name(service_info.name)
         _LOGGER.info(
             "Detected Richmat bed at %s (name: %s) by name pattern",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_RICHMAT
+        return DetectionResult(
+            bed_type=BED_TYPE_RICHMAT,
+            confidence=0.9,
+            signals=signals,
+            detected_remote=detected_remote,
+        )
 
     # Check for Comfort Motion / Lierda - service UUID detection
     # Uses FF12 service UUID (more specific than generic Jiecang detection)
     if COMFORT_MOTION_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:comfort_motion")
         _LOGGER.info(
             "Detected Comfort Motion bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_COMFORT_MOTION
+        return DetectionResult(bed_type=BED_TYPE_COMFORT_MOTION, confidence=1.0, signals=signals)
 
     # Check for Jiecang - name-based detection (Glide beds, Dream Motion app)
-    if any(x in device_name for x in ["jiecang", "jc-", "dream motion", "glide", "comfort motion", "lierda"]):
+    if any(
+        x in device_name for x in ["jiecang", "jc-", "dream motion", "glide", "comfort motion", "lierda"]
+    ):
+        signals.append("name:jiecang")
         _LOGGER.info(
             "Detected Jiecang bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_JIECANG
+        return DetectionResult(bed_type=BED_TYPE_JIECANG, confidence=0.9, signals=signals)
 
     # Check for DewertOkin - name-based detection (A H Beard, HankookGallery)
-    if any(x in device_name for x in ["dewertokin", "dewert", "a h beard", "hankook"]):
+    # Note: Also detected by manufacturer data and service UUID above (higher priority)
+    if any(x in device_name for x in DEWERTOKIN_NAME_PATTERNS):
+        signals.append("name:dewertokin")
         _LOGGER.info(
             "Detected DewertOkin bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_DEWERTOKIN
+        return DetectionResult(bed_type=BED_TYPE_DEWERTOKIN, confidence=0.3, signals=signals)
 
     # Check for Serta Motion Perfect - name-based detection (uses Keeson protocol)
     if any(x in device_name for x in ["serta", "motion perfect"]):
+        signals.append("name:serta")
         _LOGGER.info(
             "Detected Serta bed at %s (name: %s) - uses Keeson protocol with serta variant",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_SERTA
+        return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
 
     # Check for Octo by name pattern (e.g., DA1458x BLE chip used in some receivers)
     if any(device_name.startswith(pattern) for pattern in OCTO_NAME_PATTERNS):
+        signals.append("name:octo")
         _LOGGER.info(
             "Detected Octo bed at %s (name: %s) by name pattern",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_OCTO
+        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
     # Check for Octo Star2 variant - service UUID detection
     if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:octo_star2")
         _LOGGER.info(
             "Detected Octo Star2 bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_OCTO
+        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
-    # Check for beds using FFE5 service UUID (Keeson, OKIN FFE)
+    # Check for beds using FFE5 service UUID (Keeson, OKIN FFE, Malouf LEGACY, Serta)
     # Priority: Serta/Keeson name patterns > OKIN FFE > Keeson (default)
     if KEESON_BASE_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:ffe5")
         # Check for Serta name patterns (uses Keeson protocol with serta variant)
         if any(pattern in device_name for pattern in SERTA_NAME_PATTERNS):
+            signals.append("name:serta")
             _LOGGER.info(
                 "Detected Serta bed at %s (name: %s) - uses Keeson protocol with serta variant",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_SERTA
+            return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
         # Check for OKIN FFE name patterns (0xE6 prefix variant)
         if any(pattern in device_name for pattern in OKIN_FFE_NAME_PATTERNS):
+            signals.append("name:okin_ffe")
             _LOGGER.info(
                 "Detected OKIN FFE bed at %s (name: %s)",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_OKIN_FFE
+            return DetectionResult(bed_type=BED_TYPE_OKIN_FFE, confidence=0.9, signals=signals)
         # Default to Keeson Base for other FFE5 devices
+        # This UUID is shared by Keeson, Malouf LEGACY, OKIN FFE, Serta
         _LOGGER.info(
-            "Detected Keeson Base bed at %s (name: %s)",
+            "Detected Keeson Base bed at %s (name: %s) - FFE5 UUID is ambiguous",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_KEESON
+        return DetectionResult(
+            bed_type=BED_TYPE_KEESON,
+            confidence=0.5,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_MALOUF_LEGACY_OKIN, BED_TYPE_OKIN_FFE, BED_TYPE_SERTA],
+        )
 
-    # Check for Solace/Octo (same UUID, different protocols)
+    # Check for Solace/Octo/MotoSleep (same UUID, different protocols)
     # Octo is more common, so default to Octo unless name indicates Solace
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:ffe0")
         # Check for Solace name patterns from Motion Bed app reverse engineering:
         # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
         # - S3-*, S4-*, S5-*, S6-* (S-series)
@@ -486,49 +656,125 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         # - Contains "solace"
         # - Matches legacy Solace naming convention like "S4-Y-192-461000AD"
         if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
+            signals.append("name:solace")
             _LOGGER.info(
                 "Detected Solace bed at %s (name: %s) by name pattern",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_SOLACE
+            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
         if "solace" in device_name or SOLACE_NAME_PATTERN.match(device_name):
+            signals.append("name:solace")
             _LOGGER.info(
                 "Detected Solace bed at %s (name: %s)",
                 service_info.address,
                 service_info.name,
             )
-            return BED_TYPE_SOLACE
+            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
         # Default to Octo (more common)
+        # This UUID is shared by Octo, Solace, and MotoSleep
         _LOGGER.info(
-            "Detected Octo bed at %s (name: %s) - defaulting to Octo for shared UUID",
+            "Detected Octo bed at %s (name: %s) - defaulting to Octo for shared FFE0 UUID",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_OCTO
+        return DetectionResult(
+            bed_type=BED_TYPE_OCTO,
+            confidence=0.5,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
+        )
 
     # Check for Mattress Firm 900 (iFlex) - name-based detection
     # Must check before Richmat Nordic since they share the same UUID
     if "iflex" in device_name:
+        signals.append("name:iflex")
         _LOGGER.info(
             "Detected Mattress Firm 900 bed at %s (name: %s)",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_MATTRESSFIRM
+        return DetectionResult(bed_type=BED_TYPE_MATTRESSFIRM, confidence=0.9, signals=signals)
 
-    # Check for Richmat Nordic / Keeson KSBT (same UUID)
+    # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID
     if RICHMAT_NORDIC_SERVICE_UUID.lower() in service_uuids:
-        # Default to Richmat, user can change in config
+        signals.append("uuid:nordic_uart")
+        # This UUID is shared by Richmat, Keeson KSBT, Mattress Firm, and OKIN 64-bit
         _LOGGER.info(
-            "Detected Richmat/Keeson bed at %s (name: %s)",
+            "Detected Richmat/Keeson bed at %s (name: %s) - Nordic UART UUID is ambiguous",
             service_info.address,
             service_info.name,
         )
-        return BED_TYPE_RICHMAT
+        return DetectionResult(
+            bed_type=BED_TYPE_RICHMAT,
+            confidence=0.5,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
+            requires_characteristic_check=True,
+        )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)
+    return DetectionResult(bed_type=None, confidence=0.0, signals=signals)
+
+
+async def detect_bed_type_by_characteristics(
+    client: BleakClient,
+    initial_detection: str,
+) -> str | None:
+    """Refine bed type detection by examining characteristics after connection.
+
+    This function should be called when initial detection was ambiguous
+    (e.g., FEE9 could be Richmat or BedTech, 62741523 could be Okimat or OKIN 64-bit).
+
+    Args:
+        client: Connected BleakClient instance with services already discovered
+        initial_detection: The bed type from initial detection (e.g., BED_TYPE_RICHMAT)
+
+    Returns:
+        Refined bed type if characteristics indicate a different type,
+        or None if the initial detection should be kept.
+    """
+    try:
+        # Build a set of all characteristic UUIDs for easy lookup
+        all_chars: set[str] = set()
+        for service in client.services:
+            for char in service.characteristics:
+                all_chars.add(char.uuid.lower())
+
+        # For FEE9 service (Richmat WiLinke): Check if BedTech characteristic exists
+        if initial_detection == BED_TYPE_RICHMAT:
+            # BedTech has a specific write characteristic
+            if BEDTECH_WRITE_CHAR_UUID.lower() in all_chars:
+                _LOGGER.info(
+                    "Refined detection: BedTech characteristic found (was Richmat)"
+                )
+                return BED_TYPE_BEDTECH
+
+        # For OKIN service (62741523): Check for 64-bit read characteristic
+        if initial_detection == BED_TYPE_OKIMAT:
+            # OKIN 64-bit has the response/notify characteristic (62741625)
+            if OKIMAT_NOTIFY_CHAR_UUID.lower() in all_chars:
+                # The presence of 62741625 doesn't definitively mean 64-bit
+                # (Okimat also has this), but we can note it for logging
+                _LOGGER.debug(
+                    "OKIN notify characteristic found - could be Okimat or OKIN 64-bit"
+                )
+                # To truly distinguish, we'd need to try sending a command
+                # and check the response format (6-byte vs 10-byte)
+                # For now, keep as Okimat since it's more common
+
+        # For Nordic UART service: Check for specific protocol indicators
+        if initial_detection == BED_TYPE_RICHMAT:
+            # Nordic UART is used by Richmat, Keeson KSBT, Mattress Firm, OKIN 64-bit
+            # Without actually sending commands, we can't reliably distinguish
+            pass
+
+    except BleakError as err:
+        _LOGGER.debug("Characteristic detection failed (BLE error): %s", err)
+    except AttributeError as err:
+        _LOGGER.debug("Characteristic detection failed (malformed service): %s", err)
+
     return None
 
 

@@ -73,7 +73,9 @@ from .const import (
     get_richmat_motor_count,
 )
 from .detection import (
+    BED_TYPE_DISPLAY_NAMES,
     detect_bed_type,
+    detect_bed_type_detailed,
     detect_richmat_remote_from_name,
     determine_unsupported_reason,
     get_bed_type_options,
@@ -174,7 +176,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Confirm discovery."""
         assert self._discovery_info is not None
 
-        bed_type = detect_bed_type(self._discovery_info)
+        # Use detailed detection to get confidence and ambiguity info
+        detection_result = detect_bed_type_detailed(self._discovery_info)
+        bed_type = detection_result.bed_type
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -311,8 +315,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Auto-detect motor count for Richmat beds based on remote code features
         default_motor_count = DEFAULT_MOTOR_COUNT
+        detected_remote = detection_result.detected_remote
         if bed_type == BED_TYPE_RICHMAT:
-            detected_remote = detect_richmat_remote_from_name(self._discovery_info.name)
+            # Use detected_remote from detection result, or try to extract from name
+            if not detected_remote:
+                detected_remote = detect_richmat_remote_from_name(self._discovery_info.name)
             if detected_remote:
                 features = get_richmat_features(detected_remote)
                 default_motor_count = get_richmat_motor_count(features)
@@ -353,9 +360,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         # Add remote selection for Richmat beds with auto-detected default
+        # Uses detected_remote from detection result or from earlier name-based detection
         if bed_type == BED_TYPE_RICHMAT:
-            # Try to auto-detect remote code from device name
-            detected_remote = detect_richmat_remote_from_name(self._discovery_info.name)
             if detected_remote:
                 _LOGGER.info(
                     "Auto-detected Richmat remote code '%s' from device name '%s'",
@@ -380,13 +386,32 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 remotes_options
             )
 
+        # Build description placeholders with optional ambiguity warning
+        description_placeholders = {
+            "name": self._discovery_info.name or self._discovery_info.address,
+        }
+
+        # Add detection confidence info for ambiguous cases
+        if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
+            # Map internal bed type constants to human-readable display names
+            display_names = [
+                BED_TYPE_DISPLAY_NAMES.get(t, t) for t in detection_result.ambiguous_types
+            ]
+            ambiguous_list = ", ".join(display_names)
+            description_placeholders["detection_note"] = (
+                f"Detection confidence: {int(detection_result.confidence * 100)}%. "
+                f"Could also be: {ambiguous_list}. "
+                "Verify the bed type below matches your device."
+            )
+        else:
+            # For high-confidence detections, show a reassuring message
+            description_placeholders["detection_note"] = "Detected automatically."
+
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
             errors=errors,
-            description_placeholders={
-                "name": self._discovery_info.name or self._discovery_info.address,
-            },
+            description_placeholders=description_placeholders,
         )
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

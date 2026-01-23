@@ -1,9 +1,39 @@
 """Constants for the Adjustable Bed integration."""
 
+from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final
 
 DOMAIN: Final = "adjustable_bed"
+
+
+@dataclass
+class DetectionResult:
+    """Result of bed type detection with confidence scoring.
+
+    Attributes:
+        bed_type: The detected bed type constant, or None if not detected
+        confidence: Confidence score from 0.0 to 1.0:
+            - 1.0: Unique UUID (Linak, Malouf NEW_OKIN, Reverie, Leggett Gen2)
+            - 0.95: Manufacturer data match (e.g., DewertOkin Company ID)
+            - 0.9: UUID + name pattern match or unique characteristic
+            - 0.7: UUID + manufacturer data
+            - 0.5: UUID only (ambiguous, shared by multiple bed types)
+            - 0.3: Name pattern only (no UUID match)
+        signals: List of detection signals that matched (e.g., ["uuid:linak", "name:bed"])
+        ambiguous_types: List of other bed types that could match (for low confidence)
+        detected_remote: Auto-detected remote code for Richmat beds
+        manufacturer_id: BLE manufacturer Company ID if found
+        requires_characteristic_check: True if post-connection check recommended
+    """
+
+    bed_type: str | None
+    confidence: float
+    signals: list[str] = field(default_factory=list)
+    ambiguous_types: list[str] | None = None
+    detected_remote: str | None = None
+    manufacturer_id: int | None = None
+    requires_characteristic_check: bool = False
 
 # Configuration keys
 CONF_BED_TYPE: Final = "bed_type"
@@ -297,6 +327,14 @@ COMFORT_MOTION_PEILIN_CHAR_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16801"
 # Uses handle-based writes rather than UUID
 DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 
+# DewertOkin manufacturer data (BLE Company ID)
+# Source: com.dewertokin.okinsmartcomfort app disassembly
+MANUFACTURER_ID_DEWERTOKIN: Final = 1643  # 0x066B
+
+# DewertOkin service UUID (unique to FurniMove/DewertOkin devices)
+# This UUID can uniquely identify DewertOkin beds regardless of device name
+DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"
+
 # Serta Motion Perfect III specific
 # Uses handle-based writes rather than UUID
 SERTA_WRITE_HANDLE: Final = 0x0020
@@ -351,12 +389,32 @@ MALOUF_LEGACY_OKIN_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34
 # - Nectar (7-byte protocol)
 # - Okimat (6-byte protocol)
 # - Leggett & Platt Okin variant (6-byte protocol, same as Okimat)
+# - OKIN 64-bit (10-byte protocol with 64-bit bitmasks)
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
 LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
 # Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN-XXXXXX" (e.g., OKIN-346311), "OKIN luis",
 # or "Smartbed" (Malouf/Lucid/CVB beds using OKIN protocol)
 OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin luis", "smartbed")
+
+# OKIN 64-bit name patterns (from com.okin.bedding.adjustbed app disassembly)
+# Note: Most OKIN 64-bit devices don't have distinctive names - they require
+# post-connection characteristic detection (presence of 62741625 read char)
+OKIN_64BIT_NAME_PATTERNS: Final[tuple[str, ...]] = ()  # No reliable name patterns found
+
+# BedTech name patterns (shares FEE9 service UUID with Richmat WiLinke)
+# Post-connection characteristic detection (d44bc439...) is more reliable
+BEDTECH_NAME_PATTERNS: Final = ("bedtech",)
+
+# DewertOkin name patterns (A H Beard, Hankook Gallery devices)
+# Source: com.dewertokin.okinsmartcomfort app disassembly
+# Note: "furnimove" is the app name but not a reliable device pattern
+DEWERTOKIN_NAME_PATTERNS: Final = (
+    "dewertokin",
+    "dewert",
+    "a h beard",
+    "hankook",
+)
 
 # OKIN FFE name patterns (OKIN 13/15 series using FFE5 service with 0xE6 prefix)
 # These use the same FFE5 service UUID as Keeson but with different command prefix
