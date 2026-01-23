@@ -29,7 +29,6 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -349,7 +348,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_LEGGETT_PLATT, confidence=1.0, signals=signals)
+        return DetectionResult(bed_type=BED_TYPE_LEGGETT_GEN2, confidence=1.0, signals=signals)
 
     # Check for Reverie Nightstand (Protocol 110) - more specific UUID
     if REVERIE_NIGHTSTAND_SERVICE_UUID.lower() in service_uuids:
@@ -453,7 +452,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     service_info.name,
                 )
                 return DetectionResult(
-                    bed_type=BED_TYPE_LEGGETT_PLATT, confidence=0.9, signals=signals
+                    bed_type=BED_TYPE_LEGGETT_WILINKE, confidence=0.9, signals=signals
                 )
 
     # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
