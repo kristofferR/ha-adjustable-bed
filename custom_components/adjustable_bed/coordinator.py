@@ -1390,6 +1390,14 @@ class AdjustableBedCoordinator:
         """Register a callback for position updates."""
         self._position_callbacks.add(callback_fn)
 
+        # Immediately emit current position data if available
+        # This handles the race where initial read completed before registration
+        if self._position_data:
+            try:
+                callback_fn(self._position_data)
+            except Exception as err:
+                _LOGGER.warning("Position callback error during registration: %s", err)
+
         def unregister() -> None:
             self._position_callbacks.discard(callback_fn)  # Safe removal, no error if missing
 
