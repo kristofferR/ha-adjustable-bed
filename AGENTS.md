@@ -192,6 +192,12 @@ custom_components/adjustable_bed/
 
 5. **Intentional disconnect flag** - Set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect. Cleared in finally block since callback may not fire on clean disconnects.
 
+## Releases
+
+When creating a release, update the version in **both** files:
+- `custom_components/adjustable_bed/manifest.json` - the `"version"` field
+- `pyproject.toml` - the `version` field in `[project]`
+
 ## Development
 
 ### Testing in Home Assistant
