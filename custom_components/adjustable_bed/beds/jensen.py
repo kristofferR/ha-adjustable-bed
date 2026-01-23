@@ -352,9 +352,9 @@ class JensenController(BedController):
                     foot_pct,
                 )
 
-                # Map to standard motor names (head/back and feet/legs)
-                self._notify_callback("head", head_pct)
-                self._notify_callback("feet", foot_pct)
+                # Map to standard motor names (back and legs)
+                self._notify_callback("back", head_pct)
+                self._notify_callback("legs", foot_pct)
 
         elif cmd_type == 0x0A:
             # Config response - handled separately in query_config
