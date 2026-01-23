@@ -7,10 +7,10 @@ from typing import Any
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
-from .const import CONF_OCTO_PIN
+from .const import CONF_JENSEN_PIN, CONF_OCTO_PIN
 
 # Keys to fully redact
-KEYS_TO_REDACT = {CONF_NAME, CONF_OCTO_PIN, "title"}
+KEYS_TO_REDACT = {CONF_NAME, CONF_JENSEN_PIN, CONF_OCTO_PIN, "title"}
 
 # Keys containing MAC addresses (partial redaction - keep OUI)
 MAC_ADDRESS_KEYS = {CONF_ADDRESS, "address"}

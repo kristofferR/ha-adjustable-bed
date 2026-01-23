@@ -144,9 +144,19 @@ class JensenController(BedController):
 
         PIN command format: [0x1E, digit1, digit2, digit3, digit4, 0x00]
         Each digit is its numeric value (not ASCII code).
+
+        Sanitizes the PIN by stripping whitespace and keeping only digits.
+        Falls back to "0000" if the PIN is invalid.
         """
-        # Pad or truncate to 4 digits
-        pin_digits = self._pin.ljust(4, "0")[:4]
+        # Sanitize: strip whitespace and keep only digits
+        sanitized = "".join(c for c in self._pin.strip() if c.isdigit())
+
+        # Ensure exactly 4 digits (pad with 0s or truncate)
+        if not sanitized:
+            _LOGGER.warning("Invalid Jensen PIN configured, using fallback '0000'")
+            sanitized = "0000"
+        pin_digits = sanitized.ljust(4, "0")[:4]
+
         return bytes([0x1E, int(pin_digits[0]), int(pin_digits[1]),
                       int(pin_digits[2]), int(pin_digits[3]), 0x00])
 
@@ -419,8 +429,9 @@ class JensenController(BedController):
                 JENSEN_CHAR_UUID, self._build_pin_unlock_command(), response=True
             )
 
-            # Request initial position reading
-            await self.read_positions()
+            # Request initial position reading only if angle sensing is enabled
+            if callback is not None:
+                await self.read_positions()
 
         except BleakError as err:
             _LOGGER.warning("Failed to start Jensen notifications: %s", err)

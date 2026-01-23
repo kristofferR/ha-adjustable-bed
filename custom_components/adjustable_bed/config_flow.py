@@ -36,6 +36,7 @@ from .const import (
     ALL_PROTOCOL_VARIANTS,
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_JENSEN,
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
@@ -45,6 +46,7 @@ from .const import (
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_JENSEN_PIN,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -273,6 +275,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Add Octo PIN if configured (when detected as Octo, field was shown inline)
                 if selected_bed_type == BED_TYPE_OCTO:
                     entry_data[CONF_OCTO_PIN] = octo_pin
+                # Add Jensen PIN if configured (when detected as Jensen, field was shown inline)
+                if selected_bed_type == BED_TYPE_JENSEN:
+                    entry_data[CONF_JENSEN_PIN] = user_input.get(CONF_JENSEN_PIN, "")
                 # Add Richmat remote code if configured (when detected as Richmat, field was shown inline)
                 if selected_bed_type == BED_TYPE_RICHMAT:
                     user_selected_remote = user_input.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
@@ -359,6 +364,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
             schema_dict[vol.Optional(CONF_OCTO_PIN, default=DEFAULT_OCTO_PIN)] = TextSelector(
+                TextSelectorConfig()
+            )
+
+        # Add PIN field for Jensen beds (default PIN "3060" is used if empty)
+        if bed_type == BED_TYPE_JENSEN:
+            schema_dict[vol.Optional(CONF_JENSEN_PIN, default="")] = TextSelector(
                 TextSelectorConfig()
             )
 
@@ -1594,6 +1605,15 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 vol.Optional(
                     CONF_OCTO_PIN,
                     default=current_data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN),
+                )
+            ] = TextSelector(TextSelectorConfig())
+
+        # Add PIN field for Jensen beds
+        if bed_type == BED_TYPE_JENSEN:
+            schema_dict[
+                vol.Optional(
+                    CONF_JENSEN_PIN,
+                    default=current_data.get(CONF_JENSEN_PIN, ""),
                 )
             ] = TextSelector(TextSelectorConfig())
 
