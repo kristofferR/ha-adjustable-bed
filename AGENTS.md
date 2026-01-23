@@ -194,9 +194,23 @@ custom_components/adjustable_bed/
 
 ## Releases
 
-When creating a release, update the version in **both** files:
-- `custom_components/adjustable_bed/manifest.json` - the `"version"` field
-- `pyproject.toml` - the `version` field in `[project]`
+When creating a release:
+
+1. Update the version in **both** files:
+   - `custom_components/adjustable_bed/manifest.json` - the `"version"` field
+   - `pyproject.toml` - the `version` field in `[project]`
+
+2. Commit, tag, and push:
+   ```bash
+   git commit -m "chore: Bump version to X.Y.Z"
+   git tag vX.Y.Z
+   git push && git push origin vX.Y.Z
+   ```
+
+3. Create a GitHub release with `gh release create` including a changelog with:
+   - **What's New** - New features, new bed support
+   - **Bug Fixes** - List of fixes with brief descriptions
+   - **Upgrading** - Instructions (usually just "Update via HACS or manually replace folder")
 
 ## Development
 
