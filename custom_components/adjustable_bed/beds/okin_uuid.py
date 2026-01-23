@@ -665,7 +665,11 @@ class OkinUuidController(BedController):
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights."""
         await self._execute_command(
-            self._remote.toggle_lights, default_count=50, default_delay_ms=100
+            # Most Okin UUID remotes treat under-bed lights as a single toggle press.
+            # Repeating the command causes visible flashing and can end in "off".
+            self._remote.toggle_lights,
+            default_count=1,
+            default_delay_ms=100,
         )
 
     # Massage methods (may not work on all remotes - inherited from Keeson)
