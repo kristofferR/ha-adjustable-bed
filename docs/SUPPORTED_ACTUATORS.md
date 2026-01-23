@@ -4,26 +4,22 @@ This document provides an overview of supported bed brands. Click on a brand nam
 
 | Brand | Status | Key Features |
 |-------|--------|--------------|
-| [Linak](beds/linak.md) | ✅ Tested | Position feedback, 4 memory presets, massage, lights |
-| [Keeson](beds/keeson.md) | ✅ Tested | Position feedback (Ergomotion), 4 presets, massage, lights |
-| [MotoSleep](beds/motosleep.md) | 🔄 Works | 2 memory presets, massage, lights, Zero-G |
-| [Richmat](beds/richmat.md) | 🔄 Works | 2 memory presets, massage, lights, Zero-G |
-| [Octo](beds/octo.md) | 🔄 Works | Two protocol variants, optional PIN auth, lights |
-| [Solace](beds/solace.md) | ❓ Untested | 5 memory presets, lift/tilt, Zero-G |
-| [Leggett & Platt](beds/leggett-platt.md) | ❓ Untested | 4 memory presets, massage (0-10), RGB lighting |
-| [Reverie](beds/reverie.md) | ❓ Untested | Position control (0-100%), 4 presets, wave massage |
-| [Okimat/Okin](beds/okimat.md) | ❓ Untested | 4 memory presets, massage, lights (requires pairing) |
-| [Jiecang](beds/jiecang.md) | ❓ Untested | Presets only (no direct motor), 2 memory slots |
-| [DewertOkin](beds/dewertokin.md) | ❓ Untested | 2 memory presets, wave massage, lights |
-| [Serta](beds/serta.md) | ❓ Untested | Massage intensity control, Zero-G/TV/Lounge |
-| [Mattress Firm 900](beds/mattressfirm.md) | ❓ Untested | Lumbar control, 3-level massage, built-in presets |
-| [Nectar](beds/nectar.md) | ❓ Untested | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
-
-## Status Legend
-
-- ✅ **Tested** - Confirmed working by community members
-- 🔄 **Works** - Working but may have improvements in progress
-- ❓ **Untested** - Implemented based on protocol documentation, needs testing
+| [Linak](beds/linak.md) | ✅ Supported | Position feedback, 4 memory presets, massage, lights |
+| [Keeson](beds/keeson.md) | ✅ Supported | Position feedback (Ergomotion), 4 presets, massage, lights |
+| [Richmat](beds/richmat.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
+| [MotoSleep](beds/motosleep.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
+| [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, lights |
+| [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G |
+| [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | 4 memory presets, massage (0-10), RGB lighting |
+| [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
+| [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
+| [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
+| [DewertOkin](beds/dewertokin.md) | ✅ Supported | 2 memory presets, wave massage, lights |
+| [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
+| [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
+| [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
+| [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
+| [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
 
 ---
 
@@ -39,16 +35,20 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 
 | Bed Type | Command Format | Write Method | Pairing Required | Detection |
 |----------|---------------|--------------|------------------|-----------|
-| [Okimat](beds/okimat.md) | 6-byte binary | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
-| [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte binary | UUID `62741525-...` | ✅ Yes | Name patterns |
-| [Nectar](beds/nectar.md) | 7-byte binary | UUID `62741525-...` | ❌ No | Name contains "nectar" |
-| [DewertOkin](beds/dewertokin.md) | 6-byte binary | Handle `0x0013` | ❌ No | Name patterns |
-| [Mattress Firm 900](beds/mattressfirm.md) | 7-byte binary | Nordic UART | ❌ No | Name starts with "iflex" |
+| [Okimat](beds/okimat.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
+| [Okin 64-bit](beds/okimat.md#okin-64-bit-protocol) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
+| [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
+| [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name contains "nectar" |
+| [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
+| [Mattress Firm 900](beds/mattressfirm.md) | 7-byte (32-bit cmd) | Nordic UART | ❌ No | Name starts with "iflex" |
+| [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
+| [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 
 **Key differences:**
-- **6-byte vs 7-byte**: Different command structures - not interchangeable
+- **6-byte vs 7-byte vs 8-byte vs 10-byte**: Different command structures - not interchangeable
+- **32-bit vs 64-bit commands**: Okin 64-bit uses 8-byte command values instead of 4-byte
 - **UUID vs Handle**: DewertOkin writes to a BLE handle instead of a characteristic UUID
-- **Nordic UART**: Mattress Firm uses a completely different BLE service
+- **Nordic UART**: Many newer beds use the Nordic UART service
 
 **If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type.
 
@@ -95,16 +95,20 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - `Nectar*` → Nectar
    - `Okimat*`, `Okin RF*`, `Okin BLE*` → Okimat
    - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
-   - `Ergomotion*` or `Ergo*` → Ergomotion (use Keeson)
+   - `Ergomotion*` or `Ergo*` → Keeson
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
    - `Dewert*`, `A H Beard*`, or `Hankook*` → DewertOkin
    - `Serta*` or `Motion Perfect*` → Serta
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
+   - `Malouf*`, `Structures*` → Malouf
 4. **Check service UUIDs** (using nRF Connect):
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
+   - Service `01000001-...` → Malouf (New OKIN)
+   - Service `0000ffe5-...` → Malouf (Legacy OKIN) or Keeson OKIN variant
+   - Service `0000fee9-...` → Richmat WiLinke or BedTech
 
 If your bed isn't auto-detected, use manual configuration and try different bed types.
 
@@ -125,6 +129,9 @@ Community contributors who helped reverse-engineer specific protocols:
 | Reverie | Vitaliy |
 | Leggett & Platt | MarcusW |
 | Okimat | david_nagy, corne, PT |
+| Malouf | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
+| BedTech | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
+| Okin 64-bit | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
 
 Additional contributions:
 - **Mattress Firm 900**: [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)

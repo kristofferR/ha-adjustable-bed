@@ -66,7 +66,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | Actuator | Example Brands |
 |----------|----------------|
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
-| ✅ [Keeson](docs/beds/keeson.md) | Member's Mark, Purple, GhostBed, ErgoSportive |
+| ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
@@ -74,7 +74,6 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |
-| ✅ [Ergomotion](docs/beds/ergomotion.md) | Serta, Tempur, Beautyrest, King Koil |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Rize, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
