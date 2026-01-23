@@ -10,6 +10,7 @@ from .const import (
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_JENSEN,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -348,6 +349,11 @@ async def create_controller(
         from .beds.bedtech import BedTechController
 
         return BedTechController(coordinator)
+
+    if bed_type == BED_TYPE_JENSEN:
+        from .beds.jensen import JensenController
+
+        return JensenController(coordinator)
 
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController

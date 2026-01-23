@@ -22,6 +22,7 @@ from .const import (
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_JENSEN,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -57,6 +58,8 @@ from .const import (
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
     COMFORT_MOTION_SERVICE_UUID,
+    JENSEN_NAME_PATTERNS,
+    JENSEN_SERVICE_UUID,
     DEWERTOKIN_NAME_PATTERNS,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
@@ -203,6 +206,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_BEDTECH: "BedTech",
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
+    BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, Serta)",
     BED_TYPE_LINAK: "Linak",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
@@ -305,6 +309,34 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
+            confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for Jensen - unique service UUID (00001234)
+    if JENSEN_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:jensen")
+        _LOGGER.info(
+            "Detected Jensen bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_JENSEN,
+            confidence=1.0,
+            signals=signals,
+        )
+
+    # Check for Jensen by name pattern (JMC400)
+    if any(device_name.startswith(pattern) for pattern in JENSEN_NAME_PATTERNS):
+        signals.append("name:jensen")
+        _LOGGER.info(
+            "Detected Jensen bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_JENSEN,
             confidence=0.9,
             signals=signals,
         )
