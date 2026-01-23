@@ -338,6 +338,9 @@
       "massage_mode_step": {
         "name": "Massage Mode"
       },
+      "toggle_light": {
+        "name": "Toggle Light"
+      },
       "light_cycle": {
         "name": "Light Cycle"
       },
@@ -409,11 +412,7 @@
         "name": "Feet Angle"
       }
     },
-    "switch": {
-      "under_bed_lights": {
-        "name": "Under Bed Lights"
-      }
-    },
+    "switch": {},
     "binary_sensor": {
       "ble_connection": {
         "name": "BLE Connection"

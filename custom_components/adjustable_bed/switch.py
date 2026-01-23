@@ -32,16 +32,7 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
     required_capability: str | None = None
 
 
-SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
-    AdjustableBedSwitchEntityDescription(
-        key="under_bed_lights",
-        translation_key="under_bed_lights",
-        icon="mdi:lightbulb",
-        turn_on_fn=lambda ctrl: ctrl.lights_on(),
-        turn_off_fn=lambda ctrl: ctrl.lights_off(),
-        required_capability="supports_lights",
-    ),
-)
+SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = ()
 
 
 async def async_setup_entry(

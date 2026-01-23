@@ -283,7 +283,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
     ),
-    # Light cycle button
+    # Light buttons
+    AdjustableBedButtonEntityDescription(
+        key="toggle_light",
+        translation_key="toggle_light",
+        icon="mdi:lightbulb",
+        press_fn=lambda ctrl: ctrl.lights_toggle(),
+        required_capability="supports_lights",
+    ),
     AdjustableBedButtonEntityDescription(
         key="light_cycle",
         translation_key="light_cycle",
