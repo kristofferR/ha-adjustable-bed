@@ -153,8 +153,8 @@ class JensenController(BedController):
 
         # Ensure exactly 4 digits (pad with 0s or truncate)
         if not sanitized:
-            _LOGGER.warning("Invalid Jensen PIN configured, using fallback '0000'")
-            sanitized = "0000"
+            _LOGGER.warning("Invalid Jensen PIN configured, using default '%s'", self.DEFAULT_PIN)
+            sanitized = self.DEFAULT_PIN
         pin_digits = sanitized.ljust(4, "0")[:4]
 
         return bytes([0x1E, int(pin_digits[0]), int(pin_digits[1]),
