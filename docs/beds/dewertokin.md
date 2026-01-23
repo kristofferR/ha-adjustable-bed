@@ -8,7 +8,7 @@
 
 Brands using DewertOkin actuators:
 
-- Mattress Firm / Sleepy's Elite
+- Mattress Firm (except Sleepy's Elite - see [Sleepy's Elite](sleepys.md))
 - Resident Adjustable Base
 - Rize (multiple models: Home, Remedy, Clarity, Contemporary, Aviada)
 - SIMMONS

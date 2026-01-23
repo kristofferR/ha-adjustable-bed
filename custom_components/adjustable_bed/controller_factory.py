@@ -38,6 +38,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEPYS_BOX15,
+    BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
@@ -354,5 +356,17 @@ async def create_controller(
         variant = protocol_variant if protocol_variant and protocol_variant != "auto" else "nordic"
         _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
         return Okin64BitController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_SLEEPYS_BOX15:
+        from .beds.sleepys import SleepysBox15Controller
+
+        _LOGGER.debug("Using Sleepy's BOX15 controller")
+        return SleepysBox15Controller(coordinator)
+
+    if bed_type == BED_TYPE_SLEEPYS_BOX24:
+        from .beds.sleepys import SleepysBox24Controller
+
+        _LOGGER.debug("Using Sleepy's BOX24 controller")
+        return SleepysBox24Controller(coordinator)
 
     raise ValueError(f"Unknown bed type: {bed_type}")

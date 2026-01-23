@@ -45,6 +45,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEPYS_BOX15,
+    BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
     # Detection constants
     COMFORT_MOTION_SERVICE_UUID,
@@ -71,6 +73,7 @@ from .const import (
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SERTA_NAME_PATTERNS,
+    SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
 )
@@ -176,6 +179,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT: "Richmat",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_SERTA: "Serta Motion Perfect",
+    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
+    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SOLACE: "Solace",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
@@ -279,6 +284,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         )
         return BED_TYPE_REVERIE
 
+    # Check for Sleepy's Elite BOX24 - name-based detection (before Okimat since same UUID)
+    # Sleepy's BOX24 beds use OKIN 64-bit service UUID
+    if (
+        any(pattern in device_name for pattern in SLEEPYS_NAME_PATTERNS)
+        and OKIMAT_SERVICE_UUID.lower() in service_uuids
+    ):
+        _LOGGER.info(
+            "Detected Sleepy's Elite BOX24 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_SLEEPYS_BOX24
+
     # Check for Nectar - name-based detection (before Okimat since same UUID)
     # Nectar beds use OKIN service UUID but different command protocol
     if "nectar" in device_name and OKIMAT_SERVICE_UUID.lower() in service_uuids:
@@ -361,6 +379,19 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
             service_info.name,
         )
         return BED_TYPE_ERGOMOTION
+
+    # Check for Sleepy's Elite BOX15 - name pattern + FFE5 service (before Keeson)
+    # Sleepy's BOX15 uses FFE5 service UUID with 9-byte checksum protocol
+    if (
+        any(pattern in device_name for pattern in SLEEPYS_NAME_PATTERNS)
+        and KEESON_BASE_SERVICE_UUID.lower() in service_uuids
+    ):
+        _LOGGER.info(
+            "Detected Sleepy's Elite BOX15 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return BED_TYPE_SLEEPYS_BOX15
 
     # Check for Malouf LEGACY_OKIN - name pattern + FFE5 service (before Keeson)
     # Malouf LEGACY_OKIN uses FFE5 service UUID but different 9-byte command format

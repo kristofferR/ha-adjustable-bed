@@ -61,6 +61,8 @@ BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda pro
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
+BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
+BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -104,6 +106,9 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BEDTECH,
     # OKIN 64-bit
     BED_TYPE_OKIN_64BIT,
+    # Sleepy's Elite
+    BED_TYPE_SLEEPYS_BOX15,
+    BED_TYPE_SLEEPYS_BOX24,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -411,6 +416,14 @@ SOLACE_NAME_PATTERNS: Final = (
 # Malouf name patterns
 # Malouf beds typically have "malouf" in the device name
 MALOUF_NAME_PATTERNS: Final = ("malouf",)
+
+# Sleepy's Elite name patterns (MFRM = Mattress Firm)
+# These beds use the Sleepy's Elite app (com.okin.bedding.sleepy)
+SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
+
+# Sleepy's Elite BOX24 protocol UUIDs (OKIN 64-bit service)
+SLEEPYS_BOX24_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
+SLEEPYS_BOX24_WRITE_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
@@ -1008,4 +1021,10 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Linak: 100ms delay → 15 repeats = 1.5s total
     # Source: com.linak.linakbed.ble.memory ANALYSIS.md
     BED_TYPE_LINAK: (15, 100),
+    # Sleepy's BOX15: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.okin.bedding.sleepy ANALYSIS.md
+    BED_TYPE_SLEEPYS_BOX15: (15, 100),
+    # Sleepy's BOX24: 100ms delay → 15 repeats = 1.5s total
+    # Source: com.okin.bedding.sleepy ANALYSIS.md
+    BED_TYPE_SLEEPYS_BOX24: (15, 100),
 }

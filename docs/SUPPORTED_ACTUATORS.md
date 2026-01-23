@@ -20,6 +20,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 | [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
+| [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 
 ---
 
@@ -102,6 +103,7 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
    - `Malouf*`, `Structures*` → Malouf
+   - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
 4. **Check service UUIDs** (using nRF Connect):
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
    - Service `45e25100-...` → Leggett & Platt Gen2
@@ -132,6 +134,7 @@ Community contributors who helped reverse-engineer specific protocols:
 | Malouf | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
 | BedTech | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
 | Okin 64-bit | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
+| Sleepy's Elite | [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) |
 
 Additional contributions:
 - **Mattress Firm 900**: [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)
