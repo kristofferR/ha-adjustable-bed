@@ -235,7 +235,12 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
         await super().async_added_to_hass()
-        # Register for position updates (which also include massage state changes)
+        # Register for position callbacks because the BLE position notifications
+        # (parsed by _parse_position_message in Keeson/Ergomotion controllers) also
+        # contain massage state data. When the controller receives a notification,
+        # it parses both position and massage state, then triggers all registered
+        # position callbacks. Our _handle_state_update receives these updates and
+        # refreshes the entity state, which reads massage data via get_massage_state().
         self._unregister_callback = self._coordinator.register_position_callback(
             self._handle_state_update
         )
