@@ -343,16 +343,12 @@ class KeesonController(BedController):
             "feet": "keeson_legs",
         }
 
-    # Massage timer support (via MASSAGE_TIMER_STEP command)
+    # Massage timer - Keeson only has step command, no direct timer set
+    # We cannot reliably emulate stepping without knowing current state
     @property
     def supports_massage_timer(self) -> bool:
-        """Return True - Keeson beds support massage timer via step command."""
-        return True
-
-    @property
-    def massage_timer_options(self) -> list[int]:
-        """Return available timer durations: 10, 20, 30 minutes."""
-        return [10, 20, 30]
+        """Return False - Keeson can only step through timer, not set directly."""
+        return False
 
     @property
     def massage_intensity_max(self) -> int:

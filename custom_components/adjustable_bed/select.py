@@ -93,13 +93,27 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         state = controller.get_massage_state()
         timer_mode = state.get("timer_mode")
 
-        if timer_mode:
-            # timer_mode is typically "10", "20", "30" as string
-            return f"{timer_mode} min"
+        # Normalize: treat "0", 0, empty, or None as "Off"
+        if not timer_mode or str(timer_mode) == "0":
+            return "Off"
+
+        # Format as option string and validate against allowed options
+        formatted = f"{timer_mode} min"
+        if formatted in self._attr_options:
+            return formatted
         return "Off"
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""
+        # Validate option against allowed options
+        if option not in self._attr_options:
+            _LOGGER.warning(
+                "Invalid timer option '%s' - allowed options: %s",
+                option,
+                self._attr_options,
+            )
+            return
+
         _LOGGER.info(
             "Massage timer set requested: %s (device: %s)",
             option,
@@ -111,11 +125,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             minutes = 0
         else:
             # Extract number from "10 min", "20 min", etc.
-            try:
-                minutes = int(option.split()[0])
-            except (ValueError, IndexError):
-                _LOGGER.warning("Invalid timer option: %s", option)
-                return
+            minutes = int(option.split()[0])
 
         async def _set_timer(ctrl: BedController) -> None:
             await ctrl.set_massage_timer(minutes)

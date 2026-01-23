@@ -267,5 +267,9 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
 
         # Timer mode is a string, intensity is int
         if self.entity_description.state_key == "timer_mode":
-            return str(value) if value else "Off"
+            # Normalize: treat "0", 0, or empty string as "Off"
+            str_value = str(value)
+            if str_value == "" or str_value == "0":
+                return "Off"
+            return str_value
         return int(value)

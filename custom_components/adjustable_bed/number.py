@@ -393,7 +393,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set the massage intensity level."""
         zone = self.entity_description.massage_zone
-        level = int(round(value))
+        level = round(value)
 
         _LOGGER.info(
             "Massage intensity set requested: %s zone to level %d (device: %s)",
