@@ -1038,51 +1038,51 @@ DEFAULT_MOTOR_PULSE_COUNT: Final = 25  # Default for most beds
 DEFAULT_MOTOR_PULSE_DELAY_MS: Final = 50  # Default for most beds
 
 # Per-bed-type motor pulse defaults based on app disassembly analysis
-# Target: ~1.5 second total motor movement duration (repeat_count = 1500ms / delay_ms)
+# Target: ~1.0 second total motor movement duration (repeat_count = 1000ms / delay_ms)
 BED_MOTOR_PULSE_DEFAULTS: Final = {
-    # Richmat: 150ms delay → 10 repeats = 1.5s total
+    # Richmat: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md
-    BED_TYPE_RICHMAT: (10, 150),
-    # Keeson: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_RICHMAT: (7, 150),
+    # Keeson: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
-    BED_TYPE_KEESON: (15, 100),
-    # Ergomotion: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_KEESON: (10, 100),
+    # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
-    BED_TYPE_ERGOMOTION: (15, 100),
-    # Serta: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_ERGOMOTION: (10, 100),
+    # Serta: 100ms delay → 10 repeats = 1.0s total
     # Source: com.ore.serta330 ANALYSIS.md
-    BED_TYPE_SERTA: (15, 100),
-    # Malouf Legacy OKIN: 150ms delay → 10 repeats = 1.5s total
+    BED_TYPE_SERTA: (10, 100),
+    # Malouf Legacy OKIN: 150ms delay → 7 repeats = 1.05s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
-    BED_TYPE_MALOUF_LEGACY_OKIN: (10, 150),
-    # Malouf New OKIN (Nordic): 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_MALOUF_LEGACY_OKIN: (7, 150),
+    # Malouf New OKIN (Nordic): 100ms delay → 10 repeats = 1.0s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
-    BED_TYPE_MALOUF_NEW_OKIN: (15, 100),
-    # OKIN FFE: 150ms delay → 10 repeats = 1.5s total
+    BED_TYPE_MALOUF_NEW_OKIN: (10, 100),
+    # OKIN FFE: 150ms delay → 7 repeats = 1.05s total
     # Source: com.lucid.bedbase ANALYSIS.md
-    BED_TYPE_OKIN_FFE: (10, 150),
-    # OKIN Nordic: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_OKIN_FFE: (7, 150),
+    # OKIN Nordic: 100ms delay → 10 repeats = 1.0s total
     # Source: com.lucid.bedbase ANALYSIS.md
-    BED_TYPE_OKIN_NORDIC: (15, 100),
-    # Leggett WiLinke: 150ms delay → 10 repeats = 1.5s total
+    BED_TYPE_OKIN_NORDIC: (10, 100),
+    # Leggett WiLinke: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md - WiLinke protocol variant
-    BED_TYPE_LEGGETT_WILINKE: (10, 150),
-    # OCTO: 350ms delay → 4 repeats = 1.4s total
+    BED_TYPE_LEGGETT_WILINKE: (7, 150),
+    # OCTO: 350ms delay → 3 repeats = 1.05s total
     # Source: de.octoactuators.octosmartcontrolapp ANALYSIS.md
-    BED_TYPE_OCTO: (4, 350),
-    # Jiecang: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_OCTO: (3, 350),
+    # Jiecang: 100ms delay → 10 repeats = 1.0s total
     # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
-    BED_TYPE_JIECANG: (15, 100),
-    # Comfort Motion: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_JIECANG: (10, 100),
+    # Comfort Motion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
-    BED_TYPE_COMFORT_MOTION: (15, 100),
-    # Linak: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_COMFORT_MOTION: (10, 100),
+    # Linak: 100ms delay → 10 repeats = 1.0s total
     # Source: com.linak.linakbed.ble.memory ANALYSIS.md
-    BED_TYPE_LINAK: (15, 100),
-    # Sleepy's BOX15: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_LINAK: (10, 100),
+    # Sleepy's BOX15: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
-    BED_TYPE_SLEEPYS_BOX15: (15, 100),
-    # Sleepy's BOX24: 100ms delay → 15 repeats = 1.5s total
+    BED_TYPE_SLEEPYS_BOX15: (10, 100),
+    # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
-    BED_TYPE_SLEEPYS_BOX24: (15, 100),
+    BED_TYPE_SLEEPYS_BOX24: (10, 100),
 }
