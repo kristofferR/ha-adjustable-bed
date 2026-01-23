@@ -26,6 +26,17 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Position calibration constants (from APK analysis)
+# Head: 1 = flat (0%), ~30500 = max raised (~100%)
+HEAD_POS_FLAT = 1
+HEAD_POS_MAX = 30500
+
+# Foot: values appear inverted - higher values may indicate flat
+# FLATTEN command uses 0x60EA (24810), ComfortSequenze shows 60000
+# Using 60000 as flat for now - needs hardware testing
+FOOT_POS_FLAT = 60000
+FOOT_POS_MAX = 1  # Inverted: lower value = more raised
+
 
 class JensenCommands:
     """Jensen 6-byte command constants.
@@ -54,8 +65,9 @@ class JensenCommands:
     PRESET_MEMORY_SAVE = bytes([0x10, 0x40, 0x00, 0x00, 0x00, 0x00])
     PRESET_MEMORY_RECALL = bytes([0x10, 0x80, 0x00, 0x00, 0x00, 0x00])
 
-    # Position read command
+    # Position commands
     READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
+    GET_STATUS = bytes([0x10, 0xFE, 0x00, 0x00, 0x00, 0x00])
 
     # Massage commands (0x12 prefix)
     MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
@@ -99,6 +111,9 @@ class JensenController(BedController):
         self._notify_callback: Callable[[str, float], None] | None = None
         self._features: JensenFeatureFlags = JensenFeatureFlags.NONE
         self._config_loaded: bool = False
+        # Note: Light and massage state is tracked locally. It may become out of sync
+        # if the bed is controlled via remote or the app, or after HA restarts.
+        # The Jensen protocol does not support querying actual state.
         self._lights_on: bool = False
         self._underbed_lights_on: bool = False
         self._massage_head_on: bool = False
@@ -210,11 +225,7 @@ class JensenController(BedController):
                     | JensenFeatureFlags.LIGHT
                     | JensenFeatureFlags.LIGHT_UNDERBED
                 )
-                self._config_loaded = True
                 return
-
-            # Stop notifications
-            await self.client.stop_notify(JENSEN_CHAR_UUID)
 
             # Parse config response
             if config_data:
@@ -234,12 +245,16 @@ class JensenController(BedController):
                 _LOGGER.warning("No config data received")
                 self._features = JensenFeatureFlags.NONE
 
-            self._config_loaded = True
-
         except BleakError as err:
             _LOGGER.warning("Failed to query config: %s", err)
-            # Default to basic features on error
+            self._features = JensenFeatureFlags.NONE
+        finally:
             self._config_loaded = True
+            # Always try to stop notifications
+            try:
+                await self.client.stop_notify(JENSEN_CHAR_UUID)
+            except (BleakError, AttributeError):
+                pass
 
     async def write_command(
         self,
@@ -276,20 +291,125 @@ class JensenController(BedController):
             if i < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
+    def _raw_to_percentage(self, raw_value: int, motor: str) -> float:
+        """Convert raw position value to percentage (0-100).
+
+        Args:
+            raw_value: Raw 16-bit position value from the bed
+            motor: Motor name ("head" or "foot")
+
+        Returns:
+            Position as percentage (0 = flat, 100 = max raised)
+        """
+        if motor == "head":
+            # Head: 1 = flat (0%), ~30500 = max (100%)
+            if raw_value <= HEAD_POS_FLAT:
+                return 0.0
+            if raw_value >= HEAD_POS_MAX:
+                return 100.0
+            return min(100.0, (raw_value - HEAD_POS_FLAT) / (HEAD_POS_MAX - HEAD_POS_FLAT) * 100)
+        else:
+            # Foot: values are inverted (higher = flat, lower = raised)
+            # 60000 = flat (0%), 1 = max (100%)
+            if raw_value >= FOOT_POS_FLAT:
+                return 0.0
+            if raw_value <= FOOT_POS_MAX:
+                return 100.0
+            return min(100.0, (FOOT_POS_FLAT - raw_value) / (FOOT_POS_FLAT - FOOT_POS_MAX) * 100)
+
+    def _handle_notification(self, _sender: int, data: bytearray) -> None:
+        """Handle BLE notification data.
+
+        Parses position responses with format:
+        [0x10, ??, headMSB, headLSB, footMSB, footLSB]
+        """
+        self.forward_raw_notification(JENSEN_CHAR_UUID, bytes(data))
+
+        if len(data) < 6:
+            _LOGGER.debug("Jensen notification too short: %s", data.hex())
+            return
+
+        cmd_type = data[0]
+
+        if cmd_type == 0x10:
+            # Motor/position response: [10, ??, headMSB, headLSB, footMSB, footLSB]
+            head_pos = (data[2] << 8) | data[3]
+            foot_pos = (data[4] << 8) | data[5]
+
+            _LOGGER.debug(
+                "Jensen position update: head_raw=%d, foot_raw=%d",
+                head_pos,
+                foot_pos,
+            )
+
+            if self._notify_callback:
+                head_pct = self._raw_to_percentage(head_pos, "head")
+                foot_pct = self._raw_to_percentage(foot_pos, "foot")
+
+                _LOGGER.debug(
+                    "Jensen position percentages: head=%.1f%%, foot=%.1f%%",
+                    head_pct,
+                    foot_pct,
+                )
+
+                # Map to standard motor names (head/back and feet/legs)
+                self._notify_callback("head", head_pct)
+                self._notify_callback("feet", foot_pct)
+
+        elif cmd_type == 0x0A:
+            # Config response - handled separately in query_config
+            _LOGGER.debug("Jensen config notification: %s", data.hex())
+
     async def start_notify(self, callback: Callable[[str, float], None]) -> None:
         """Start listening for position notifications."""
         self._notify_callback = callback
-        _LOGGER.debug("Jensen beds don't support continuous position notifications")
+
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.warning("Cannot start Jensen notifications: not connected")
+            return
+
+        try:
+            await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
+            _LOGGER.info("Started position notifications for Jensen bed")
+
+            # Request initial position reading
+            await self.read_positions()
+
+        except BleakError as err:
+            _LOGGER.warning("Failed to start Jensen notifications: %s", err)
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
+        if self.client is None or not self.client.is_connected:
+            return
 
-    async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data."""
-        # Jensen beds may support position reading via READ_POSITION command
-        # but the response format is not fully documented
-        pass
+        try:
+            await self.client.stop_notify(JENSEN_CHAR_UUID)
+            _LOGGER.debug("Stopped Jensen position notifications")
+        except BleakError:
+            pass
+
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+        """Read current position via READ_POSITION command.
+
+        Sends the position query command. The response will be delivered
+        via the notification handler.
+
+        Args:
+            motor_count: Unused for Jensen (always reads both head and foot).
+        """
+        del motor_count  # Unused - Jensen always reads both motors
+        if self.client is None or not self.client.is_connected:
+            _LOGGER.debug("Cannot read positions: not connected")
+            return
+
+        try:
+            await self.client.write_gatt_char(
+                JENSEN_CHAR_UUID, JensenCommands.READ_POSITION, response=True
+            )
+            _LOGGER.debug("Sent READ_POSITION command to Jensen bed")
+        except BleakError as err:
+            _LOGGER.warning("Failed to send READ_POSITION command: %s", err)
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
@@ -342,7 +462,10 @@ class JensenController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self.move_head_stop()
+        await self.write_command(
+            JensenCommands.MOTOR_STOP,
+            cancel_event=asyncio.Event(),
+        )
 
     async def move_feet_up(self) -> None:
         """Move feet up (same as legs for Jensen)."""
@@ -354,7 +477,10 @@ class JensenController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self.move_head_stop()
+        await self.write_command(
+            JensenCommands.MOTOR_STOP,
+            cancel_event=asyncio.Event(),
+        )
 
     async def stop_all(self) -> None:
         """Stop all motors."""
@@ -366,22 +492,40 @@ class JensenController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(
-            JensenCommands.PRESET_FLAT,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        try:
+            await self.write_command(
+                JensenCommands.PRESET_FLAT,
+                repeat_count=100,
+                repeat_delay_ms=150,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    JensenCommands.MOTOR_STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP after preset_flat")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (Jensen only has 1 slot)."""
-        if memory_num == 1:
+        if memory_num != 1:
+            _LOGGER.warning("Invalid memory preset number: %d (Jensen only supports slot 1)", memory_num)
+            return
+        try:
             await self.write_command(
                 JensenCommands.PRESET_MEMORY_RECALL,
                 repeat_count=100,
                 repeat_delay_ms=150,
             )
-        else:
-            _LOGGER.warning("Invalid memory preset number: %d (Jensen only supports slot 1)", memory_num)
+        finally:
+            try:
+                await self.write_command(
+                    JensenCommands.MOTOR_STOP,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP after preset_memory")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (Jensen only has 1 slot)."""

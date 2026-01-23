@@ -20,7 +20,7 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
-| Position Feedback | ❌ |
+| Position Feedback | ✅ |
 | Memory Presets | ✅ (1 slot) |
 | Flat Preset | ✅ |
 | Massage | ✅ (dynamic) |
@@ -29,6 +29,8 @@
 | Fan | ❌ (detected but not implemented) |
 
 **Note:** Massage and light features are dynamically detected. Not all Jensen beds have these features - the integration queries the bed's configuration on connection to determine available capabilities.
+
+**Position Feedback:** The integration supports reading head and foot positions via the `READ_POSITION` command. Position values are converted to percentages (0% = flat, 100% = max raised). The calibration constants are based on APK analysis and may need adjustment for some bed variants.
 
 ## Protocol Details
 
@@ -120,8 +122,17 @@ From APK analysis:
 - **Stop Required:** Yes, explicit stop command sent after movement
 - **Presets:** Longer repeat duration for preset commands (bed moves to target position)
 
+## Position Response Format
+
+When querying position with `10 FF 00 00 00 00`, the bed responds with:
+`[0x10, ??, headMSB, headLSB, footMSB, footLSB]`
+
+Position value ranges (from APK analysis):
+- **Head:** 1 = flat, ~30500 = max raised
+- **Foot:** Values are inverted - 60000 = flat, 1 = max raised
+
 ## Limitations
 
 - Only 1 memory slot (some beds may have more)
-- Position feedback not fully documented
+- Position calibration may vary between bed models - values are estimated from APK analysis
 - Fan control not implemented (flag is detected but commands unknown)

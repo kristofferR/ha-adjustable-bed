@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
@@ -720,6 +721,11 @@ class AdjustableBedCoordinator:
                     if hasattr(self._controller, "send_pin"):
                         await self._controller.send_pin()
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
+
+                # For Jensen beds: query dynamic features (lights, massage)
+                if self._bed_type == BED_TYPE_JENSEN:
+                    if hasattr(self._controller, "query_config"):
+                        await self._controller.query_config()
 
                 # Store connection metadata for binary sensor
                 self._last_connected = datetime.now(UTC)
