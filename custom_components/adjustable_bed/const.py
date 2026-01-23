@@ -49,6 +49,7 @@ CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
+CONF_JENSEN_PIN: Final = "jensen_pin"
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"

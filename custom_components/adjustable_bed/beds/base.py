@@ -237,7 +237,7 @@ class BedController(ABC):
         """
 
     @abstractmethod
-    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications.
 
         Subscribe to BLE notifications for position updates. When the bed
@@ -247,6 +247,9 @@ class BedController(ABC):
             callback: Function called with (position_name, angle) when position
                      updates are received. position_name is one of: "back",
                      "legs", "head", "feet". angle is in degrees (0.0 = flat).
+                     May be None for beds that require notification setup for
+                     protocol reasons (e.g., Jensen PIN unlock) even when
+                     position feedback is not needed.
 
         Note:
             Not all bed types support position notifications. Implementations

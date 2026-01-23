@@ -64,6 +64,7 @@ from .const import (
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_JENSEN_PIN,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -159,6 +160,9 @@ class AdjustableBedCoordinator:
 
         # Richmat-specific configuration
         self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+
+        # Jensen-specific configuration
+        self._jensen_pin: str = entry.data.get(CONF_JENSEN_PIN, "")
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -703,6 +707,7 @@ class AdjustableBedCoordinator:
                     client=self._client,
                     octo_pin=self._octo_pin,
                     richmat_remote=self._richmat_remote,
+                    jensen_pin=self._jensen_pin,
                 )
                 _LOGGER.debug("Controller created successfully")
 

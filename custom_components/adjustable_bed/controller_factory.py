@@ -75,6 +75,7 @@ async def create_controller(
     client: BleakClient | None,
     octo_pin: str = "",
     richmat_remote: str = "auto",
+    jensen_pin: str = "",
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -88,6 +89,7 @@ async def create_controller(
         client: The BleakClient connection (needed for auto-detection)
         octo_pin: PIN for Octo beds (default: empty string)
         richmat_remote: Remote code for Richmat beds (default: "auto")
+        jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
 
     Returns:
         The appropriate BedController subclass instance
@@ -353,7 +355,7 @@ async def create_controller(
     if bed_type == BED_TYPE_JENSEN:
         from .beds.jensen import JensenController
 
-        return JensenController(coordinator)
+        return JensenController(coordinator, pin=jensen_pin)
 
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController

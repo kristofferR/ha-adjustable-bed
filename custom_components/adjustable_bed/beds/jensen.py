@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import JENSEN_CHAR_UUID
+from ..const import JENSEN_CHAR_UUID, JENSEN_SERVICE_UUID
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -69,14 +69,6 @@ class JensenCommands:
     READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
     GET_STATUS = bytes([0x10, 0xFE, 0x00, 0x00, 0x00, 0x00])
 
-    # PIN unlock command (0x1E prefix)
-    # Format: [0x1E, digit1, digit2, digit3, digit4, 0x00]
-    # Default PIN "3060" = [0x1E, 0x03, 0x00, 0x06, 0x00, 0x00]
-    # Note: Each digit is its numeric value, not ASCII code
-    # The app ALWAYS sends this command immediately after characteristics are discovered,
-    # BEFORE any other commands (including config queries)
-    PIN_UNLOCK = bytes([0x1E, 0x03, 0x00, 0x06, 0x00, 0x00])
-
     # Massage commands (0x12 prefix)
     MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
     MASSAGE_HEAD_ON = bytes([0x12, 0x05, 0x00, 0x00, 0x00, 0x00])
@@ -113,8 +105,16 @@ class JensenController(BedController):
     by querying the bed's configuration.
     """
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Jensen controller."""
+    # Default PIN for Jensen beds
+    DEFAULT_PIN: str = "3060"
+
+    def __init__(self, coordinator: AdjustableBedCoordinator, pin: str = "") -> None:
+        """Initialize the Jensen controller.
+
+        Args:
+            coordinator: The coordinator managing this controller.
+            pin: 4-digit PIN for bed authentication. Defaults to "3060" if empty.
+        """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._features: JensenFeatureFlags = JensenFeatureFlags.NONE
@@ -129,12 +129,26 @@ class JensenController(BedController):
         self._underbed_lights_on: bool = False
         self._massage_head_on: bool = False
         self._massage_foot_on: bool = False
-        _LOGGER.debug("JensenController initialized")
+
+        # PIN for authentication - use provided PIN or default
+        self._pin: str = pin if pin else self.DEFAULT_PIN
+        _LOGGER.debug("JensenController initialized with PIN: %s", "*" * len(self._pin))
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return JENSEN_CHAR_UUID
+
+    def _build_pin_unlock_command(self) -> bytes:
+        """Build the PIN unlock command from the configured PIN.
+
+        PIN command format: [0x1E, digit1, digit2, digit3, digit4, 0x00]
+        Each digit is its numeric value (not ASCII code).
+        """
+        # Pad or truncate to 4 digits
+        pin_digits = self._pin.ljust(4, "0")[:4]
+        return bytes([0x1E, int(pin_digits[0]), int(pin_digits[1]),
+                      int(pin_digits[2]), int(pin_digits[3]), 0x00])
 
     # Capability properties
     @property
@@ -383,10 +397,10 @@ class JensenController(BedController):
         # Log discovered services and characteristic properties for debugging
         if self.client.services:
             for service in self.client.services:
-                if "1234" in str(service.uuid).lower():
+                if str(service.uuid).lower() == JENSEN_SERVICE_UUID.lower():
                     _LOGGER.info("Found Jensen service: %s", service.uuid)
                     for char in service.characteristics:
-                        if "1111" in str(char.uuid).lower():
+                        if str(char.uuid).lower() == JENSEN_CHAR_UUID.lower():
                             _LOGGER.info(
                                 "Found Jensen characteristic: %s, properties: %s",
                                 char.uuid,
@@ -400,10 +414,9 @@ class JensenController(BedController):
 
             # Send PIN unlock command IMMEDIATELY after notifications are enabled
             # The app ALWAYS does this before any other commands (config, position, etc.)
-            # Format: [0x1E, digit1, digit2, digit3, digit4, 0x00] where default PIN is "3060"
             _LOGGER.debug("Sending Jensen PIN unlock command")
             await self.client.write_gatt_char(
-                JENSEN_CHAR_UUID, JensenCommands.PIN_UNLOCK, response=True
+                JENSEN_CHAR_UUID, self._build_pin_unlock_command(), response=True
             )
 
             # Request initial position reading
@@ -450,7 +463,7 @@ class JensenController(BedController):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
-            await self.write_command(command, repeat_count=10, repeat_delay_ms=100)
+            await self.write_command(command)
         finally:
             try:
                 await self.write_command(
