@@ -12,6 +12,8 @@ from homeassistant.helpers.selector import SelectOptionDict
 if TYPE_CHECKING:
     from bleak import BleakClient
 
+from bleak.exc import BleakError
+
 from .const import (
     # Legacy/brand-specific bed types
     # NOTE: BED_TYPE_BEDTECH and BED_TYPE_OKIN_64BIT can now be partially auto-detected:
@@ -459,7 +461,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         if wilinke_uuid.lower() in service_uuids:
             signals.append("uuid:wilinke")
             # FEE9 is ambiguous - could be Richmat or BedTech
-            if BEDTECH_SERVICE_UUID.lower() in service_uuids:
+            if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():
                 _LOGGER.info(
                     "Detected Richmat WiLinke bed at %s (name: %s) - FEE9 UUID (also used by BedTech)",
                     service_info.address,
@@ -770,8 +772,10 @@ async def detect_bed_type_by_characteristics(
             # Without actually sending commands, we can't reliably distinguish
             pass
 
-    except Exception as err:
-        _LOGGER.debug("Characteristic detection failed: %s", err)
+    except BleakError as err:
+        _LOGGER.debug("Characteristic detection failed (BLE error): %s", err)
+    except AttributeError as err:
+        _LOGGER.debug("Characteristic detection failed (malformed service): %s", err)
 
     return None
 

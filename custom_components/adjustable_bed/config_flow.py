@@ -73,6 +73,7 @@ from .const import (
     get_richmat_motor_count,
 )
 from .detection import (
+    BED_TYPE_DISPLAY_NAMES,
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
@@ -392,14 +393,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Add detection confidence info for ambiguous cases
         if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
-            ambiguous_list = ", ".join(detection_result.ambiguous_types)
+            # Map internal bed type constants to human-readable display names
+            display_names = [
+                BED_TYPE_DISPLAY_NAMES.get(t, t) for t in detection_result.ambiguous_types
+            ]
+            ambiguous_list = ", ".join(display_names)
             description_placeholders["detection_note"] = (
                 f"Detection confidence: {int(detection_result.confidence * 100)}%. "
                 f"Could also be: {ambiguous_list}. "
                 "Verify the bed type below matches your device."
             )
         else:
-            description_placeholders["detection_note"] = ""
+            # For high-confidence detections, show a reassuring message
+            description_placeholders["detection_note"] = "Detected automatically."
 
         return self.async_show_form(
             step_id="bluetooth_confirm",

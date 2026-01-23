@@ -30,7 +30,7 @@
       },
       "bluetooth_confirm": {
         "title": "Confirm Adjustable Bed",
-        "description": "Do you want to set up {name}?\n\n{detection_note}",
+        "description": "Do you want to set up {name}?\n{detection_note}",
         "data": {
           "bed_type": "Bed type",
           "name": "Name",
