@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_KEESON,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
+    CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
@@ -124,6 +125,47 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class AdjustableBedMassageNumberEntityDescription(NumberEntityDescription):
+    """Describes an Adjustable Bed massage intensity number entity."""
+
+    massage_zone: str  # "head", "foot", "wave"
+
+
+MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, ...] = (
+    AdjustableBedMassageNumberEntityDescription(
+        key="massage_head_intensity",
+        translation_key="massage_head_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="head",
+    ),
+    AdjustableBedMassageNumberEntityDescription(
+        key="massage_foot_intensity",
+        translation_key="massage_foot_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="foot",
+    ),
+    AdjustableBedMassageNumberEntityDescription(
+        key="massage_wave_intensity",
+        translation_key="massage_wave_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="wave",
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -133,93 +175,115 @@ async def async_setup_entry(
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     bed_type = entry.data.get(CONF_BED_TYPE)
+    has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
+    controller = coordinator.controller
 
-    # Skip number entities if angle sensing is disabled
-    if coordinator.disable_angle_sensing:
-        _LOGGER.debug(
-            "Angle sensing disabled for %s, skipping position number entities",
-            coordinator.name,
-        )
-        return
+    entities: list[NumberEntity] = []
 
-    # Check if bed supports position feedback
-    # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
-    protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-    has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-        bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
-    )
-
-    # Skip number entities for beds without position feedback
-    if not has_position_feedback:
-        _LOGGER.debug(
-            "Bed type %s (variant=%s) does not support position feedback, skipping position number entities",
-            bed_type,
-            protocol_variant,
-        )
-        return
-
-    entities: list[AdjustableBedPositionNumber] = []
-
-    # Keeson and Ergomotion beds use different motor naming:
-    # Head/Feet instead of Back/Legs, but position data still uses "back"/"legs" keys
-    if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-        _LOGGER.debug(
-            "Setting up Keeson/Ergomotion position numbers for %s (motor_count=%d)",
-            coordinator.name,
-            motor_count,
+    # Set up position number entities (only for beds with position feedback)
+    if not coordinator.disable_angle_sensing:
+        # Check if bed supports position feedback
+        # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
+        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+        has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
+            bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
         )
 
-        # Find the descriptions we need
-        descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
+        if has_position_feedback:
+            # Keeson and Ergomotion beds use different motor naming:
+            # Head/Feet instead of Back/Legs, but position data still uses "back"/"legs" keys
+            if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+                _LOGGER.debug(
+                    "Setting up Keeson/Ergomotion position numbers for %s (motor_count=%d)",
+                    coordinator.name,
+                    motor_count,
+                )
 
-        # Create head position (maps to "back" position data)
-        # Keeson/Ergomotion report percentage positions (0-100), not angles
-        head_desc = descriptions_by_key["head_position"]
-        keeson_head_desc = AdjustableBedNumberEntityDescription(
-            key=head_desc.key,
-            translation_key=head_desc.translation_key,
-            icon=head_desc.icon,
-            native_min_value=0,
-            native_max_value=100,
-            native_step=1,
-            native_unit_of_measurement="%",
-            mode=head_desc.mode,
-            position_key="back",  # Map to "back" in position_data
-            move_up_fn=head_desc.move_up_fn,
-            move_down_fn=head_desc.move_down_fn,
-            move_stop_fn=head_desc.move_stop_fn,
-            max_angle=100.0,  # Use 100 as max for percentage-based beds
-            min_motors=2,
-        )
-        entities.append(AdjustableBedPositionNumber(coordinator, keeson_head_desc))
+                # Find the descriptions we need
+                descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
 
-        # Create feet position (maps to "legs" position data)
-        # Keeson/Ergomotion report percentage positions (0-100), not angles
-        feet_desc = descriptions_by_key["feet_position"]
-        keeson_feet_desc = AdjustableBedNumberEntityDescription(
-            key=feet_desc.key,
-            translation_key=feet_desc.translation_key,
-            icon=feet_desc.icon,
-            native_min_value=0,
-            native_max_value=100,
-            native_step=1,
-            native_unit_of_measurement="%",
-            mode=feet_desc.mode,
-            position_key="legs",  # Map to "legs" in position_data
-            move_up_fn=feet_desc.move_up_fn,
-            move_down_fn=feet_desc.move_down_fn,
-            move_stop_fn=feet_desc.move_stop_fn,
-            max_angle=100.0,  # Use 100 as max for percentage-based beds
-            min_motors=2,
-        )
-        entities.append(AdjustableBedPositionNumber(coordinator, keeson_feet_desc))
-    else:
-        # Standard bed motor layout (Back/Legs/Head/Feet)
-        for description in NUMBER_DESCRIPTIONS:
-            if motor_count >= description.min_motors:
-                entities.append(AdjustableBedPositionNumber(coordinator, description))
+                # Create head position (maps to "back" position data)
+                # Keeson/Ergomotion report percentage positions (0-100), not angles
+                head_desc = descriptions_by_key["head_position"]
+                keeson_head_desc = AdjustableBedNumberEntityDescription(
+                    key=head_desc.key,
+                    translation_key=head_desc.translation_key,
+                    icon=head_desc.icon,
+                    native_min_value=0,
+                    native_max_value=100,
+                    native_step=1,
+                    native_unit_of_measurement="%",
+                    mode=head_desc.mode,
+                    position_key="back",  # Map to "back" in position_data
+                    move_up_fn=head_desc.move_up_fn,
+                    move_down_fn=head_desc.move_down_fn,
+                    move_stop_fn=head_desc.move_stop_fn,
+                    max_angle=100.0,  # Use 100 as max for percentage-based beds
+                    min_motors=2,
+                )
+                entities.append(AdjustableBedPositionNumber(coordinator, keeson_head_desc))
 
-    async_add_entities(entities)
+                # Create feet position (maps to "legs" position data)
+                # Keeson/Ergomotion report percentage positions (0-100), not angles
+                feet_desc = descriptions_by_key["feet_position"]
+                keeson_feet_desc = AdjustableBedNumberEntityDescription(
+                    key=feet_desc.key,
+                    translation_key=feet_desc.translation_key,
+                    icon=feet_desc.icon,
+                    native_min_value=0,
+                    native_max_value=100,
+                    native_step=1,
+                    native_unit_of_measurement="%",
+                    mode=feet_desc.mode,
+                    position_key="legs",  # Map to "legs" in position_data
+                    move_up_fn=feet_desc.move_up_fn,
+                    move_down_fn=feet_desc.move_down_fn,
+                    move_stop_fn=feet_desc.move_stop_fn,
+                    max_angle=100.0,  # Use 100 as max for percentage-based beds
+                    min_motors=2,
+                )
+                entities.append(AdjustableBedPositionNumber(coordinator, keeson_feet_desc))
+            else:
+                # Standard bed motor layout (Back/Legs/Head/Feet)
+                for description in NUMBER_DESCRIPTIONS:
+                    if motor_count >= description.min_motors:
+                        entities.append(AdjustableBedPositionNumber(coordinator, description))
+        else:
+            _LOGGER.debug(
+                "Bed type %s (variant=%s) does not support position feedback, skipping position number entities",
+                bed_type,
+                entry.data.get(CONF_PROTOCOL_VARIANT),
+            )
+
+    # Set up massage intensity number entities (only for beds with massage and direct intensity control)
+    if has_massage and controller is not None:
+        if getattr(controller, "supports_massage_intensity_control", False):
+            supported_zones = getattr(controller, "massage_intensity_zones", [])
+            max_intensity = getattr(controller, "massage_intensity_max", 10)
+            _LOGGER.debug(
+                "Setting up massage intensity numbers for %s (zones: %s, max: %d)",
+                coordinator.name,
+                supported_zones,
+                max_intensity,
+            )
+
+            for description in MASSAGE_NUMBER_DESCRIPTIONS:
+                if description.massage_zone in supported_zones:
+                    # Create description with correct max value for this controller
+                    adjusted_desc = AdjustableBedMassageNumberEntityDescription(
+                        key=description.key,
+                        translation_key=description.translation_key,
+                        icon=description.icon,
+                        native_min_value=0,
+                        native_max_value=max_intensity,
+                        native_step=1,
+                        mode=description.mode,
+                        massage_zone=description.massage_zone,
+                    )
+                    entities.append(AdjustableBedMassageNumber(coordinator, adjusted_desc))
+
+    if entities:
+        async_add_entities(entities)
 
 
 class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
@@ -287,3 +351,58 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
             move_down_fn=self.entity_description.move_down_fn,
             move_stop_fn=self.entity_description.move_stop_fn,
         )
+
+
+class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
+    """Number entity for Adjustable Bed massage intensity control."""
+
+    entity_description: AdjustableBedMassageNumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedMassageNumberEntityDescription,
+    ) -> None:
+        """Initialize the massage number entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current massage intensity from controller state."""
+        controller = self._coordinator.controller
+        if controller is None:
+            return None
+
+        # Get massage state from controller
+        state = controller.get_massage_state()
+        zone = self.entity_description.massage_zone
+
+        # Map zone to state key
+        key_map = {
+            "head": "head_intensity",
+            "foot": "foot_intensity",
+            "wave": "wave_intensity",
+        }
+        state_key = key_map.get(zone)
+        if state_key and state_key in state:
+            return float(state[state_key])
+        return 0.0
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the massage intensity level."""
+        zone = self.entity_description.massage_zone
+        level = int(round(value))
+
+        _LOGGER.info(
+            "Massage intensity set requested: %s zone to level %d (device: %s)",
+            zone,
+            level,
+            self._coordinator.name,
+        )
+
+        async def _set_intensity(ctrl: BedController) -> None:
+            await ctrl.set_massage_intensity(zone, level)
+
+        await self._coordinator.async_execute_controller_command(_set_intensity)

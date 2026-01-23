@@ -11,7 +11,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
 from bleak.exc import BleakError
@@ -771,3 +771,83 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support massage modes
         """
         raise NotImplementedError("Massage modes not supported on this bed")
+
+    # Massage intensity and timer control (optional - for beds with direct control)
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        """Return True if bed supports setting massage intensity directly.
+
+        When True, the bed can set specific intensity levels (0-10) rather than
+        just stepping up/down. This enables number entity sliders for massage.
+        """
+        return False
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Return list of massage zones that support direct intensity control.
+
+        Possible zones: "head", "foot", "wave", "lumbar"
+        Override in subclasses that support direct intensity control.
+        """
+        return []
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return maximum intensity level for massage zones.
+
+        Most beds use 0-10, some use 0-6. Default is 10.
+        """
+        return 10
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        """Return True if bed supports setting massage timer directly."""
+        return False
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """Return available timer durations in minutes.
+
+        Common options: [10, 20, 30]
+        Override in subclasses that support timer selection.
+        """
+        return []
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set massage intensity for a specific zone.
+
+        Args:
+            zone: Massage zone ("head", "foot", "wave", "lumbar")
+            level: Intensity level (0 to massage_intensity_max, 0 = off)
+
+        Raises:
+            NotImplementedError: If the bed doesn't support direct intensity control
+        """
+        raise NotImplementedError("Direct massage intensity control not supported on this bed")
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set massage timer duration.
+
+        Args:
+            minutes: Timer duration in minutes (0 = off, or a value from massage_timer_options)
+
+        Raises:
+            NotImplementedError: If the bed doesn't support timer selection
+        """
+        raise NotImplementedError("Massage timer selection not supported on this bed")
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return current massage state for state feedback.
+
+        Returns a dict with current state info (keys vary by bed):
+        - head_intensity: int (0-10 or 0-6)
+        - foot_intensity: int
+        - wave_intensity: int
+        - timer_mode: str | None ("10", "20", "30")
+        - head_active: bool
+        - foot_active: bool
+
+        Override in subclasses with state tracking/feedback.
+        """
+        return {}

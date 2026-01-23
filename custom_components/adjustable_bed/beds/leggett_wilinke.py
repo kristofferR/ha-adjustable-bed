@@ -187,6 +187,17 @@ class LeggettWilinkeController(BedController):
         """Return True - this bed uses discrete motor commands."""
         return True
 
+    # Massage timer support
+    @property
+    def supports_massage_timer(self) -> bool:
+        """Return True - L&P WiLinke beds support direct timer selection."""
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """Return available timer durations: 10, 20, 30 minutes."""
+        return [10, 20, 30]
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build WiLinke 5-byte command with checksum.
 
@@ -452,3 +463,27 @@ class LeggettWilinkeController(BedController):
     async def massage_wave_toggle(self) -> None:
         """Toggle wave massage mode."""
         await self.write_command(self._build_command(LeggettWilinkeCommands.MASSAGE_WAVE))
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set massage timer duration.
+
+        Args:
+            minutes: Timer duration (0 = off/stop, 10, 20, or 30)
+        """
+        if minutes == 0:
+            # Turn off massage timer / stop massage
+            await self.massage_off()
+        elif minutes == 10:
+            await self.write_command(
+                self._build_command(LeggettWilinkeCommands.MASSAGE_TIMER_10M)
+            )
+        elif minutes == 20:
+            await self.write_command(
+                self._build_command(LeggettWilinkeCommands.MASSAGE_TIMER_20M)
+            )
+        elif minutes == 30:
+            await self.write_command(
+                self._build_command(LeggettWilinkeCommands.MASSAGE_TIMER_30M)
+            )
+        else:
+            _LOGGER.warning("Invalid timer duration: %d (valid: 0, 10, 20, 30)", minutes)

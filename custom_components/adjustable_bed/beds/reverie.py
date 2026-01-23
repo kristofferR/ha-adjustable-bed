@@ -129,6 +129,22 @@ class ReverieController(BedController):
         """Return True - Reverie beds support direct position commands."""
         return True
 
+    # Massage intensity control - Reverie supports direct level setting (0-10)
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        """Return True - Reverie supports setting massage intensity directly."""
+        return True
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Return zones with direct intensity control: head, foot, wave."""
+        return ["head", "foot", "wave"]
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return 10 - Reverie uses 0-10 intensity scale."""
+        return 10
+
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert angle to Reverie's native 0-100 position.
 
@@ -501,3 +517,38 @@ class ReverieController(BedController):
             repeat_count=100,
             repeat_delay_ms=300,
         )
+
+    # Direct massage intensity control
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set massage intensity for a specific zone.
+
+        Args:
+            zone: "head", "foot", or "wave"
+            level: 0-10 (0 = off)
+        """
+        # Clamp level to valid range
+        level = max(0, min(10, level))
+
+        if zone == "head":
+            self._massage_head_level = level
+            await self.write_command(self._build_command(ReverieCommands.massage_head(level)))
+        elif zone == "foot":
+            self._massage_foot_level = level
+            await self.write_command(self._build_command(ReverieCommands.massage_foot(level)))
+        elif zone == "wave":
+            self._massage_wave_level = level
+            await self.write_command(self._build_command(ReverieCommands.massage_wave(level)))
+        else:
+            _LOGGER.warning("Unknown massage zone: %s", zone)
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return current massage state from internal tracking.
+
+        Returns:
+            dict with head_intensity, foot_intensity, wave_intensity
+        """
+        return {
+            "head_intensity": self._massage_head_level,
+            "foot_intensity": self._massage_foot_level,
+            "wave_intensity": self._massage_wave_level,
+        }

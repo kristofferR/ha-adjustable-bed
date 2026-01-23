@@ -309,37 +309,37 @@
         "name": "Save to Memory 4"
       },
       "massage_all_off": {
-        "name": "Massage Off"
+        "name": "Massage: Off"
       },
       "massage_all_toggle": {
-        "name": "Massage Toggle"
+        "name": "Massage: Toggle"
       },
       "massage_all_up": {
-        "name": "Massage Intensity Up"
+        "name": "Massage: Intensity Up"
       },
       "massage_all_down": {
-        "name": "Massage Intensity Down"
+        "name": "Massage: Intensity Down"
       },
       "massage_head_toggle": {
-        "name": "Head Massage Toggle"
+        "name": "Massage: Head Toggle"
       },
       "massage_head_up": {
-        "name": "Head Massage Up"
+        "name": "Massage: Head Up"
       },
       "massage_head_down": {
-        "name": "Head Massage Down"
+        "name": "Massage: Head Down"
       },
       "massage_foot_toggle": {
-        "name": "Foot Massage Toggle"
+        "name": "Massage: Foot Toggle"
       },
       "massage_foot_up": {
-        "name": "Foot Massage Up"
+        "name": "Massage: Foot Up"
       },
       "massage_foot_down": {
-        "name": "Foot Massage Down"
+        "name": "Massage: Foot Down"
       },
       "massage_mode_step": {
-        "name": "Massage Mode"
+        "name": "Massage: Mode"
       },
       "light_cycle": {
         "name": "Light Cycle"
@@ -352,6 +352,18 @@
       },
       "connect": {
         "name": "Connect"
+      },
+      "head_up": {
+        "name": "Head Up"
+      },
+      "head_down": {
+        "name": "Head Down"
+      },
+      "legs_up": {
+        "name": "Legs Up"
+      },
+      "legs_down": {
+        "name": "Legs Down"
       }
     },
     "cover": {
@@ -398,6 +410,15 @@
       },
       "feet_angle": {
         "name": "Feet Angle"
+      },
+      "massage_head_level": {
+        "name": "Massage: Head Level"
+      },
+      "massage_foot_level": {
+        "name": "Massage: Foot Level"
+      },
+      "massage_timer_mode": {
+        "name": "Massage: Timer Mode"
       }
     },
     "switch": {
@@ -422,6 +443,20 @@
       },
       "feet_position": {
         "name": "Feet Position"
+      },
+      "massage_head_intensity": {
+        "name": "Massage: Head Intensity"
+      },
+      "massage_foot_intensity": {
+        "name": "Massage: Foot Intensity"
+      },
+      "massage_wave_intensity": {
+        "name": "Massage: Wave Intensity"
+      }
+    },
+    "select": {
+      "massage_timer": {
+        "name": "Massage: Timer"
       }
     }
   },
