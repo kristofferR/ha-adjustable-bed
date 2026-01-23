@@ -427,16 +427,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for BedTech - name-based detection (before Richmat WiLinke since same UUID)
     # BedTech shares FEE9 service UUID with Richmat WiLinke
     if any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS):
-        for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
-            if wilinke_uuid.lower() in service_uuids:
-                signals.append("uuid:fee9")
-                signals.append("name:bedtech")
-                _LOGGER.info(
-                    "Detected BedTech bed at %s (name: %s)",
-                    service_info.address,
-                    service_info.name,
-                )
-                return DetectionResult(bed_type=BED_TYPE_BEDTECH, confidence=0.9, signals=signals)
+        if BEDTECH_SERVICE_UUID.lower() in service_uuids:
+            signals.append(f"uuid:{BEDTECH_SERVICE_UUID.lower()}")
+            signals.append("name:bedtech")
+            _LOGGER.info(
+                "Detected BedTech bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_BEDTECH, confidence=0.9, signals=signals)
 
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check
