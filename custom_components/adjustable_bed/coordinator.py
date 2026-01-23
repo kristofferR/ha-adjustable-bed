@@ -1276,15 +1276,24 @@ class AdjustableBedCoordinator:
 
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""
+        if self._controller is None:
+            _LOGGER.warning("Cannot start notifications: no controller available")
+            return
+
+        # Jensen beds ALWAYS need start_notify() called, even with angle sensing disabled,
+        # because it sends the PIN unlock command required before any other commands work.
+        # The Jensen app sequence: enable notifications → PIN unlock → config query → commands
+        if self._bed_type == BED_TYPE_JENSEN:
+            _LOGGER.info("Starting notifications for Jensen bed %s (required for PIN unlock)", self._address)
+            callback = None if self._disable_angle_sensing else self._handle_position_update
+            await self._controller.start_notify(callback)
+            return
+
         if self._disable_angle_sensing:
             _LOGGER.info(
                 "Angle sensing disabled for %s - skipping position notifications (physical remote will remain functional)",
                 self._address,
             )
-            return
-
-        if self._controller is None:
-            _LOGGER.warning("Cannot start notifications: no controller available")
             return
 
         _LOGGER.info("Starting position notifications for %s", self._address)

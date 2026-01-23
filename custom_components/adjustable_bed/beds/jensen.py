@@ -69,6 +69,14 @@ class JensenCommands:
     READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
     GET_STATUS = bytes([0x10, 0xFE, 0x00, 0x00, 0x00, 0x00])
 
+    # PIN unlock command (0x1E prefix)
+    # Format: [0x1E, digit1, digit2, digit3, digit4, 0x00]
+    # Default PIN "3060" = [0x1E, 0x03, 0x00, 0x06, 0x00, 0x00]
+    # Note: Each digit is its numeric value, not ASCII code
+    # The app ALWAYS sends this command immediately after characteristics are discovered,
+    # BEFORE any other commands (including config queries)
+    PIN_UNLOCK = bytes([0x1E, 0x03, 0x00, 0x06, 0x00, 0x00])
+
     # Massage commands (0x12 prefix)
     MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
     MASSAGE_HEAD_ON = bytes([0x12, 0x05, 0x00, 0x00, 0x00, 0x00])
@@ -359,23 +367,52 @@ class JensenController(BedController):
                 self._config_data = bytes(data)
                 self._config_received.set()
 
-    async def start_notify(self, callback: Callable[[str, float], None]) -> None:
-        """Start listening for position notifications."""
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Start listening for position notifications.
+
+        The app ALWAYS enables notifications before sending any commands.
+        This method must be called even when angle sensing is disabled, because
+        Jensen beds require the notification handler to be active for commands to work.
+        """
         self._notify_callback = callback
 
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning("Cannot start Jensen notifications: not connected")
             return
 
+        # Log discovered services and characteristic properties for debugging
+        if self.client.services:
+            for service in self.client.services:
+                if "1234" in str(service.uuid).lower():
+                    _LOGGER.info("Found Jensen service: %s", service.uuid)
+                    for char in service.characteristics:
+                        if "1111" in str(char.uuid).lower():
+                            _LOGGER.info(
+                                "Found Jensen characteristic: %s, properties: %s",
+                                char.uuid,
+                                char.properties,
+                            )
+
         try:
+            # Always enable notifications - the app does this before any commands
             await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
             _LOGGER.info("Started position notifications for Jensen bed")
+
+            # Send PIN unlock command IMMEDIATELY after notifications are enabled
+            # The app ALWAYS does this before any other commands (config, position, etc.)
+            # Format: [0x1E, digit1, digit2, digit3, digit4, 0x00] where default PIN is "3060"
+            _LOGGER.debug("Sending Jensen PIN unlock command")
+            await self.client.write_gatt_char(
+                JENSEN_CHAR_UUID, JensenCommands.PIN_UNLOCK, response=True
+            )
 
             # Request initial position reading
             await self.read_positions()
 
         except BleakError as err:
             _LOGGER.warning("Failed to start Jensen notifications: %s", err)
+            # Log all available services for debugging
+            self.log_discovered_services(level=logging.INFO)
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
