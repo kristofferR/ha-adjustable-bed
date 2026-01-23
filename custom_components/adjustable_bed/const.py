@@ -90,6 +90,7 @@ BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 11
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
+BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
@@ -134,6 +135,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SERTA,
     # BedTech
     BED_TYPE_BEDTECH,
+    # Jensen
+    BED_TYPE_JENSEN,
     # OKIN 64-bit
     BED_TYPE_OKIN_64BIT,
     # Sleepy's Elite
@@ -479,9 +482,19 @@ MALOUF_NAME_PATTERNS: Final = ("malouf",)
 # These beds use the Sleepy's Elite app (com.okin.bedding.sleepy)
 SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 
+# Jensen name patterns (JMC400 / LinON Entry)
+# Source: com.hilding.jbg_ble APK analysis
+JENSEN_NAME_PATTERNS: Final = ("jmc400",)
+
 # Sleepy's Elite BOX24 protocol UUIDs (OKIN 64-bit service)
 SLEEPYS_BOX24_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 SLEEPYS_BOX24_WRITE_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
+
+# Jensen specific UUIDs (JMC400 / LinON Entry)
+# Protocol reverse-engineered from com.hilding.jbg_ble APK
+# Uses simple 6-byte command format with no checksum
+JENSEN_SERVICE_UUID: Final = "00001234-0000-1000-8000-00805f9b34fb"
+JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
@@ -1085,4 +1098,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX24: (10, 100),
+    # Jensen: 100ms delay → 10 repeats = 1.0s total
+    # Source: com.hilding.jbg_ble APK analysis
+    BED_TYPE_JENSEN: (10, 100),
 }

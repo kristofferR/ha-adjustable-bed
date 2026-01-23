@@ -20,6 +20,7 @@ from .base import BedController
 
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
+from .jensen import JensenController
 from .keeson import KeesonController
 from .leggett_gen2 import LeggettGen2Controller
 from .leggett_okin import LeggettOkinController
@@ -51,6 +52,7 @@ __all__ = [
     "LeggettWilinkeController",
     # Brand-specific controllers
     "JiecangController",
+    "JensenController",
     "KeesonController",
     "LinakController",
     "MotoSleepController",

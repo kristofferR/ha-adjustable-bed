@@ -14,6 +14,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
 | [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
+| [Jensen](beds/jensen.md) | ⚠️ Beta | 1 memory preset, dynamic feature detection (lights, massage) |
 | [DewertOkin](beds/dewertokin.md) | ✅ Supported | 2 memory presets, wave massage, lights |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |

@@ -75,6 +75,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion |
+| ⚠️ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Rize, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | Mattress Firm, iFlex |
