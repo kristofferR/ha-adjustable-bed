@@ -105,6 +105,11 @@ class Okin7ByteController(BedController):
         return True
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True - Okin 7-byte has separate LIGHT_ON/LIGHT_OFF commands."""
+        return True
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return False - these beds don't support programmable memory presets."""
         return False

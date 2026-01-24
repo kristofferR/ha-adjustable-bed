@@ -475,6 +475,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True if bed has separate on/off light commands."""
+        return False
+
+    @property
     def has_lumbar_support(self) -> bool:
         """Return True if bed has lumbar motor control."""
         return False

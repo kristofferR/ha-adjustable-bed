@@ -188,6 +188,11 @@ class JensenController(BedController):
         return bool(self._features & JensenFeatureFlags.LIGHT)
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True if bed has discrete on/off light commands."""
+        return self.supports_lights
+
+    @property
     def supports_under_bed_lights(self) -> bool:
         """Return True if bed has under-bed light (determined dynamically)."""
         return bool(self._features & JensenFeatureFlags.LIGHT_UNDERBED)

@@ -118,6 +118,11 @@ class LinakController(BedController):
         return True
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True - Linak has separate on/off commands."""
+        return True
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return True - Linak beds support memory presets."""
         return True

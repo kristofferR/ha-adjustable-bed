@@ -398,6 +398,11 @@ class OctoController(BedController):
         return True
 
     @property
+    def supports_discrete_light_control(self) -> bool:
+        """Return True if bed has separate on/off light commands."""
+        return self.supports_lights
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return False - Octo beds don't support memory presets."""
         return False
