@@ -32,7 +32,16 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
     required_capability: str | None = None
 
 
-SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = ()
+SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
+    AdjustableBedSwitchEntityDescription(
+        key="under_bed_lights",
+        translation_key="under_bed_lights",
+        icon="mdi:lightbulb",
+        turn_on_fn=lambda ctrl: ctrl.lights_on(),
+        turn_off_fn=lambda ctrl: ctrl.lights_off(),
+        required_capability="supports_discrete_light_control",
+    ),
+)
 
 
 async def async_setup_entry(
@@ -77,7 +86,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         # Default to False for toggle-only beds when controller disconnects
         controller = coordinator.controller
         self._supports_discrete_light_control = (
-            getattr(controller, "supports_discrete_light_control", True)
+            getattr(controller, "supports_discrete_light_control", False)
             if controller is not None
             else False
         )

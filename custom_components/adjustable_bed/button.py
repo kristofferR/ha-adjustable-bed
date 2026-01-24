@@ -348,6 +348,10 @@ async def async_setup_entry(
     for description in BUTTON_DESCRIPTIONS:
         if description.requires_massage and not has_massage:
             continue
+        # Skip toggle_light if controller supports discrete light control (use switch instead)
+        if description.key == "toggle_light":
+            if controller and getattr(controller, "supports_discrete_light_control", False):
+                continue
         # Skip buttons that require capabilities the controller doesn't have
         if description.required_capability is not None:
             if controller is None:
