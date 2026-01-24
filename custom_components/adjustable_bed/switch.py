@@ -86,7 +86,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         # Default to False for toggle-only beds when controller disconnects
         controller = coordinator.controller
         self._supports_discrete_light_control = (
-            getattr(controller, "supports_discrete_light_control", True)
+            getattr(controller, "supports_discrete_light_control", False)
             if controller is not None
             else False
         )
