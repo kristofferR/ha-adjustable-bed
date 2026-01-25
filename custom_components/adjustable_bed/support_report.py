@@ -168,19 +168,23 @@ async def _get_bluetooth_info(
     else:
         info["last_advertisement"] = None
 
-    # Get adapter info if available
+    # Get scanner/adapter info if available
     try:
-        adapters = bluetooth.async_get_adapters(hass)  # type: ignore[attr-defined]
-        info["adapters"] = [
+        # Use async_current_scanners which is available in modern HA versions
+        scanners = bluetooth.async_current_scanners(hass)
+        info["scanners"] = [
             {
-                "address": adapter.get("address"),
-                "adapter_name": adapter.get("name"),
-                "passive_scan": adapter.get("passive_scan"),
+                "source": getattr(scanner, "source", "unknown"),
+                "name": getattr(scanner, "name", "unknown"),
+                "scanning": getattr(scanner, "scanning", None),
+                "connector": type(getattr(scanner, "connector", None)).__name__
+                if hasattr(scanner, "connector")
+                else None,
             }
-            for adapter in adapters
+            for scanner in scanners
         ]
     except Exception as err:
-        info["adapters_error"] = str(err)
+        info["scanners_error"] = str(err)
 
     return info
 

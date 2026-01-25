@@ -38,6 +38,7 @@ from .reverie import ReverieController
 from .reverie_nightstand import ReverieNightstandController
 from .richmat import RichmatController
 from .solace import SolaceController
+from .svane import SvaneController
 
 __all__ = [
     # Base class
@@ -61,4 +62,5 @@ __all__ = [
     "ReverieNightstandController",
     "RichmatController",
     "SolaceController",
+    "SvaneController",
 ]

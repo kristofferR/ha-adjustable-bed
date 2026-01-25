@@ -95,6 +95,7 @@ BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
+BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -143,6 +144,8 @@ SUPPORTED_BED_TYPES: Final = [
     # Sleepy's Elite
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    # Svane
+    BED_TYPE_SVANE,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -496,6 +499,22 @@ SLEEPYS_BOX24_WRITE_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # Uses simple 6-byte command format with no checksum
 JENSEN_SERVICE_UUID: Final = "00001234-0000-1000-8000-00805f9b34fb"
 JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
+
+# Svane LinonPI specific UUIDs (multi-service architecture)
+# Protocol reverse-engineered from com.produktide.svane.svaneremote APK
+# Each motor has its own service with direction-specific characteristics
+SVANE_HEAD_SERVICE_UUID: Final = "0000abcb-0000-1000-8000-00805f9b34fb"
+SVANE_FEET_SERVICE_UUID: Final = "0000c258-0000-1000-8000-00805f9b34fb"
+SVANE_LIGHT_SERVICE_UUID: Final = "0000d07b-0000-1000-8000-00805f9b34fb"
+# Characteristic UUIDs (same UUID exists in each motor service)
+SVANE_CHAR_UP_UUID: Final = "000001ac-0000-1000-8000-00805f9b34fb"
+SVANE_CHAR_DOWN_UUID: Final = "0000bae9-0000-1000-8000-00805f9b34fb"
+SVANE_CHAR_POSITION_UUID: Final = "0000143d-0000-1000-8000-00805f9b34fb"
+SVANE_CHAR_MEMORY_UUID: Final = "0000fb6e-0000-1000-8000-00805f9b34fb"
+SVANE_LIGHT_ON_OFF_UUID: Final = "0000a8e0-0000-1000-8000-00805f9b34fb"
+
+# Svane name patterns
+SVANE_NAME_PATTERNS: Final = ("svane bed",)
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
@@ -1104,4 +1123,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Jensen: 400ms delay → 10 repeats = 4.0s total
     # Source: air.no.jensen.adjustablesleep APK analysis (RaiseAndLower.as:79 uses 400ms)
     BED_TYPE_JENSEN: (10, 400),
+    # Svane: 100ms delay → 10 repeats = 1.0s total
+    # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
+    BED_TYPE_SVANE: (10, 100),
 }
