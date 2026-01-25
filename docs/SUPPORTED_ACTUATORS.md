@@ -39,7 +39,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | Bed Type | Command Format | Write Method | Pairing Required | Detection |
 |----------|---------------|--------------|------------------|-----------|
 | [Okimat](beds/okimat.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
-| [Okin 64-bit](beds/sleepys.md) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
+| [Okin 64-bit](beds/sleepys.md#box24-protocol-7-byte-packets) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
 | [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name contains "nectar" |
 | [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
