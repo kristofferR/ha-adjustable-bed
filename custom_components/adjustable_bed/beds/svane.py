@@ -53,7 +53,7 @@ class SvaneCommands:
     FLATTEN: bytes = bytes([0x3F, 0x81, 0x00, 0x00, 0x00, 0x00])
     SAVE_POSITION: bytes = bytes([0x3F, 0x40, 0x00, 0x00, 0x00, 0x00])
     RECALL_POSITION: bytes = bytes([0x3F, 0x80, 0x00, 0x00, 0x00, 0x00])
-    READ_POSITION: bytes = bytes([0x3F, 0xFF, 0x00, 0x00, 0x00, 0x00])
+    READ_POSITION: bytes = bytes([0x3F, 0xFF, 0x00, 0x00, 0x00, 0x00])  # TODO: for future position query support
 
     # Light commands (6-byte, written to LIGHT_ON_OFF characteristic)
     LIGHT_ON: bytes = bytes([0x13, 0x02, 0x50, 0x01, 0x00, 0x50])  # brightness=80
@@ -68,6 +68,10 @@ class SvaneController(BedController):
     in multiple services, so we must find the characteristic within the correct
     service before writing.
     """
+
+    # Max angle estimates for position feedback (0-100 raw value mapped to degrees)
+    _HEAD_MAX_ANGLE: float = 60.0
+    _FEET_MAX_ANGLE: float = 45.0
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Svane controller."""
@@ -260,9 +264,8 @@ class SvaneController(BedController):
                         )
                         if len(data) >= 1 and self._notify_callback:
                             # Position is a raw value, estimate angle
-                            # Assuming 0-100 range maps to 0-60 degrees for head, 0-45 for feet
                             position = data[0]
-                            max_angle = 60.0 if name == "back" else 45.0
+                            max_angle = self._HEAD_MAX_ANGLE if name == "back" else self._FEET_MAX_ANGLE
                             angle = position * max_angle / 100
                             self._notify_callback(name, angle)
 
@@ -293,8 +296,8 @@ class SvaneController(BedController):
             return
 
         position_configs = [
-            ("back", SVANE_HEAD_SERVICE_UUID, 60.0),
-            ("legs", SVANE_FEET_SERVICE_UUID, 45.0),
+            ("back", SVANE_HEAD_SERVICE_UUID, self._HEAD_MAX_ANGLE),
+            ("legs", SVANE_FEET_SERVICE_UUID, self._FEET_MAX_ANGLE),
         ]
 
         for motor_name, service_uuid, max_angle in position_configs:
@@ -356,7 +359,6 @@ class SvaneController(BedController):
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
-        # Stop both directions to be safe
         cancel_event = asyncio.Event()
         await self._write_to_service_char(
             SVANE_HEAD_SERVICE_UUID,
