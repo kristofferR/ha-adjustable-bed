@@ -1290,8 +1290,10 @@ class AdjustableBedCoordinator:
         # The Jensen app sequence: enable notifications → PIN unlock → config query → commands
         if self._bed_type == BED_TYPE_JENSEN:
             _LOGGER.info("Starting notifications for Jensen bed %s (required for PIN unlock)", self._address)
-            callback = None if self._disable_angle_sensing else self._handle_position_update
-            await self._controller.start_notify(callback)
+            # Jensen always needs position tracking for correct cover button state.
+            # The disable_angle_sensing option controls sensor entity creation (sensor.py),
+            # not internal position tracking.
+            await self._controller.start_notify(self._handle_position_update)
             return
 
         if self._disable_angle_sensing:
