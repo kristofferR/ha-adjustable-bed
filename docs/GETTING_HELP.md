@@ -81,25 +81,13 @@ If you prefer to gather information separately:
 
 ### Debug Logging
 
-For detailed logs, add this to your `configuration.yaml`:
+1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
+2. Click the **⋮** menu → **Enable debug logging**
+3. Reproduce the issue (use the bed controls, trigger the problem)
+4. Return to the same menu → **Disable debug logging**
+5. Your browser will automatically download the log file
 
-```yaml
-logger:
-  logs:
-    custom_components.adjustable_bed: debug
-```
-
-Restart Home Assistant, reproduce the issue, then check **Settings** → **System** → **Logs** and filter by "adjustable_bed".
-
-For Bluetooth-level debugging:
-
-```yaml
-logger:
-  logs:
-    custom_components.adjustable_bed: debug
-    homeassistant.components.bluetooth: debug
-    bleak: debug
-```
+This captures only the relevant logs for this integration, making it easier to diagnose issues.
 
 ---
 

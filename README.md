@@ -50,12 +50,7 @@
 1. **Check range** - Bluetooth adapter or proxy within ~10m of bed
 2. **Disconnect other apps** - Most beds allow only one BLE connection
 3. **Reload integration** - Settings → Devices & Services → Adjustable Bed → Reload
-4. **Enable debug logs** - Add to `configuration.yaml`:
-   ```yaml
-   logger:
-     logs:
-       custom_components.adjustable_bed: debug
-   ```
+4. **Enable debug logs** - Settings → Devices & Services → Adjustable Bed → ⋮ menu → Enable debug logging. Reproduce issue, then disable to download logs.
 
 </details>
 

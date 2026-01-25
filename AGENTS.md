@@ -231,14 +231,7 @@ When creating a release:
 
 1. Copy `custom_components/adjustable_bed` to your HA's `config/custom_components/`
 2. Restart Home Assistant
-3. Add debug logging to `configuration.yaml`:
-   ```yaml
-   logger:
-     default: info
-     logs:
-       custom_components.adjustable_bed: debug
-       homeassistant.components.bluetooth: debug
-   ```
+3. Enable debug logging: Settings → Devices & Services → Adjustable Bed → ⋮ menu → Enable debug logging. Use the integration, then disable debug logging to download the log file.
 
 ### Using BLE Diagnostics
 
