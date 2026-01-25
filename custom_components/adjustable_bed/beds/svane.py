@@ -191,7 +191,8 @@ class SvaneController(BedController):
                 return
 
             try:
-                await self.client.write_gatt_char(char, command, response=True)
+                async with self._ble_lock:
+                    await self.client.write_gatt_char(char, command, response=True)
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write to service %s char %s",
