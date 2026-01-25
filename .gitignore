@@ -11,3 +11,6 @@ uv.lock
 
 # Disassembly/reverse engineering artifacts
 disassembly/
+
+# Claude Code instructions (symlink to AGENTS.md)
+CLAUDE.md
