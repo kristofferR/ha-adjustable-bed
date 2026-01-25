@@ -223,7 +223,7 @@ When creating a release:
 3. Create a GitHub release with `gh release create` including a changelog with:
    - **What's New** - New features, new bed support
    - **Bug Fixes** - List of fixes with brief descriptions
-   - **Upgrading** - Instructions (usually just "Update via HACS or manually replace folder")
+   - Do NOT include an "Upgrading" section - users already know how to update
 
 ## Development
 
