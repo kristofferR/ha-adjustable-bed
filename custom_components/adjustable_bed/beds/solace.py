@@ -134,7 +134,8 @@ class SolaceController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Solace bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Solace bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            SOLACE_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,

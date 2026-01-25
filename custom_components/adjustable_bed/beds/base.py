@@ -81,6 +81,12 @@ class BedController(ABC):
             characteristic_uuid: The UUID of the characteristic that sent the notification.
             data: The raw notification data bytes.
         """
+        _LOGGER.debug(
+            "GATT notify from %s (%s): %s",
+            self._coordinator.address,
+            characteristic_uuid,
+            data.hex(),
+        )
         if self._raw_notify_callback is not None:
             try:
                 self._raw_notify_callback(characteristic_uuid, data)
@@ -186,6 +192,16 @@ class BedController(ABC):
             raise ConnectionError("Not connected to bed")
 
         effective_cancel = cancel_event or self._coordinator.cancel_command
+
+        _LOGGER.debug(
+            "GATT write to %s (%s): %s (response=%s, repeat=%d, delay=%dms)",
+            self._coordinator.address,
+            char_uuid,
+            command.hex(),
+            response,
+            repeat_count,
+            repeat_delay_ms,
+        )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():

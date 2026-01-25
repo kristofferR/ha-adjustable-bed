@@ -26,16 +26,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# Position calibration constants (from APK analysis)
+# Position calibration constants (from APK analysis and hardware testing)
 # Head: 1 = flat (0%), ~30500 = max raised (~100%)
 HEAD_POS_FLAT = 1
 HEAD_POS_MAX = 30500
 
-# Foot: values appear inverted - higher values may indicate flat
-# FLATTEN command uses 0x60EA (24810), ComfortSequenze shows 60000
-# Using 60000 as flat for now - needs hardware testing
-FOOT_POS_FLAT = 60000
-FOOT_POS_MAX = 1  # Inverted: lower value = more raised
+# Foot: Uses same scale as head (confirmed via hardware testing)
+# Low values = flat, high values = raised
+FOOT_POS_FLAT = 1
+FOOT_POS_MAX = 30500
 
 
 class JensenCommands:
@@ -327,21 +326,19 @@ class JensenController(BedController):
         Returns:
             Position as percentage (0 = flat, 100 = max raised)
         """
+        # Both head and foot use the same scale: low values = flat, high values = raised
         if motor == "head":
-            # Head: 1 = flat (0%), ~30500 = max (100%)
-            if raw_value <= HEAD_POS_FLAT:
-                return 0.0
-            if raw_value >= HEAD_POS_MAX:
-                return 100.0
-            return min(100.0, (raw_value - HEAD_POS_FLAT) / (HEAD_POS_MAX - HEAD_POS_FLAT) * 100)
+            pos_flat = HEAD_POS_FLAT
+            pos_max = HEAD_POS_MAX
         else:
-            # Foot: values are inverted (higher = flat, lower = raised)
-            # 60000 = flat (0%), 1 = max (100%)
-            if raw_value >= FOOT_POS_FLAT:
-                return 0.0
-            if raw_value <= FOOT_POS_MAX:
-                return 100.0
-            return min(100.0, (FOOT_POS_FLAT - raw_value) / (FOOT_POS_FLAT - FOOT_POS_MAX) * 100)
+            pos_flat = FOOT_POS_FLAT
+            pos_max = FOOT_POS_MAX
+
+        if raw_value <= pos_flat:
+            return 0.0
+        if raw_value >= pos_max:
+            return 100.0
+        return min(100.0, (raw_value - pos_flat) / (pos_max - pos_flat) * 100)
 
     def _handle_notification(self, _sender: int, data: bytearray) -> None:
         """Handle BLE notification data.

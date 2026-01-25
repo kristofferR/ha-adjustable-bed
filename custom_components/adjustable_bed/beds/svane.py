@@ -181,7 +181,7 @@ class SvaneController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing %s to service %s char %s (repeat: %d, delay: %dms)",
+            "Writing %s to service %s char %s (repeat: %d, delay: %dms, response=True)",
             command.hex(),
             service_uuid[:8],
             char_uuid[:8],

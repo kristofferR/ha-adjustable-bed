@@ -143,7 +143,7 @@ class ReverieNightstandController(BedController):
         command = bytes([value])
 
         _LOGGER.debug(
-            "Writing 0x%02X to %s (repeat: %d, delay: %dms)",
+            "Writing 0x%02X to %s (repeat: %d, delay: %dms, response=True)",
             value,
             char_uuid,
             repeat_count,

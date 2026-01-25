@@ -316,7 +316,8 @@ class OctoController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Octo bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Octo bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            OCTO_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -839,7 +840,8 @@ class OctoStar2Controller(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Octo Star2 bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Octo Star2 bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            OCTO_STAR2_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,
