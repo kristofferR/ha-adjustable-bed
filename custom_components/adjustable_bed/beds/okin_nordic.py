@@ -382,8 +382,8 @@ class OkinNordicController(BedController):
 
     # Light controls
     async def lights_on(self) -> None:
-        """Turn lights on (cycles through modes)."""
-        await self.write_command(OkinNordicCommands.LIGHT_CYCLE, repeat_count=1)
+        """Turn lights on."""
+        await self.write_command(OkinNordicCommands.LIGHT_ON, repeat_count=1)
 
     async def lights_off(self) -> None:
         """Turn lights off (requires hold)."""
