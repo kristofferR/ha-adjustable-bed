@@ -2,7 +2,7 @@
 
 **Status:** ✅ Tested
 
-**Credit:** Protocol reverse-engineered from `com.hilding.jbg_ble` APK
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 - Jensen JMC400
