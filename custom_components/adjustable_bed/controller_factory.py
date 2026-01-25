@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
+    BED_TYPE_SVANE,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
@@ -376,5 +377,10 @@ async def create_controller(
 
         _LOGGER.debug("Using Sleepy's BOX24 controller")
         return SleepysBox24Controller(coordinator)
+
+    if bed_type == BED_TYPE_SVANE:
+        from .beds.svane import SvaneController
+
+        return SvaneController(coordinator)
 
     raise ValueError(f"Unknown bed type: {bed_type}")

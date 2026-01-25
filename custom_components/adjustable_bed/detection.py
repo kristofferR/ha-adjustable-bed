@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
+    BED_TYPE_SVANE,
     # Detection constants
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
@@ -90,6 +91,8 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SVANE_HEAD_SERVICE_UUID,
+    SVANE_NAME_PATTERNS,
     # Detection result type
     DetectionResult,
 )
@@ -221,6 +224,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SOLACE: "Solace",
+    BED_TYPE_SVANE: "Svane",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -337,6 +341,34 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_JENSEN,
+            confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for Svane - unique service UUID (abcb)
+    if SVANE_HEAD_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:svane")
+        _LOGGER.info(
+            "Detected Svane bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_SVANE,
+            confidence=1.0,
+            signals=signals,
+        )
+
+    # Check for Svane by name pattern
+    if any(pattern in device_name for pattern in SVANE_NAME_PATTERNS):
+        signals.append("name:svane")
+        _LOGGER.info(
+            "Detected Svane bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_SVANE,
             confidence=0.9,
             signals=signals,
         )
