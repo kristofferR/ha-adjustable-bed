@@ -150,6 +150,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
 
+        _LOGGER.info("Service goto_preset called: preset=%d", preset)
+
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
@@ -191,6 +193,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         """Handle save_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+
+        _LOGGER.info("Service save_preset called: preset=%d", preset)
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
@@ -235,6 +239,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+
+        _LOGGER.info("Service stop_all called")
+
         missing_device_ids: list[str] = []
 
         for device_id in device_ids:
@@ -292,6 +299,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         device_ids = call.data.get(CONF_DEVICE_ID, [])
         motor = call.data[ATTR_MOTOR]
         position = call.data[ATTR_POSITION]
+
+        _LOGGER.info(
+            "Service set_position called: motor=%s, position=%.1f%%",
+            motor,
+            position,
+        )
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
