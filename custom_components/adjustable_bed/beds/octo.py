@@ -352,6 +352,7 @@ class OctoController(BedController):
         if self.client is not None and self.client.is_connected:
             try:
                 await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
+                self._notifications_started = True
                 _LOGGER.debug("Started Octo notifications for feature discovery")
             except BleakError as err:
                 _LOGGER.debug("Could not start notifications: %s", err)
