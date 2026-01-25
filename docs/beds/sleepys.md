@@ -2,7 +2,7 @@
 
 **Status:** Untested
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) from MFRM Sleepy's Elite app v1.1.4 (com.okin.bedding.sleepy)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
