@@ -120,6 +120,11 @@ class ReverieController(BedController):
         return True
 
     @property
+    def supports_lights(self) -> bool:
+        """Return True - Reverie beds support under-bed lighting."""
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return False - Reverie only supports toggle, not discrete on/off."""
         return False
