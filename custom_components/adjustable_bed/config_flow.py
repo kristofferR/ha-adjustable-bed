@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
+    CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
@@ -59,6 +60,7 @@ from .const import (
     DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
+    DEFAULT_CONNECTION_PROFILE,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
@@ -73,6 +75,9 @@ from .const import (
     RICHMAT_REMOTES,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
+    CONNECTION_PROFILE_BALANCED,
+    CONNECTION_PROFILE_RELIABLE,
+    CONNECTION_PROFILES,
     get_richmat_features,
     get_richmat_motor_count,
     requires_pairing,
@@ -101,6 +106,11 @@ from .validators import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
+    CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
+    CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
+}
 
 
 class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -1339,7 +1349,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             device,
             address,
             max_attempts=1,
-            timeout=30.0,  # Match coordinator's CONNECTION_TIMEOUT
+            timeout=CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout,
             pair=True,
         )
         try:
@@ -1552,6 +1562,10 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 CONF_PREFERRED_ADAPTER,
                 default=current_adapter,
             ): vol.In(adapters),
+            vol.Optional(
+                CONF_CONNECTION_PROFILE,
+                default=current_data.get(CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE),
+            ): vol.In(CONNECTION_PROFILE_OPTIONS),
             vol.Optional(
                 CONF_MOTOR_PULSE_COUNT,
                 default=str(current_data.get(CONF_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_COUNT)),

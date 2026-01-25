@@ -35,6 +35,17 @@ class DetectionResult:
     manufacturer_id: int | None = None
     requires_characteristic_check: bool = False
 
+
+@dataclass(frozen=True)
+class ConnectionProfileSettings:
+    """Connection timing profile settings for BLE connections."""
+
+    max_retries: int
+    retry_base_delay: float
+    retry_jitter: float
+    connection_timeout: float
+    post_connect_delay: float
+
 # Configuration keys
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
@@ -42,6 +53,7 @@ CONF_MOTOR_COUNT: Final = "motor_count"
 CONF_HAS_MASSAGE: Final = "has_massage"
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
+CONF_CONNECTION_PROFILE: Final = "connection_profile"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
@@ -54,6 +66,10 @@ CONF_JENSEN_PIN: Final = "jensen_pin"
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"
 POSITION_MODE_ACCURACY: Final = "accuracy"
+
+# Connection profile values
+CONNECTION_PROFILE_BALANCED: Final = "balanced"
+CONNECTION_PROFILE_RELIABLE: Final = "reliable"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -1065,6 +1081,25 @@ DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
 DEFAULT_OCTO_PIN: Final = ""
+DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
+
+# Connection profiles
+CONNECTION_PROFILES: Final = {
+    CONNECTION_PROFILE_BALANCED: ConnectionProfileSettings(
+        max_retries=3,
+        retry_base_delay=2.0,  # 2s then 4s (with jitter)
+        retry_jitter=0.2,
+        connection_timeout=20.0,
+        post_connect_delay=0.5,
+    ),
+    CONNECTION_PROFILE_RELIABLE: ConnectionProfileSettings(
+        max_retries=3,
+        retry_base_delay=3.0,  # 3s then 6s (with jitter)
+        retry_jitter=0.2,
+        connection_timeout=25.0,
+        post_connect_delay=1.0,
+    ),
+}
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them

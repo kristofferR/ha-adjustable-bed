@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import random
 import time
 import traceback
 from collections.abc import Callable, Coroutine
@@ -60,6 +61,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
@@ -77,6 +79,7 @@ from .const import (
     DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
+    DEFAULT_CONNECTION_PROFILE,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
@@ -84,6 +87,7 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    CONNECTION_PROFILES,
     POSITION_CHECK_INTERVAL,
     POSITION_MODE_ACCURACY,
     POSITION_OVERSHOOT_TOLERANCE,
@@ -110,13 +114,6 @@ class NoControllerError(Exception):
     """Raised when no controller is available."""
 
 
-# Retry settings
-MAX_RETRIES = 3
-RETRY_DELAY = 5.0  # Increased delay between retries for BLE stability
-CONNECTION_TIMEOUT = 30.0  # Timeout for BLE connection attempts
-POST_CONNECT_DELAY = 1.0  # Delay after connection to let it stabilize
-
-
 class AdjustableBedCoordinator:
     """Coordinator for managing bed connection and state."""
 
@@ -137,6 +134,25 @@ class AdjustableBedCoordinator:
         )
         self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+
+        # Connection profile settings
+        self._connection_profile: str = entry.data.get(
+            CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE
+        )
+        profile_settings = CONNECTION_PROFILES.get(self._connection_profile)
+        if profile_settings is None:
+            _LOGGER.warning(
+                "Unknown connection profile '%s'; defaulting to '%s'",
+                self._connection_profile,
+                DEFAULT_CONNECTION_PROFILE,
+            )
+            self._connection_profile = DEFAULT_CONNECTION_PROFILE
+            profile_settings = CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE]
+        self._max_retries: int = profile_settings.max_retries
+        self._retry_base_delay: float = profile_settings.retry_base_delay
+        self._retry_jitter: float = profile_settings.retry_jitter
+        self._connection_timeout: float = profile_settings.connection_timeout
+        self._post_connect_delay: float = profile_settings.post_connect_delay
 
         # Get bed-type-specific motor pulse defaults, falling back to global defaults
         bed_pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
@@ -199,7 +215,7 @@ class AdjustableBedCoordinator:
         self._pairing_supported: bool | None = None
 
         _LOGGER.debug(
-            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s)",
+            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s, connection_profile: %s)",
             self._name,
             self._address,
             self._bed_type,
@@ -207,6 +223,7 @@ class AdjustableBedCoordinator:
             self._has_massage,
             self._disable_angle_sensing,
             self._preferred_adapter,
+            self._connection_profile,
         )
 
     @property
@@ -417,20 +434,24 @@ class AdjustableBedCoordinator:
             return True
 
         _LOGGER.info(
-            "Initiating BLE connection to %s (max %d attempts)", self._address, MAX_RETRIES
+            "Initiating BLE connection to %s (max %d attempts)",
+            self._address,
+            self._max_retries,
         )
         overall_start = time.monotonic()
 
-        for attempt in range(MAX_RETRIES):
+        for attempt in range(self._max_retries):
             attempt_start = time.monotonic()
             # On retries, add a delay before attempting to give the Bluetooth stack time to reset
             if attempt > 0:
-                pre_retry_delay = RETRY_DELAY * (1 + attempt * 0.5)  # Progressive backoff
+                base_delay = self._retry_base_delay * (2 ** (attempt - 1))
+                jitter = random.uniform(1 - self._retry_jitter, 1 + self._retry_jitter)
+                pre_retry_delay = base_delay * jitter
                 _LOGGER.info(
                     "Waiting %.1fs before connection retry %d/%d to %s...",
                     pre_retry_delay,
                     attempt + 1,
-                    MAX_RETRIES,
+                    self._max_retries,
                     self._address,
                 )
                 await asyncio.sleep(pre_retry_delay)
@@ -439,7 +460,7 @@ class AdjustableBedCoordinator:
                 _LOGGER.debug(
                     "Connection attempt %d/%d: Looking up device %s via HA Bluetooth (preferred adapter: %s)",
                     attempt + 1,
-                    MAX_RETRIES,
+                    self._max_retries,
                     self._address,
                     self._preferred_adapter,
                 )
@@ -468,7 +489,7 @@ class AdjustableBedCoordinator:
                         self._address,
                         lookup_elapsed,
                         attempt + 1,
-                        MAX_RETRIES,
+                        self._max_retries,
                     )
                     # Log what devices ARE visible
                     try:
@@ -541,7 +562,7 @@ class AdjustableBedCoordinator:
                 _LOGGER.info(
                     "Attempting BLE GATT connection to %s (timeout: %.0fs)...",
                     self._address,
-                    CONNECTION_TIMEOUT,
+                    self._connection_timeout,
                 )
 
                 # Create a callback to get fresh device from preferred adapter on retries
@@ -604,7 +625,7 @@ class AdjustableBedCoordinator:
                             self._name,
                             disconnected_callback=self._on_disconnect,
                             max_attempts=1,
-                            timeout=CONNECTION_TIMEOUT,
+                            timeout=self._connection_timeout,
                             ble_device_callback=ble_device_callback,
                             pair=use_pairing,
                         )
@@ -630,7 +651,7 @@ class AdjustableBedCoordinator:
                                 self._name,
                                 disconnected_callback=self._on_disconnect,
                                 max_attempts=1,
-                                timeout=CONNECTION_TIMEOUT,
+                                timeout=self._connection_timeout,
                                 ble_device_callback=ble_device_callback,
                             )
                         else:
@@ -679,7 +700,7 @@ class AdjustableBedCoordinator:
                         )
 
                 # Small delay to let connection stabilize before operations
-                await asyncio.sleep(POST_CONNECT_DELAY)
+                await asyncio.sleep(self._post_connect_delay)
 
                 # Log connection details
                 _LOGGER.debug(
@@ -755,7 +776,7 @@ class AdjustableBedCoordinator:
                     self._address,
                     attempt_elapsed,
                     attempt + 1,
-                    MAX_RETRIES,
+                    self._max_retries,
                     err,
                 )
                 _LOGGER.debug(
@@ -781,7 +802,7 @@ class AdjustableBedCoordinator:
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
                     attempt + 1,
-                    MAX_RETRIES,
+                    self._max_retries,
                     err,
                 )
                 _LOGGER.debug(
@@ -815,7 +836,7 @@ class AdjustableBedCoordinator:
             "  4. Move adapter closer to bed\n"
             "  5. If using ESPHome proxy, verify it's online",
             self._address,
-            MAX_RETRIES,
+            self._max_retries,
             total_elapsed,
         )
         return False
