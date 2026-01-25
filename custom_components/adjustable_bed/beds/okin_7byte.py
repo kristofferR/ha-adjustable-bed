@@ -129,7 +129,8 @@ class Okin7ByteController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Okin 7-byte bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin 7-byte bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            NECTAR_WRITE_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,

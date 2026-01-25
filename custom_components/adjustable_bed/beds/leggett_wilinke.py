@@ -226,7 +226,8 @@ class LeggettWilinkeController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to L&P WiLinke bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to L&P WiLinke bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            self._char_uuid,
             command.hex(),
             repeat_count,
             repeat_delay_ms,

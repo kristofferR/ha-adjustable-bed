@@ -159,10 +159,20 @@ class OkinNordicController(BedController):
                 return
             _LOGGER.debug("Sending init sequence before first command")
             try:
+                _LOGGER.debug(
+                    "Init write to %s: %s (response=True)",
+                    MATTRESSFIRM_WRITE_CHAR_UUID,
+                    OkinNordicCommands.INIT_1.hex(),
+                )
                 await self.client.write_gatt_char(
                     MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_1, response=True
                 )
                 await asyncio.sleep(0.1)  # 100ms delay between init commands
+                _LOGGER.debug(
+                    "Init write to %s: %s (response=True)",
+                    MATTRESSFIRM_WRITE_CHAR_UUID,
+                    OkinNordicCommands.INIT_2.hex(),
+                )
                 await self.client.write_gatt_char(
                     MATTRESSFIRM_WRITE_CHAR_UUID, OkinNordicCommands.INIT_2, response=True
                 )
@@ -172,7 +182,8 @@ class OkinNordicController(BedController):
                 raise
 
         _LOGGER.debug(
-            "Writing command to Okin Nordic bed: %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin Nordic bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            MATTRESSFIRM_WRITE_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,

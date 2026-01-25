@@ -150,7 +150,7 @@ class OkinHandleController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Okin handle bed (handle 0x%04x): %s (repeat: %d, delay: %dms)",
+            "Writing command to Okin handle bed (handle 0x%04x): %s (repeat: %d, delay: %dms, response=True)",
             DEWERTOKIN_WRITE_HANDLE,
             command.hex(),
             repeat_count,
