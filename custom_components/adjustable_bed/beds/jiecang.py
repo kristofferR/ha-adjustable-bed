@@ -141,6 +141,11 @@ class JiecangController(BedController):
         """Return True - Jiecang beds support programming memory positions via BLE."""
         return True
 
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - Jiecang beds support under-bed lighting."""
+        return True
+
     async def write_command(
         self,
         command: bytes,

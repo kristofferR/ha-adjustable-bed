@@ -127,6 +127,11 @@ class MaloufNewOkinController(BedController):
         return False
 
     @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Malouf beds support memory presets (slots 1-2)."""
+        return True
+
+    @property
     def memory_slot_count(self) -> int:
         """Return 2 - Malouf beds support memory slots 1-2."""
         return 2
@@ -434,6 +439,11 @@ class MaloufLegacyOkinController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return False - only toggle control available."""
         return False
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Malouf beds support memory presets (slots 1-2)."""
+        return True
 
     @property
     def memory_slot_count(self) -> int:

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 20 bed types implemented. Linak, Keeson, Richmat, MotoSleep, and Jensen tested. Other brands need community testing.
+**Current status:** 26 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, and Jensen tested. Other brands need community testing.
 
 ## Architecture
 
@@ -45,6 +45,10 @@ custom_components/adjustable_bed/
 │   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
 │   ├── jensen.py        # Jensen JMC400 protocol (tested, PIN auth)
 │   ├── svane.py         # Svane LinonPI multi-service protocol
+│   ├── bedtech.py       # BedTech 5-byte ASCII protocol
+│   ├── okin_64bit.py    # OKIN 64-bit 10-byte protocol
+│   ├── reverie_nightstand.py  # Reverie Protocol 110 (nightstand)
+│   ├── sleepys.py       # Sleepy's Elite BOX15/BOX24 protocols
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
@@ -114,6 +118,11 @@ custom_components/adjustable_bed/
 | Malouf LEGACY_OKIN | `MaloufController` | LEGACY_OKIN 7-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
 | Jensen | `JensenController` | 6-byte commands with PIN auth | Service UUID `00001234-...` or name "JMC*" | ✅ Tested |
 | Svane | `SvaneController` | LinonPI multi-service 2-byte commands | Service UUID `0000abcb-...` or name "Svane Bed" | Needs testing |
+| BedTech | `BedtechController` | 5-byte ASCII protocol | Service UUID `0000fee9-...` | Needs testing |
+| Sleepy's BOX15 | `SleepysController` | 9-byte with checksum | Service UUID `0000ffe5-...` | Needs testing |
+| Sleepy's BOX24 | `SleepysController` | 7-byte OKIN 64-bit | Service UUID `62741523-...` | Needs testing |
+| Reverie Nightstand | `ReverieNightstandController` | Protocol 110 | Service UUID `db801000-...` | Needs testing |
+| Okin 64-bit | `Okin64BitController` | 10-byte commands | Service UUID `62741523-...` | Needs testing |
 | Diagnostic | `DiagnosticController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type

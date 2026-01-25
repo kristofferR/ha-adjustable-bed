@@ -531,7 +531,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_KSBT: "KSBT (older Keeson remotes)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
-    KEESON_VARIANT_SERTA: "Serta (big-endian, Serta MP Remote)",
+    KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
 }
 
 # Leggett & Platt variants

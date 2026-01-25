@@ -14,7 +14,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
 | [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
-| [Jensen](beds/jensen.md) | ⚠️ Beta | 1 memory preset, dynamic feature detection (lights, massage) |
+| [Jensen](beds/jensen.md) | ✅ Supported | 1 memory preset, dynamic feature detection (lights, massage) |
 | [DewertOkin](beds/dewertokin.md) | ✅ Supported | 2 memory presets, wave massage, lights |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
@@ -39,7 +39,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | Bed Type | Command Format | Write Method | Pairing Required | Detection |
 |----------|---------------|--------------|------------------|-----------|
 | [Okimat](beds/okimat.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
-| [Okin 64-bit](beds/okimat.md#okin-64-bit-protocol) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
+| [Okin 64-bit](beds/sleepys.md#box24-protocol-7-byte-packets) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
 | [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name contains "nectar" |
 | [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
