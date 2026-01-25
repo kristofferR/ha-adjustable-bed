@@ -473,8 +473,37 @@ RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function", "x1rm")
 ERGOMOTION_NAME_PATTERNS: Final = ("ergomotion", "ergo", "serta-i")
 
 # Octo name patterns
-# - "da1458x" - Dialog Semiconductor BLE SoC used in some Octo receivers
-OCTO_NAME_PATTERNS: Final = ("da1458x",)
+# Source: blenames.json from de.octoactuators.octosmartcontrolapp APK
+# These are the official BLE device name prefixes for Octo controllers:
+# - RTV: Lift 1M
+# - RC2: Receiver II
+# - MC2: Micro 2
+# - OCTOBrick: Brick 1
+# - MC1: Micro 1
+# - L2M: Lift 2M
+# - CLI: Cosy Lift
+# - OCTOIQ: IQ Redesign
+# - OCTOBrick2: Brick 2
+# - RC3: Receiver II 3M
+# - BMB: BrickMini Basic
+# - BMS: BrickMini Memo
+# - BM3: BrickMini Basic 3M
+# - da1458x: Dialog Semiconductor BLE SoC used in some receivers
+OCTO_NAME_PATTERNS: Final = (
+    "rtv",
+    "rc2",
+    "mc2",
+    "octobrick",
+    "mc1",
+    "l2m",
+    "cli",
+    "octoiq",
+    "rc3",
+    "bmb",
+    "bms",
+    "bm3",
+    "da1458x",
+)
 
 # Solace/Motion Bed name patterns (from Motion Bed app reverse engineering)
 # These help distinguish Solace beds from Octo beds which share the same UUID

@@ -41,6 +41,8 @@ _LOGGER = logging.getLogger(__name__)
 # Motor bit masks
 OCTO_MOTOR_HEAD = 0x02
 OCTO_MOTOR_LEGS = 0x04
+OCTO_MOTOR_3 = 0x08  # Third motor (lumbar/tilt) - for beds with CAP_MOTORCOUNT > 2
+OCTO_MOTOR_4 = 0x10  # Fourth motor - for beds with CAP_MOTORCOUNT > 3
 
 # Feature IDs
 OCTO_FEATURE_MEMCOUNT = 0x000002  # Number of memory positions
@@ -649,18 +651,22 @@ class OctoController(BedController):
         )
 
     # Light control
+    # Data format: [cap_id (3 bytes), readonly (1 byte), char_len (1 byte), char (n bytes), value_type (1 byte), value (n bytes)]
+    # Cap ID 0x000102 = LIGHT feature, ReadOnly=0x00 for write operations, value 0x01=on, 0x00=off
     async def lights_on(self) -> None:
         """Turn on under-bed lights."""
         await self._write_octo_command(
             command=[0x20, 0x72],
-            data=[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01],
+            data=[0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x01],
+            #                       ^^^^ ReadOnly=0 for write
         )
 
     async def lights_off(self) -> None:
         """Turn off under-bed lights."""
         await self._write_octo_command(
             command=[0x20, 0x72],
-            data=[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x00],
+            data=[0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x01, 0x00],
+            #                       ^^^^ ReadOnly=0 for write
         )
 
     async def lights_toggle(self) -> None:

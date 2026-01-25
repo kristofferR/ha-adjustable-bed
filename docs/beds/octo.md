@@ -7,6 +7,7 @@
 ## Known Models
 - Octo-branded adjustable beds
 - Beka
+- Cozyworld Cozy2Go
 
 ## Apps
 
