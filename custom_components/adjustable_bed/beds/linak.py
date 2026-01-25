@@ -76,7 +76,9 @@ class LinakCommands:
     MASSAGE_MODE_STEP = bytes([0x81, 0x00])
 
     # Motor movement commands
-    MOVE_STOP = bytes([0x00, 0x00])
+    # Note: 0x00 is INITIALIZE_DOWN, not stop. 0xFF is the correct stop command.
+    # Using 0x00 can cause a brief reverse movement.
+    MOVE_STOP = bytes([0xFF, 0x00])
     MOVE_ALL_UP = bytes([0x01, 0x00])
 
     # Individual motor control
