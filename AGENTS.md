@@ -43,6 +43,8 @@ custom_components/adjustable_bed/
 │   ├── jiecang.py       # Jiecang/Glide protocol
 │   ├── serta.py         # Serta Motion Perfect III protocol
 │   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
+│   ├── jensen.py        # Jensen JMC400 protocol (tested, PIN auth)
+│   ├── svane.py         # Svane LinonPI multi-service protocol
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
@@ -110,6 +112,8 @@ custom_components/adjustable_bed/
 | Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
 | Malouf NEW_OKIN | `MaloufController` | NEW_OKIN 6-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
 | Malouf LEGACY_OKIN | `MaloufController` | LEGACY_OKIN 7-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
+| Jensen | `JensenController` | 6-byte commands with PIN auth | Service UUID `00001234-...` or name "JMC*" | ✅ Tested |
+| Svane | `SvaneController` | LinonPI multi-service 2-byte commands | Service UUID `0000abcb-...` or name "Svane Bed" | Needs testing |
 | Diagnostic | `DiagnosticController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
