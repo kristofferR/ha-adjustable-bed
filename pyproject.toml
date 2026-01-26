@@ -1,6 +1,6 @@
 [project]
 name = "ha-adjustable-bed"
-version = "1.9.2"
+version = "1.9.3"
 description = "Home Assistant integration for adjustable beds"
 requires-python = ">=3.13"
 

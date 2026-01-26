@@ -313,6 +313,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def is_closed(self) -> bool | None:
         """Return if the cover is closed (flat position)."""
+        if self._coordinator.disable_angle_sensing:
+            return None
         # We don't have position feedback for all motor types
         # Return None to indicate unknown state
         angle = self._coordinator.position_data.get(self._position_key)
@@ -334,6 +336,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def current_cover_position(self) -> int | None:
         """Return current position of cover."""
+        if self._coordinator.disable_angle_sensing:
+            return None
         # Get position from position data if available
         position = self._coordinator.position_data.get(self._position_key)
         if position is None:
