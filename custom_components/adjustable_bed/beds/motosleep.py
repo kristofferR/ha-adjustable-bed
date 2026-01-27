@@ -222,6 +222,30 @@ class MotoSleepController(BedController):
         """Stop feet motor."""
         self._coordinator.cancel_command.set()
 
+    async def move_neck_up(self) -> None:
+        """Move neck up."""
+        await self._move_motor(MotoSleepCommands.MOTOR_NECK_UP)
+
+    async def move_neck_down(self) -> None:
+        """Move neck down."""
+        await self._move_motor(MotoSleepCommands.MOTOR_NECK_DOWN)
+
+    async def move_neck_stop(self) -> None:
+        """Stop neck motor."""
+        self._coordinator.cancel_command.set()
+
+    async def move_lumbar_up(self) -> None:
+        """Move lumbar up."""
+        await self._move_motor(MotoSleepCommands.MOTOR_LUMBAR_UP)
+
+    async def move_lumbar_down(self) -> None:
+        """Move lumbar down."""
+        await self._move_motor(MotoSleepCommands.MOTOR_LUMBAR_DOWN)
+
+    async def move_lumbar_stop(self) -> None:
+        """Stop lumbar motor."""
+        self._coordinator.cancel_command.set()
+
     async def stop_all(self) -> None:
         """Stop all motors.
 
@@ -261,6 +285,20 @@ class MotoSleepController(BedController):
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
+
+    async def program_zero_g(self) -> None:
+        """Program current position as zero gravity preset."""
+        await self.write_command(self._build_command(MotoSleepCommands.PROGRAM_ZERO_G))
+
+    async def program_anti_snore(self) -> None:
+        """Program current position as anti-snore preset."""
+        await self.write_command(
+            self._build_command(MotoSleepCommands.PROGRAM_ANTI_SNORE)
+        )
+
+    async def program_tv(self) -> None:
+        """Program current position as TV preset."""
+        await self.write_command(self._build_command(MotoSleepCommands.PROGRAM_TV))
 
     # Light methods
     async def lights_on(self) -> None:
