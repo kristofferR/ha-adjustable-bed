@@ -35,9 +35,9 @@ body:
     attributes:
       label: Official Mobile App
       description: The name of the app you use to control your bed (check your app store)
-      placeholder: "e.g., Tempur Ergo, Sleeptracker, Sven & Son, Reverie"
+      placeholder: "Type N/A if your bed doesn't have an app"
     validations:
-      required: false
+      required: true
 
   - type: input
     id: remote_model
