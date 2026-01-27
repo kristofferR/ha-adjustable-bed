@@ -60,7 +60,8 @@ Commands are single bytes written to the command characteristic:
 ### Light Control
 
 Light commands are 3 bytes written to the light characteristic:
-```
+
+```text
 [brightness, 0x00, timer]
 ```
 - `brightness`: 0 = off, 0xFF = full brightness

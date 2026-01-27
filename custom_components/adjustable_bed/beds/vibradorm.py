@@ -242,7 +242,11 @@ class VibradormController(BedController):
                     for char in service.characteristics:
                         if str(char.uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID.lower():
                             props = {prop.lower() for prop in char.properties}
-                            self._write_with_response = "write" in props and "write-without-response" not in props
+                            # Prefer write-with-response when available for acknowledgements
+                            if "write" in props:
+                                self._write_with_response = True
+                            elif "write-without-response" in props:
+                                self._write_with_response = False
                             _LOGGER.debug(
                                 "Vibradorm write mode: %s (properties: %s)",
                                 "with-response" if self._write_with_response else "without-response",
