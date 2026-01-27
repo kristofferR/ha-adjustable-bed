@@ -471,6 +471,35 @@ class TestMotoSleepPresets:
             MOTOSLEEP_CHAR_UUID, expected, response=True
         )
 
+    @pytest.mark.parametrize(
+        "method_name,expected_char",
+        [
+            ("program_zero_g", MotoSleepCommands.PROGRAM_ZERO_G),
+            ("program_anti_snore", MotoSleepCommands.PROGRAM_ANTI_SNORE),
+            ("program_tv", MotoSleepCommands.PROGRAM_TV),
+        ],
+    )
+    async def test_program_preset(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        method_name: str,
+        expected_char: int,
+    ):
+        """Test program preset commands (zero-g, anti-snore, TV)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        method = getattr(coordinator.controller, method_name)
+        await method()
+
+        expected = coordinator.controller._build_command(expected_char)
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            MOTOSLEEP_CHAR_UUID, expected, response=True
+        )
+
 
 class TestMotoSleepLights:
     """Test MotoSleep light commands."""
