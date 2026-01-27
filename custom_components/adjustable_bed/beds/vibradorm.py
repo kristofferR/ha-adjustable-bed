@@ -144,6 +144,10 @@ class VibradormController(BedController):
             repeat_delay_ms,
         )
 
+        # Use coordinator's cancel event if none provided
+        if cancel_event is None:
+            cancel_event = self._coordinator._cancel_command
+
         await self._write_gatt_with_retry(
             VIBRADORM_COMMAND_CHAR_UUID,
             command,
@@ -340,16 +344,35 @@ class VibradormController(BedController):
         )
 
     async def move_feet_up(self) -> None:
-        """Move feet up (same as legs for 2-motor Vibradorm beds)."""
-        await self.move_legs_up()
+        """Move feet up.
+
+        On 4-motor beds, uses dedicated foot motor (FOOT_UP).
+        On 2/3-motor beds, falls back to legs motor.
+        """
+        if self._coordinator.motor_count >= 4:
+            await self._move_with_stop(VibradormCommands.FOOT_UP)
+        else:
+            await self.move_legs_up()
 
     async def move_feet_down(self) -> None:
-        """Move feet down (same as legs for 2-motor Vibradorm beds)."""
-        await self.move_legs_down()
+        """Move feet down.
+
+        On 4-motor beds, uses dedicated foot motor (FOOT_DOWN).
+        On 2/3-motor beds, falls back to legs motor.
+        """
+        if self._coordinator.motor_count >= 4:
+            await self._move_with_stop(VibradormCommands.FOOT_DOWN)
+        else:
+            await self.move_legs_down()
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self.move_legs_stop()
+        # STOP command stops all motors, works for both dedicated foot and legs
+        await self._write_motor_command(
+            VibradormCommands.STOP,
+            repeat_count=1,
+            cancel_event=asyncio.Event(),
+        )
 
     async def stop_all(self) -> None:
         """Stop all motors."""
@@ -361,11 +384,18 @@ class VibradormController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position (all motors down)."""
-        await self._write_motor_command(VibradormCommands.ALL_DOWN, repeat_count=1)
+        """Go to flat position (all motors down).
+
+        Presets work like motor commands - they trigger movement that
+        continues until STOP is sent (based on APK analysis).
+        """
+        await self._move_with_stop(VibradormCommands.ALL_DOWN)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset position.
+
+        Presets work like motor commands - they trigger movement that
+        continues until STOP is sent (based on APK analysis).
 
         Args:
             memory_num: Memory slot number (1-4)
@@ -379,7 +409,7 @@ class VibradormController(BedController):
         if memory_num not in memory_commands:
             _LOGGER.warning("Invalid memory preset number: %d (supported: 1-4)", memory_num)
             return
-        await self._write_motor_command(memory_commands[memory_num], repeat_count=1)
+        await self._move_with_stop(memory_commands[memory_num])
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory.
