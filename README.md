@@ -78,6 +78,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
+| ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
+| 🧪 [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

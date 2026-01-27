@@ -23,6 +23,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 | [Svane](beds/svane.md) | ⚠️ Beta | LinonPI protocol, multi-service |
+| [Vibradorm](beds/vibradorm.md) | 🧪 Needs Testing | Position feedback, 4 memory presets, lights |
 
 ---
 
@@ -106,6 +107,7 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - `iFlex*` → Mattress Firm 900
    - `Malouf*`, `Structures*` → Malouf
    - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
+   - `VMAT*` → Vibradorm
 4. **Check service UUIDs** (using nRF Connect):
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
    - Service `45e25100-...` → Leggett & Platt Gen2
@@ -113,6 +115,7 @@ Will not be implemented. Use the [SleepIQ](https://www.home-assistant.io/integra
    - Service `01000001-...` → Malouf (New OKIN)
    - Service `0000ffe5-...` → Malouf (Legacy OKIN) or Keeson OKIN variant
    - Service `0000fee9-...` → Richmat WiLinke or BedTech
+   - Service `00001525-...` → Vibradorm
 
 If your bed isn't auto-detected, use manual configuration and try different bed types.
 
@@ -143,5 +146,6 @@ Community contributors who helped reverse-engineer specific protocols:
 | Sleepy's Elite | [kristofferR](https://github.com/kristofferR) |
 | Jensen | [kristofferR](https://github.com/kristofferR) |
 | Svane | [kristofferR](https://github.com/kristofferR) |
+| Vibradorm | [kristofferR](https://github.com/kristofferR) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |
