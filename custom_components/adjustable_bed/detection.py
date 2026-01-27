@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
+    BED_TYPE_VIBRADORM,
     # Detection constants
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
@@ -76,6 +77,7 @@ from .const import (
     MALOUF_NAME_PATTERNS,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_VIBRADORM,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_PATTERNS,
@@ -93,6 +95,8 @@ from .const import (
     SOLACE_SERVICE_UUID,
     SVANE_HEAD_SERVICE_UUID,
     SVANE_NAME_PATTERNS,
+    VIBRADORM_NAME_PATTERNS,
+    VIBRADORM_SERVICE_UUID,
     # Detection result type
     DetectionResult,
 )
@@ -169,6 +173,11 @@ def _check_manufacturer_data(
     if MANUFACTURER_ID_DEWERTOKIN in manufacturer_data:
         return BED_TYPE_DEWERTOKIN, 0.95, MANUFACTURER_ID_DEWERTOKIN
 
+    # Vibradorm: Company ID 944 (0x03B0)
+    # Source: de.vibradorm.vra app disassembly
+    if MANUFACTURER_ID_VIBRADORM in manufacturer_data:
+        return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
+
     return None, 0.0, None
 
 
@@ -225,6 +234,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SVANE: "Svane",
+    BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
 }
@@ -341,6 +351,34 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_JENSEN,
+            confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for Vibradorm - unique service UUID (1525)
+    if VIBRADORM_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:vibradorm")
+        _LOGGER.info(
+            "Detected Vibradorm bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_VIBRADORM,
+            confidence=1.0,
+            signals=signals,
+        )
+
+    # Check for Vibradorm by name pattern (VMAT*)
+    if any(device_name.startswith(pattern) for pattern in VIBRADORM_NAME_PATTERNS):
+        signals.append("name:vibradorm")
+        _LOGGER.info(
+            "Detected Vibradorm bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_VIBRADORM,
             confidence=0.9,
             signals=signals,
         )

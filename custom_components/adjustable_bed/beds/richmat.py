@@ -466,20 +466,40 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]
         _LOGGER.warning("BLE services not discovered, falling back to Nordic Richmat variant")
         return False, RICHMAT_NORDIC_CHAR_UUID
 
+    # Log all discovered services for debugging
+    service_uuids = [s.uuid.lower() for s in client.services]
+    _LOGGER.debug("Richmat variant detection - discovered services: %s", service_uuids)
+
     # Try WiLinke variants first
     for i, service_uuid in enumerate(RICHMAT_WILINKE_SERVICE_UUIDS):
         try:
             service = client.services.get_service(service_uuid)
             if service:
                 write_uuid = RICHMAT_WILINKE_CHAR_UUIDS[i][0]
+                _LOGGER.debug(
+                    "Found WiLinke service %s (index %d), looking for write char %s",
+                    service_uuid,
+                    i,
+                    write_uuid,
+                )
+                # Log all characteristics in this service for debugging
+                char_uuids = [c.uuid.lower() for c in service.characteristics]
+                _LOGGER.debug("Service %s characteristics: %s", service_uuid, char_uuids)
+
                 char = service.get_characteristic(write_uuid)
                 if char:
-                    _LOGGER.debug(
-                        "Detected WiLinke Richmat variant (service: %s, char: %s)",
+                    _LOGGER.info(
+                        "Detected WiLinke Richmat variant (service: %s, write char: %s)",
                         service_uuid,
                         write_uuid,
                     )
                     return True, write_uuid
+                else:
+                    _LOGGER.debug(
+                        "Write characteristic %s not found in service %s",
+                        write_uuid,
+                        service_uuid,
+                    )
         except Exception as err:
             _LOGGER.debug(
                 "WiLinke variant check failed for service %s: %s",
@@ -488,5 +508,7 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]
             )
 
     # Fall back to Nordic
-    _LOGGER.debug("Using Nordic Richmat variant")
+    _LOGGER.info(
+        "No WiLinke service/characteristic found, falling back to Nordic Richmat variant"
+    )
     return False, RICHMAT_NORDIC_CHAR_UUID

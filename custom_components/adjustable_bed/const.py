@@ -112,6 +112,7 @@ BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte comma
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
+BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -162,6 +163,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Svane
     BED_TYPE_SVANE,
+    # Vibradorm
+    BED_TYPE_VIBRADORM,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -465,7 +468,8 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt")
 
 # Richmat Nordic name patterns (e.g., QRRM157052, Sleep Function 2.0, X1RM beds)
-RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function", "x1rm")
+# Also includes DHN- prefix (Germany Motions beds using FFF0 service)
+RICHMAT_NAME_PATTERNS: Final = ("qrrm", "sleep function", "x1rm", "dhn-")
 
 # Ergomotion name patterns
 # - "ergomotion", "ergo" (generic)
@@ -560,6 +564,19 @@ SVANE_LIGHT_ON_OFF_UUID: Final = "0000a8e0-0000-1000-8000-00805f9b34fb"
 
 # Svane name patterns
 SVANE_NAME_PATTERNS: Final = ("svane bed",)
+
+# Vibradorm specific UUIDs (VMAT Basic protocol)
+# Protocol reverse-engineered from de.vibradorm.vra and com.vibradorm.vmatbasic APKs
+VIBRADORM_SERVICE_UUID: Final = "00001525-9f03-0de5-96c5-b8f4f3081186"
+VIBRADORM_COMMAND_CHAR_UUID: Final = "00001526-9f03-0de5-96c5-b8f4f3081186"
+VIBRADORM_LIGHT_CHAR_UUID: Final = "00001529-9f03-0de5-96c5-b8f4f3081186"
+VIBRADORM_NOTIFY_CHAR_UUID: Final = "00001551-9f03-0de5-96c5-b8f4f3081186"
+
+# Vibradorm manufacturer ID
+MANUFACTURER_ID_VIBRADORM: Final = 944  # 0x03B0
+
+# Vibradorm name patterns (VMAT = Vibradorm Motor Actuator)
+VIBRADORM_NAME_PATTERNS: Final = ("vmat",)
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
@@ -1077,6 +1094,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_REVERIE_NIGHTSTAND,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
+        BED_TYPE_VIBRADORM,
     }
 )
 
@@ -1190,4 +1208,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Svane: 100ms delay → 10 repeats = 1.0s total
     # Source: com.produktide.svane.svaneremote ANALYSIS.md (motorRunnable posts every 100ms)
     BED_TYPE_SVANE: (10, 100),
+    # Vibradorm: 100ms delay → 10 repeats = 1.0s total
+    # Source: de.vibradorm.vra APK analysis (CmdMotorVMAT uses 100ms intervals)
+    BED_TYPE_VIBRADORM: (10, 100),
 }

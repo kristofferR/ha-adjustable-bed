@@ -59,6 +59,15 @@
     },
     {
       "local_name": "Svane*"
+    },
+    {
+      "service_uuid": "00001525-9f03-0de5-96c5-b8f4f3081186"
+    },
+    {
+      "local_name": "VMAT*"
+    },
+    {
+      "manufacturer_id": 944
     }
   ],
   "codeowners": ["@kristofferR"],

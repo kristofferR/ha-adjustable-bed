@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
     BED_TYPE_SVANE,
+    BED_TYPE_VIBRADORM,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
@@ -163,7 +164,13 @@ async def create_controller(
             return RichmatController(coordinator, is_wilinke=False, remote_code=richmat_remote)
         elif protocol_variant == RICHMAT_VARIANT_WILINKE:
             _LOGGER.debug("Using WiLinke Richmat variant (configured)")
-            return RichmatController(coordinator, is_wilinke=True, remote_code=richmat_remote)
+            # Still need to detect correct char_uuid - different WiLinke devices use different UUIDs
+            if client is None or not client.is_connected:
+                raise ConnectionError("Cannot use WiLinke variant: client not connected")
+            _, char_uuid = await detect_richmat_variant(client)
+            return RichmatController(
+                coordinator, is_wilinke=True, char_uuid=char_uuid, remote_code=richmat_remote
+            )
         elif protocol_variant == RICHMAT_VARIANT_PREFIX55:
             _LOGGER.debug("Using Prefix55 Richmat variant (configured)")
             return RichmatController(
@@ -382,5 +389,10 @@ async def create_controller(
         from .beds.svane import SvaneController
 
         return SvaneController(coordinator)
+
+    if bed_type == BED_TYPE_VIBRADORM:
+        from .beds.vibradorm import VibradormController
+
+        return VibradormController(coordinator)
 
     raise ValueError(f"Unknown bed type: {bed_type}")
