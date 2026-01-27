@@ -501,6 +501,11 @@ class BedController(ABC):
         return False
 
     @property
+    def has_neck_support(self) -> bool:
+        """Return True if bed has neck motor control."""
+        return False
+
+    @property
     def has_pillow_support(self) -> bool:
         """Return True if bed has pillow motor control."""
         return False
@@ -594,6 +599,32 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't have lumbar motor
         """
         raise NotImplementedError("Lumbar motor not supported on this bed")
+
+    # Neck motor control (optional - only some beds have this)
+
+    async def move_neck_up(self) -> None:
+        """Move neck motor up for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have neck motor
+        """
+        raise NotImplementedError("Neck motor not supported on this bed")
+
+    async def move_neck_down(self) -> None:
+        """Move neck motor down for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have neck motor
+        """
+        raise NotImplementedError("Neck motor not supported on this bed")
+
+    async def move_neck_stop(self) -> None:
+        """Immediately stop neck motor movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have neck motor
+        """
+        raise NotImplementedError("Neck motor not supported on this bed")
 
     # Pillow motor control (optional - only some beds have this)
 

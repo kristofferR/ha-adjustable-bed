@@ -119,6 +119,16 @@ class MotoSleepController(BedController):
         """Return True - MotoSleep beds support programming memory positions."""
         return True
 
+    @property
+    def has_lumbar_support(self) -> bool:
+        """Return True - MotoSleep beds support lumbar motor control."""
+        return True
+
+    @property
+    def has_neck_support(self) -> bool:
+        """Return True - MotoSleep beds support neck motor control."""
+        return True
+
     def _build_command(self, char_code: int) -> bytes:
         """Build a 2-byte command: [0x24, char_code]."""
         return bytes([0x24, char_code])

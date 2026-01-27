@@ -214,6 +214,138 @@ class TestMotoSleepMovement:
         # MotoSleep stop_all only cancels the running loop, doesn't send data
         mock_bleak_client.write_gatt_char.assert_not_called()
 
+    async def test_move_neck_up(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move neck up sends NECK_UP command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_neck_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_NECK_UP)
+        assert first_command == expected
+
+    async def test_move_neck_down(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move neck down sends NECK_DOWN command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_neck_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_NECK_DOWN)
+        assert first_command == expected
+
+    async def test_move_neck_stop_noop(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move neck stop does nothing (MotoSleep stops when button released)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_neck_stop()
+
+        # Should not send any command
+        mock_bleak_client.write_gatt_char.assert_not_called()
+
+    async def test_move_lumbar_up(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move lumbar up sends LUMBAR_UP command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_lumbar_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_LUMBAR_UP)
+        assert first_command == expected
+
+    async def test_move_lumbar_down(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move lumbar down sends LUMBAR_DOWN command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_lumbar_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_LUMBAR_DOWN)
+        assert first_command == expected
+
+    async def test_move_lumbar_stop_noop(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test move lumbar stop does nothing (MotoSleep stops when button released)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_lumbar_stop()
+
+        # Should not send any command
+        mock_bleak_client.write_gatt_char.assert_not_called()
+
+
+class TestMotoSleepCapabilities:
+    """Test MotoSleep capability properties."""
+
+    async def test_has_neck_support(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test MotoSleep reports neck motor support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.has_neck_support is True
+
+    async def test_has_lumbar_support(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test MotoSleep reports lumbar motor support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.has_lumbar_support is True
+
 
 class TestMotoSleepPresets:
     """Test MotoSleep preset commands."""
