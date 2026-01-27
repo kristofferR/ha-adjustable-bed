@@ -166,6 +166,17 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
 )
 
 
+LIGHT_LEVEL_DESCRIPTION = NumberEntityDescription(
+    key="light_level",
+    translation_key="light_level",
+    icon="mdi:brightness-6",
+    native_min_value=0,
+    native_max_value=10,
+    native_step=1,
+    mode=NumberMode.SLIDER,
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -281,6 +292,27 @@ async def async_setup_entry(
                         massage_zone=description.massage_zone,
                     )
                     entities.append(AdjustableBedMassageNumber(coordinator, adjusted_desc))
+
+    # Set up light level number entity (only for beds that support it)
+    if controller is not None:
+        if getattr(controller, "supports_light_level_control", False):
+            max_level = getattr(controller, "light_level_max", 10)
+            _LOGGER.debug(
+                "Setting up light level number for %s (max: %d)",
+                coordinator.name,
+                max_level,
+            )
+            # Create description with correct max value for this controller
+            adjusted_desc = NumberEntityDescription(
+                key=LIGHT_LEVEL_DESCRIPTION.key,
+                translation_key=LIGHT_LEVEL_DESCRIPTION.translation_key,
+                icon=LIGHT_LEVEL_DESCRIPTION.icon,
+                native_min_value=0,
+                native_max_value=max_level,
+                native_step=1,
+                mode=NumberMode.SLIDER,
+            )
+            entities.append(AdjustableBedLightLevelNumber(coordinator, adjusted_desc))
 
     if entities:
         async_add_entities(entities)
@@ -406,3 +438,43 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
             await ctrl.set_massage_intensity(zone, level)
 
         await self._coordinator.async_execute_controller_command(_set_intensity)
+
+
+class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
+    """Number entity for Adjustable Bed light level control."""
+
+    entity_description: NumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: NumberEntityDescription,
+    ) -> None:
+        """Initialize the light level number entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current light level.
+
+        Note: Light level state is not tracked - returns None (unknown).
+        The bed does not report current light level back.
+        """
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the light level."""
+        level = round(value)
+
+        _LOGGER.info(
+            "Light level set requested: level %d (device: %s)",
+            level,
+            self._coordinator.name,
+        )
+
+        async def _set_level(ctrl: BedController) -> None:
+            await ctrl.set_light_level(level)
+
+        await self._coordinator.async_execute_controller_command(_set_level)

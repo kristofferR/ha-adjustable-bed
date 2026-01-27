@@ -341,6 +341,18 @@
       "massage_mode_step": {
         "name": "Massage: Mode"
       },
+      "massage_circulation_full_body": {
+        "name": "Massage: Full Body Loop"
+      },
+      "massage_circulation_head": {
+        "name": "Massage: Head Loop"
+      },
+      "massage_circulation_leg": {
+        "name": "Massage: Leg Loop"
+      },
+      "massage_circulation_hip": {
+        "name": "Massage: Hip Loop"
+      },
       "light_cycle": {
         "name": "Light Cycle"
       },
@@ -387,6 +399,9 @@
       },
       "tilt": {
         "name": "Tilt"
+      },
+      "hip": {
+        "name": "Hip"
       },
       "keeson_back": {
         "name": "Back"
@@ -452,11 +467,17 @@
       },
       "massage_wave_intensity": {
         "name": "Massage: Wave Intensity"
+      },
+      "light_level": {
+        "name": "Light Level"
       }
     },
     "select": {
       "massage_timer": {
         "name": "Massage: Timer"
+      },
+      "light_timer": {
+        "name": "Light Timer"
       }
     }
   },

@@ -133,6 +133,17 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         min_motors=2,  # Tilt is independent of motor count
         max_angle=45,
     ),
+    AdjustableBedCoverEntityDescription(
+        key="hip",
+        translation_key="hip",
+        icon="mdi:human",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_hip_up(),
+        close_fn=lambda ctrl: ctrl.move_hip_down(),
+        stop_fn=lambda ctrl: ctrl.move_hip_stop(),
+        min_motors=2,  # Hip is independent of motor count
+        max_angle=45,
+    ),
 )
 
 
@@ -261,6 +272,10 @@ async def async_setup_entry(
             # Special handling for pillow - only add if controller supports it
             elif description.key == "pillow":
                 if controller is not None and controller.has_pillow_support:
+                    entities.append(AdjustableBedCover(coordinator, description))
+            # Special handling for hip - only add if controller supports it
+            elif description.key == "hip":
+                if controller is not None and controller.has_hip_support:
                     entities.append(AdjustableBedCover(coordinator, description))
             elif motor_count >= description.min_motors:
                 # For Reverie beds, adjust max_angle for back/head motors

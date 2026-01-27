@@ -63,6 +63,10 @@ class SolaceCommands:
 
     MOTOR_STOP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x00, 0xD7, 0x00])
 
+    # Hip motor
+    MOTOR_HIP_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x0D, 0x16, 0xC5])
+    MOTOR_HIP_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x0E, 0x56, 0xC4])
+
     # Massage controls
     MASSAGE_HEAD_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x10, 0xD6, 0xCC])
     MASSAGE_HEAD_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x11, 0x17, 0x0C])
@@ -71,6 +75,30 @@ class SolaceCommands:
     MASSAGE_FREQUENCY_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x14, 0xD7, 0x0F])
     MASSAGE_FREQUENCY_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x15, 0x16, 0xCF])
     MASSAGE_STOP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x1C, 0xD6, 0xC9])
+
+    # Circulation/Loop massage modes
+    MASSAGE_CIRCULATION_FULL_BODY = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x05, 0x00, 0xE4, 0xC7, 0x4A])
+    MASSAGE_CIRCULATION_HEAD = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x05, 0x00, 0xE3, 0x86, 0x88])
+    MASSAGE_CIRCULATION_LEG = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x05, 0x00, 0xE5, 0x06, 0x8A])
+    MASSAGE_CIRCULATION_HIP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x05, 0x00, 0xE6, 0x46, 0x8B])
+
+    # Light levels (0-10)
+    LIGHT_LEVEL_0 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x23, 0x96, 0xD9])
+    LIGHT_LEVEL_1 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x01, 0x23, 0x97, 0x49])
+    LIGHT_LEVEL_2 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x02, 0x23, 0x97, 0xB9])
+    LIGHT_LEVEL_3 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x03, 0x23, 0x96, 0x29])
+    LIGHT_LEVEL_4 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x04, 0x23, 0x94, 0x19])
+    LIGHT_LEVEL_5 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x05, 0x23, 0x95, 0x89])
+    LIGHT_LEVEL_6 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x06, 0x23, 0x95, 0x79])
+    LIGHT_LEVEL_7 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x07, 0x23, 0x94, 0xE9])
+    LIGHT_LEVEL_8 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x08, 0x23, 0x91, 0x19])
+    LIGHT_LEVEL_9 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x09, 0x23, 0x90, 0x89])
+    LIGHT_LEVEL_10 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x0A, 0x23, 0x90, 0x79])
+
+    # Light timers
+    LIGHT_TIMER_10_MIN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x19, 0x16, 0xCA])
+    LIGHT_TIMER_8_HOURS = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x1A, 0x56, 0xCB])
+    LIGHT_TIMER_10_HOURS = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x1B, 0x97, 0x0B])
 
 
 class SolaceController(BedController):
@@ -335,3 +363,102 @@ class SolaceController(BedController):
     async def massage_off(self) -> None:
         """Stop all massage."""
         await self.write_command(SolaceCommands.MASSAGE_STOP)
+
+    # Hip motor support
+    @property
+    def has_hip_support(self) -> bool:
+        """Return True - Solace beds have hip motor."""
+        return True
+
+    async def move_hip_up(self) -> None:
+        """Move hip motor up."""
+        await self._move_with_stop(SolaceCommands.MOTOR_HIP_UP)
+
+    async def move_hip_down(self) -> None:
+        """Move hip motor down."""
+        await self._move_with_stop(SolaceCommands.MOTOR_HIP_DOWN)
+
+    async def move_hip_stop(self) -> None:
+        """Stop hip motor."""
+        await self.move_head_stop()
+
+    # Light level control
+    @property
+    def supports_light_level_control(self) -> bool:
+        """Return True - Solace beds support light level control."""
+        return True
+
+    @property
+    def light_level_max(self) -> int:
+        """Return maximum light level (10)."""
+        return 10
+
+    async def set_light_level(self, level: int) -> None:
+        """Set light level (0-10)."""
+        commands = [
+            SolaceCommands.LIGHT_LEVEL_0,
+            SolaceCommands.LIGHT_LEVEL_1,
+            SolaceCommands.LIGHT_LEVEL_2,
+            SolaceCommands.LIGHT_LEVEL_3,
+            SolaceCommands.LIGHT_LEVEL_4,
+            SolaceCommands.LIGHT_LEVEL_5,
+            SolaceCommands.LIGHT_LEVEL_6,
+            SolaceCommands.LIGHT_LEVEL_7,
+            SolaceCommands.LIGHT_LEVEL_8,
+            SolaceCommands.LIGHT_LEVEL_9,
+            SolaceCommands.LIGHT_LEVEL_10,
+        ]
+        if 0 <= level <= 10:
+            await self.write_command(commands[level])
+        else:
+            _LOGGER.warning("Invalid light level: %d (valid: 0-10)", level)
+
+    # Light timer control
+    @property
+    def supports_light_timer(self) -> bool:
+        """Return True - Solace beds support light timer."""
+        return True
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        """Return available light timer options."""
+        return ["Off", "10 min", "8 hours", "10 hours"]
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        """Set light timer.
+
+        Args:
+            timer_option: One of "Off", "10 min", "8 hours", "10 hours"
+        """
+        commands = {
+            "Off": SolaceCommands.LIGHT_LEVEL_0,  # Turn off light
+            "10 min": SolaceCommands.LIGHT_TIMER_10_MIN,
+            "8 hours": SolaceCommands.LIGHT_TIMER_8_HOURS,
+            "10 hours": SolaceCommands.LIGHT_TIMER_10_HOURS,
+        }
+        if cmd := commands.get(timer_option):
+            await self.write_command(cmd)
+        else:
+            _LOGGER.warning("Invalid light timer option: %s", timer_option)
+
+    # Circulation massage support
+    @property
+    def supports_circulation_massage(self) -> bool:
+        """Return True - Solace beds support circulation massage modes."""
+        return True
+
+    async def massage_circulation_full_body(self) -> None:
+        """Start full body circulation massage."""
+        await self.write_command(SolaceCommands.MASSAGE_CIRCULATION_FULL_BODY)
+
+    async def massage_circulation_head(self) -> None:
+        """Start head circulation massage."""
+        await self.write_command(SolaceCommands.MASSAGE_CIRCULATION_HEAD)
+
+    async def massage_circulation_leg(self) -> None:
+        """Start leg circulation massage."""
+        await self.write_command(SolaceCommands.MASSAGE_CIRCULATION_LEG)
+
+    async def massage_circulation_hip(self) -> None:
+        """Start hip circulation massage."""
+        await self.write_command(SolaceCommands.MASSAGE_CIRCULATION_HIP)

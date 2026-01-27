@@ -283,6 +283,39 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
     ),
+    # Circulation massage buttons (only for beds with circulation massage support)
+    AdjustableBedButtonEntityDescription(
+        key="massage_circulation_full_body",
+        translation_key="massage_circulation_full_body",
+        icon="mdi:human",
+        requires_massage=True,
+        press_fn=lambda ctrl: ctrl.massage_circulation_full_body(),
+        required_capability="supports_circulation_massage",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="massage_circulation_head",
+        translation_key="massage_circulation_head",
+        icon="mdi:head",
+        requires_massage=True,
+        press_fn=lambda ctrl: ctrl.massage_circulation_head(),
+        required_capability="supports_circulation_massage",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="massage_circulation_leg",
+        translation_key="massage_circulation_leg",
+        icon="mdi:foot-print",
+        requires_massage=True,
+        press_fn=lambda ctrl: ctrl.massage_circulation_leg(),
+        required_capability="supports_circulation_massage",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="massage_circulation_hip",
+        translation_key="massage_circulation_hip",
+        icon="mdi:human-handsdown",
+        requires_massage=True,
+        press_fn=lambda ctrl: ctrl.massage_circulation_hip(),
+        required_capability="supports_circulation_massage",
+    ),
     # Light buttons
     AdjustableBedButtonEntityDescription(
         key="toggle_light",

@@ -511,6 +511,11 @@ class BedController(ABC):
         return False
 
     @property
+    def has_hip_support(self) -> bool:
+        """Return True if bed has hip motor control."""
+        return False
+
+    @property
     def supports_motor_control(self) -> bool:
         """Return True if bed supports direct motor control (up/down/stop).
 
@@ -646,6 +651,32 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't have tilt motor
         """
         raise NotImplementedError("Tilt motor not supported on this bed")
+
+    # Hip motor control (optional - only some beds have this)
+
+    async def move_hip_up(self) -> None:
+        """Move hip motor up for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have hip motor
+        """
+        raise NotImplementedError("Hip motor not supported on this bed")
+
+    async def move_hip_down(self) -> None:
+        """Move hip motor down for a short duration, then stop.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have hip motor
+        """
+        raise NotImplementedError("Hip motor not supported on this bed")
+
+    async def move_hip_stop(self) -> None:
+        """Immediately stop hip motor movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have hip motor
+        """
+        raise NotImplementedError("Hip motor not supported on this bed")
 
     # Optional preset methods (may not be available on all beds)
     # These raise NotImplementedError by default. Subclasses override if supported.
@@ -875,3 +906,99 @@ class BedController(ABC):
         Override in subclasses with state tracking/feedback.
         """
         return {}
+
+    # Light level control (optional - for beds with brightness adjustment)
+
+    @property
+    def supports_light_level_control(self) -> bool:
+        """Return True if bed supports setting light brightness directly.
+
+        When True, the bed can set specific brightness levels (0-10) rather than
+        just toggle. This enables number entity sliders for light level.
+        """
+        return False
+
+    @property
+    def light_level_max(self) -> int:
+        """Return maximum light level.
+
+        Most beds use 0-10. Default is 10.
+        """
+        return 10
+
+    async def set_light_level(self, level: int) -> None:
+        """Set light brightness level.
+
+        Args:
+            level: Brightness level (0 to light_level_max, 0 = off)
+
+        Raises:
+            NotImplementedError: If the bed doesn't support light level control
+        """
+        raise NotImplementedError("Light level control not supported on this bed")
+
+    # Light timer control (optional - for beds with auto-off timer)
+
+    @property
+    def supports_light_timer(self) -> bool:
+        """Return True if bed supports setting light auto-off timer."""
+        return False
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        """Return available light timer options.
+
+        Options should be human-readable strings like "Off", "10 min", "8 hours".
+        Override in subclasses that support timer selection.
+        """
+        return []
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        """Set light auto-off timer.
+
+        Args:
+            timer_option: One of the options from light_timer_options
+
+        Raises:
+            NotImplementedError: If the bed doesn't support light timer
+        """
+        raise NotImplementedError("Light timer not supported on this bed")
+
+    # Circulation massage control (optional - for beds with loop massage modes)
+
+    @property
+    def supports_circulation_massage(self) -> bool:
+        """Return True if bed supports circulation/loop massage modes."""
+        return False
+
+    async def massage_circulation_full_body(self) -> None:
+        """Start full body circulation massage.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support circulation massage
+        """
+        raise NotImplementedError("Circulation massage not supported on this bed")
+
+    async def massage_circulation_head(self) -> None:
+        """Start head circulation massage.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support circulation massage
+        """
+        raise NotImplementedError("Circulation massage not supported on this bed")
+
+    async def massage_circulation_leg(self) -> None:
+        """Start leg circulation massage.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support circulation massage
+        """
+        raise NotImplementedError("Circulation massage not supported on this bed")
+
+    async def massage_circulation_hip(self) -> None:
+        """Start hip circulation massage.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support circulation massage
+        """
+        raise NotImplementedError("Circulation massage not supported on this bed")
