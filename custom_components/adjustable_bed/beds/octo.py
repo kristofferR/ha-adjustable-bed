@@ -910,12 +910,22 @@ class OctoStar2Controller(BedController):
             "motors stop when commands cease"
         )
 
+    def _get_pulse_settings(self) -> tuple[int, int]:
+        """Get clamped pulse settings from coordinator.
+
+        Returns:
+            Tuple of (pulse_count, pulse_delay_ms), both clamped to minimum of 1.
+        """
+        return (
+            max(1, self._coordinator.motor_pulse_count),
+            max(1, self._coordinator.motor_pulse_delay_ms),
+        )
+
     # Motor control methods using fixed Star2 commands
     # Uses coordinator's configurable pulse settings for timing
     async def move_head_up(self) -> None:
         """Move head motor up."""
-        pulse_count = max(1, self._coordinator.motor_pulse_count)
-        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        pulse_count, pulse_delay = self._get_pulse_settings()
         try:
             await self.write_command(
                 self.CMD_HEAD_UP,
@@ -927,8 +937,7 @@ class OctoStar2Controller(BedController):
 
     async def move_head_down(self) -> None:
         """Move head motor down."""
-        pulse_count = max(1, self._coordinator.motor_pulse_count)
-        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        pulse_count, pulse_delay = self._get_pulse_settings()
         try:
             await self.write_command(
                 self.CMD_HEAD_DOWN,
@@ -959,8 +968,7 @@ class OctoStar2Controller(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs motor up."""
-        pulse_count = max(1, self._coordinator.motor_pulse_count)
-        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        pulse_count, pulse_delay = self._get_pulse_settings()
         try:
             await self.write_command(
                 self.CMD_FEET_UP,
@@ -972,8 +980,7 @@ class OctoStar2Controller(BedController):
 
     async def move_legs_down(self) -> None:
         """Move legs motor down."""
-        pulse_count = max(1, self._coordinator.motor_pulse_count)
-        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        pulse_count, pulse_delay = self._get_pulse_settings()
         try:
             await self.write_command(
                 self.CMD_FEET_DOWN,
@@ -1011,8 +1018,7 @@ class OctoStar2Controller(BedController):
 
     async def preset_flat(self) -> None:
         """Go to flat position by moving both motors down."""
-        pulse_count = max(1, self._coordinator.motor_pulse_count)
-        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        pulse_count, pulse_delay = self._get_pulse_settings()
         try:
             await self.write_command(
                 self.CMD_BOTH_DOWN,
