@@ -581,6 +581,17 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_BEDTECH, confidence=0.9, signals=signals)
 
+    # Check for Octo by name pattern (e.g., RC2, DA1458x, etc.)
+    # MUST be before Richmat WiLinke since FFE0 (W3 variant) is in both lists
+    if any(device_name.startswith(pattern) for pattern in OCTO_NAME_PATTERNS):
+        signals.append("name:octo")
+        _LOGGER.info(
+            "Detected Octo bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
+
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check
     # Variant detection (mlrm) happens at controller instantiation
@@ -749,16 +760,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
-
-    # Check for Octo by name pattern (e.g., DA1458x BLE chip used in some receivers)
-    if any(device_name.startswith(pattern) for pattern in OCTO_NAME_PATTERNS):
-        signals.append("name:octo")
-        _LOGGER.info(
-            "Detected Octo bed at %s (name: %s) by name pattern",
-            service_info.address,
-            service_info.name,
-        )
-        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
     # Check for Octo Star2 variant - service UUID detection
     if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
