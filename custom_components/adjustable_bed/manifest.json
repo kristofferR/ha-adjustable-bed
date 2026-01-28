@@ -71,6 +71,9 @@
     },
     {
       "service_uuid": "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
+    },
+    {
+      "service_uuid": "0000e0ff-3c17-d293-8e48-14fe2e4da212"
     }
   ],
   "codeowners": ["@kristofferR"],

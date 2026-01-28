@@ -232,17 +232,26 @@ BEDTECH_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 
 # WiLinke variants (5-byte commands with checksum)
+# Source: com.desarketing.gmmotor (Germany Motions) APK blutter decompilation
+# The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
+# W1 is the default fallback when no specific service is found
+RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 RICHMAT_WILINKE_SERVICE_UUIDS: Final = [
-    "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7",
-    "0000fee9-0000-1000-8000-00805f9b34fb",
-    "0000fee9-0000-1000-8000-00805f9b34bb",
-    "0000fff0-0000-1000-8000-00805f9b34fb",
+    "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7",  # Custom (legacy, index 0)
+    "0000fee9-0000-1000-8000-00805f9b34fb",  # W1 (index 1) - default fallback
+    "0000fee9-0000-1000-8000-00805f9b34bb",  # W2 (index 2) - note different base UUID suffix
+    "0000ffe0-0000-1000-8000-00805f9b34fb",  # W3 (index 3)
+    "0000fff0-0000-1000-8000-00805f9b34fb",  # W4 (index 4) - Germany Motions DHN-* beds
+    "0000e0ff-3c17-d293-8e48-14fe2e4da212",  # W5 (index 5) - custom base UUID
 ]
 RICHMAT_WILINKE_CHAR_UUIDS: Final = [
-    ("d44bc439-abfd-45a2-b575-925416129600", "d44bc439-abfd-45a2-b575-925416129601"),
-    ("d44bc439-abfd-45a2-b575-925416129600", "d44bc439-abfd-45a2-b575-925416129601"),
-    ("d44bc439-abfd-45a2-b575-925416129622", "d44bc439-abfd-45a2-b575-925416129611"),
-    ("0000fff2-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"),
+    # (write_char, notify_char) pairs matching service UUIDs above
+    ("d44bc439-abfd-45a2-b575-925416129600", "d44bc439-abfd-45a2-b575-925416129601"),  # Custom
+    ("d44bc439-abfd-45a2-b575-925416129600", "d44bc439-abfd-45a2-b575-925416129601"),  # W1
+    ("d44bc439-abfd-45a2-b575-925416129622", "d44bc439-abfd-45a2-b575-925416129611"),  # W2
+    ("0000ffe2-0000-1000-8000-00805f9b34fb", "0000ffe1-0000-1000-8000-00805f9b34fb"),  # W3
+    ("0000fff2-0000-1000-8000-00805f9b34fb", "0000fff1-0000-1000-8000-00805f9b34fb"),  # W4
+    ("00000002-3c17-d293-8e48-14fe2e4da212", "00000003-3c17-d293-8e48-14fe2e4da212"),  # W5
 ]
 
 # Keeson specific UUIDs
