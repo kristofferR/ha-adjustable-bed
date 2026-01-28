@@ -14,7 +14,7 @@ Protocol-based controllers:
 Brand-specific controllers:
 - RichmatController, KeesonController, LinakController,
   ReverieController, JiecangController, SolaceController, MotoSleepController, OctoController,
-  RemacroController
+  RemacroController, RondureController
 """
 
 from .base import BedController

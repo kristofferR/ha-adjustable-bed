@@ -400,8 +400,20 @@ async def create_controller(
     if bed_type == BED_TYPE_RONDURE:
         from .beds.rondure import RondureController
 
-        # Use configured variant, default to "both" (both sides)
-        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else "both"
+        from .const import RONDURE_VARIANTS
+
+        # Validate and default variant
+        valid_variants = set(RONDURE_VARIANTS.keys())
+        if protocol_variant and protocol_variant != "auto" and protocol_variant in valid_variants:
+            variant = protocol_variant
+        else:
+            if protocol_variant and protocol_variant != "auto":
+                _LOGGER.warning(
+                    "Invalid Rondure variant '%s', defaulting to 'both'. Valid: %s",
+                    protocol_variant,
+                    list(valid_variants),
+                )
+            variant = "both"
         _LOGGER.debug("Using Rondure controller with variant: %s", variant)
         return RondureController(coordinator, variant=variant)
 

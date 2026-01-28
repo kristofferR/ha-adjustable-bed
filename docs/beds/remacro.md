@@ -34,7 +34,7 @@ Note: The service UUID is similar to Nordic UART Service (6e400001-...) but with
 
 All commands are 8 bytes:
 
-```
+```text
 [serial, PID, cmd_lo, cmd_hi, param0, param1, param2, param3]
 ```
 

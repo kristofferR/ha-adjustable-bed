@@ -1244,4 +1244,10 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Vibradorm: 100ms delay → 10 repeats = 1.0s total
     # Source: de.vibradorm.vra APK analysis (CmdMotorVMAT uses 100ms intervals)
     BED_TYPE_VIBRADORM: (10, 100),
+    # Rondure: 50ms delay → 25 repeats = 1.25s total
+    # Source: com.sfd.rondure_hump ANALYSIS.md
+    BED_TYPE_RONDURE: (25, 50),
+    # Remacro: 100ms delay → 10 repeats = 1.0s total (matches DEFAULT)
+    # Source: com.cheers.jewmes ANALYSIS.md
+    BED_TYPE_REMACRO: (10, 100),
 }

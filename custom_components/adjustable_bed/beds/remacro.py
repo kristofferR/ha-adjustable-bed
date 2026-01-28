@@ -267,11 +267,9 @@ class RemacroController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
-        pass
 
     async def _send_command(self, command: int, repeat_count: int = 1) -> None:
         """Build and send a command packet."""

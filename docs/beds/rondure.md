@@ -25,12 +25,14 @@ The 1500 Tilt Base (internal name: Rondure Hump) uses the FurniBus protocol, a p
 ## Packet Format
 
 ### Both Sides (8 bytes)
-```
+
+```text
 [0xE5, 0xFE, 0x16, cmd[0], cmd[1], cmd[2], cmd[3], checksum]
 ```
 
 ### Single Side (9 bytes)
-```
+
+```text
 [0xE6, 0xFE, 0x16, cmd[0], cmd[1], cmd[2], cmd[3], side, checksum]
 ```
 
@@ -42,6 +44,7 @@ Where:
 - `checksum` = bitwise NOT of sum of all preceding bytes
 
 ### Checksum Calculation
+
 ```python
 checksum = (~sum(packet[:-1])) & 0xFF
 ```
