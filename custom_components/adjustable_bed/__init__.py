@@ -645,6 +645,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
                         remaining_ms -= this_cycle_ms
                 finally:
+                    # Capture any exception from move_task to re-raise after stop
+                    move_exc: Exception | None = None
+
                     # Always cancel/await any pending task to retrieve exceptions
                     if move_task is not None:  # type: ignore[unreachable]
                         move_task.cancel()
@@ -652,11 +655,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                             await move_task
                         except asyncio.CancelledError:
                             pass
-                        except Exception:
+                        except Exception as exc:
                             _LOGGER.exception("Exception in move task")
+                            move_exc = exc
+
                     # Always send stop command after movement completes or is interrupted
                     # Shield protects the stop from being cancelled by outer context
                     await asyncio.shield(stop_fn(ctrl))
+
+                    # Re-raise captured exception so service caller sees the failure
+                    if move_exc is not None:
+                        raise move_exc
 
             await coordinator.async_execute_controller_command(timed_movement)
 
