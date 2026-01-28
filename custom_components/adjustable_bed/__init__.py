@@ -612,28 +612,37 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             pulse_interval_ms = 100
             cycle_duration_ms = pulse_count * pulse_interval_ms  # 1500ms per cycle
 
-            async def timed_movement(ctrl: "BedController") -> None:
+            # Bind closure variables as defaults to avoid late-binding bugs
+            async def timed_movement(
+                ctrl: BedController,
+                *,
+                _coordinator: AdjustableBedCoordinator = coordinator,
+                _move_fn=move_fn,
+                _stop_fn=stop_fn,
+                _cycle_duration_ms: int = cycle_duration_ms,
+                _duration_ms: int = duration_ms,
+            ) -> None:
                 """Execute movement for specified duration, always sending stop."""
                 move_task: asyncio.Task[None] | None = None
-                remaining_ms = duration_ms
+                remaining_ms = _duration_ms
 
                 try:
                     while remaining_ms > 0:
                         # Check for cancellation from coordinator
-                        if coordinator.cancel_command.is_set():
+                        if _coordinator.cancel_command.is_set():
                             break
 
                         # Calculate duration for this cycle (may be partial for final cycle)
-                        this_cycle_ms = min(cycle_duration_ms, remaining_ms)
+                        this_cycle_ms = min(_cycle_duration_ms, remaining_ms)
 
                         # Start the move task
-                        move_task = asyncio.create_task(move_fn(ctrl))
+                        move_task = asyncio.create_task(_move_fn(ctrl))
 
                         try:
                             # Wait for either task completion or cycle timeout
                             await asyncio.wait_for(move_task, timeout=this_cycle_ms / 1000.0)
                             move_task = None  # Clear after successful completion
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             # Cycle duration elapsed before move_fn completed (partial cycle)
                             # Cancel the task and continue to next iteration or exit
                             move_task.cancel()
@@ -661,7 +670,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
                     # Always send stop command after movement completes or is interrupted
                     # Shield protects the stop from being cancelled by outer context
-                    await asyncio.shield(stop_fn(ctrl))
+                    await asyncio.shield(_stop_fn(ctrl))
 
                     # Re-raise captured exception so service caller sees the failure
                     if move_exc is not None:
