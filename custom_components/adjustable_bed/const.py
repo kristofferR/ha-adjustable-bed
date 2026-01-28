@@ -398,6 +398,10 @@ OCTO_STAR2_CHAR_UUID: Final = "00005a55-0000-1000-8000-00805f9b34fb"
 # Octo beds drop BLE connection after ~30s without PIN re-authentication
 OCTO_PIN_KEEPALIVE_INTERVAL: Final = 25
 
+# Octo light auto-off timeout (seconds)
+# Octo under-bed lights automatically turn off after 5 minutes (hardware behavior)
+OCTO_LIGHT_AUTO_OFF_SECONDS: Final = 300
+
 # Octo variant identifiers (dict defined later after VARIANT_AUTO)
 OCTO_VARIANT_STANDARD: Final = "standard"
 OCTO_VARIANT_STAR2: Final = "star2"

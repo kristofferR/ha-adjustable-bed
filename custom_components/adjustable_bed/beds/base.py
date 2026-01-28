@@ -976,6 +976,20 @@ class BedController(ABC):
         return False
 
     @property
+    def light_auto_off_seconds(self) -> int | None:
+        """Return the number of seconds before lights auto-off, or None if no auto-off.
+
+        Some beds have hardware-enforced light timeouts (e.g., Octo lights turn off
+        after 5 minutes). This property allows controllers to report this timeout
+        so the switch entity can update its assumed state accordingly.
+
+        Returns:
+            Number of seconds until lights auto-off, or None if lights stay on
+            until manually turned off.
+        """
+        return None
+
+    @property
     def light_timer_options(self) -> list[str]:
         """Return available light timer options.
 

@@ -27,6 +27,7 @@ from bleak.exc import BleakError
 
 from ..const import (
     OCTO_CHAR_UUID,
+    OCTO_LIGHT_AUTO_OFF_SECONDS,
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
 )
@@ -411,6 +412,13 @@ class OctoController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has separate on/off light commands."""
         return self.supports_lights
+
+    @property
+    def light_auto_off_seconds(self) -> int | None:
+        """Octo lights auto-off after 5 minutes (hardware behavior)."""
+        if self.supports_lights:
+            return OCTO_LIGHT_AUTO_OFF_SECONDS
+        return None
 
     @property
     def supports_memory_presets(self) -> bool:
