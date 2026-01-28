@@ -28,6 +28,7 @@ from ..const import (
     RICHMAT_REMOTE_AUTO,
     RICHMAT_WILINKE_CHAR_UUIDS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W1_SERVICE_UUID,
     RichmatFeatures,
     get_richmat_features,
 )
@@ -507,8 +508,19 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]
                 err,
             )
 
-    # Fall back to Nordic
+    # Fall back to WiLinke W1 variant (like the Germany Motions app does)
+    # The app defaults to W1 when no specific service is found, not Nordic.
+    # W1 uses FEE9 service with d44bc439 characteristics.
+    # Look up W1 by its service UUID to avoid hardcoded index dependency.
+    try:
+        w1_index = RICHMAT_WILINKE_SERVICE_UUIDS.index(RICHMAT_WILINKE_W1_SERVICE_UUID)
+        w1_write_char = RICHMAT_WILINKE_CHAR_UUIDS[w1_index][0]
+    except (ValueError, IndexError):
+        # Fallback if W1 UUID not found (should never happen)
+        w1_write_char = "d44bc439-abfd-45a2-b575-925416129600"
     _LOGGER.info(
-        "No WiLinke service/characteristic found, falling back to Nordic Richmat variant"
+        "No WiLinke service/characteristic found, falling back to W1 WiLinke variant "
+        "(write char: %s)",
+        w1_write_char,
     )
-    return False, RICHMAT_NORDIC_CHAR_UUID
+    return True, w1_write_char
