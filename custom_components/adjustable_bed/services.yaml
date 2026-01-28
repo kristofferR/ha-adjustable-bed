@@ -88,6 +88,55 @@ set_position:
           max: 100
           mode: slider
 
+timed_move:
+  name: Timed Move
+  description: Move a motor for a specified duration. Useful for beds without presets or position feedback.
+  fields:
+    device_id:
+      name: Device
+      description: The adjustable bed device.
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    motor:
+      name: Motor
+      description: The motor to move.
+      required: true
+      selector:
+        select:
+          options:
+            - label: Back
+              value: back
+            - label: Legs
+              value: legs
+            - label: Head
+              value: head
+            - label: Feet
+              value: feet
+    direction:
+      name: Direction
+      description: Direction to move the motor.
+      required: true
+      selector:
+        select:
+          options:
+            - label: Up
+              value: up
+            - label: Down
+              value: down
+    duration_ms:
+      name: Duration (ms)
+      description: How long to move the motor in milliseconds (100-30000).
+      required: true
+      selector:
+        number:
+          min: 100
+          max: 30000
+          step: 100
+          unit_of_measurement: ms
+          mode: box
+
 run_diagnostics:
   name: Run BLE Diagnostics
   description: Capture BLE protocol data from a device for troubleshooting and adding support for new bed models. Either provide a configured device or a target MAC address.
