@@ -612,25 +612,41 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             pulse_interval_ms = 100
             cycle_duration_ms = pulse_count * pulse_interval_ms  # 1500ms per cycle
 
-            # Calculate number of cycles needed to cover the requested duration
-            import math
-
-            num_cycles = math.ceil(duration_ms / cycle_duration_ms)
-
             async def timed_movement(ctrl: "BedController") -> None:
                 """Execute movement for specified duration, always sending stop."""
                 move_task: asyncio.Task[None] | None = None
+                remaining_ms = duration_ms
+
                 try:
-                    for _ in range(num_cycles):
-                        # Each move_fn call sends pulse_count commands at pulse_interval_ms
+                    while remaining_ms > 0:
+                        # Check for cancellation from coordinator
+                        if coordinator.cancel_command.is_set():
+                            break
+
+                        # Calculate duration for this cycle (may be partial for final cycle)
+                        this_cycle_ms = min(cycle_duration_ms, remaining_ms)
+
+                        # Start the move task
                         move_task = asyncio.create_task(move_fn(ctrl))
-                        await move_task
-                        move_task = None  # Clear after successful completion
+
+                        try:
+                            # Wait for either task completion or cycle timeout
+                            await asyncio.wait_for(move_task, timeout=this_cycle_ms / 1000.0)
+                            move_task = None  # Clear after successful completion
+                        except asyncio.TimeoutError:
+                            # Cycle duration elapsed before move_fn completed (partial cycle)
+                            # Cancel the task and continue to next iteration or exit
+                            move_task.cancel()
+                            try:
+                                await move_task
+                            except asyncio.CancelledError:
+                                pass
+                            move_task = None
+
+                        remaining_ms -= this_cycle_ms
                 finally:
-                    # Always await any pending task to retrieve exceptions
+                    # Always cancel/await any pending task to retrieve exceptions
                     if move_task is not None:  # type: ignore[unreachable]
-                        # Cancel first (no-op if already done), then await to retrieve
-                        # any exception so it doesn't become "Task exception was never retrieved"
                         move_task.cancel()
                         try:
                             await move_task
@@ -638,7 +654,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                             pass
                         except Exception:
                             _LOGGER.exception("Exception in move task")
-                    # Always send stop command after all pulses complete
+                    # Always send stop command after movement completes or is interrupted
                     # Shield protects the stop from being cancelled by outer context
                     await asyncio.shield(stop_fn(ctrl))
 
