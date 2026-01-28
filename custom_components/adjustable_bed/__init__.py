@@ -639,7 +639,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         except Exception:
                             _LOGGER.exception("Exception in move task")
                     # Always send stop command after all pulses complete
-                    await stop_fn(ctrl)
+                    # Shield protects the stop from being cancelled by outer context
+                    await asyncio.shield(stop_fn(ctrl))
 
             await coordinator.async_execute_controller_command(timed_movement)
 
