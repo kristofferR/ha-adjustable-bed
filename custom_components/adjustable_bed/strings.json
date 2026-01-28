@@ -555,6 +555,28 @@
           "description": "Target position (degrees or percentage depending on bed type)."
         }
       }
+    },
+    "timed_move": {
+      "name": "Timed Move",
+      "description": "Move a motor for a specified duration.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "motor": {
+          "name": "Motor",
+          "description": "The motor to move (back, legs, head, or feet)."
+        },
+        "direction": {
+          "name": "Direction",
+          "description": "Direction to move (up or down)."
+        },
+        "duration_ms": {
+          "name": "Duration (ms)",
+          "description": "How long to move the motor in milliseconds."
+        }
+      }
     }
   },
   "exceptions": {

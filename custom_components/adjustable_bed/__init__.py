@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import cast
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from .beds.base import BedController
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -37,17 +40,24 @@ SERVICE_STOP_ALL = "stop_all"
 SERVICE_RUN_DIAGNOSTICS = "run_diagnostics"
 SERVICE_GENERATE_SUPPORT_REPORT = "generate_support_report"
 SERVICE_SET_POSITION = "set_position"
+SERVICE_TIMED_MOVE = "timed_move"
 ATTR_PRESET = "preset"
 ATTR_MOTOR = "motor"
 ATTR_POSITION = "position"
 ATTR_TARGET_ADDRESS = "target_address"
 ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
+ATTR_DIRECTION = "direction"
+ATTR_DURATION_MS = "duration_ms"
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
 MIN_CAPTURE_DURATION = 10
 MAX_CAPTURE_DURATION = 300
+
+# Timed move duration limits (milliseconds)
+MIN_TIMED_MOVE_DURATION_MS = 100
+MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
 
 # Timeout for initial connection at startup
 # Must be long enough to cover at least one full connection attempt (30s) with margin
@@ -481,6 +491,210 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
+    async def handle_timed_move(call: ServiceCall) -> None:
+        """Handle timed_move service call."""
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        motor = call.data[ATTR_MOTOR]
+        direction = call.data[ATTR_DIRECTION]
+        duration_ms = call.data[ATTR_DURATION_MS]
+
+        _LOGGER.info(
+            "Service timed_move called: motor=%s, direction=%s, duration_ms=%d",
+            motor,
+            direction,
+            duration_ms,
+        )
+
+        for device_id in device_ids:
+            coordinator = await _get_coordinator_from_device(hass, device_id)
+            if not coordinator:
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
+                )
+
+            # Get config entry for motor count validation
+            entry: ConfigEntry | None = None
+            for entry_id, coord in hass.data[DOMAIN].items():
+                if coord is coordinator:
+                    entry = hass.config_entries.async_get_entry(entry_id)
+                    break
+
+            if not entry:
+                raise ServiceValidationError(
+                    f"Could not find config entry for device {device_id}",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
+                    translation_placeholders={"device_id": device_id},
+                )
+
+            bed_type = entry.data.get(CONF_BED_TYPE)
+            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+
+            # Define motor configurations for timed move
+            # For Keeson/Ergomotion: only head and feet are valid
+            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet)
+            is_keeson_ergomotion = bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION)
+
+            if is_keeson_ergomotion:
+                valid_motors = {"head", "feet"}
+                motor_configs = {
+                    "head": {
+                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                    },
+                    "feet": {
+                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                    },
+                }
+            else:
+                motor_configs = {
+                    "back": {
+                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                        "min_motors": 2,
+                    },
+                    "legs": {
+                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                        "min_motors": 2,
+                    },
+                    "head": {
+                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                        "min_motors": 3,
+                    },
+                    "feet": {
+                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                        "min_motors": 4,
+                    },
+                }
+                valid_motors = {
+                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
+                }
+
+            # Validate motor is valid for this bed
+            if motor not in valid_motors:
+                raise ServiceValidationError(
+                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                    f"Valid motors: {', '.join(sorted(valid_motors))}",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_motor_for_bed_type",
+                    translation_placeholders={
+                        "motor": motor,
+                        "device_name": coordinator.name,
+                        "valid_motors": ", ".join(sorted(valid_motors)),
+                    },
+                )
+
+            config = motor_configs[motor]
+
+            # Get the appropriate move function based on direction
+            if direction == "up":
+                move_fn = config["move_up_fn"]
+            else:
+                move_fn = config["move_down_fn"]
+            stop_fn = config["move_stop_fn"]
+
+            # Execute timed movement
+            # Pulse parameters for normal movements: 15 repeats @ 100ms interval
+            pulse_count = 15
+            pulse_interval_ms = 100
+            cycle_duration_ms = pulse_count * pulse_interval_ms  # 1500ms per cycle
+
+            # Bind closure variables as defaults to avoid late-binding bugs
+            async def timed_movement(
+                ctrl: BedController,
+                *,
+                _coordinator: AdjustableBedCoordinator = coordinator,
+                _move_fn=move_fn,
+                _stop_fn=stop_fn,
+                _cycle_duration_ms: int = cycle_duration_ms,
+                _duration_ms: int = duration_ms,
+            ) -> None:
+                """Execute movement for specified duration, always sending stop."""
+                move_task: asyncio.Task[None] | None = None
+                remaining_ms = _duration_ms
+
+                try:
+                    while remaining_ms > 0:
+                        # Check for cancellation from coordinator
+                        if _coordinator.cancel_command.is_set():
+                            break
+
+                        # Calculate duration for this cycle (may be partial for final cycle)
+                        this_cycle_ms = min(_cycle_duration_ms, remaining_ms)
+
+                        # Start the move task
+                        move_task = asyncio.create_task(_move_fn(ctrl))
+
+                        try:
+                            # Wait for either task completion or cycle timeout
+                            await asyncio.wait_for(move_task, timeout=this_cycle_ms / 1000.0)
+                            move_task = None  # Clear after successful completion
+                        except TimeoutError:
+                            # Cycle duration elapsed before move_fn completed (partial cycle)
+                            # Cancel the task and continue to next iteration or exit
+                            move_task.cancel()
+                            try:
+                                await move_task
+                            except asyncio.CancelledError:
+                                pass
+                            move_task = None
+
+                        remaining_ms -= this_cycle_ms
+                finally:
+                    # Capture any exception from move_task to re-raise after stop
+                    move_exc: Exception | None = None
+
+                    # Always cancel/await any pending task to retrieve exceptions
+                    if move_task is not None:  # type: ignore[unreachable]
+                        move_task.cancel()
+                        try:
+                            await move_task
+                        except asyncio.CancelledError:
+                            pass
+                        except Exception as exc:
+                            _LOGGER.exception("Exception in move task")
+                            move_exc = exc
+
+                    # Always send stop command after movement completes or is interrupted
+                    # Shield protects the stop from being cancelled by outer context
+                    await asyncio.shield(_stop_fn(ctrl))
+
+                    # Re-raise captured exception so service caller sees the failure
+                    if move_exc is not None:
+                        raise move_exc
+
+            await coordinator.async_execute_controller_command(timed_movement)
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TIMED_MOVE,
+        handle_timed_move,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
+                vol.Required(ATTR_DURATION_MS): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_TIMED_MOVE_DURATION_MS, max=MAX_TIMED_MOVE_DURATION_MS),
+                ),
+            }
+        ),
+    )
+
     async def handle_run_diagnostics(call: ServiceCall) -> None:
         """Handle run_diagnostics service call."""
         from homeassistant.components.persistent_notification import async_create
@@ -723,6 +937,7 @@ def _async_unregister_services(hass: HomeAssistant) -> None:
         SERVICE_SAVE_PRESET,
         SERVICE_STOP_ALL,
         SERVICE_SET_POSITION,
+        SERVICE_TIMED_MOVE,
         SERVICE_RUN_DIAGNOSTICS,
         SERVICE_GENERATE_SUPPORT_REPORT,
     ):
