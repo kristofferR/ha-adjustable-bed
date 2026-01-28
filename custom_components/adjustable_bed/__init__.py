@@ -607,10 +607,20 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             stop_fn = config["move_stop_fn"]
 
             # Execute timed movement
-            # Pulse parameters for normal movements: 15 repeats @ 100ms interval
-            pulse_count = 15
-            pulse_interval_ms = 100
-            cycle_duration_ms = pulse_count * pulse_interval_ms  # 1500ms per cycle
+            # Calculate repeat count: duration_ms / pulse_delay_ms
+            # Example: 3500ms on Octo (350ms delay) = 10 repeats
+            pulse_delay_ms = coordinator.motor_pulse_delay_ms
+            calculated_repeat_count = max(1, duration_ms // pulse_delay_ms)
+
+            _LOGGER.debug(
+                "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
+                duration_ms,
+                pulse_delay_ms,
+                calculated_repeat_count,
+            )
+
+            # Store original pulse count to restore after
+            original_pulse_count = coordinator.motor_pulse_count
 
             # Bind closure variables as defaults to avoid late-binding bugs
             async def timed_movement(
@@ -619,62 +629,23 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 _coordinator: AdjustableBedCoordinator = coordinator,
                 _move_fn=move_fn,
                 _stop_fn=stop_fn,
-                _cycle_duration_ms: int = cycle_duration_ms,
-                _duration_ms: int = duration_ms,
+                _calculated_repeat_count: int = calculated_repeat_count,
+                _original_pulse_count: int = original_pulse_count,
             ) -> None:
                 """Execute movement for specified duration, always sending stop."""
-                move_task: asyncio.Task[None] | None = None
-                remaining_ms = _duration_ms
-
                 try:
-                    while remaining_ms > 0:
-                        # Check for cancellation from coordinator
-                        if _coordinator.cancel_command.is_set():
-                            break
+                    # Temporarily set pulse count to calculated value
+                    # This is safe because we're inside the command lock
+                    _coordinator._motor_pulse_count = _calculated_repeat_count
 
-                        # Calculate duration for this cycle (may be partial for final cycle)
-                        this_cycle_ms = min(_cycle_duration_ms, remaining_ms)
-
-                        # Start the move task
-                        move_task = asyncio.create_task(_move_fn(ctrl))
-
-                        try:
-                            # Wait for either task completion or cycle timeout
-                            await asyncio.wait_for(move_task, timeout=this_cycle_ms / 1000.0)
-                            move_task = None  # Clear after successful completion
-                        except TimeoutError:
-                            # Cycle duration elapsed before move_fn completed (partial cycle)
-                            # Cancel the task and continue to next iteration or exit
-                            move_task.cancel()
-                            try:
-                                await move_task
-                            except asyncio.CancelledError:
-                                pass
-                            move_task = None
-
-                        remaining_ms -= this_cycle_ms
+                    # Call the movement function (uses coordinator's pulse settings)
+                    await _move_fn(ctrl)
                 finally:
-                    # Capture any exception from move_task to re-raise after stop
-                    move_exc: Exception | None = None
+                    # Restore original pulse count
+                    _coordinator._motor_pulse_count = _original_pulse_count
 
-                    # Always cancel/await any pending task to retrieve exceptions
-                    if move_task is not None:  # type: ignore[unreachable]
-                        move_task.cancel()
-                        try:
-                            await move_task
-                        except asyncio.CancelledError:
-                            pass
-                        except Exception as exc:
-                            _LOGGER.exception("Exception in move task")
-                            move_exc = exc
-
-                    # Always send stop command after movement completes or is interrupted
-                    # Shield protects the stop from being cancelled by outer context
+                    # Always send stop command
                     await asyncio.shield(_stop_fn(ctrl))
-
-                    # Re-raise captured exception so service caller sees the failure
-                    if move_exc is not None:
-                        raise move_exc
 
             await coordinator.async_execute_controller_command(timed_movement)
 
