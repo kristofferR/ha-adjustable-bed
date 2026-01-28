@@ -113,6 +113,8 @@ BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
+BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
+BED_TYPE_REMACRO: Final = "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -165,6 +167,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SVANE,
     # Vibradorm
     BED_TYPE_VIBRADORM,
+    # Rondure / 1500 Tilt Base
+    BED_TYPE_RONDURE,
+    # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
+    BED_TYPE_REMACRO,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -577,6 +583,33 @@ MANUFACTURER_ID_VIBRADORM: Final = 944  # 0x03B0
 
 # Vibradorm name patterns (VMAT = Vibradorm Motor Actuator)
 VIBRADORM_NAME_PATTERNS: Final = ("vmat",)
+
+# Rondure / 1500 Tilt Base specific UUIDs (FurniBus protocol)
+# Protocol reverse-engineered from com.sfd.rondure_hump APK
+# Uses 8-byte (both sides) or 9-byte (single side) packets with ~sum checksum
+RONDURE_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+RONDURE_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
+RONDURE_READ_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+# Also supports Nordic UART as an alternative (same UUIDs as NORDIC_UART_*)
+
+# Rondure side selection variants
+RONDURE_VARIANT_BOTH: Final = "both"  # Control both sides (default)
+RONDURE_VARIANT_SIDE_A: Final = "side_a"  # Control side A only
+RONDURE_VARIANT_SIDE_B: Final = "side_b"  # Control side B only
+RONDURE_VARIANTS: Final = {
+    RONDURE_VARIANT_BOTH: "Both sides",
+    RONDURE_VARIANT_SIDE_A: "Side A only",
+    RONDURE_VARIANT_SIDE_B: "Side B only",
+}
+
+# Remacro specific UUIDs (SynData protocol)
+# Protocol reverse-engineered from com.cheers.jewmes APK (Jeromes app)
+# Used by: CheersSleep, Jeromes, Slumberland, The Brick furniture store beds
+# Uses 8-byte packets: [serial, PID, cmd_lo, cmd_hi, param0-3]
+# Note: The service UUID is similar to Nordic UART but with different prefix (6e4035xx vs 6e4000xx)
+REMACRO_SERVICE_UUID: Final = "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
+REMACRO_WRITE_CHAR_UUID: Final = "6e403588-b5a3-f393-e0a9-e50e24dcca9e"
+REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"

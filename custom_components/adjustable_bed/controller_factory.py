@@ -9,6 +9,7 @@ from .adapter import discover_services
 from .const import (
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
+    BED_TYPE_REMACRO,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_DEWERTOKIN,
@@ -38,6 +39,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RONDURE,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -394,5 +396,18 @@ async def create_controller(
         from .beds.vibradorm import VibradormController
 
         return VibradormController(coordinator)
+
+    if bed_type == BED_TYPE_RONDURE:
+        from .beds.rondure import RondureController
+
+        # Use configured variant, default to "both" (both sides)
+        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else "both"
+        _LOGGER.debug("Using Rondure controller with variant: %s", variant)
+        return RondureController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_REMACRO:
+        from .beds.remacro import RemacroController
+
+        return RemacroController(coordinator)
 
     raise ValueError(f"Unknown bed type: {bed_type}")
