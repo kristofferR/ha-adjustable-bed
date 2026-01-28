@@ -21,6 +21,7 @@ from .const import (
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_REMACRO,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_DEWERTOKIN,
@@ -49,6 +50,7 @@ from .const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RONDURE,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -59,6 +61,7 @@ from .const import (
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
+    REMACRO_SERVICE_UUID,
     COMFORT_MOTION_SERVICE_UUID,
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
@@ -228,6 +231,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REVERIE: "Reverie (Protocol 108)",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
     BED_TYPE_RICHMAT: "Richmat",
+    BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
+    BED_TYPE_REMACRO: "Remacro (CheersSleep, Jeromes, Slumberland, The Brick)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
@@ -408,6 +413,21 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(
             bed_type=BED_TYPE_SVANE,
             confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for Remacro (Jeromes / Slumberland / The Brick) - unique service UUID (6e403587)
+    # Note: Similar to Nordic UART (6e400001) but with different prefix, so unique
+    if REMACRO_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:remacro")
+        _LOGGER.info(
+            "Detected Remacro bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_REMACRO,
+            confidence=1.0,
             signals=signals,
         )
 
