@@ -495,11 +495,34 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None]
                         write_uuid,
                     )
                     return True, write_uuid
-                else:
+
+                _LOGGER.debug(
+                    "Write characteristic %s not found in service %s",
+                    write_uuid,
+                    service_uuid,
+                )
+
+                # Fallback: try using the notify char for writing
+                # Some beds (like Germany Motions DHN-*) use a single characteristic
+                # for both read/write/notify instead of separate write and notify chars
+                notify_uuid = RICHMAT_WILINKE_CHAR_UUIDS[i][1]
+                if notify_uuid != write_uuid:
+                    notify_char = service.get_characteristic(notify_uuid)
+                    if notify_char:
+                        # Normalize properties to lowercase set for exact matching
+                        # (avoids false positive from "write-without-response")
+                        props = {prop.lower() for prop in notify_char.properties}
+                        if "write" in props:
+                            _LOGGER.info(
+                                "Detected WiLinke Richmat variant using notify char for writing "
+                                "(service: %s, write char: %s)",
+                                service_uuid,
+                                notify_uuid,
+                            )
+                            return True, notify_uuid
                     _LOGGER.debug(
-                        "Write characteristic %s not found in service %s",
-                        write_uuid,
-                        service_uuid,
+                        "Notify characteristic %s not writable or not found",
+                        notify_uuid,
                     )
         except Exception as err:
             _LOGGER.debug(
