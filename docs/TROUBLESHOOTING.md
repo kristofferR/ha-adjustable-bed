@@ -22,13 +22,13 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 **Possible Causes:**
 1. Bed is powered off or in standby mode
-2. Another device is already connected (phone app, another HA instance)
+2. Another device is already connected (phone app, remote, another HA instance)
 3. Bed is out of Bluetooth range
 4. Bluetooth adapter issues
 
 **Solutions:**
 1. **Power cycle the bed:** Unplug the bed's power for 30 seconds, then plug it back in
-2. **Close other apps:** Close any phone apps that might be connected to the bed
+2. **Close other apps and kill remotes:** Close any phone apps that might be connected to the bed and remove batteries from remotes
 3. **Move adapter closer:** If using a USB Bluetooth adapter, try moving it closer to the bed
 4. **Use a Bluetooth proxy:** Consider using an ESPHome Bluetooth proxy placed near the bed
 5. **Check Bluetooth adapter:** Verify your Bluetooth adapter is working with other devices
