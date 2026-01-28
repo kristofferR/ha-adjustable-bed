@@ -610,6 +610,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Calculate repeat count: duration_ms / pulse_delay_ms
             # Example: 3500ms on Octo (350ms delay) = 10 repeats
             pulse_delay_ms = coordinator.motor_pulse_delay_ms
+            if pulse_delay_ms <= 0:
+                _LOGGER.warning(
+                    "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
+                    pulse_delay_ms,
+                    coordinator.name,
+                )
+                pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
             calculated_repeat_count = max(1, duration_ms // pulse_delay_ms)
 
             _LOGGER.debug(
