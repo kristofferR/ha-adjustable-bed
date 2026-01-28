@@ -945,8 +945,8 @@ def get_richmat_features(remote_code: str) -> RichmatFeatures:
     """Get features for a Richmat remote code.
 
     Looks up features from both manually-defined overrides and the
-    comprehensive auto-generated mapping (456 product codes extracted
-    from the official Richmat app).
+    comprehensive auto-generated mapping (492 product codes extracted
+    from Richmat apps).
 
     Args:
         remote_code: The remote code (e.g., "VIRM", "qrrm", "i7rm")

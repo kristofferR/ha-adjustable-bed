@@ -700,11 +700,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.9, signals=signals)
 
-    # Check for Richmat by name pattern (e.g., QRRM157052)
+    # Check for Richmat by name pattern (e.g., QRRM157052, B6RM123456, ZR10...)
+    # Uses RICHMAT_CODE_PATTERN regex to match all valid remote codes (492 codes supported)
     # Also extract remote code for feature detection
-    if any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS):
+    detected_remote = detect_richmat_remote_from_name(service_info.name)
+    if detected_remote or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS):
         signals.append("name:richmat")
-        detected_remote = detect_richmat_remote_from_name(service_info.name)
         _LOGGER.info(
             "Detected Richmat bed at %s (name: %s) by name pattern",
             service_info.address,
