@@ -95,6 +95,7 @@ from .const import (
     POSITION_STALL_COUNT,
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
+    OKIMAT_SERVICE_UUID,
     RICHMAT_REMOTE_AUTO,
     requires_pairing,
 )
@@ -605,7 +606,8 @@ class AdjustableBedCoordinator:
                 use_pairing = bed_requires_pairing and self._pairing_supported is not False
                 if use_pairing:
                     _LOGGER.info(
-                        "Pairing enabled for %s (bed type: %s, variant: %s)",
+                        "Pairing enabled for %s (bed type: %s, variant: %s) - "
+                        "GATT services cache disabled to force fresh discovery",
                         self._name,
                         self._bed_type,
                         self._protocol_variant,
@@ -618,6 +620,11 @@ class AdjustableBedCoordinator:
                 self._notify_connection_state_change(False)
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
+                    # When pairing is required, disable services cache to force fresh
+                    # GATT discovery. Some devices expose different services depending
+                    # on pairing state, and stale cached services from a previous
+                    # non-paired connection will cause characteristic lookups to fail.
+                    disable_cache = use_pairing
                     try:
                         self._client = await establish_connection(
                             BleakClient,
@@ -628,6 +635,7 @@ class AdjustableBedCoordinator:
                             timeout=self._connection_timeout,
                             ble_device_callback=ble_device_callback,
                             pair=use_pairing,
+                            use_services_cache=not disable_cache,
                         )
                         # If we get here with pairing enabled, mark it as supported
                         if use_pairing:
@@ -644,7 +652,8 @@ class AdjustableBedCoordinator:
                             )
                             # Remember that pairing isn't supported to avoid repeated warnings
                             self._pairing_supported = False
-                            # Retry without pairing
+                            # Retry without pairing but still disable cache since
+                            # this bed type requires pairing and may have stale data
                             self._client = await establish_connection(
                                 BleakClient,
                                 device,
@@ -653,6 +662,7 @@ class AdjustableBedCoordinator:
                                 max_attempts=1,
                                 timeout=self._connection_timeout,
                                 ble_device_callback=ble_device_callback,
+                                use_services_cache=False,
                             )
                         else:
                             raise
@@ -711,6 +721,34 @@ class AdjustableBedCoordinator:
 
                 # Discover services and log hierarchy
                 await discover_services(self._client, self._address)
+
+                # Validate expected services are present (for beds requiring pairing)
+                if bed_requires_pairing and self._client.services:
+                    discovered_uuids = {
+                        svc.uuid.lower() for svc in self._client.services
+                    }
+                    _LOGGER.debug(
+                        "Discovered service UUIDs for %s: %s",
+                        self._name,
+                        sorted(discovered_uuids),
+                    )
+
+                    # Get expected service UUID for this bed type
+                    expected_service = OKIMAT_SERVICE_UUID.lower()
+                    if (
+                        self._bed_type
+                        in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN)
+                        and expected_service not in discovered_uuids
+                    ):
+                        _LOGGER.warning(
+                            "⚠ Expected OKIN service UUID %s not found in discovered "
+                            "services for %s. This usually means pairing/bonding failed. "
+                            "Discovered services: %s. Try removing and re-adding the "
+                            "device with 'Pair Now' option.",
+                            expected_service,
+                            self._name,
+                            sorted(discovered_uuids),
+                        )
 
                 # Read BLE Device Information Service for manufacturer/model
                 ble_manufacturer, ble_model = await read_ble_device_info(
