@@ -1647,7 +1647,12 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
 
         # Add angle limit fields for beds that use angle-based positions
         # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
-        if bed_type and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
+        # Only show for beds that actually support position feedback
+        if (
+            bed_type
+            and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS
+            and bed_type in BEDS_WITH_POSITION_FEEDBACK
+        ):
             schema_dict[
                 vol.Optional(
                     CONF_BACK_MAX_ANGLE,
