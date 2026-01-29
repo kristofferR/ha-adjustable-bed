@@ -25,6 +25,11 @@ Brands using Keeson/Ergomotion actuators:
 - Sealy Ease
 - Some Costco beds
 
+**DewertOkin/ORE brands** also using FFE5 protocol (31 apps):
+- Simon Li, Cherish Smart, Minghua, Heal Every Night
+- ORE: Dynasty, LevaSleep, American Star, Avanti, Comfort Furniture, Hestia Motion, Maxcoil, Power's Bedding, SFM, Ultramatic, Better Living, Koizumi
+- See [DewertOkin](dewertokin.md) for full list
+
 ## Apps
 
 | Analyzed | App | Package ID |

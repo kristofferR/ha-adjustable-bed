@@ -1,49 +1,98 @@
 # DewertOkin
 
-**Status:**  Untested
+**Status:** ✅ Supported
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
-## Known Models
+## Known Brands
 
-Brands using DewertOkin actuators:
+Brands using DewertOkin/ORE actuators (79 apps analyzed):
 
-- Mattress Firm (except Sleepy's Elite - see [Sleepy's Elite](sleepys.md))
+**Rize Family:**
+- Rize (Home, II, II Carefree, II Clarity, Contemporary, Bob, Sanctuary, Aviada, MF900)
 - Resident Adjustable Base
-- Rize (multiple models: Home, Remedy, Clarity, Contemporary, Aviada)
-- SIMMONS
-- Nectar Move
-- Power Bob Ultra
-- Dynasty Bases
+
+**Simmons:**
+- SIMMONS (US)
+- Simmons Korea (시몬스)
+
+**Customatic:**
+- Customatic (Clarity, Demo, Remedy, Jerome's)
+
+**Mattress Brands:**
+- Mattress Firm (except Sleepy's Elite - see [Sleepy's Elite](sleepys.md))
+- Nectar Motion
+- Glory Furniture
+- Tranquil Sleep
+- Luxe
+- Ultra
+
+**ORE/Glideaway Family:**
 - Glideaway Motion
-- AdjustaMattress
-- Eshine Sleep
-- CHERISH SMART
-- OrmatekTechnoSmart
-- INNOVA
 - Symphony Sleep
-- Jordan's (multiple models: Restful, Serenity, Tranquil, Sanctuary, Carefree, Clarity)
+- Movita
+- Dynasty Bases
+- Better Living
+- LevaSleep
+- American Star
+- Avanti Bases
+- Comfort Furniture
+- Hestia Motion
+- Maxcoil Una
+- Power's Bedding
 - Ultramatic Smart Bed
+
+**Asian Markets:**
+- Jobs 賈伯斯 (Taiwan)
+- Koizumi (Japan)
+- Minamoto Bed (Japan)
 - M line
-- MaxCoil Una
-- AVANTI BASES
-- Bedsense Bases
-- RÖWA
+- Berun
+- Alya
+- Nerum
+- IST
+
+**Other Brands:**
 - Simon Li
+- Cherish Smart
+- Support 挺你
+- Apex
+- Doublesleep
+- OkinSmartComfort
+- OrmatekTechnoSmart
+- INNOVA (SFM)
+- RÖWA
 - Flexsteel Pulse
-- A H Beard adjustable beds
-- HankookGallery beds
+- A H Beard
+- Hankook Gallery
 - Beds with DewertOkin HE150 controller
 
 ## Apps
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.dewertokin.okinsmartcomfort) | `com.dewertokin.okinsmartcomfort` |
-| ✅ | [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy) | `com.okin.bedding.sleepy` |
-| ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) | `com.okin.resident.release` |
-| ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) | `com.okin.bedding.rizeResident` |
-| ✅ | [INNOVA](https://play.google.com/store/apps/details?id=com.ore.sfm) | `com.ore.sfm` |
+79 DewertOkin/ORE apps were analyzed. All use one of these protocols:
+
+| Protocol | Apps | Service UUID | Controller |
+|----------|------|--------------|------------|
+| FFE5/Keeson | 31 | `0000ffe5-...` | `keeson.py` |
+| OKIN UUID | 19 | `62741523-...` | `okin_uuid.py` |
+| FFE0/Solace | 19 | `0000ffe0-...` | `solace.py` |
+| Nordic UART | 5 | `6e400001-...` | `okin_nordic.py` |
+| FFF0/WiLinke | 2 | `0000fff0-...` | `leggett_wilinke.py` |
+
+**Key analyzed apps:**
+
+| App | Package ID | Protocol |
+|-----|------------|----------|
+| MFRM Sleepy's Elite | `com.okin.bedding.sleepy` | Multi-protocol |
+| Resident | `com.okin.resident.release` | Flutter |
+| Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
+| Simmons | `com.okin.simmons` | Flutter |
+| Glideaway | `com.ore.bedding.glideawaymontion` | FFE5 |
+| Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
+| INNOVA/SFM | `com.ore.sfm` | FFE5 |
+| OkinSmartComfort | `com.okin.okinsmartcomfort` | OKIN UUID + Nordic |
+
+See `disassembly/output/OKIN_MASTER_ANALYSIS.md` for complete app listing.
 
 ## Features
 

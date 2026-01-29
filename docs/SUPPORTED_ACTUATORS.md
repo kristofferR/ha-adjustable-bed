@@ -15,7 +15,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
 | [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
 | [Jensen](beds/jensen.md) | ✅ Supported | 1 memory preset, dynamic feature detection (lights, massage) |
-| [DewertOkin](beds/dewertokin.md) | ✅ Supported | 2 memory presets, wave massage, lights |
+| [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (Rize, Simmons, etc.), multiple protocols |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
@@ -99,13 +99,14 @@ These beds have their own dedicated integrations:
    - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
    - `Ergomotion*` or `Ergo*` → Keeson
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
-   - `Dewert*`, `A H Beard*`, or `Hankook*` → DewertOkin
+   - `Dewert*`, `A H Beard*`, `Hankook*` → DewertOkin
    - `Serta*` or `Motion Perfect*` → Serta
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
    - `Malouf*`, `Structures*` → Malouf
    - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
    - `VMAT*` → Vibradorm
+   - `Rize*`, `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
 
 4. **Use Diagnostic mode to find service UUIDs**: If unsure, add the device as "Diagnostic/Unknown" and run the `run_diagnostics` service. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
