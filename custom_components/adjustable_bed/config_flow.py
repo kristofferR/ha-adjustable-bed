@@ -50,10 +50,10 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_LEGS_MAX_ANGLE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
-    CONF_LEGS_MAX_ANGLE,
     CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -1700,32 +1700,39 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
                 )
-            # Convert angle limit values to floats
-            try:
-                if CONF_BACK_MAX_ANGLE in user_input:
+            # Convert angle limit values to floats with field-specific error handling
+            if CONF_BACK_MAX_ANGLE in user_input:
+                try:
                     value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
                             step_id="init",
                             data_schema=vol.Schema(schema_dict),
-                            errors={"base": "invalid_angle"},
+                            errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_BACK_MAX_ANGLE] = value
-                if CONF_LEGS_MAX_ANGLE in user_input:
+                except (ValueError, TypeError):
+                    return self.async_show_form(
+                        step_id="init",
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
+                    )
+            if CONF_LEGS_MAX_ANGLE in user_input:
+                try:
                     value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
                             step_id="init",
                             data_schema=vol.Schema(schema_dict),
-                            errors={"base": "invalid_angle"},
+                            errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_LEGS_MAX_ANGLE] = value
-            except (ValueError, TypeError):
-                return self.async_show_form(
-                    step_id="init",
-                    data_schema=vol.Schema(schema_dict),
-                    errors={"base": "invalid_angle"},
-                )
+                except (ValueError, TypeError):
+                    return self.async_show_form(
+                        step_id="init",
+                        data_schema=vol.Schema(schema_dict),
+                        errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
+                    )
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(
