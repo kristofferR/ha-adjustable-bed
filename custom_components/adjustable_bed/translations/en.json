@@ -240,7 +240,9 @@
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN"
+          "octo_pin": "Octo PIN",
+          "back_max_angle": "Maximum back angle (degrees)",
+          "legs_max_angle": "Maximum legs angle (degrees)"
         },
         "data_description": {
           "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
@@ -254,13 +256,16 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300).",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN."
+          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
+          "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
         }
       }
     },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
-      "invalid_pin": "PIN must be empty or exactly 4 digits."
+      "invalid_pin": "PIN must be empty or exactly 4 digits.",
+      "invalid_angle": "Angle must be a positive number between 0 and 180 degrees."
     }
   },
   "entity": {

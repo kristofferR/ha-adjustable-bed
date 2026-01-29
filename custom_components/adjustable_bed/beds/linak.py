@@ -14,14 +14,10 @@ from typing import TYPE_CHECKING, Any
 from bleak.exc import BleakError
 
 from ..const import (
-    LINAK_BACK_MAX_ANGLE,
     LINAK_BACK_MAX_POSITION,
     LINAK_CONTROL_CHAR_UUID,
-    LINAK_FEET_MAX_ANGLE,
     LINAK_FEET_MAX_POSITION,
-    LINAK_HEAD_MAX_ANGLE,
     LINAK_HEAD_MAX_POSITION,
-    LINAK_LEG_MAX_ANGLE,
     LINAK_LEG_MAX_POSITION,
     LINAK_POSITION_BACK_UUID,
     LINAK_POSITION_FEET_UUID,
@@ -202,20 +198,26 @@ class LinakController(BedController):
         )
 
         # Set up notification handlers for position characteristics
+        # Use configurable angle limits from coordinator
+        back_max_angle = self._coordinator.back_max_angle
+        legs_max_angle = self._coordinator.legs_max_angle
+        head_max_angle = self._coordinator.head_max_angle
+        feet_max_angle = self._coordinator.feet_max_angle
+
         position_chars = [
-            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, LINAK_BACK_MAX_ANGLE),
-            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, LINAK_LEG_MAX_ANGLE),
+            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
+            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
         ]
 
         if motor_count > 2:
             position_chars.append(
-                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, LINAK_HEAD_MAX_ANGLE)
+                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
             )
             _LOGGER.debug("Adding head position notifications (3+ motors)")
 
         if motor_count > 3:
             position_chars.append(
-                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, LINAK_FEET_MAX_ANGLE)
+                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
             )
             _LOGGER.debug("Adding feet position notifications (4 motors)")
 
@@ -353,19 +355,25 @@ class LinakController(BedController):
             _LOGGER.warning("Cannot read positions: not connected")
             return
 
+        # Use configurable angle limits from coordinator
+        back_max_angle = self._coordinator.back_max_angle
+        legs_max_angle = self._coordinator.legs_max_angle
+        head_max_angle = self._coordinator.head_max_angle
+        feet_max_angle = self._coordinator.feet_max_angle
+
         position_chars = [
-            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, LINAK_BACK_MAX_ANGLE),
-            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, LINAK_LEG_MAX_ANGLE),
+            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
+            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
         ]
 
         if motor_count > 2:
             position_chars.append(
-                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, LINAK_HEAD_MAX_ANGLE)
+                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
             )
 
         if motor_count > 3:
             position_chars.append(
-                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, LINAK_FEET_MAX_ANGLE)
+                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
             )
 
         for name, uuid, max_pos, max_angle in position_chars:
@@ -389,6 +397,8 @@ class LinakController(BedController):
             return
 
         # Only back needs polling - legs sends notifications
+        # Use configurable angle limit from coordinator
+        back_max_angle = self._coordinator.back_max_angle
         try:
             # Acquire BLE lock to prevent conflicts with concurrent writes
             async with self._ble_lock:
@@ -396,7 +406,7 @@ class LinakController(BedController):
             if data:
                 _LOGGER.debug("Polled back position: %s", data.hex())
                 self._handle_position_data(
-                    "back", bytearray(data), LINAK_BACK_MAX_POSITION, LINAK_BACK_MAX_ANGLE
+                    "back", bytearray(data), LINAK_BACK_MAX_POSITION, back_max_angle
                 )
         except BleakError:
             _LOGGER.debug("Failed to poll back position (may be disconnected)")

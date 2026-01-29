@@ -40,7 +40,9 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
+    BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
+    CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -51,13 +53,16 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_LEGS_MAX_ANGLE,
     CONF_OCTO_PIN,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_DISCONNECT_AFTER_COMMAND,
+    DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_CONNECTION_PROFILE,
@@ -1640,6 +1645,22 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 )
             ] = vol.In(RICHMAT_REMOTES)
 
+        # Add angle limit fields for beds that use angle-based positions
+        # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
+        if bed_type and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
+            schema_dict[
+                vol.Optional(
+                    CONF_BACK_MAX_ANGLE,
+                    default=str(current_data.get(CONF_BACK_MAX_ANGLE, DEFAULT_BACK_MAX_ANGLE)),
+                )
+            ] = TextSelector(TextSelectorConfig())
+            schema_dict[
+                vol.Optional(
+                    CONF_LEGS_MAX_ANGLE,
+                    default=str(current_data.get(CONF_LEGS_MAX_ANGLE, DEFAULT_LEGS_MAX_ANGLE)),
+                )
+            ] = TextSelector(TextSelectorConfig())
+
         if user_input is not None:
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
@@ -1673,6 +1694,32 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     step_id="init",
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
+                )
+            # Convert angle limit values to floats
+            try:
+                if CONF_BACK_MAX_ANGLE in user_input:
+                    value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
+                    if value <= 0 or value > 180:
+                        return self.async_show_form(
+                            step_id="init",
+                            data_schema=vol.Schema(schema_dict),
+                            errors={"base": "invalid_angle"},
+                        )
+                    user_input[CONF_BACK_MAX_ANGLE] = value
+                if CONF_LEGS_MAX_ANGLE in user_input:
+                    value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
+                    if value <= 0 or value > 180:
+                        return self.async_show_form(
+                            step_id="init",
+                            data_schema=vol.Schema(schema_dict),
+                            errors={"base": "invalid_angle"},
+                        )
+                    user_input[CONF_LEGS_MAX_ANGLE] = value
+            except (ValueError, TypeError):
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "invalid_angle"},
                 )
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}

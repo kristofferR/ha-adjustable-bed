@@ -75,7 +75,11 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONF_BACK_MAX_ANGLE,
+    CONF_LEGS_MAX_ANGLE,
+    DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_DISABLE_ANGLE_SENSING,
+    DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_DISCONNECT_AFTER_COMMAND,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
@@ -256,6 +260,52 @@ class AdjustableBedCoordinator:
     def disable_angle_sensing(self) -> bool:
         """Return whether angle sensing is disabled."""
         return self._disable_angle_sensing
+
+    @property
+    def back_max_angle(self) -> float:
+        """Return the maximum angle for back motor (also used for head)."""
+        # Check options first (runtime config), then entry data (initial config)
+        if CONF_BACK_MAX_ANGLE in self.entry.options:
+            return float(self.entry.options[CONF_BACK_MAX_ANGLE])
+        if CONF_BACK_MAX_ANGLE in self.entry.data:
+            return float(self.entry.data[CONF_BACK_MAX_ANGLE])
+        return DEFAULT_BACK_MAX_ANGLE
+
+    @property
+    def legs_max_angle(self) -> float:
+        """Return the maximum angle for legs motor (also used for feet)."""
+        # Check options first (runtime config), then entry data (initial config)
+        if CONF_LEGS_MAX_ANGLE in self.entry.options:
+            return float(self.entry.options[CONF_LEGS_MAX_ANGLE])
+        if CONF_LEGS_MAX_ANGLE in self.entry.data:
+            return float(self.entry.data[CONF_LEGS_MAX_ANGLE])
+        return DEFAULT_LEGS_MAX_ANGLE
+
+    @property
+    def head_max_angle(self) -> float:
+        """Return the maximum angle for head motor (derived from back)."""
+        return self.back_max_angle
+
+    @property
+    def feet_max_angle(self) -> float:
+        """Return the maximum angle for feet motor (derived from legs)."""
+        return self.legs_max_angle
+
+    def get_max_angle(self, position_key: str) -> float:
+        """Get the max angle for a motor position key.
+
+        Args:
+            position_key: Motor name ("back", "legs", "head", or "feet")
+
+        Returns:
+            Maximum angle in degrees for the specified motor.
+        """
+        if position_key in ("back", "head"):
+            return self.back_max_angle
+        if position_key in ("legs", "feet"):
+            return self.legs_max_angle
+        # Unknown motor, return back max as default
+        return self.back_max_angle
 
     @property
     def motor_pulse_count(self) -> int:

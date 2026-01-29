@@ -62,6 +62,12 @@ CONF_POSITION_MODE: Final = "position_mode"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"
+CONF_BACK_MAX_ANGLE: Final = "back_max_angle"
+CONF_LEGS_MAX_ANGLE: Final = "legs_max_angle"
+
+# Default angle limits (from Linak beds)
+DEFAULT_BACK_MAX_ANGLE: Final = 68.0
+DEFAULT_LEGS_MAX_ANGLE: Final = 45.0
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"

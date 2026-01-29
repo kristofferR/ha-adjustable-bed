@@ -256,9 +256,29 @@ async def async_setup_entry(
                 entities.append(AdjustableBedPositionNumber(coordinator, keeson_feet_desc))
             else:
                 # Standard bed motor layout (Back/Legs/Head/Feet)
+                # Use configurable angle limits for beds that support angle-based positions
                 for description in NUMBER_DESCRIPTIONS:
                     if motor_count >= description.min_motors:
-                        entities.append(AdjustableBedPositionNumber(coordinator, description))
+                        # Get dynamic max angle from coordinator
+                        max_angle = coordinator.get_max_angle(description.position_key)
+                        # Create a new description with the dynamic max angle
+                        dynamic_desc = AdjustableBedNumberEntityDescription(
+                            key=description.key,
+                            translation_key=description.translation_key,
+                            icon=description.icon,
+                            native_min_value=description.native_min_value,
+                            native_max_value=int(max_angle),
+                            native_step=description.native_step,
+                            native_unit_of_measurement=description.native_unit_of_measurement,
+                            mode=description.mode,
+                            position_key=description.position_key,
+                            move_up_fn=description.move_up_fn,
+                            move_down_fn=description.move_down_fn,
+                            move_stop_fn=description.move_stop_fn,
+                            max_angle=max_angle,
+                            min_motors=description.min_motors,
+                        )
+                        entities.append(AdjustableBedPositionNumber(coordinator, dynamic_desc))
         else:
             _LOGGER.debug(
                 "Bed type %s (variant=%s) does not support position feedback, skipping position number entities",
