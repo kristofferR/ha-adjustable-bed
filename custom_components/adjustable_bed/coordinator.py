@@ -581,8 +581,11 @@ class AdjustableBedCoordinator:
                             getattr(scanner, "source", "unknown")
                             for scanner in scanners
                         ]
-                    except Exception:
-                        pass  # Non-critical for connection
+                    except Exception as exc:
+                        _LOGGER.debug(
+                            "Failed to capture adapters via bluetooth.async_current_scanners: %s",
+                            exc,
+                        )
                 except Exception as err:
                     _LOGGER.debug("Could not get scanner count: %s", err)
 

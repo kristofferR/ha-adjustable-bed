@@ -26,6 +26,7 @@ from .const import (
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
+from .diagnostics_utils import get_gatt_summary
 from .redaction import redact_data
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ async def generate_support_report(
         "adapter": coordinator.adapter_details,
         "command_timing": coordinator.command_timing,
         "bluetooth": await _get_bluetooth_info(hass, coordinator),
-        "gatt_summary": _get_gatt_summary(coordinator),
+        "gatt_summary": get_gatt_summary(coordinator),
         "controller": _get_controller_info(coordinator),
         "position_data": dict(coordinator.position_data),
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
@@ -148,34 +149,6 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
             info["char_uuid"] = controller._char_uuid
 
     return info
-
-
-def _get_gatt_summary(coordinator: AdjustableBedCoordinator) -> dict[str, Any]:
-    """Get GATT service/characteristic summary for diagnostics."""
-    client = coordinator.client
-    if not client or not client.services:
-        return {"available": False}
-
-    service_count = len(list(client.services))
-    char_count = 0
-    notifiable_chars: list[str] = []
-    writable_chars: list[str] = []
-
-    for service in client.services:
-        for char in service.characteristics:
-            char_count += 1
-            if "notify" in char.properties or "indicate" in char.properties:
-                notifiable_chars.append(char.uuid)
-            if "write" in char.properties or "write-without-response" in char.properties:
-                writable_chars.append(char.uuid)
-
-    return {
-        "available": True,
-        "service_count": service_count,
-        "characteristic_count": char_count,
-        "notifiable_characteristics": notifiable_chars,
-        "writable_characteristics": writable_chars,
-    }
 
 
 async def _get_bluetooth_info(
