@@ -219,6 +219,23 @@ class AdjustableBedCoordinator:
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
 
+        # Connection history tracking for diagnostics (issue #168)
+        self._connection_attempt_count: int = 0
+        self._connection_success_count: int = 0
+        self._last_connection_attempt: datetime | None = None
+        self._last_connection_error: str | None = None
+        self._last_connection_error_type: str | None = None
+        self._last_disconnect_reason: str | None = None  # "idle_timeout", "intentional", "unexpected"
+
+        # Command timing tracking for diagnostics (issue #168)
+        self._last_command_start: datetime | None = None
+        self._last_command_end: datetime | None = None
+        self._last_notify_received: datetime | None = None
+
+        # Adapter selection details for diagnostics (issue #168)
+        self._actual_adapter: str | None = None
+        self._available_adapters: list[str] = []
+
         _LOGGER.debug(
             "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s, connection_profile: %s)",
             self._name,
@@ -368,6 +385,36 @@ class AdjustableBedCoordinator:
         return self._cancel_command
 
     @property
+    def connection_history(self) -> dict[str, Any]:
+        """Return connection history for diagnostics."""
+        return {
+            "attempt_count": self._connection_attempt_count,
+            "success_count": self._connection_success_count,
+            "last_attempt": self._last_connection_attempt.isoformat() if self._last_connection_attempt else None,
+            "last_error": self._last_connection_error,
+            "last_error_type": self._last_connection_error_type,
+            "last_disconnect_reason": self._last_disconnect_reason,
+        }
+
+    @property
+    def adapter_details(self) -> dict[str, Any]:
+        """Return adapter selection details for diagnostics."""
+        return {
+            "preferred": self._preferred_adapter,
+            "actual": self._actual_adapter,
+            "available": self._available_adapters,
+        }
+
+    @property
+    def command_timing(self) -> dict[str, Any]:
+        """Return command timing for diagnostics."""
+        return {
+            "last_command_start": self._last_command_start.isoformat() if self._last_command_start else None,
+            "last_command_end": self._last_command_end.isoformat() if self._last_command_end else None,
+            "last_notify_received": self._last_notify_received.isoformat() if self._last_notify_received else None,
+        }
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this bed."""
         return DeviceInfo(
@@ -493,6 +540,10 @@ class AdjustableBedCoordinator:
 
         for attempt in range(self._max_retries):
             attempt_start = time.monotonic()
+            # Track connection attempt for diagnostics (issue #168)
+            self._connection_attempt_count += 1
+            self._last_connection_attempt = datetime.now(UTC)
+
             # On retries, add a delay before attempting to give the Bluetooth stack time to reset
             if attempt > 0:
                 base_delay = self._retry_base_delay * (2 ** (attempt - 1))
@@ -523,6 +574,18 @@ class AdjustableBedCoordinator:
                         "Available Bluetooth scanners (connectable): %d",
                         scanner_count,
                     )
+                    # Capture available adapters for diagnostics (issue #168)
+                    try:
+                        scanners = bluetooth.async_current_scanners(self.hass)
+                        self._available_adapters = [
+                            getattr(scanner, "source", "unknown")
+                            for scanner in scanners
+                        ]
+                    except Exception as exc:
+                        _LOGGER.debug(
+                            "Failed to capture adapters via bluetooth.async_current_scanners: %s",
+                            exc,
+                        )
                 except Exception as err:
                     _LOGGER.debug("Could not get scanner count: %s", err)
 
@@ -736,6 +799,12 @@ class AdjustableBedCoordinator:
                 except Exception:
                     _LOGGER.debug("Could not determine actual connection adapter")
 
+                # Track successful connection for diagnostics (issue #168)
+                self._connection_success_count += 1
+                self._actual_adapter = actual_adapter
+                self._last_connection_error = None
+                self._last_connection_error_type = None
+
                 connect_elapsed = time.monotonic() - connect_start
                 total_elapsed = time.monotonic() - attempt_start
                 _LOGGER.info(
@@ -858,6 +927,11 @@ class AdjustableBedCoordinator:
                     error_category = "CONNECTION REFUSED (another device may be connected)"
                 else:
                     error_category = "BLE ERROR"
+
+                # Track connection error for diagnostics (issue #168)
+                self._last_connection_error = str(err)
+                self._last_connection_error_type = type(err).__name__
+
                 _LOGGER.warning(
                     "✗ %s to %s after %.1fs (attempt %d/%d): %s",
                     error_category,
@@ -886,6 +960,10 @@ class AdjustableBedCoordinator:
                     self._client = None
                 # Delay is handled at the start of the next iteration with progressive backoff
             except Exception as err:
+                # Track connection error for diagnostics (issue #168)
+                self._last_connection_error = str(err)
+                self._last_connection_error_type = type(err).__name__
+
                 _LOGGER.warning(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
@@ -950,6 +1028,11 @@ class AdjustableBedCoordinator:
 
         # Store disconnect timestamp for binary sensor
         self._last_disconnected = datetime.now(UTC)
+
+        # Track disconnect reason for diagnostics (issue #168)
+        # If intentional, reason is set by async_disconnect() or _async_idle_disconnect()
+        if not self._intentional_disconnect:
+            self._last_disconnect_reason = "unexpected"
 
         # Stop keepalive task before clearing controller to prevent task leak
         # Capture controller reference before clearing to avoid race condition
@@ -1069,6 +1152,8 @@ class AdjustableBedCoordinator:
                 _LOGGER.info("Disconnecting from bed at %s", self._address)
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
                 self._intentional_disconnect = True
+                # Track disconnect reason for diagnostics (issue #168)
+                self._last_disconnect_reason = "intentional"
                 try:
                     # Stop keep-alive and notifications before disconnecting
                     if self._controller is not None:
@@ -1141,6 +1226,9 @@ class AdjustableBedCoordinator:
             self._idle_disconnect_seconds,
             self._address,
         )
+        # Track disconnect reason for diagnostics (issue #168)
+        # Set before async_disconnect which sets "intentional" - idle_timeout is more specific
+        self._last_disconnect_reason = "idle_timeout"
         await self.async_disconnect()
 
     async def async_ensure_connected(self, reset_timer: bool = True) -> bool:
@@ -1338,6 +1426,9 @@ class AdjustableBedCoordinator:
                     _LOGGER.error("Cannot execute command: no controller available")
                     raise RuntimeError("No controller available")
 
+                # Track command timing for diagnostics (issue #168)
+                self._last_command_start = datetime.now(UTC)
+
                 # Start position polling during movement if angle sensing enabled
                 poll_stop: asyncio.Event | None = None
                 poll_task: asyncio.Task[None] | None = None
@@ -1350,6 +1441,8 @@ class AdjustableBedCoordinator:
                 try:
                     await command_fn(self._controller)
                 finally:
+                    # Track command end time for diagnostics (issue #168)
+                    self._last_command_end = datetime.now(UTC)
                     # Stop polling
                     if poll_stop is not None:
                         poll_stop.set()
@@ -1515,6 +1608,8 @@ class AdjustableBedCoordinator:
         """Handle a position update from the bed."""
         _LOGGER.debug("Position update: %s = %.1f°", position, angle)
         self._position_data[position] = angle
+        # Track notification timing for diagnostics (issue #168)
+        self._last_notify_received = datetime.now(UTC)
         # Copy to safely iterate while callbacks might unregister themselves
         for callback_fn in list(self._position_callbacks):
             try:

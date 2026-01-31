@@ -9,6 +9,7 @@ from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_BED_TYPE,
@@ -21,6 +22,7 @@ from .const import (
     SUPPORTED_BED_TYPES,
 )
 from .coordinator import AdjustableBedCoordinator
+from .diagnostics_utils import get_gatt_summary
 from .redaction import redact_data
 
 
@@ -29,6 +31,10 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+    # Get integration version from manifest
+    integration = await async_get_integration(hass, DOMAIN)
+    integration_version = integration.version
 
     # Get connection state
     is_connected = coordinator.is_connected
@@ -96,6 +102,7 @@ async def async_get_config_entry_diagnostics(
     # Build the diagnostic data
     data = {
         "system": {
+            "integration_version": integration_version,
             "home_assistant_version": HA_VERSION,
             "python_version": sys.version.split()[0],
         },
@@ -116,8 +123,12 @@ async def async_get_config_entry_diagnostics(
         "coordinator": {
             "is_connected": is_connected,
             "is_connecting": coordinator.is_connecting,
+            "connection_history": coordinator.connection_history,
+            "adapter_details": coordinator.adapter_details,
+            "command_timing": coordinator.command_timing,
         },
         "ble": ble_info,
+        "gatt_summary": get_gatt_summary(coordinator),
         "advertisement": advertisement_info,
         "controller": controller_info,
         "position_data": position_data,

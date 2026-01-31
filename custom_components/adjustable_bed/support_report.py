@@ -14,6 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_BED_TYPE,
@@ -25,6 +26,7 @@ from .const import (
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
+from .diagnostics_utils import get_gatt_summary
 from .redaction import redact_data
 
 if TYPE_CHECKING:
@@ -46,13 +48,21 @@ async def generate_support_report(
     """Generate a comprehensive support report."""
     timestamp = datetime.now(UTC)
 
+    # Get integration version from manifest
+    integration = await async_get_integration(hass, DOMAIN)
+    integration_version = integration.version
+
     report: dict[str, Any] = {
-        "report_version": "1.0",
+        "report_version": "1.1",
         "generated_at": timestamp.isoformat(),
-        "system": _get_system_info(hass),
+        "system": _get_system_info(hass, integration_version),
         "integration": _get_integration_info(entry),
         "connection": _get_connection_info(coordinator),
+        "connection_history": coordinator.connection_history,
+        "adapter": coordinator.adapter_details,
+        "command_timing": coordinator.command_timing,
         "bluetooth": await _get_bluetooth_info(hass, coordinator),
+        "gatt_summary": get_gatt_summary(coordinator),
         "controller": _get_controller_info(coordinator),
         "position_data": dict(coordinator.position_data),
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
@@ -65,9 +75,10 @@ async def generate_support_report(
     return redact_data(report)  # type: ignore[no-any-return]
 
 
-def _get_system_info(hass: HomeAssistant) -> dict[str, Any]:
+def _get_system_info(hass: HomeAssistant, integration_version: str) -> dict[str, Any]:
     """Get system information."""
     return {
+        "integration_version": integration_version,
         "home_assistant_version": HA_VERSION,
         "python_version": sys.version,
         "os": sys.platform,
@@ -155,6 +166,7 @@ async def _get_bluetooth_info(
         service_data = service_info.service_data or {}
 
         info["last_advertisement"] = {
+            "captured_at": datetime.now(UTC).isoformat(),
             "device_name": service_info.name,
             "rssi": getattr(service_info, "rssi", None),
             "service_uuids": [str(uuid) for uuid in service_uuids],

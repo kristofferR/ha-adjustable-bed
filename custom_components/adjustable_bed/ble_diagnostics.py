@@ -67,6 +67,10 @@ class DiagnosticReport:
     device_information: dict[str, str | None]
     notifications: list[dict[str, str]]
     errors: list[str]
+    # New fields for enhanced diagnostics (issue #168)
+    gatt_summary: dict[str, Any] = field(default_factory=dict)
+    adapter_details: dict[str, Any] = field(default_factory=dict)
+    connection_history: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary for JSON serialization."""
@@ -75,8 +79,11 @@ class DiagnosticReport:
             "device": self.device,
             "advertisement": self.advertisement,
             "gatt_services": self.gatt_services,
+            "gatt_summary": self.gatt_summary,
             "device_information": self.device_information,
             "notifications": self.notifications,
+            "adapter_details": self.adapter_details,
+            "connection_history": self.connection_history,
             "errors": self.errors,
         }
 
@@ -179,9 +186,16 @@ class BLEDiagnosticRunner:
 
         end_time = datetime.now(UTC)
 
+        # Get coordinator data if available (issue #168)
+        adapter_details: dict[str, Any] = {}
+        connection_history: dict[str, Any] = {}
+        if self.coordinator:
+            adapter_details = self.coordinator.adapter_details
+            connection_history = self.coordinator.connection_history
+
         return DiagnosticReport(
             metadata={
-                "version": "1.0",
+                "version": "1.1",
                 "timestamp": start_time.isoformat(),
                 "end_timestamp": end_time.isoformat(),
                 "capture_duration_seconds": self.capture_duration,
@@ -190,6 +204,7 @@ class BLEDiagnosticRunner:
             device=device_info,
             advertisement=advertisement_info,
             gatt_services=[self._service_to_dict(s) for s in services_info],
+            gatt_summary=self._build_gatt_summary(services_info),
             device_information=device_information,
             notifications=[
                 {
@@ -199,6 +214,8 @@ class BLEDiagnosticRunner:
                 }
                 for n in self._notifications
             ],
+            adapter_details=adapter_details,
+            connection_history=connection_history,
             errors=self._errors,
         )
 
@@ -430,6 +447,31 @@ class BLEDiagnosticRunner:
             characteristic_uuid,
             data.hex(),
         )
+
+    def _build_gatt_summary(self, services: list[ServiceInfo]) -> dict[str, Any]:
+        """Build GATT summary from enumerated services."""
+        if not services:
+            return {"available": False}
+
+        char_count = 0
+        notifiable_chars: list[str] = []
+        writable_chars: list[str] = []
+
+        for service in services:
+            for char in service.characteristics:
+                char_count += 1
+                if "notify" in char.properties or "indicate" in char.properties:
+                    notifiable_chars.append(char.uuid)
+                if "write" in char.properties or "write-without-response" in char.properties:
+                    writable_chars.append(char.uuid)
+
+        return {
+            "available": True,
+            "service_count": len(services),
+            "characteristic_count": char_count,
+            "notifiable_characteristics": notifiable_chars,
+            "writable_characteristics": writable_chars,
+        }
 
     @staticmethod
     def _service_to_dict(service: ServiceInfo) -> dict[str, Any]:
