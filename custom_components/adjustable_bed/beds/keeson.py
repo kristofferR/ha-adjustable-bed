@@ -363,11 +363,23 @@ class KeesonController(BedController):
         else:
             # BaseI4/I5/OKIN/Serta/Ergomotion/ORE: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
+            
+            # Command values were reverse-engineered for little-endian (non-ORE variants).
+            # For ORE variant (big-endian), we need to byte-swap the command value first.
+            if self._variant == KEESON_VARIANT_ORE:
+                # Byte-swap 32-bit value: convert little-endian to big-endian
+                command_value = (
+                    ((command_value & 0xFF) << 24) |
+                    ((command_value & 0xFF00) << 8) |
+                    ((command_value & 0xFF0000) >> 8) |
+                    ((command_value & 0xFF000000) >> 24)
+                )
+            
             int_bytes = int_to_bytes(command_value)
-            # ORE variant (Dynasty, INNOVA) uses big-endian byte order
-            # All other variants use little-endian (bytes reversed)
+            # All non-KSBT variants use little-endian (bytes reversed) except ORE
             if self._variant != KEESON_VARIANT_ORE:
                 int_bytes.reverse()  # Little-endian for non-ORE variants
+            
             prefix = 0xE6 if self._variant == KEESON_VARIANT_OKIN else 0xE5
             data = [prefix, 0xFE, 0x16] + int_bytes
             checksum = sum(data) ^ 0xFF
