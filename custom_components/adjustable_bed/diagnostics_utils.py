@@ -14,12 +14,13 @@ def get_gatt_summary(coordinator: AdjustableBedCoordinator) -> dict[str, Any]:
     if not client or not client.services:
         return {"available": False}
 
-    service_count = len(list(client.services))
+    # Capture services once to avoid multiple iterations
+    services = list(client.services)
     char_count = 0
     notifiable_chars: list[str] = []
     writable_chars: list[str] = []
 
-    for service in client.services:
+    for service in services:
         for char in service.characteristics:
             char_count += 1
             if "notify" in char.properties or "indicate" in char.properties:
@@ -29,8 +30,8 @@ def get_gatt_summary(coordinator: AdjustableBedCoordinator) -> dict[str, Any]:
 
     return {
         "available": True,
-        "service_count": service_count,
+        "service_count": len(services),
         "characteristic_count": char_count,
-        "notifiable_characteristics": notifiable_chars,
-        "writable_characteristics": writable_chars,
+        "notifiable_characteristics": sorted(notifiable_chars),
+        "writable_characteristics": sorted(writable_chars),
     }
