@@ -13,6 +13,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
@@ -146,8 +147,11 @@ class TestDetectBedType:
         bed_type = detect_bed_type(service_info)
         assert bed_type == BED_TYPE_KEESON
 
-    def test_detect_keeson_base_i5_name(self):
-        """Test Keeson detection with 'base-i5.' prefix (e.g., base-i5.00000682)."""
+    def test_detect_coolbase_base_i5_name(self):
+        """Test Cool Base detection with 'base-i5.' prefix (e.g., base-i5.00000682).
+
+        Cool Base is a Keeson BaseI5 variant with additional fan control.
+        """
         service_info = MagicMock()
         service_info.name = "base-i5.00000682"
         service_info.address = "AA:BB:CC:DD:EE:FF"
@@ -155,7 +159,7 @@ class TestDetectBedType:
         service_info.manufacturer_data = {}
 
         bed_type = detect_bed_type(service_info)
-        assert bed_type == BED_TYPE_KEESON
+        assert bed_type == BED_TYPE_COOLBASE
 
     def test_detect_keeson_ksbt_name(self):
         """Test Keeson detection with 'KSBT' prefix (e.g., KSBT03C000015046)."""

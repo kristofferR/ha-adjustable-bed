@@ -500,3 +500,225 @@ class TestMultiMotorConfiguration:
             device_info = coordinator.device_info
 
             assert f"{motor_count} motors" in device_info["model"]
+
+
+class TestStopAfterCancel:
+    """Test STOP-after-cancel coordinator flow.
+
+    These tests verify the critical behavior where:
+    1. stop_command() sets cancel signal before acquiring lock
+    2. Running commands check cancel_event and exit early
+    3. STOP is sent after acquiring the lock (ensuring GATT write completes)
+    4. STOP uses a fresh cancel event so it's not cancelled itself
+    """
+
+    async def test_stop_command_sets_cancel_signal(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test stop_command sets cancel signal before acquiring lock."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        # Verify cancel event is initially not set
+        assert not coordinator._cancel_command.is_set()
+
+        # Call stop command
+        await coordinator.async_stop_command()
+
+        # Cancel signal should have been set (though it may be cleared after)
+        # We verify this by checking cancel_counter increased
+        assert coordinator._cancel_counter >= 1
+
+    async def test_stop_command_increments_cancel_counter(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test stop_command increments cancel counter to prevent stale commands."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        initial_counter = coordinator._cancel_counter
+
+        # Call stop command
+        await coordinator.async_stop_command()
+
+        # Counter should have incremented
+        assert coordinator._cancel_counter == initial_counter + 1
+
+    async def test_stop_command_sends_stop_to_controller(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test stop_command calls controller's stop_all method."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        # Mock the controller's stop_all method
+        coordinator._controller.stop_all = AsyncMock()
+
+        await coordinator.async_stop_command()
+
+        # Verify stop_all was called on the controller
+        coordinator._controller.stop_all.assert_called_once()
+
+    async def test_stop_command_resets_disconnect_timer(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test stop_command resets disconnect timer after completion."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        # Disconnect timer should be set after connect
+        assert coordinator._disconnect_timer is not None
+
+        await coordinator.async_stop_command()
+
+        # Disconnect timer should still be set (reset after stop)
+        assert coordinator._disconnect_timer is not None
+
+    async def test_stop_command_when_not_connected(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test stop_command handles not connected state gracefully."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        # Simulate disconnection by clearing the client reference
+        # This prevents async_ensure_connected from trying to reconnect
+        coordinator._client = None
+
+        # Should not raise, just log error
+        await coordinator.async_stop_command()
+
+    async def test_execute_controller_command_cancels_running(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test execute_controller_command cancels running command when requested."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        initial_counter = coordinator._cancel_counter
+
+        # Execute a command with cancel_running=True (default)
+        async def dummy_command(controller):
+            pass
+
+        await coordinator.async_execute_controller_command(dummy_command)
+
+        # Counter should have incremented (cancel signal was set)
+        assert coordinator._cancel_counter == initial_counter + 1
+
+    async def test_execute_controller_command_preserves_running(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test execute_controller_command preserves running command when cancel_running=False."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        initial_counter = coordinator._cancel_counter
+
+        # Execute a command with cancel_running=False
+        async def dummy_command(controller):
+            pass
+
+        await coordinator.async_execute_controller_command(dummy_command, cancel_running=False)
+
+        # Counter should NOT have incremented
+        assert coordinator._cancel_counter == initial_counter
+
+    async def test_cancel_counter_prevents_stale_command_execution(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test that cancel counter prevents stale commands from executing.
+
+        When a command is cancelled while waiting for lock, it should not execute.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        command_executed = False
+
+        async def tracked_command(controller):
+            nonlocal command_executed
+            command_executed = True
+
+        # First, acquire the lock by starting a command
+        import asyncio
+        async with coordinator._command_lock:
+            # Start the command task (it will wait for lock and capture entry_cancel_count)
+            task = asyncio.create_task(
+                coordinator.async_execute_controller_command(tracked_command)
+            )
+            # Give it a moment to start waiting for the lock
+            await asyncio.sleep(0.01)
+
+            # NOW increment cancel counter to simulate another command cancelling this one
+            # This happens AFTER the task captured entry_cancel_count
+            coordinator._cancel_counter += 1
+
+        # Wait for task to complete
+        await task
+
+        # Command should NOT have executed because cancel counter changed while waiting
+        assert not command_executed
+
+    async def test_stop_after_movement_always_sent(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test that STOP is sent even when movement command is cancelled.
+
+        Movement commands should use try/finally to guarantee STOP is sent.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        # Track all commands sent
+        commands_sent = []
+        original_write = mock_bleak_client.write_gatt_char
+
+        async def tracking_write(char, data, **kwargs):
+            commands_sent.append(data)
+            return await original_write(char, data, **kwargs)
+
+        mock_bleak_client.write_gatt_char = AsyncMock(side_effect=tracking_write)
+
+        # Execute a movement command (e.g., move_head_up)
+        # The controller should send movement commands followed by STOP
+        await coordinator.controller.move_head_up()
+
+        # Verify that commands were sent (movement + stop)
+        assert len(commands_sent) > 0

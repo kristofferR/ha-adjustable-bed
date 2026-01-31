@@ -20,10 +20,12 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
+    RICHMAT_VARIANT_NORDIC,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -39,6 +41,7 @@ def mock_richmat_config_entry_data() -> dict:
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,
         CONF_PREFERRED_ADAPTER: "auto",
+        CONF_PROTOCOL_VARIANT: RICHMAT_VARIANT_NORDIC,
     }
 
 

@@ -85,6 +85,7 @@ class TestDiagnosticsOutput:
         mock_diagnostics_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
         mock_bleak_client: MagicMock,
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """Test diagnostics when not connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -114,6 +115,7 @@ class TestDiagnosticsOutput:
         mock_diagnostics_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
         mock_bleak_client: MagicMock,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """Test diagnostics when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -153,6 +155,7 @@ class TestDiagnosticsOutput:
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """Test that sensitive data is redacted."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -177,6 +180,7 @@ class TestDiagnosticsOutput:
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """Test diagnostics includes controller info when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -200,6 +204,7 @@ class TestDiagnosticsOutput:
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
         mock_coordinator_connected,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """Test diagnostics includes supported bed types."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

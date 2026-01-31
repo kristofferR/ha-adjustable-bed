@@ -208,10 +208,10 @@ class TestOkinNordicController:
         mock_okin_nordic_coordinator._client = mock_client
         controller._initialized = True
 
-        # Test light cycle
+        # Test light on
         await controller.lights_on()
         assert mock_client.write_gatt_char.called
-        assert mock_client.write_gatt_char.call_args_list[0][0][1] == OkinNordicCommands.LIGHT_CYCLE
+        assert mock_client.write_gatt_char.call_args_list[0][0][1] == OkinNordicCommands.LIGHT_ON
 
         mock_client.reset_mock()
 
