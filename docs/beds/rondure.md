@@ -1,26 +1,42 @@
-# 1500 Tilt Base / Rondure Protocol
+# Rondure
 
-**Bed Type:** `rondure`
 **Status:** Needs testing
-**Detection:** Manual selection (shared service UUID)
 
-## Overview
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The 1500 Tilt Base (internal name: Rondure Hump) uses the FurniBus protocol, a proprietary Bluetooth LE protocol supporting:
-- 4 motors: head, foot, tilt, lumbar
-- Split-king bed support with independent side control
-- Massage modes (head, foot, lumbar)
-- Under-bed lighting
-- Multiple presets (flat, zero-g, TV/anti-snore)
+## Known Models
 
-## Bluetooth Details
+- 1500 Tilt Base (internal name: Rondure Hump)
 
-| Property | Value |
-|----------|-------|
-| Service UUID | `0000ffe0-0000-1000-8000-00805f9b34fb` |
-| Write Characteristic | `0000ffe9-0000-1000-8000-00805f9b34fb` |
-| Read Characteristic | `0000ffe4-0000-1000-8000-00805f9b34fb` |
-| Alternative | Nordic UART Service (6e400001-...) |
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | 1500 Tilt Base Remote | `com.sfd.rondure_hump` |
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
+| Split-King | ✅ (independent side control) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ |
+| Factory Presets | ✅ (Flat, Zero-G, TV/Anti-Snore) |
+| Massage | ✅ (head, foot, lumbar zones) |
+| Lights | ✅ |
+
+## Protocol Details
+
+**Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
+**Write Characteristic:** `0000ffe9-0000-1000-8000-00805f9b34fb`
+**Read Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+**Alternative:** Nordic UART Service (6e400001-...)
+**Format:** 8-byte (both sides) or 9-byte (single side) packets with checksum
+
+## Detection
+
+Manual bed type selection required. The service UUID `0000ffe0-...` is shared with many other bed types (Solace, Octo, etc.), so auto-detection is not possible.
 
 ## Packet Format
 
@@ -80,20 +96,20 @@ Commands are 32-bit values sent in little-endian byte order.
 
 ### Massage Control
 
-| Action | Command | Notes |
-|--------|---------|-------|
-| Head Massage | `0x00000800` | Toggle head massage |
-| Foot Massage | `0x00000400` | Toggle foot massage |
-| Lumbar Massage | `0x00400000` | Toggle lumbar massage |
-| Massage Mode 1 | `0x00100000` | Set massage pattern 1 |
-| Massage Mode 2 | `0x00200000` | Set massage pattern 2 |
-| Massage Mode 3 | `0x00080000` | Set massage pattern 3 |
+| Action | Command |
+|--------|---------|
+| Head Massage | `0x00000800` |
+| Foot Massage | `0x00000400` |
+| Lumbar Massage | `0x00400000` |
+| Massage Mode 1 | `0x00100000` |
+| Massage Mode 2 | `0x00200000` |
+| Massage Mode 3 | `0x00080000` |
 
 ### Light Control
 
-| Action | Command | Notes |
-|--------|---------|-------|
-| Light Toggle | `0x00020000` | Toggle under-bed light |
+| Action | Command |
+|--------|---------|
+| Light Toggle | `0x00020000` |
 
 ## Configuration
 
@@ -117,23 +133,10 @@ For split-king beds, configure the protocol variant:
 | Light toggle | 1 | - | Single command |
 | Stop | 1 | - | Always sent after movement |
 
-## Brands
-
-Beds known to use this protocol:
-- 1500 Tilt Base
-
-## App
-
-- **Android App:** 1500 Tilt Base Remote
-- **Package:** `com.sfd.rondure_hump`
-- **Analyzed Version:** 1.1.3
-
 ## Notes
 
-1. The service UUID `0000ffe0-...` is shared with many other bed types (Solace, Octo, etc.), so auto-detection is not possible. Manual bed type selection is required.
+1. The app supports both BLE and Classic Bluetooth. This implementation uses BLE only.
 
-2. The app supports both BLE and Classic Bluetooth. This implementation uses BLE only.
+2. For Classic Bluetooth, the protocol uses big-endian command encoding instead of little-endian.
 
-3. For Classic Bluetooth, the protocol uses big-endian command encoding instead of little-endian.
-
-4. Timer status can be read from notifications (byte values 1=10min, 2=20min, 3=30min).
+3. Timer status can be read from notifications (byte values 1=10min, 2=20min, 3=30min).

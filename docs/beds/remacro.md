@@ -1,34 +1,50 @@
-# Remacro Protocol
+# Remacro
 
-**Bed Type:** `remacro`
 **Status:** Needs testing
-**Detection:** Unique service UUID (auto-detected)
 
-## Overview
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The Remacro protocol is used by multiple furniture store brands that share the same OEM controller:
-- CheersSleep
-- Jeromes (com.cheers.jewmes)
-- Slumberland (com.cheers.slumber)
-- The Brick (com.cheers.brick)
+## Known Models
 
-The beds use the SynData protocol with 8-byte command packets. Features include:
-- 4 motors: head, foot, lumbar, tilt/neck
-- 4 memory presets (user programmable)
-- 4 default presets: flat, zero-g, TV, anti-snore
-- Multiple massage modes and zones
-- RGB LED under-bed lighting
-- Heat control (model dependent)
+- CheersSleep beds
+- Jeromes furniture store beds
+- Slumberland furniture store beds
+- The Brick furniture store beds
 
-## Bluetooth Details
+These brands share the same OEM controller using the SynData protocol.
 
-| Property | Value |
-|----------|-------|
-| Service UUID | `6e403587-b5a3-f393-e0a9-e50e24dcca9e` |
-| Write Characteristic | `6e403588-b5a3-f393-e0a9-e50e24dcca9e` |
-| Read Characteristic | `6e403589-b5a3-f393-e0a9-e50e24dcca9e` |
+## Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | Jeromes | `com.cheers.jewmes` |
+| ✅ | Slumberland | `com.cheers.slumber` |
+| ✅ | The Brick | `com.cheers.brick` |
+
+## Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (4 motors: head, foot, lumbar, tilt/neck) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (4 slots) |
+| Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
+| Massage | ✅ (3 modes, 2 zones) |
+| RGB Lights | ✅ |
+| Heat Control | ✅ (model dependent) |
+
+## Protocol Details
+
+**Service UUID:** `6e403587-b5a3-f393-e0a9-e50e24dcca9e`
+**Write Characteristic:** `6e403588-b5a3-f393-e0a9-e50e24dcca9e`
+**Read Characteristic:** `6e403589-b5a3-f393-e0a9-e50e24dcca9e`
+**Format:** 8-byte packets with sequence number
 
 Note: The service UUID is similar to Nordic UART Service (6e400001-...) but with a different prefix (6e4035xx vs 6e4000xx), making it uniquely identifiable.
+
+## Detection
+
+Devices are auto-detected by the unique service UUID `6e403587-b5a3-f393-e0a9-e50e24dcca9e`.
 
 ## Packet Format
 
@@ -78,60 +94,60 @@ Where:
 
 ### Presets - User Memory
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Go to Memory 1 | MOV_ML1 | 0x0311 (785) | Recall |
-| Go to Memory 2 | MOV_ML2 | 0x0313 (787) | Recall |
-| Go to Memory 3 | MOV_ML3 | 0x0315 (789) | Recall |
-| Go to Memory 4 | MOV_ML4 | 0x0317 (791) | Recall |
-| Save Memory 1 | SET_ML1 | 0x0310 (784) | Program |
-| Save Memory 2 | SET_ML2 | 0x0312 (786) | Program |
-| Save Memory 3 | SET_ML3 | 0x0314 (788) | Program |
-| Save Memory 4 | SET_ML4 | 0x0316 (790) | Program |
+| Action | Command | Value |
+|--------|---------|-------|
+| Go to Memory 1 | MOV_ML1 | 0x0311 (785) |
+| Go to Memory 2 | MOV_ML2 | 0x0313 (787) |
+| Go to Memory 3 | MOV_ML3 | 0x0315 (789) |
+| Go to Memory 4 | MOV_ML4 | 0x0317 (791) |
+| Save Memory 1 | SET_ML1 | 0x0310 (784) |
+| Save Memory 2 | SET_ML2 | 0x0312 (786) |
+| Save Memory 3 | SET_ML3 | 0x0314 (788) |
+| Save Memory 4 | SET_ML4 | 0x0316 (790) |
 
 ### Presets - Factory Defaults
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Flat | DEF_ML1 | 0x0301 (769) | Factory preset |
-| Zero-G | DEF_ML2 | 0x0302 (770) | Factory preset |
-| TV | DEF_ML3 | 0x0303 (771) | Factory preset |
-| Anti-Snore | DEF_ML4 | 0x0304 (772) | Factory preset |
+| Action | Command | Value |
+|--------|---------|-------|
+| Flat | DEF_ML1 | 0x0301 (769) |
+| Zero-G | DEF_ML2 | 0x0302 (770) |
+| TV | DEF_ML3 | 0x0303 (771) |
+| Anti-Snore | DEF_ML4 | 0x0304 (772) |
 
 ### Massage Control
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Stop Massage | MMODE_STOP | 0x0200 (512) | |
-| Mode 1 | MMODE1_RUN | 0x0201 (513) | |
-| Mode 2 | MMODE2_RUN | 0x0202 (514) | |
-| Mode 3 | MMODE3_RUN | 0x0203 (515) | |
-| Zone 1 | MM1_RUN | 0x0121 (289) | Head zone |
-| Zone 2 | MM2_RUN | 0x0122 (290) | Foot zone |
-| Both Zones | MM12_RUN | 0x0120 (288) | |
+| Action | Command | Value |
+|--------|---------|-------|
+| Stop Massage | MMODE_STOP | 0x0200 (512) |
+| Mode 1 | MMODE1_RUN | 0x0201 (513) |
+| Mode 2 | MMODE2_RUN | 0x0202 (514) |
+| Mode 3 | MMODE3_RUN | 0x0203 (515) |
+| Zone 1 (Head) | MM1_RUN | 0x0121 (289) |
+| Zone 2 (Foot) | MM2_RUN | 0x0122 (290) |
+| Both Zones | MM12_RUN | 0x0120 (288) |
 
 ### LED Control
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Off | LED_OFF | 0x0500 (1280) | |
-| RGB Value | LED_RGBV | 0x0501 (1281) | With param |
-| White | LED_W | 0x0502 (1282) | |
-| Red | LED_R | 0x0503 (1283) | |
-| Green | LED_G | 0x0504 (1284) | |
-| Blue | LED_B | 0x0505 (1285) | |
-| Mode 1 | LED_M1 | 0x0509 (1289) | Pattern |
-| Mode 2 | LED_M2 | 0x050A (1290) | Pattern |
-| Mode 3 | LED_M3 | 0x050B (1291) | Pattern |
+| Action | Command | Value |
+|--------|---------|-------|
+| Off | LED_OFF | 0x0500 (1280) |
+| RGB Value | LED_RGBV | 0x0501 (1281) |
+| White | LED_W | 0x0502 (1282) |
+| Red | LED_R | 0x0503 (1283) |
+| Green | LED_G | 0x0504 (1284) |
+| Blue | LED_B | 0x0505 (1285) |
+| Mode 1 | LED_M1 | 0x0509 (1289) |
+| Mode 2 | LED_M2 | 0x050A (1290) |
+| Mode 3 | LED_M3 | 0x050B (1291) |
 
 ### Heat Control
 
-| Action | Command | Value | Notes |
-|--------|---------|-------|-------|
-| Off | HEAT_OFF | 0x7000 (28672) | |
-| Mode 1 | HEAT_M1 | 0x7001 (28673) | Low |
-| Mode 2 | HEAT_M2 | 0x7002 (28674) | Medium |
-| Mode 3 | HEAT_M3 | 0x7003 (28675) | High |
+| Action | Command | Value |
+|--------|---------|-------|
+| Off | HEAT_OFF | 0x7000 (28672) |
+| Mode 1 (Low) | HEAT_M1 | 0x7001 (28673) |
+| Mode 2 (Medium) | HEAT_M2 | 0x7002 (28674) |
+| Mode 3 (High) | HEAT_M3 | 0x7003 (28675) |
 
 ## Command Timing
 
@@ -142,29 +158,6 @@ Where:
 | Massage toggle | 1 | - | Single command |
 | Light toggle | 1 | - | Single command |
 | Stop | 1 | - | Always sent after movement |
-
-## Brands
-
-Beds known to use this protocol:
-- CheersSleep beds
-- Jeromes furniture store beds
-- Slumberland furniture store beds
-- The Brick furniture store beds
-
-## Apps
-
-| App | Package |
-|-----|---------|
-| Jeromes | `com.cheers.jewmes` |
-| Slumberland | `com.cheers.slumber` |
-| The Brick | `com.cheers.brick` |
-
-## Detection
-
-Devices are detected by the unique service UUID:
-- `6e403587-b5a3-f393-e0a9-e50e24dcca9e`
-
-The app also uses manufacturer data to identify specific device models (keys 45-53), but this is not required for basic operation.
 
 ## Notes
 
