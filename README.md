@@ -79,7 +79,10 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
-| 🧪 [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
+| ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
+| ✅ [Svane](docs/beds/svane.md) | Svane |
+| 🧪 [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
+| 🧪 [Remacro](docs/beds/remacro.md) | CheersSleep, Jeromes, Slumberland, The Brick |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 
