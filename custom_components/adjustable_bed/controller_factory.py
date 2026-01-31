@@ -10,6 +10,7 @@ from .const import (
     # Legacy/brand-specific bed types
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -40,6 +41,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
+    BED_TYPE_SBI,
+    BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -62,6 +65,7 @@ from .const import (
     RICHMAT_VARIANT_PREFIXAA,
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    SBI_VARIANT_BOTH,
 )
 
 if TYPE_CHECKING:
@@ -441,5 +445,25 @@ async def create_controller(
         from .beds.remacro import RemacroController
 
         return RemacroController(coordinator)
+
+    if bed_type == BED_TYPE_COOLBASE:
+        from .beds.coolbase import CoolBaseController
+
+        _LOGGER.debug("Using Cool Base controller")
+        return CoolBaseController(coordinator)
+
+    if bed_type == BED_TYPE_SCOTT_LIVING:
+        from .beds.scott_living import ScottLivingController
+
+        _LOGGER.debug("Using Scott Living controller")
+        return ScottLivingController(coordinator)
+
+    if bed_type == BED_TYPE_SBI:
+        from .beds.sbi import SBIController
+
+        # Use configured variant or default to "both" for dual-bed control
+        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else SBI_VARIANT_BOTH
+        _LOGGER.debug("Using SBI controller with variant: %s", variant)
+        return SBIController(coordinator, variant=variant)
 
     raise ValueError(f"Unknown bed type: {bed_type}")

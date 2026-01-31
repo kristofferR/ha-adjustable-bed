@@ -22,6 +22,7 @@ from .const import (
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
@@ -51,6 +52,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_RONDURE,
+    BED_TYPE_SBI,
+    BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -62,6 +65,7 @@ from .const import (
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
     COMFORT_MOTION_SERVICE_UUID,
+    COOLBASE_NAME_PATTERNS,
     DEWERTOKIN_NAME_PATTERNS,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
@@ -219,6 +223,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
     # Brand-specific types
     BED_TYPE_BEDTECH: "BedTech",
+    BED_TYPE_COOLBASE: "Cool Base (BaseI5 with fan)",
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
@@ -234,6 +239,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Remacro (CheersSleep, Jeromes, Slumberland, The Brick)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
+    BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
+    BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
@@ -592,6 +599,49 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
+    # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
+    # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3
+    if SOLACE_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:ffe0")
+        # Check for Solace name patterns
+        if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
+            signals.append("name:solace")
+            _LOGGER.info(
+                "Detected Solace bed at %s (name: %s) by name pattern",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
+        if "solace" in device_name:
+            signals.append("name:solace")
+            _LOGGER.info(
+                "Detected Solace bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
+        # Check for MotoSleep name pattern (HHC prefix)
+        if device_name.startswith("hhc"):
+            signals.append("name:motosleep")
+            _LOGGER.info(
+                "Detected MotoSleep bed at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_MOTOSLEEP, confidence=0.9, signals=signals)
+        # Default to Octo for unknown FFE0 names
+        _LOGGER.info(
+            "Detected Octo bed at %s (name: %s) - defaulting to Octo for shared FFE0 UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_OCTO,
+            confidence=0.5,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
+        )
+
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check
     # Variant detection (mlrm) happens at controller instantiation
@@ -672,6 +722,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             bed_type=BED_TYPE_SLEEPYS_BOX15, confidence=0.9, signals=signals
         )
 
+    # Check for Cool Base - name pattern detection (before Keeson since same UUID)
+    # Cool Base is a Keeson BaseI5 variant with additional fan control
+    # Device names start with "base-i5" (from BleConnect.java: limitedDevice = "base-i5")
+    if any(device_name.startswith(pattern) for pattern in COOLBASE_NAME_PATTERNS):
+        signals.append("name:coolbase")
+        _LOGGER.info(
+            "Detected Cool Base bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_COOLBASE, confidence=0.9, signals=signals)
+
     # Check for Malouf LEGACY_OKIN - name pattern + FFE5 service (before Keeson)
     # Malouf LEGACY_OKIN uses FFE5 service UUID but different 9-byte command format
     if (
@@ -703,8 +765,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Richmat by name pattern (e.g., QRRM157052, B6RM123456, ZR10...)
     # Uses RICHMAT_CODE_PATTERN regex to match all valid remote codes (492 codes supported)
     # Also extract remote code for feature detection
+    # Exclude MlRM patterns which are Leggett & Platt (need WiLinke UUID to detect)
     detected_remote = detect_richmat_remote_from_name(service_info.name)
-    if detected_remote or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS):
+    is_leggett_mlrm = any(device_name.startswith(p) for p in LEGGETT_RICHMAT_NAME_PATTERNS)
+    if (detected_remote or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS)) and not is_leggett_mlrm:
         signals.append("name:richmat")
         _LOGGER.info(
             "Detected Richmat bed at %s (name: %s) by name pattern",

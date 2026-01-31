@@ -121,6 +121,9 @@ BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
 BED_TYPE_REMACRO: Final = "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
+BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
+BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -177,6 +180,12 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RONDURE,
     # Remacro (CheersSleep / Jeromes / Slumberland / The Brick)
     BED_TYPE_REMACRO,
+    # Cool Base (fan control)
+    BED_TYPE_COOLBASE,
+    # Scott Living (9-byte Keeson variant)
+    BED_TYPE_SCOTT_LIVING,
+    # SBI/Q-Plus (Costco, with position feedback)
+    BED_TYPE_SBI,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -488,10 +497,14 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 
 # Keeson name patterns for devices that may not advertise the specific service UUID
 # - base-i4.XXXXXXXX (e.g., base-i4.00002574)
-# - base-i5.XXXXXXXX (e.g., base-i5.00000682)
+# - base-i5.XXXXXXXX (e.g., base-i5.00000682) - Note: base-i5 can also be Cool Base
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-")
+
+# Cool Base name patterns (Keeson BaseI5 with fan control)
+# From BleConnect.java: limitedDevice = "base-i5"
+COOLBASE_NAME_PATTERNS: Final = ("base-i5",)
 
 # Richmat Nordic name patterns (e.g., QRRM157052, Sleep Function 2.0, X1RM beds)
 # Also includes DHN- prefix (Germany Motions beds using FFF0 service)
@@ -620,6 +633,16 @@ RONDURE_VARIANTS: Final = {
     RONDURE_VARIANT_BOTH: "Both sides",
     RONDURE_VARIANT_SIDE_A: "Side A only",
     RONDURE_VARIANT_SIDE_B: "Side B only",
+}
+
+# SBI/Q-Plus side selection variants
+SBI_VARIANT_BOTH: Final = "both"  # Control both sides (8-byte, 0xE5 header)
+SBI_VARIANT_SIDE_A: Final = "side_a"  # Control side A only (9-byte, 0xE6 header)
+SBI_VARIANT_SIDE_B: Final = "side_b"  # Control side B only (9-byte, 0xE6 header)
+SBI_VARIANTS: Final = {
+    SBI_VARIANT_BOTH: "Both sides (dual bed)",
+    SBI_VARIANT_SIDE_A: "Side A only",
+    SBI_VARIANT_SIDE_B: "Side B only",
 }
 
 # Remacro specific UUIDs (SynData protocol)
@@ -1093,6 +1116,14 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIMAT_VARIANT_94238,
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
+    # SBI/Q-Plus variants
+    SBI_VARIANT_BOTH,
+    SBI_VARIANT_SIDE_A,
+    SBI_VARIANT_SIDE_B,
+    # Rondure variants (already in RONDURE_VARIANTS)
+    RONDURE_VARIANT_BOTH,
+    RONDURE_VARIANT_SIDE_A,
+    RONDURE_VARIANT_SIDE_B,
 ]
 
 # Bed types that require BLE pairing before they can be controlled
@@ -1156,6 +1187,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
         BED_TYPE_VIBRADORM,
+        BED_TYPE_SBI,  # SBI/Q-Plus has position feedback via pulse lookup tables
     }
 )
 
@@ -1278,4 +1310,13 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Remacro: 100ms delay → 10 repeats = 1.0s total (matches DEFAULT)
     # Source: com.cheers.jewmes ANALYSIS.md
     BED_TYPE_REMACRO: (10, 100),
+    # Cool Base: 100ms delay → 10 repeats = 1.0s total (same as BaseI5)
+    # Source: com.keeson.coolbase ANALYSIS.md
+    BED_TYPE_COOLBASE: (10, 100),
+    # Scott Living: 100ms delay → 10 repeats = 1.0s total
+    # Source: com.keeson.scottlivingrelease ANALYSIS.md
+    BED_TYPE_SCOTT_LIVING: (10, 100),
+    # SBI/Q-Plus: 100ms delay → 10 repeats = 1.0s total
+    # Source: com.sbi.costco ANALYSIS.md
+    BED_TYPE_SBI: (10, 100),
 }

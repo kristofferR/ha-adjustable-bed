@@ -14,10 +14,11 @@ Protocol-based controllers:
 Brand-specific controllers:
 - RichmatController, KeesonController, LinakController,
   ReverieController, JiecangController, SolaceController, MotoSleepController, OctoController,
-  RemacroController, RondureController
+  RemacroController, RondureController, CoolBaseController, ScottLivingController, SBIController
 """
 
 from .base import BedController
+from .coolbase import CoolBaseController
 from .jensen import JensenController
 
 # Brand-specific controllers (unchanged)
@@ -40,6 +41,8 @@ from .reverie import ReverieController
 from .reverie_nightstand import ReverieNightstandController
 from .richmat import RichmatController
 from .rondure import RondureController
+from .sbi import SBIController
+from .scott_living import ScottLivingController
 from .solace import SolaceController
 from .svane import SvaneController
 from .vibradorm import VibradormController
@@ -56,17 +59,20 @@ __all__ = [
     "LeggettOkinController",
     "LeggettWilinkeController",
     # Brand-specific controllers
-    "RemacroController",
+    "CoolBaseController",
     "JiecangController",
     "JensenController",
     "KeesonController",
     "LinakController",
     "MotoSleepController",
     "OctoController",
+    "RemacroController",
     "ReverieController",
     "ReverieNightstandController",
     "RichmatController",
     "RondureController",
+    "SBIController",
+    "ScottLivingController",
     "SolaceController",
     "SvaneController",
     "VibradormController",
