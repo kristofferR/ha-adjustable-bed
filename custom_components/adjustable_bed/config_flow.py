@@ -26,6 +26,7 @@ from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
 )
+from homeassistant.helpers.translation import async_get_translations
 
 from .actuator_groups import (
     ACTUATOR_GROUPS,
@@ -198,8 +199,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Check if disambiguation is needed (low confidence with alternatives)
         if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
-            # Build list of all candidate types (detected + alternatives)
-            self._disambiguation_types = [bed_type] + list(detection_result.ambiguous_types)
+            # Build list of all candidate types (detected + alternatives), deduplicated
+            seen: set[str] = set()
+            disambiguation_types: list[str] = []
+            for t in [bed_type] + list(detection_result.ambiguous_types):
+                if t not in seen:
+                    seen.add(t)
+                    disambiguation_types.append(t)
+            self._disambiguation_types = disambiguation_types
             _LOGGER.debug(
                 "Ambiguous detection for %s - showing disambiguation UI with options: %s",
                 discovery_info.address,
@@ -242,8 +249,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             display_name = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
             options.append(SelectOptionDict(value=bed_type, label=display_name))
 
-        # Add "Show all bed types" fallback option
-        options.append(SelectOptionDict(value="show_all", label="Show all bed types..."))
+        # Add "Show all bed types" fallback option with translated label
+        translations = await async_get_translations(
+            self.hass, self.hass.config.language, "config", {DOMAIN}
+        )
+        show_all_label = translations.get(
+            f"component.{DOMAIN}.config.step.bluetooth_disambiguate.data.show_all_option",
+            "Show all bed types...",
+        )
+        options.append(SelectOptionDict(value="show_all", label=show_all_label))
 
         return self.async_show_form(
             step_id="bluetooth_disambiguate",

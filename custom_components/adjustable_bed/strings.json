@@ -32,7 +32,8 @@
         "title": "Select Bed Type",
         "description": "Multiple bed types use the same Bluetooth identifier as **{name}**.\n\nSelect which type matches your bed:",
         "data": {
-          "bed_type_choice": "Bed type"
+          "bed_type_choice": "Bed type",
+          "show_all_option": "Show all bed types..."
         },
         "data_description": {
           "bed_type_choice": "If unsure, try the first option - you can change this later in device settings."
