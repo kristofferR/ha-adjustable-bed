@@ -392,6 +392,11 @@ DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 # Source: com.dewertokin.okinsmartcomfort app disassembly
 MANUFACTURER_ID_DEWERTOKIN: Final = 1643  # 0x066B
 
+# OKIN Automotive manufacturer data (BLE Company ID)
+# Source: Bluetooth SIG assigned numbers, SmartBed by Okin app
+# Used by SmartBed devices that advertise manufacturer data instead of service UUIDs
+MANUFACTURER_ID_OKIN: Final = 89  # 0x0059
+
 # DewertOkin service UUID (unique to FurniMove/DewertOkin devices)
 # This UUID can uniquely identify DewertOkin beds regardless of device name
 DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"

@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_NORDIC,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -42,6 +43,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_CONTROL_SERVICE_UUID,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
@@ -292,6 +294,22 @@ class TestDetectBedTypeByManufacturerData:
         assert result.bed_type == BED_TYPE_VIBRADORM
         assert result.confidence == 0.95
         assert result.manufacturer_id == MANUFACTURER_ID_VIBRADORM
+
+    def test_detect_okin_nordic_by_manufacturer_id(self):
+        """Test OKIN Nordic detection by Company ID 89 (SmartBed by Okin).
+
+        GitHub issue #185: Amada bed with SmartBed by Okin app advertises
+        manufacturer ID 89 but no service UUIDs, so detection must use
+        manufacturer data instead.
+        """
+        service_info = _make_service_info(
+            name="Smartbed209008942",
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"\x01\x02\x03"},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_OKIN_NORDIC
+        assert result.confidence == 0.9
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
 
 class TestOkinUUIDDisambiguation:

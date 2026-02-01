@@ -83,6 +83,7 @@ from .const import (
     MALOUF_NAME_PATTERNS,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
@@ -185,6 +186,12 @@ def _check_manufacturer_data(
     if MANUFACTURER_ID_VIBRADORM in manufacturer_data:
         return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
 
+    # OKIN Automotive: Company ID 89 (0x0059)
+    # Source: Bluetooth SIG assigned numbers, SmartBed by Okin app
+    # These devices typically don't advertise service UUIDs but use Nordic UART
+    if MANUFACTURER_ID_OKIN in manufacturer_data:
+        return BED_TYPE_OKIN_NORDIC, 0.9, MANUFACTURER_ID_OKIN
+
     return None, 0.0, None
 
 
@@ -214,7 +221,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
     BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
     BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
-    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
+    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex, SmartBed)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     # Protocol-based types (Leggett & Platt family)
