@@ -286,7 +286,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Control characteristic should use Keeson Base write UUID."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -298,7 +298,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support zero-g preset."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -310,7 +310,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support TV preset."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -322,7 +322,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support 2 memory presets."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -335,7 +335,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support light control."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -347,7 +347,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support tilt motor."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -359,7 +359,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support lumbar motor."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -371,7 +371,7 @@ class TestSBIController:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """SBI should support position feedback."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -392,7 +392,7 @@ class TestSBIMovement:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """move_head_up should send 8-byte packet in Both mode."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -410,7 +410,7 @@ class TestSBIMovement:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """move_tilt_up should send MOTOR_TILT_UP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -428,7 +428,7 @@ class TestSBIMovement:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """stop_all should send all-zero command bytes."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -458,7 +458,7 @@ class TestSBIPresets:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_flat should send PRESET_FLAT command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -476,7 +476,7 @@ class TestSBIPresets:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_zero_g should send PRESET_ZERO_G command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -494,7 +494,7 @@ class TestSBIPresets:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_memory(1) should send PRESET_MEMORY_1 command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -521,7 +521,7 @@ class TestSBIMassage:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """massage_toggle should send MASSAGE_LEVEL command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
@@ -539,7 +539,7 @@ class TestSBIMassage:
         self,
         hass: HomeAssistant,
         mock_sbi_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """massage_mode_1 should send MASSAGE_MODE_1 command."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)

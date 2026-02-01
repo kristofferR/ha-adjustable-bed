@@ -185,7 +185,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Control characteristic should use Keeson Base write UUID."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -197,7 +197,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support zero-g preset."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -209,7 +209,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support TV preset (Memory 3)."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -221,7 +221,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support anti-snore preset."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -233,7 +233,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support memory presets."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -246,7 +246,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support light control."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -258,7 +258,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support tilt motor."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -270,7 +270,7 @@ class TestScottLivingController:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """Scott Living should support lumbar motor."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -291,7 +291,7 @@ class TestScottLivingMovement:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """move_head_up should send 9-byte packet."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -309,7 +309,7 @@ class TestScottLivingMovement:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """move_tilt_up should send MOTOR_TILT_UP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -327,7 +327,7 @@ class TestScottLivingMovement:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """move_lumbar_up should send MOTOR_LUMBAR_UP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -345,7 +345,7 @@ class TestScottLivingMovement:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """stop_all should send zero command value."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -375,7 +375,7 @@ class TestScottLivingPresets:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_flat should send PRESET_FLAT command."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -393,7 +393,7 @@ class TestScottLivingPresets:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_zero_g should send ZERO_G command."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
@@ -411,7 +411,7 @@ class TestScottLivingPresets:
         self,
         hass: HomeAssistant,
         mock_scott_living_config_entry,
-        _mock_coordinator_connected,
+        mock_coordinator_connected,
     ):
         """preset_memory(1) should send MEMORY_1 command."""
         coordinator = AdjustableBedCoordinator(hass, mock_scott_living_config_entry)
