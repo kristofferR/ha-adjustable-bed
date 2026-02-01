@@ -19,7 +19,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MOTOSLEEP,
@@ -501,6 +500,113 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "already_configured"
+
+    async def test_bluetooth_discovery_ambiguous_shows_disambiguation(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Test that ambiguous BLE detection shows disambiguation step."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+
+        # Should show disambiguation form instead of confirm
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+    async def test_bluetooth_disambiguate_selects_type(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Test selecting a bed type from disambiguation proceeds to confirm."""
+        # Start the flow
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+        # Select a specific bed type from disambiguation
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": BED_TYPE_OKIMAT},
+        )
+
+        # Should proceed to confirm step
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+
+    async def test_bluetooth_disambiguate_show_all_option(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Test selecting 'show all' from disambiguation proceeds to confirm."""
+        # Start the flow
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+        # Select "show all bed types" option
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": "show_all"},
+        )
+
+        # Should proceed to confirm step with full bed type list available
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+
+    async def test_bluetooth_disambiguate_creates_entry_with_selected_type(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Test that disambiguation selection results in correct bed type in entry."""
+        from custom_components.adjustable_bed.const import BED_TYPE_OKIN_64BIT
+
+        # Start the flow
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+        # Select OKIN 64-bit from disambiguation options (doesn't require pairing)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": BED_TYPE_OKIN_64BIT},
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        # Confirm with minimal input
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "My Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Should create entry with the disambiguated type
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
 
 
 class TestManualFlow:

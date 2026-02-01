@@ -722,3 +722,27 @@ def mock_bluetooth_service_info_reverie_nightstand() -> MagicMock:
     service_info.time = 0
     service_info.tx_power = None
     return service_info
+
+
+@pytest.fixture
+def mock_bluetooth_service_info_ambiguous_okin() -> MagicMock:
+    """Return mock Bluetooth service info for ambiguous OKIN detection.
+
+    Uses the OKIN service UUID (62741523) with a generic name, which triggers
+    the disambiguation flow since this UUID is shared by Okimat, Leggett Okin,
+    and OKIN 64-bit beds.
+    """
+    service_info = MagicMock()
+    service_info.name = "Smart Bed Controller"  # Generic name, not matching any pattern
+    service_info.address = "AA:BB:CC:DD:EE:00"
+    service_info.rssi = -60
+    service_info.manufacturer_data = {}
+    service_info.service_data = {}
+    service_info.service_uuids = [OKIMAT_SERVICE_UUID]  # 62741523 - shared by multiple types
+    service_info.source = "local"
+    service_info.device = MagicMock()
+    service_info.advertisement = MagicMock()
+    service_info.connectable = True
+    service_info.time = 0
+    service_info.tx_power = None
+    return service_info

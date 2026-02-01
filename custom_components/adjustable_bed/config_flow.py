@@ -138,6 +138,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._selected_actuator: str | None = None
         self._selected_bed_type: str | None = None
         self._selected_protocol_variant: str | None = None
+        # For disambiguation UI when BLE detection is ambiguous
+        self._disambiguation_types: list[str] | None = None
+        self._disambiguated_bed_type: str | None = None
+        self._show_full_bed_type_list: bool = False
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     async def async_step_bluetooth(
@@ -162,7 +166,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(discovery_info.address.upper())
         self._abort_if_unique_id_configured()
 
-        bed_type = detect_bed_type(discovery_info)
+        # Use detailed detection to get confidence and ambiguity info
+        detection_result = detect_bed_type_detailed(discovery_info)
+        bed_type = detection_result.bed_type
+
         if bed_type is None:
             # Capture device info for troubleshooting
             device_info = capture_device_info(discovery_info)
@@ -179,16 +186,81 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="not_supported")
 
         _LOGGER.info(
-            "Detected supported bed: %s at %s (name: %s)",
+            "Detected supported bed: %s at %s (name: %s) with confidence %.1f",
             bed_type,
             discovery_info.address,
             discovery_info.name,
+            detection_result.confidence,
         )
 
         self._discovery_info = discovery_info
         self.context["title_placeholders"] = {"name": discovery_info.name or discovery_info.address}
 
+        # Check if disambiguation is needed (low confidence with alternatives)
+        if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
+            # Build list of all candidate types (detected + alternatives)
+            self._disambiguation_types = [bed_type] + list(detection_result.ambiguous_types)
+            _LOGGER.debug(
+                "Ambiguous detection for %s - showing disambiguation UI with options: %s",
+                discovery_info.address,
+                self._disambiguation_types,
+            )
+            return await self.async_step_bluetooth_disambiguate()
+
         return await self.async_step_bluetooth_confirm()
+
+    async def async_step_bluetooth_disambiguate(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle disambiguation when BLE detection is ambiguous.
+
+        Shows a focused list of 2-4 candidate bed types instead of the full
+        dropdown with 20+ options, making it easier for users to select the
+        correct type when the BLE service UUID matches multiple protocols.
+        """
+        assert self._discovery_info is not None
+        assert self._disambiguation_types is not None
+
+        if user_input is not None:
+            selected = user_input.get("bed_type_choice")
+            if selected == "show_all":
+                # User wants the full dropdown - set flag and go to confirm step
+                self._show_full_bed_type_list = True
+                self._disambiguated_bed_type = None
+                _LOGGER.debug("User selected 'show all bed types' option")
+            else:
+                # User selected a specific type from disambiguation
+                self._disambiguated_bed_type = selected
+                self._show_full_bed_type_list = False
+                _LOGGER.debug("User disambiguated bed type to: %s", selected)
+
+            return await self.async_step_bluetooth_confirm()
+
+        # Build options for disambiguation - only the relevant 2-4 types
+        options: list[SelectOptionDict] = []
+        for bed_type in self._disambiguation_types:
+            display_name = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+            options.append(SelectOptionDict(value=bed_type, label=display_name))
+
+        # Add "Show all bed types" fallback option
+        options.append(SelectOptionDict(value="show_all", label="Show all bed types..."))
+
+        return self.async_show_form(
+            step_id="bluetooth_disambiguate",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("bed_type_choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    ),
+                }
+            ),
+            description_placeholders={
+                "name": self._discovery_info.name or self._discovery_info.address,
+            },
+        )
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
@@ -198,7 +270,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(self._discovery_info)
-        bed_type = detection_result.bed_type
+        detected_bed_type = detection_result.bed_type
+
+        # Use disambiguated type if user selected one, otherwise use detected type
+        bed_type = self._disambiguated_bed_type or detected_bed_type
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -215,7 +290,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
             # Validate protocol variant is valid for selected bed type
-            if selected_bed_type and not is_valid_variant_for_bed_type(selected_bed_type, protocol_variant):
+            if selected_bed_type and not is_valid_variant_for_bed_type(
+                selected_bed_type, protocol_variant
+            ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
 
             # Get bed-specific defaults for motor pulse settings
@@ -247,7 +324,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 "User confirmed bed setup: name=%s, type=%s (detected: %s), variant=%s, address=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
                 user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 selected_bed_type,
-                bed_type,
+                detected_bed_type,
                 protocol_variant,
                 self._discovery_info.address,
                 user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
@@ -280,11 +357,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
                 # Handle bed-type-specific configuration when user overrides detected type
                 # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
-                if selected_bed_type == BED_TYPE_OCTO and bed_type != BED_TYPE_OCTO:
+                if selected_bed_type == BED_TYPE_OCTO and detected_bed_type != BED_TYPE_OCTO:
                     self._manual_data = entry_data
                     return await self.async_step_bluetooth_octo()
                 # If user selected Richmat but detection wasn't Richmat, collect remote in follow-up step
-                if selected_bed_type == BED_TYPE_RICHMAT and bed_type != BED_TYPE_RICHMAT:
+                if selected_bed_type == BED_TYPE_RICHMAT and detected_bed_type != BED_TYPE_RICHMAT:
                     self._manual_data = entry_data
                     return await self.async_step_bluetooth_richmat()
                 # Add Octo PIN if configured (when detected as Octo, field was shown inline)
@@ -348,8 +425,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 default_motor_count = get_richmat_motor_count(features)
 
         # Build schema with optional variant selection
-        schema_dict = {
-            vol.Optional(CONF_BED_TYPE, default=bed_type): vol.In(SUPPORTED_BED_TYPES),
+        # Use searchable dropdown when user asked for all bed types, otherwise simple dropdown
+        if self._show_full_bed_type_list:
+            bed_type_selector = SelectSelector(
+                SelectSelectorConfig(
+                    options=get_bed_type_options(),
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            )
+        else:
+            bed_type_selector = vol.In(SUPPORTED_BED_TYPES)
+
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Optional(CONF_BED_TYPE, default=bed_type): bed_type_selector,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.In([2, 3, 4]),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
@@ -408,9 +496,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             remotes_options = dict(RICHMAT_REMOTES)
             if detected_remote and detected_remote.upper() not in RICHMAT_REMOTES:
                 # Modify "Auto" label to show detected code
-                remotes_options[RICHMAT_REMOTE_AUTO] = (
-                    f"Auto (detected: {detected_remote.upper()})"
-                )
+                remotes_options[RICHMAT_REMOTE_AUTO] = f"Auto (detected: {detected_remote.upper()})"
             schema_dict[vol.Optional(CONF_RICHMAT_REMOTE, default=default_remote)] = vol.In(
                 remotes_options
             )
@@ -421,7 +507,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
         # Add detection confidence info for ambiguous cases
-        if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
+        # Skip the warning if user already went through disambiguation step
+        if self._disambiguated_bed_type:
+            # User already chose from disambiguation - show their selection
+            display_name = BED_TYPE_DISPLAY_NAMES.get(
+                self._disambiguated_bed_type, self._disambiguated_bed_type
+            )
+            description_placeholders["detection_note"] = f"Selected: {display_name}"
+        elif self._show_full_bed_type_list:
+            # User asked to see all bed types
+            description_placeholders["detection_note"] = "Select your bed type from the list."
+        elif detection_result.confidence < 0.7 and detection_result.ambiguous_types:
             # Map internal bed type constants to human-readable display names
             display_names = [
                 BED_TYPE_DISPLAY_NAMES.get(t, t) for t in detection_result.ambiguous_types
@@ -844,9 +940,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): str,
                 vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle
-                ): bool,
+                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
                 vol.Optional(
                     CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)
@@ -1026,9 +1120,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
                 vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
-                vol.Optional(
-                    CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle
-                ): bool,
+                vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
                 vol.Optional(
                     CONF_MOTOR_PULSE_COUNT, default=str(default_pulse_count)
@@ -1215,7 +1307,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         SelectSelectorConfig(
                             options=[
                                 SelectOptionDict(value="pair_now", label="Pair Now"),
-                                SelectOptionDict(value="skip_pairing", label="Skip (already paired)"),
+                                SelectOptionDict(
+                                    value="skip_pairing", label="Skip (already paired)"
+                                ),
                             ],
                             mode=SelectSelectorMode.LIST,
                         )
@@ -1276,7 +1370,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         SelectSelectorConfig(
                             options=[
                                 SelectOptionDict(value="pair_now", label="Pair Now"),
-                                SelectOptionDict(value="skip_pairing", label="Skip (already paired)"),
+                                SelectOptionDict(
+                                    value="skip_pairing", label="Skip (already paired)"
+                                ),
                             ],
                             mode=SelectSelectorMode.LIST,
                         )

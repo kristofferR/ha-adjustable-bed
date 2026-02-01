@@ -28,6 +28,16 @@
           "variant": "Different beds use different protocols. The hints describe what the Bluetooth device name typically looks like for each variant."
         }
       },
+      "bluetooth_disambiguate": {
+        "title": "Select Bed Type",
+        "description": "Multiple bed types use the same Bluetooth identifier as **{name}**.\n\nSelect which type matches your bed:",
+        "data": {
+          "bed_type_choice": "Bed type"
+        },
+        "data_description": {
+          "bed_type_choice": "If unsure, try the first option - you can change this later in device settings."
+        }
+      },
       "bluetooth_confirm": {
         "title": "Confirm Adjustable Bed",
         "description": "Do you want to set up {name}?\n{detection_note}",
