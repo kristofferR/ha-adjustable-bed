@@ -187,11 +187,8 @@ def _check_manufacturer_data(
     if MANUFACTURER_ID_VIBRADORM in manufacturer_data:
         return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
 
-    # OKIN Automotive: Company ID 89 (0x0059)
-    # Source: Bluetooth SIG assigned numbers, SmartBed by Okin app
-    # These devices use CB24 protocol over Nordic UART (7-byte commands)
-    if MANUFACTURER_ID_OKIN in manufacturer_data:
-        return BED_TYPE_OKIN_CB24, 0.9, MANUFACTURER_ID_OKIN
+    # Note: OKIN Automotive (ID 89) is NOT checked here because it should be
+    # a fallback after UUID-based detection. See detect_bed_type_detailed().
 
     return None, 0.0, None
 
@@ -1029,6 +1026,24 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
             ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
             requires_characteristic_check=True,
+        )
+
+    # Fallback: Check for OKIN Automotive manufacturer ID 89 (CB24 protocol)
+    # This is checked LAST to allow UUID-based detection to take priority.
+    # SmartBed by Okin devices advertise manufacturer ID but no service UUIDs.
+    if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
+        signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
+        _LOGGER.info(
+            "Detected Okin CB24 bed at %s (name: %s) by manufacturer ID %s (fallback)",
+            service_info.address,
+            service_info.name,
+            MANUFACTURER_ID_OKIN,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIN_CB24,
+            confidence=0.7,  # Lower confidence as fallback
+            signals=signals,
+            manufacturer_id=MANUFACTURER_ID_OKIN,
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)

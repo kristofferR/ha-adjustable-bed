@@ -302,6 +302,9 @@ class TestDetectBedTypeByManufacturerData:
         GitHub issue #185: Amada bed with SmartBed by Okin app advertises
         manufacturer ID 89 but no service UUIDs, so detection must use
         manufacturer data instead. Uses CB24 protocol over Nordic UART.
+
+        Note: Manufacturer ID 89 detection is a FALLBACK (checked last) to
+        allow UUID-based detection to take priority for other OKIN devices.
         """
         service_info = _make_service_info(
             name="Smartbed209008942",
@@ -309,7 +312,7 @@ class TestDetectBedTypeByManufacturerData:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OKIN_CB24
-        assert result.confidence == 0.9
+        assert result.confidence == 0.7  # Lower confidence as fallback
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
 

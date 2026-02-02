@@ -62,6 +62,7 @@ CONF_POSITION_MODE: Final = "position_mode"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"
+CONF_CB24_BED_SELECTION: Final = "cb24_bed_selection"
 CONF_BACK_MAX_ANGLE: Final = "back_max_angle"
 CONF_LEGS_MAX_ANGLE: Final = "legs_max_angle"
 
@@ -434,6 +435,13 @@ OCTO_VARIANT_STAR2: Final = "star2"
 MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
+
+# Okin CB24 bed selection values
+# Used by SmartBed by Okin for split-king/dual bed configurations
+# Source: com.okin.bedding.smartbedwifi ANALYSIS.md
+CB24_BED_SELECTION_DEFAULT: Final = 0x00  # Default/single bed
+CB24_BED_SELECTION_A: Final = 0xAA  # Bed A (left side)
+CB24_BED_SELECTION_B: Final = 0xBB  # Bed B (right side)
 
 # Nectar specific UUIDs
 # Protocol reverse-engineered by MaximumWorf (https://github.com/MaximumWorf/homeassistant-nectar)

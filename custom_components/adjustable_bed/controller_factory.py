@@ -86,6 +86,7 @@ async def create_controller(
     octo_pin: str = "",
     richmat_remote: str = "auto",
     jensen_pin: str = "",
+    cb24_bed_selection: int = 0x00,
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -100,6 +101,7 @@ async def create_controller(
         octo_pin: PIN for Octo beds (default: empty string)
         richmat_remote: Remote code for Richmat beds (default: "auto")
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
+        cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
 
     Returns:
         The appropriate BedController subclass instance
@@ -135,7 +137,7 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller
 
-        return OkinCB24Controller(coordinator)
+        return OkinCB24Controller(coordinator, bed_selection=cb24_bed_selection)
 
     if bed_type == BED_TYPE_MALOUF_NEW_OKIN:
         from .beds.malouf import MaloufNewOkinController
