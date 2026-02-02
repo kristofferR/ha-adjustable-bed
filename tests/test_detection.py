@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_REMACRO,
@@ -295,19 +296,19 @@ class TestDetectBedTypeByManufacturerData:
         assert result.confidence == 0.95
         assert result.manufacturer_id == MANUFACTURER_ID_VIBRADORM
 
-    def test_detect_okin_nordic_by_manufacturer_id(self):
-        """Test OKIN Nordic detection by Company ID 89 (SmartBed by Okin).
+    def test_detect_okin_cb24_by_manufacturer_id(self):
+        """Test OKIN CB24 detection by Company ID 89 (SmartBed by Okin).
 
         GitHub issue #185: Amada bed with SmartBed by Okin app advertises
         manufacturer ID 89 but no service UUIDs, so detection must use
-        manufacturer data instead.
+        manufacturer data instead. Uses CB24 protocol over Nordic UART.
         """
         service_info = _make_service_info(
             name="Smartbed209008942",
             manufacturer_data={MANUFACTURER_ID_OKIN: b"\x01\x02\x03"},
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_OKIN_NORDIC
+        assert result.bed_type == BED_TYPE_OKIN_CB24
         assert result.confidence == 0.9
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
@@ -678,6 +679,62 @@ class TestExcludedDevicePatterns:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type is None
         assert "excluded:" in result.signals[0]
+
+    def test_exclusion_skipped_for_unique_uuid_linak(self):
+        """Test that exclusion is skipped when device has unique Linak UUID.
+
+        A hypothetical "Linak Controller" bed should be detected as Linak,
+        not excluded by the "controller" pattern.
+        """
+        service_info = _make_service_info(
+            name="Linak Controller",
+            service_uuids=[LINAK_CONTROL_SERVICE_UUID],  # Unique Linak UUID
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_LINAK
+        assert result.confidence == 1.0
+        assert "excluded:" not in str(result.signals)
+
+    def test_exclusion_skipped_for_unique_uuid_jensen(self):
+        """Test that exclusion is skipped when device has unique Jensen UUID.
+
+        A hypothetical "Jensen Watch" bed should be detected as Jensen,
+        not excluded by the "watch" pattern.
+        """
+        service_info = _make_service_info(
+            name="Jensen Watch",
+            service_uuids=[JENSEN_SERVICE_UUID],  # Unique Jensen UUID
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_JENSEN
+        assert result.confidence == 1.0
+        assert "excluded:" not in str(result.signals)
+
+    def test_exclusion_skipped_for_unique_uuid_svane(self):
+        """Test that exclusion is skipped when device has unique Svane UUID.
+
+        A hypothetical "Svane Band" bed should be detected as Svane,
+        not excluded by the "band" pattern.
+        """
+        service_info = _make_service_info(
+            name="Svane Band",
+            service_uuids=[SVANE_HEAD_SERVICE_UUID],  # Unique Svane UUID
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SVANE
+        assert result.confidence == 1.0
+        assert "excluded:" not in str(result.signals)
+
+    def test_exclusion_applied_with_no_uuids(self):
+        """Test that exclusion is applied when device has no UUIDs."""
+        service_info = _make_service_info(
+            name="Wyze Scale",
+            service_uuids=[],  # No UUIDs
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+        # Either "wyze" or "scale" pattern can match first
+        assert any("excluded:" in s for s in result.signals)
 
 
 class TestUnknownDevices:

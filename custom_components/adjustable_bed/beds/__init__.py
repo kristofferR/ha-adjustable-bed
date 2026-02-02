@@ -3,10 +3,11 @@
 This module exports all bed controllers. Controllers are organized by protocol:
 
 Protocol-based controllers:
+- OkinCB24Controller: CB24 7-byte via Nordic UART (SmartBed by Okin)
 - OkinHandleController: Okin 6-byte via BLE handle
 - OkinUuidController: Okin 6-byte via UUID, requires pairing
 - Okin7ByteController: 7-byte via Okin service UUID
-- OkinNordicController: 7-byte via Nordic UART
+- OkinNordicController: 7-byte via Nordic UART (Mattress Firm 900)
 - LeggettGen2Controller: Leggett & Platt Gen2 ASCII protocol
 - LeggettOkinController: Leggett & Platt Okin binary protocol
 - LeggettWilinkeController: Leggett & Platt WiLinke 5-byte protocol
@@ -33,6 +34,7 @@ from .octo import OctoController
 from .okin_7byte import Okin7ByteController
 
 # Protocol-based controllers
+from .okin_cb24 import OkinCB24Controller
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
 from .okin_uuid import OkinUuidController
@@ -51,6 +53,7 @@ __all__ = [
     # Base class
     "BedController",
     # Protocol-based controllers
+    "OkinCB24Controller",
     "OkinHandleController",
     "OkinUuidController",
     "Okin7ByteController",

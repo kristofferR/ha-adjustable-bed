@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -130,6 +131,11 @@ async def create_controller(
         from .beds.okin_nordic import OkinNordicController
 
         return OkinNordicController(coordinator)
+
+    if bed_type == BED_TYPE_OKIN_CB24:
+        from .beds.okin_cb24 import OkinCB24Controller
+
+        return OkinCB24Controller(coordinator)
 
     if bed_type == BED_TYPE_MALOUF_NEW_OKIN:
         from .beds.malouf import MaloufNewOkinController
