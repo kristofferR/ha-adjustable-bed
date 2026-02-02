@@ -62,6 +62,7 @@ CONF_POSITION_MODE: Final = "position_mode"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"
+CONF_CB24_BED_SELECTION: Final = "cb24_bed_selection"
 CONF_BACK_MAX_ANGLE: Final = "back_max_angle"
 CONF_LEGS_MAX_ANGLE: Final = "legs_max_angle"
 
@@ -86,6 +87,7 @@ BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
 BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairing)
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
+BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
@@ -133,6 +135,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
@@ -432,6 +435,13 @@ OCTO_VARIANT_STAR2: Final = "star2"
 MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
+
+# Okin CB24 bed selection values
+# Used by SmartBed by Okin for split-king/dual bed configurations
+# Source: com.okin.bedding.smartbedwifi ANALYSIS.md
+CB24_BED_SELECTION_DEFAULT: Final = 0x00  # Default/single bed
+CB24_BED_SELECTION_A: Final = 0xAA  # Bed A (left side)
+CB24_BED_SELECTION_B: Final = 0xBB  # Bed B (right side)
 
 # Nectar specific UUIDs
 # Protocol reverse-engineered by MaximumWorf (https://github.com/MaximumWorf/homeassistant-nectar)
@@ -1279,6 +1289,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN Nordic: 100ms delay → 10 repeats = 1.0s total
     # Source: com.lucid.bedbase ANALYSIS.md
     BED_TYPE_OKIN_NORDIC: (10, 100),
+    # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
+    # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
+    BED_TYPE_OKIN_CB24: (3, 300),
     # Leggett WiLinke: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md - WiLinke protocol variant
     BED_TYPE_LEGGETT_WILINKE: (7, 150),

@@ -67,6 +67,7 @@ from .const import (
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_CB24_BED_SELECTION,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
     CONF_MOTOR_COUNT,
@@ -184,6 +185,9 @@ class AdjustableBedCoordinator:
 
         # Jensen-specific configuration
         self._jensen_pin: str = entry.data.get(CONF_JENSEN_PIN, "")
+
+        # CB24-specific configuration (SmartBed by Okin split beds)
+        self._cb24_bed_selection: int = entry.data.get(CONF_CB24_BED_SELECTION, 0x00)
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -886,6 +890,7 @@ class AdjustableBedCoordinator:
                     octo_pin=self._octo_pin,
                     richmat_remote=self._richmat_remote,
                     jensen_pin=self._jensen_pin,
+                    cb24_bed_selection=self._cb24_bed_selection,
                 )
                 _LOGGER.debug("Controller created successfully")
 

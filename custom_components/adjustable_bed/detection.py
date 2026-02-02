@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
@@ -186,11 +187,8 @@ def _check_manufacturer_data(
     if MANUFACTURER_ID_VIBRADORM in manufacturer_data:
         return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
 
-    # OKIN Automotive: Company ID 89 (0x0059)
-    # Source: Bluetooth SIG assigned numbers, SmartBed by Okin app
-    # These devices typically don't advertise service UUIDs but use Nordic UART
-    if MANUFACTURER_ID_OKIN in manufacturer_data:
-        return BED_TYPE_OKIN_NORDIC, 0.9, MANUFACTURER_ID_OKIN
+    # Note: OKIN Automotive (ID 89) is NOT checked here because it should be
+    # a fallback after UUID-based detection. See detect_bed_type_detailed().
 
     return None, 0.0, None
 
@@ -198,8 +196,24 @@ def _check_manufacturer_data(
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
 SOLACE_NAME_PATTERN = re.compile(r"^s\d+-[a-z]-\d+-[a-z0-9]+$", re.IGNORECASE)
 
+# Generic/shared BLE service UUIDs used by multiple bed types AND non-bed devices.
+# Name-based exclusions are only applied when a device advertises these UUIDs,
+# preserving UUID-based detection for beds with unique service UUIDs.
+# See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
+GENERIC_SHARED_SERVICE_UUIDS: frozenset[str] = frozenset(
+    uuid.lower()
+    for uuid in (
+        SOLACE_SERVICE_UUID,  # FFE0 - Solace, Octo, MotoSleep, scales, scooters
+        KEESON_BASE_SERVICE_UUID,  # FFE5 - Keeson, Malouf, Serta, fitness trackers
+        RICHMAT_NORDIC_SERVICE_UUID,  # Nordic UART - Richmat, many IoT devices
+        OKIMAT_SERVICE_UUID,  # 62741523 - Okimat, Leggett Okin, Nectar
+        *RICHMAT_WILINKE_SERVICE_UUIDS,  # FEE9 variants - Richmat WiLinke, BedTech
+    )
+)
+
 # Device name patterns that should NOT be detected as beds
 # These use generic BLE UUIDs that beds also use, but are clearly not beds
+# Only applied when device has generic UUIDs (see GENERIC_SHARED_SERVICE_UUIDS)
 # See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
 EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     # Mobility devices
@@ -260,6 +274,19 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     "beacon",
 )
 
+
+def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
+    """Check if device has only generic/shared UUIDs (or no UUIDs).
+
+    Returns True if the device should be subject to name-based exclusion checks.
+    Returns False if the device has a unique bed-specific UUID that should
+    take priority over name patterns.
+    """
+    if not service_uuids:
+        return True
+    return all(uuid in GENERIC_SHARED_SERVICE_UUIDS for uuid in service_uuids)
+
+
 # Display names for bed types shown in the UI selector
 # Note: Legacy types (dewertokin, okimat, nectar, mattressfirm, leggett_platt)
 # are NOT included here - they're only kept for backward compatibility with
@@ -269,7 +296,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
     BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
     BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
-    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex, SmartBed)",
+    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
+    BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     # Protocol-based types (Leggett & Platt family)
@@ -350,17 +378,21 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     _LOGGER.debug("  Service UUIDs: %s", service_uuids)
     _LOGGER.debug("  Manufacturer data: %s", service_info.manufacturer_data)
 
-    # Exclude devices that are clearly not beds based on name
-    # These often use the same generic BLE UUIDs as beds
-    for pattern in EXCLUDED_DEVICE_PATTERNS:
-        if pattern in device_name:
-            _LOGGER.debug(
-                "Device %s excluded: name '%s' matches excluded pattern '%s'",
-                service_info.address,
-                service_info.name,
-                pattern,
-            )
-            return DetectionResult(bed_type=None, confidence=0.0, signals=["excluded:" + pattern])
+    # Exclude devices that are clearly not beds based on name, but only when
+    # they have generic/shared UUIDs. This preserves UUID-based detection for
+    # beds with unique service UUIDs (e.g., a hypothetical "Linak Band" bed
+    # with Linak's unique UUID would not be excluded by the "band" pattern).
+    if _has_only_generic_uuids(service_uuids):
+        for pattern in EXCLUDED_DEVICE_PATTERNS:
+            if pattern in device_name:
+                _LOGGER.debug(
+                    "Device %s excluded: name '%s' matches excluded pattern '%s' "
+                    "(device has only generic UUIDs)",
+                    service_info.address,
+                    service_info.name,
+                    pattern,
+                )
+                return DetectionResult(bed_type=None, confidence=0.0, signals=["excluded:" + pattern])
 
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
@@ -994,6 +1026,24 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
             ambiguous_types=[BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
             requires_characteristic_check=True,
+        )
+
+    # Fallback: Check for OKIN Automotive manufacturer ID 89 (CB24 protocol)
+    # This is checked LAST to allow UUID-based detection to take priority.
+    # SmartBed by Okin devices advertise manufacturer ID but no service UUIDs.
+    if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
+        signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
+        _LOGGER.info(
+            "Detected Okin CB24 bed at %s (name: %s) by manufacturer ID %s (fallback)",
+            service_info.address,
+            service_info.name,
+            MANUFACTURER_ID_OKIN,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIN_CB24,
+            confidence=0.7,  # Lower confidence as fallback
+            signals=signals,
+            manufacturer_id=MANUFACTURER_ID_OKIN,
         )
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)
