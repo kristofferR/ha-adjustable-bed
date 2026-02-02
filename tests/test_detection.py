@@ -561,11 +561,17 @@ class TestNordicUARTDisambiguation:
 
 
 class TestExcludedDevicePatterns:
-    """Test that non-bed devices are correctly excluded."""
+    """Test that non-bed devices are correctly excluded.
+
+    These devices use generic BLE UUIDs (FFE0, FFE5, Nordic UART) that
+    are also used by legitimate beds, causing false positive discovery.
+    See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
+    """
 
     @pytest.mark.parametrize(
         "name",
         [
+            # Mobility devices
             "scooter123",
             "Ninebot S",
             "Segway Mini",
@@ -575,13 +581,99 @@ class TestExcludedDevicePatterns:
             "E-Scooter Mini",
             "Skateboard Electric",
             "Hoverboard Kids",
+            # Scales and health monitors (issue #187)
+            "Wyze Scale",
+            "Wyze Scale S",
+            "Withings Body+",
+            "RENPHO Smart Scale",
+            "eufy Smart Scale",
+            "FitIndex Scale",
+            "Greater Goods Scale",
+            "Etekcity Scale",
+            "Arboleaf Scale",
+            "Weight Gurus",
+            "My Scale Pro",
+            # Wearables and fitness trackers (issue #187)
+            "Fitbit Charge 5",
+            "Garmin Forerunner",
+            "Amazfit Band 7",
+            "Xiaomi Mi Band",
+            "Mi Band 8",
+            "MiBand 7",
+            "Huawei Band 8",
+            "Polar H10",
+            "Suunto 9",
+            "COROS PACE 2",
+            "WHOOP 4.0",
+            "Smart Watch Pro",
+            "Fitness Tracker X",
+            "Activity Band",
+            # Health monitors
+            "Blood Pressure Monitor",
+            "Pulse Ox Sensor",
+            "Heart Rate Monitor",
+            "Glucose Monitor",
+            "Fingertip Oximeter",
+            "Digital Thermometer",
+            # Other common BLE devices
+            "Sony Headphones",
+            "AirPods Pro",
+            "Wireless Earbuds",
+            "Bluetooth Speaker",
+            "Logitech Keyboard",
+            "MX Mouse",
+            "Xbox Controller",
+            "PS5 Gamepad",
+            "Tile Pro",
+            "AirTag Wallet",
+            "SmartTag Plus",
+            "iBeacon",
         ],
     )
     def test_excluded_devices(self, name: str):
         """Test that non-bed devices with generic UUIDs are excluded."""
         service_info = _make_service_info(
             name=name,
-            service_uuids=[SOLACE_SERVICE_UUID],  # Generic UUID used by scooters
+            service_uuids=[SOLACE_SERVICE_UUID],  # Generic FFE0 UUID
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+        assert "excluded:" in result.signals[0]
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            # Scales with FFE5 UUID (Keeson/Malouf/Serta)
+            "Wyze Scale X",
+            "Smart Scale WiFi",
+            # Wearables with Nordic UART
+            "Band 8 Pro",
+            "Watch SE",
+        ],
+    )
+    def test_excluded_devices_ffe5_uuid(self, name: str):
+        """Test exclusion works with FFE5 UUID (used by Keeson, Malouf, etc.)."""
+        service_info = _make_service_info(
+            name=name,
+            service_uuids=[KEESON_BASE_SERVICE_UUID],  # FFE5 UUID
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+        assert "excluded:" in result.signals[0]
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            # Devices with Nordic UART UUID
+            "Polar Heart Rate",
+            "Garmin Watch 2",
+        ],
+    )
+    def test_excluded_devices_nordic_uart(self, name: str):
+        """Test exclusion works with Nordic UART UUID."""
+        service_info = _make_service_info(
+            name=name,
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],  # Nordic UART
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type is None
