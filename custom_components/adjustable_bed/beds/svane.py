@@ -299,19 +299,21 @@ class SvaneController(BedController):
             ("legs", SVANE_FEET_SERVICE_UUID, self._FEET_MAX_ANGLE),
         ]
 
-        for motor_name, service_uuid, max_angle in position_configs:
-            char = self._get_char_in_service(service_uuid, SVANE_CHAR_POSITION_UUID)
-            if char is None:
-                continue
+        # Use BLE lock to prevent concurrent GATT operations
+        async with self._ble_lock:
+            for motor_name, service_uuid, max_angle in position_configs:
+                char = self._get_char_in_service(service_uuid, SVANE_CHAR_POSITION_UUID)
+                if char is None:
+                    continue
 
-            try:
-                data = await self.client.read_gatt_char(char)
-                if data and len(data) >= 1 and self._notify_callback:
-                    position = data[0]
-                    angle = position * max_angle / 100
-                    self._notify_callback(motor_name, angle)
-            except BleakError:
-                _LOGGER.debug("Could not read position for %s", motor_name)
+                try:
+                    data = await self.client.read_gatt_char(char)
+                    if data and len(data) >= 1 and self._notify_callback:
+                        position = data[0]
+                        angle = position * max_angle / 100
+                        self._notify_callback(motor_name, angle)
+                except BleakError:
+                    _LOGGER.debug("Could not read position for %s", motor_name)
 
     async def _move_motor(
         self,

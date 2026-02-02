@@ -238,24 +238,26 @@ class ReverieNightstandController(BedController):
         if self.client is None or not self.client.is_connected:
             return
 
-        try:
-            head_data = await self.client.read_gatt_char(
-                REVERIE_NIGHTSTAND_HEAD_POSITION_UUID
-            )
-            if head_data and len(head_data) >= 1 and self._notify_callback:
-                position = head_data[0]
-                angle = position * 0.6
-                self._notify_callback("back", angle)
+        # Use BLE lock to prevent concurrent GATT operations
+        async with self._ble_lock:
+            try:
+                head_data = await self.client.read_gatt_char(
+                    REVERIE_NIGHTSTAND_HEAD_POSITION_UUID
+                )
+                if head_data and len(head_data) >= 1 and self._notify_callback:
+                    position = head_data[0]
+                    angle = position * 0.6
+                    self._notify_callback("back", angle)
 
-            foot_data = await self.client.read_gatt_char(
-                REVERIE_NIGHTSTAND_FOOT_POSITION_UUID
-            )
-            if foot_data and len(foot_data) >= 1 and self._notify_callback:
-                position = foot_data[0]
-                angle = position * 0.45
-                self._notify_callback("legs", angle)
-        except BleakError:
-            _LOGGER.debug("Could not read positions")
+                foot_data = await self.client.read_gatt_char(
+                    REVERIE_NIGHTSTAND_FOOT_POSITION_UUID
+                )
+                if foot_data and len(foot_data) >= 1 and self._notify_callback:
+                    position = foot_data[0]
+                    angle = position * 0.45
+                    self._notify_callback("legs", angle)
+            except BleakError:
+                _LOGGER.debug("Could not read positions")
 
     async def _move_linear(
         self,

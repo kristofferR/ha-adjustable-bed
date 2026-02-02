@@ -487,7 +487,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
-                vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+                # No max cap here - per-motor validation handles bed-specific limits
+                vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
             }
         ),
     )

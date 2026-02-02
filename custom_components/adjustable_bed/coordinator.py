@@ -1118,6 +1118,9 @@ class AdjustableBedCoordinator:
         Called after initial connection to populate position sensors with
         actual values instead of starting as 'unknown'.
         Runs in background with short timeout to not block startup.
+
+        Uses the command lock to prevent concurrent GATT operations with
+        commands that may start immediately after connection.
         """
         if self._disable_angle_sensing:
             _LOGGER.debug("Skipping initial position read (angle sensing disabled)")
@@ -1126,17 +1129,19 @@ class AdjustableBedCoordinator:
         _LOGGER.debug("Reading initial positions for %s", self._address)
         try:
             async with asyncio.timeout(5.0):
-                if self._client is not None and self._client.is_connected:
-                    await self._async_read_positions()
-                    # Only log success if position_data has values
-                    if self._position_data:
-                        _LOGGER.info(
-                            "Initial positions read for %s: %s",
-                            self._address,
-                            {k: f"{v}°" for k, v in self._position_data.items()},
-                        )
-                    else:
-                        _LOGGER.debug("Initial position read completed but no data received")
+                # Use command lock to prevent concurrent GATT operations
+                async with self._command_lock:
+                    if self._client is not None and self._client.is_connected:
+                        await self._async_read_positions()
+                        # Only log success if position_data has values
+                        if self._position_data:
+                            _LOGGER.info(
+                                "Initial positions read for %s: %s",
+                                self._address,
+                                {k: f"{v}°" for k, v in self._position_data.items()},
+                            )
+                        else:
+                            _LOGGER.debug("Initial position read completed but no data received")
         except TimeoutError:
             _LOGGER.debug("Initial position read timed out - sensors will update on first command")
         except Exception as err:
@@ -1144,8 +1149,13 @@ class AdjustableBedCoordinator:
                 "Initial position read failed: %s - sensors will update on first command", err
             )
 
-    async def async_disconnect(self) -> None:
-        """Disconnect from the bed."""
+    async def async_disconnect(self, reason: str = "intentional") -> None:
+        """Disconnect from the bed.
+
+        Args:
+            reason: The reason for disconnecting (for diagnostics).
+                    Common values: "intentional", "idle_timeout"
+        """
         _LOGGER.debug("async_disconnect called for %s", self._address)
         async with self._lock:
             self._cancel_disconnect_timer()
@@ -1158,7 +1168,7 @@ class AdjustableBedCoordinator:
                 # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
                 self._intentional_disconnect = True
                 # Track disconnect reason for diagnostics (issue #168)
-                self._last_disconnect_reason = "intentional"
+                self._last_disconnect_reason = reason
                 try:
                     # Stop keep-alive and notifications before disconnecting
                     if self._controller is not None:
@@ -1231,10 +1241,7 @@ class AdjustableBedCoordinator:
             self._idle_disconnect_seconds,
             self._address,
         )
-        # Track disconnect reason for diagnostics (issue #168)
-        # Set before async_disconnect which sets "intentional" - idle_timeout is more specific
-        self._last_disconnect_reason = "idle_timeout"
-        await self.async_disconnect()
+        await self.async_disconnect(reason="idle_timeout")
 
     async def async_ensure_connected(self, reset_timer: bool = True) -> bool:
         """Ensure we are connected to the bed."""
@@ -1337,16 +1344,12 @@ class AdjustableBedCoordinator:
         # Signal cancellation to any running command
         self._cancel_counter += 1
         self._cancel_command.set()
-        entry_cancel_count = self._cancel_counter
 
         # Acquire the command lock to wait for any in-flight GATT write to complete
         # This prevents concurrent BLE writes which cause "operation in progress" errors
+        # NOTE: Stop is safety-critical and must ALWAYS complete - no early return if
+        # cancel_counter changes while waiting (that would leave motors running)
         async with self._command_lock:
-            # Check if we were cancelled while waiting (unlikely for stop, but possible)
-            if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Stop command cancelled while waiting for lock")
-                return
-
             # Cancel disconnect timer while command is in progress
             self._cancel_disconnect_timer()
             try:
