@@ -31,7 +31,7 @@ from ..const import (
     KEESON_KSBT_SERVICE_UUID,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_ORE,
+    KEESON_VARIANT_SINO,
 )
 from .base import BedController
 from .okin_protocol import int_to_bytes
@@ -89,12 +89,12 @@ class KeesonCommands:
     TOGGLE_LIGHTS = 0x20000  # Alias for Ergomotion compatibility
 
 
-class ORECommands:
-    """ORE (Dynasty, INNOVA) specific command constants.
+class SinoCommands:
+    """Sino (Dynasty, INNOVA) specific command constants.
 
-    ORE beds with FFE5/FFE9 service UUIDs use SinoProtocol command values.
+    Sino beds with FFE5/FFE9 service UUIDs use SinoProtocol command values.
     Motor and preset commands use the same values as standard Keeson.
-    Light commands are ORE-specific (discrete on/off, not toggle).
+    Light commands are Sino-specific (discrete on/off, not toggle).
 
     Based on reverse engineering of com.ore.bedding.glideawaymontion APK.
     """
@@ -345,7 +345,7 @@ class KeesonController(BedController):
     @property
     def supports_discrete_light_control(self) -> bool:
         """Return True for ORE variant (discrete on/off), False for others (toggle only)."""
-        return self._variant == KEESON_VARIANT_ORE
+        return self._variant == KEESON_VARIANT_SINO
 
     @property
     def has_tilt_support(self) -> bool:
@@ -392,13 +392,13 @@ class KeesonController(BedController):
     @property
     def supports_massage_intensity_control(self) -> bool:
         """Return True for ORE variant which supports step up/down intensity."""
-        return self._variant == KEESON_VARIANT_ORE
+        return self._variant == KEESON_VARIANT_SINO
 
     @property
     def massage_intensity_max(self) -> int:
         """Return max massage intensity based on variant."""
-        if self._variant == KEESON_VARIANT_ORE:
-            return 10  # ORE uses 0-10 scale
+        if self._variant == KEESON_VARIANT_SINO:
+            return 10  # Sino uses 0-10 scale
         return 6  # Keeson/Ergomotion use 0-6 scale
 
     def _build_command(self, command_value: int) -> bytes:
@@ -407,12 +407,12 @@ class KeesonController(BedController):
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
         else:
-            # BaseI4/I5/OKIN/Serta/Ergomotion/ORE: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
+            # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
             int_bytes = int_to_bytes(command_value)
-            # ORE variant (Dynasty, INNOVA) uses big-endian byte order
+            # Sino variant (Dynasty, INNOVA) uses big-endian byte order
             # All other variants use little-endian (bytes reversed)
-            if self._variant != KEESON_VARIANT_ORE:
+            if self._variant != KEESON_VARIANT_SINO:
                 int_bytes.reverse()  # Little-endian for non-ORE variants
             prefix = 0xE6 if self._variant == KEESON_VARIANT_OKIN else 0xE5
             data = [prefix, 0xFE, 0x16] + int_bytes
@@ -809,45 +809,45 @@ class KeesonController(BedController):
     # Light methods
     async def lights_on(self) -> None:
         """Turn on safety lights."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
-            await self.write_command(self._build_command(ORECommands.LIGHT_ON))
+            await self.write_command(self._build_command(SinoCommands.LIGHT_ON))
         else:
             # Other variants only have toggle
             await self.lights_toggle()
 
     async def lights_off(self) -> None:
         """Turn off safety lights."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
-            await self.write_command(self._build_command(ORECommands.LIGHT_OFF))
+            await self.write_command(self._build_command(SinoCommands.LIGHT_OFF))
         else:
             # Other variants only have toggle
             await self.lights_toggle()
 
     async def lights_toggle(self) -> None:
         """Toggle safety lights."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE doesn't have a toggle - track state and use discrete commands
             # For now, just turn off (user can use lights_on to turn on)
-            await self.write_command(self._build_command(ORECommands.LIGHT_OFF))
+            await self.write_command(self._build_command(SinoCommands.LIGHT_OFF))
         else:
             await self.write_command(self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS))
 
     # Massage methods
     async def massage_toggle(self) -> None:
         """Toggle massage."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE variant: use the toggle command to step through modes
-            await self.write_command(self._build_command(ORECommands.MASSAGE_TOGGLE))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_TOGGLE))
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_STEP))
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE variant: send stop all command
-            await self.write_command(self._build_command(ORECommands.MASSAGE_OFF))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_OFF))
             self._head_massage = 0
             self._foot_massage = 0
         else:
@@ -856,45 +856,45 @@ class KeesonController(BedController):
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: step command increases intensity by 1 level
-            await self.write_command(self._build_command(ORECommands.MASSAGE_HEAD_UP))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_UP))
             self._head_massage = min(10, self._head_massage + 1)
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_UP))
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: step command decreases intensity by 1 level
-            await self.write_command(self._build_command(ORECommands.MASSAGE_HEAD_DOWN))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_DOWN))
             self._head_massage = max(0, self._head_massage - 1)
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN))
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: step command increases intensity by 1 level
-            await self.write_command(self._build_command(ORECommands.MASSAGE_FOOT_UP))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_UP))
             self._foot_massage = min(10, self._foot_massage + 1)
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_UP))
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: step command decreases intensity by 1 level
-            await self.write_command(self._build_command(ORECommands.MASSAGE_FOOT_DOWN))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_DOWN))
             self._foot_massage = max(0, self._foot_massage - 1)
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN))
 
     async def massage_intensity_up(self) -> None:
         """Increase all massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: increase both head and foot intensity
-            await self.write_command(self._build_command(ORECommands.MASSAGE_ALL_UP))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_ALL_UP))
             self._head_massage = min(10, self._head_massage + 1)
             self._foot_massage = min(10, self._foot_massage + 1)
         else:
@@ -903,9 +903,9 @@ class KeesonController(BedController):
 
     async def massage_intensity_down(self) -> None:
         """Decrease all massage intensity."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: decrease both head and foot intensity
-            await self.write_command(self._build_command(ORECommands.MASSAGE_ALL_DOWN))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_ALL_DOWN))
             self._head_massage = max(0, self._head_massage - 1)
             self._foot_massage = max(0, self._foot_massage - 1)
         else:
@@ -914,23 +914,23 @@ class KeesonController(BedController):
 
     async def massage_mode_step(self) -> None:
         """Step through massage modes/timer."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: use timer step command to cycle through 10/20/30 min options
-            await self.write_command(self._build_command(ORECommands.MASSAGE_TIMER))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_TIMER))
         else:
             await self.write_command(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP))
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage zone on/off."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: toggle by setting to max if off, or stopping if on
             if self._head_massage > 0:
                 # Turn off head massage by sending decrease commands
-                await self.write_command(self._build_command(ORECommands.MASSAGE_HEAD_DOWN))
+                await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_DOWN))
                 self._head_massage = max(0, self._head_massage - 1)
             else:
                 # Turn on head massage
-                await self.write_command(self._build_command(ORECommands.MASSAGE_HEAD_UP))
+                await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_UP))
                 self._head_massage = 1
         else:
             # Standard Keeson doesn't have per-zone toggle
@@ -938,15 +938,15 @@ class KeesonController(BedController):
 
     async def massage_foot_toggle(self) -> None:
         """Toggle foot massage zone on/off."""
-        if self._variant == KEESON_VARIANT_ORE:
+        if self._variant == KEESON_VARIANT_SINO:
             # ORE: toggle by setting to max if off, or stopping if on
             if self._foot_massage > 0:
                 # Turn off foot massage by sending decrease commands
-                await self.write_command(self._build_command(ORECommands.MASSAGE_FOOT_DOWN))
+                await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_DOWN))
                 self._foot_massage = max(0, self._foot_massage - 1)
             else:
                 # Turn on foot massage
-                await self.write_command(self._build_command(ORECommands.MASSAGE_FOOT_UP))
+                await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_UP))
                 self._foot_massage = 1
         else:
             # Standard Keeson doesn't have per-zone toggle

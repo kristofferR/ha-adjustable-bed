@@ -36,6 +36,7 @@ from .const import (
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -54,7 +55,7 @@ from .const import (
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_ORE,
+    KEESON_VARIANT_SINO,
     KEESON_VARIANT_SERTA,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
@@ -138,6 +139,11 @@ async def create_controller(
         from .beds.okin_cb24 import OkinCB24Controller
 
         return OkinCB24Controller(coordinator, bed_selection=cb24_bed_selection)
+
+    if bed_type == BED_TYPE_OKIN_ORE:
+        from .beds.okin_ore import OkinOreController
+
+        return OkinOreController(coordinator)
 
     if bed_type == BED_TYPE_MALOUF_NEW_OKIN:
         from .beds.malouf import MaloufNewOkinController
@@ -246,9 +252,9 @@ async def create_controller(
         elif protocol_variant == KEESON_VARIANT_SERTA:
             _LOGGER.debug("Using Serta Keeson variant")
             return KeesonController(coordinator, variant="serta")
-        elif protocol_variant == KEESON_VARIANT_ORE:
-            _LOGGER.debug("Using ORE Keeson variant (big-endian)")
-            return KeesonController(coordinator, variant="ore")
+        elif protocol_variant == KEESON_VARIANT_SINO:
+            _LOGGER.debug("Using Sino Keeson variant (big-endian)")
+            return KeesonController(coordinator, variant="sino")
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")

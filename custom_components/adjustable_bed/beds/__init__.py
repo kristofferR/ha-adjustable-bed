@@ -37,6 +37,7 @@ from .okin_7byte import Okin7ByteController
 from .okin_cb24 import OkinCB24Controller
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
+from .okin_ore import OkinOreController
 from .okin_uuid import OkinUuidController
 from .remacro import RemacroController
 from .reverie import ReverieController
@@ -55,6 +56,7 @@ __all__ = [
     # Protocol-based controllers
     "OkinCB24Controller",
     "OkinHandleController",
+    "OkinOreController",
     "OkinUuidController",
     "Okin7ByteController",
     "OkinNordicController",

@@ -733,7 +733,7 @@ def mock_bluetooth_service_info_ambiguous_okin() -> MagicMock:
     and OKIN 64-bit beds.
     """
     service_info = MagicMock()
-    service_info.name = "Smart Bed Controller"  # Generic name, not matching any pattern
+    service_info.name = "Okin Device"  # Generic name, not matching any specific bed pattern
     service_info.address = "AA:BB:CC:DD:EE:00"
     service_info.rssi = -60
     service_info.manufacturer_data = {}

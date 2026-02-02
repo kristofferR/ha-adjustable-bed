@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -92,6 +93,7 @@ from .const import (
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
     OKIN_FFE_NAME_PATTERNS,
+    OKIN_ORE_SERVICE_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
@@ -299,6 +301,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
+    BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
@@ -423,6 +426,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(
             bed_type=BED_TYPE_DEWERTOKIN,
             confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for OKIN ORE - unique service UUID (00001000)
+    if OKIN_ORE_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:okin_ore")
+        _LOGGER.info(
+            "Detected OKIN ORE bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIN_ORE,
+            confidence=1.0,
             signals=signals,
         )
 

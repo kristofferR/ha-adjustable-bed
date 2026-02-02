@@ -88,6 +88,7 @@ BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairin
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
+BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
@@ -136,6 +137,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_ORE,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
@@ -451,6 +453,14 @@ NECTAR_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 
+# OKIN ORE (OREBedBleProtocol) specific UUIDs
+# Protocol reverse-engineered from com.ore.bedding.glideawaymontion APK
+# Uses A5 5A packet format with checksum, unique 00001000 service UUID
+# Detection: Service UUID or scan record bytes 9-10 = 0x4F 0x4B ("OK")
+OKIN_ORE_SERVICE_UUID: Final = "00001000-0000-1000-8000-00805f9b34fb"
+OKIN_ORE_WRITE_CHAR_UUID: Final = "00001001-0000-1000-8000-00805f9b34fb"
+OKIN_ORE_READ_CHAR_UUID: Final = "00001002-0000-1000-8000-00805f9b34fb"
+
 # Malouf NEW_OKIN specific UUIDs
 # Protocol reverse-engineered from Malouf Base app
 # Uses a unique advertised service UUID for detection plus Nordic UART for commands
@@ -678,7 +688,7 @@ KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
 KEESON_VARIANT_OKIN: Final = "okin"
 KEESON_VARIANT_SERTA: Final = "serta"
-KEESON_VARIANT_ORE: Final = "ore"
+KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark, Purple)",
@@ -686,7 +696,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_ORE: "ORE (Dynasty, INNOVA - big-endian)",
+    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA - big-endian, FFE5 service)",
 }
 
 # Leggett & Platt variants
@@ -1110,7 +1120,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,
-    KEESON_VARIANT_ORE,
+    KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
@@ -1292,6 +1302,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
     BED_TYPE_OKIN_CB24: (3, 300),
+    # OKIN ORE: 300ms delay → 1 repeat = 0.3s per command (preset-based)
+    # Source: com.ore.bedding.glideawaymontion ANALYSIS.md
+    BED_TYPE_OKIN_ORE: (1, 300),
     # Leggett WiLinke: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md - WiLinke protocol variant
     BED_TYPE_LEGGETT_WILINKE: (7, 150),
