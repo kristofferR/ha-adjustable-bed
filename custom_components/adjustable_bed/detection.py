@@ -199,8 +199,10 @@ def _check_manufacturer_data(
 SOLACE_NAME_PATTERN = re.compile(r"^s\d+-[a-z]-\d+-[a-z0-9]+$", re.IGNORECASE)
 
 # Device name patterns that should NOT be detected as beds
-# These use generic BUIDs that beds also use, but are clearly not beds
+# These use generic BLE UUIDs that beds also use, but are clearly not beds
+# See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
 EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
+    # Mobility devices
     "scooter",
     "ninebot",
     "segway",
@@ -210,6 +212,52 @@ EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
     "e-scooter",
     "skateboard",
     "hoverboard",
+    # Scales and health monitors
+    "scale",
+    "weight",
+    "wyze",
+    "withings",
+    "renpho",
+    "eufy",
+    "fitindex",
+    "greater goods",
+    "etekcity",
+    "arboleaf",
+    # Wearables and fitness trackers
+    "watch",
+    "band",
+    "tracker",
+    "fitbit",
+    "garmin",
+    "amazfit",
+    "xiaomi",
+    "mi band",
+    "miband",
+    "huawei",
+    "polar",
+    "suunto",
+    "coros",
+    "whoop",
+    # Health monitors
+    "thermometer",
+    "blood pressure",
+    "pulse ox",
+    "heart rate",
+    "glucose",
+    "oximeter",
+    # Other common BLE devices
+    "headphone",
+    "earbud",
+    "airpod",
+    "speaker",
+    "keyboard",
+    "mouse",
+    "controller",
+    "gamepad",
+    "tile",
+    "airtag",
+    "smarttag",
+    "beacon",
 )
 
 # Display names for bed types shown in the UI selector
