@@ -90,7 +90,7 @@ def build_cb24_command(command_value: int, bed_selection: int = 0x00) -> bytes:
     Returns:
         7-byte command: [0x05, 0x02, cmd3, cmd2, cmd1, cmd0, bed_selection]
     """
-    return bytes([0x05, 0x02] + int_to_bytes(command_value) + [bed_selection])
+    return bytes([0x05, 0x02, *int_to_bytes(command_value), bed_selection])
 
 
 class OkinCB24Controller(BedController):
