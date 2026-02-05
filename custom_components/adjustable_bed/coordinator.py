@@ -1826,8 +1826,12 @@ class AdjustableBedCoordinator:
                             break
 
                         # Check for overshoot (passed the target)
-                        # Overshoot reversal is a safety correction - clear cancel event
-                        # to ensure reversal completes even if user cancelled
+                        # Overshoot reversal is a safety correction - clear cancel
+                        # to allow reversal movement, but check _cancel_counter to
+                        # detect if a NEW stop was requested (not just the prior
+                        # cancel that the seek itself issued on entry). If counter
+                        # changed, a real user-initiated stop arrived and we must
+                        # honour it instead of reversing.
                         # Use larger overshoot tolerance to prevent oscillation
                         if (
                             moving_up
@@ -1841,6 +1845,10 @@ class AdjustableBedCoordinator:
                             if not getattr(self._controller, "auto_stops_on_idle", False):
                                 await move_stop_fn(self._controller)
                                 await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            # Check if a new stop was requested while we were stopping
+                            if self._cancel_counter > entry_cancel_count:
+                                _LOGGER.debug("New stop request during overshoot - aborting reversal")
+                                break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_down_fn(self._controller)
                             moving_up = False
@@ -1856,6 +1864,10 @@ class AdjustableBedCoordinator:
                             if not getattr(self._controller, "auto_stops_on_idle", False):
                                 await move_stop_fn(self._controller)
                                 await asyncio.sleep(0.3)  # Ensure stop completes before reversal
+                            # Check if a new stop was requested while we were stopping
+                            if self._cancel_counter > entry_cancel_count:
+                                _LOGGER.debug("New stop request during overshoot - aborting reversal")
+                                break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_up_fn(self._controller)
                             moving_up = True
