@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 26 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, and Jensen tested. Other brands need community testing.
+**Current status:** 36 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, and Vibradorm tested. Other brands need community testing.
 
 ## Architecture
 
@@ -23,11 +23,14 @@ custom_components/adjustable_bed/
 ├── validators.py        # Config validation (MAC addresses, PIN, variants)
 ├── redaction.py         # Data redaction for diagnostics
 ├── support_report.py    # Support report generation
+├── richmat_features.py  # Richmat feature detection helpers
+├── actuator_groups.py   # Actuator group logic
+├── diagnostics_utils.py # Diagnostics helper utilities
 ├── beds/                # Bed controller implementations
 │   ├── base.py          # Abstract base class (BedController)
 │   ├── linak.py         # Linak protocol (tested)
 │   ├── richmat.py       # Richmat Nordic/WiLinke protocols (tested)
-│   ├── keeson.py        # Keeson KSBT/BaseI4/I5/Ergomotion protocols (tested)
+│   ├── keeson.py        # Keeson KSBT/BaseI4/I5/Ergomotion/Serta protocols (tested)
 │   ├── motosleep.py     # MotoSleep HHC ASCII protocol (tested)
 │   ├── solace.py        # Solace 11-byte packet protocol
 │   ├── leggett_gen2.py  # Leggett & Platt Gen2 ASCII protocol
@@ -38,21 +41,30 @@ custom_components/adjustable_bed/
 │   ├── okin_handle.py   # Okin 6-byte via handle protocol
 │   ├── okin_7byte.py    # Okin 7-byte protocol
 │   ├── okin_nordic.py   # Okin 7-byte via Nordic UART
+│   ├── okin_cb24.py     # Okin CB24 protocol via Nordic UART
+│   ├── okin_ore.py      # Okin ORE protocol (A5 5A format)
 │   ├── okin_protocol.py # Shared Okin protocol utilities
+│   ├── okin_64bit.py    # OKIN 64-bit 10-byte protocol
 │   ├── malouf.py        # Malouf NEW_OKIN/LEGACY_OKIN protocols
-│   ├── jiecang.py       # Jiecang/Glide protocol
-│   ├── serta.py         # Serta Motion Perfect III protocol
+│   ├── jiecang.py       # Jiecang/Glide/Comfort Motion protocol
 │   ├── octo.py          # Octo standard/Star2 protocols (PIN auth)
 │   ├── jensen.py        # Jensen JMC400 protocol (tested, PIN auth)
 │   ├── svane.py         # Svane LinonPI multi-service protocol
 │   ├── bedtech.py       # BedTech 5-byte ASCII protocol
-│   ├── okin_64bit.py    # OKIN 64-bit 10-byte protocol
 │   ├── reverie_nightstand.py  # Reverie Protocol 110 (nightstand)
 │   ├── sleepys.py       # Sleepy's Elite BOX15/BOX24 protocols
+│   ├── vibradorm.py     # Vibradorm VMAT protocol (tested)
+│   ├── rondure.py       # Rondure 8/9-byte FurniBus protocol
+│   ├── remacro.py       # Remacro 8-byte SynData protocol
+│   ├── coolbase.py      # Cool Base (Keeson BaseI5 with fan control)
+│   ├── scott_living.py  # Scott Living 9-byte protocol
+│   ├── sbi.py           # SBI/Q-Plus (Costco) with position feedback
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
 ├── cover.py             # Motor control entities (open=up, close=down)
+├── number.py            # Number entities (angle settings, etc.)
+├── select.py            # Select entities (variant selection, etc.)
 ├── sensor.py            # Position angle feedback entities
 ├── switch.py            # Light control entities
 ├── diagnostics.py       # HA diagnostics download support
@@ -111,22 +123,30 @@ custom_components/adjustable_bed/
 | Okin Handle | `OkinHandleController` | Okin 6-byte via handle (0x0013) | Name patterns | Needs testing |
 | Okin 7-byte | `Okin7ByteController` | 7-byte via Okin service UUID | Service UUID `62741523-...` + name | Needs testing |
 | Okin Nordic | `OkinNordicController` | 7-byte via Nordic UART | Service UUID `6e400001-...` | Needs testing |
-| Serta | `SertaController` | Handle-based writes (0x0020) | Name patterns | Needs testing |
+| Okin CB24 | `OkinCB24Controller` | CB24 protocol via Nordic UART | Name patterns (SmartBed, Amada) | Needs testing |
+| Okin ORE | `OkinOreController` | A5 5A format protocol | Service UUID `00001000-...` | Needs testing |
+| Okin FFE | `KeesonController(variant="okin")` | 0xE6 prefix, Keeson protocol | Name patterns ("okin", "cb-") + FFE5 UUID | Needs testing |
+| Okin 64-bit | `Okin64BitController` | 10-byte commands | Service UUID `62741523-...` | Needs testing |
+| Serta | `KeesonController(variant="serta")` | Keeson protocol with serta variant | Name patterns ("serta", "motion perfect") | Needs testing |
+| Ergomotion | `KeesonController(variant="ergomotion")` | Keeson protocol with position feedback | Name patterns ("ergomotion", "ergo", "serta-i") | Needs testing |
 | Jiecang | `JiecangController` | Glide beds, Dream Motion app | Char UUID `0000ff01-...` | Needs testing |
+| Comfort Motion | `JiecangController` | Comfort Motion / Lierda protocol | Service UUID `0000ff12-...` | Needs testing |
 | Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
-| Malouf NEW_OKIN | `MaloufController` | NEW_OKIN 6-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
-| Malouf LEGACY_OKIN | `MaloufController` | LEGACY_OKIN 7-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
+| Malouf NEW_OKIN | `MaloufNewOkinController` | NEW_OKIN 6-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
+| Malouf LEGACY_OKIN | `MaloufLegacyOkinController` | LEGACY_OKIN 7-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
 | Jensen | `JensenController` | 6-byte commands with PIN auth | Service UUID `00001234-...` or name "JMC*" | ✅ Tested |
 | Svane | `SvaneController` | LinonPI multi-service 2-byte commands | Service UUID `0000abcb-...` or name "Svane Bed" | ✅ Tested |
-| BedTech | `BedtechController` | 5-byte ASCII protocol | Service UUID `0000fee9-...` | Needs testing |
-| Sleepy's BOX15 | `SleepysController` | 9-byte with checksum | Service UUID `0000ffe5-...` | Needs testing |
-| Sleepy's BOX24 | `SleepysController` | 7-byte OKIN 64-bit | Service UUID `62741523-...` | Needs testing |
+| BedTech | `BedTechController` | 5-byte ASCII protocol | Service UUID `0000fee9-...` | Needs testing |
+| Sleepy's BOX15 | `SleepysBox15Controller` | 9-byte with checksum | Service UUID `0000ffe5-...` | Needs testing |
+| Sleepy's BOX24 | `SleepysBox24Controller` | 7-byte OKIN 64-bit | Service UUID `62741523-...` | Needs testing |
 | Reverie Nightstand | `ReverieNightstandController` | Protocol 110 | Service UUID `db801000-...` | Needs testing |
-| Okin 64-bit | `Okin64BitController` | 10-byte commands | Service UUID `62741523-...` | Needs testing |
 | Vibradorm | `VibradormController` | VMAT protocol, requires BLE pairing | Service UUID `00001525-...` or name "VMAT*" | ✅ Tested |
 | Rondure | `RondureController` | 8/9-byte FurniBus protocol | Manual selection (shared UUID) | Needs testing |
 | Remacro | `RemacroController` | 8-byte SynData protocol | Service UUID `6e403587-...` | Needs testing |
-| Diagnostic | `DiagnosticController` | Debug mode for unsupported beds | Manual selection only | Debug |
+| Cool Base | `CoolBaseController` | Keeson BaseI5 with fan control | Name patterns ("base-i5") | Needs testing |
+| Scott Living | `ScottLivingController` | 9-byte protocol | Manual selection | Needs testing |
+| SBI/Q-Plus | `SBIController` | Position feedback via pulse lookup | Manual selection | Needs testing |
+| Diagnostic | `DiagnosticBedController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
 
@@ -176,13 +196,18 @@ custom_components/adjustable_bed/
 | `protocol_variant` | Protocol variant (bed-specific) | auto |
 | `disable_angle_sensing` | Disable position feedback | true |
 | `preferred_adapter` | Lock to specific BLE adapter | auto |
-| `motor_pulse_count` | Command repeat count | 25 |
-| `motor_pulse_delay_ms` | Delay between repeats | 50 |
+| `connection_profile` | BLE connection profile | balanced |
+| `motor_pulse_count` | Command repeat count | 10 |
+| `motor_pulse_delay_ms` | Delay between repeats | 100 |
 | `disconnect_after_command` | Disconnect immediately after commands | false |
 | `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
 | `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |
+| `jensen_pin` | PIN for Jensen beds | "" |
+| `cb24_bed_selection` | Bed A/B selection for CB24 split beds | 0x00 |
 | `richmat_remote` | Remote code for Richmat beds | auto |
+| `back_max_angle` | Max angle for back motor (degrees) | 68.0 |
+| `legs_max_angle` | Max angle for legs motor (degrees) | 45.0 |
 
 ## Services
 
@@ -191,6 +216,8 @@ custom_components/adjustable_bed/
 | `adjustable_bed.goto_preset` | Move bed to memory position 1-4 |
 | `adjustable_bed.save_preset` | Save current position to memory 1-4 |
 | `adjustable_bed.stop_all` | Immediately stop all motors |
+| `adjustable_bed.set_position` | Move motor to a specific position |
+| `adjustable_bed.timed_move` | Move motor for a specified duration |
 | `adjustable_bed.run_diagnostics` | Capture BLE protocol data for debugging |
 | `adjustable_bed.generate_support_report` | Generate JSON support report with diagnostics (params: device_id, include_logs) |
 

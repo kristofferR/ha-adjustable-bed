@@ -116,6 +116,14 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Sleepy's BOX24 | 10 | 100ms |
 | Jensen | 3 | 400ms |
 | Svane | 10 | 100ms |
+| Vibradorm | 10 | 100ms |
+| Rondure | 25 | 50ms |
+| Remacro | 10 | 100ms |
+| OKIN CB24 | 3 | 300ms |
+| OKIN ORE | 1 | 300ms |
+| Cool Base | 10 | 100ms |
+| Scott Living | 10 | 100ms |
+| SBI/Q-Plus | 10 | 100ms |
 | All others | 10 | 100ms |
 
 ### When to Adjust

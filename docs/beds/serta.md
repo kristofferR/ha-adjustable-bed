@@ -26,10 +26,12 @@
 
 ## Protocol Details
 
-**Write Handle:** `0x0020`
+**Controller:** `KeesonController` (variant: `serta`)
+**Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
+**Write Char UUID:** `0000ffe9-0000-1000-8000-00805f9b34fb`
 **Format:** 8-byte packets with `e5fe16` prefix
 
-**Note:** Serta uses handle-based writes rather than characteristic UUIDs.
+**Note:** Serta uses the Keeson protocol with the serta variant. It shares the same FFE5/FFE9 service as other Keeson-based beds.
 
 ### Motor Commands
 

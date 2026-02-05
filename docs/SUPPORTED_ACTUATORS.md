@@ -24,6 +24,9 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 | [Svane](beds/svane.md) | ✅ Supported | LinonPI protocol, multi-service |
 | [Vibradorm](beds/vibradorm.md) | ✅ Supported | Position feedback, 4 memory presets, lights |
+| [Cool Base](beds/coolbase.md) | 🧪 Needs Testing | Keeson BaseI5 with fan control |
+| [Scott Living](beds/scott-living.md) | 🧪 Needs Testing | 9-byte protocol |
+| [SBI/Q-Plus](beds/sbi.md) | 🧪 Needs Testing | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 🧪 Needs Testing | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | 🧪 Needs Testing | 4 motors, 8 presets, RGB lights, heat |
 
