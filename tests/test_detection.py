@@ -468,6 +468,14 @@ class TestFFE0UUIDDisambiguation:
         )
         assert detect_bed_type(service_info) == BED_TYPE_SOLACE
 
+    def test_ffe0_with_legacy_solace_pattern(self):
+        """Test Solace detection with FFE0 UUID + legacy S2-* naming format."""
+        service_info = _make_service_info(
+            name="S2-Y-192-461000AD",
+            service_uuids=[SOLACE_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_SOLACE
+
     def test_ffe0_with_sealymf_name(self):
         """Test Solace detection with FFE0 UUID + SealyMF in name."""
         service_info = _make_service_info(

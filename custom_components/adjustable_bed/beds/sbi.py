@@ -143,6 +143,7 @@ class SBIController(BedController):
         # Position state from notifications
         self._head_angle: int = 0
         self._foot_angle: int = 0
+        self._position_feedback_warning_logged = False
 
         self._char_uuid = KEESON_BASE_WRITE_CHAR_UUID
         self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
@@ -205,8 +206,8 @@ class SBIController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        """Return True - SBI has position feedback via lookup tables."""
-        return True
+        """Return False until SBI notification parsing is protocol-verified."""
+        return False
 
     @property
     def head_angle(self) -> int:
@@ -296,43 +297,17 @@ class SBIController(BedController):
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
         self._parse_notification(bytes(data))
 
-    def _parse_notification(self, data: bytes) -> None:
+    def _parse_notification(self, _data: bytes) -> None:
         """Parse notification data for position feedback.
 
-        The notification format contains pulse counts that can be
-        converted to angles using the lookup tables.
+        The packet layout has not been verified on real devices yet.
+        Ignore parsed positions for now so we don't expose incorrect angles.
         """
-        # Position data format needs to be determined from actual device
-        # Based on APK analysis, pulse values are 16-bit and may need inversion
-        if len(data) < 4:
-            return
-
-        # This is a placeholder - actual format needs verification
-        # The APK shows pulse values are extracted and passed to angle lookup
-        try:
-            # Attempt to extract head and foot pulse values
-            # Exact positions depend on actual notification format
-            if len(data) >= 4:
-                head_pulse = int.from_bytes(data[0:2], byteorder="little", signed=False)
-                foot_pulse = int.from_bytes(data[2:4], byteorder="little", signed=False)
-
-                self._head_angle = pulse_to_angle(head_pulse, HEAD_PULSE_TABLE)
-                self._foot_angle = pulse_to_angle(foot_pulse, FOOT_PULSE_TABLE)
-
-                _LOGGER.debug(
-                    "SBI position: head=%d° (pulse=%d), foot=%d° (pulse=%d)",
-                    self._head_angle,
-                    head_pulse,
-                    self._foot_angle,
-                    foot_pulse,
-                )
-
-                # Notify callback if set
-                if self._notify_callback:
-                    self._notify_callback("head", float(self._head_angle))
-                    self._notify_callback("foot", float(self._foot_angle))
-        except Exception:
-            _LOGGER.debug("Failed to parse position notification")
+        if not self._position_feedback_warning_logged:
+            _LOGGER.debug(
+                "Ignoring SBI position notifications because packet layout is not yet validated"
+            )
+            self._position_feedback_warning_logged = True
 
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""

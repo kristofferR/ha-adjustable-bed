@@ -47,7 +47,7 @@ def mock_sbi_config_entry_data() -> dict:
         CONF_BED_TYPE: BED_TYPE_SBI,
         CONF_MOTOR_COUNT: 4,  # Head, foot, tilt, lumbar
         CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: False,  # SBI has position feedback
+        CONF_DISABLE_ANGLE_SENSING: True,  # SBI position parsing is not yet verified
         CONF_PREFERRED_ADAPTER: "auto",
         CONF_PROTOCOL_VARIANT: SBI_VARIANT_BOTH,
     }
@@ -78,7 +78,7 @@ def mock_sbi_side_a_config_entry_data() -> dict:
         CONF_BED_TYPE: BED_TYPE_SBI,
         CONF_MOTOR_COUNT: 4,
         CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: False,
+        CONF_DISABLE_ANGLE_SENSING: True,
         CONF_PREFERRED_ADAPTER: "auto",
         CONF_PROTOCOL_VARIANT: SBI_VARIANT_SIDE_A,
     }
@@ -373,11 +373,11 @@ class TestSBIController:
         mock_sbi_config_entry,
         mock_coordinator_connected,
     ):
-        """SBI should support position feedback."""
+        """SBI should not advertise position feedback until parsing is validated."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_position_feedback is True
+        assert coordinator.controller.supports_position_feedback is False
 
 
 # -----------------------------------------------------------------------------

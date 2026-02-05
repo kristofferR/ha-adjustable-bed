@@ -50,7 +50,7 @@ async def generate_support_report(
 
     # Get integration version from manifest
     integration = await async_get_integration(hass, DOMAIN)
-    integration_version = integration.version
+    integration_version = str(integration.version) if integration.version is not None else "unknown"
 
     report: dict[str, Any] = {
         "report_version": "1.1",

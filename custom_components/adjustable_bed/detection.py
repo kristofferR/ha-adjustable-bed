@@ -707,7 +707,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:ffe0")
-        # Check for Solace name patterns
+        # Check for Solace name patterns from Motion Bed app reverse engineering:
+        # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
+        # - S3-*, S4-*, S5-*, S6-* (S-series)
+        # - SealyMF (Sealy Motion Flex)
+        # - Contains "solace"
+        # - Matches legacy Solace naming convention like "S2-Y-192-461000AD"
         if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
             signals.append("name:solace")
             _LOGGER.info(
@@ -716,7 +721,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 service_info.name,
             )
             return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        if "solace" in device_name:
+        if "solace" in device_name or SOLACE_NAME_PATTERN.match(device_name):
             signals.append("name:solace")
             _LOGGER.info(
                 "Detected Solace bed at %s (name: %s)",
@@ -974,46 +979,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             confidence=0.5,
             signals=signals,
             ambiguous_types=[BED_TYPE_MALOUF_LEGACY_OKIN, BED_TYPE_OKIN_FFE, BED_TYPE_SERTA],
-        )
-
-    # Check for Solace/Octo/MotoSleep (same UUID, different protocols)
-    # Octo is more common, so default to Octo unless name indicates Solace
-    if SOLACE_SERVICE_UUID.lower() in service_uuids:
-        signals.append("uuid:ffe0")
-        # Check for Solace name patterns from Motion Bed app reverse engineering:
-        # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
-        # - S3-*, S4-*, S5-*, S6-* (S-series)
-        # - SealyMF (Sealy Motion Flex)
-        # - Contains "solace"
-        # - Matches legacy Solace naming convention like "S4-Y-192-461000AD"
-        if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
-            signals.append("name:solace")
-            _LOGGER.info(
-                "Detected Solace bed at %s (name: %s) by name pattern",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        if "solace" in device_name or SOLACE_NAME_PATTERN.match(device_name):
-            signals.append("name:solace")
-            _LOGGER.info(
-                "Detected Solace bed at %s (name: %s)",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        # Default to Octo (more common)
-        # This UUID is shared by Octo, Solace, and MotoSleep
-        _LOGGER.info(
-            "Detected Octo bed at %s (name: %s) - defaulting to Octo for shared FFE0 UUID",
-            service_info.address,
-            service_info.name,
-        )
-        return DetectionResult(
-            bed_type=BED_TYPE_OCTO,
-            confidence=0.5,
-            signals=signals,
-            ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
         )
 
     # Check for Mattress Firm 900 (iFlex) - name-based detection

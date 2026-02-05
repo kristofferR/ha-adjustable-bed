@@ -440,6 +440,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Build schema with optional variant selection
         # Use searchable dropdown when user asked for all bed types, otherwise simple dropdown
+        bed_type_selector: Any
         if self._show_full_bed_type_list:
             bed_type_selector = SelectSelector(
                 SelectSelectorConfig(

@@ -1216,7 +1216,6 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
         BED_TYPE_VIBRADORM,
-        BED_TYPE_SBI,  # SBI/Q-Plus has position feedback via pulse lookup tables
     }
 )
 
