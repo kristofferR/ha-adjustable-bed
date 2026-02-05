@@ -279,4 +279,8 @@ class AdjustableBedMassageSensor(AdjustableBedEntity, SensorEntity):
             if str_value == "" or str_value == "0":
                 return "Off"
             return str_value
-        return int(value)
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            _LOGGER.debug("Non-numeric massage state value: %s", value)
+            return None
