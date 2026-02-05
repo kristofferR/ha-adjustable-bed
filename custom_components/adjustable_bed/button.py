@@ -211,6 +211,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_all_off",
         icon="mdi:vibrate-off",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_off(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -218,6 +219,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_all_toggle",
         icon="mdi:vibrate",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_toggle(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -225,6 +227,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_all_up",
         icon="mdi:arrow-up-bold",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_up(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -232,6 +235,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_all_down",
         icon="mdi:arrow-down-bold",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_down(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -239,6 +243,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_head_toggle",
         icon="mdi:head",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_toggle(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -246,6 +251,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_head_up",
         icon="mdi:arrow-up",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_up(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -253,6 +259,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_head_down",
         icon="mdi:arrow-down",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_down(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -260,6 +267,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_foot_toggle",
         icon="mdi:foot-print",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_toggle(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -267,6 +275,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_foot_up",
         icon="mdi:arrow-up",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_up(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -274,6 +283,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_foot_down",
         icon="mdi:arrow-down",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_down(),
     ),
     AdjustableBedButtonEntityDescription(
@@ -281,6 +291,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_mode_step",
         icon="mdi:format-list-numbered",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
     ),
     # Circulation massage buttons (only for beds with circulation massage support)
@@ -289,6 +300,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_circulation_full_body",
         icon="mdi:human",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_full_body(),
         required_capability="supports_circulation_massage",
     ),
@@ -297,6 +309,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_circulation_head",
         icon="mdi:head",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_head(),
         required_capability="supports_circulation_massage",
     ),
@@ -305,6 +318,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_circulation_leg",
         icon="mdi:foot-print",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_leg(),
         required_capability="supports_circulation_massage",
     ),
@@ -313,6 +327,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="massage_circulation_hip",
         icon="mdi:human-handsdown",
         requires_massage=True,
+        cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_circulation_hip(),
         required_capability="supports_circulation_massage",
     ),

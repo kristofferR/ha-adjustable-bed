@@ -123,6 +123,12 @@ class OkinCB24Controller(BedController):
     Supports dual-bed configurations via bed selection byte.
     """
 
+    # CB24 memory/preset actions in the OEM app run as hold-to-run commands
+    # with a 300ms resend cadence. We approximate that with a long burst that
+    # can still be preempted by later commands (e.g. massage/stop).
+    PRESET_REPEAT_COUNT = 83
+    PRESET_REPEAT_DELAY_MS = 300
+
     def __init__(
         self, coordinator: AdjustableBedCoordinator, bed_selection: int = 0x00
     ) -> None:
@@ -347,22 +353,15 @@ class OkinCB24Controller(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command continuously until bed reaches target position.
+        """Send a preset command in an interruptible hold-style burst.
 
-        CB24 beds require continuous commands to keep moving, same as motor control.
-        We send for ~15 seconds (50 repeats at 300ms) which should be enough for
-        most preset movements. The bed will stop automatically when it reaches the
-        target position, even if we're still sending commands.
-
-        We do NOT send STOP after presets - that would abort the movement if the
-        command loop is cancelled early.
+        CB24 presets behave like hold-to-run commands, so we resend at 300ms
+        intervals and do NOT send STOP afterwards.
         """
-        # Send preset command continuously at 300ms intervals (same as motor timing)
-        # 83 repeats * 300ms = ~25 seconds, enough for most preset movements
         await self.write_command(
             self._build_command(command_value),
-            repeat_count=83,
-            repeat_delay_ms=300,
+            repeat_count=self.PRESET_REPEAT_COUNT,
+            repeat_delay_ms=self.PRESET_REPEAT_DELAY_MS,
         )
 
     async def preset_flat(self) -> None:

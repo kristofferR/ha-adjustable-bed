@@ -8,6 +8,7 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 
 # Import enable_custom_integrations fixture
+from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import DOMAIN
 
 
@@ -107,6 +108,13 @@ class TestCoverEntities:
 
 class TestButtonEntities:
     """Test button entities."""
+
+    def test_massage_buttons_cancel_running_commands(self):
+        """Massage buttons should preempt long-running movement/preset actions."""
+        massage_buttons = [desc for desc in BUTTON_DESCRIPTIONS if desc.key.startswith("massage_")]
+
+        assert len(massage_buttons) > 0
+        assert all(desc.cancel_movement for desc in massage_buttons)
 
     async def test_button_entities_created(
         self,
