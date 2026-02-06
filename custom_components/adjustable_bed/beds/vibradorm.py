@@ -97,7 +97,7 @@ class VibradormController(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._lights_on: bool = False
-        self._write_with_response: bool = True
+        self._write_with_response: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -191,10 +191,10 @@ class VibradormController(BedController):
         Position notification format (from XMCMotorData.java):
         - Byte 0-1: Header/flags
         - Byte 2: Flags (bit 4 = init request, bit 6 = sync status)
-        - Bytes 3-4: Motor 1 position (16-bit little-endian)
-        - Bytes 5-6: Motor 2 position (16-bit little-endian)
-        - Bytes 7-8: Motor 3 position (16-bit little-endian)
-        - Bytes 9-10: Motor 4 position (16-bit little-endian)
+        - Bytes 3-4: Motor 1 position (16-bit big-endian)
+        - Bytes 5-6: Motor 2 position (16-bit big-endian)
+        - Bytes 7-8: Motor 3 position (16-bit big-endian)
+        - Bytes 9-10: Motor 4 position (16-bit big-endian)
 
         Position values are raw encoder counts, higher values = more raised.
         """
@@ -204,10 +204,10 @@ class VibradormController(BedController):
             _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
             return
 
-        # Parse motor positions (16-bit little-endian values)
+        # Parse motor positions (16-bit big-endian values)
         # Motor 1 = head/back, Motor 2 = legs
-        motor1_pos = int.from_bytes(data[3:5], byteorder="little")
-        motor2_pos = int.from_bytes(data[5:7], byteorder="little")
+        motor1_pos = int.from_bytes(data[3:5], byteorder="big")
+        motor2_pos = int.from_bytes(data[5:7], byteorder="big")
 
         _LOGGER.debug(
             "Vibradorm position update: motor1=%d, motor2=%d (raw: %s)",
