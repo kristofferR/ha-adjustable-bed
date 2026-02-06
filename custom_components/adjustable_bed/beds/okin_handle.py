@@ -68,7 +68,7 @@ class OkinHandleCommands:
     # Massage
     WAVE_MASSAGE = bytes.fromhex("040280000000")
     HEAD_MASSAGE = bytes.fromhex("040200000800")
-    FOOT_MASSAGE = bytes.fromhex("040200400000")
+    FOOT_MASSAGE = bytes.fromhex("040200000400")
     MASSAGE_OFF = bytes.fromhex("040202000000")
 
     # Lights
