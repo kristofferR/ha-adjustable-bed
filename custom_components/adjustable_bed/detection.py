@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -68,6 +69,7 @@ from .const import (
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
+    COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     COMFORT_MOTION_SERVICE_UUID,
     COOLBASE_NAME_PATTERNS,
     DEWERTOKIN_NAME_PATTERNS,
@@ -89,6 +91,8 @@ from .const import (
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
+    LIMOSS_NAME_PATTERNS,
+    LIMOSS_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_PATTERNS,
@@ -332,6 +336,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Remacro (CheersSleep, Jeromes, Slumberland, The Brick)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
+    BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
@@ -774,6 +779,16 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:ffe0")
+        # Limoss / Stawett use the same FFE0 UUID but are identified by name.
+        if any(pattern in device_name for pattern in LIMOSS_NAME_PATTERNS):
+            signals.append("name:limoss")
+            _LOGGER.info(
+                "Detected Limoss bed at %s (name: %s) by FFE0 UUID + name pattern",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=0.9, signals=signals)
+
         # Check for Solace name patterns from Motion Bed app reverse engineering:
         # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
         # - S3-*, S4-*, S5-*, S6-* (S-series)
@@ -870,6 +885,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_MOTOSLEEP, confidence=0.9, signals=signals)
 
+    # Check for Limoss / Stawett (TEA-encrypted protocol over shared FFE0/FFE1 UUIDs)
+    # Detection relies primarily on device name because FFE0 is shared by many protocols.
+    if any(pattern in device_name for pattern in LIMOSS_NAME_PATTERNS):
+        signals.append("name:limoss")
+        confidence = 0.3
+        _LOGGER.info(
+            "Detected Limoss bed at %s (name: %s) by name pattern",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals)
+
     # Check for Ergomotion - name-based detection (before Keeson since same UUID)
     # Includes "serta-i" prefix for Serta-branded ErgoMotion beds (e.g., Serta-i490350)
     if any(pattern in device_name for pattern in ERGOMOTION_NAME_PATTERNS):
@@ -959,9 +986,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
 
     # Check for Comfort Motion / Lierda - service UUID detection
-    # Uses FF12 service UUID (more specific than generic Jiecang detection)
-    if COMFORT_MOTION_SERVICE_UUID.lower() in service_uuids:
-        signals.append("uuid:comfort_motion")
+    # Supports both legacy FF12 service and Lierda3 FE60 service.
+    if (
+        COMFORT_MOTION_SERVICE_UUID.lower() in service_uuids
+        or COMFORT_MOTION_LIERDA3_SERVICE_UUID.lower() in service_uuids
+    ):
+        if COMFORT_MOTION_LIERDA3_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:comfort_motion_lierda3")
+        else:
+            signals.append("uuid:comfort_motion")
         _LOGGER.info(
             "Detected Comfort Motion bed at %s (name: %s)",
             service_info.address,

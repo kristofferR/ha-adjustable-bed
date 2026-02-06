@@ -69,7 +69,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |
-| ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion |
+| ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA |
+| 🧪 [Limoss](docs/beds/limoss.md) | Limoss, Stawett |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Rize, Simmons, Nectar, Resident, Symphony |

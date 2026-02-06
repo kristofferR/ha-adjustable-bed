@@ -8,6 +8,7 @@ import pytest
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
@@ -16,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -40,9 +42,11 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
+    COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
+    LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
@@ -175,6 +179,24 @@ class TestDetectBedTypeByServiceUUID:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_SUTA
+        assert result.confidence == 0.9
+
+    def test_detect_comfort_motion_lierda3_by_uuid(self):
+        """Test Comfort Motion detection by Lierda3 FE60 service UUID."""
+        service_info = _make_service_info(
+            name="DreaMOTION",
+            service_uuids=[COMFORT_MOTION_LIERDA3_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_COMFORT_MOTION
+
+    def test_detect_limoss_by_ffe0_uuid_and_name(self):
+        """Test Limoss detection by FFE0 UUID + Limoss name pattern."""
+        service_info = _make_service_info(
+            name="LIMOSS Remote",
+            service_uuids=[LIMOSS_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_LIMOSS
         assert result.confidence == 0.9
 
 
@@ -310,6 +332,13 @@ class TestDetectBedTypeByNamePattern:
         """Test Richmat detection by Sleep Function 2.0 name."""
         service_info = _make_service_info(name="Sleep Function 2.0")
         assert detect_bed_type(service_info) == BED_TYPE_RICHMAT
+
+    def test_detect_limoss_by_name_pattern(self):
+        """Test Limoss detection by name pattern without UUID."""
+        service_info = _make_service_info(name="Stawett Remote")
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_LIMOSS
+        assert result.confidence == 0.3
 
 
 class TestDetectBedTypeByManufacturerData:

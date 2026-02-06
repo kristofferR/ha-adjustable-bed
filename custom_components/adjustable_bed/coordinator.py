@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -445,6 +446,7 @@ class AdjustableBedCoordinator:
             BED_TYPE_LEGGETT_GEN2: "Leggett & Platt",
             BED_TYPE_LEGGETT_OKIN: "Leggett & Platt",
             BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt",
+            BED_TYPE_LIMOSS: "Limoss",
             BED_TYPE_REVERIE: "Reverie",
             BED_TYPE_REVERIE_NIGHTSTAND: "Reverie",
             BED_TYPE_OKIMAT: "Okimat",
@@ -893,6 +895,12 @@ class AdjustableBedCoordinator:
                     cb24_bed_selection=self._cb24_bed_selection,
                 )
                 _LOGGER.debug("Controller created successfully")
+
+                if self._bed_type == BED_TYPE_LIMOSS and hasattr(
+                    self._controller, "reset_max_raw_estimate"
+                ):
+                    # Reset Limoss normalization state on each connection.
+                    cast(Any, self._controller).reset_max_raw_estimate()
 
                 if reset_timer:
                     self._reset_disconnect_timer()

@@ -18,7 +18,13 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import JIECANG_CHAR_UUID
+from ..const import (
+    COMFORT_MOTION_LIERDA3_SERVICE_UUID,
+    COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID,
+    COMFORT_MOTION_SERVICE_UUID,
+    COMFORT_MOTION_WRITE_CHAR_UUID,
+    JIECANG_CHAR_UUID,
+)
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -101,14 +107,44 @@ class JiecangController(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the Jiecang controller."""
         super().__init__(coordinator)
+        self._char_uuid = self._detect_control_characteristic_uuid()
         self._massage_back_level = 0
         self._massage_leg_level = 0
-        _LOGGER.debug("JiecangController initialized")
+        _LOGGER.debug(
+            "JiecangController initialized with control characteristic %s",
+            self._char_uuid,
+        )
+
+    def _detect_control_characteristic_uuid(self) -> str:
+        """Detect the active write characteristic UUID.
+
+        Supports:
+        - Lierda1 / Comfort Motion: FF12 service + FF01 write char
+        - Lierda3 (LOGICDATA): FE60 service + FE61 write char
+        """
+        client = self.client
+        if client is None or client.services is None:
+            return JIECANG_CHAR_UUID
+
+        # Lierda3 variant (LOGICDATA MOTIONrelax)
+        lierda3_service = client.services.get_service(COMFORT_MOTION_LIERDA3_SERVICE_UUID)
+        if lierda3_service is not None:
+            if lierda3_service.get_characteristic(COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID):
+                return COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID
+
+        # Legacy Lierda1 / Comfort Motion variant
+        comfort_service = client.services.get_service(COMFORT_MOTION_SERVICE_UUID)
+        if comfort_service is not None:
+            if comfort_service.get_characteristic(COMFORT_MOTION_WRITE_CHAR_UUID):
+                return COMFORT_MOTION_WRITE_CHAR_UUID
+
+        # Generic fallback used by existing Jiecang implementations
+        return JIECANG_CHAR_UUID
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
-        return JIECANG_CHAR_UUID
+        return self._char_uuid
 
     # Capability properties
     @property
@@ -160,7 +196,7 @@ class JiecangController(BedController):
 
         _LOGGER.debug(
             "Writing command to Jiecang bed (%s): %s (repeat: %d, delay: %dms, response=True)",
-            JIECANG_CHAR_UUID,
+            self._char_uuid,
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -173,7 +209,7 @@ class JiecangController(BedController):
 
             try:
                 async with self._ble_lock:
-                    await self.client.write_gatt_char(JIECANG_CHAR_UUID, command, response=True)
+                    await self.client.write_gatt_char(self._char_uuid, command, response=True)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

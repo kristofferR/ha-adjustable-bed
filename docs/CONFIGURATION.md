@@ -111,6 +111,7 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Octo | 3 | 350ms |
 | Jiecang | 10 | 100ms |
 | Comfort Motion | 10 | 100ms |
+| Limoss | 12 | 80ms |
 | Linak | 10 | 100ms |
 | Sleepy's BOX15 | 10 | 100ms |
 | Sleepy's BOX24 | 10 | 100ms |

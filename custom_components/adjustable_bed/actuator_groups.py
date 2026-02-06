@@ -18,6 +18,7 @@ from .const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -147,6 +148,11 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
         "description": "Tempur-Pedic, Carpe Diem, Wonderland, Svane, high-end European beds",
         "variants": None,  # Single protocol
     },
+    "limoss": {
+        "display": "Limoss / Stawett",
+        "description": "Limoss and Stawett bases (TEA-encrypted protocol)",
+        "variants": None,  # Single protocol
+    },
     "malouf": {
         "display": "Malouf",
         "description": "Malouf adjustable bases",
@@ -273,6 +279,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "jensen": BED_TYPE_JENSEN,
     "jiecang": BED_TYPE_JIECANG,
     "linak": BED_TYPE_LINAK,
+    "limoss": BED_TYPE_LIMOSS,
     "motosleep": BED_TYPE_MOTOSLEEP,
     "octo": BED_TYPE_OCTO,
     "richmat": BED_TYPE_RICHMAT,

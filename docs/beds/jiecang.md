@@ -12,6 +12,7 @@ Brands using Jiecang actuators:
 - Dream Motion / Dreamotion Smart
 - ERGOBALANCE
 - Glide adjustable beds
+- LOGICDATA MOTIONrelax
 - Jiecang-branded controllers
 
 ## Apps
@@ -19,6 +20,7 @@ Brands using Jiecang actuators:
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Jiecang Bed / Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed) | `com.jiecang.app.android.jiecangbed` |
+| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.app.android.bed` |
 
 ## Features
 
@@ -36,7 +38,11 @@ Brands using Jiecang actuators:
 
 ## Protocol Details
 
-**Characteristic UUID:** `0000ff01-0000-1000-8000-00805f9b34fb`
+**Service/Characteristic variants:**
+
+- Lierda1 / Comfort Motion: Service `0000ff12-0000-1000-8000-00805f9b34fb`, write `0000ff01-0000-1000-8000-00805f9b34fb`
+- Lierda3 / LOGICDATA: Service `0000fe60-0000-1000-8000-00805f9b34fb`, write `0000fe61-0000-1000-8000-00805f9b34fb`
+
 **Format:** 7-byte fixed packets
 
 **Command format:** `F1 F1` + data bytes + checksum + `7E`
@@ -105,4 +111,6 @@ Massage commands use the format: `F1 F1` + zone + `02 08` + level + checksum + `
 
 ## Detection
 
-Detected by device name containing: `jiecang`, `jc-`, `dream motion`, or `glide`
+Detected by:
+1. Service UUID `0000ff12-...` (Comfort Motion / Lierda1) or `0000fe60-...` (Lierda3)
+2. Device name containing: `jiecang`, `jc-`, `dream motion`, `glide`, `comfort motion`, or `lierda`
