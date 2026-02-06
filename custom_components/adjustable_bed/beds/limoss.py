@@ -279,7 +279,7 @@ class LimossController(BedController):
                 if shrunk_max < current_max:
                     self._max_raw_estimate[motor] = shrunk_max
                     current_max = shrunk_max
-                    _LOGGER.warning(
+                    _LOGGER.info(
                         "Shrank Limoss max raw estimate for %s on %s: %d -> %d (streak=%d)",
                         motor,
                         self._coordinator.address,
@@ -471,6 +471,12 @@ class LimossController(BedController):
         """Query current motor positions.
 
         Position responses are returned via notifications.
+
+        The caller-supplied ``motor_count`` is treated as a hint. If
+        ``self._reported_motor_count`` is available from a capability response,
+        that device-reported value takes precedence over ``motor_count``.
+        The effective count is then clamped to the 2-4 range and used to build
+        the query command list before sending each query via ``_send_command``.
         """
         if self.client is None or not self.client.is_connected:
             return
