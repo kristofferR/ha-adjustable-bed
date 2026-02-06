@@ -75,6 +75,20 @@ class LimossCommands:
     ASK_MOTOR_3_POS = 0x30
     ASK_MOTOR_4_POS = 0x40
 
+    # SetPos commands (for memory recall)
+    SET_MOTOR_1_POS = 0x11
+    SET_MOTOR_2_POS = 0x21
+    SET_MOTOR_3_POS = 0x31
+    SET_MOTOR_4_POS = 0x41
+
+    # Vibration zone commands
+    VIBRATION_1 = 0x60
+    VIBRATION_2 = 0x61
+    VIBRATION_3 = 0x62
+    VIBRATION_4 = 0x63
+    VIBRATION_5 = 0x64
+    VIBRATION_6 = 0x65
+
     # Optional feature commands
     LIGHT_TOGGLE = 0x70
 
@@ -100,6 +114,8 @@ class LimossController(BedController):
         self._memory_slot_count: int = 0
         self._reported_motor_count: int | None = None
         self._last_positions_raw: dict[str, int] = {}
+        self._memory_positions: dict[int, dict[str, int]] = {}
+        self._vibration_count: int = 0
         # Position normalization state (raw 32-bit samples -> estimated angles).
         self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
         self._low_sample_streak: dict[str, int] = dict.fromkeys(
@@ -378,6 +394,7 @@ class LimossController(BedController):
 
             self._reported_motor_count = motor_count if motor_count > 0 else None
             self._memory_slot_count = memory_count
+            self._vibration_count = vibration_count
 
             _LOGGER.info(
                 "Limoss capabilities: buttons=%d motors=%d vibration=%d memory=%d",
@@ -585,19 +602,75 @@ class LimossController(BedController):
         """Send both-down movement command and then stop."""
         await self._move_with_stop(LimossCommands.PRESET_FLAT)
 
+    @property
+    def supports_memory_presets(self) -> bool:
+        """Return True if positions have been saved to recall."""
+        return len(self._memory_positions) > 0
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        """Return True - Limoss supports saving positions via SetPos."""
+        return True
+
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset (not natively exposed as a dedicated BLE command)."""
-        _LOGGER.warning(
-            "Limoss memory recall is not supported via dedicated protocol command (requested slot %d)",
-            memory_num,
-        )
+        """Recall a saved memory position via SetPos commands.
+
+        Sends stored position data to each motor at 300ms intervals.
+        """
+        positions = self._memory_positions.get(memory_num)
+        if not positions:
+            _LOGGER.warning(
+                "No positions saved in Limoss memory slot %d (save first)", memory_num
+            )
+            return
+
+        set_pos_commands = {
+            "back": LimossCommands.SET_MOTOR_1_POS,
+            "legs": LimossCommands.SET_MOTOR_2_POS,
+            "head": LimossCommands.SET_MOTOR_3_POS,
+            "feet": LimossCommands.SET_MOTOR_4_POS,
+        }
+
+        for motor_name, raw_pos in positions.items():
+            cmd = set_pos_commands.get(motor_name)
+            if cmd is None:
+                continue
+            p1 = (raw_pos >> 24) & 0xFF
+            p2 = (raw_pos >> 16) & 0xFF
+            p3 = (raw_pos >> 8) & 0xFF
+            p4 = raw_pos & 0xFF
+            await self._send_command(cmd, p1, p2, p3, p4)
+            await asyncio.sleep(0.3)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program memory preset (not natively exposed as a dedicated BLE command)."""
-        _LOGGER.warning(
-            "Limoss memory programming is not supported via dedicated protocol command (requested slot %d)",
-            memory_num,
+        """Save current motor positions to a memory slot."""
+        if not self._last_positions_raw:
+            _LOGGER.warning("No position data available to save to Limoss memory slot %d", memory_num)
+            return
+        self._memory_positions[memory_num] = dict(self._last_positions_raw)
+        _LOGGER.info(
+            "Saved Limoss positions to memory slot %d: %s", memory_num, self._memory_positions[memory_num]
         )
+
+    # Massage/vibration methods
+    async def massage_toggle(self) -> None:
+        """Toggle vibration zone 1."""
+        await self._send_command(LimossCommands.VIBRATION_1)
+
+    async def massage_zone(self, zone: int) -> None:
+        """Toggle a specific vibration zone (1-6)."""
+        zone_commands = {
+            1: LimossCommands.VIBRATION_1,
+            2: LimossCommands.VIBRATION_2,
+            3: LimossCommands.VIBRATION_3,
+            4: LimossCommands.VIBRATION_4,
+            5: LimossCommands.VIBRATION_5,
+            6: LimossCommands.VIBRATION_6,
+        }
+        if cmd := zone_commands.get(zone):
+            await self._send_command(cmd)
+        else:
+            _LOGGER.warning("Invalid Limoss vibration zone: %d (valid: 1-6)", zone)
 
     # Optional light helper (not exposed as capability by default)
     async def lights_toggle(self) -> None:
