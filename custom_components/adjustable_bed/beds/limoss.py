@@ -93,13 +93,14 @@ class LimossController(BedController):
         self._reported_motor_count: int | None = None
         self._last_positions_raw: dict[str, int] = {}
         # Position normalization state (raw 32-bit samples -> estimated angles).
-        self._max_raw_estimate: dict[str, int] = dict(_DEFAULT_MAX_RAW_ESTIMATE)
-        self._low_sample_streak: dict[str, int] = {
-            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
-        }
-        self._low_sample_peak: dict[str, int] = {
-            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
-        }
+        self._max_raw_estimate: dict[str, int] = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
+        self._max_raw_estimate.update(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._low_sample_streak: dict[str, int] = dict.fromkeys(
+            _DEFAULT_MAX_RAW_ESTIMATE, 0
+        )
+        self._low_sample_peak: dict[str, int] = dict.fromkeys(
+            _DEFAULT_MAX_RAW_ESTIMATE, 0
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -122,14 +123,11 @@ class LimossController(BedController):
         Called by the coordinator on connection/reconnection to avoid carrying
         stale calibration state across sessions.
         """
-        self._max_raw_estimate = dict(_DEFAULT_MAX_RAW_ESTIMATE)
-        self._low_sample_streak = {
-            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
-        }
-        self._low_sample_peak = {
-            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
-        }
-        _LOGGER.warning(
+        self._max_raw_estimate = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
+        self._max_raw_estimate.update(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._low_sample_streak = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
+        self._low_sample_peak = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
+        _LOGGER.debug(
             "Reset Limoss max raw position estimates for %s",
             self._coordinator.address,
         )
@@ -456,6 +454,12 @@ class LimossController(BedController):
                         self._write_with_response = True
                     elif "write-without-response" in props:
                         self._write_with_response = False
+                    _LOGGER.debug(
+                        "Limoss GATT write properties for %s: %s (write_with_response=%s)",
+                        self._coordinator.address,
+                        sorted(props),
+                        self._write_with_response,
+                    )
 
         await self.client.start_notify(LIMOSS_CHAR_UUID, self._handle_notification)
         _LOGGER.info("Started Limoss notifications")

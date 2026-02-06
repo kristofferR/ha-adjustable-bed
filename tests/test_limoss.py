@@ -219,10 +219,11 @@ class TestLimossController:
 
         await controller.read_positions(motor_count=3)
 
-        decoded_cmds = [
-            controller._decode_packet(call.args[1])[0]
+        decoded_packets = [
+            controller._decode_packet(call.args[1])
             for call in mock_bleak_client.write_gatt_char.call_args_list
         ]
+        decoded_cmds = [packet[0] for packet in decoded_packets if packet is not None]
         assert LimossCommands.ASK_MOTOR_1_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_2_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_3_POS in decoded_cmds
