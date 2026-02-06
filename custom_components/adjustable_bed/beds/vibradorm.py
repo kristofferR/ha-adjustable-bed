@@ -20,6 +20,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
     VIBRADORM_LIGHT_CHAR_UUID,
     VIBRADORM_NOTIFY_CHAR_UUID,
@@ -79,6 +80,9 @@ class VibradormCommands:
     MEMORY_5: int = 0x1B  # 27
     MEMORY_6: int = 0x1C  # 28
     STORE: int = 0x0D  # 13 (save current position to active memory slot)
+
+    # Vibration/massage commands (via CBI characteristic)
+    VRT_ON_OFF: int = 0x34  # Toggle vibration on/off
 
 
 class VibradormController(BedController):
@@ -470,3 +474,15 @@ class VibradormController(BedController):
             await self.lights_off()
         else:
             await self.lights_on()
+
+    # Massage/vibration methods (via CBI characteristic)
+    async def massage_toggle(self) -> None:
+        """Toggle vibration on/off via CBI characteristic."""
+        if self.client is None or not self.client.is_connected:
+            raise ConnectionError("Not connected to bed")
+
+        await self._write_gatt_with_retry(
+            VIBRADORM_CBI_CHAR_UUID,
+            bytes([VibradormCommands.VRT_ON_OFF]),
+            response=self._write_with_response,
+        )
