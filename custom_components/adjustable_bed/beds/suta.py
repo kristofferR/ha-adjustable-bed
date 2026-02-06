@@ -67,6 +67,7 @@ class SutaController(BedController):
         self._write_char_uuid = SUTA_DEFAULT_WRITE_CHAR_UUID
         self._write_with_response = True
         self._write_mode_initialized = False
+        self._light_state = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -320,13 +321,18 @@ class SutaController(BedController):
 
     # Light methods
     async def lights_on(self) -> None:
-        """Turn on under-bed light."""
+        """Turn on under-bed light and update local light-state tracking."""
         await self.write_command(self._build_command(SutaCommands.LIGHT_ON))
+        self._light_state = True
 
     async def lights_off(self) -> None:
-        """Turn off under-bed light."""
+        """Turn off under-bed light and update local light-state tracking."""
         await self.write_command(self._build_command(SutaCommands.LIGHT_OFF))
+        self._light_state = False
 
     async def lights_toggle(self) -> None:
-        """Toggle under-bed light (approximated via explicit ON command)."""
-        await self.lights_on()
+        """Toggle under-bed light using the integration's local light-state flag."""
+        if self._light_state:
+            await self.lights_off()
+        else:
+            await self.lights_on()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -25,33 +26,50 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
-class TestTiMOTIONAhfController:
-    """Test TiMOTION AHF controller behavior."""
+@pytest.fixture
+def ahf_coordinator(hass: HomeAssistant, mock_coordinator_connected):
+    """Create and connect a coordinator for a TiMOTION AHF test device."""
 
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
-    ) -> None:
-        """Controller should use Nordic UART write characteristic."""
+    async def _create(
+        *,
+        address: str,
+        name: str,
+        entry_id: str,
+        motor_count: int = 4,
+    ) -> AdjustableBedCoordinator:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="AHF Test Bed",
             data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:11",
-                CONF_NAME: "AHF-1234",
+                CONF_ADDRESS: address,
+                CONF_NAME: name,
                 CONF_BED_TYPE: BED_TYPE_TIMOTION_AHF,
-                CONF_MOTOR_COUNT: 4,
+                CONF_MOTOR_COUNT: motor_count,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
-            unique_id="AA:BB:CC:DD:EE:11",
-            entry_id="timotion_ahf_test_entry",
+            unique_id=address,
+            entry_id=entry_id,
         )
         entry.add_to_hass(hass)
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
+        return coordinator
+
+    return _create
+
+
+class TestTiMOTIONAhfController:
+    """Test TiMOTION AHF controller behavior."""
+
+    async def test_control_characteristic_uuid(self, ahf_coordinator) -> None:
+        """Controller should use Nordic UART write characteristic."""
+        coordinator = await ahf_coordinator(
+            address="AA:BB:CC:DD:EE:11",
+            name="AHF-1234",
+            entry_id="timotion_ahf_test_entry",
+        )
 
         assert coordinator.controller.control_characteristic_uuid == TIMOTION_AHF_WRITE_CHAR_UUID
 
@@ -68,29 +86,16 @@ class TestTiMOTIONAhfController:
 
     async def test_move_back_up_sends_motor1_and_stop(
         self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
+        ahf_coordinator,
         mock_bleak_client: MagicMock,
     ) -> None:
         """Back-up movement should use motor1 up bit and end with stop packet."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="AHF Test Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:12",
-                CONF_NAME: "AHF-1235",
-                CONF_BED_TYPE: BED_TYPE_TIMOTION_AHF,
-                CONF_MOTOR_COUNT: 4,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-            unique_id="AA:BB:CC:DD:EE:12",
+        coordinator = await ahf_coordinator(
+            address="AA:BB:CC:DD:EE:12",
+            name="AHF-1235",
             entry_id="timotion_ahf_test_entry_2",
+            motor_count=4,
         )
-        entry.add_to_hass(hass)
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
 
         await coordinator.controller.move_back_up()
 
@@ -103,29 +108,16 @@ class TestTiMOTIONAhfController:
 
     async def test_move_head_up_uses_motor3_bit(
         self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
+        ahf_coordinator,
         mock_bleak_client: MagicMock,
     ) -> None:
         """Head-up should map to motor3 up bit in group1."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="AHF Test Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:13",
-                CONF_NAME: "AHF-1236",
-                CONF_BED_TYPE: BED_TYPE_TIMOTION_AHF,
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-            unique_id="AA:BB:CC:DD:EE:13",
+        coordinator = await ahf_coordinator(
+            address="AA:BB:CC:DD:EE:13",
+            name="AHF-1236",
             entry_id="timotion_ahf_test_entry_3",
+            motor_count=3,
         )
-        entry.add_to_hass(hass)
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
 
         await coordinator.controller.move_head_up()
 
@@ -134,29 +126,16 @@ class TestTiMOTIONAhfController:
 
     async def test_lights_toggle_uses_under_bed_bit(
         self,
-        hass: HomeAssistant,
-        mock_coordinator_connected,
+        ahf_coordinator,
         mock_bleak_client: MagicMock,
     ) -> None:
         """Light toggle should send under-bed light bit in group2."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="AHF Test Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:14",
-                CONF_NAME: "AHF-1237",
-                CONF_BED_TYPE: BED_TYPE_TIMOTION_AHF,
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-            unique_id="AA:BB:CC:DD:EE:14",
+        coordinator = await ahf_coordinator(
+            address="AA:BB:CC:DD:EE:14",
+            name="AHF-1237",
             entry_id="timotion_ahf_test_entry_4",
+            motor_count=2,
         )
-        entry.add_to_hass(hass)
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
 
         await coordinator.controller.lights_toggle()
 
