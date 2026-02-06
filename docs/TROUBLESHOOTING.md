@@ -277,9 +277,10 @@ Use these to identify your bed type in a BLE scanner:
 | `0000aa5c-0000-1000-8000-00805f9b34fb` | Octo Star2 |
 | `0000abcb-0000-1000-8000-00805f9b34fb` | Svane |
 | `0000fee9-0000-1000-8000-00805f9b34fb` | BedTech, Richmat WiLinke (variant) |
-| `0000ff12-0000-1000-8000-00805f9b34fb` | Comfort Motion / Jiecang |
+| `0000ff12-0000-1000-8000-00805f9b34fb` | Comfort Motion / Jiecang (Lierda1) |
+| `0000fe60-0000-1000-8000-00805f9b34fb` | Comfort Motion / Jiecang (Lierda3, LOGICDATA MOTIONrelax) |
 | `0000ffb0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback) |
-| `0000ffe0-0000-1000-8000-00805f9b34fb` | Solace, MotoSleep, Octo (standard) |
+| `0000ffe0-0000-1000-8000-00805f9b34fb` | Solace, MotoSleep, Octo (standard), Limoss/Stawett (name-based) |
 | `0000ffe5-0000-1000-8000-00805f9b34fb` | Keeson Base, Ergomotion, Malouf LEGACY_OKIN, OKIN FFE, Serta |
 | `0000fff0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback), Richmat WiLinke (variant) |
 | `01000001-0000-1000-8000-00805f9b34fb` | Malouf NEW_OKIN |

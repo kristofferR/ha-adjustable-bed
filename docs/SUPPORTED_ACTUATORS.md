@@ -24,6 +24,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 | [Svane](beds/svane.md) | ✅ Supported | LinonPI protocol, multi-service |
 | [Vibradorm](beds/vibradorm.md) | ✅ Supported | Position feedback, 4 memory presets, lights |
+| [Limoss](beds/limoss.md) | 🧪 Needs Testing | TEA-encrypted packets, position feedback, dynamic capability query |
 | [Cool Base](beds/coolbase.md) | 🧪 Needs Testing | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 🧪 Needs Testing | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | 🧪 Needs Testing | Position feedback via pulse lookup |
@@ -77,8 +78,10 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 
 Beds that won't be supported:
 - **Sleeptracker AI** — Tempur-Pedic Ergo, BeautyRest SmartMotion, Serta Motion (cloud-connected models)
-- **Logicdata** — Uses local UDP/HTTP, not Bluetooth
+- **Logicdata eLift / desk controllers** — Uses local UDP/HTTP, not Bluetooth
 - **ErgoWifi** — Uses Xlink cloud platform
+
+Note: LOGICDATA MOTIONrelax BLE beds are supported under [Jiecang](beds/jiecang.md) (Lierda protocol).
 
 If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an addon or make a seperate integration for WiFi/Cloud adjustable beds. 
 
