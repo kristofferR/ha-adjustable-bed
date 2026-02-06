@@ -696,6 +696,7 @@ SVANE_NAME_PATTERNS: Final = ("svane bed",)
 VIBRADORM_SERVICE_UUID: Final = "00001525-9f03-0de5-96c5-b8f4f3081186"
 VIBRADORM_COMMAND_CHAR_UUID: Final = "00001526-9f03-0de5-96c5-b8f4f3081186"
 VIBRADORM_LIGHT_CHAR_UUID: Final = "00001529-9f03-0de5-96c5-b8f4f3081186"
+VIBRADORM_CBI_CHAR_UUID: Final = "00001550-9f03-0de5-96c5-b8f4f3081186"
 VIBRADORM_NOTIFY_CHAR_UUID: Final = "00001551-9f03-0de5-96c5-b8f4f3081186"
 
 # Vibradorm manufacturer ID
@@ -827,6 +828,10 @@ class RichmatFeatures(IntFlag):
     MOTOR_FEET = 1 << 19
     MOTOR_PILLOW = 1 << 20
     MOTOR_LUMBAR = 1 << 21
+
+    # Memory 3 (extended)
+    PRESET_MEMORY_3 = 1 << 22
+    PROGRAM_MEMORY_3 = 1 << 23
 
 
 # Richmat remote codes and their supported features

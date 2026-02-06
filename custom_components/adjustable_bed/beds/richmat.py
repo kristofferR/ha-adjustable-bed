@@ -48,6 +48,7 @@ class RichmatCommands:
     PRESET_LOUNGE = 0x59
     PRESET_MEMORY_1 = 0x2E
     PRESET_MEMORY_2 = 0x2F
+    PRESET_MEMORY_3 = 0x30
     PRESET_TV = 0x58
     PRESET_ZERO_G = 0x45
 
@@ -56,6 +57,7 @@ class RichmatCommands:
     PROGRAM_LOUNGE = 0x65
     PROGRAM_MEMORY_1 = 0x2B
     PROGRAM_MEMORY_2 = 0x2C
+    PROGRAM_MEMORY_3 = 0x2D
     PROGRAM_TV = 0x64
     PROGRAM_ZERO_G = 0x66
 
@@ -178,7 +180,12 @@ class RichmatController(BedController):
     def supports_memory_presets(self) -> bool:
         """Return True if this bed supports memory presets based on detected features."""
         return bool(
-            self._features & (RichmatFeatures.PRESET_MEMORY_1 | RichmatFeatures.PRESET_MEMORY_2)
+            self._features
+            & (
+                RichmatFeatures.PRESET_MEMORY_1
+                | RichmatFeatures.PRESET_MEMORY_2
+                | RichmatFeatures.PRESET_MEMORY_3
+            )
         )
 
     @property
@@ -189,13 +196,20 @@ class RichmatController(BedController):
             count += 1
         if self._features & RichmatFeatures.PRESET_MEMORY_2:
             count += 1
+        if self._features & RichmatFeatures.PRESET_MEMORY_3:
+            count += 1
         return count
 
     @property
     def supports_memory_programming(self) -> bool:
         """Return True if this bed supports programming memory positions."""
         return bool(
-            self._features & (RichmatFeatures.PROGRAM_MEMORY_1 | RichmatFeatures.PROGRAM_MEMORY_2)
+            self._features
+            & (
+                RichmatFeatures.PROGRAM_MEMORY_1
+                | RichmatFeatures.PROGRAM_MEMORY_2
+                | RichmatFeatures.PROGRAM_MEMORY_3
+            )
         )
 
     def _build_command(self, command_byte: int) -> bytes:
@@ -372,22 +386,24 @@ class RichmatController(BedController):
         commands = {
             1: RichmatCommands.PRESET_MEMORY_1,
             2: RichmatCommands.PRESET_MEMORY_2,
+            3: RichmatCommands.PRESET_MEMORY_3,
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
         commands = {
             1: RichmatCommands.PROGRAM_MEMORY_1,
             2: RichmatCommands.PROGRAM_MEMORY_2,
+            3: RichmatCommands.PROGRAM_MEMORY_3,
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position.
