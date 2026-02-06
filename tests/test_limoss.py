@@ -203,6 +203,7 @@ class TestLimossController:
         packet = controller._build_packet(LimossCommands.QUERY_CAPABILITIES, 8, 0x12, 1, 0x05)
         controller._handle_notification(MagicMock(), bytearray(packet))
 
+        assert controller._reported_motor_count == 2
         assert controller.memory_slot_count == 5
 
     async def test_read_positions_queries_each_motor(
@@ -227,6 +228,7 @@ class TestLimossController:
         assert LimossCommands.ASK_MOTOR_1_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_2_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_3_POS in decoded_cmds
+        assert LimossCommands.ASK_MOTOR_4_POS not in decoded_cmds
 
     async def test_raw_to_angle_shrinks_overestimated_max_raw(
         self,

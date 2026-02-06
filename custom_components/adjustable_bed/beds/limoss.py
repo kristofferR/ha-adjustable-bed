@@ -79,6 +79,14 @@ class LimossCommands:
     LIGHT_TOGGLE = 0x70
 
 
+POSITION_MAP: dict[int, str] = {
+    LimossCommands.ASK_MOTOR_1_POS: "back",
+    LimossCommands.ASK_MOTOR_2_POS: "legs",
+    LimossCommands.ASK_MOTOR_3_POS: "head",
+    LimossCommands.ASK_MOTOR_4_POS: "feet",
+}
+
+
 class LimossController(BedController):
     """Controller for Limoss / Stawett TEA-encrypted protocol."""
 
@@ -93,12 +101,8 @@ class LimossController(BedController):
         self._reported_motor_count: int | None = None
         self._last_positions_raw: dict[str, int] = {}
         # Position normalization state (raw 32-bit samples -> estimated angles).
-        self._max_raw_estimate: dict[str, int] = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
-        self._max_raw_estimate.update(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
         self._low_sample_streak: dict[str, int] = dict.fromkeys(
-            _DEFAULT_MAX_RAW_ESTIMATE, 0
-        )
-        self._low_sample_peak: dict[str, int] = dict.fromkeys(
             _DEFAULT_MAX_RAW_ESTIMATE, 0
         )
 
@@ -114,8 +118,8 @@ class LimossController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return reported memory slot count (fallback: 1)."""
-        return self._memory_slot_count if self._memory_slot_count > 0 else 1
+        """Return reported memory slot count (fallback: 0)."""
+        return self._memory_slot_count if self._memory_slot_count > 0 else 0
 
     def reset_max_raw_estimate(self) -> None:
         """Reset raw-position normalization estimates.
@@ -123,10 +127,8 @@ class LimossController(BedController):
         Called by the coordinator on connection/reconnection to avoid carrying
         stale calibration state across sessions.
         """
-        self._max_raw_estimate = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
-        self._max_raw_estimate.update(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._max_raw_estimate = _DEFAULT_MAX_RAW_ESTIMATE.copy()
         self._low_sample_streak = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
-        self._low_sample_peak = dict.fromkeys(_DEFAULT_MAX_RAW_ESTIMATE, 0)
         _LOGGER.debug(
             "Reset Limoss max raw position estimates for %s",
             self._coordinator.address,
@@ -237,7 +239,6 @@ class LimossController(BedController):
             current_max = raw_value
             self._max_raw_estimate[motor] = raw_value
             self._low_sample_streak[motor] = 0
-            self._low_sample_peak[motor] = 0
         else:
             current_max = self._maybe_shrink_max_raw_estimate(
                 motor=motor,
@@ -267,14 +268,11 @@ class LimossController(BedController):
             and raw_value < (current_max * _MAX_ESTIMATE_SHRINK_TRIGGER_RATIO)
         ):
             streak = self._low_sample_streak.get(motor, 0) + 1
-            peak = max(self._low_sample_peak.get(motor, 0), raw_value)
             self._low_sample_streak[motor] = streak
-            self._low_sample_peak[motor] = peak
 
             if streak >= _MAX_ESTIMATE_SHRINK_STREAK:
                 previous_max = current_max
                 shrunk_max = max(
-                    peak,
                     int(current_max * _MAX_ESTIMATE_SHRINK_DECAY),
                     1,
                 )
@@ -282,20 +280,17 @@ class LimossController(BedController):
                     self._max_raw_estimate[motor] = shrunk_max
                     current_max = shrunk_max
                     _LOGGER.warning(
-                        "Shrank Limoss max raw estimate for %s on %s: %d -> %d (peak=%d, streak=%d)",
+                        "Shrank Limoss max raw estimate for %s on %s: %d -> %d (streak=%d)",
                         motor,
                         self._coordinator.address,
                         previous_max,
                         shrunk_max,
-                        peak,
                         streak,
                     )
 
                 self._low_sample_streak[motor] = 0
-                self._low_sample_peak[motor] = 0
         else:
             self._low_sample_streak[motor] = 0
-            self._low_sample_peak[motor] = 0
 
         return current_max
 
@@ -396,13 +391,7 @@ class LimossController(BedController):
                 self._capabilities_received.set()
             return
 
-        position_map = {
-            LimossCommands.ASK_MOTOR_1_POS: "back",
-            LimossCommands.ASK_MOTOR_2_POS: "legs",
-            LimossCommands.ASK_MOTOR_3_POS: "head",
-            LimossCommands.ASK_MOTOR_4_POS: "feet",
-        }
-        position_key = position_map.get(cmd)
+        position_key = POSITION_MAP.get(cmd)
         if position_key is None:
             return
 
