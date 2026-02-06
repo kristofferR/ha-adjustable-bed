@@ -297,17 +297,17 @@ class TestBedTechController:
 
         assert coordinator.controller.has_pillow_support is True
 
-    async def test_supports_stop_all_is_false(
+    async def test_supports_stop_all_is_true(
         self,
         hass: HomeAssistant,
         mock_bedtech_config_entry,
         mock_coordinator_connected,
     ):
-        """BedTech should NOT support stop_all (auto-stops)."""
+        """BedTech should expose stop_all compatibility command."""
         coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_stop_all is False
+        assert coordinator.controller.supports_stop_all is True
 
 
 class TestBedTechMovement:
@@ -366,6 +366,40 @@ class TestBedTechMovement:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert first_call_data[3] == ord(BedTechCommands.LEG_UP)
+
+    async def test_move_head_stop_sends_stop_command(
+        self,
+        hass: HomeAssistant,
+        mock_bedtech_config_entry,
+        mock_coordinator_connected,
+    ):
+        """move_head_stop should send BedTech stop compatibility command (^)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.move_head_stop()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert call_data[3] == ord(BedTechCommands.STOP_ALL)
+
+    async def test_stop_all_sends_stop_command(
+        self,
+        hass: HomeAssistant,
+        mock_bedtech_config_entry,
+        mock_coordinator_connected,
+    ):
+        """stop_all should send BedTech stop compatibility command (^)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.stop_all()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert call_data[3] == ord(BedTechCommands.STOP_ALL)
 
 
 class TestBedTechPresets:
@@ -476,3 +510,24 @@ class TestBedTechLights:
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
         assert call_data[3] == ord(BedTechCommands.LIGHT_TOGGLE)
+
+
+class TestBedTechMassage:
+    """Test BedTech massage commands."""
+
+    async def test_massage_off_sends_correct_command(
+        self,
+        hass: HomeAssistant,
+        mock_bedtech_config_entry,
+        mock_coordinator_connected,
+    ):
+        """massage_off should send MASSAGE_OFF command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.massage_off()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert call_data[3] == ord(BedTechCommands.MASSAGE_OFF)

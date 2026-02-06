@@ -493,8 +493,18 @@ OKIMAT_NAME_PATTERNS: Final = ("okimat", "okin rf", "okin ble", "okin-", "okin l
 OKIN_64BIT_NAME_PATTERNS: Final[tuple[str, ...]] = ()  # No reliable name patterns found
 
 # BedTech name patterns (shares FEE9 service UUID with Richmat WiLinke)
-# Post-connection characteristic detection (d44bc439...) is more reliable
-BEDTECH_NAME_PATTERNS: Final = ("bedtech",)
+# Source: com.bedtech BedTechCharacterModels (BT2000/BT2500/BT3000/BT6500/BTX4 family)
+BEDTECH_NAME_PATTERNS: Final = (
+    "bedtech",
+    "bt2000",
+    "bt2500",
+    "bt3000",
+    "bt3000fh",
+    "bt6500",
+    "btx4",
+    "btx4fh",
+    "btx5fh",
+)
 
 # DewertOkin name patterns (A H Beard, Hankook Gallery devices)
 # Source: com.dewertokin.okinsmartcomfort app disassembly

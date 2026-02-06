@@ -537,6 +537,14 @@ class TestFEE9UUIDDisambiguation:
         )
         assert detect_bed_type(service_info) == BED_TYPE_BEDTECH
 
+    def test_fee9_with_bedtech_model_name(self):
+        """Test BedTech detection with FEE9 UUID + BedTech model name."""
+        service_info = _make_service_info(
+            name="BT6500",
+            service_uuids=[BEDTECH_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_BEDTECH
+
     def test_fee9_with_mlrm_name(self):
         """Test Leggett WiLinke detection with FEE9 UUID + MlRM prefix."""
         service_info = _make_service_info(
