@@ -220,15 +220,11 @@ class SolaceController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self.write_command(
-            SolaceCommands.PRESET_ALL_FLAT,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to flat position (single-shot, bed moves autonomously)."""
+        await self.write_command(SolaceCommands.PRESET_ALL_FLAT, repeat_count=3)
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
+        """Go to memory preset (single-shot, bed moves autonomously)."""
         commands = {
             1: SolaceCommands.PRESET_MEMORY_1,
             2: SolaceCommands.PRESET_MEMORY_2,
@@ -236,7 +232,7 @@ class SolaceController(BedController):
             4: SolaceCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
+            await self.write_command(command, repeat_count=3)
         else:
             _LOGGER.warning("Invalid memory preset number: %d (valid: 1-4)", memory_num)
 
@@ -254,36 +250,20 @@ class SolaceController(BedController):
             _LOGGER.warning("Invalid memory program number: %d (valid: 1-4)", memory_num)
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
-        await self.write_command(
-            SolaceCommands.PRESET_ZERO_G,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to zero gravity position (single-shot, bed moves autonomously)."""
+        await self.write_command(SolaceCommands.PRESET_ZERO_G, repeat_count=3)
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        await self.write_command(
-            SolaceCommands.PRESET_ANTI_SNORE,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to anti-snore position (single-shot, bed moves autonomously)."""
+        await self.write_command(SolaceCommands.PRESET_ANTI_SNORE, repeat_count=3)
 
     async def preset_tv(self) -> None:
-        """Go to TV position."""
-        await self.write_command(
-            SolaceCommands.PRESET_TV,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to TV position (single-shot, bed moves autonomously)."""
+        await self.write_command(SolaceCommands.PRESET_TV, repeat_count=3)
 
     async def preset_yoga(self) -> None:
-        """Go to yoga position."""
-        await self.write_command(
-            SolaceCommands.PRESET_YOGA,
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        """Go to yoga position (single-shot, bed moves autonomously)."""
+        await self.write_command(SolaceCommands.PRESET_YOGA, repeat_count=3)
 
     # Massage methods
     async def massage_head_up(self) -> None:
