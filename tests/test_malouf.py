@@ -335,16 +335,18 @@ class TestMaloufNewOkinPresets:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test preset flat command."""
+        """Test preset flat sends command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.preset_flat()
 
-        expected = coordinator.controller._build_command(MaloufCommands.ALL_FLAT)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        sent_commands = [call.args[1] for call in calls]
+        expected_preset = coordinator.controller._build_command(MaloufCommands.ALL_FLAT)
+        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        assert expected_preset in sent_commands
+        assert sent_commands[-1] == expected_stop
 
     async def test_preset_zero_g(
         self,
@@ -353,16 +355,18 @@ class TestMaloufNewOkinPresets:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test preset zero-G command."""
+        """Test preset zero-G sends command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.preset_zero_g()
 
-        expected = coordinator.controller._build_command(MaloufCommands.ZERO_G)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        sent_commands = [call.args[1] for call in calls]
+        expected_preset = coordinator.controller._build_command(MaloufCommands.ZERO_G)
+        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        assert expected_preset in sent_commands
+        assert sent_commands[-1] == expected_stop
 
     async def test_preset_memory_1(
         self,
@@ -371,16 +375,18 @@ class TestMaloufNewOkinPresets:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test preset memory 1 command."""
+        """Test preset memory 1 sends command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.preset_memory(1)
 
-        expected = coordinator.controller._build_command(MaloufCommands.MEMORY_1)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        sent_commands = [call.args[1] for call in calls]
+        expected_preset = coordinator.controller._build_command(MaloufCommands.MEMORY_1)
+        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        assert expected_preset in sent_commands
+        assert sent_commands[-1] == expected_stop
 
     async def test_preset_memory_2(
         self,
@@ -389,16 +395,18 @@ class TestMaloufNewOkinPresets:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test preset memory 2 command."""
+        """Test preset memory 2 sends command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.preset_memory(2)
 
-        expected = coordinator.controller._build_command(MaloufCommands.MEMORY_2)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            MALOUF_NEW_OKIN_WRITE_CHAR_UUID, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        sent_commands = [call.args[1] for call in calls]
+        expected_preset = coordinator.controller._build_command(MaloufCommands.MEMORY_2)
+        expected_stop = coordinator.controller._build_command(MaloufCommands.STOP)
+        assert expected_preset in sent_commands
+        assert sent_commands[-1] == expected_stop
 
 
 class TestMaloufCapabilities:

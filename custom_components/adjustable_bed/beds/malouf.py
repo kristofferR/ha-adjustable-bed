@@ -261,25 +261,36 @@ class MaloufNewOkinController(BedController):
         )
 
     # Preset methods
+    async def _send_preset(self, command_value: int) -> None:
+        """Send a preset command followed by STOP."""
+        await self.write_command(self._build_command(command_value))
+        try:
+            await self.write_command(
+                self._build_command(MaloufCommands.STOP),
+                cancel_event=asyncio.Event(),
+            )
+        except (BleakError, ConnectionError):
+            _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command(MaloufCommands.ALL_FLAT))
+        await self._send_preset(MaloufCommands.ALL_FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self.write_command(self._build_command(MaloufCommands.ZERO_G))
+        await self._send_preset(MaloufCommands.ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(self._build_command(MaloufCommands.ANTI_SNORE))
+        await self._send_preset(MaloufCommands.ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV/reading position."""
-        await self.write_command(self._build_command(MaloufCommands.TV_READ))
+        await self._send_preset(MaloufCommands.TV_READ)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(self._build_command(MaloufCommands.LOUNGE))
+        await self._send_preset(MaloufCommands.LOUNGE)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -288,7 +299,7 @@ class MaloufNewOkinController(BedController):
             2: MaloufCommands.MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
+            await self._send_preset(command)
         else:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
@@ -542,25 +553,41 @@ class MaloufLegacyOkinController(BedController):
         )
 
     # Preset methods
+    async def _send_preset(self, command_value: int) -> None:
+        """Send a preset command 3x with 200ms delays, then STOP.
+
+        LEGACY_OKIN requires triple-send for reliable preset reception.
+        """
+        await self.write_command(
+            self._build_command(command_value), repeat_count=3, repeat_delay_ms=200
+        )
+        try:
+            await self.write_command(
+                self._build_command(MaloufCommands.STOP),
+                cancel_event=asyncio.Event(),
+            )
+        except (BleakError, ConnectionError):
+            _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command(MaloufCommands.ALL_FLAT))
+        await self._send_preset(MaloufCommands.ALL_FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero-G position."""
-        await self.write_command(self._build_command(MaloufCommands.ZERO_G))
+        await self._send_preset(MaloufCommands.ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
-        await self.write_command(self._build_command(MaloufCommands.ANTI_SNORE))
+        await self._send_preset(MaloufCommands.ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV/reading position."""
-        await self.write_command(self._build_command(MaloufCommands.TV_READ))
+        await self._send_preset(MaloufCommands.TV_READ)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position."""
-        await self.write_command(self._build_command(MaloufCommands.LOUNGE))
+        await self._send_preset(MaloufCommands.LOUNGE)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -569,7 +596,7 @@ class MaloufLegacyOkinController(BedController):
             2: MaloufCommands.MEMORY_2,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
+            await self._send_preset(command)
         else:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
