@@ -395,9 +395,51 @@ class ScottLivingController(BedController):
         await self.write_command(self._build_command(ScottLivingCommands.LIGHT))
 
     # Massage methods (available on 13-button and 17-button remotes)
+    async def massage_off(self) -> None:
+        """Step both massage zones down once."""
+        await self.massage_intensity_down()
+
     async def massage_toggle(self) -> None:
-        """Toggle massage (step head massage intensity)."""
+        """Toggle massage (step head massage intensity up)."""
+        await self.massage_head_up()
+
+    async def massage_intensity_up(self) -> None:
+        """Increase massage intensity on both zones."""
+        await self.massage_head_up()
+        await self.massage_foot_up()
+
+    async def massage_intensity_down(self) -> None:
+        """Decrease massage intensity on both zones."""
+        await self.massage_head_down()
+        await self.massage_foot_down()
+
+    async def massage_head_toggle(self) -> None:
+        """Toggle head massage (step intensity up)."""
+        await self.massage_head_up()
+
+    async def massage_head_up(self) -> None:
+        """Increase head massage intensity."""
         await self.massage_head_step_up()
+
+    async def massage_head_down(self) -> None:
+        """Decrease head massage intensity."""
+        await self.massage_head_step_down()
+
+    async def massage_foot_toggle(self) -> None:
+        """Toggle foot massage (step intensity up)."""
+        await self.massage_foot_up()
+
+    async def massage_foot_up(self) -> None:
+        """Increase foot massage intensity."""
+        await self.massage_foot_step_up()
+
+    async def massage_foot_down(self) -> None:
+        """Decrease foot massage intensity."""
+        await self.massage_foot_step_down()
+
+    async def massage_mode_step(self) -> None:
+        """Step massage mode (mapped to head intensity step-up)."""
+        await self.massage_toggle()
 
     async def massage_head_step_up(self) -> None:
         """Increase head massage intensity."""
