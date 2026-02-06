@@ -14,7 +14,7 @@ Protocol-based controllers:
 
 Brand-specific controllers:
 - RichmatController, KeesonController, LinakController,
-  ReverieController, JiecangController, SolaceController, MotoSleepController, OctoController,
+  ReverieController, JiecangController, LimossController, SolaceController, MotoSleepController, OctoController,
   RemacroController, RondureController, CoolBaseController, ScottLivingController, SBIController
 """
 
@@ -29,6 +29,7 @@ from .leggett_gen2 import LeggettGen2Controller
 from .leggett_okin import LeggettOkinController
 from .leggett_wilinke import LeggettWilinkeController
 from .linak import LinakController
+from .limoss import LimossController
 from .motosleep import MotoSleepController
 from .octo import OctoController
 from .okin_7byte import Okin7ByteController
@@ -68,6 +69,7 @@ __all__ = [
     "JiecangController",
     "JensenController",
     "KeesonController",
+    "LimossController",
     "LinakController",
     "MotoSleepController",
     "OctoController",

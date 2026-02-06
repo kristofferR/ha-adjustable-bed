@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -366,6 +367,11 @@ async def create_controller(
         from .beds.jiecang import JiecangController
 
         return JiecangController(coordinator)
+
+    if bed_type == BED_TYPE_LIMOSS:
+        from .beds.limoss import LimossController
+
+        return LimossController(coordinator)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
         from .beds.okin_handle import OkinHandleController

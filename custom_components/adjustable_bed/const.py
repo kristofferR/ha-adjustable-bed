@@ -114,6 +114,7 @@ BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
 BED_TYPE_REVERIE_NIGHTSTAND: Final = "reverie_nightstand"  # Reverie Protocol 110
 BED_TYPE_COMFORT_MOTION: Final = "comfort_motion"  # Comfort Motion / Lierda protocol
+BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
@@ -166,6 +167,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_REVERIE_NIGHTSTAND,
     # Comfort Motion / Lierda protocol
     BED_TYPE_COMFORT_MOTION,
+    # Limoss / Stawett
+    BED_TYPE_LIMOSS,
     # Serta Motion Perfect
     BED_TYPE_SERTA,
     # BedTech
@@ -385,9 +388,20 @@ COMFORT_MOTION_SERVICE_UUID: Final = "0000ff12-0000-1000-8000-00805f9b34fb"
 COMFORT_MOTION_WRITE_CHAR_UUID: Final = "0000ff01-0000-1000-8000-00805f9b34fb"
 COMFORT_MOTION_READ_CHAR_UUID: Final = "0000ff02-0000-1000-8000-00805f9b34fb"
 COMFORT_MOTION_BTNAME_CHAR_UUID: Final = "0000ff06-0000-1000-8000-00805f9b34fb"
+# Lierda3 variant (LOGICDATA MOTIONrelax)
+COMFORT_MOTION_LIERDA3_SERVICE_UUID: Final = "0000fe60-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_LIERDA3_WRITE_CHAR_UUID: Final = "0000fe61-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_LIERDA3_READ_CHAR_UUID: Final = "0000fe62-0000-1000-8000-00805f9b34fb"
+COMFORT_MOTION_LIERDA3_BTNAME_CHAR_UUID: Final = "0000fe63-0000-1000-8000-00805f9b34fb"
 # Peilin variant (secondary protocol)
 COMFORT_MOTION_PEILIN_SERVICE_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16800"
 COMFORT_MOTION_PEILIN_CHAR_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16801"
+
+# Limoss / Stawett specific UUIDs (TEA-encrypted 10-byte packets)
+# Service/characteristic are shared with other protocols, so detection primarily
+# relies on device name patterns ("limoss", "stawett").
+LIMOSS_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+LIMOSS_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 # DewertOkin specific (A H Beard, HankookGallery beds)
 # Uses handle-based writes rather than UUID
@@ -612,6 +626,10 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
 JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
+
+# Limoss / Stawett name patterns
+# Source: com.limoss.limossremote and com.stawett APK analysis
+LIMOSS_NAME_PATTERNS: Final = ("limoss", "stawett")
 
 # Sleepy's Elite BOX24 protocol UUIDs (OKIN 64-bit service)
 SLEEPYS_BOX24_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
@@ -1225,6 +1243,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_REVERIE_NIGHTSTAND,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
+        BED_TYPE_LIMOSS,
         BED_TYPE_VIBRADORM,
     }
 )
@@ -1330,6 +1349,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Comfort Motion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
     BED_TYPE_COMFORT_MOTION: (10, 100),
+    # Limoss: 80ms delay → 12 repeats = 0.96s total
+    # Source: com.limoss.limossremote ANALYSIS.md (LIMOSS_SENDING_INTERVAL = 80ms)
+    BED_TYPE_LIMOSS: (12, 80),
     # Linak: 100ms delay → 10 repeats = 1.0s total
     # Source: com.linak.linakbed.ble.memory ANALYSIS.md
     BED_TYPE_LINAK: (10, 100),
