@@ -24,6 +24,8 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 | [Svane](beds/svane.md) | ✅ Supported | LinonPI protocol, multi-service |
 | [Vibradorm](beds/vibradorm.md) | ✅ Supported | Position feedback, 4 memory presets, lights |
+| [SUTA Smart Home](beds/suta.md) | 🧪 Needs Testing | AT command protocol, 4 memory slots, discrete lights |
+| [TiMOTION AHF](beds/timotion-ahf.md) | 🧪 Needs Testing | 5-motor bitmask protocol, toggle lights, AHF name detection |
 | [Cool Base](beds/coolbase.md) | 🧪 Needs Testing | Keeson BaseI5 with fan control |
 | [Scott Living](beds/scott-living.md) | 🧪 Needs Testing | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | 🧪 Needs Testing | Position feedback via pulse lookup |
@@ -111,6 +113,8 @@ These beds have their own dedicated integrations:
    - `Malouf*`, `Structures*` → Malouf
    - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
    - `VMAT*` → Vibradorm
+   - `SUTA-*` → SUTA Smart Home (bed-frame variants)
+   - `AHF*` → TiMOTION AHF
    - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
    - `Rize*`, `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
 
@@ -120,6 +124,8 @@ These beds have their own dedicated integrations:
    - Service `0000aa5c-...` → Octo Star2 variant
    - Service `01000001-...` → Malouf (New OKIN)
    - Service `0000ffe5-...` → Malouf (Legacy OKIN) or Keeson OKIN variant
+   - Service `0000fff0-...` + name `SUTA-*` → SUTA Smart Home
+   - Service `6e400001-...` + name `AHF*` → TiMOTION AHF
    - Service `0000fee9-...` → Richmat WiLinke or BedTech
    - Service `00001525-...` → Vibradorm
    - Service `6e403587-...` → Remacro
@@ -156,5 +162,7 @@ Community contributors who helped reverse-engineer specific protocols:
 | Jensen | [kristofferR](https://github.com/kristofferR) |
 | Svane | [kristofferR](https://github.com/kristofferR) |
 | Vibradorm | [kristofferR](https://github.com/kristofferR) |
+| SUTA Smart Home | [kristofferR](https://github.com/kristofferR) |
+| TiMOTION AHF | [kristofferR](https://github.com/kristofferR) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |

@@ -28,6 +28,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
+    BED_TYPE_SUTA,
+    BED_TYPE_TIMOTION_AHF,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -35,6 +37,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    SUTA_SERVICE_UUID,
+    TIMOTION_AHF_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type
 
@@ -74,6 +78,28 @@ class TestDetectBedType:
         """Test detection of MotoSleep bed (by HHC name prefix)."""
         bed_type = detect_bed_type(mock_bluetooth_service_info_motosleep)
         assert bed_type == BED_TYPE_MOTOSLEEP
+
+    def test_detect_suta_bed(self):
+        """Test detection of SUTA bed by name + FFF0 service."""
+        service_info = MagicMock()
+        service_info.name = "SUTA-B803"
+        service_info.address = "AA:11:22:33:44:55"
+        service_info.service_uuids = [SUTA_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_SUTA
+
+    def test_detect_timotion_ahf_bed(self):
+        """Test detection of TiMOTION AHF bed by name + Nordic UART service."""
+        service_info = MagicMock()
+        service_info.name = "AHF-1234"
+        service_info.address = "AA:11:22:33:44:56"
+        service_info.service_uuids = [TIMOTION_AHF_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+
+        bed_type = detect_bed_type(service_info)
+        assert bed_type == BED_TYPE_TIMOTION_AHF
 
     def test_detect_leggett_platt_bed(self, mock_bluetooth_service_info_leggett):
         """Test detection of Leggett & Platt bed (Gen2)."""

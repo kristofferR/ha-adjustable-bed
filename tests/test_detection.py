@@ -35,7 +35,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
+    BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
@@ -54,7 +56,9 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SOLACE_SERVICE_UUID,
+    SUTA_SERVICE_UUID,
     SVANE_HEAD_SERVICE_UUID,
+    TIMOTION_AHF_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import (
@@ -163,6 +167,16 @@ class TestDetectBedTypeByServiceUUID:
         )
         assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
+    def test_detect_suta_by_fff0_uuid_and_name(self):
+        """Test SUTA detection by FFF0 UUID + SUTA name pattern."""
+        service_info = _make_service_info(
+            name="SUTA-B803",
+            service_uuids=[SUTA_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SUTA
+        assert result.confidence == 0.9
+
 
 class TestDetectBedTypeByNamePattern:
     """Test detection by device name patterns."""
@@ -201,6 +215,33 @@ class TestDetectBedTypeByNamePattern:
         """Test MotoSleep detection by HHC prefix (uppercase)."""
         service_info = _make_service_info(name="HHC5678ABCD")
         assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
+
+    def test_detect_timotion_ahf_by_name(self):
+        """Test TiMOTION AHF detection by AHF prefix."""
+        service_info = _make_service_info(
+            name="AHF-1234",
+            service_uuids=[TIMOTION_AHF_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_TIMOTION_AHF
+        assert result.confidence == 0.9
+
+    def test_detect_suta_by_name_without_uuid(self):
+        """Test SUTA fallback detection by name when UUID is missing."""
+        service_info = _make_service_info(name="SUTA-B207", service_uuids=[])
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SUTA
+        assert result.confidence == 0.3
+
+    def test_skip_suta_accessory_subtypes(self):
+        """Test SUTA accessory/mattress subtypes are excluded from bed detection."""
+        service_info = _make_service_info(
+            name="SUTA-MOON",
+            service_uuids=[SOLACE_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+        assert "name:suta_accessory" in result.signals
 
     def test_detect_ergomotion_by_name(self):
         """Test Ergomotion detection by name pattern."""

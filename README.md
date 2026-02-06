@@ -80,6 +80,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
+| 🧪 [SUTA Smart Home](docs/beds/suta.md) | SUTA bed-frame controllers (`SUTA-*`) |
+| 🧪 [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION AHF (`AHF*`) |
 | ✅ [Svane](docs/beds/svane.md) | Svane |
 | 🧪 [Rondure](docs/beds/rondure.md) | 1500 Tilt Base |
 | 🧪 [Remacro](docs/beds/remacro.md) | CheersSleep, Jeromes, Slumberland, The Brick |

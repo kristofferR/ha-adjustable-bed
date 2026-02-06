@@ -60,7 +60,9 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
+    BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     # Detection constants
     BEDTECH_NAME_PATTERNS,
@@ -104,8 +106,13 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SUTA_NAME_PATTERNS,
+    SUTA_SERVICE_UUID,
+    SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
     SVANE_NAME_PATTERNS,
+    TIMOTION_AHF_NAME_PATTERNS,
+    TIMOTION_AHF_SERVICE_UUID,
     VIBRADORM_NAME_PATTERNS,
     VIBRADORM_SERVICE_UUID,
     # Detection result type
@@ -331,7 +338,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SOLACE: "Solace",
+    BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane",
+    BED_TYPE_TIMOTION_AHF: "TiMOTION AHF",
     BED_TYPE_VIBRADORM: "Vibradorm (VMAT)",
     # Diagnostic
     BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
@@ -539,6 +548,64 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(
             bed_type=BED_TYPE_REMACRO,
             confidence=1.0,
+            signals=signals,
+        )
+
+    # Check for SUTA Smart Home (AT command protocol over FFF0).
+    # Excludes known accessory-only subtypes that use a separate binary protocol.
+    if any(device_name.startswith(pattern) for pattern in SUTA_NAME_PATTERNS):
+        if any(device_name.startswith(prefix) for prefix in SUTA_UNSUPPORTED_NAME_PREFIXES):
+            signals.append("name:suta_accessory")
+            _LOGGER.debug(
+                "Skipping SUTA accessory subtype at %s (name: %s)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(bed_type=None, confidence=0.0, signals=signals)
+        else:
+            signals.append("name:suta")
+            if SUTA_SERVICE_UUID.lower() in service_uuids:
+                signals.append("uuid:suta_fff0")
+                _LOGGER.info(
+                    "Detected SUTA bed at %s (name: %s) by FFF0 UUID + name pattern",
+                    service_info.address,
+                    service_info.name,
+                )
+                return DetectionResult(
+                    bed_type=BED_TYPE_SUTA,
+                    confidence=0.9,
+                    signals=signals,
+                )
+            if not service_uuids:
+                _LOGGER.info(
+                    "Detected SUTA bed at %s (name: %s) by name pattern",
+                    service_info.address,
+                    service_info.name,
+                )
+                return DetectionResult(
+                    bed_type=BED_TYPE_SUTA,
+                    confidence=0.3,
+                    signals=signals,
+                )
+
+    # Check for TiMOTION AHF protocol by device name.
+    # The protocol uses Nordic UART UUIDs, which are shared by many devices.
+    if any(device_name.startswith(pattern) for pattern in TIMOTION_AHF_NAME_PATTERNS):
+        signals.append("name:timotion_ahf")
+        confidence = 0.3
+        if TIMOTION_AHF_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:nordic_uart")
+            confidence = 0.9
+
+        _LOGGER.info(
+            "Detected TiMOTION AHF bed at %s (name: %s)%s",
+            service_info.address,
+            service_info.name,
+            " with Nordic UART service" if confidence >= 0.9 else " by name pattern",
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_TIMOTION_AHF,
+            confidence=confidence,
             signals=signals,
         )
 

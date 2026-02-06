@@ -49,7 +49,9 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SOLACE,
+    BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
@@ -281,6 +283,16 @@ async def create_controller(
         from .beds.motosleep import MotoSleepController
 
         return MotoSleepController(coordinator)
+
+    if bed_type == BED_TYPE_SUTA:
+        from .beds.suta import SutaController
+
+        return SutaController(coordinator)
+
+    if bed_type == BED_TYPE_TIMOTION_AHF:
+        from .beds.timotion_ahf import TiMOTIONAhfController
+
+        return TiMOTIONAhfController(coordinator)
 
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         # Use configured variant or auto-detect

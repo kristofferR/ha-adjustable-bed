@@ -127,6 +127,8 @@ BED_TYPE_REMACRO: Final = "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slu
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
+BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
+BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -191,6 +193,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SCOTT_LIVING,
     # SBI/Q-Plus (Costco, with position feedback)
     BED_TYPE_SBI,
+    # SUTA Smart Home AT protocol
+    BED_TYPE_SUTA,
+    # TiMOTION AHF protocol
+    BED_TYPE_TIMOTION_AHF,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -321,6 +327,17 @@ SOLACE_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 # MotoSleep specific UUIDs (same as Solace but different protocol)
 MOTOSLEEP_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
+
+# SUTA Smart Home specific UUIDs (AT command protocol)
+# The app discovers writable/notifiable characteristics dynamically by properties.
+# FFF1 is used as a fallback write characteristic when dynamic discovery is unavailable.
+SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
+SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
+
+# TiMOTION AHF protocol UUIDs (Nordic UART Service)
+TIMOTION_AHF_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
+TIMOTION_AHF_WRITE_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
+TIMOTION_AHF_NOTIFY_CHAR_UUID: Final = NORDIC_UART_READ_CHAR_UUID
 
 # Leggett & Platt specific UUIDs
 # Gen2 variant (Richmat-based, ASCII commands)
@@ -613,6 +630,23 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Source: com.hilding.jbg_ble APK analysis
 JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
 
+# SUTA Smart Home name patterns.
+# Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
+# Accessory/mattress subtypes use a different binary protocol and are excluded.
+SUTA_NAME_PATTERNS: Final = ("suta-",)
+SUTA_UNSUPPORTED_NAME_PREFIXES: Final = (
+    "suta-moon",
+    "suta-temp",
+    "suta-rbhc",
+    "suta-drawer",
+    "suta-storage",
+    "suta-sofa",
+    "suta-yogabed",
+    "suta-rollsofa",
+)
+
+# TiMOTION AHF name patterns
+TIMOTION_AHF_NAME_PATTERNS: Final = ("ahf",)
 # Sleepy's Elite BOX24 protocol UUIDs (OKIN 64-bit service)
 SLEEPYS_BOX24_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 SLEEPYS_BOX24_WRITE_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
@@ -1363,4 +1397,10 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # SBI/Q-Plus: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sbi.costco ANALYSIS.md
     BED_TYPE_SBI: (10, 100),
+    # SUTA: 150ms delay → 7 repeats = 1.05s total
+    # Source: com.shuta.smart_home ANALYSIS.md
+    BED_TYPE_SUTA: (7, 150),
+    # TiMOTION AHF: 100ms delay → 10 repeats = 1.0s total
+    # Source: com.timotion.ahf ANALYSIS.md
+    BED_TYPE_TIMOTION_AHF: (10, 100),
 }

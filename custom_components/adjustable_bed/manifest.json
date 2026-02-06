@@ -49,6 +49,12 @@
       "service_uuid": "00001234-0000-1000-8000-00805f9b34fb"
     },
     {
+      "local_name": "AHF*"
+    },
+    {
+      "local_name": "SUTA*"
+    },
+    {
       "local_name": "JMC*"
     },
     {

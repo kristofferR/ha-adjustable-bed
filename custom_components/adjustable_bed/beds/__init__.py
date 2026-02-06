@@ -48,6 +48,8 @@ from .sbi import SBIController
 from .scott_living import ScottLivingController
 from .solace import SolaceController
 from .svane import SvaneController
+from .suta import SutaController
+from .timotion_ahf import TiMOTIONAhfController
 from .vibradorm import VibradormController
 
 __all__ = [
@@ -80,5 +82,7 @@ __all__ = [
     "ScottLivingController",
     "SolaceController",
     "SvaneController",
+    "SutaController",
+    "TiMOTIONAhfController",
     "VibradormController",
 ]
