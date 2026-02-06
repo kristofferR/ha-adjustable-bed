@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from unittest.mock import MagicMock
 
 import pytest
@@ -143,7 +144,49 @@ class TestLimossController:
         position_key, angle = callback.call_args.args
         assert position_key == "back"
         assert isinstance(angle, float)
-        assert angle > 0
+        expected_angle = (
+            (raw_position / controller._max_raw_estimate["back"])
+            * coordinator.get_max_angle("back")
+        )
+        assert math.isclose(angle, expected_angle, rel_tol=1e-6, abs_tol=1e-6)
+
+    async def test_move_head_up_uses_motor_3_when_four_motors_reported(
+        self,
+        hass: HomeAssistant,
+        mock_limoss_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Head control should use motor 3 command on 4-motor Limoss beds."""
+        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._reported_motor_count = 4
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await controller.move_head_up()
+
+        first_packet = mock_bleak_client.write_gatt_char.call_args_list[0].args[1]
+        assert controller._decode_packet(first_packet)[0] == LimossCommands.MOTOR_3_UP
+
+    async def test_move_feet_up_uses_motor_4_when_four_motors_reported(
+        self,
+        hass: HomeAssistant,
+        mock_limoss_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Feet control should use motor 4 command on 4-motor Limoss beds."""
+        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._reported_motor_count = 4
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await controller.move_feet_up()
+
+        first_packet = mock_bleak_client.write_gatt_char.call_args_list[0].args[1]
+        assert controller._decode_packet(first_packet)[0] == LimossCommands.MOTOR_4_UP
 
     async def test_capability_response_updates_memory_slots(
         self,
@@ -183,3 +226,36 @@ class TestLimossController:
         assert LimossCommands.ASK_MOTOR_1_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_2_POS in decoded_cmds
         assert LimossCommands.ASK_MOTOR_3_POS in decoded_cmds
+
+    async def test_raw_to_angle_shrinks_overestimated_max_raw(
+        self,
+        hass: HomeAssistant,
+        mock_limoss_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Repeated low-but-valid samples should shrink stale max-raw estimates."""
+        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        initial_max = controller._max_raw_estimate["back"]
+        for _ in range(12):
+            controller._raw_to_angle(8000, "back")
+
+        assert controller._max_raw_estimate["back"] < initial_max
+
+    async def test_reset_max_raw_estimate_restores_defaults(
+        self,
+        hass: HomeAssistant,
+        mock_limoss_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """reset_max_raw_estimate should restore built-in normalization defaults."""
+        coordinator = AdjustableBedCoordinator(hass, mock_limoss_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        controller._max_raw_estimate["back"] = 9000
+        controller.reset_max_raw_estimate()
+
+        assert controller._max_raw_estimate["back"] == 16000

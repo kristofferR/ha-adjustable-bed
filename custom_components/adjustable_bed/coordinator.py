@@ -896,6 +896,12 @@ class AdjustableBedCoordinator:
                 )
                 _LOGGER.debug("Controller created successfully")
 
+                if self._bed_type == BED_TYPE_LIMOSS and hasattr(
+                    self._controller, "reset_max_raw_estimate"
+                ):
+                    # Reset Limoss normalization state on each connection.
+                    cast(Any, self._controller).reset_max_raw_estimate()
+
                 if reset_timer:
                     self._reset_disconnect_timer()
 

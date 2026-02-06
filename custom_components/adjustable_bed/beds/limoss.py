@@ -37,6 +37,17 @@ _TEA_DELTA = 0x9E3779B9
 _TEA_ROUNDS = 16
 _U32_MASK = 0xFFFFFFFF
 
+_DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
+    "back": 16000,
+    "legs": 12000,
+    "head": 16000,
+    "feet": 12000,
+}
+_MAX_ESTIMATE_SHRINK_TRIGGER_RATIO = 0.7
+_MAX_ESTIMATE_SHRINK_STREAK = 6
+_MAX_ESTIMATE_SHRINK_DECAY = 0.9
+_MAX_ESTIMATE_MIN_SHRINK_SAMPLE = 500
+
 
 class LimossCommands:
     """Limoss command constants."""
@@ -81,12 +92,13 @@ class LimossController(BedController):
         self._memory_slot_count: int = 0
         self._reported_motor_count: int | None = None
         self._last_positions_raw: dict[str, int] = {}
-        # Initial normalization estimates for 32-bit motor positions.
-        self._max_raw_estimate: dict[str, int] = {
-            "back": 16000,
-            "legs": 12000,
-            "head": 16000,
-            "feet": 12000,
+        # Position normalization state (raw 32-bit samples -> estimated angles).
+        self._max_raw_estimate: dict[str, int] = dict(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._low_sample_streak: dict[str, int] = {
+            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
+        }
+        self._low_sample_peak: dict[str, int] = {
+            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
         }
 
     @property
@@ -103,6 +115,24 @@ class LimossController(BedController):
     def memory_slot_count(self) -> int:
         """Return reported memory slot count (fallback: 1)."""
         return self._memory_slot_count if self._memory_slot_count > 0 else 1
+
+    def reset_max_raw_estimate(self) -> None:
+        """Reset raw-position normalization estimates.
+
+        Called by the coordinator on connection/reconnection to avoid carrying
+        stale calibration state across sessions.
+        """
+        self._max_raw_estimate = dict(_DEFAULT_MAX_RAW_ESTIMATE)
+        self._low_sample_streak = {
+            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
+        }
+        self._low_sample_peak = {
+            motor: 0 for motor in _DEFAULT_MAX_RAW_ESTIMATE
+        }
+        _LOGGER.warning(
+            "Reset Limoss max raw position estimates for %s",
+            self._coordinator.address,
+        )
 
     @staticmethod
     def _tea_encrypt(block: bytes) -> bytes:
@@ -204,11 +234,18 @@ class LimossController(BedController):
 
     def _raw_to_angle(self, raw_value: int, motor: str) -> float:
         """Convert raw Limoss 32-bit position value to an estimated angle."""
-        # Auto-expand estimate when higher values are observed.
         current_max = self._max_raw_estimate.get(motor, 16000)
         if raw_value > current_max:
             current_max = raw_value
             self._max_raw_estimate[motor] = raw_value
+            self._low_sample_streak[motor] = 0
+            self._low_sample_peak[motor] = 0
+        else:
+            current_max = self._maybe_shrink_max_raw_estimate(
+                motor=motor,
+                raw_value=raw_value,
+                current_max=current_max,
+            )
 
         if current_max <= 0:
             return 0.0
@@ -216,6 +253,59 @@ class LimossController(BedController):
         percent = min(100.0, max(0.0, (raw_value / current_max) * 100.0))
         max_angle = self._coordinator.get_max_angle(motor)
         return (percent / 100.0) * max_angle
+
+    def _maybe_shrink_max_raw_estimate(
+        self,
+        motor: str,
+        raw_value: int,
+        current_max: int,
+    ) -> int:
+        """Shrink overestimated max-raw values after repeated low samples."""
+        if current_max <= 0:
+            return current_max
+
+        if (
+            raw_value >= _MAX_ESTIMATE_MIN_SHRINK_SAMPLE
+            and raw_value < (current_max * _MAX_ESTIMATE_SHRINK_TRIGGER_RATIO)
+        ):
+            streak = self._low_sample_streak.get(motor, 0) + 1
+            peak = max(self._low_sample_peak.get(motor, 0), raw_value)
+            self._low_sample_streak[motor] = streak
+            self._low_sample_peak[motor] = peak
+
+            if streak >= _MAX_ESTIMATE_SHRINK_STREAK:
+                previous_max = current_max
+                shrunk_max = max(
+                    peak,
+                    int(current_max * _MAX_ESTIMATE_SHRINK_DECAY),
+                    1,
+                )
+                if shrunk_max < current_max:
+                    self._max_raw_estimate[motor] = shrunk_max
+                    current_max = shrunk_max
+                    _LOGGER.warning(
+                        "Shrank Limoss max raw estimate for %s on %s: %d -> %d (peak=%d, streak=%d)",
+                        motor,
+                        self._coordinator.address,
+                        previous_max,
+                        shrunk_max,
+                        peak,
+                        streak,
+                    )
+
+                self._low_sample_streak[motor] = 0
+                self._low_sample_peak[motor] = 0
+        else:
+            self._low_sample_streak[motor] = 0
+            self._low_sample_peak[motor] = 0
+
+        return current_max
+
+    def _effective_motor_count(self) -> int:
+        """Return the best available motor count for runtime command routing."""
+        if self._reported_motor_count is not None:
+            return max(2, min(4, self._reported_motor_count))
+        return max(2, min(4, self._coordinator.motor_count))
 
     async def _send_command(
         self,
@@ -431,22 +521,33 @@ class LimossController(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_1_UP)
+        # For 3+ motor beds, head is motor 3. For 2-motor beds, alias head to motor 1.
+        cmd = (
+            LimossCommands.MOTOR_3_UP
+            if self._effective_motor_count() >= 3
+            else LimossCommands.MOTOR_1_UP
+        )
+        await self._move_with_stop(cmd)
 
     async def move_head_down(self) -> None:
-        await self._move_with_stop(LimossCommands.MOTOR_1_DOWN)
+        cmd = (
+            LimossCommands.MOTOR_3_DOWN
+            if self._effective_motor_count() >= 3
+            else LimossCommands.MOTOR_1_DOWN
+        )
+        await self._move_with_stop(cmd)
 
     async def move_head_stop(self) -> None:
         await self._send_stop()
 
     async def move_back_up(self) -> None:
-        await self.move_head_up()
+        await self._move_with_stop(LimossCommands.MOTOR_1_UP)
 
     async def move_back_down(self) -> None:
-        await self.move_head_down()
+        await self._move_with_stop(LimossCommands.MOTOR_1_DOWN)
 
     async def move_back_stop(self) -> None:
-        await self.move_head_stop()
+        await self._send_stop()
 
     async def move_legs_up(self) -> None:
         await self._move_with_stop(LimossCommands.MOTOR_2_UP)
@@ -458,13 +559,24 @@ class LimossController(BedController):
         await self._send_stop()
 
     async def move_feet_up(self) -> None:
-        await self.move_legs_up()
+        # For 4-motor beds, feet is motor 4. For 2/3-motor beds, alias feet to motor 2.
+        cmd = (
+            LimossCommands.MOTOR_4_UP
+            if self._effective_motor_count() >= 4
+            else LimossCommands.MOTOR_2_UP
+        )
+        await self._move_with_stop(cmd)
 
     async def move_feet_down(self) -> None:
-        await self.move_legs_down()
+        cmd = (
+            LimossCommands.MOTOR_4_DOWN
+            if self._effective_motor_count() >= 4
+            else LimossCommands.MOTOR_2_DOWN
+        )
+        await self._move_with_stop(cmd)
 
     async def move_feet_stop(self) -> None:
-        await self.move_legs_stop()
+        await self._send_stop()
 
     async def stop_all(self) -> None:
         await self._send_stop()

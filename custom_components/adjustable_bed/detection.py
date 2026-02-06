@@ -823,15 +823,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     if any(pattern in device_name for pattern in LIMOSS_NAME_PATTERNS):
         signals.append("name:limoss")
         confidence = 0.3
-        if LIMOSS_SERVICE_UUID.lower() in service_uuids:
-            signals.append("uuid:ffe0")
-            confidence = 0.9
-
         _LOGGER.info(
-            "Detected Limoss bed at %s (name: %s)%s",
+            "Detected Limoss bed at %s (name: %s) by name pattern",
             service_info.address,
             service_info.name,
-            " with FFE0 service" if confidence >= 0.9 else " by name pattern",
         )
         return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=confidence, signals=signals)
 
