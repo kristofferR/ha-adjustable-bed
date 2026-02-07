@@ -338,7 +338,7 @@ class TestRemacroController:
 
         assert coordinator.controller.supports_massage is True
 
-    async def test_supports_light(
+    async def test_supports_lights(
         self,
         hass: HomeAssistant,
         mock_remacro_config_entry,
@@ -348,7 +348,7 @@ class TestRemacroController:
         coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_light is True
+        assert coordinator.controller.supports_lights is True
 
     async def test_has_lumbar_support(
         self,

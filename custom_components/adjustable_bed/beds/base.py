@@ -543,6 +543,26 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_memory_presets(self) -> bool:
+        """Return True if bed supports recalling saved memory presets."""
+        return False
+
+    @property
+    def supports_lights(self) -> bool:
+        """Return True if bed has controllable lighting."""
+        return False
+
+    @property
+    def supports_light(self) -> bool:
+        """Backward-compatible alias for supports_lights."""
+        return self.supports_lights
+
+    @property
+    def supports_under_bed_lights(self) -> bool:
+        """Return True if bed supports dedicated under-bed light commands."""
+        return False
+
+    @property
     def supports_light_cycle(self) -> bool:
         """Return True if bed supports light cycle control."""
         return False
@@ -575,6 +595,16 @@ class BedController(ABC):
     @property
     def has_hip_support(self) -> bool:
         """Return True if bed has hip motor control."""
+        return False
+
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True if bed reports position feedback."""
+        return False
+
+    @property
+    def supports_massage(self) -> bool:
+        """Return True if bed supports massage commands."""
         return False
 
     @property
@@ -827,6 +857,30 @@ class BedController(ABC):
         """
         raise NotImplementedError("Light control not supported on this bed")
 
+    async def underbed_lights_on(self) -> None:
+        """Turn on dedicated under-bed lights.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support dedicated under-bed lights
+        """
+        raise NotImplementedError("Under-bed light control not supported on this bed")
+
+    async def underbed_lights_off(self) -> None:
+        """Turn off dedicated under-bed lights.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support dedicated under-bed lights
+        """
+        raise NotImplementedError("Under-bed light control not supported on this bed")
+
+    async def underbed_lights_toggle(self) -> None:
+        """Toggle dedicated under-bed lights.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support dedicated under-bed lights
+        """
+        raise NotImplementedError("Under-bed light control not supported on this bed")
+
     async def massage_off(self) -> None:
         """Turn off all massage motors.
 
@@ -1065,6 +1119,40 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support light timer
         """
         raise NotImplementedError("Light timer not supported on this bed")
+
+    @property
+    def supports_fan_control(self) -> bool:
+        """Return True if bed supports fan commands."""
+        return False
+
+    @property
+    def fan_level_max(self) -> int:
+        """Return maximum fan level supported by the bed."""
+        return 0
+
+    async def fan_left_cycle(self) -> None:
+        """Cycle the left fan speed.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support fan control
+        """
+        raise NotImplementedError("Fan control not supported on this bed")
+
+    async def fan_right_cycle(self) -> None:
+        """Cycle the right fan speed.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support fan control
+        """
+        raise NotImplementedError("Fan control not supported on this bed")
+
+    async def fan_sync_cycle(self) -> None:
+        """Cycle both fan speeds in sync.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support fan control
+        """
+        raise NotImplementedError("Fan control not supported on this bed")
 
     # Circulation massage control (optional - for beds with loop massage modes)
 
