@@ -1262,6 +1262,16 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Connection check: reconnecting to %s", self._address)
             return await self._async_connect_locked(reset_timer=reset_timer)
 
+    async def _async_refresh_controller_auth(self) -> None:
+        """Refresh protocol auth for controllers that require re-authentication."""
+        if self._controller is None:
+            return
+
+        # Jensen can require a fresh PIN unlock command even on reused BLE connections.
+        if self._bed_type == BED_TYPE_JENSEN and hasattr(self._controller, "send_pin"):
+            _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._address)
+            await cast(Any, self._controller).send_pin()
+
     async def async_write_command(
         self,
         command: bytes,
@@ -1310,6 +1320,8 @@ class AdjustableBedCoordinator:
                 if self._controller is None:
                     _LOGGER.error("Cannot write command: no controller available")
                     raise RuntimeError("No controller available")
+
+                await self._async_refresh_controller_auth()
 
                 # Start position polling during movement if angle sensing enabled
                 poll_stop: asyncio.Event | None = None
@@ -1368,6 +1380,8 @@ class AdjustableBedCoordinator:
                 if self._controller is None:
                     _LOGGER.error("Cannot send stop: no controller available")
                     return
+
+                await self._async_refresh_controller_auth()
 
                 # Use controller's stop_all method which knows the correct protocol
                 await self._controller.stop_all()
@@ -1441,6 +1455,8 @@ class AdjustableBedCoordinator:
                 if self._controller is None:
                     _LOGGER.error("Cannot execute command: no controller available")
                     raise RuntimeError("No controller available")
+
+                await self._async_refresh_controller_auth()
 
                 # Track command timing for diagnostics (issue #168)
                 self._last_command_start = datetime.now(UTC)
@@ -1723,6 +1739,8 @@ class AdjustableBedCoordinator:
                 if self._controller is None:
                     _LOGGER.error("Cannot seek position: no controller available")
                     raise NoControllerError("No controller available")
+
+                await self._async_refresh_controller_auth()
 
                 # Get current position, attempting a read if not available
                 # This must be done INSIDE the lock after ensuring connection
