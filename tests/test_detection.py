@@ -607,13 +607,27 @@ class TestFEE9UUIDDisambiguation:
         )
         assert detect_bed_type(service_info) == BED_TYPE_BEDTECH
 
-    def test_fee9_with_bedtech_model_name(self):
-        """Test BedTech detection with FEE9 UUID + BedTech model name."""
+    def test_fee9_with_bedtech_model_name_is_ambiguous(self):
+        """Test FEE9 + BT model name defaults to Richmat with ambiguity."""
         service_info = _make_service_info(
             name="BT6500",
             service_uuids=[BEDTECH_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_BEDTECH
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert result.confidence == 0.5
+        assert result.ambiguous_types == [BED_TYPE_BEDTECH]
+
+    def test_fee9_with_richmat_remote_name_prefers_richmat(self):
+        """Test FEE9 + Richmat remote code name uses high-confidence Richmat."""
+        service_info = _make_service_info(
+            name="QRRM141291",
+            service_uuids=[BEDTECH_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert result.confidence == 0.9
+        assert result.detected_remote == "qrrm"
 
     def test_fee9_with_mlrm_name(self):
         """Test Leggett WiLinke detection with FEE9 UUID + MlRM prefix."""

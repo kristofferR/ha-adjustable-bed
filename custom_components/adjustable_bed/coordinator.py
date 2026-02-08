@@ -106,6 +106,7 @@ from .const import (
     requires_pairing,
 )
 from .controller_factory import create_controller
+from .detection import detect_richmat_remote_from_name
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -882,6 +883,19 @@ class AdjustableBedCoordinator:
                 self._ble_manufacturer = ble_manufacturer
                 self._ble_model = ble_model
 
+                # If remote is set to auto, infer Richmat remote code from BLE name at runtime.
+                # This preserves compatibility for existing entries created before auto-code storage.
+                richmat_remote = self._richmat_remote
+                if self._bed_type == BED_TYPE_RICHMAT and richmat_remote == RICHMAT_REMOTE_AUTO:
+                    detected_remote = detect_richmat_remote_from_name(device.name)
+                    if detected_remote:
+                        richmat_remote = detected_remote
+                        _LOGGER.info(
+                            "Auto-detected Richmat remote code '%s' from BLE name '%s'",
+                            detected_remote,
+                            device.name,
+                        )
+
                 # Create the controller
                 _LOGGER.debug("Creating %s controller...", self._bed_type)
                 self._controller = await create_controller(
@@ -890,7 +904,7 @@ class AdjustableBedCoordinator:
                     protocol_variant=self._protocol_variant,
                     client=self._client,
                     octo_pin=self._octo_pin,
-                    richmat_remote=self._richmat_remote,
+                    richmat_remote=richmat_remote,
                     jensen_pin=self._jensen_pin,
                     cb24_bed_selection=self._cb24_bed_selection,
                 )

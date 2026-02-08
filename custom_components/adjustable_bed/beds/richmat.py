@@ -25,6 +25,7 @@ from ..const import (
     RICHMAT_PROTOCOL_SINGLE,
     RICHMAT_PROTOCOL_WILINKE,
     RICHMAT_REMOTE_AUTO,
+    RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES,
     RICHMAT_WILINKE_CHAR_UUIDS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RICHMAT_WILINKE_W1_SERVICE_UUID,
@@ -82,6 +83,7 @@ class RichmatCommands:
 
     # End/Stop
     END = 0x6E
+    END_COMPAT = 0x5E  # WiLinke compatibility stop for selected remotes (e.g. QRRM)
 
 
 class RichmatController(BedController):
@@ -122,14 +124,35 @@ class RichmatController(BedController):
             self._command_protocol = RICHMAT_PROTOCOL_WILINKE
         else:
             self._command_protocol = RICHMAT_PROTOCOL_SINGLE
+        self._stop_command_byte = self._resolve_stop_command_byte()
 
         _LOGGER.debug(
-            "RichmatController initialized (char: %s, protocol: %s, remote: %s, response: %s)",
+            "RichmatController initialized (char: %s, protocol: %s, remote: %s, stop: 0x%02X, response: %s)",
             self._char_uuid,
             self._command_protocol,
             self._remote_code,
+            self._stop_command_byte,
             self._write_with_response,
         )
+
+    def _resolve_stop_command_byte(self) -> int:
+        """Resolve stop command byte for protocol/remote compatibility."""
+        remote_code = (self._remote_code or "").lower()
+        if (
+            self._command_protocol == RICHMAT_PROTOCOL_WILINKE
+            and remote_code in RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES
+        ):
+            _LOGGER.info(
+                "Using Richmat WiLinke compatibility stop byte 0x%02X for remote '%s'",
+                RichmatCommands.END_COMPAT,
+                self._remote_code,
+            )
+            return RichmatCommands.END_COMPAT
+        return RichmatCommands.END
+
+    def _build_stop_command(self) -> bytes:
+        """Build stop command bytes using resolved stop compatibility byte."""
+        return self._build_command(self._stop_command_byte)
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -279,7 +302,7 @@ class RichmatController(BedController):
             # Wrap in try-except to prevent masking the original exception
             try:
                 await self.write_command(
-                    self._build_command(RichmatCommands.END),
+                    self._build_stop_command(),
                     cancel_event=asyncio.Event(),
                 )
             except Exception:
@@ -297,7 +320,7 @@ class RichmatController(BedController):
     async def move_head_stop(self) -> None:
         """Stop head motor."""
         await self.write_command(
-            self._build_command(RichmatCommands.END),
+            self._build_stop_command(),
             cancel_event=asyncio.Event(),
         )
 
@@ -364,7 +387,7 @@ class RichmatController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self.write_command(
-            self._build_command(RichmatCommands.END),
+            self._build_stop_command(),
             cancel_event=asyncio.Event(),
         )
 

@@ -9,7 +9,6 @@ Protocol reverse-engineered from com.bedtech BedTech app (React Native/Hermes).
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -81,7 +80,6 @@ class BedTechCommands:
     MASSAGE_ON = "]"  # 0x5D
     MASSAGE_OFF = "^"  # 0x5E
     MASSAGE_SWITCH = "H"  # 0x48
-    STOP_ALL = "^"  # 0x5E (compatibility: observed as stop on some BT6500 beds)
 
     # Massage timer
     MASSAGE_TIMER_10 = "_"  # 0x5F
@@ -202,8 +200,8 @@ class BedTechController(BedController):
 
     @property
     def supports_stop_all(self) -> bool:
-        """Return True - send compatibility stop command for BedTech/BT6500 beds."""
-        return True
+        """Return False - BedTech beds auto-stop on command release."""
+        return False
 
     def _build_command(self, cmd_char: str) -> bytes:
         """Build command bytes for the given command character."""
@@ -216,18 +214,6 @@ class BedTechController(BedController):
         pulse_delay = self._coordinator.motor_pulse_delay_ms
         await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
 
-    async def _send_stop_command(self) -> None:
-        """Send BedTech stop command.
-
-        BedTech apps appear to use command-release semantics, but field reports
-        show BT6500 variants that require `^` (0x5E) to stop movement.
-        """
-        await self.write_command(
-            self._build_command(BedTechCommands.STOP_ALL),
-            repeat_count=1,
-            cancel_event=asyncio.Event(),
-        )
-
     # Motor control methods
     async def move_head_up(self) -> None:
         """Move head up."""
@@ -238,8 +224,8 @@ class BedTechController(BedController):
         await self._send_command(BedTechCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self._send_stop_command()
+        """Stop head motor (no-op - BedTech auto-stops)."""
+        pass
 
     async def move_back_up(self) -> None:
         """Move back up (same as head for BedTech)."""
@@ -263,7 +249,7 @@ class BedTechController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self._send_stop_command()
+        pass
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -275,7 +261,7 @@ class BedTechController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self._send_stop_command()
+        pass
 
     async def move_pillow_up(self) -> None:
         """Move pillow/leg up."""
@@ -287,11 +273,11 @@ class BedTechController(BedController):
 
     async def move_pillow_stop(self) -> None:
         """Stop pillow motor."""
-        await self._send_stop_command()
+        pass
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
-        await self._send_stop_command()
+        """Stop all motors (no-op - BedTech auto-stops)."""
+        pass
 
     # Preset methods
     async def preset_flat(self) -> None:
@@ -353,14 +339,6 @@ class BedTechController(BedController):
     async def massage_toggle(self) -> None:
         """Toggle massage on/off."""
         await self.write_command(self._build_command(BedTechCommands.MASSAGE_ON))
-
-    async def massage_off(self) -> None:
-        """Turn off massage."""
-        await self.write_command(
-            self._build_command(BedTechCommands.MASSAGE_OFF),
-            repeat_count=1,
-            cancel_event=asyncio.Event(),
-        )
 
     async def massage_head_toggle(self) -> None:
         """Cycle head massage intensity."""

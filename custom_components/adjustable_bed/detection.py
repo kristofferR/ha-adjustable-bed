@@ -386,6 +386,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
     device_name = (service_info.name or "").lower()
     signals: list[str] = []
+    detected_remote = detect_richmat_remote_from_name(service_info.name)
+    is_leggett_mlrm_name = any(
+        device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
+    )
+    is_richmat_named = (
+        bool(detected_remote)
+        or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS)
+    ) and not is_leggett_mlrm_name
 
     _LOGGER.debug(
         "Detecting bed type for device %s (name: %s)",
@@ -836,7 +844,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check
     # Variant detection (mlrm) happens at controller instantiation
-    if any(device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS):
+    if is_leggett_mlrm_name:
         for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
             if wilinke_uuid.lower() in service_uuids:
                 signals.append("uuid:wilinke")
@@ -856,6 +864,19 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals.append("uuid:wilinke")
             # FEE9 is ambiguous - could be Richmat or BedTech
             if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():
+                if is_richmat_named:
+                    signals.append("name:richmat")
+                    _LOGGER.info(
+                        "Detected Richmat WiLinke bed at %s (name: %s) by Richmat name + FEE9 UUID",
+                        service_info.address,
+                        service_info.name,
+                    )
+                    return DetectionResult(
+                        bed_type=BED_TYPE_RICHMAT,
+                        confidence=0.9,
+                        signals=signals,
+                        detected_remote=detected_remote,
+                    )
                 _LOGGER.info(
                     "Detected Richmat WiLinke bed at %s (name: %s) - FEE9 UUID (also used by BedTech)",
                     service_info.address,
@@ -969,9 +990,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Uses RICHMAT_CODE_PATTERN regex to match all valid remote codes (492 codes supported)
     # Also extract remote code for feature detection
     # Exclude MlRM patterns which are Leggett & Platt (need WiLinke UUID to detect)
-    detected_remote = detect_richmat_remote_from_name(service_info.name)
-    is_leggett_mlrm = any(device_name.startswith(p) for p in LEGGETT_RICHMAT_NAME_PATTERNS)
-    if (detected_remote or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS)) and not is_leggett_mlrm:
+    if is_richmat_named:
         signals.append("name:richmat")
         _LOGGER.info(
             "Detected Richmat bed at %s (name: %s) by name pattern",

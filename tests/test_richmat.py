@@ -162,6 +162,38 @@ class TestRichmatController:
         expected_checksum = (RichmatCommands.PRESET_FLAT + 0xAB) & 0xFF
         assert command[4] == expected_checksum
 
+    async def test_wilinke_qrrm_uses_compat_stop_byte(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+    ):
+        """WiLinke QRRM remotes should use compatibility stop byte 0x5E."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+        stop_command = controller._build_stop_command()
+
+        assert len(stop_command) == 5
+        assert stop_command[3] == RichmatCommands.END_COMPAT
+
+    async def test_wilinke_non_compat_remote_uses_standard_stop_byte(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+    ):
+        """WiLinke non-compat remotes should keep standard stop byte 0x6E."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="v1rm")
+        stop_command = controller._build_stop_command()
+
+        assert len(stop_command) == 5
+        assert stop_command[3] == RichmatCommands.END
+
     async def test_write_command(
         self,
         hass: HomeAssistant,
@@ -275,6 +307,27 @@ class TestRichmatMovement:
         mock_bleak_client.write_gatt_char.assert_called_with(
             RICHMAT_NORDIC_CHAR_UUID, expected_end, response=True
         )
+
+    async def test_wilinke_qrrm_move_stop_uses_compat_byte(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """move_head_stop should use 0x5E for WiLinke QRRM compatibility."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await controller.move_head_stop()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+        sent_command = calls[0][0][1]
+        assert sent_command[3] == RichmatCommands.END_COMPAT
 
     async def test_move_lumbar_up(
         self,
