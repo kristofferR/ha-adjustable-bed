@@ -297,17 +297,17 @@ class TestBedTechController:
 
         assert coordinator.controller.has_pillow_support is True
 
-    async def test_supports_stop_all_is_false(
+    @pytest.mark.usefixtures("mock_coordinator_connected")
+    async def test_supports_stop_all(
         self,
         hass: HomeAssistant,
         mock_bedtech_config_entry,
-        mock_coordinator_connected,
     ):
-        """BedTech should NOT support stop_all (auto-stops)."""
+        """BedTech should support stop_all (BT6500 compatibility stop)."""
         coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_stop_all is False
+        assert coordinator.controller.supports_stop_all is True
 
 
 class TestBedTechMovement:

@@ -366,8 +366,6 @@ class TestCoordinatorNotifications:
         mock_bleak_client: MagicMock,
     ):
         """Test start_notify subscribes to notifications when enabled."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
-
         # Create entry with angle sensing enabled
         mock_config_entry_data["disable_angle_sensing"] = False
         entry = MockConfigEntry(
@@ -412,7 +410,6 @@ class TestMotorPulseConfiguration:
         mock_config_entry_data: dict,
     ):
         """Test custom motor pulse values from config."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         mock_config_entry_data[CONF_MOTOR_PULSE_COUNT] = 50
         mock_config_entry_data[CONF_MOTOR_PULSE_DELAY_MS] = 100
@@ -436,7 +433,6 @@ class TestMotorPulseConfiguration:
         mock_config_entry_data: dict,
     ):
         """Test Richmat bed uses its specific default pulse values."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_RICHMAT
         # Don't set pulse values - should use bed-type defaults
@@ -461,7 +457,6 @@ class TestMotorPulseConfiguration:
         mock_config_entry_data: dict,
     ):
         """Test Keeson bed uses its specific default pulse values."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_KEESON
         # Don't set pulse values - should use bed-type defaults
@@ -486,7 +481,6 @@ class TestMotorPulseConfiguration:
         mock_config_entry_data: dict,
     ):
         """Test custom pulse config overrides bed-type defaults."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_RICHMAT
         mock_config_entry_data[CONF_MOTOR_PULSE_COUNT] = 15
@@ -518,7 +512,6 @@ class TestMultiMotorConfiguration:
         motor_count: int,
     ):
         """Test different motor count configurations."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         mock_config_entry_data[CONF_MOTOR_COUNT] = motor_count
 
@@ -540,7 +533,6 @@ class TestMultiMotorConfiguration:
         mock_config_entry_data: dict,
     ):
         """Test device info model includes motor count."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
 
         for motor_count in [2, 3, 4]:
             mock_config_entry_data[CONF_MOTOR_COUNT] = motor_count
