@@ -120,10 +120,10 @@ class TestCoordinatorConnection:
 
         assert result is False
 
+    @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_connect_richmat_auto_remote_uses_ble_name_detection(
         self,
         hass: HomeAssistant,
-        mock_coordinator_connected,
     ):
         """Richmat auto remote should be inferred from BLE name when available."""
         entry = MockConfigEntry(
