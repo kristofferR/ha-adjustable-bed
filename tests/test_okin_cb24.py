@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock, call
 
 from custom_components.adjustable_bed.beds.okin_cb24 import (
     OkinCB24Commands,
@@ -31,11 +31,11 @@ class TestOkinCB24Controller:
 
     def test_preset_burst_timing_constants(self) -> None:
         """Preset burst timing should match CB24 hold-style cadence."""
-        assert OkinCB24Controller.PRESET_REPEAT_COUNT == 83
+        assert OkinCB24Controller.PRESET_REPEAT_COUNT == 40
         assert OkinCB24Controller.PRESET_REPEAT_DELAY_MS == 300
 
-    async def test_send_preset_uses_interruptible_burst_timing(self) -> None:
-        """Preset commands should use configured burst timing."""
+    async def test_send_preset_uses_burst_timing_and_stop_cleanup(self) -> None:
+        """Preset commands should use hold burst timing and send STOP cleanup."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator)
@@ -43,8 +43,17 @@ class TestOkinCB24Controller:
 
         await controller._send_preset(OkinCB24Commands.PRESET_ZERO_G)
 
-        controller.write_command.assert_awaited_once_with(
-            controller._build_command(OkinCB24Commands.PRESET_ZERO_G),
-            repeat_count=controller.PRESET_REPEAT_COUNT,
-            repeat_delay_ms=controller.PRESET_REPEAT_DELAY_MS,
+        assert controller.write_command.await_count == 2
+        controller.write_command.assert_has_awaits(
+            [
+                call(
+                    controller._build_command(OkinCB24Commands.PRESET_ZERO_G),
+                    repeat_count=controller.PRESET_REPEAT_COUNT,
+                    repeat_delay_ms=controller.PRESET_REPEAT_DELAY_MS,
+                ),
+                call(
+                    controller._build_command(0),
+                    cancel_event=ANY,
+                ),
+            ]
         )
