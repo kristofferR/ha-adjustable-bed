@@ -103,7 +103,7 @@ Note: `head` is mapped to the same upper actuator commands as `back` for compati
 |-----------|-------------|-------|-------|
 | Motor movement (default) | 7 | 150ms | Bed-type pulse defaults |
 | Stop | 2 | 100ms | Sent after movement |
-| Preset recall | 100 | 150ms | Repeated command pattern |
+| Preset recall | 1 | n/a | Single command, bed firmware handles full move |
 | Save memory | 5 | 150ms | Program command burst |
 
 ## Notes
@@ -115,4 +115,3 @@ Note: `head` is mapped to the same upper actuator commands as `back` for compati
 ## References
 
 - `disassembly/output/com.shuta.smart_home/ANALYSIS.md`
-

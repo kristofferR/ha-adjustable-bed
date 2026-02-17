@@ -252,14 +252,19 @@ class SutaController(BedController):
         """Stop all motor movement."""
         await self._send_stop()
 
+    async def _send_preset_recall(self, command: str) -> None:
+        """Send a preset recall command once.
+
+        SUTA firmware handles the full movement to the target preset after a
+        single MODE command; repeating the command or forcing STOP causes
+        choppy movement.
+        """
+        await self.write_command(self._build_command(command))
+
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self._preset_with_stop(
-            self._build_command(SutaCommands.PRESET_FLAT),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._send_preset_recall(SutaCommands.PRESET_FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
@@ -270,11 +275,7 @@ class SutaController(BedController):
             4: SutaCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self._preset_with_stop(
-                self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=150,
-            )
+            await self._send_preset_recall(command)
         else:
             _LOGGER.warning("SUTA supports memory presets 1-4 only")
 
@@ -297,27 +298,15 @@ class SutaController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero-g preset."""
-        await self._preset_with_stop(
-            self._build_command(SutaCommands.PRESET_ZERO_G),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._send_preset_recall(SutaCommands.PRESET_ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore preset."""
-        await self._preset_with_stop(
-            self._build_command(SutaCommands.PRESET_ANTI_SNORE),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._send_preset_recall(SutaCommands.PRESET_ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV preset."""
-        await self._preset_with_stop(
-            self._build_command(SutaCommands.PRESET_TV),
-            repeat_count=100,
-            repeat_delay_ms=150,
-        )
+        await self._send_preset_recall(SutaCommands.PRESET_TV)
 
     # Light methods
     async def lights_on(self) -> None:

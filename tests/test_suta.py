@@ -138,7 +138,7 @@ class TestSutaController:
         suta_coordinator,
         mock_bleak_client: MagicMock,
     ) -> None:
-        """Memory preset 2 should send M2 recall command."""
+        """Memory preset 2 should send one M2 recall command without STOP."""
         coordinator = await suta_coordinator(
             address="AA:BB:CC:DD:EE:04",
             name="SUTA-B505",
@@ -147,5 +147,24 @@ class TestSutaController:
 
         await coordinator.controller.preset_memory(2)
 
-        first_payload = mock_bleak_client.write_gatt_char.call_args_list[0][0][1]
-        assert first_payload == _to_packet(SutaCommands.PRESET_MEMORY_2)
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+        assert calls[0][0][1] == _to_packet(SutaCommands.PRESET_MEMORY_2)
+
+    async def test_preset_tv_sends_single_command_without_stop(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """TV preset should send one preset command and let firmware run continuously."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:06",
+            name="SUTA-B201B",
+            entry_id="suta_test_entry_6",
+        )
+
+        await coordinator.controller.preset_tv()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+        assert calls[0][0][1] == _to_packet(SutaCommands.PRESET_TV)
