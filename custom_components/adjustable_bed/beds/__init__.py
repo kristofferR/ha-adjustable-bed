@@ -29,8 +29,8 @@ from .keeson import KeesonController
 from .leggett_gen2 import LeggettGen2Controller
 from .leggett_okin import LeggettOkinController
 from .leggett_wilinke import LeggettWilinkeController
-from .linak import LinakController
 from .limoss import LimossController
+from .linak import LinakController
 from .motosleep import MotoSleepController
 from .octo import OctoController
 from .okin_7byte import Okin7ByteController
@@ -49,8 +49,8 @@ from .rondure import RondureController
 from .sbi import SBIController
 from .scott_living import ScottLivingController
 from .solace import SolaceController
-from .svane import SvaneController
 from .suta import SutaController
+from .svane import SvaneController
 from .timotion_ahf import TiMOTIONAhfController
 from .vibradorm import VibradormController
 

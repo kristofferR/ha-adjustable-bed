@@ -32,7 +32,6 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
 )
 from .base import BedController
 
