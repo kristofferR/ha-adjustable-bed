@@ -23,8 +23,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PREFERRED_ADAPTER,
     CONF_RICHMAT_REMOTE,
-    DEFAULT_MOTOR_PULSE_COUNT,
-    DEFAULT_MOTOR_PULSE_DELAY_MS,
     DOMAIN,
     RICHMAT_REMOTE_AUTO,
 )
@@ -169,6 +167,126 @@ class TestCoordinatorConnection:
 
         assert result is True
         assert mock_create_controller.await_args.kwargs["richmat_remote"] == "qrrm"
+
+    async def test_connect_auto_mode_sets_fresh_device_callback_with_selected_source(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_adapters,
+        mock_bleak_client: MagicMock,
+    ):
+        """Auto mode should pass a callback that refreshes device from selected source."""
+        del mock_bluetooth_adapters
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "proxy_1"}
+        adapter_result.source = "proxy_1"
+        adapter_result.rssi = -67
+
+        fresh_device = MagicMock()
+        fresh_device.address = TEST_ADDRESS
+        fresh_device.name = TEST_NAME
+        fresh_device.details = {"source": "proxy_1"}
+
+        svc_info = MagicMock()
+        svc_info.address = TEST_ADDRESS
+        svc_info.source = "proxy_1"
+        svc_info.rssi = -64
+        svc_info.device = fresh_device
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ) as mock_establish_connection,
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=MagicMock(),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_discovered_service_info",
+                return_value=[svc_info],
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            result = await coordinator.async_connect()
+
+            assert result is True
+            ble_device_callback = mock_establish_connection.await_args.kwargs["ble_device_callback"]
+            assert ble_device_callback is not None
+            assert ble_device_callback() is fresh_device
+
+    async def test_connect_auto_mode_callback_falls_back_when_source_missing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_adapters,
+        mock_bleak_client: MagicMock,
+    ):
+        """Auto mode callback should fall back to default lookup if selected source disappears."""
+        del mock_bluetooth_adapters
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "proxy_1"}
+        adapter_result.source = "proxy_1"
+        adapter_result.rssi = -67
+
+        stale_source_info = MagicMock()
+        stale_source_info.address = TEST_ADDRESS
+        stale_source_info.source = "proxy_2"
+        stale_source_info.rssi = -72
+        stale_source_info.device = MagicMock()
+
+        fallback_device = MagicMock()
+        fallback_device.address = TEST_ADDRESS
+        fallback_device.name = TEST_NAME
+        fallback_device.details = {"source": "local"}
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ) as mock_establish_connection,
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=MagicMock(),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_discovered_service_info",
+                return_value=[stale_source_info],
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+                return_value=fallback_device,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            result = await coordinator.async_connect()
+
+            assert result is True
+            ble_device_callback = mock_establish_connection.await_args.kwargs["ble_device_callback"]
+            assert ble_device_callback is not None
+            assert ble_device_callback() is fallback_device
 
     async def test_disconnect(
         self,

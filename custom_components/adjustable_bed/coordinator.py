@@ -63,12 +63,12 @@ from .const import (
     BED_TYPE_SOLACE,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
+    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_CB24_BED_SELECTION,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
     CONF_MOTOR_COUNT,
@@ -686,38 +686,51 @@ class AdjustableBedCoordinator:
                     self._connection_timeout,
                 )
 
-                # Create a callback to get fresh device from preferred adapter on retries
-                ble_device_callback: Callable[[], BLEDevice] | None = None
+                # Always provide a callback so bleak-retry-connector can refresh the
+                # BLEDevice between retries. In auto mode this prevents using a stale
+                # device object from an older scan snapshot.
+                target_source: str | None = None
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
+                    target_source = self._preferred_adapter
+                elif adapter_result.source and adapter_result.source != "unknown":
+                    target_source = adapter_result.source
 
-                    def _get_device_from_preferred_adapter() -> BLEDevice:
-                        """Get a fresh BLEDevice from the preferred adapter."""
-                        for svc_info in bluetooth.async_discovered_service_info(
-                            self.hass, connectable=True
-                        ):
-                            if (
-                                svc_info.address.upper() == self._address
-                                and getattr(svc_info, "source", None) == self._preferred_adapter
-                            ):
-                                _LOGGER.debug(
-                                    "ble_device_callback returning device from %s (RSSI: %s)",
-                                    self._preferred_adapter,
-                                    getattr(svc_info, "rssi", "N/A"),
-                                )
-                                return svc_info.device
-                        # Fall back to any source if preferred not available
+                def _get_fresh_device_for_connection(
+                    selected_source: str | None = target_source,
+                ) -> BLEDevice:
+                    """Return a fresh BLEDevice from the current scanner data."""
+                    discovered = bluetooth.async_discovered_service_info(
+                        self.hass, connectable=True
+                    )
+                    for svc_info in discovered:
+                        if svc_info.address.upper() != self._address:
+                            continue
+                        svc_source = getattr(svc_info, "source", None)
+                        if selected_source is None or svc_source == selected_source:
+                            _LOGGER.debug(
+                                "ble_device_callback returning device from %s (RSSI: %s)",
+                                svc_source or "unknown",
+                                getattr(svc_info, "rssi", "N/A"),
+                            )
+                            return svc_info.device
+
+                    if selected_source is not None:
                         _LOGGER.debug(
-                            "Preferred adapter %s not available, falling back",
-                            self._preferred_adapter,
+                            "Target adapter %s not currently seeing %s, falling back to default lookup",
+                            selected_source,
+                            self._address,
                         )
-                        fallback = bluetooth.async_ble_device_from_address(
-                            self.hass, self._address, connectable=True
-                        )
-                        if fallback is None:
-                            raise BleakError(f"Device {self._address} not found")
-                        return fallback
 
-                    ble_device_callback = _get_device_from_preferred_adapter
+                    fallback = bluetooth.async_ble_device_from_address(
+                        self.hass, self._address, connectable=True
+                    )
+                    if fallback is None:
+                        raise BleakError(f"Device {self._address} not found")
+                    return fallback
+
+                ble_device_callback: Callable[[], BLEDevice] | None = (
+                    _get_fresh_device_for_connection
+                )
 
                 # Determine if this bed type needs pairing and if pairing is supported
                 bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
