@@ -122,9 +122,9 @@ class OkinCB24Controller(BedController):
     Supports dual-bed configurations via bed selection byte.
     """
 
-    # CB24 memory/preset actions in the OEM app run as hold-to-run commands
-    # with a 300ms resend cadence. We approximate that with a long burst that
-    # can still be preempted by later commands (e.g. massage/stop).
+    # CB24 memory/preset actions in the OEM app are hold-to-run with 300ms resend.
+    # Home Assistant preset buttons are one-shot events, so keep the existing hold
+    # burst window and always send STOP afterwards (equivalent to button release).
     PRESET_REPEAT_COUNT = 83
     PRESET_REPEAT_DELAY_MS = 300
 
@@ -331,16 +331,25 @@ class OkinCB24Controller(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command in an interruptible hold-style burst.
-
-        CB24 presets behave like hold-to-run commands, so we resend at 300ms
-        intervals and do NOT send STOP afterwards.
-        """
-        await self.write_command(
-            self._build_command(command_value),
-            repeat_count=self.PRESET_REPEAT_COUNT,
-            repeat_delay_ms=self.PRESET_REPEAT_DELAY_MS,
-        )
+        """Send a preset command as hold-style burst, then release with STOP."""
+        try:
+            await self.write_command(
+                self._build_command(command_value),
+                repeat_count=self.PRESET_REPEAT_COUNT,
+                repeat_delay_ms=self.PRESET_REPEAT_DELAY_MS,
+            )
+        finally:
+            try:
+                await asyncio.shield(
+                    self.write_command(
+                        self._build_command(0),
+                        cancel_event=asyncio.Event(),
+                    )
+                )
+            except asyncio.CancelledError:
+                raise
+            except BleakError:
+                _LOGGER.debug("Failed to send stop command during preset cleanup", exc_info=True)
 
     async def preset_flat(self) -> None:
         """Go to flat position."""
