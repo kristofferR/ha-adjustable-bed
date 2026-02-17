@@ -7,6 +7,7 @@
 ## Known Models
 
 - BedTech adjustable bases
+- Dreams Sleepmotion 200i
 
 ## Apps
 
