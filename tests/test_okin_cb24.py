@@ -31,7 +31,7 @@ class TestOkinCB24Controller:
 
     def test_preset_burst_timing_constants(self) -> None:
         """Preset burst timing should match CB24 hold-style cadence."""
-        assert OkinCB24Controller.PRESET_REPEAT_COUNT == 40
+        assert OkinCB24Controller.PRESET_REPEAT_COUNT == 83
         assert OkinCB24Controller.PRESET_REPEAT_DELAY_MS == 300
 
     async def test_send_preset_uses_burst_timing_and_stop_cleanup(self) -> None:

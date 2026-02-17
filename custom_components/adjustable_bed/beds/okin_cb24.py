@@ -123,9 +123,9 @@ class OkinCB24Controller(BedController):
     """
 
     # CB24 memory/preset actions in the OEM app are hold-to-run with 300ms resend.
-    # Home Assistant preset buttons are one-shot events, so emulate a bounded hold
-    # window and always send STOP afterwards (equivalent to button release).
-    PRESET_REPEAT_COUNT = 40
+    # Home Assistant preset buttons are one-shot events, so keep the existing hold
+    # burst window and always send STOP afterwards (equivalent to button release).
+    PRESET_REPEAT_COUNT = 83
     PRESET_REPEAT_DELAY_MS = 300
 
     def __init__(
