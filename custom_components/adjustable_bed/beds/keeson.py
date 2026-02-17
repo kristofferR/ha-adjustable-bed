@@ -103,10 +103,6 @@ class SinoCommands:
     LIGHT_ON = 0x31000001
     LIGHT_OFF = 0x31000000
 
-    # Massage on/off
-    MASSAGE_OFF = 0x10000000
-    MASSAGE_ON = 0x10000001
-
     # Massage absolute intensity base addresses (add level 0-10)
     MASSAGE_HEAD_INTENSITY_BASE = 0x10000010
     MASSAGE_FOOT_INTENSITY_BASE = 0x11000010
@@ -143,6 +139,7 @@ class KeesonController(BedController):
         self._foot_moving: bool = False
         self._head_massage: int = 0
         self._foot_massage: int = 0
+        self._wave_massage: int = 0
         self._led_on: bool = False
         self._timer_mode: str | None = None
 
@@ -829,9 +826,7 @@ class KeesonController(BedController):
         """Toggle massage."""
         if self._variant == KEESON_VARIANT_SINO:
             if self._head_massage > 0 or self._foot_massage > 0:
-                await self.write_command(self._build_command(SinoCommands.MASSAGE_OFF))
-                self._head_massage = 0
-                self._foot_massage = 0
+                await self.massage_off()
             else:
                 self._head_massage = 1
                 self._foot_massage = 1
@@ -847,7 +842,9 @@ class KeesonController(BedController):
     async def massage_off(self) -> None:
         """Turn off all massage."""
         if self._variant == KEESON_VARIANT_SINO:
-            await self.write_command(self._build_command(SinoCommands.MASSAGE_OFF))
+            # Dynasty/INNOVA apps stop massage by setting both zones to intensity 0.
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE))
             self._head_massage = 0
             self._foot_massage = 0
         else:
@@ -943,10 +940,10 @@ class KeesonController(BedController):
     async def massage_mode_step(self) -> None:
         """Step through massage wave patterns."""
         if self._variant == KEESON_VARIANT_SINO:
-            self._head_massage = (self._head_massage % 10) + 1
+            self._wave_massage = (self._wave_massage % 10) + 1
             await self.write_command(
                 self._build_command(
-                    SinoCommands.MASSAGE_HEAD_WAVE_BASE + self._head_massage
+                    SinoCommands.MASSAGE_HEAD_WAVE_BASE + self._wave_massage
                 )
             )
         else:
@@ -997,6 +994,7 @@ class KeesonController(BedController):
         return {
             "head_intensity": self._head_massage,
             "foot_intensity": self._foot_massage,
+            "wave_intensity": self._wave_massage,
             "timer_mode": self._timer_mode,
             "led_on": self._led_on,
         }

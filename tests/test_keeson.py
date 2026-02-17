@@ -587,7 +587,7 @@ class TestSinoMassage:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage_off sends MASSAGE_OFF and resets tracked levels."""
+        """Test massage_off sends zero intensity to both zones and resets tracked levels."""
         coordinator = await self._make_coordinator(hass, sino_config_entry_data, "sino_off")
         coordinator.controller._head_massage = 5
         coordinator.controller._foot_massage = 3
@@ -596,10 +596,11 @@ class TestSinoMassage:
 
         assert coordinator.controller._head_massage == 0
         assert coordinator.controller._foot_massage == 0
-        expected = coordinator.controller._build_command(SinoCommands.MASSAGE_OFF)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            coordinator.controller._char_uuid, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        head_off = coordinator.controller._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE)
+        foot_off = coordinator.controller._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE)
+        assert calls[-2][0][1] == head_off
+        assert calls[-1][0][1] == foot_off
 
     async def test_massage_toggle_off_to_on(
         self,
@@ -632,7 +633,7 @@ class TestSinoMassage:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage_toggle sends MASSAGE_OFF when any massage is active."""
+        """Test massage_toggle sends zero intensity to both zones when active."""
         coordinator = await self._make_coordinator(
             hass, sino_config_entry_data, "sino_toggle_off"
         )
@@ -642,10 +643,11 @@ class TestSinoMassage:
 
         assert coordinator.controller._head_massage == 0
         assert coordinator.controller._foot_massage == 0
-        expected = coordinator.controller._build_command(SinoCommands.MASSAGE_OFF)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            coordinator.controller._char_uuid, expected, response=True
-        )
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        head_off = coordinator.controller._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE)
+        foot_off = coordinator.controller._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE)
+        assert calls[-2][0][1] == head_off
+        assert calls[-1][0][1] == foot_off
 
     async def test_massage_head_toggle_off_to_on(
         self,
@@ -789,7 +791,7 @@ class TestSinoMassage:
         coordinator = await self._make_coordinator(hass, sino_config_entry_data, "sino_wave")
 
         await coordinator.controller.massage_mode_step()
-        assert coordinator.controller._head_massage == 1
+        assert coordinator.controller._wave_massage == 1
         expected = coordinator.controller._build_command(
             SinoCommands.MASSAGE_HEAD_WAVE_BASE + 1
         )
@@ -798,9 +800,11 @@ class TestSinoMassage:
         )
 
         # At level 10, wraps to 1
-        coordinator.controller._head_massage = 10
+        coordinator.controller._wave_massage = 10
+        coordinator.controller._head_massage = 4
         await coordinator.controller.massage_mode_step()
-        assert coordinator.controller._head_massage == 1
+        assert coordinator.controller._wave_massage == 1
+        assert coordinator.controller._head_massage == 4
         expected = coordinator.controller._build_command(
             SinoCommands.MASSAGE_HEAD_WAVE_BASE + 1
         )
