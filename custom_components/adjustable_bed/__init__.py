@@ -156,6 +156,31 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
         return None
 
+    async def _get_controller_for_service(
+        coordinator: AdjustableBedCoordinator,
+    ) -> BedController:
+        """Return an active controller for service validation/execution.
+
+        Service calls may arrive while the coordinator is idle-disconnected and
+        controller is None. Reconnect first so capability checks don't fail with
+        a false "not supported" error.
+        """
+        controller = coordinator.controller
+        if controller is not None:
+            return controller
+
+        _LOGGER.debug(
+            "No active controller for %s during service call; attempting reconnect",
+            coordinator.name,
+        )
+        connected = await coordinator.async_ensure_connected(reset_timer=False)
+        controller = coordinator.controller
+        if not connected or controller is None:
+            raise ServiceValidationError(
+                f"Device '{coordinator.name}' is currently unavailable (unable to connect)",
+            )
+        return controller
+
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
         preset = call.data[ATTR_PRESET]
@@ -167,8 +192,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 # Check if controller supports memory presets
-                controller = coordinator.controller
-                if controller is None or not getattr(controller, "supports_memory_presets", False):
+                controller = await _get_controller_for_service(coordinator)
+                if not getattr(controller, "supports_memory_presets", False):
                     raise ServiceValidationError(
                         f"Device '{coordinator.name}' does not support memory presets",
                         translation_domain=DOMAIN,
@@ -211,10 +236,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
                 # Check if controller supports programming memory presets
-                controller = coordinator.controller
-                if controller is None or not getattr(
-                    controller, "supports_memory_programming", False
-                ):
+                controller = await _get_controller_for_service(coordinator)
+                if not getattr(controller, "supports_memory_programming", False):
                     raise ServiceValidationError(
                         f"Device '{coordinator.name}' does not support programming memory presets",
                         translation_domain=DOMAIN,

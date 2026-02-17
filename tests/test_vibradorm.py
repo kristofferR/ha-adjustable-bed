@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from bleak.exc import BleakCharacteristicNotFoundError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -20,9 +21,11 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     VIBRADORM_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -57,6 +60,48 @@ def mock_vibradorm_config_entry(
     )
     entry.add_to_hass(hass)
     return entry
+
+
+class _MockCharacteristic:
+    """Simple mock BLE characteristic."""
+
+    def __init__(self, uuid: str, properties: list[str]) -> None:
+        self.uuid = uuid
+        self.properties = properties
+
+
+class _MockService:
+    """Simple mock BLE service with UUID and characteristics."""
+
+    def __init__(self, uuid: str, characteristics: list[_MockCharacteristic]) -> None:
+        self.uuid = uuid
+        self.characteristics = characteristics
+
+    def get_characteristic(self, uuid: str) -> _MockCharacteristic | None:
+        """Return characteristic by UUID."""
+        for char in self.characteristics:
+            if str(char.uuid).lower() == uuid.lower():
+                return char
+        return None
+
+
+class _MockServices:
+    """Simple mock BLE service collection."""
+
+    def __init__(self, services: list[_MockService]) -> None:
+        self._services = services
+
+    def __iter__(self):
+        return iter(self._services)
+
+    def __len__(self) -> int:
+        return len(self._services)
+
+    def get_service(self, uuid: str) -> _MockService | None:
+        for service in self._services:
+            if str(service.uuid).lower() == uuid.lower():
+                return service
+        return None
 
 
 # -----------------------------------------------------------------------------
@@ -187,6 +232,104 @@ class TestVibradormController:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_discrete_light_control is True
+
+    async def test_resolves_secondary_service_command_characteristic(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controller should use secondary VMAT command UUID when primary is unavailable."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        secondary_service = _MockService(
+            VIBRADORM_SECONDARY_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_SECONDARY_COMMAND_CHAR_UUID, ["read", "write"]),
+            ],
+        )
+        mock_client.services = _MockServices([secondary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == VIBRADORM_SECONDARY_COMMAND_CHAR_UUID
+
+    async def test_resolves_secondary_alt_command_characteristic(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controller should fall back to UUID 1534 when 1528 is missing."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        secondary_service = _MockService(
+            VIBRADORM_SECONDARY_SERVICE_UUID,
+            [
+                _MockCharacteristic(
+                    VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
+                    ["read", "write", "write-without-response"],
+                ),
+            ],
+        )
+        mock_client.services = _MockServices([secondary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID
+
+    async def test_retries_with_secondary_characteristic_when_primary_missing(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Retry with secondary command characteristic after primary UUID lookup failure."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        secondary_service = _MockService(
+            VIBRADORM_SECONDARY_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_SECONDARY_COMMAND_CHAR_UUID, ["read", "write"]),
+            ],
+        )
+        mock_client.services = _MockServices([secondary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        # Simulate cached primary UUID that no longer exists on this proxy path.
+        controller._characteristics_initialized = True
+        controller._command_char_uuid = VIBRADORM_COMMAND_CHAR_UUID
+
+        async def _write_side_effect(char_uuid: str, *_args, **_kwargs):
+            if str(char_uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID:
+                raise BleakCharacteristicNotFoundError(char_uuid)
+            return None
+
+        mock_client.write_gatt_char.side_effect = _write_side_effect
+
+        await controller.write_command(
+            bytes([VibradormCommands.HEAD_UP]),
+            repeat_count=1,
+        )
+
+        called_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
+        assert VIBRADORM_COMMAND_CHAR_UUID in called_uuids
+        assert VIBRADORM_SECONDARY_COMMAND_CHAR_UUID in called_uuids
 
 
 class TestVibradormMovement:

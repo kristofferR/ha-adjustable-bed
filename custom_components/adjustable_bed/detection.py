@@ -43,9 +43,9 @@ from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
@@ -82,6 +82,7 @@ from .const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
+    LIMOSS_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
@@ -91,8 +92,6 @@ from .const import (
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
-    LIMOSS_NAME_PATTERNS,
-    LIMOSS_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_PATTERNS,
@@ -118,6 +117,7 @@ from .const import (
     TIMOTION_AHF_NAME_PATTERNS,
     TIMOTION_AHF_SERVICE_UUID,
     VIBRADORM_NAME_PATTERNS,
+    VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
     # Detection result type
     DetectionResult,
@@ -493,8 +493,11 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for Vibradorm - unique service UUID (1525)
-    if VIBRADORM_SERVICE_UUID.lower() in service_uuids:
+    # Check for Vibradorm - VMAT service UUIDs (1525/1527)
+    if (
+        VIBRADORM_SERVICE_UUID.lower() in service_uuids
+        or VIBRADORM_SECONDARY_SERVICE_UUID.lower() in service_uuids
+    ):
         signals.append("uuid:vibradorm")
         _LOGGER.info(
             "Detected Vibradorm bed at %s (name: %s) by service UUID",

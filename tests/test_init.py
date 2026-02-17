@@ -211,6 +211,55 @@ class TestServices:
         # Verify write_gatt_char was called (preset command)
         assert mock_bleak_client.write_gatt_char.call_count >= 1
 
+    async def test_goto_preset_service_reconnects_before_capability_check(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Test goto_preset reconnects when controller is temporarily unavailable."""
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        original_controller = coordinator.controller
+        assert original_controller is not None
+        coordinator._controller = None
+
+        async def _restore_controller(reset_timer: bool = True) -> bool:
+            coordinator._controller = original_controller
+            return True
+
+        with (
+            patch.object(
+                coordinator,
+                "async_ensure_connected",
+                new=AsyncMock(side_effect=_restore_controller),
+            ) as mock_ensure_connected,
+            patch.object(
+                coordinator,
+                "async_execute_controller_command",
+                new=AsyncMock(),
+            ) as mock_execute,
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_GOTO_PRESET,
+                {"device_id": [device_id], "preset": 1},
+                blocking=True,
+            )
+
+        mock_ensure_connected.assert_awaited_once_with(reset_timer=False)
+        mock_execute.assert_awaited_once()
+
     async def test_stop_all_service(
         self,
         hass: HomeAssistant,

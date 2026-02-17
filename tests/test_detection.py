@@ -28,7 +28,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_FFE,
-    BED_TYPE_OKIN_NORDIC,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -63,6 +62,7 @@ from custom_components.adjustable_bed.const import (
     SUTA_SERVICE_UUID,
     SVANE_HEAD_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
+    VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import (
@@ -112,6 +112,14 @@ class TestDetectBedTypeByServiceUUID:
         service_info = _make_service_info(
             name="VMAT123",
             service_uuids=[VIBRADORM_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_VIBRADORM
+
+    def test_detect_vibradorm_by_secondary_uuid(self):
+        """Test Vibradorm detection by secondary VMAT service UUID."""
+        service_info = _make_service_info(
+            name="VMAT533",
+            service_uuids=[VIBRADORM_SECONDARY_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_VIBRADORM
 

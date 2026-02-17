@@ -33,8 +33,9 @@
 
 ## Protocol Details
 
-**Service UUID:** `00001525-9f03-0de5-96c5-b8f4f3081186`
-**Command Characteristic:** `00001526-9f03-0de5-96c5-b8f4f3081186`
+**Primary Service UUID:** `00001525-9f03-0de5-96c5-b8f4f3081186`
+**Secondary Service UUID (some VMAT-BASIC-RF-CBI beds):** `00001527-9f03-0de5-96c5-b8f4f3081186`
+**Command Characteristic:** `00001526-9f03-0de5-96c5-b8f4f3081186` (fallbacks: `00001528`, `00001534`)
 **Light Characteristic:** `00001529-9f03-0de5-96c5-b8f4f3081186`
 **Notify Characteristic:** `00001551-9f03-0de5-96c5-b8f4f3081186`
 
@@ -78,7 +79,7 @@ Notifications provide motor positions as 16-bit little-endian values:
 
 The bed is detected by:
 1. **Manufacturer ID:** 944 (0x03B0) - highest priority
-2. **Service UUID:** `00001525-9f03-0de5-96c5-b8f4f3081186`
+2. **Service UUID:** `00001525-...` or `00001527-...`
 3. **Device name pattern:** Names starting with "VMAT"
 
 ## Troubleshooting

@@ -17,13 +17,16 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.exc import BleakError
+from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 
 from ..const import (
     VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
     VIBRADORM_LIGHT_CHAR_UUID,
     VIBRADORM_NOTIFY_CHAR_UUID,
+    VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
 from .base import BedController
@@ -32,6 +35,17 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+VIBRADORM_SERVICE_UUID_CANDIDATES = (
+    VIBRADORM_SERVICE_UUID,
+    VIBRADORM_SECONDARY_SERVICE_UUID,
+)
+
+VIBRADORM_COMMAND_UUID_CANDIDATES = (
+    VIBRADORM_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
+    VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
+)
 
 
 class VibradormCommands:
@@ -103,11 +117,139 @@ class VibradormController(BedController):
         self._lights_on: bool = False
         self._write_with_response: bool = False
         self._cbi_toggle: bool = False  # Alternates 0x0000/0x8000 per CBI write
+        self._command_char_uuid: str = VIBRADORM_COMMAND_CHAR_UUID
+        self._light_char_uuid: str = VIBRADORM_LIGHT_CHAR_UUID
+        self._cbi_char_uuid: str = VIBRADORM_CBI_CHAR_UUID
+        self._notify_char_uuid: str = VIBRADORM_NOTIFY_CHAR_UUID
+        self._characteristics_initialized: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
-        return VIBRADORM_COMMAND_CHAR_UUID
+        return self._command_char_uuid
+
+    @staticmethod
+    def _get_characteristic_by_uuid(service: object, char_uuid: str) -> object | None:
+        """Get characteristic from a service by UUID with broad compatibility."""
+        get_characteristic = getattr(service, "get_characteristic", None)
+        if callable(get_characteristic):
+            try:
+                characteristic = get_characteristic(char_uuid)
+            except Exception:
+                characteristic = None
+            if characteristic is not None:
+                return characteristic
+
+        for characteristic in getattr(service, "characteristics", []):
+            if str(characteristic.uuid).lower() == char_uuid.lower():
+                return characteristic
+        return None
+
+    @staticmethod
+    def _characteristic_properties(characteristic: object) -> set[str]:
+        """Return normalized characteristic properties."""
+        return {prop.lower() for prop in getattr(characteristic, "properties", [])}
+
+    def _refresh_characteristics(self, *, force: bool = False) -> None:
+        """Resolve runtime UUIDs for VMAT variants from discovered services."""
+        if self._characteristics_initialized and not force:
+            return
+
+        client = self.client
+        if client is None or client.services is None:
+            return
+
+        service_map = {str(service.uuid).lower(): service for service in client.services}
+        candidate_services = [
+            service_map[service_uuid.lower()]
+            for service_uuid in VIBRADORM_SERVICE_UUID_CANDIDATES
+            if service_uuid.lower() in service_map
+        ]
+
+        if not candidate_services:
+            if force:
+                _LOGGER.debug(
+                    "No Vibradorm services found during characteristic refresh; using defaults"
+                )
+            return
+
+        selected_command_char = None
+        for char_uuid in VIBRADORM_COMMAND_UUID_CANDIDATES:
+            for service in candidate_services:
+                char = self._get_characteristic_by_uuid(service, char_uuid)
+                if char is None:
+                    continue
+                props = self._characteristic_properties(char)
+                if "write" in props or "write-without-response" in props:
+                    selected_command_char = char
+                    break
+            if selected_command_char is not None:
+                break
+
+        if selected_command_char is None:
+            excluded_uuids = {
+                VIBRADORM_LIGHT_CHAR_UUID.lower(),
+                VIBRADORM_CBI_CHAR_UUID.lower(),
+                VIBRADORM_NOTIFY_CHAR_UUID.lower(),
+            }
+            for service in candidate_services:
+                for char in getattr(service, "characteristics", []):
+                    props = self._characteristic_properties(char)
+                    if "write" not in props and "write-without-response" not in props:
+                        continue
+                    char_uuid = str(char.uuid).lower()
+                    if char_uuid in excluded_uuids:
+                        continue
+                    selected_command_char = char
+                    break
+                if selected_command_char is not None:
+                    break
+
+        if selected_command_char is not None:
+            resolved_command_uuid = str(selected_command_char.uuid)
+            if resolved_command_uuid != self._command_char_uuid:
+                _LOGGER.info(
+                    "Resolved Vibradorm command characteristic: %s -> %s",
+                    self._command_char_uuid,
+                    resolved_command_uuid,
+                )
+            self._command_char_uuid = resolved_command_uuid
+
+            props = self._characteristic_properties(selected_command_char)
+            if "write" in props:
+                self._write_with_response = True
+            elif "write-without-response" in props:
+                self._write_with_response = False
+
+            _LOGGER.debug(
+                "Vibradorm write mode: %s (characteristic: %s, properties: %s)",
+                "with-response" if self._write_with_response else "without-response",
+                self._command_char_uuid,
+                getattr(selected_command_char, "properties", []),
+            )
+
+        for service in candidate_services:
+            light_char = self._get_characteristic_by_uuid(service, VIBRADORM_LIGHT_CHAR_UUID)
+            if light_char is not None:
+                self._light_char_uuid = str(light_char.uuid)
+                break
+
+        for service in candidate_services:
+            cbi_char = self._get_characteristic_by_uuid(service, VIBRADORM_CBI_CHAR_UUID)
+            if cbi_char is not None:
+                self._cbi_char_uuid = str(cbi_char.uuid)
+                break
+
+        for service in candidate_services:
+            notify_char = self._get_characteristic_by_uuid(service, VIBRADORM_NOTIFY_CHAR_UUID)
+            if notify_char is None:
+                continue
+            props = self._characteristic_properties(notify_char)
+            if "notify" in props:
+                self._notify_char_uuid = str(notify_char.uuid)
+                break
+
+        self._characteristics_initialized = True
 
     # Capability properties
     @property
@@ -154,14 +296,43 @@ class VibradormController(BedController):
         if cancel_event is None:
             cancel_event = self._coordinator._cancel_command
 
-        await self._write_gatt_with_retry(
-            VIBRADORM_COMMAND_CHAR_UUID,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self._write_with_response,
-        )
+        self._refresh_characteristics()
+
+        try:
+            await self._write_gatt_with_retry(
+                self._command_char_uuid,
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=self._write_with_response,
+            )
+        except BleakCharacteristicNotFoundError:
+            previous_char = self._command_char_uuid
+            self._refresh_characteristics(force=True)
+
+            if self._command_char_uuid == previous_char:
+                _LOGGER.error(
+                    "Vibradorm command characteristic %s not found; no fallback characteristic "
+                    "available",
+                    previous_char,
+                )
+                self.log_discovered_services(level=logging.INFO)
+                raise
+
+            _LOGGER.warning(
+                "Vibradorm command characteristic %s not found, retrying with %s",
+                previous_char,
+                self._command_char_uuid,
+            )
+            await self._write_gatt_with_retry(
+                self._command_char_uuid,
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=self._write_with_response,
+            )
 
     async def _write_motor_command(
         self,
@@ -205,8 +376,9 @@ class VibradormController(BedController):
             cmd,
             self._cbi_toggle,
         )
+        self._refresh_characteristics()
         await self._write_gatt_with_retry(
-            VIBRADORM_CBI_CHAR_UUID,
+            self._cbi_char_uuid,
             data,
             response=self._write_with_response,
         )
@@ -225,7 +397,7 @@ class VibradormController(BedController):
 
         Position values are raw encoder counts, higher values = more raised.
         """
-        self.forward_raw_notification(VIBRADORM_NOTIFY_CHAR_UUID, bytes(data))
+        self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
         if len(data) < 8:
             _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
@@ -267,26 +439,10 @@ class VibradormController(BedController):
             _LOGGER.warning("Cannot start Vibradorm notifications: not connected")
             return
 
-        # Detect write mode from characteristic properties
-        if self.client.services:
-            for service in self.client.services:
-                if str(service.uuid).lower() == VIBRADORM_SERVICE_UUID.lower():
-                    for char in service.characteristics:
-                        if str(char.uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID.lower():
-                            props = {prop.lower() for prop in char.properties}
-                            # Prefer write-with-response when available for acknowledgements
-                            if "write" in props:
-                                self._write_with_response = True
-                            elif "write-without-response" in props:
-                                self._write_with_response = False
-                            _LOGGER.debug(
-                                "Vibradorm write mode: %s (properties: %s)",
-                                "with-response" if self._write_with_response else "without-response",
-                                char.properties,
-                            )
+        self._refresh_characteristics(force=True)
 
         try:
-            await self.client.start_notify(VIBRADORM_NOTIFY_CHAR_UUID, self._handle_notification)
+            await self.client.start_notify(self._notify_char_uuid, self._handle_notification)
             _LOGGER.info("Started position notifications for Vibradorm bed")
         except BleakError as err:
             _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
@@ -298,7 +454,7 @@ class VibradormController(BedController):
             return
 
         try:
-            await self.client.stop_notify(VIBRADORM_NOTIFY_CHAR_UUID)
+            await self.client.stop_notify(self._notify_char_uuid)
             _LOGGER.debug("Stopped Vibradorm position notifications")
         except BleakError:
             pass
@@ -495,9 +651,10 @@ class VibradormController(BedController):
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
+        self._refresh_characteristics()
         try:
             await self._write_gatt_with_retry(
-                VIBRADORM_LIGHT_CHAR_UUID,
+                self._light_char_uuid,
                 bytes([0xFF, 0x00, 0x00]),  # Full brightness, no timer
                 response=self._write_with_response,
             )
@@ -512,9 +669,10 @@ class VibradormController(BedController):
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
+        self._refresh_characteristics()
         try:
             await self._write_gatt_with_retry(
-                VIBRADORM_LIGHT_CHAR_UUID,
+                self._light_char_uuid,
                 bytes([0x00, 0x00, 0x00]),  # Off
                 response=self._write_with_response,
             )
