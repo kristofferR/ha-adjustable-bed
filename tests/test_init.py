@@ -260,6 +260,43 @@ class TestServices:
         mock_ensure_connected.assert_awaited_once_with(reset_timer=False)
         mock_execute.assert_awaited_once()
 
+    async def test_goto_preset_service_rejects_invalid_slot_number(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Test goto_preset raises error when preset exceeds memory_slot_count."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        controller = coordinator.controller
+
+        # Patch the controller to support presets but only 3 slots
+        with (
+            patch.object(type(controller), "supports_memory_presets", new_callable=lambda: property(lambda self: True)),
+            patch.object(type(controller), "memory_slot_count", new_callable=lambda: property(lambda self: 3)),
+        ):
+            with pytest.raises(ServiceValidationError, match="only supports memory presets 1-3"):
+                await hass.services.async_call(
+                    DOMAIN,
+                    SERVICE_GOTO_PRESET,
+                    {"device_id": [device_id], "preset": 4},
+                    blocking=True,
+                )
+
     async def test_stop_all_service(
         self,
         hass: HomeAssistant,
