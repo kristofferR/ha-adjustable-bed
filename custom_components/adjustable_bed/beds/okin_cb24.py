@@ -122,12 +122,6 @@ class OkinCB24Controller(BedController):
     Supports dual-bed configurations via bed selection byte.
     """
 
-    # CB24 memory/preset actions in the OEM app are hold-to-run with 300ms resend.
-    # Home Assistant preset buttons are one-shot events, so keep the existing hold
-    # burst window and always send STOP afterwards (equivalent to button release).
-    PRESET_REPEAT_COUNT = 83
-    PRESET_REPEAT_DELAY_MS = 300
-
     def __init__(
         self, coordinator: AdjustableBedCoordinator, bed_selection: int = 0x00
     ) -> None:
@@ -331,30 +325,13 @@ class OkinCB24Controller(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command as hold-style burst, then release with STOP."""
-        try:
-            await self.write_command(
-                self._build_command(command_value),
-                repeat_count=self.PRESET_REPEAT_COUNT,
-                repeat_delay_ms=self.PRESET_REPEAT_DELAY_MS,
-            )
-        finally:
-            # If a newer command preempted this preset, skip explicit STOP so the
-            # handoff stays responsive.
-            if self._coordinator.cancel_command.is_set():
-                _LOGGER.debug("Preset command preempted; skipping STOP cleanup")
-            else:
-                try:
-                    await asyncio.shield(
-                        self.write_command(
-                            self._build_command(0),
-                            cancel_event=asyncio.Event(),
-                        )
-                    )
-                except asyncio.CancelledError:
-                    raise
-                except (BleakError, ConnectionError):
-                    _LOGGER.debug("Failed to send stop command during preset cleanup", exc_info=True)
+        """Send a preset command (one-shot, no STOP).
+
+        CB24 presets are autonomous: the actuator receives the command once and
+        moves to the saved position on its own.  The OEM app (callMemory for
+        NEW_PROTOCOL) sends a single packet and never follows up with STOP.
+        """
+        await self.write_command(self._build_command(command_value))
 
     async def preset_flat(self) -> None:
         """Go to flat position."""
