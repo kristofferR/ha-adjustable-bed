@@ -54,6 +54,8 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    CB1322_MANUFACTURER_MARKERS,
+    KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
@@ -266,10 +268,7 @@ async def create_controller(
 
             fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
             has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
-            has_dual_fallback_services = {
-                "0000fff0-0000-1000-8000-00805f9b34fb",
-                "0000ffb0-0000-1000-8000-00805f9b34fb",
-            } <= service_uuids
+            has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
             normalized_name = (device_name or "").lower()
             is_okin_ble_name = any(
                 normalized_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS
@@ -277,9 +276,8 @@ async def create_controller(
 
             if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
                 # Check manufacturer name for CB1322 sub-variant (OKIN protocol)
-                _CB1322_MANUFACTURERS = ("ble-4.0 module", "dewertokin")
                 mfr_lower = (ble_manufacturer or "").lower()
-                if any(marker in mfr_lower for marker in _CB1322_MANUFACTURERS):
+                if any(marker in mfr_lower for marker in CB1322_MANUFACTURER_MARKERS):
                     _LOGGER.info(
                         "Auto-detected Keeson OKIN (CB1322) variant for %s "
                         "(name: %s, manufacturer: %s)",

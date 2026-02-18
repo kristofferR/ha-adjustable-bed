@@ -153,6 +153,7 @@ class KeesonController(BedController):
         coordinator: AdjustableBedCoordinator,
         variant: str = "base",
         char_uuid: str | None = None,
+        *,
         betterliving_presets: bool = False,
         cb1322_presets: bool = False,
     ) -> None:
@@ -361,8 +362,8 @@ class KeesonController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True for BetterLiving (has save commands), False for other Keeson."""
-        return self._betterliving_presets
+        """Return True for BetterLiving (save commands) and CB1322 (long-press save)."""
+        return self._betterliving_presets or self._cb1322_presets
 
     @property
     def supports_lights(self) -> bool:
@@ -793,6 +794,12 @@ class KeesonController(BedController):
             }
             if command := commands.get(memory_num):
                 await self.write_command(self._build_command(command))
+            else:
+                _LOGGER.warning(
+                    "BetterLiving memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
             return
 
         if self._cb1322_presets:
@@ -802,6 +809,12 @@ class KeesonController(BedController):
             }
             if command := commands.get(memory_num):
                 await self.write_command(self._build_command(command))
+            else:
+                _LOGGER.warning(
+                    "CB1322 memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
             return
 
         # Warn about variant-specific behavior
@@ -840,6 +853,12 @@ class KeesonController(BedController):
             }
             if command := commands.get(memory_num):
                 await self.write_command(self._build_command(command))
+            else:
+                _LOGGER.warning(
+                    "BetterLiving save memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
             return
 
         if self._cb1322_presets:
@@ -852,6 +871,12 @@ class KeesonController(BedController):
                     self._build_command(command),
                     repeat_count=30,
                     repeat_delay_ms=100,
+                )
+            else:
+                _LOGGER.warning(
+                    "CB1322 save memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
                 )
             return
 

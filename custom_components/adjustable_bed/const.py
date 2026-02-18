@@ -313,6 +313,15 @@ KEESON_FALLBACK_GATT_PAIRS: Final = [
     ("0000ffb0-0000-1000-8000-00805f9b34fb", "0000ffb2-0000-1000-8000-00805f9b34fb"),
 ]
 
+# BetterLiving-style OKIN-BLE beds advertise both fallback service UUIDs
+KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset({
+    "0000fff0-0000-1000-8000-00805f9b34fb",
+    "0000ffb0-0000-1000-8000-00805f9b34fb",
+})
+
+# CB1322 sub-variant manufacturer name markers (lowercase for comparison)
+CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
+
 # Ergomotion specific UUIDs (same protocol as Keeson Base, but with position feedback)
 ERGOMOTION_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 ERGOMOTION_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"

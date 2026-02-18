@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import inspect
 import logging
 import random
 import time
@@ -697,13 +698,19 @@ class AdjustableBedCoordinator:
                 if close_stale_connections_by_address is not None:
                     try:
                         close_result = close_stale_connections_by_address(self._address)
-                        if asyncio.iscoroutine(close_result):
+                        if inspect.isawaitable(close_result):
                             await close_result
-                    except Exception as err:
+                    except (OSError, BleakError) as err:
                         _LOGGER.debug(
                             "Could not close stale connections for %s: %s",
                             self._address,
                             err,
+                        )
+                    except Exception:
+                        _LOGGER.warning(
+                            "Unexpected error closing stale connections for %s",
+                            self._address,
+                            exc_info=True,
                         )
 
                 # Always provide a callback so bleak-retry-connector can refresh the

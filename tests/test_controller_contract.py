@@ -340,7 +340,7 @@ async def test_cb1322_preset_commands() -> None:
 
     # Verify memory slot count
     assert controller.memory_slot_count == 2
-    assert controller.supports_memory_programming is False
+    assert controller.supports_memory_programming is True
 
 
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
