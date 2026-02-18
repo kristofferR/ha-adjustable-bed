@@ -111,6 +111,40 @@ class SinoCommands:
     MASSAGE_HEAD_WAVE_BASE = 0x10000020
 
 
+class BetterLivingCommands:
+    """BetterLiving BED_DEFAULT preset command constants.
+
+    BetterLiving beds (OKIN-BLE device name, FFF0+FFB0 services) use Sino
+    big-endian packet format but with different preset values in the 0x01000000
+    range. Motors, massage, and lights match standard Sino commands.
+
+    Based on reverse engineering of BetterLiving APK (com.betterliving.bed).
+    """
+
+    PRESET_ZERO_G = 0x01000001
+    PRESET_FLAT = 0x01000002
+    PRESET_MEMORY_1 = 0x01000008
+    PRESET_MEMORY_2 = 0x01000009
+    STOP_POSITION = 0x01000000
+    SAVE_ZERO_G = 0x20000001
+    SAVE_MEMORY_1 = 0x20000008
+    SAVE_MEMORY_2 = 0x20000009
+
+
+class CB1322Commands:
+    """BetterLiving CB1322 sub-variant preset command constants.
+
+    CB1322 devices use OKIN variant (0xE6 prefix, little-endian) with
+    different memory values than standard Keeson OKIN. Identified by
+    manufacturer name "BLE-4.0 Module" or "DewertOKIN" from BLE 0x2A29.
+
+    Based on reverse engineering of BetterLiving APK (com.betterliving.bed).
+    """
+
+    PRESET_MEMORY_1 = 0x00010000
+    PRESET_MEMORY_2 = 0x00040000
+
+
 class KeesonController(BedController):
     """Controller for Keeson beds (including Ergomotion variant with position feedback)."""
 
@@ -119,6 +153,8 @@ class KeesonController(BedController):
         coordinator: AdjustableBedCoordinator,
         variant: str = "base",
         char_uuid: str | None = None,
+        betterliving_presets: bool = False,
+        cb1322_presets: bool = False,
     ) -> None:
         """Initialize the Keeson controller.
 
@@ -126,9 +162,13 @@ class KeesonController(BedController):
             coordinator: The AdjustableBedCoordinator instance
             variant: Protocol variant ('ksbt', 'base', or 'ergomotion')
             char_uuid: The characteristic UUID to use for writing commands
+            betterliving_presets: Use BetterLiving BED_DEFAULT preset values
+            cb1322_presets: Use CB1322 sub-variant memory preset values
         """
         super().__init__(coordinator)
         self._variant = variant
+        self._betterliving_presets = betterliving_presets
+        self._cb1322_presets = cb1322_presets
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
 
@@ -304,9 +344,12 @@ class KeesonController(BedController):
         """Return memory slot count based on variant.
 
         KSBT: Slots 1-2 (M button = slot 1, TV = slot 2)
+        BetterLiving/CB1322: Slots 1-2 (from APK analysis)
         BaseI4/I5: Slot 3 only (from APK analysis)
         Ergomotion: 4 slots (needs verification)
         """
+        if self._betterliving_presets or self._cb1322_presets:
+            return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
         if self._variant == "ksbt":
             return 2  # Memory 1 (M button) and Memory 2 (TV button)
         elif self._variant == "ergomotion":
@@ -318,8 +361,8 @@ class KeesonController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Keeson beds don't support programming memory positions."""
-        return False
+        """Return True for BetterLiving (has save commands), False for other Keeson."""
+        return self._betterliving_presets
 
     @property
     def supports_lights(self) -> bool:
@@ -394,10 +437,10 @@ class KeesonController(BedController):
             # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
             int_bytes = int_to_bytes(command_value)
-            # Sino variant (Dynasty, INNOVA) uses big-endian byte order
-            # All other variants use little-endian (bytes reversed)
-            if self._variant != KEESON_VARIANT_SINO:
-                int_bytes.reverse()  # Little-endian for non-ORE variants
+            # Sino variant (Dynasty, INNOVA) and BetterLiving BED_DEFAULT use
+            # big-endian byte order. All other variants use little-endian.
+            if self._variant != KEESON_VARIANT_SINO and not self._betterliving_presets:
+                int_bytes.reverse()  # Little-endian for non-Sino variants
             prefix = 0xE6 if self._variant == KEESON_VARIANT_OKIN else 0xE5
             data = [prefix, 0xFE, 0x16] + int_bytes
             checksum = sum(data) ^ 0xFF
@@ -728,7 +771,10 @@ class KeesonController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT))
+        if self._betterliving_presets:
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_FLAT))
+        else:
+            await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT))
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset.
@@ -737,7 +783,27 @@ class KeesonController(BedController):
         - KSBT: Memory 1 (0x2000) = M button, Memory 2 (0x4000) = TV button
         - BaseI4/I5: Memory 3 (0x8000) is the only confirmed memory preset
         - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
+        - BetterLiving: Memory 1 (0x01000008), Memory 2 (0x01000009)
+        - CB1322: Memory 1 (0x00010000), Memory 2 (0x00040000)
         """
+        if self._betterliving_presets:
+            commands = {
+                1: BetterLivingCommands.PRESET_MEMORY_1,
+                2: BetterLivingCommands.PRESET_MEMORY_2,
+            }
+            if command := commands.get(memory_num):
+                await self.write_command(self._build_command(command))
+            return
+
+        if self._cb1322_presets:
+            commands = {
+                1: CB1322Commands.PRESET_MEMORY_1,
+                2: CB1322Commands.PRESET_MEMORY_2,
+            }
+            if command := commands.get(memory_num):
+                await self.write_command(self._build_command(command))
+            return
+
         # Warn about variant-specific behavior
         if self._variant != "base" and memory_num == 3:
             _LOGGER.warning(
@@ -760,14 +826,45 @@ class KeesonController(BedController):
             await self.write_command(self._build_command(command))
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported on Keeson)."""
+        """Program current position to memory.
+
+        BetterLiving BED_DEFAULT has dedicated save commands.
+        CB1322 emulates save by sending the recall command repeated 30x at 100ms
+        (simulating a long press on the physical remote).
+        Other Keeson variants don't support programming.
+        """
+        if self._betterliving_presets:
+            commands = {
+                1: BetterLivingCommands.SAVE_MEMORY_1,
+                2: BetterLivingCommands.SAVE_MEMORY_2,
+            }
+            if command := commands.get(memory_num):
+                await self.write_command(self._build_command(command))
+            return
+
+        if self._cb1322_presets:
+            commands = {
+                1: CB1322Commands.PRESET_MEMORY_1,
+                2: CB1322Commands.PRESET_MEMORY_2,
+            }
+            if command := commands.get(memory_num):
+                await self.write_command(
+                    self._build_command(command),
+                    repeat_count=30,
+                    repeat_delay_ms=100,
+                )
+            return
+
         _LOGGER.warning(
             "Keeson beds don't support programming memory presets (requested: %d)", memory_num
         )
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
+        if self._betterliving_presets:
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ZERO_G))
+        else:
+            await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT/Ergomotion 'M' button / Memory 1)."""

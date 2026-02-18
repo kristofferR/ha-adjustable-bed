@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
+    KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_OKIN,
     OCTO_VARIANT_STANDARD,
@@ -212,6 +213,134 @@ async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature()
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
+    assert getattr(controller, "_betterliving_presets", None) is True
+
+
+async def test_factory_auto_detects_keeson_sino_for_okin_ble_name_single_uuid() -> None:
+    """OKIN-BLE name + single fallback UUID should select Sino with betterliving presets."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[
+            SimpleNamespace(uuid="0000fff0-0000-1000-8000-00805f9b34fb"),
+        ],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="OKIN-BLE00000",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
+    assert getattr(controller, "_betterliving_presets", None) is True
+
+
+async def test_factory_auto_detects_cb1322_variant() -> None:
+    """OKIN-BLE name + fallback UUIDs + CB1322 manufacturer should select OKIN with cb1322."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[
+            SimpleNamespace(uuid="0000fff0-0000-1000-8000-00805f9b34fb"),
+            SimpleNamespace(uuid="0000ffb0-0000-1000-8000-00805f9b34fb"),
+        ],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="OKIN-BLE00000",
+        ble_manufacturer="BLE-4.0 Module",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_OKIN
+    assert getattr(controller, "_cb1322_presets", None) is True
+
+
+async def test_factory_auto_detects_cb1322_dewertokin_manufacturer() -> None:
+    """DewertOKIN manufacturer string should also trigger CB1322 detection."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[
+            SimpleNamespace(uuid="0000fff0-0000-1000-8000-00805f9b34fb"),
+            SimpleNamespace(uuid="0000ffb0-0000-1000-8000-00805f9b34fb"),
+        ],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="OKIN-BLE00000",
+        ble_manufacturer="DewertOKIN",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_OKIN
+    assert getattr(controller, "_cb1322_presets", None) is True
+
+
+async def test_betterliving_preset_commands() -> None:
+    """BetterLiving presets should use BetterLivingCommands values."""
+    from custom_components.adjustable_bed.beds.keeson import (
+        BetterLivingCommands,
+        KeesonController,
+    )
+
+    coordinator = _FactoryCoordinator()
+    controller = KeesonController(
+        coordinator, variant="sino", betterliving_presets=True
+    )
+
+    # Verify flat preset builds the right command value
+    cmd = controller._build_command(BetterLivingCommands.PRESET_FLAT)
+    # E5 FE 16 + big-endian 0x01000002 + checksum
+    assert cmd[0] == 0xE5
+    assert cmd[1] == 0xFE
+    assert cmd[2] == 0x16
+    # Big-endian 0x01000002 = [0x01, 0x00, 0x00, 0x02]
+    assert cmd[3:7] == bytes([0x01, 0x00, 0x00, 0x02])
+
+    # Verify memory slot count
+    assert controller.memory_slot_count == 2
+    assert controller.supports_memory_programming is True
+
+
+async def test_cb1322_preset_commands() -> None:
+    """CB1322 presets should use CB1322Commands values with OKIN (little-endian) format."""
+    from custom_components.adjustable_bed.beds.keeson import (
+        CB1322Commands,
+        KeesonController,
+    )
+
+    coordinator = _FactoryCoordinator()
+    controller = KeesonController(
+        coordinator, variant="okin", cb1322_presets=True
+    )
+
+    # Verify memory 1 builds with OKIN prefix and little-endian
+    cmd = controller._build_command(CB1322Commands.PRESET_MEMORY_1)
+    # E6 FE 16 + little-endian 0x00010000 = [0x00, 0x00, 0x01, 0x00] + checksum
+    assert cmd[0] == 0xE6
+    assert cmd[1] == 0xFE
+    assert cmd[2] == 0x16
+    assert cmd[3:7] == bytes([0x00, 0x00, 0x01, 0x00])
+
+    # Verify memory slot count
+    assert controller.memory_slot_count == 2
+    assert controller.supports_memory_programming is False
 
 
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
