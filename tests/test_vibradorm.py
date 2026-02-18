@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 from bleak.exc import BleakCharacteristicNotFoundError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -208,6 +210,30 @@ class TestVibradormController:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_memory_programming is True
+
+    async def test_supports_memory_presets(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Vibradorm should support memory preset recall entities."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_memory_presets is True
+
+    async def test_supports_position_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Vibradorm should report position feedback via notifications."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_position_feedback is True
 
     async def test_supports_light_cycle(
         self,
@@ -535,3 +561,63 @@ class TestVibradormCommandFormat:
             VibradormCommands.ALL_UP,
         ]
         assert len(motor_commands) == len(set(motor_commands))
+
+
+class TestVibradormPositionFeedback:
+    """Test Vibradorm notification decoding and position mapping."""
+
+    def test_primary_position_packet_updates_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """Primary packet type should update back/legs angles."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Raw values match default calibration max to produce full configured angles.
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert updates == [("back", 68.0), ("legs", 45.0)]
+
+    def test_secondary_packet_maps_to_head_feet_after_primary_on_4_motor(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry_data: dict,
+    ) -> None:
+        """4-motor beds should map secondary position packets to head/feet."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm 4-motor Test Bed",
+            data={**mock_vibradorm_config_entry_data, CONF_MOTOR_COUNT: 4},
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="vibradorm_test_entry_4_motor",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Prime with a primary packet to establish back/legs mapping.
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+        )
+        updates.clear()
+
+        # Secondary packet should now be interpreted as head/feet.
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x15, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert updates == [("head", 68.0), ("feet", 45.0)]

@@ -47,6 +47,22 @@ VIBRADORM_COMMAND_UUID_CANDIDATES = (
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
 )
 
+VIBRADORM_POSITION_PACKET_PRIMARY = 0x11
+VIBRADORM_POSITION_PACKET_SECONDARY = 0x15
+VIBRADORM_POSITION_PACKET_TYPES = frozenset(
+    {
+        VIBRADORM_POSITION_PACKET_PRIMARY,
+        VIBRADORM_POSITION_PACKET_SECONDARY,
+    }
+)
+
+_DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
+    "back": 1100,
+    "legs": 700,
+    "head": 1100,
+    "feet": 700,
+}
+
 
 class VibradormCommands:
     """Vibradorm single-byte command constants.
@@ -122,6 +138,8 @@ class VibradormController(BedController):
         self._cbi_char_uuid: str = VIBRADORM_CBI_CHAR_UUID
         self._notify_char_uuid: str = VIBRADORM_NOTIFY_CHAR_UUID
         self._characteristics_initialized: bool = False
+        self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
+        self._seen_primary_position_packets: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -258,6 +276,11 @@ class VibradormController(BedController):
         return True
 
     @property
+    def supports_memory_presets(self) -> bool:
+        """Return True - Vibradorm beds support memory preset recall."""
+        return True
+
+    @property
     def memory_slot_count(self) -> int:
         """Return 4 - Vibradorm beds support 4 main memory slots (more available)."""
         return 4
@@ -265,6 +288,11 @@ class VibradormController(BedController):
     @property
     def supports_memory_programming(self) -> bool:
         """Return True - Vibradorm beds support programming memory positions."""
+        return True
+
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Vibradorm beds provide position notifications."""
         return True
 
     @property
@@ -384,52 +412,70 @@ class VibradormController(BedController):
         )
         self._cbi_toggle = not self._cbi_toggle
 
+    def _raw_to_angle(self, raw_value: int, motor: str) -> float:
+        """Convert VMAT raw encoder position to an angle estimate."""
+        current_max = self._max_raw_estimate.get(motor, 1)
+        if raw_value > current_max:
+            current_max = raw_value
+            self._max_raw_estimate[motor] = raw_value
+
+        if current_max <= 0:
+            return 0.0
+
+        percent = min(100.0, max(0.0, (raw_value / current_max) * 100.0))
+        max_angle = self._coordinator.get_max_angle(motor)
+        return round((percent / 100.0) * max_angle, 1)
+
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
-        Position notification format (from XMCMotorData.java):
-        - Byte 0-1: Header/flags
-        - Byte 2: Flags (bit 4 = init request, bit 6 = sync status)
-        - Bytes 3-4: Motor 1 position (16-bit big-endian)
-        - Bytes 5-6: Motor 2 position (16-bit big-endian)
-        - Bytes 7-8: Motor 3 position (16-bit big-endian)
-        - Bytes 9-10: Motor 4 position (16-bit big-endian)
-
-        Position values are raw encoder counts, higher values = more raised.
+        VMAT notifications include several packet types. Position packets use:
+        - Byte 0: Frame marker (0x20)
+        - Byte 1: Message family (typically 0x3F)
+        - Byte 2: Packet type (0x11 primary, 0x15 secondary)
+        - Bytes 3-4: Position value #1 (16-bit big-endian)
+        - Bytes 5-6: Position value #2 (16-bit big-endian)
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 8:
+        if len(data) < 7:
             _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
             return
 
-        # Parse motor positions (16-bit big-endian values)
-        # Motor 1 = head/back, Motor 2 = legs
-        motor1_pos = int.from_bytes(data[3:5], byteorder="big")
-        motor2_pos = int.from_bytes(data[5:7], byteorder="big")
+        if data[0] != 0x20:
+            return
+
+        packet_type = data[2]
+        if packet_type not in VIBRADORM_POSITION_PACKET_TYPES:
+            return
+
+        value1_raw = int.from_bytes(data[3:5], byteorder="big")
+        value2_raw = int.from_bytes(data[5:7], byteorder="big")
+
+        position_updates: dict[str, int]
+
+        # 4-motor MC4 models emit two position packet groups:
+        # - 0x11 for back/legs
+        # - 0x15 for head/feet
+        # Keep 2-motor behavior intact by treating both as back/legs there.
+        if packet_type == VIBRADORM_POSITION_PACKET_PRIMARY:
+            self._seen_primary_position_packets = True
+            position_updates = {"back": value1_raw, "legs": value2_raw}
+        elif self._coordinator.motor_count >= 4 and self._seen_primary_position_packets:
+            position_updates = {"head": value1_raw, "feet": value2_raw}
+        else:
+            position_updates = {"back": value1_raw, "legs": value2_raw}
 
         _LOGGER.debug(
-            "Vibradorm position update: motor1=%d, motor2=%d (raw: %s)",
-            motor1_pos,
-            motor2_pos,
+            "Vibradorm position packet type=0x%02X updates=%s raw=%s",
+            packet_type,
+            position_updates,
             data.hex(),
         )
 
         if self._notify_callback:
-            # Convert raw positions to percentages
-            # Based on user data: flat = ~0, raised = ~0x1922 (~6434) for head
-            # Using conservative estimate: 0-10000 range maps to 0-100%
-            head_pct = min(100.0, max(0.0, motor1_pos / 100.0))
-            legs_pct = min(100.0, max(0.0, motor2_pos / 100.0))
-
-            _LOGGER.debug(
-                "Vibradorm position percentages: head=%.1f%%, legs=%.1f%%",
-                head_pct,
-                legs_pct,
-            )
-
-            self._notify_callback("back", head_pct)
-            self._notify_callback("legs", legs_pct)
+            for motor, raw_value in position_updates.items():
+                self._notify_callback(motor, self._raw_to_angle(raw_value, motor))
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications."""
