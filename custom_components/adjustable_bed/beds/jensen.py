@@ -583,7 +583,14 @@ class JensenController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self.write_command(JensenCommands.PRESET_FLAT)
+        # Flat preset reliability improves when sent as a short burst.
+        pulse_count = max(2, self._coordinator.motor_pulse_count)
+        pulse_delay = max(1, self._coordinator.motor_pulse_delay_ms)
+        await self.write_command(
+            JensenCommands.PRESET_FLAT,
+            repeat_count=pulse_count,
+            repeat_delay_ms=pulse_delay,
+        )
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (Jensen only has 1 slot)."""
