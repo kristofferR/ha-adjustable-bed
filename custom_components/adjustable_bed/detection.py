@@ -78,7 +78,9 @@ from .const import (
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
+    KEESON_FALLBACK_GATT_PAIRS,
     KEESON_NAME_PATTERNS,
+    KEESON_SINO_NAME_PATTERNS,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
@@ -133,6 +135,10 @@ MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 # Or: "ZR" + 2 digits (like ZR10, ZR60)
 # Case-insensitive via re.IGNORECASE
 RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[0-9]{2})", re.IGNORECASE)
+
+KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
+    service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
+)
 
 
 def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
@@ -843,6 +849,29 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
             ambiguous_types=[BED_TYPE_SOLACE, BED_TYPE_MOTOSLEEP],
         )
+
+    # BetterLiving / related OKIN-BLE names use Keeson-Sino packet format on
+    # fallback UUIDs that are otherwise shared with Richmat WiLinke (FFF0).
+    # Keep this before generic Richmat WiLinke checks.
+    if any(device_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS):
+        matched_fallback_uuids = sorted(
+            uuid for uuid in KEESON_FALLBACK_SERVICE_UUIDS if uuid in service_uuids
+        )
+        if matched_fallback_uuids:
+            signals.append("name:keeson_sino")
+            for uuid in matched_fallback_uuids:
+                signals.append(f"uuid:{uuid}")
+            _LOGGER.info(
+                "Detected Keeson Sino bed at %s (name: %s) by name pattern + fallback UUIDs: %s",
+                service_info.address,
+                service_info.name,
+                ", ".join(matched_fallback_uuids),
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_KEESON,
+                confidence=0.9,
+                signals=signals,
+            )
 
     # Check for Leggett & Platt MlRM variant (MlRM prefix with WiLinke UUID)
     # Must be before generic Richmat WiLinke check

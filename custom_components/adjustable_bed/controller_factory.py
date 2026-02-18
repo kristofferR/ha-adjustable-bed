@@ -54,6 +54,8 @@ from .const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
@@ -71,6 +73,7 @@ from .const import (
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SBI_VARIANT_BOTH,
+    VARIANT_AUTO,
 )
 
 if TYPE_CHECKING:
@@ -87,6 +90,7 @@ async def create_controller(
     bed_type: str,
     protocol_variant: str | None,
     client: BleakClient | None,
+    device_name: str | None = None,
     octo_pin: str = "",
     richmat_remote: str = "auto",
     jensen_pin: str = "",
@@ -102,6 +106,7 @@ async def create_controller(
         bed_type: The type of bed (from const.py BED_TYPE_* constants)
         protocol_variant: Protocol variant for beds with multiple protocols
         client: The BleakClient connection (needed for auto-detection)
+        device_name: Raw BLE device name from discovery/connection (if available)
         octo_pin: PIN for Octo beds (default: empty string)
         richmat_remote: Remote code for Richmat beds (default: "auto")
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
@@ -246,6 +251,34 @@ async def create_controller(
         if keeson_variant == "ore":
             _LOGGER.debug("Normalizing deprecated Keeson variant 'ore' to 'sino'")
             keeson_variant = KEESON_VARIANT_SINO
+
+        # Auto-detect Keeson sub-variant where possible.
+        # BetterLiving/OKIN-BLE beds use Sino (big-endian) and advertise
+        # fallback service UUIDs that overlap with Richmat WiLinke.
+        if keeson_variant in (None, "", VARIANT_AUTO):
+            service_uuids: set[str] = set()
+            if client is not None and client.services:
+                service_uuids = {service.uuid.lower() for service in client.services}
+
+            fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
+            has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
+            has_dual_fallback_services = {
+                "0000fff0-0000-1000-8000-00805f9b34fb",
+                "0000ffb0-0000-1000-8000-00805f9b34fb",
+            } <= service_uuids
+            normalized_name = (device_name or "").lower()
+            is_okin_ble_name = any(
+                normalized_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS
+            )
+
+            if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
+                _LOGGER.info(
+                    "Auto-detected Keeson Sino variant for %s (name: %s, services: %s)",
+                    coordinator.address,
+                    device_name or "unknown",
+                    sorted(service_uuids),
+                )
+                keeson_variant = KEESON_VARIANT_SINO
 
         # Use configured variant or default to base
         if keeson_variant == KEESON_VARIANT_KSBT:

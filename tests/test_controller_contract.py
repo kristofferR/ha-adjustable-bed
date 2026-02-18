@@ -11,15 +11,18 @@ import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
+    KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_OKIN,
     OCTO_VARIANT_STANDARD,
     RICHMAT_VARIANT_NORDIC,
     SBI_VARIANT_BOTH,
     SUPPORTED_BED_TYPES,
+    VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 
@@ -185,6 +188,30 @@ async def test_factory_resolves_every_supported_bed_type(bed_type: str) -> None:
     """Every supported bed type should resolve through create_controller."""
     controller = await _create_controller_for_bed_type(bed_type)
     assert isinstance(controller, BedController)
+
+
+async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature() -> None:
+    """Keeson auto mode should select Sino for BetterLiving-style BLE signature."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[
+            SimpleNamespace(uuid="0000fff0-0000-1000-8000-00805f9b34fb"),
+            SimpleNamespace(uuid="0000ffb0-0000-1000-8000-00805f9b34fb"),
+        ],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="OKIN-BLE00000",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
 
 
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)

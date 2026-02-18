@@ -916,6 +916,7 @@ class AdjustableBedCoordinator:
                     bed_type=self._bed_type,
                     protocol_variant=self._protocol_variant,
                     client=self._client,
+                    device_name=device.name,
                     octo_pin=self._octo_pin,
                     richmat_remote=richmat_remote,
                     jensen_pin=self._jensen_pin,

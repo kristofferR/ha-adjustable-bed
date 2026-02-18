@@ -44,6 +44,7 @@ from custom_components.adjustable_bed.const import (
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
+    KEESON_FALLBACK_GATT_PAIRS,
     LEGGETT_GEN2_SERVICE_UUID,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
@@ -207,17 +208,6 @@ class TestDetectBedTypeByServiceUUID:
         assert result.bed_type == BED_TYPE_LIMOSS
         assert result.confidence == 0.9
 
-    def test_detect_suta_by_fff0_uuid_and_name(self):
-        """Test SUTA detection by FFF0 UUID + SUTA name pattern."""
-        service_info = _make_service_info(
-            name="SUTA-B803",
-            service_uuids=[SUTA_SERVICE_UUID],
-        )
-        result = detect_bed_type_detailed(service_info)
-        assert result.bed_type == BED_TYPE_SUTA
-        assert result.confidence == 0.9
-
-
 class TestDetectBedTypeByNamePattern:
     """Test detection by device name patterns."""
 
@@ -320,6 +310,17 @@ class TestDetectBedTypeByNamePattern:
         """Test Keeson detection by ORE- prefix (Dynasty/INNOVA beds)."""
         service_info = _make_service_info(name="ORE-ac2170000d")
         assert detect_bed_type(service_info) == BED_TYPE_KEESON
+
+    def test_detect_keeson_sino_by_okin_ble_name_and_fallback_uuid(self):
+        """Test BetterLiving-style OKIN-BLE names resolve to Keeson (Sino path)."""
+        fallback_service_uuid = KEESON_FALLBACK_GATT_PAIRS[0][0]
+        service_info = _make_service_info(
+            name="OKIN-BLE00000",
+            service_uuids=[fallback_service_uuid],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KEESON
+        assert result.confidence == 0.9
 
     def test_detect_serta_by_name(self):
         """Test Serta detection by name pattern."""

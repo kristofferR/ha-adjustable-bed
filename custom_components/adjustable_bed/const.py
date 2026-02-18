@@ -559,6 +559,10 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-")
 
+# BetterLiving / related OKIN app naming that uses Keeson-Sino packet format (E5 FE 16, big-endian)
+# Source: com.ore.betterliving2 app disassembly
+KEESON_SINO_NAME_PATTERNS: Final = ("okin-ble",)
+
 # Cool Base name patterns (Keeson BaseI5 with fan control)
 # From BleConnect.java: limitedDevice = "base-i5"
 COOLBASE_NAME_PATTERNS: Final = ("base-i5",)
@@ -755,7 +759,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA - big-endian, FFE5 service)",
+    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
 }
 
