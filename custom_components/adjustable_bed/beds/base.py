@@ -192,7 +192,8 @@ class BedController(ABC):
             ConnectionError: If not connected to the bed
             BleakError: If the GATT write fails
         """
-        if self.client is None or not self.client.is_connected:
+        client = self.client
+        if client is None or not client.is_connected:
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
 
@@ -214,10 +215,14 @@ class BedController(ABC):
                 return
 
             try:
+                client = self.client
+                if client is None or not client.is_connected:
+                    _LOGGER.error("Cannot write command: BLE client disconnected during write")
+                    raise ConnectionError("Not connected to bed")
                 # Acquire BLE lock for each individual write to prevent conflicts
                 # with concurrent position reads during movement
                 async with self._ble_lock:
-                    await self.client.write_gatt_char(char_uuid, command, response=response)
+                    await client.write_gatt_char(char_uuid, command, response=response)
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write command %s to %s",

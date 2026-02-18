@@ -269,7 +269,7 @@ class OkinCB24Controller(BedController):
                 )
             except asyncio.CancelledError:
                 raise
-            except BleakError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send stop command during cleanup", exc_info=True)
 
     # Motor control methods
@@ -339,17 +339,22 @@ class OkinCB24Controller(BedController):
                 repeat_delay_ms=self.PRESET_REPEAT_DELAY_MS,
             )
         finally:
-            try:
-                await asyncio.shield(
-                    self.write_command(
-                        self._build_command(0),
-                        cancel_event=asyncio.Event(),
+            # If a newer command preempted this preset, skip explicit STOP so the
+            # handoff stays responsive.
+            if self._coordinator.cancel_command.is_set():
+                _LOGGER.debug("Preset command preempted; skipping STOP cleanup")
+            else:
+                try:
+                    await asyncio.shield(
+                        self.write_command(
+                            self._build_command(0),
+                            cancel_event=asyncio.Event(),
+                        )
                     )
-                )
-            except asyncio.CancelledError:
-                raise
-            except BleakError:
-                _LOGGER.debug("Failed to send stop command during preset cleanup", exc_info=True)
+                except asyncio.CancelledError:
+                    raise
+                except (BleakError, ConnectionError):
+                    _LOGGER.debug("Failed to send stop command during preset cleanup", exc_info=True)
 
     async def preset_flat(self) -> None:
         """Go to flat position."""

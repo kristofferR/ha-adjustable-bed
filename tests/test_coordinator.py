@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -875,6 +876,102 @@ class TestStopAfterCancel:
 
         # Command should NOT have executed because cancel counter changed while waiting
         assert not command_executed
+
+    async def test_stale_command_does_not_disconnect_with_disconnect_after_enabled(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A stale queued command should not force disconnect/reconnect handoff churn."""
+        del mock_bleak_client
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_DISCONNECT_AFTER_COMMAND: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="disconnect_stale_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        coordinator.async_disconnect = AsyncMock()
+
+        async def tracked_command(controller):
+            del controller
+
+        import asyncio
+        async with coordinator._command_lock:
+            task = asyncio.create_task(
+                coordinator.async_execute_controller_command(tracked_command)
+            )
+            await asyncio.sleep(0.01)
+            coordinator._cancel_counter += 1
+
+        await task
+        coordinator.async_disconnect.assert_not_awaited()
+
+    async def test_preempted_command_skips_disconnect_until_replacement_finishes(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """When a command is preempted, only the replacement should trigger disconnect."""
+        del mock_bleak_client
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_DISCONNECT_AFTER_COMMAND: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="disconnect_handoff_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        coordinator.async_disconnect = AsyncMock()
+
+        import asyncio
+
+        command_started = asyncio.Event()
+
+        async def long_running_command(controller):
+            del controller
+            command_started.set()
+            while not coordinator.cancel_command.is_set():
+                await asyncio.sleep(0.001)
+
+        async def replacement_command(controller):
+            del controller
+
+        first_task = asyncio.create_task(
+            coordinator.async_execute_controller_command(long_running_command, cancel_running=False)
+        )
+        await command_started.wait()
+        await coordinator.async_execute_controller_command(replacement_command)
+        await first_task
+
+        assert coordinator.async_disconnect.await_count == 1
 
     async def test_stop_after_movement_always_sent(
         self,

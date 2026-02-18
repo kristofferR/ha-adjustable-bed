@@ -1503,15 +1503,10 @@ class AdjustableBedCoordinator:
                 _LOGGER.debug("Controller command cancelled while waiting for lock")
                 # Handle disconnect timer since we're bailing out without executing
                 if self._client is not None and self._client.is_connected:
-                    if self._disconnect_after_command and not skip_disconnect:
-                        # Configured to disconnect after commands and not a keep-alive command -
-                        # disconnect now since no command was executed (avoids leaving connection open)
-                        _LOGGER.debug("Disconnecting after cancelled command (disconnect_after_command=True)")
-                        await self.async_disconnect()
-                    else:
-                        # Not configured for immediate disconnect or skip_disconnect is True
-                        # (e.g., keep-alive commands) - reset idle timer instead
-                        self._reset_disconnect_timer()
+                    # A newer command superseded this one while it waited for lock.
+                    # Keep the connection alive to avoid disconnect/reconnect thrash
+                    # between back-to-back commands.
+                    self._reset_disconnect_timer()
                 return
 
             try:
@@ -1572,14 +1567,24 @@ class AdjustableBedCoordinator:
                 raise
             finally:
                 if self._client is not None and self._client.is_connected:
+                    command_preempted = self._cancel_counter > entry_cancel_count
                     # Disconnect immediately if configured to do so (unless skip_disconnect)
-                    if self._disconnect_after_command and not skip_disconnect:
+                    if (
+                        self._disconnect_after_command
+                        and not skip_disconnect
+                        and not command_preempted
+                    ):
                         _LOGGER.debug(
                             "Disconnecting after command (disconnect_after_command=True) for %s",
                             self._address,
                         )
                         await self.async_disconnect()
                     else:
+                        if command_preempted:
+                            _LOGGER.debug(
+                                "Skipping disconnect for %s: newer command is pending",
+                                self._address,
+                            )
                         # Otherwise, reset the idle disconnect timer
                         self._reset_disconnect_timer()
 
