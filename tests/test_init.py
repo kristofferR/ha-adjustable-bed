@@ -6,14 +6,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
     SERVICE_SAVE_PRESET,
     SERVICE_STOP_ALL,
+    async_migrate_entry,
 )
-from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_LINAK,
+    BED_TYPE_VIBRADORM,
+    CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
+    DOMAIN,
+)
 
 
 class TestIntegrationSetup:
@@ -175,6 +183,88 @@ class TestIntegrationUnload:
         assert not hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
 
 
+class TestMigration:
+    """Test config entry migrations."""
+
+    async def test_migrate_v1_vibradorm_enables_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """V1 Vibradorm entries should migrate angle sensing from disabled to enabled."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm Migration Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:01",
+            entry_id="migration_vibradorm_v1",
+            version=1,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 2
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """V1 non-Vibradorm entries should keep disable_angle_sensing unchanged."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Linak Migration Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:02",
+            entry_id="migration_linak_v1",
+            version=1,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 2
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+    async def test_migrate_v2_entry_is_noop(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Already-migrated entries should remain unchanged."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm Migration V2 Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:03",
+            entry_id="migration_vibradorm_v2",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 2
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+
 class TestServices:
     """Test integration services."""
 
@@ -288,14 +378,14 @@ class TestServices:
         with (
             patch.object(type(controller), "supports_memory_presets", new_callable=lambda: property(lambda self: True)),
             patch.object(type(controller), "memory_slot_count", new_callable=lambda: property(lambda self: 3)),
+            pytest.raises(ServiceValidationError, match="only supports memory presets 1-3"),
         ):
-            with pytest.raises(ServiceValidationError, match="only supports memory presets 1-3"):
-                await hass.services.async_call(
-                    DOMAIN,
-                    SERVICE_GOTO_PRESET,
-                    {"device_id": [device_id], "preset": 4},
-                    blocking=True,
-                )
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_GOTO_PRESET,
+                {"device_id": [device_id], "preset": 4},
+                blocking=True,
+            )
 
     async def test_stop_all_service(
         self,

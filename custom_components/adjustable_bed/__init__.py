@@ -21,8 +21,10 @@ from homeassistant.helpers import device_registry as dr
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
+    BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -75,6 +77,51 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SWITCH,
 ]
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate config entries to newer schema versions."""
+    _LOGGER.debug(
+        "Migrating config entry %s for %s from version %s",
+        entry.entry_id,
+        entry.title,
+        entry.version,
+    )
+
+    if entry.version > 2:
+        _LOGGER.error(
+            "Cannot migrate config entry %s for %s from unsupported future version %s",
+            entry.entry_id,
+            entry.title,
+            entry.version,
+        )
+        return False
+
+    if entry.version == 1:
+        new_data = {**entry.data}
+
+        # Legacy Vibradorm entries defaulted angle sensing to disabled, so
+        # position feedback entities never showed up unless manually reconfigured.
+        if (
+            new_data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
+            and new_data.get(CONF_DISABLE_ANGLE_SENSING, True)
+        ):
+            new_data[CONF_DISABLE_ANGLE_SENSING] = False
+            _LOGGER.info(
+                "Migrated %s (%s): enabled angle sensing for Vibradorm position feedback",
+                entry.title,
+                entry.entry_id,
+            )
+
+        hass.config_entries.async_update_entry(entry, data=new_data, version=2)
+
+    _LOGGER.debug(
+        "Migration complete for config entry %s (%s), now at version %s",
+        entry.title,
+        entry.entry_id,
+        entry.version,
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
