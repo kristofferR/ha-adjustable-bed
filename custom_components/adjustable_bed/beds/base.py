@@ -538,6 +538,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_both_up(self) -> bool:
+        """Return True if bed supports moving both head and legs up simultaneously."""
+        return False
+
+    @property
     def supports_preset_yoga(self) -> bool:
         """Return True if bed supports yoga preset."""
         return False
@@ -822,6 +827,14 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support this preset
         """
         raise NotImplementedError("TV preset not supported on this bed")
+
+    async def preset_both_up(self) -> None:
+        """Move both head and legs up simultaneously.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support this preset
+        """
+        raise NotImplementedError("Both up preset not supported on this bed")
 
     async def preset_yoga(self) -> None:
         """Move bed to yoga position.

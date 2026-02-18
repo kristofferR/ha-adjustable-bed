@@ -150,6 +150,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         required_capability="supports_preset_incline",
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_both_up",
+        translation_key="preset_both_up",
+        icon="mdi:arrow-up-bold",
+        press_fn=lambda ctrl: ctrl.preset_both_up(),
+        cancel_movement=True,
+        required_capability="supports_preset_both_up",
+    ),
+    AdjustableBedButtonEntityDescription(
         key="preset_yoga",
         translation_key="preset_yoga",
         icon="mdi:yoga",

@@ -607,7 +607,16 @@ class OctoController(BedController):
         """Stop all motors."""
         await self._stop_motors()
 
+    @property
+    def supports_preset_both_up(self) -> bool:
+        """Return True - Octo beds support moving both head and legs up."""
+        return True
+
     # Preset methods
+    async def preset_both_up(self) -> None:
+        """Move both head and legs up simultaneously."""
+        await self._move_with_stop(OCTO_MOTOR_HEAD | OCTO_MOTOR_LEGS, "up")
+
     async def preset_flat(self) -> None:
         """Go to flat position.
 
@@ -1029,6 +1038,23 @@ class OctoStar2Controller(BedController):
         Star2 doesn't have explicit stop command - motors stop when commands cease.
         """
         await self._send_stop()
+
+    @property
+    def supports_preset_both_up(self) -> bool:
+        """Return True - Octo Star2 beds support moving both head and legs up."""
+        return True
+
+    async def preset_both_up(self) -> None:
+        """Move both head and legs up simultaneously."""
+        pulse_count, pulse_delay = self._get_pulse_settings()
+        try:
+            await self.write_command(
+                self.CMD_BOTH_UP,
+                repeat_count=pulse_count,
+                repeat_delay_ms=pulse_delay,
+            )
+        finally:
+            await self._send_stop()
 
     async def preset_flat(self) -> None:
         """Go to flat position by moving both motors down."""

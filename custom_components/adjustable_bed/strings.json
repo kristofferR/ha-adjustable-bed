@@ -297,6 +297,9 @@
       "preset_incline": {
         "name": "Incline"
       },
+      "preset_both_up": {
+        "name": "Both Up"
+      },
       "preset_yoga": {
         "name": "Yoga"
       },

@@ -335,6 +335,9 @@
       "program_memory_6": {
         "name": "Save to Memory 6"
       },
+      "preset_both_up": {
+        "name": "Both Up"
+      },
       "massage_all_off": {
         "name": "Massage Off"
       },
