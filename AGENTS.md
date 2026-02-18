@@ -8,6 +8,11 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 
 **Current status:** 36 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, and Vibradorm tested. Other brands need community testing.
 
+## GitHub Comment Approval
+
+- Never post GitHub comments (issues, pull requests, discussions, releases, etc.) without explicit and specific user approval for that exact comment action.
+- If approval is missing or ambiguous, ask before posting.
+
 ## Architecture
 
 ```

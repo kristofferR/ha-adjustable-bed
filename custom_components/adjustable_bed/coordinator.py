@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import inspect
 import logging
 import random
 import time
@@ -16,6 +17,12 @@ from bleak import BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from bleak_retry_connector import establish_connection
+
+try:
+    from bleak_retry_connector import close_stale_connections_by_address
+except ImportError:
+    # Older bleak-retry-connector versions may not expose this helper.
+    close_stale_connections_by_address = None
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -686,6 +693,26 @@ class AdjustableBedCoordinator:
                     self._connection_timeout,
                 )
 
+                # Best-effort BlueZ cleanup. Some failed attempts leave stale pending
+                # connections behind, which can cause repeated connect timeouts.
+                if close_stale_connections_by_address is not None:
+                    try:
+                        close_result = close_stale_connections_by_address(self._address)
+                        if inspect.isawaitable(close_result):
+                            await close_result
+                    except (OSError, BleakError) as err:
+                        _LOGGER.debug(
+                            "Could not close stale connections for %s: %s",
+                            self._address,
+                            err,
+                        )
+                    except Exception:
+                        _LOGGER.warning(
+                            "Unexpected error closing stale connections for %s",
+                            self._address,
+                            exc_info=True,
+                        )
+
                 # Always provide a callback so bleak-retry-connector can refresh the
                 # BLEDevice between retries. In auto mode this prevents using a stale
                 # device object from an older scan snapshot.
@@ -916,10 +943,12 @@ class AdjustableBedCoordinator:
                     bed_type=self._bed_type,
                     protocol_variant=self._protocol_variant,
                     client=self._client,
+                    device_name=device.name,
                     octo_pin=self._octo_pin,
                     richmat_remote=richmat_remote,
                     jensen_pin=self._jensen_pin,
                     cb24_bed_selection=self._cb24_bed_selection,
+                    ble_manufacturer=ble_manufacturer,
                 )
                 _LOGGER.debug("Controller created successfully")
 

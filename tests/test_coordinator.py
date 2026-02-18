@@ -83,6 +83,23 @@ class TestCoordinatorConnection:
         assert result is True
         assert coordinator.controller is not None
 
+    @pytest.mark.usefixtures("mock_coordinator_connected")
+    async def test_connect_closes_stale_connections_before_connect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Test connection attempts close stale BlueZ state before GATT connect."""
+        with patch(
+            "custom_components.adjustable_bed.coordinator.close_stale_connections_by_address",
+            new_callable=AsyncMock,
+        ) as mock_close_stale:
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        mock_close_stale.assert_called_once_with(TEST_ADDRESS)
+
     async def test_connect_device_not_found(
         self,
         hass: HomeAssistant,

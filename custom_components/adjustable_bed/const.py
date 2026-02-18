@@ -313,6 +313,15 @@ KEESON_FALLBACK_GATT_PAIRS: Final = [
     ("0000ffb0-0000-1000-8000-00805f9b34fb", "0000ffb2-0000-1000-8000-00805f9b34fb"),
 ]
 
+# BetterLiving-style OKIN-BLE beds advertise both fallback service UUIDs
+KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset({
+    "0000fff0-0000-1000-8000-00805f9b34fb",
+    "0000ffb0-0000-1000-8000-00805f9b34fb",
+})
+
+# CB1322 sub-variant manufacturer name markers (lowercase for comparison)
+CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
+
 # Ergomotion specific UUIDs (same protocol as Keeson Base, but with position feedback)
 ERGOMOTION_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 ERGOMOTION_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
@@ -559,6 +568,10 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
 KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-")
 
+# BetterLiving / related OKIN app naming that uses Keeson-Sino packet format (E5 FE 16, big-endian)
+# Source: com.ore.betterliving2 app disassembly
+KEESON_SINO_NAME_PATTERNS: Final = ("okin-ble",)
+
 # Cool Base name patterns (Keeson BaseI5 with fan control)
 # From BleConnect.java: limitedDevice = "base-i5"
 COOLBASE_NAME_PATTERNS: Final = ("base-i5",)
@@ -755,7 +768,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA - big-endian, FFE5 service)",
+    KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
 }
 
