@@ -508,13 +508,13 @@ class TestVibradormPresets:
         first_call_data = calls[0][0][1]
         assert first_call_data[0] == VibradormCommands.ALL_DOWN
 
-    async def test_preset_memory_1_sends_cbi_command(
+    async def test_preset_memory_1_sends_motor_command(
         self,
         hass: HomeAssistant,
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """preset_memory(1) should send 2-byte CBI command with MEMORY_1."""
+        """preset_memory(1) should send 1-byte motor command via COMMAND char."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -522,18 +522,17 @@ class TestVibradormPresets:
         await coordinator.controller.preset_memory(1)
 
         calls = mock_client.write_gatt_char.call_args_list
-        # First call: CBI command [0x00, MEMORY_1] (toggle=False -> 0x0000)
         first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 2
-        assert first_call_data[1] == VibradormCommands.MEMORY_1
+        assert len(first_call_data) == 1
+        assert first_call_data[0] == VibradormCommands.MEMORY_1
 
-    async def test_preset_memory_4_sends_cbi_command(
+    async def test_preset_memory_4_sends_motor_command(
         self,
         hass: HomeAssistant,
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """preset_memory(4) should send 2-byte CBI command with MEMORY_4."""
+        """preset_memory(4) should send 1-byte motor command via COMMAND char."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -542,16 +541,16 @@ class TestVibradormPresets:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 2
-        assert first_call_data[1] == VibradormCommands.MEMORY_4
+        assert len(first_call_data) == 1
+        assert first_call_data[0] == VibradormCommands.MEMORY_4
 
-    async def test_preset_memory_6_sends_cbi_command(
+    async def test_preset_memory_6_sends_motor_command(
         self,
         hass: HomeAssistant,
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """preset_memory(6) should send 2-byte CBI command with MEMORY_6."""
+        """preset_memory(6) should send 1-byte motor command via COMMAND char."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -560,8 +559,25 @@ class TestVibradormPresets:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 2
-        assert first_call_data[1] == VibradormCommands.MEMORY_6
+        assert len(first_call_data) == 1
+        assert first_call_data[0] == VibradormCommands.MEMORY_6
+
+    async def test_preset_memory_sends_stop_after(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """preset_memory should send STOP after motor command (hold-to-run)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.preset_memory(1)
+
+        calls = mock_client.write_gatt_char.call_args_list
+        last_call_data = calls[-1][0][1]
+        assert last_call_data[0] == VibradormCommands.STOP
 
     async def test_program_memory_sends_store_sequence(
         self,
@@ -655,32 +671,82 @@ class TestVibradormCommandFormat:
 class TestVibradormPositionFeedback:
     """Test Vibradorm notification decoding and position mapping."""
 
-    def test_primary_position_packet_updates_back_and_legs(
+    def test_flat_position_packet_reports_zero_angles(
         self,
         hass: HomeAssistant,
         mock_vibradorm_config_entry,
     ) -> None:
-        """Primary packet type should update back/legs angles."""
+        """Flat position (all zeros) should report 0.0 angles."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         controller = VibradormController(coordinator)
 
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Raw values match default calibration max to produce full configured angles.
+        # Real flat data: 20 3F 02 00 00 00 00 00 00 00 00 00
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([0x20, 0x3F, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
         )
 
-        assert updates == [("back", 68.0), ("legs", 45.0)]
+        assert updates == [("back", 0.0), ("legs", 0.0)]
 
-    def test_secondary_packet_maps_to_head_feet_after_primary_on_4_motor(
+    def test_position_packet_updates_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """Position packet should parse back/legs at correct offsets with LE."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Real head-up data: 20 3F 02 00 22 19 00 00 00 00 00 00
+        # bytes[4:6] LE = 0x1922 = 6434 → back
+        # bytes[6:8] LE = 0x0000 = 0 → legs
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x02, 0x00, 0x22, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        # 6434 / 7000 * 68.0 ≈ 62.5
+        assert len(updates) == 2
+        assert updates[0][0] == "back"
+        assert updates[0][1] == pytest.approx(62.5, abs=0.1)
+        assert updates[1] == ("legs", 0.0)
+
+    def test_position_packet_legs_up(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """Position packet with legs raised should parse correctly."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Real feet-up data: 20 3F 02 00 00 00 18 36 00 00 00 00
+        # bytes[6:8] LE = 0x3618 = 13848 → legs
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x02, 0x00, 0x00, 0x00, 0x18, 0x36, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert updates[0] == ("back", 0.0)
+        assert updates[1][0] == "legs"
+        # 13848 / 14000 * 45.0 ≈ 44.5
+        assert updates[1][1] == pytest.approx(44.5, abs=0.1)
+
+    def test_4_motor_position_packet_parses_all_motors(
         self,
         hass: HomeAssistant,
         mock_vibradorm_config_entry_data: dict,
     ) -> None:
-        """4-motor beds should map secondary position packets to head/feet."""
+        """4-motor beds should parse all motor positions from a single packet."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Vibradorm 4-motor Test Bed",
@@ -696,53 +762,57 @@ class TestVibradormPositionFeedback:
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Prime with a primary packet to establish back/legs mapping.
+        # All 4 motors with different values:
+        # back=0x1922(6434), legs=0x3618(13848), head=0x0D80(3456), feet=0x1B58(7000)
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([
+                0x20, 0x3F, 0x02, 0x00,
+                0x22, 0x19,  # back LE
+                0x18, 0x36,  # legs LE
+                0x80, 0x0D,  # head LE
+                0x58, 0x1B,  # feet LE
+            ]),
         )
-        updates.clear()
 
-        # Secondary packet should now be interpreted as head/feet.
-        controller._handle_notification(
-            MagicMock(),
-            bytearray([0x20, 0x3F, 0x15, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
-        )
+        motor_names = [m for m, _ in updates]
+        assert motor_names == ["back", "legs", "head", "feet"]
 
-        assert updates == [("head", 68.0), ("feet", 45.0)]
-
-    def test_secondary_packet_maps_to_head_after_primary_on_3_motor(
+    def test_short_packet_ignored(
         self,
         hass: HomeAssistant,
-        mock_vibradorm_config_entry_data: dict,
+        mock_vibradorm_config_entry,
     ) -> None:
-        """3-motor beds should map secondary position packets to head."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Vibradorm 3-motor Test Bed",
-            data={**mock_vibradorm_config_entry_data, CONF_MOTOR_COUNT: 3},
-            unique_id="AA:BB:CC:DD:EE:11",
-            entry_id="vibradorm_test_entry_3_motor_position",
-        )
-        entry.add_to_hass(hass)
-
-        coordinator = AdjustableBedCoordinator(hass, entry)
+        """Packets shorter than 8 bytes should be ignored."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         controller = VibradormController(coordinator)
 
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Prime with a primary packet to establish back/legs mapping.
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([0x20, 0x3F, 0x02, 0x00, 0x22]),
         )
-        updates.clear()
 
-        # Secondary packet should map first value to head on 3-motor beds.
+        assert updates == []
+
+    def test_wrong_header_ignored(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """Packets with wrong header should be ignored."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Wrong first byte
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x15, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([0x21, 0x3F, 0x02, 0x00, 0x22, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
         )
 
-        assert updates == [("head", 68.0)]
+        assert updates == []
