@@ -39,7 +39,7 @@ class AdjustableBedButtonEntityDescription(ButtonEntityDescription):
     cancel_movement: bool = False  # If True, cancels any running motor command
     # Capability property name to check on controller (e.g., "supports_preset_zero_g")
     required_capability: str | None = None
-    # Memory slot number for memory preset/program buttons (1-4). Used to check memory_slot_count.
+    # Memory slot number for memory preset/program buttons (1-6). Used to check memory_slot_count.
     memory_slot: int | None = None
     # Whether this is a memory programming button (requires supports_memory_programming)
     is_program_button: bool = False
@@ -82,6 +82,24 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         cancel_movement=True,
         required_capability="supports_memory_presets",
         memory_slot=4,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_memory_5",
+        translation_key="preset_memory_5",
+        icon="mdi:numeric-5-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(5),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=5,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="preset_memory_6",
+        translation_key="preset_memory_6",
+        icon="mdi:numeric-6-box",
+        press_fn=lambda ctrl: ctrl.preset_memory(6),
+        cancel_movement=True,
+        required_capability="supports_memory_presets",
+        memory_slot=6,
     ),
     AdjustableBedButtonEntityDescription(
         key="preset_flat",
@@ -178,6 +196,26 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.program_memory(4),
         required_capability="supports_memory_presets",
         memory_slot=4,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_5",
+        translation_key="program_memory_5",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(5),
+        required_capability="supports_memory_presets",
+        memory_slot=5,
+        is_program_button=True,
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="program_memory_6",
+        translation_key="program_memory_6",
+        icon="mdi:content-save",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=lambda ctrl: ctrl.program_memory(6),
+        required_capability="supports_memory_presets",
+        memory_slot=6,
         is_program_button=True,
     ),
     # Stop button

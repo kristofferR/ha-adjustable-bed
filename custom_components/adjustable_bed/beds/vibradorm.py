@@ -282,8 +282,8 @@ class VibradormController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 4 - Vibradorm beds support 4 main memory slots (more available)."""
-        return 4
+        """Return 6 - Vibradorm supports memory slots 1-6."""
+        return 6
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -454,15 +454,17 @@ class VibradormController(BedController):
 
         position_updates: dict[str, int]
 
-        # 4-motor MC4 models emit two position packet groups:
+        # MC3/MC4 models emit two position packet groups:
         # - 0x11 for back/legs
-        # - 0x15 for head/feet
-        # Keep 2-motor behavior intact by treating both as back/legs there.
+        # - 0x15 for head (+ feet on 4-motor units)
+        # Keep 2-motor behavior intact by treating secondary packets as back/legs.
         if packet_type == VIBRADORM_POSITION_PACKET_PRIMARY:
             self._seen_primary_position_packets = True
             position_updates = {"back": value1_raw, "legs": value2_raw}
-        elif self._coordinator.motor_count >= 4 and self._seen_primary_position_packets:
-            position_updates = {"head": value1_raw, "feet": value2_raw}
+        elif self._coordinator.motor_count >= 3 and self._seen_primary_position_packets:
+            position_updates = {"head": value1_raw}
+            if self._coordinator.motor_count >= 4:
+                position_updates["feet"] = value2_raw
         else:
             position_updates = {"back": value1_raw, "legs": value2_raw}
 
@@ -486,6 +488,7 @@ class VibradormController(BedController):
             return
 
         self._refresh_characteristics(force=True)
+        self._seen_primary_position_packets = False
 
         try:
             await self.client.start_notify(self._notify_char_uuid, self._handle_notification)
@@ -530,12 +533,26 @@ class VibradormController(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(VibradormCommands.HEAD_UP)
+        """Move head up.
+
+        On 3/4-motor beds, head uses the dedicated NH command pair.
+        On 2-motor beds, head maps to KH/KR (shared back/head actuator).
+        """
+        if self._coordinator.motor_count >= 3:
+            await self._move_with_stop(VibradormCommands.NECK_UP)
+        else:
+            await self._move_with_stop(VibradormCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(VibradormCommands.HEAD_DOWN)
+        """Move head down.
+
+        On 3/4-motor beds, head uses the dedicated NH command pair.
+        On 2-motor beds, head maps to KH/KR (shared back/head actuator).
+        """
+        if self._coordinator.motor_count >= 3:
+            await self._move_with_stop(VibradormCommands.NECK_DOWN)
+        else:
+            await self._move_with_stop(VibradormCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
@@ -546,12 +563,12 @@ class VibradormController(BedController):
         )
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head for Vibradorm)."""
-        await self.move_head_up()
+        """Move back up using KH command."""
+        await self._move_with_stop(VibradormCommands.HEAD_UP)
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head for Vibradorm)."""
-        await self.move_head_down()
+        """Move back down using KR command."""
+        await self._move_with_stop(VibradormCommands.HEAD_DOWN)
 
     async def move_back_stop(self) -> None:
         """Stop back motor (same as head for Vibradorm)."""
@@ -628,16 +645,18 @@ class VibradormController(BedController):
         with toggle bit, then STOP to halt after reaching position.
 
         Args:
-            memory_num: Memory slot number (1-4)
+            memory_num: Memory slot number (1-6)
         """
         memory_commands = {
             1: VibradormCommands.MEMORY_1,
             2: VibradormCommands.MEMORY_2,
             3: VibradormCommands.MEMORY_3,
             4: VibradormCommands.MEMORY_4,
+            5: VibradormCommands.MEMORY_5,
+            6: VibradormCommands.MEMORY_6,
         }
         if memory_num not in memory_commands:
-            _LOGGER.warning("Invalid memory preset number: %d (supported: 1-4)", memory_num)
+            _LOGGER.warning("Invalid memory preset number: %d (supported: 1-6)", memory_num)
             return
         try:
             await self._write_cbi_command(memory_commands[memory_num])
@@ -660,16 +679,18 @@ class VibradormController(BedController):
         3. Send STOP ×4
 
         Args:
-            memory_num: Memory slot number (1-4)
+            memory_num: Memory slot number (1-6)
         """
         memory_commands = {
             1: VibradormCommands.MEMORY_1,
             2: VibradormCommands.MEMORY_2,
             3: VibradormCommands.MEMORY_3,
             4: VibradormCommands.MEMORY_4,
+            5: VibradormCommands.MEMORY_5,
+            6: VibradormCommands.MEMORY_6,
         }
         if memory_num not in memory_commands:
-            _LOGGER.warning("Invalid memory program number: %d (supported: 1-4)", memory_num)
+            _LOGGER.warning("Invalid memory program number: %d (supported: 1-6)", memory_num)
             return
 
         # Step 1: Send STORE ×4 to CBI

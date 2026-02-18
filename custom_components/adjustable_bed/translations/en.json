@@ -311,6 +311,12 @@
       "preset_memory_4": {
         "name": "Memory 4"
       },
+      "preset_memory_5": {
+        "name": "Memory 5"
+      },
+      "preset_memory_6": {
+        "name": "Memory 6"
+      },
       "program_memory_1": {
         "name": "Save to Memory 1"
       },
@@ -322,6 +328,12 @@
       },
       "program_memory_4": {
         "name": "Save to Memory 4"
+      },
+      "program_memory_5": {
+        "name": "Save to Memory 5"
+      },
+      "program_memory_6": {
+        "name": "Save to Memory 6"
       },
       "massage_all_off": {
         "name": "Massage Off"

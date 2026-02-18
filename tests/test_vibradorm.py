@@ -149,6 +149,8 @@ class TestVibradormCommands:
         assert VibradormCommands.MEMORY_2 == 0x0F  # 15
         assert VibradormCommands.MEMORY_3 == 0x0C  # 12
         assert VibradormCommands.MEMORY_4 == 0x1A  # 26
+        assert VibradormCommands.MEMORY_5 == 0x1B  # 27
+        assert VibradormCommands.MEMORY_6 == 0x1C  # 28
 
     def test_store_command(self):
         """STORE command should be 0x0D."""
@@ -193,11 +195,11 @@ class TestVibradormController:
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """Vibradorm should have 4 memory slots."""
+        """Vibradorm should have 6 memory slots."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.memory_slot_count == 4
+        assert coordinator.controller.memory_slot_count == 6
 
     async def test_supports_memory_programming(
         self,
@@ -398,6 +400,58 @@ class TestVibradormMovement:
         first_call_data = calls[0][0][1]
         assert first_call_data[0] == VibradormCommands.LEGS_UP
 
+    async def test_move_head_up_uses_neck_command_on_3_motor(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """3-motor beds should map head movement to dedicated NH/NR commands."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm 3-motor Test Bed",
+            data={**mock_vibradorm_config_entry_data, CONF_MOTOR_COUNT: 3},
+            unique_id="AA:BB:CC:DD:EE:01",
+            entry_id="vibradorm_test_entry_3_motor_head",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.move_head_up()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        first_call_data = calls[0][0][1]
+        assert first_call_data[0] == VibradormCommands.NECK_UP
+
+    async def test_move_back_up_uses_back_command_on_3_motor(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """3-motor beds should keep back movement on KH/KR commands."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm 3-motor Test Bed",
+            data={**mock_vibradorm_config_entry_data, CONF_MOTOR_COUNT: 3},
+            unique_id="AA:BB:CC:DD:EE:02",
+            entry_id="vibradorm_test_entry_3_motor_back",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.move_back_up()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        first_call_data = calls[0][0][1]
+        assert first_call_data[0] == VibradormCommands.HEAD_UP
+
     async def test_stop_all_sends_stop_command(
         self,
         hass: HomeAssistant,
@@ -491,6 +545,24 @@ class TestVibradormPresets:
         assert len(first_call_data) == 2
         assert first_call_data[1] == VibradormCommands.MEMORY_4
 
+    async def test_preset_memory_6_sends_cbi_command(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """preset_memory(6) should send 2-byte CBI command with MEMORY_6."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.preset_memory(6)
+
+        calls = mock_client.write_gatt_char.call_args_list
+        first_call_data = calls[0][0][1]
+        assert len(first_call_data) == 2
+        assert first_call_data[1] == VibradormCommands.MEMORY_6
+
     async def test_program_memory_sends_store_sequence(
         self,
         hass: HomeAssistant,
@@ -519,6 +591,23 @@ class TestVibradormPresets:
         # Last 4 calls: STOP (1-byte motor commands)
         for i in range(5, 9):
             assert sent[i] == bytes([VibradormCommands.STOP])
+
+    async def test_program_memory_6_sends_selected_slot(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """program_memory(6) should target memory slot 6 after STORE sequence."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.program_memory(6)
+
+        calls = mock_client.write_gatt_char.call_args_list
+        sent = [call.args[1] for call in calls]
+        assert sent[4] == bytes([0x00, VibradormCommands.MEMORY_6])  # toggle=0
 
 
 class TestVibradormCommandFormat:
@@ -621,3 +710,39 @@ class TestVibradormPositionFeedback:
         )
 
         assert updates == [("head", 68.0), ("feet", 45.0)]
+
+    def test_secondary_packet_maps_to_head_after_primary_on_3_motor(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry_data: dict,
+    ) -> None:
+        """3-motor beds should map secondary position packets to head."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm 3-motor Test Bed",
+            data={**mock_vibradorm_config_entry_data, CONF_MOTOR_COUNT: 3},
+            unique_id="AA:BB:CC:DD:EE:11",
+            entry_id="vibradorm_test_entry_3_motor_position",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Prime with a primary packet to establish back/legs mapping.
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x11, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+        )
+        updates.clear()
+
+        # Secondary packet should map first value to head on 3-motor beds.
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x15, 0x04, 0x4C, 0x02, 0xBC, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert updates == [("head", 68.0)]

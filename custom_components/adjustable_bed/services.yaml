@@ -11,12 +11,12 @@ goto_preset:
           integration: adjustable_bed
     preset:
       name: Preset Number
-      description: Memory slot number (1-4).
+      description: Memory slot number (1-6, device-dependent).
       required: true
       selector:
         number:
           min: 1
-          max: 4
+          max: 6
           mode: box
 
 save_preset:
@@ -32,12 +32,12 @@ save_preset:
           integration: adjustable_bed
     preset:
       name: Preset Number
-      description: Memory slot number (1-4).
+      description: Memory slot number (1-6, device-dependent).
       required: true
       selector:
         number:
           min: 1
-          max: 4
+          max: 6
           mode: box
 
 stop_all:
