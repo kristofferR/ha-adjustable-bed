@@ -47,20 +47,12 @@ VIBRADORM_COMMAND_UUID_CANDIDATES = (
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
 )
 
-VIBRADORM_POSITION_PACKET_PRIMARY = 0x11
-VIBRADORM_POSITION_PACKET_SECONDARY = 0x15
-VIBRADORM_POSITION_PACKET_TYPES = frozenset(
-    {
-        VIBRADORM_POSITION_PACKET_PRIMARY,
-        VIBRADORM_POSITION_PACKET_SECONDARY,
-    }
-)
 
 _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
-    "back": 1100,
-    "legs": 700,
-    "head": 1100,
-    "feet": 700,
+    "back": 7000,
+    "legs": 14000,
+    "head": 7000,
+    "feet": 14000,
 }
 
 
@@ -139,7 +131,6 @@ class VibradormController(BedController):
         self._notify_char_uuid: str = VIBRADORM_NOTIFY_CHAR_UUID
         self._characteristics_initialized: bool = False
         self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
-        self._seen_primary_position_packets: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -429,48 +420,38 @@ class VibradormController(BedController):
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
-        VMAT notifications include several packet types. Position packets use:
+        VMAT position notifications (from XMCMotorData.java / MainScreen):
         - Byte 0: Frame marker (0x20)
-        - Byte 1: Message family (typically 0x3F)
-        - Byte 2: Packet type (0x11 primary, 0x15 secondary)
-        - Bytes 3-4: Position value #1 (16-bit big-endian)
-        - Bytes 5-6: Position value #2 (16-bit big-endian)
+        - Byte 1: Message family (0x3F)
+        - Byte 2: Flags (bit 4 = init, bit 6 = sync)
+        - Byte 3: Reserved (0x00)
+        - Bytes 4-5: Motor 1 (back) position, 16-bit little-endian
+        - Bytes 6-7: Motor 2 (legs) position, 16-bit little-endian
+        - Bytes 8-9: Motor 3 (head) position, 16-bit little-endian
+        - Bytes 10-11: Motor 4 (feet) position, 16-bit little-endian
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 7:
+        if len(data) < 8:
             _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
             return
 
-        if data[0] != 0x20:
+        if data[0] != 0x20 or data[1] != 0x3F:
             return
 
-        packet_type = data[2]
-        if packet_type not in VIBRADORM_POSITION_PACKET_TYPES:
-            return
+        # Parse motor positions at correct offsets with little-endian byte order
+        back_raw = int.from_bytes(data[4:6], byteorder="little")
+        legs_raw = int.from_bytes(data[6:8], byteorder="little")
 
-        value1_raw = int.from_bytes(data[3:5], byteorder="big")
-        value2_raw = int.from_bytes(data[5:7], byteorder="big")
+        position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
 
-        position_updates: dict[str, int]
-
-        # MC3/MC4 models emit two position packet groups:
-        # - 0x11 for back/legs
-        # - 0x15 for head (+ feet on 4-motor units)
-        # Keep 2-motor behavior intact by treating secondary packets as back/legs.
-        if packet_type == VIBRADORM_POSITION_PACKET_PRIMARY:
-            self._seen_primary_position_packets = True
-            position_updates = {"back": value1_raw, "legs": value2_raw}
-        elif self._coordinator.motor_count >= 3 and self._seen_primary_position_packets:
-            position_updates = {"head": value1_raw}
-            if self._coordinator.motor_count >= 4:
-                position_updates["feet"] = value2_raw
-        else:
-            position_updates = {"back": value1_raw, "legs": value2_raw}
+        if self._coordinator.motor_count >= 3 and len(data) >= 10:
+            position_updates["head"] = int.from_bytes(data[8:10], byteorder="little")
+        if self._coordinator.motor_count >= 4 and len(data) >= 12:
+            position_updates["feet"] = int.from_bytes(data[10:12], byteorder="little")
 
         _LOGGER.debug(
-            "Vibradorm position packet type=0x%02X updates=%s raw=%s",
-            packet_type,
+            "Vibradorm position updates=%s raw=%s",
             position_updates,
             data.hex(),
         )
@@ -488,7 +469,6 @@ class VibradormController(BedController):
             return
 
         self._refresh_characteristics(force=True)
-        self._seen_primary_position_packets = False
 
         try:
             await self.client.start_notify(self._notify_char_uuid, self._handle_notification)
@@ -639,10 +619,11 @@ class VibradormController(BedController):
         await self._move_with_stop(VibradormCommands.ALL_DOWN)
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset position via CBI characteristic.
+        """Go to memory preset position.
 
-        Memory recall sends the slot command to the CBI characteristic
-        with toggle bit, then STOP to halt after reaching position.
+        Memory recall uses the same motor command path as regular movements
+        (APK's motorCommandKeyPressed with setRepeatCommand=true). The command
+        is sent repeatedly on the COMMAND characteristic, with STOP in finally.
 
         Args:
             memory_num: Memory slot number (1-6)
@@ -658,17 +639,7 @@ class VibradormController(BedController):
         if memory_num not in memory_commands:
             _LOGGER.warning("Invalid memory preset number: %d (supported: 1-6)", memory_num)
             return
-        try:
-            await self._write_cbi_command(memory_commands[memory_num])
-        finally:
-            try:
-                await self._write_motor_command(
-                    VibradormCommands.STOP,
-                    repeat_count=1,
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP after memory recall")
+        await self._move_with_stop(memory_commands[memory_num])
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory via CBI characteristic.
