@@ -290,7 +290,11 @@ class TestSvanePresetCommands:
         mock_coordinator_connected,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Flat preset should write to POSITION characteristic in both motor services."""
+        """Flat preset should write to POSITION characteristic in both motor services.
+
+        When MEMORY is not available, the primary MEMORY write fails gracefully
+        and the command falls through to POSITION writes only.
+        """
         coordinator = AdjustableBedCoordinator(hass, mock_svane_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -309,8 +313,8 @@ class TestSvanePresetCommands:
 
         await coordinator.controller.preset_flat()
 
-        expected_repeats = max(3, coordinator.motor_pulse_count)
-        assert mock_client.write_gatt_char.call_count == expected_repeats * 2
+        # 3 repeats * 2 POSITION chars = 6 writes (MEMORY path fails gracefully)
+        assert mock_client.write_gatt_char.call_count == 3 * 2
 
         written_chars = {call.args[0] for call in mock_client.write_gatt_char.call_args_list}
         assert head_position in written_chars
@@ -320,14 +324,20 @@ class TestSvanePresetCommands:
             for call in mock_client.write_gatt_char.call_args_list
         )
 
-    async def test_preset_flat_writes_memory_fallback_when_available(
+    async def test_preset_flat_writes_memory_first_then_position(
         self,
         hass: HomeAssistant,
         mock_svane_config_entry,
         mock_coordinator_connected,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Flat preset should also issue compatibility writes to MEMORY characteristics."""
+        """Flat preset writes to MEMORY first (primary), then POSITION (secondary).
+
+        The MEMORY path is tried first since it works on more firmware revisions
+        (same approach as preset_zero_g). POSITION writes follow for compatibility
+        with firmware that uses the POSITION characteristic for presets.
+        See: https://github.com/kristofferR/ha-adjustable-bed/issues/152
+        """
         coordinator = AdjustableBedCoordinator(hass, mock_svane_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -348,16 +358,19 @@ class TestSvanePresetCommands:
 
         await coordinator.controller.preset_flat()
 
-        expected_repeats = max(3, coordinator.motor_pulse_count)
-        # POSITION writes + single MEMORY fallback write per service.
-        assert mock_client.write_gatt_char.call_count == (expected_repeats * 2) + 2
+        # 3 MEMORY writes (primary) + 3 repeats * 2 POSITION chars (secondary) = 9
+        assert mock_client.write_gatt_char.call_count == 3 + (3 * 2)
 
-        fallback_chars = {
-            mock_client.write_gatt_char.call_args_list[-2].args[0],
-            mock_client.write_gatt_char.call_args_list[-1].args[0],
-        }
-        assert head_memory in fallback_chars
-        assert feet_memory in fallback_chars
+        # First 3 writes should be to MEMORY in HEAD service
+        memory_writes = mock_client.write_gatt_char.call_args_list[:3]
+        assert all(call.args[0] == head_memory for call in memory_writes)
+        assert all(call.args[1] == SvaneCommands.FLATTEN for call in memory_writes)
+
+        # Remaining 6 writes should be to POSITION chars in both services
+        position_writes = mock_client.write_gatt_char.call_args_list[3:]
+        position_chars = {call.args[0] for call in position_writes}
+        assert head_position in position_chars
+        assert feet_position in position_chars
 
     async def test_program_memory_writes_to_position_chars(
         self,

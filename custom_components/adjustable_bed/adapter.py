@@ -33,6 +33,7 @@ async def select_adapter(
     hass: HomeAssistant,
     address: str,
     preferred_adapter: str | None,
+    exclude_adapters: set[str] | None = None,
 ) -> AdapterSelectionResult:
     """Select the best Bluetooth adapter for connection.
 
@@ -40,11 +41,14 @@ async def select_adapter(
     - If a preferred adapter is configured, looks for device from that adapter
     - Otherwise, selects the adapter with the best RSSI (strongest signal)
     - Falls back to default Home Assistant lookup if needed
+    - Can exclude specific adapters (e.g., after connection slot exhaustion)
 
     Args:
         hass: Home Assistant instance
         address: The BLE device address to find
         preferred_adapter: Preferred adapter source, or None/ADAPTER_AUTO for automatic
+        exclude_adapters: Set of adapter sources to skip (e.g., adapters that ran
+            out of connection slots). Only affects auto-selection, not preferred adapter.
 
     Returns:
         AdapterSelectionResult with device, source, rssi, and available sources
@@ -112,7 +116,7 @@ async def select_adapter(
             _LOGGER.debug("Error during auto adapter selection: %s", err)
             discovered_services = []
 
-        # Find the adapter with best RSSI
+        # Find the adapter with best RSSI, respecting exclusions
         for svc_info in discovered_services:
             if svc_info.address.upper() == address.upper():
                 svc_rssi = getattr(svc_info, "rssi", None)
@@ -123,6 +127,11 @@ async def select_adapter(
                     rssi_value = RSSI_UNAVAILABLE
                 svc_source = getattr(svc_info, "source", "unknown")
                 _LOGGER.debug("Auto-select candidate: source=%s, rssi=%s", svc_source, rssi_value)
+                if exclude_adapters and svc_source in exclude_adapters:
+                    _LOGGER.debug(
+                        "Skipping excluded adapter %s (RSSI: %s)", svc_source, rssi_value
+                    )
+                    continue
                 if rssi_value > best_rssi:
                     best_rssi = rssi_value
                     best_source = svc_source
