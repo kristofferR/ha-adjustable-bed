@@ -495,12 +495,14 @@ class OkinCB24Controller(BedController):
         )
 
     # Preset methods
-    def _should_promote_presets_to_continuous(self, command_value: int) -> bool:
+    def _should_promote_presets_to_continuous(
+        self, command_value: int, *, _now: float | None = None
+    ) -> bool:
         """Promote auto legacy presets to continuous when user retries quickly."""
         if not self._adaptive_preset_fallback:
             return False
 
-        now = time.monotonic()
+        now = _now if _now is not None else time.monotonic()
         if (
             self._last_one_shot_preset_command == command_value
             and now - self._last_one_shot_preset_monotonic

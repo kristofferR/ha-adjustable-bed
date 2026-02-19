@@ -107,20 +107,22 @@ def _infer_cb24_variant_from_okin_payload(payload: bytes) -> str | None:
     Home Assistant exposes manufacturer payload bytes (without Company ID),
     so we search for those ASCII markers within the payload.
     """
-    dot_index = payload.find(b"DOT")
-    if dot_index != -1 and len(payload) > dot_index + 4:
-        marker_type = payload[dot_index + 3]
-        marker_subtype = payload[dot_index + 4]
+    # APK places markers at the start of the manufacturer payload.
+    # Anchor all checks with startswith to avoid false positives from
+    # short patterns (e.g. "OK" is only 2 bytes) matching random data.
+    if payload.startswith(b"DOT") and len(payload) >= 5:
+        marker_type = payload[3]
+        marker_subtype = payload[4]
         if marker_type == 0x01:
             return OKIN_CB24_VARIANT_DACHENG
         if marker_subtype == 0x01:
             return OKIN_CB24_VARIANT_CB1221
         return OKIN_CB24_VARIANT_CB24
 
-    if b"AB" in payload:
+    if payload.startswith(b"AB"):
         return OKIN_CB24_VARIANT_CB24_AB
 
-    if b"OK" in payload:
+    if payload.startswith(b"OK"):
         return OKIN_CB24_VARIANT_CB27
 
     return None
@@ -241,6 +243,8 @@ async def create_controller(
                 manufacturer_data=manufacturer_data,
             )
 
+        # OLD uses unconditional continuous presets so adaptive fallback is
+        # unnecessary; NEW/CB27NEW are new-protocol one-shot (no legacy path).
         adaptive_preset_fallback = (
             not explicit_variant_selected
             and profile_variant

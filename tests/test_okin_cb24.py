@@ -195,6 +195,30 @@ class TestOkinCB24Controller:
         assert controller._continuous_presets is False
         assert controller._adaptive_preset_fallback is True
 
+    def test_adaptive_cb24_stays_one_shot_after_window_expires(self) -> None:
+        """Adaptive fallback should not promote when retry is outside the 12-second window."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(
+            coordinator,
+            protocol_variant=OKIN_CB24_VARIANT_CB24,
+            adaptive_preset_fallback=True,
+        )
+
+        # First tap at t=1000 records the preset and timestamp
+        result1 = controller._should_promote_presets_to_continuous(
+            OkinCB24Commands.PRESET_MEMORY_1, _now=1000.0
+        )
+        assert result1 is False
+
+        # Retry same preset after window has expired (13s > 12s) — treated as fresh tap
+        result2 = controller._should_promote_presets_to_continuous(
+            OkinCB24Commands.PRESET_MEMORY_1, _now=1013.0
+        )
+        assert result2 is False
+        assert controller._continuous_presets is False
+        assert controller._adaptive_preset_fallback is True
+
     @pytest.mark.asyncio
     async def test_old_protocol_preset_sends_stop_on_cancellation(self) -> None:
         """`cb_old` compatibility profile should still attempt STOP on cancellation."""
@@ -312,6 +336,22 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == expected_variant
         assert controller._adaptive_preset_fallback is True
+
+    @pytest.mark.asyncio
+    async def test_unknown_manufacturer_payload_falls_back_to_name_heuristic(self) -> None:
+        """Unknown OKIN payload should fall through to name-based CB27New detection."""
+        coordinator = _make_factory_coordinator()
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_OKIN_CB24,
+            protocol_variant=None,
+            client=None,
+            device_name="smartbed1234567890",
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"\x00\x00\x00\x00"},
+        )
+
+        assert isinstance(controller, OkinCB24Controller)
+        assert controller._protocol_variant == OKIN_CB24_VARIANT_CB27NEW
 
     @pytest.mark.asyncio
     async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self) -> None:

@@ -943,10 +943,7 @@ class AdjustableBedCoordinator:
                     connectable=True,
                 )
                 if advertisement and advertisement.manufacturer_data:
-                    manufacturer_data = {
-                        int(company_id): bytes(payload)
-                        for company_id, payload in advertisement.manufacturer_data.items()
-                    }
+                    manufacturer_data = dict(advertisement.manufacturer_data)
                     _LOGGER.debug(
                         "Using manufacturer data keys for controller creation: %s",
                         sorted(manufacturer_data),
