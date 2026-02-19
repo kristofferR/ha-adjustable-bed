@@ -454,6 +454,34 @@ class VibradormController(BedController):
         )
         self._cbi_toggle = not self._cbi_toggle
 
+    async def _request_position_update(self) -> None:
+        """Send CmdGetStatusMotMon to request position data from the bed.
+
+        This mirrors the APK's SYNC button behavior — it writes a 3-byte
+        command to the CBI characteristic that triggers the bed to send
+        a position status notification on the CBI_RESPONSE characteristic.
+
+        Packet: [MSB(toggle | 0x3D), LSB(toggle | 0x3D), 0x3F]
+        """
+        toggle = 0x8000 if self._cbi_toggle else 0x0000
+        value = toggle | 0x3D
+        data = bytes([(value >> 8) & 0xFF, value & 0xFF, 0x3F])
+        _LOGGER.debug(
+            "Requesting position update: CmdGetStatusMotMon %s (toggle=%s)",
+            data.hex(),
+            self._cbi_toggle,
+        )
+        self._refresh_characteristics()
+        try:
+            await self._write_gatt_with_retry(
+                self._cbi_char_uuid,
+                data,
+                response=self._write_with_response,
+            )
+            self._cbi_toggle = not self._cbi_toggle
+        except BleakError as err:
+            _LOGGER.debug("Position request failed (non-critical): %s", err)
+
     def _raw_to_angle(self, raw_value: int, motor: str) -> float:
         """Convert VMAT raw encoder position to an angle estimate."""
         current_max = self._max_raw_estimate.get(motor, 1)
@@ -471,48 +499,76 @@ class VibradormController(BedController):
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
-        VMAT position notifications (from MainScreen / XMCMotorData) are observed
-        in two layouts:
-        - Long:  0x20, 0x3F, flags, reserved, [positions...]
-        - Short: 0x3F, flags, reserved, [positions...]
+        VMAT position notifications are 11 bytes in the long format:
+          0x20, 0x3F, flags, M1hi, M1lo, M2hi, M2lo, M3hi, M3lo, M4hi, M4lo
 
-        Position payload uses little-endian motor values:
-        - Motor 1 (back)
-        - Motor 2 (legs)
-        - Motor 3 (head)
-        - Motor 4 (feet)
+        Or 10 bytes in the short format (without the 0x20 prefix):
+          0x3F, flags, M1hi, M1lo, M2hi, M2lo, M3hi, M3lo, M4hi, M4lo
+
+        Motor positions are big-endian uint16 values:
+        - Motor 1 (back/Kopf)
+        - Motor 2 (legs/Oberschenkel)
+        - Motor 3 (head/Nacken)
+        - Motor 4 (feet/Fuß)
+
+        Non-position notifications (0x20 0xEF, 0x21 0xA0, etc.) are logged
+        for diagnostics but otherwise ignored.
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 7:
-            _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
+        if len(data) < 2:
+            _LOGGER.debug("Vibradorm notification too short (%d bytes): %s", len(data), data.hex())
             return
 
         payload_offset: int
         if data[0] == 0x20:
-            if len(data) < 8 or data[1] != 0x3F:
+            if data[1] != 0x3F:
+                _LOGGER.debug(
+                    "Vibradorm non-position notification: %s (type=0x%02X)",
+                    data.hex(),
+                    data[1],
+                )
                 return
-            payload_offset = 4
-        elif data[0] == 0x3F:
+            if len(data) < 7:
+                _LOGGER.debug(
+                    "Vibradorm position notification too short (%d bytes): %s",
+                    len(data),
+                    data.hex(),
+                )
+                return
             payload_offset = 3
+        elif data[0] == 0x3F:
+            if len(data) < 6:
+                _LOGGER.debug(
+                    "Vibradorm short position notification too short (%d bytes): %s",
+                    len(data),
+                    data.hex(),
+                )
+                return
+            payload_offset = 2
         else:
+            _LOGGER.debug(
+                "Vibradorm unknown notification: %s (header=0x%02X)",
+                data.hex(),
+                data[0],
+            )
             return
 
-        # Parse motor positions at payload offsets with little-endian byte order.
-        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="little")
+        # Parse motor positions as big-endian uint16 values.
+        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="big")
         legs_raw = int.from_bytes(
-            data[payload_offset + 2 : payload_offset + 4], byteorder="little"
+            data[payload_offset + 2 : payload_offset + 4], byteorder="big"
         )
 
         position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
 
         if self._coordinator.motor_count >= 3 and len(data) >= payload_offset + 6:
             position_updates["head"] = int.from_bytes(
-                data[payload_offset + 4 : payload_offset + 6], byteorder="little"
+                data[payload_offset + 4 : payload_offset + 6], byteorder="big"
             )
         if self._coordinator.motor_count >= 4 and len(data) >= payload_offset + 8:
             position_updates["feet"] = int.from_bytes(
-                data[payload_offset + 6 : payload_offset + 8], byteorder="little"
+                data[payload_offset + 6 : payload_offset + 8], byteorder="big"
             )
 
         _LOGGER.debug(
@@ -535,9 +591,19 @@ class VibradormController(BedController):
 
         self._refresh_characteristics(force=True)
 
+        _LOGGER.debug(
+            "Subscribing to Vibradorm notifications on characteristic %s",
+            self._notify_char_uuid,
+        )
+
+        notify_started = False
         try:
             await self.client.start_notify(self._notify_char_uuid, self._handle_notification)
-            _LOGGER.info("Started position notifications for Vibradorm bed")
+            _LOGGER.info(
+                "Started position notifications for Vibradorm bed on %s",
+                self._notify_char_uuid,
+            )
+            notify_started = True
         except BleakCharacteristicNotFoundError:
             previous_char = self._notify_char_uuid
             self._refresh_characteristics(force=True)
@@ -564,13 +630,23 @@ class VibradormController(BedController):
 
             try:
                 await retry_client.start_notify(retry_char, self._handle_notification)
-                _LOGGER.info("Started position notifications for Vibradorm bed")
+                _LOGGER.info(
+                    "Started position notifications for Vibradorm bed on %s",
+                    retry_char,
+                )
+                notify_started = True
             except BleakError as err:
                 _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
                 self.log_discovered_services(level=logging.INFO)
         except BleakError as err:
             _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
             self.log_discovered_services(level=logging.INFO)
+
+        if notify_started:
+            _LOGGER.debug(
+                "Sending CmdGetStatusMotMon to trigger initial position update"
+            )
+            await self._request_position_update()
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
@@ -584,13 +660,13 @@ class VibradormController(BedController):
             pass
 
     async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data.
+        """Read current position data by requesting a status update.
 
-        Vibradorm beds push position updates via notifications.
-        This method is a no-op since positions come automatically.
+        Vibradorm beds primarily push position updates via notifications,
+        but we can also actively request a position update via CmdGetStatusMotMon.
         """
-        del motor_count  # Unused - positions come via notifications
-        _LOGGER.debug("Vibradorm read_positions called (positions come via notifications)")
+        del motor_count  # Unused - all motors reported in one notification
+        await self._request_position_update()
 
     async def _motor_move_with_stop(self, command: int) -> None:
         """Execute a single-byte movement command and always send STOP at the end."""
