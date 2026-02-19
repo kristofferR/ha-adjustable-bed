@@ -67,6 +67,14 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     OCTO_VARIANT_STAR2,
+    OKIN_CB24_VARIANT_CB24,
+    OKIN_CB24_VARIANT_CB24_AB,
+    OKIN_CB24_VARIANT_CB1221,
+    OKIN_CB24_VARIANT_CB27,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_DACHENG,
+    OKIN_CB24_VARIANT_NEW,
+    OKIN_CB24_VARIANT_OLD,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_VARIANT_NORDIC,
@@ -150,39 +158,42 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller
 
-        # Detect NEW_PROTOCOL vs OLD_PROTOCOL from device name.
-        # The OEM SmartBed app uses CB27NewDeviceProfile for devices whose
-        # name starts with "smartbed" (case-insensitive) and is exactly
-        # 18 characters long.  All other OKIN manufacturer-ID devices use
-        # CB24Protocol (OLD_PROTOCOL) which requires continuous preset sends.
-        is_new_protocol = False
+        # Detect SmartBed profile variant.
+        # OEM app behavior:
+        # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
+        # - CB24/CB27/CB24AB/CB1221/Dacheng (OLD protocol): all other CB24-family devices
+        profile_variant = OKIN_CB24_VARIANT_OLD
         if device_name:
             name_lower = device_name.lower()
             if name_lower.startswith("smartbed") and len(device_name) == 18:
-                is_new_protocol = True
-                _LOGGER.info(
-                    "CB24 sub-variant: CB27New (NEW_PROTOCOL) for '%s'",
-                    device_name,
-                )
+                profile_variant = OKIN_CB24_VARIANT_CB27NEW
+                _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
             else:
-                _LOGGER.info(
-                    "CB24 sub-variant: OLD_PROTOCOL for '%s' (len=%d)",
-                    device_name,
+                profile_variant = OKIN_CB24_VARIANT_OLD
+                _LOGGER.debug(
+                    "CB24 profile auto-detected: cb_old (name len=%d)",
                     len(device_name),
                 )
 
-        # Allow manual override via protocol_variant
-        if protocol_variant == "cb_new":
-            is_new_protocol = True
-            _LOGGER.debug("CB24 protocol override: NEW_PROTOCOL (cb_new)")
-        elif protocol_variant == "cb_old":
-            is_new_protocol = False
-            _LOGGER.debug("CB24 protocol override: OLD_PROTOCOL (cb_old)")
+        # Manual override via protocol_variant.
+        # Alias variants map to the corresponding protocol family.
+        if protocol_variant in {
+            OKIN_CB24_VARIANT_OLD,
+            OKIN_CB24_VARIANT_NEW,
+            OKIN_CB24_VARIANT_CB24,
+            OKIN_CB24_VARIANT_CB27,
+            OKIN_CB24_VARIANT_CB24_AB,
+            OKIN_CB24_VARIANT_CB1221,
+            OKIN_CB24_VARIANT_DACHENG,
+            OKIN_CB24_VARIANT_CB27NEW,
+        }:
+            profile_variant = protocol_variant
+            _LOGGER.debug("CB24 profile override: %s", profile_variant)
 
         return OkinCB24Controller(
             coordinator,
             bed_selection=cb24_bed_selection,
-            is_new_protocol=is_new_protocol,
+            protocol_variant=profile_variant,
         )
 
     if bed_type == BED_TYPE_OKIN_ORE:
