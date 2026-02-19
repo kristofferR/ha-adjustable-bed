@@ -66,12 +66,13 @@ from .const import (
     KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
+    MANUFACTURER_ID_OKIN,
     OCTO_VARIANT_STAR2,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
-    OKIN_CB24_VARIANT_CB1221,
     OKIN_CB24_VARIANT_CB27,
     OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_CB1221,
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
@@ -95,6 +96,66 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+def _infer_cb24_variant_from_okin_payload(payload: bytes) -> str | None:
+    """Infer CB24 sub-variant from OKIN manufacturer payload bytes.
+
+    The SmartBed APK profile matcher keys off scanRecord marker bytes:
+    - "DOT" + type/subtype bytes for dacheng/cb1221/cb24
+    - "AB" for cb24_ab
+    - "OK" for cb27
+
+    Home Assistant exposes manufacturer payload bytes (without Company ID),
+    so we search for those ASCII markers within the payload.
+    """
+    # APK places markers at the start of the manufacturer payload.
+    # Anchor all checks with startswith to avoid false positives from
+    # short patterns (e.g. "OK" is only 2 bytes) matching random data.
+    if payload.startswith(b"DOT") and len(payload) >= 5:
+        marker_type = payload[3]
+        marker_subtype = payload[4]
+        if marker_type == 0x01:
+            return OKIN_CB24_VARIANT_DACHENG
+        if marker_subtype == 0x01:
+            return OKIN_CB24_VARIANT_CB1221
+        return OKIN_CB24_VARIANT_CB24
+
+    if payload.startswith(b"AB"):
+        return OKIN_CB24_VARIANT_CB24_AB
+
+    if payload.startswith(b"OK"):
+        return OKIN_CB24_VARIANT_CB27
+
+    return None
+
+
+def _auto_detect_cb24_profile_variant(
+    device_name: str | None,
+    manufacturer_data: dict[int, bytes] | None,
+) -> str:
+    """Auto-detect SmartBed/CB24 profile variant from advertisement signals."""
+    if manufacturer_data and MANUFACTURER_ID_OKIN in manufacturer_data:
+        okin_payload = manufacturer_data[MANUFACTURER_ID_OKIN]
+        inferred_variant = _infer_cb24_variant_from_okin_payload(okin_payload)
+        if inferred_variant:
+            _LOGGER.debug(
+                "CB24 profile auto-detected from manufacturer payload: %s",
+                inferred_variant,
+            )
+            return inferred_variant
+
+    # OEM app behavior:
+    # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
+    # - all other CB24-family devices: legacy packets (default to CB24 profile)
+    if device_name:
+        name_lower = device_name.lower()
+        if name_lower.startswith("smartbed") and len(device_name) == 18:
+            _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
+            return OKIN_CB24_VARIANT_CB27NEW
+        _LOGGER.debug("CB24 profile auto-detected: cb24 (name len=%d)", len(device_name))
+
+    return OKIN_CB24_VARIANT_CB24
+
+
 async def create_controller(
     coordinator: AdjustableBedCoordinator,
     bed_type: str,
@@ -106,6 +167,7 @@ async def create_controller(
     jensen_pin: str = "",
     cb24_bed_selection: int = 0x00,
     ble_manufacturer: str | None = None,
+    manufacturer_data: dict[int, bytes] | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -123,6 +185,7 @@ async def create_controller(
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
         cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
         ble_manufacturer: Manufacturer name from BLE Device Information Service (0x2A29)
+        manufacturer_data: Last advertisement manufacturer payloads by Company ID
 
     Returns:
         The appropriate BedController subclass instance
@@ -158,26 +221,8 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller
 
-        # Detect SmartBed profile variant.
-        # OEM app behavior:
-        # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
-        # - all other CB24-family devices: legacy packets (default to CB24 profile)
-        profile_variant = OKIN_CB24_VARIANT_CB24
-        if device_name:
-            name_lower = device_name.lower()
-            if name_lower.startswith("smartbed") and len(device_name) == 18:
-                profile_variant = OKIN_CB24_VARIANT_CB27NEW
-                _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
-            else:
-                profile_variant = OKIN_CB24_VARIANT_CB24
-                _LOGGER.debug(
-                    "CB24 profile auto-detected: cb24 (name len=%d)",
-                    len(device_name),
-                )
-
         # Manual override via protocol_variant.
-        # Alias variants map to the corresponding protocol family.
-        if protocol_variant in {
+        explicit_variant_selected = protocol_variant in {
             OKIN_CB24_VARIANT_OLD,
             OKIN_CB24_VARIANT_NEW,
             OKIN_CB24_VARIANT_CB24,
@@ -186,14 +231,37 @@ async def create_controller(
             OKIN_CB24_VARIANT_CB1221,
             OKIN_CB24_VARIANT_DACHENG,
             OKIN_CB24_VARIANT_CB27NEW,
-        }:
+        }
+
+        if explicit_variant_selected:
+            # Alias variants map to the corresponding protocol family.
             profile_variant = protocol_variant
             _LOGGER.debug("CB24 profile override: %s", profile_variant)
+        else:
+            profile_variant = _auto_detect_cb24_profile_variant(
+                device_name=device_name,
+                manufacturer_data=manufacturer_data,
+            )
+
+        # OLD uses unconditional continuous presets so adaptive fallback is
+        # unnecessary; NEW/CB27NEW are new-protocol one-shot (no legacy path).
+        adaptive_preset_fallback = (
+            not explicit_variant_selected
+            and profile_variant
+            in {
+                OKIN_CB24_VARIANT_CB24,
+                OKIN_CB24_VARIANT_CB27,
+                OKIN_CB24_VARIANT_CB24_AB,
+                OKIN_CB24_VARIANT_CB1221,
+                OKIN_CB24_VARIANT_DACHENG,
+            }
+        )
 
         return OkinCB24Controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
+            adaptive_preset_fallback=adaptive_preset_fallback,
         )
 
     if bed_type == BED_TYPE_OKIN_ORE:
