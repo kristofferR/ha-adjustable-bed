@@ -191,15 +191,14 @@ class TestMigration:
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """V1 Vibradorm entries should migrate angle sensing from disabled to enabled."""
+        """V1 legacy Vibradorm entries should enable angle sensing when setting is missing."""
+        legacy_data = {**mock_config_entry_data, CONF_BED_TYPE: BED_TYPE_VIBRADORM}
+        legacy_data.pop(CONF_DISABLE_ANGLE_SENSING, None)
+
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Vibradorm Migration Test",
-            data={
-                **mock_config_entry_data,
-                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
-                CONF_DISABLE_ANGLE_SENSING: True,
-            },
+            data=legacy_data,
             unique_id="AA:BB:CC:DD:EE:01",
             entry_id="migration_vibradorm_v1",
             version=1,
@@ -209,7 +208,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
@@ -235,23 +234,22 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
-    async def test_migrate_v2_entry_is_noop(
+    async def test_migrate_v2_vibradorm_enables_angle_sensing(
         self,
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """Already-migrated entries should remain unchanged."""
+        """V2 legacy Vibradorm entries should enable angle sensing when setting is missing."""
+        legacy_data = {**mock_config_entry_data, CONF_BED_TYPE: BED_TYPE_VIBRADORM}
+        legacy_data.pop(CONF_DISABLE_ANGLE_SENSING, None)
+
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Vibradorm Migration V2 Test",
-            data={
-                **mock_config_entry_data,
-                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
-                CONF_DISABLE_ANGLE_SENSING: True,
-            },
+            data=legacy_data,
             unique_id="AA:BB:CC:DD:EE:03",
             entry_id="migration_vibradorm_v2",
             version=2,
@@ -261,7 +259,59 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_migrate_v1_vibradorm_keeps_existing_enabled_angle_setting(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """V1 Vibradorm entries should keep explicit disable_angle_sensing=False unchanged."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm Migration Explicit False Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_VIBRADORM,
+                CONF_DISABLE_ANGLE_SENSING: False,
+            },
+            unique_id="AA:BB:CC:DD:EE:05",
+            entry_id="migration_vibradorm_v1_explicit_false",
+            version=1,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 3
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """V2 non-Vibradorm entries keep disable_angle_sensing unchanged."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Linak Migration V2 Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:04",
+            entry_id="migration_linak_v2",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
 

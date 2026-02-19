@@ -88,7 +88,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 2:
+    if entry.version > 3:
         _LOGGER.error(
             "Cannot migrate config entry %s for %s from unsupported future version %s",
             entry.entry_id,
@@ -97,23 +97,25 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
-    if entry.version == 1:
+    if entry.version <= 2:
         new_data = {**entry.data}
 
-        # Legacy Vibradorm entries defaulted angle sensing to disabled, so
-        # position feedback entities never showed up unless manually reconfigured.
+        # Legacy Vibradorm entries that predate disable_angle_sensing defaulted
+        # position feedback to disabled, so entities stayed unavailable unless
+        # users manually reconfigured options.
         if (
             new_data.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM
-            and new_data.get(CONF_DISABLE_ANGLE_SENSING, True)
+            and CONF_DISABLE_ANGLE_SENSING not in new_data
         ):
             new_data[CONF_DISABLE_ANGLE_SENSING] = False
             _LOGGER.info(
-                "Migrated %s (%s): enabled angle sensing for Vibradorm position feedback",
+                "Migrated %s (%s): enabled angle sensing only for legacy Vibradorm "
+                "entries missing disable_angle_sensing (existing user setting left unchanged)",
                 entry.title,
                 entry.entry_id,
             )
 
-        hass.config_entries.async_update_entry(entry, data=new_data, version=2)
+        hass.config_entries.async_update_entry(entry, data=new_data, version=3)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     VIBRADORM_COMMAND_CHAR_UUID,
+    VIBRADORM_NOTIFY_CHAR_UUID,
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
     VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
     VIBRADORM_SECONDARY_SERVICE_UUID,
@@ -409,6 +410,81 @@ class TestVibradormController:
 
         called_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
         assert called_uuids == [VIBRADORM_COMMAND_CHAR_UUID, VIBRADORM_COMMAND_CHAR_UUID]
+
+    async def test_start_notify_retries_after_refresh_when_notify_uuid_is_unchanged(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Retry notifications once after refresh even if notify UUID stays the same."""
+        del mock_coordinator_connected  # Fixture used for side-effect setup
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        primary_service = _MockService(
+            VIBRADORM_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_NOTIFY_CHAR_UUID, ["notify"]),
+            ],
+        )
+        mock_client.services = _MockServices([primary_service])
+        mock_client.start_notify.reset_mock()
+
+        controller._characteristics_initialized = True
+        controller._notify_char_uuid = VIBRADORM_NOTIFY_CHAR_UUID
+
+        call_count: int = 0
+
+        async def _start_notify_side_effect(
+            char_uuid: str, *_args: object, **_kwargs: object
+        ) -> None:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1 and str(char_uuid).lower() == VIBRADORM_NOTIFY_CHAR_UUID:
+                raise BleakCharacteristicNotFoundError(char_uuid)
+            return None
+
+        mock_client.start_notify.side_effect = _start_notify_side_effect
+
+        await controller.start_notify(lambda *_: None)
+
+        called_uuids = [str(call.args[0]).lower() for call in mock_client.start_notify.call_args_list]
+        assert called_uuids == [VIBRADORM_NOTIFY_CHAR_UUID, VIBRADORM_NOTIFY_CHAR_UUID]
+
+    async def test_start_notify_uses_fallback_notifiable_characteristic(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Use a non-standard notifiable characteristic when UUID 1551 is absent."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        custom_notify_uuid = "00009998-9f03-0de5-96c5-b8f4f3081186"
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic(custom_notify_uuid, ["notify"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.start_notify.reset_mock()
+
+        await controller.start_notify(lambda *_: None)
+
+        first_call_char_uuid = str(mock_client.start_notify.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == custom_notify_uuid
 
     async def test_resolves_command_char_on_unknown_service(
         self,
@@ -852,6 +928,30 @@ class TestVibradormPositionFeedback:
         assert updates[0][0] == "back"
         assert updates[0][1] == pytest.approx(62.5, abs=0.1)
         assert updates[1] == ("legs", 0.0)
+
+    def test_short_position_packet_without_0x20_prefix_updates_angles(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """Short packet layout (3F ...) should still parse motor positions."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda motor, value: updates.append((motor, value))
+
+        # Layout without 0x20 prefix: 3F flags reserved [positions...]
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x3F, 0x11, 0x04, 0x27, 0x01, 0xA7, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert len(updates) == 2
+        assert updates[0][0] == "back"
+        assert updates[0][1] == pytest.approx(2.9, abs=0.1)
+        assert updates[1][0] == "legs"
+        assert updates[1][1] == pytest.approx(0.5, abs=0.1)
 
     def test_position_packet_legs_up(
         self,
