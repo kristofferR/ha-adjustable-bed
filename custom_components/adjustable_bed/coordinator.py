@@ -936,6 +936,22 @@ class AdjustableBedCoordinator:
                             device.name,
                         )
 
+                manufacturer_data: dict[int, bytes] | None = None
+                advertisement = bluetooth.async_last_service_info(
+                    self.hass,
+                    self._address,
+                    connectable=True,
+                )
+                if advertisement and advertisement.manufacturer_data:
+                    manufacturer_data = {
+                        int(company_id): bytes(payload)
+                        for company_id, payload in advertisement.manufacturer_data.items()
+                    }
+                    _LOGGER.debug(
+                        "Using manufacturer data keys for controller creation: %s",
+                        sorted(manufacturer_data),
+                    )
+
                 # Create the controller
                 _LOGGER.debug("Creating %s controller...", self._bed_type)
                 self._controller = await create_controller(
@@ -949,6 +965,7 @@ class AdjustableBedCoordinator:
                     jensen_pin=self._jensen_pin,
                     cb24_bed_selection=self._cb24_bed_selection,
                     ble_manufacturer=ble_manufacturer,
+                    manufacturer_data=manufacturer_data,
                 )
                 _LOGGER.debug("Controller created successfully")
 

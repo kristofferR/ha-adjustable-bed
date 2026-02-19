@@ -9,18 +9,19 @@ from unittest.mock import AsyncMock, MagicMock, call
 import pytest
 
 from custom_components.adjustable_bed.beds.okin_cb24 import (
-    OkinCB24Commands,
-    OkinCB24Controller,
     _PRESET_CONTINUOUS_COUNT,
     _PRESET_CONTINUOUS_DELAY_MS,
+    OkinCB24Commands,
+    OkinCB24Controller,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CB24,
+    MANUFACTURER_ID_OKIN,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
-    OKIN_CB24_VARIANT_CB1221,
     OKIN_CB24_VARIANT_CB27,
     OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_CB1221,
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
@@ -142,6 +143,59 @@ class TestOkinCB24Controller:
         )
 
     @pytest.mark.asyncio
+    async def test_adaptive_cb24_promotes_to_continuous_after_retry(self) -> None:
+        """Auto legacy mode should switch to continuous presets after quick retry."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(
+            coordinator,
+            protocol_variant=OKIN_CB24_VARIANT_CB24,
+            adaptive_preset_fallback=True,
+        )
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+
+        assert controller.write_command.await_count == 3
+        assert controller.write_command.await_args_list[0] == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+        )
+        assert controller.write_command.await_args_list[1] == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+            repeat_count=_PRESET_CONTINUOUS_COUNT,
+            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
+        )
+        assert controller.write_command.await_args_list[2].args[0] == controller._build_command(0)
+        assert controller._continuous_presets is True
+        assert controller._adaptive_preset_fallback is False
+
+    @pytest.mark.asyncio
+    async def test_adaptive_cb24_stays_one_shot_for_different_preset(self) -> None:
+        """Adaptive fallback should not promote when different presets are tapped."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(
+            coordinator,
+            protocol_variant=OKIN_CB24_VARIANT_CB24,
+            adaptive_preset_fallback=True,
+        )
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_2)
+
+        assert controller.write_command.await_count == 2
+        assert controller.write_command.await_args_list[0] == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+        )
+        assert controller.write_command.await_args_list[1] == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_2),
+        )
+        assert controller._continuous_presets is False
+        assert controller._adaptive_preset_fallback is True
+
+    @pytest.mark.asyncio
     async def test_old_protocol_preset_sends_stop_on_cancellation(self) -> None:
         """`cb_old` compatibility profile should still attempt STOP on cancellation."""
         coordinator = MagicMock()
@@ -226,6 +280,55 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
         assert controller._is_new_protocol is False
+        assert controller._adaptive_preset_fallback is True
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("manufacturer_payload", "expected_variant"),
+        [
+            (b"AB\x08\x01\x02", OKIN_CB24_VARIANT_CB24_AB),
+            (b"OK\x02\x04", OKIN_CB24_VARIANT_CB27),
+            (b"DOT\x01\x02", OKIN_CB24_VARIANT_DACHENG),
+            (b"DOT\x02\x01", OKIN_CB24_VARIANT_CB1221),
+            (b"DOT\x03\x02", OKIN_CB24_VARIANT_CB24),
+        ],
+    )
+    async def test_auto_detects_cb24_variant_from_manufacturer_payload(
+        self,
+        manufacturer_payload: bytes,
+        expected_variant: str,
+    ) -> None:
+        """Factory should infer APK CB24 sub-profiles from manufacturer payload markers."""
+        coordinator = _make_factory_coordinator()
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_OKIN_CB24,
+            protocol_variant=None,
+            client=None,
+            device_name="smartbed1234567890",
+            manufacturer_data={MANUFACTURER_ID_OKIN: manufacturer_payload},
+        )
+
+        assert isinstance(controller, OkinCB24Controller)
+        assert controller._protocol_variant == expected_variant
+        assert controller._adaptive_preset_fallback is True
+
+    @pytest.mark.asyncio
+    async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self) -> None:
+        """Manufacturer marker-based profiles should win over CB27New name heuristic."""
+        coordinator = _make_factory_coordinator()
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_OKIN_CB24,
+            protocol_variant=None,
+            client=None,
+            device_name="smartbed1234567890",
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"AB\x08\x01\x02"},
+        )
+
+        assert isinstance(controller, OkinCB24Controller)
+        assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24_AB
+        assert controller._is_new_protocol is False
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -259,6 +362,7 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == profile_variant
         assert controller._is_new_protocol is is_new_protocol
+        assert controller._adaptive_preset_fallback is False
 
 
 class TestOkinCB24VariantValidation:
