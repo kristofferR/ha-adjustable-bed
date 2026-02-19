@@ -709,7 +709,7 @@ class VibradormController(BedController):
         """Go to flat position (all motors down).
 
         Presets are hold-to-run: the bed only moves while the command is being
-        sent and stops when STOP arrives. We send for up to 60 seconds;
+        sent and stops when STOP arrives. We send for up to 20 seconds;
         the cancel event or the bed reaching position will end it early.
         """
         await self._preset_move(VibradormCommands.ALL_DOWN)
@@ -718,7 +718,7 @@ class VibradormController(BedController):
         """Go to memory preset position.
 
         Memory recall is hold-to-run: the bed moves toward the stored position
-        only while the command is being sent. We send for up to 60 seconds;
+        only while the command is being sent. We send for up to 20 seconds;
         the bed stops on its own at the stored position, and the user can
         cancel via the stop button.
 
@@ -743,13 +743,14 @@ class VibradormController(BedController):
 
         Vibradorm presets (flat, memory recall) require the command to be
         sent continuously - the bed moves only while it receives the command.
-        We use a large repeat count (600 x 100ms = 60s) so the bed has
-        enough time to reach position. The cancel event allows early stop.
+        We use a repeat count of 200 (200 x 100ms = 20s) which provides
+        enough headroom for the slowest motors (~14s full travel).
+        The cancel event allows early stop.
         """
         try:
             await self._write_motor_command(
                 cmd,
-                repeat_count=600,
+                repeat_count=200,
                 repeat_delay_ms=100,
             )
         finally:
