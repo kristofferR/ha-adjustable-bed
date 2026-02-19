@@ -418,6 +418,8 @@ class TestVibradormController:
         mock_coordinator_connected,
     ):
         """Retry notifications once after refresh even if notify UUID stays the same."""
+        del mock_coordinator_connected  # Fixture used for side-effect setup
+
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -439,7 +441,9 @@ class TestVibradormController:
 
         call_count: int = 0
 
-        async def _start_notify_side_effect(char_uuid: str, *_args: Any, **_kwargs: Any) -> None:
+        async def _start_notify_side_effect(
+            char_uuid: str, *_args: object, **_kwargs: object
+        ) -> None:
             nonlocal call_count
             call_count += 1
             if call_count == 1 and str(char_uuid).lower() == VIBRADORM_NOTIFY_CHAR_UUID:

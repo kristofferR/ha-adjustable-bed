@@ -269,6 +269,8 @@ class VibradormController(BedController):
                 VIBRADORM_LIGHT_CHAR_UUID.lower(),
                 VIBRADORM_CBI_CHAR_UUID.lower(),
             }
+            if self._notify_char_uuid:
+                excluded_uuids.add(self._notify_char_uuid.lower())
             for service in candidate_services:
                 for char in getattr(service, "characteristics", []):
                     props = self._characteristic_properties(char)
@@ -377,6 +379,13 @@ class VibradormController(BedController):
                     previous_char,
                     retry_char,
                 )
+
+            retry_client = self.client
+            if retry_client is None or not retry_client.is_connected:
+                _LOGGER.warning(
+                    "Cannot retry Vibradorm command write after refresh: not connected"
+                )
+                return
 
             try:
                 await self._write_gatt_with_retry(
@@ -546,8 +555,15 @@ class VibradormController(BedController):
                     retry_char,
                 )
 
+            retry_client = self.client
+            if retry_client is None or not retry_client.is_connected:
+                _LOGGER.warning(
+                    "Cannot retry Vibradorm notifications after refresh: not connected"
+                )
+                return
+
             try:
-                await self.client.start_notify(retry_char, self._handle_notification)
+                await retry_client.start_notify(retry_char, self._handle_notification)
                 _LOGGER.info("Started position notifications for Vibradorm bed")
             except BleakError as err:
                 _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
