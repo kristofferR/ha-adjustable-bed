@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call
 
@@ -123,6 +124,21 @@ class TestOkinCB24Controller:
             repeat_count=_PRESET_CONTINUOUS_COUNT,
             repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
+        second_call = controller.write_command.await_args_list[1]
+        assert second_call.args[0] == controller._build_command(0)
+
+    @pytest.mark.asyncio
+    async def test_old_protocol_preset_sends_stop_on_cancellation(self) -> None:
+        """OLD protocol should still attempt STOP when preset send is cancelled."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
+        controller.write_command = AsyncMock(side_effect=[asyncio.CancelledError(), None])
+
+        with pytest.raises(asyncio.CancelledError):
+            await controller._send_preset(OkinCB24Commands.PRESET_FLAT)
+
+        assert controller.write_command.await_count == 2
         second_call = controller.write_command.await_args_list[1]
         assert second_call.args[0] == controller._build_command(0)
 
