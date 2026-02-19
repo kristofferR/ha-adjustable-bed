@@ -20,7 +20,7 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
-| Position Feedback | ✅ (pulse-to-angle lookup tables) |
+| Position Feedback | ❌ (disabled pending protocol verification) |
 | Memory Presets | ✅ (2 slots) |
 | Factory Presets | ✅ (Flat, Zero-G, TV) |
 | Massage | ✅ (3 modes, head/foot/lumbar zones) |

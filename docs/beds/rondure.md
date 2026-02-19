@@ -21,7 +21,7 @@
 | Motor Control | ✅ (4 motors: head, foot, tilt, lumbar) |
 | Split-King | ✅ (independent side control) |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ |
+| Memory Presets | ❌ |
 | Factory Presets | ✅ (Flat, Zero-G, TV/Anti-Snore) |
 | Massage | ✅ (head, foot, lumbar zones) |
 | Lights | ✅ |

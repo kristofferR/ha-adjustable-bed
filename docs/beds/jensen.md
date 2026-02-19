@@ -149,7 +149,7 @@ When querying position with `10 FF 00 00 00 00`, the bed responds with:
 
 Position value ranges (from APK analysis):
 - **Head:** 1 = flat, ~30500 = max raised
-- **Foot:** Values are inverted - 60000 = flat, 1 = max raised
+- **Foot:** 1 = flat, ~30500 = max raised (same scale as head)
 
 ## Limitations
 

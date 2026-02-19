@@ -122,6 +122,8 @@ Where:
 | Mode 1 | MMODE1_RUN | 0x0201 (513) |
 | Mode 2 | MMODE2_RUN | 0x0202 (514) |
 | Mode 3 | MMODE3_RUN | 0x0203 (515) |
+| Mode 4 | MMODE4_RUN | 0x0204 (516) |
+| Mode 5 | MMODE5_RUN | 0x0205 (517) |
 | Zone 1 (Head) | MM1_RUN | 0x0121 (289) |
 | Zone 2 (Foot) | MM2_RUN | 0x0122 (290) |
 | Both Zones | MM12_RUN | 0x0120 (288) |

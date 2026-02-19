@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 36 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, and Vibradorm tested. Other brands need community testing.
+**Current status:** 39 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, and Vibradorm tested. Other brands need community testing.
 
 ## GitHub Comment Approval
 
@@ -64,6 +64,9 @@ custom_components/adjustable_bed/
 │   ├── coolbase.py      # Cool Base (Keeson BaseI5 with fan control)
 │   ├── scott_living.py  # Scott Living 9-byte protocol
 │   ├── sbi.py           # SBI/Q-Plus (Costco) with position feedback
+│   ├── suta.py          # SUTA Smart Home AT protocol
+│   ├── timotion_ahf.py  # TiMOTION AHF 11-byte bitmask protocol
+│   ├── limoss.py        # Limoss / Stawett TEA-encrypted protocol
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
@@ -117,7 +120,7 @@ custom_components/adjustable_bed/
 |-------|------------|----------|-----------|--------|
 | Linak | `LinakController` | 2-byte commands, write-with-response | Service UUID `99fa0001-...` | ✅ Tested |
 | Richmat | `RichmatController` | Nordic (1-byte) or WiLinke (5-byte checksum) | Service UUIDs vary by variant | ✅ Tested |
-| Keeson | `KeesonController` | KSBT (6-byte), BaseI4/I5 (8-byte XOR), or Ergomotion | Service UUID `0000ffe5-...` | ✅ Tested |
+| Keeson | `KeesonController` | KSBT/BaseI4/I5/Ergomotion/Serta/Sino variants | Service UUID `0000ffe5-...` | ✅ Tested |
 | MotoSleep | `MotoSleepController` | 2-byte ASCII `[$, char]` | Device name starts with "HHC" | ✅ Tested |
 | Solace | `SolaceController` | 11-byte packets with built-in CRC | Service UUID `0000ffe0-...` | Needs testing |
 | Leggett & Platt Gen2 | `LeggettGen2Controller` | Gen2 ASCII commands | Service UUID `45e25100-...` | Needs testing |
@@ -151,6 +154,9 @@ custom_components/adjustable_bed/
 | Cool Base | `CoolBaseController` | Keeson BaseI5 with fan control | Name patterns ("base-i5") | Needs testing |
 | Scott Living | `ScottLivingController` | 9-byte protocol | Manual selection | Needs testing |
 | SBI/Q-Plus | `SBIController` | Position feedback via pulse lookup | Manual selection | Needs testing |
+| SUTA | `SutaController` | AT command protocol (ASCII + CRLF) | Service UUID `0000fff0-...` + name "SUTA-*" | Needs testing |
+| TiMOTION AHF | `TiMOTIONAhfController` | 11-byte bitmask protocol | Service UUID `6e400001-...` + name "AHF*" | Needs testing |
+| Limoss | `LimossController` | TEA-encrypted protocol, position feedback | Service UUID `0000ffe0-...` + name patterns | Needs testing |
 | Diagnostic | `DiagnosticBedController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
