@@ -335,28 +335,36 @@ class VibradormController(BedController):
             previous_char = self._command_char_uuid
             self._refresh_characteristics(force=True)
 
-            if self._command_char_uuid == previous_char:
-                _LOGGER.error(
-                    "Vibradorm command characteristic %s not found; no fallback characteristic "
-                    "available",
+            retry_char = self._command_char_uuid
+            if retry_char == previous_char:
+                _LOGGER.warning(
+                    "Vibradorm command characteristic %s not found, retrying after service "
+                    "refresh",
+                    retry_char,
+                )
+            else:
+                _LOGGER.warning(
+                    "Vibradorm command characteristic %s not found, retrying with %s",
                     previous_char,
+                    retry_char,
+                )
+
+            try:
+                await self._write_gatt_with_retry(
+                    retry_char,
+                    command,
+                    repeat_count=repeat_count,
+                    repeat_delay_ms=repeat_delay_ms,
+                    cancel_event=cancel_event,
+                    response=self._write_with_response,
+                )
+            except BleakCharacteristicNotFoundError:
+                _LOGGER.error(
+                    "Vibradorm command characteristic %s not found after refresh retry",
+                    retry_char,
                 )
                 self.log_discovered_services(level=logging.INFO)
                 raise
-
-            _LOGGER.warning(
-                "Vibradorm command characteristic %s not found, retrying with %s",
-                previous_char,
-                self._command_char_uuid,
-            )
-            await self._write_gatt_with_retry(
-                self._command_char_uuid,
-                command,
-                repeat_count=repeat_count,
-                repeat_delay_ms=repeat_delay_ms,
-                cancel_event=cancel_event,
-                response=self._write_with_response,
-            )
 
     async def _write_motor_command(
         self,

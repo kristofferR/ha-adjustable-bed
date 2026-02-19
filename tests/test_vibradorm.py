@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
     VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
     VIBRADORM_SECONDARY_SERVICE_UUID,
+    VIBRADORM_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -358,6 +359,54 @@ class TestVibradormController:
         called_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
         assert VIBRADORM_COMMAND_CHAR_UUID in called_uuids
         assert VIBRADORM_SECONDARY_COMMAND_CHAR_UUID in called_uuids
+
+    async def test_retries_after_refresh_when_command_uuid_is_unchanged(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Retry write once after forced refresh even if command UUID remains unchanged."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        primary_service = _MockService(
+            VIBRADORM_SERVICE_UUID,
+            [
+                _MockCharacteristic(
+                    VIBRADORM_COMMAND_CHAR_UUID,
+                    ["read", "write", "write-without-response"],
+                ),
+            ],
+        )
+        mock_client.services = _MockServices([primary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        controller._characteristics_initialized = True
+        controller._command_char_uuid = VIBRADORM_COMMAND_CHAR_UUID
+
+        call_count = 0
+
+        async def _write_side_effect(char_uuid: str, *_args, **_kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1 and str(char_uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID:
+                raise BleakCharacteristicNotFoundError(char_uuid)
+            return None
+
+        mock_client.write_gatt_char.side_effect = _write_side_effect
+
+        await controller.write_command(
+            bytes([VibradormCommands.HEAD_UP]),
+            repeat_count=1,
+        )
+
+        called_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
+        assert called_uuids == [VIBRADORM_COMMAND_CHAR_UUID, VIBRADORM_COMMAND_CHAR_UUID]
 
     async def test_resolves_command_char_on_unknown_service(
         self,
