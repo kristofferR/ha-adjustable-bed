@@ -109,7 +109,7 @@ class TestOkinCB24Controller:
 
     @pytest.mark.asyncio
     async def test_old_protocol_preset_sends_continuously_then_stop(self) -> None:
-        """OLD protocol presets should send repeatedly at 300ms then STOP."""
+        """`cb_old` compatibility presets should send repeatedly at 300ms then STOP."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
@@ -128,8 +128,22 @@ class TestOkinCB24Controller:
         assert second_call.args[0] == controller._build_command(0)
 
     @pytest.mark.asyncio
+    async def test_cb24_profile_preset_is_one_shot(self) -> None:
+        """CB24 profile presets should be one-shot to match known working hardware."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_CB24)
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+
+        controller.write_command.assert_awaited_once_with(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+        )
+
+    @pytest.mark.asyncio
     async def test_old_protocol_preset_sends_stop_on_cancellation(self) -> None:
-        """OLD protocol should still attempt STOP when preset send is cancelled."""
+        """`cb_old` compatibility profile should still attempt STOP on cancellation."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
@@ -199,7 +213,7 @@ class TestOkinCB24FactoryProfiles:
 
     @pytest.mark.asyncio
     async def test_auto_detect_defaults_to_old_for_non_cb27new_names(self) -> None:
-        """Factory should default to OLD profile when CB27New signature is absent."""
+        """Factory should default to CB24 legacy profile when CB27New signature is absent."""
         coordinator = _make_factory_coordinator()
         controller = await create_controller(
             coordinator=coordinator,
@@ -210,7 +224,7 @@ class TestOkinCB24FactoryProfiles:
         )
 
         assert isinstance(controller, OkinCB24Controller)
-        assert controller._protocol_variant == OKIN_CB24_VARIANT_OLD
+        assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
         assert controller._is_new_protocol is False
 
     @pytest.mark.asyncio

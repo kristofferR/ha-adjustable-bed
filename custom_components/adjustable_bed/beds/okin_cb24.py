@@ -21,8 +21,12 @@ Protocol families detected from the OEM SmartBed app:
 - NEW protocol (CB27New / CBNewProtocol): uses 0x2A/0xAA packet families.
 - OLD protocol (CB24/CB27/CB24AB/CB1221/Dacheng): uses 0x05 0x02 packets.
 
-Presets are one-shot for NEW protocol and continuous (300ms repeats) for OLD
-protocol, matching the app's callMemory behavior.
+Preset behavior in this integration:
+- NEW protocol profiles use one-shot presets.
+- Legacy profiles (`cb24`, `cb27`, `cb24_ab`, `cb1221`, `dacheng`) use one-shot
+  presets (matching v2.4.0 behavior that worked on known hardware).
+- `cb_old` compatibility variant uses continuous presets at 300ms and sends
+  STOP after completion.
 """
 
 from __future__ import annotations
@@ -53,15 +57,15 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# OLD_PROTOCOL preset timing (matches OEM SmartBed app callMemory behavior).
+# Legacy continuous preset timing for the `cb_old` compatibility variant.
 # The OEM app sends continuously at 300ms intervals; the actuator moves
 # incrementally per command.  55 repeats ≈ 16.5s covers typical full-travel
 # preset recalls.  The cancel-event mechanism allows early interruption.
 _PRESET_CONTINUOUS_COUNT = 55
 _PRESET_CONTINUOUS_DELAY_MS = 300
 
-# Device profile variants grouped by protocol family.
-_OLD_PROTOCOL_VARIANTS = frozenset(
+# Device profile variants grouped by protocol and preset behavior.
+_LEGACY_PROTOCOL_VARIANTS = frozenset(
     {
         OKIN_CB24_VARIANT_OLD,
         OKIN_CB24_VARIANT_CB24,
@@ -72,6 +76,7 @@ _OLD_PROTOCOL_VARIANTS = frozenset(
     }
 )
 _NEW_PROTOCOL_VARIANTS = frozenset({OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW})
+_CONTINUOUS_PRESET_VARIANTS = frozenset({OKIN_CB24_VARIANT_OLD})
 
 # CBNewProtocol memory command mapping (CB24 integer command -> memory index).
 _CBNEW_MEMORY_BY_COMMAND: dict[int, int] = {
@@ -240,11 +245,15 @@ class OkinCB24Controller(BedController):
         self._bed_selection = bed_selection
         self._protocol_variant = protocol_variant
         self._is_new_protocol = protocol_variant in _NEW_PROTOCOL_VARIANTS
-        if not self._is_new_protocol and protocol_variant not in _OLD_PROTOCOL_VARIANTS:
+        self._continuous_presets = (
+            protocol_variant in _CONTINUOUS_PRESET_VARIANTS and not self._is_new_protocol
+        )
+        if not self._is_new_protocol and protocol_variant not in _LEGACY_PROTOCOL_VARIANTS:
             _LOGGER.warning(
                 "Unknown CB24 protocol variant '%s'; defaulting to OLD protocol handling",
                 protocol_variant,
             )
+            self._continuous_presets = True
 
         self._lights_on = False
         self._massage_on = False
@@ -253,10 +262,11 @@ class OkinCB24Controller(BedController):
         self._massage_mode = 0
 
         _LOGGER.debug(
-            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s)",
+            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s, continuous_presets=%s)",
             bed_selection,
             protocol_variant,
             self._is_new_protocol,
+            self._continuous_presets,
         )
 
     @property
@@ -474,16 +484,16 @@ class OkinCB24Controller(BedController):
     async def _send_preset(self, command_value: int) -> None:
         """Send a preset command using the appropriate protocol.
 
-        NEW_PROTOCOL (CB27New): One-shot — the actuator receives the command
-        once and moves to the saved position autonomously.
+        NEW_PROTOCOL (CB27New/CBNew): One-shot — the actuator receives the
+        command once and moves to the saved position autonomously.
 
-        OLD_PROTOCOL (CB24/CB27/CB24AB): Continuous — the actuator moves
-        incrementally per command and needs repeated sends at 300ms intervals
-        (matching OEM SmartBed app callMemory behavior).  STOP is sent
-        afterward to signal completion.
+        LEGACY profiles:
+        - `cb_old`: Continuous — the actuator moves incrementally per command
+          and needs repeated sends at 300ms intervals; STOP is sent afterward.
+        - `cb24`/`cb27`/`cb24_ab`/`cb1221`/`dacheng`: one-shot.
         """
         preset_command = self._build_preset_command(command_value)
-        if self._is_new_protocol:
+        if self._is_new_protocol or not self._continuous_presets:
             await self.write_command(preset_command)
         else:
             try:
