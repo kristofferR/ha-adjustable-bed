@@ -161,17 +161,17 @@ async def create_controller(
         # Detect SmartBed profile variant.
         # OEM app behavior:
         # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
-        # - CB24/CB27/CB24AB/CB1221/Dacheng (OLD protocol): all other CB24-family devices
-        profile_variant = OKIN_CB24_VARIANT_OLD
+        # - all other CB24-family devices: legacy packets (default to CB24 profile)
+        profile_variant = OKIN_CB24_VARIANT_CB24
         if device_name:
             name_lower = device_name.lower()
             if name_lower.startswith("smartbed") and len(device_name) == 18:
                 profile_variant = OKIN_CB24_VARIANT_CB27NEW
                 _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
             else:
-                profile_variant = OKIN_CB24_VARIANT_OLD
+                profile_variant = OKIN_CB24_VARIANT_CB24
                 _LOGGER.debug(
-                    "CB24 profile auto-detected: cb_old (name len=%d)",
+                    "CB24 profile auto-detected: cb24 (name len=%d)",
                     len(device_name),
                 )
 
