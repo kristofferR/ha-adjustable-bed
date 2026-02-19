@@ -150,7 +150,40 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller
 
-        return OkinCB24Controller(coordinator, bed_selection=cb24_bed_selection)
+        # Detect NEW_PROTOCOL vs OLD_PROTOCOL from device name.
+        # The OEM SmartBed app uses CB27NewDeviceProfile for devices whose
+        # name starts with "smartbed" (case-insensitive) and is exactly
+        # 18 characters long.  All other OKIN manufacturer-ID devices use
+        # CB24Protocol (OLD_PROTOCOL) which requires continuous preset sends.
+        is_new_protocol = False
+        if device_name:
+            name_lower = device_name.lower()
+            if name_lower.startswith("smartbed") and len(device_name) == 18:
+                is_new_protocol = True
+                _LOGGER.info(
+                    "CB24 sub-variant: CB27New (NEW_PROTOCOL) for '%s'",
+                    device_name,
+                )
+            else:
+                _LOGGER.info(
+                    "CB24 sub-variant: OLD_PROTOCOL for '%s' (len=%d)",
+                    device_name,
+                    len(device_name),
+                )
+
+        # Allow manual override via protocol_variant
+        if protocol_variant == "cb_new":
+            is_new_protocol = True
+            _LOGGER.debug("CB24 protocol override: NEW_PROTOCOL (cb_new)")
+        elif protocol_variant == "cb_old":
+            is_new_protocol = False
+            _LOGGER.debug("CB24 protocol override: OLD_PROTOCOL (cb_old)")
+
+        return OkinCB24Controller(
+            coordinator,
+            bed_selection=cb24_bed_selection,
+            is_new_protocol=is_new_protocol,
+        )
 
     if bed_type == BED_TYPE_OKIN_ORE:
         from .beds.okin_ore import OkinOreController

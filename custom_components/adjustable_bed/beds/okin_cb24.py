@@ -16,6 +16,13 @@ Commands follow the format: [0x05, 0x02, cmd3, cmd2, cmd1, cmd0, bed_selection]
 - Byte 6: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
 
 The 32-bit command values are identical to LeggettOkin protocol.
+
+Protocol sub-variants detected from the OEM SmartBed app:
+- CB27New (NEW_PROTOCOL): name starts with "smartbed" and len == 18.
+  Presets are one-shot (single write, actuator moves autonomously).
+- CB24/CB27/CB24AB (OLD_PROTOCOL): all other OKIN manufacturer ID devices.
+  Presets require continuous sending at 300ms intervals; the actuator moves
+  incrementally per command and stops if commands cease.
 """
 
 from __future__ import annotations
@@ -35,6 +42,13 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# OLD_PROTOCOL preset timing (matches OEM SmartBed app callMemory behavior).
+# The OEM app sends continuously at 300ms intervals; the actuator moves
+# incrementally per command.  55 repeats ≈ 16.5s covers typical full-travel
+# preset recalls.  The cancel-event mechanism allows early interruption.
+_PRESET_CONTINUOUS_COUNT = 55
+_PRESET_CONTINUOUS_DELAY_MS = 300
 
 
 class OkinCB24Commands:
@@ -123,19 +137,27 @@ class OkinCB24Controller(BedController):
     """
 
     def __init__(
-        self, coordinator: AdjustableBedCoordinator, bed_selection: int = 0x00
+        self,
+        coordinator: AdjustableBedCoordinator,
+        bed_selection: int = 0x00,
+        is_new_protocol: bool = False,
     ) -> None:
         """Initialize the Okin CB24 controller.
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
             bed_selection: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
+            is_new_protocol: True for CB27New (one-shot presets),
+                False for CB24/CB27/CB24AB (continuous presets)
         """
         super().__init__(coordinator)
         self._motor_state: dict[str, MotorDirection] = {}
         self._bed_selection = bed_selection
+        self._is_new_protocol = is_new_protocol
         _LOGGER.debug(
-            "OkinCB24Controller initialized (bed_selection=%#x)", bed_selection
+            "OkinCB24Controller initialized (bed_selection=%#x, new_protocol=%s)",
+            bed_selection,
+            is_new_protocol,
         )
 
     @property
@@ -325,13 +347,41 @@ class OkinCB24Controller(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command (one-shot, no STOP).
+        """Send a preset command using the appropriate protocol.
 
-        CB24 presets are autonomous: the actuator receives the command once and
-        moves to the saved position on its own.  The OEM app (callMemory for
-        NEW_PROTOCOL) sends a single packet and never follows up with STOP.
+        NEW_PROTOCOL (CB27New): One-shot — the actuator receives the command
+        once and moves to the saved position autonomously.
+
+        OLD_PROTOCOL (CB24/CB27/CB24AB): Continuous — the actuator moves
+        incrementally per command and needs repeated sends at 300ms intervals
+        (matching OEM SmartBed app callMemory behavior).  STOP is sent
+        afterward to signal completion.
         """
-        await self.write_command(self._build_command(command_value))
+        if self._is_new_protocol:
+            await self.write_command(self._build_command(command_value))
+        else:
+            try:
+                await self.write_command(
+                    self._build_command(command_value),
+                    repeat_count=_PRESET_CONTINUOUS_COUNT,
+                    repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
+                )
+            finally:
+                # Send STOP to signal preset completion, shielded from
+                # cancellation (same pattern as _move_motor).
+                try:
+                    await asyncio.shield(
+                        self.write_command(
+                            self._build_command(0),
+                            cancel_event=asyncio.Event(),
+                        )
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except (BleakError, ConnectionError):
+                    _LOGGER.debug(
+                        "Failed to send stop after preset", exc_info=True
+                    )
 
     async def preset_flat(self) -> None:
         """Go to flat position."""

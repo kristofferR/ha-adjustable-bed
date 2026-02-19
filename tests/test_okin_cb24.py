@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
+
+import pytest
 
 from custom_components.adjustable_bed.beds.okin_cb24 import (
     OkinCB24Commands,
     OkinCB24Controller,
+    _PRESET_CONTINUOUS_COUNT,
+    _PRESET_CONTINUOUS_DELAY_MS,
 )
 
 
@@ -29,15 +33,57 @@ class TestOkinCB24Controller:
             [0x05, 0x02, 0x00, 0x00, 0x01, 0x00, 0xAA]
         )
 
-    async def test_send_preset_is_one_shot(self) -> None:
-        """Preset commands should be sent once with no STOP follow-up."""
+    @pytest.mark.asyncio
+    async def test_new_protocol_preset_is_one_shot(self) -> None:
+        """NEW_PROTOCOL (CB27New) presets should be sent once with no STOP."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
-        controller = OkinCB24Controller(coordinator)
+        controller = OkinCB24Controller(coordinator, is_new_protocol=True)
         controller.write_command = AsyncMock()
 
         await controller._send_preset(OkinCB24Commands.PRESET_ZERO_G)
 
         controller.write_command.assert_awaited_once_with(
             controller._build_command(OkinCB24Commands.PRESET_ZERO_G),
+        )
+
+    @pytest.mark.asyncio
+    async def test_old_protocol_preset_sends_continuously_then_stop(self) -> None:
+        """OLD_PROTOCOL presets should send repeatedly at 300ms then STOP."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(coordinator, is_new_protocol=False)
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_FLAT)
+
+        assert controller.write_command.await_count == 2
+        # First call: continuous preset sends
+        first_call = controller.write_command.await_args_list[0]
+        assert first_call == call(
+            controller._build_command(OkinCB24Commands.PRESET_FLAT),
+            repeat_count=_PRESET_CONTINUOUS_COUNT,
+            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
+        )
+        # Second call: STOP command (command value 0)
+        second_call = controller.write_command.await_args_list[1]
+        assert second_call.args[0] == controller._build_command(0)
+
+    @pytest.mark.asyncio
+    async def test_default_is_old_protocol(self) -> None:
+        """Default (no is_new_protocol) should use OLD_PROTOCOL behavior."""
+        coordinator = MagicMock()
+        coordinator.address = "AA:BB:CC:DD:EE:FF"
+        controller = OkinCB24Controller(coordinator)
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+
+        # Should have 2 calls: continuous + STOP
+        assert controller.write_command.await_count == 2
+        first_call = controller.write_command.await_args_list[0]
+        assert first_call == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+            repeat_count=_PRESET_CONTINUOUS_COUNT,
+            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
