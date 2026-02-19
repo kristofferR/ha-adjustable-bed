@@ -169,18 +169,23 @@ class VibradormController(BedController):
             return
 
         service_map = {str(service.uuid).lower(): service for service in client.services}
+        all_services = list(client.services)
         candidate_services = [
             service_map[service_uuid.lower()]
             for service_uuid in VIBRADORM_SERVICE_UUID_CANDIDATES
             if service_uuid.lower() in service_map
         ]
 
+        # When no known Vibradorm services are found, fall back to searching
+        # all services on the device. Some Vibradorm variants (or ESPHome proxy
+        # configurations) may expose characteristics under different service UUIDs.
         if not candidate_services:
             if force:
                 _LOGGER.debug(
-                    "No Vibradorm services found during characteristic refresh; using defaults"
+                    "No known Vibradorm services found; searching all %d services",
+                    len(all_services),
                 )
-            return
+            candidate_services = all_services
 
         selected_command_char = None
         for char_uuid in VIBRADORM_COMMAND_UUID_CANDIDATES:
@@ -497,8 +502,8 @@ class VibradormController(BedController):
         del motor_count  # Unused - positions come via notifications
         _LOGGER.debug("Vibradorm read_positions called (positions come via notifications)")
 
-    async def _move_with_stop(self, command: int) -> None:
-        """Execute a movement command and always send STOP at the end."""
+    async def _motor_move_with_stop(self, command: int) -> None:
+        """Execute a single-byte movement command and always send STOP at the end."""
         try:
             await self._write_motor_command(command)
         finally:
@@ -519,9 +524,9 @@ class VibradormController(BedController):
         On 2-motor beds, head maps to KH/KR (shared back/head actuator).
         """
         if self._coordinator.motor_count >= 3:
-            await self._move_with_stop(VibradormCommands.NECK_UP)
+            await self._motor_move_with_stop(VibradormCommands.NECK_UP)
         else:
-            await self._move_with_stop(VibradormCommands.HEAD_UP)
+            await self._motor_move_with_stop(VibradormCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
         """Move head down.
@@ -530,9 +535,9 @@ class VibradormController(BedController):
         On 2-motor beds, head maps to KH/KR (shared back/head actuator).
         """
         if self._coordinator.motor_count >= 3:
-            await self._move_with_stop(VibradormCommands.NECK_DOWN)
+            await self._motor_move_with_stop(VibradormCommands.NECK_DOWN)
         else:
-            await self._move_with_stop(VibradormCommands.HEAD_DOWN)
+            await self._motor_move_with_stop(VibradormCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
@@ -544,11 +549,11 @@ class VibradormController(BedController):
 
     async def move_back_up(self) -> None:
         """Move back up using KH command."""
-        await self._move_with_stop(VibradormCommands.HEAD_UP)
+        await self._motor_move_with_stop(VibradormCommands.HEAD_UP)
 
     async def move_back_down(self) -> None:
         """Move back down using KR command."""
-        await self._move_with_stop(VibradormCommands.HEAD_DOWN)
+        await self._motor_move_with_stop(VibradormCommands.HEAD_DOWN)
 
     async def move_back_stop(self) -> None:
         """Stop back motor (same as head for Vibradorm)."""
@@ -556,11 +561,11 @@ class VibradormController(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._move_with_stop(VibradormCommands.LEGS_UP)
+        await self._motor_move_with_stop(VibradormCommands.LEGS_UP)
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._move_with_stop(VibradormCommands.LEGS_DOWN)
+        await self._motor_move_with_stop(VibradormCommands.LEGS_DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -577,7 +582,7 @@ class VibradormController(BedController):
         On 2/3-motor beds, falls back to legs motor.
         """
         if self._coordinator.motor_count >= 4:
-            await self._move_with_stop(VibradormCommands.FOOT_UP)
+            await self._motor_move_with_stop(VibradormCommands.FOOT_UP)
         else:
             await self.move_legs_up()
 
@@ -588,7 +593,7 @@ class VibradormController(BedController):
         On 2/3-motor beds, falls back to legs motor.
         """
         if self._coordinator.motor_count >= 4:
-            await self._move_with_stop(VibradormCommands.FOOT_DOWN)
+            await self._motor_move_with_stop(VibradormCommands.FOOT_DOWN)
         else:
             await self.move_legs_down()
 
@@ -613,17 +618,19 @@ class VibradormController(BedController):
     async def preset_flat(self) -> None:
         """Go to flat position (all motors down).
 
-        Presets work like motor commands - they trigger movement that
-        continues until STOP is sent (based on APK analysis).
+        Presets are hold-to-run: the bed only moves while the command is being
+        sent and stops when STOP arrives. We send for up to 60 seconds;
+        the cancel event or the bed reaching position will end it early.
         """
-        await self._move_with_stop(VibradormCommands.ALL_DOWN)
+        await self._preset_move(VibradormCommands.ALL_DOWN)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset position.
 
-        Memory recall uses the same motor command path as regular movements
-        (APK's motorCommandKeyPressed with setRepeatCommand=true). The command
-        is sent repeatedly on the COMMAND characteristic, with STOP in finally.
+        Memory recall is hold-to-run: the bed moves toward the stored position
+        only while the command is being sent. We send for up to 60 seconds;
+        the bed stops on its own at the stored position, and the user can
+        cancel via the stop button.
 
         Args:
             memory_num: Memory slot number (1-6)
@@ -639,7 +646,31 @@ class VibradormController(BedController):
         if memory_num not in memory_commands:
             _LOGGER.warning("Invalid memory preset number: %d (supported: 1-6)", memory_num)
             return
-        await self._move_with_stop(memory_commands[memory_num])
+        await self._preset_move(memory_commands[memory_num])
+
+    async def _preset_move(self, cmd: int) -> None:
+        """Send a preset command with long repeat for hold-to-run behavior.
+
+        Vibradorm presets (flat, memory recall) require the command to be
+        sent continuously - the bed moves only while it receives the command.
+        We use a large repeat count (600 x 100ms = 60s) so the bed has
+        enough time to reach position. The cancel event allows early stop.
+        """
+        try:
+            await self._write_motor_command(
+                cmd,
+                repeat_count=600,
+                repeat_delay_ms=100,
+            )
+        finally:
+            try:
+                await self._write_motor_command(
+                    VibradormCommands.STOP,
+                    repeat_count=1,
+                    cancel_event=asyncio.Event(),
+                )
+            except BleakError:
+                _LOGGER.debug("Failed to send STOP command during preset cleanup")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory via CBI characteristic.

@@ -359,6 +359,65 @@ class TestVibradormController:
         assert VIBRADORM_COMMAND_CHAR_UUID in called_uuids
         assert VIBRADORM_SECONDARY_COMMAND_CHAR_UUID in called_uuids
 
+    async def test_resolves_command_char_on_unknown_service(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controller should find command characteristic on non-Vibradorm services."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        # Simulate a device with a different service UUID but containing the
+        # known Vibradorm command characteristic (e.g. some firmware variants).
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic(VIBRADORM_COMMAND_CHAR_UUID, ["write-without-response"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == VIBRADORM_COMMAND_CHAR_UUID
+
+    async def test_resolves_writable_char_on_unknown_service_fallback(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controller should fall back to any writable char when no known UUIDs match."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        custom_char_uuid = "00009999-9f03-0de5-96c5-b8f4f3081186"
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic(custom_char_uuid, ["write"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == custom_char_uuid
+
 
 class TestVibradormMovement:
     """Test Vibradorm movement commands."""
@@ -489,7 +548,24 @@ class TestVibradormMovement:
 
 
 class TestVibradormPresets:
-    """Test Vibradorm preset commands."""
+    """Test Vibradorm preset commands.
+
+    Presets use hold-to-run with 600 repeats (60s). Tests set the cancel event
+    after the first write so the loop exits quickly.
+    """
+
+    @staticmethod
+    def _cancel_after_first_write(coordinator):
+        """Return a side_effect that cancels after the first write."""
+        call_count = 0
+
+        async def _side_effect(*_args, **_kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                coordinator._cancel_command.set()
+
+        return _side_effect
 
     async def test_preset_flat_sends_all_down(
         self,
@@ -497,10 +573,11 @@ class TestVibradormPresets:
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """preset_flat should send ALL_DOWN command."""
+        """preset_flat should send ALL_DOWN command with hold-to-run repeat."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = self._cancel_after_first_write(coordinator)
 
         await coordinator.controller.preset_flat()
 
@@ -518,6 +595,7 @@ class TestVibradormPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = self._cancel_after_first_write(coordinator)
 
         await coordinator.controller.preset_memory(1)
 
@@ -536,6 +614,7 @@ class TestVibradormPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = self._cancel_after_first_write(coordinator)
 
         await coordinator.controller.preset_memory(4)
 
@@ -554,6 +633,7 @@ class TestVibradormPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = self._cancel_after_first_write(coordinator)
 
         await coordinator.controller.preset_memory(6)
 
@@ -572,6 +652,7 @@ class TestVibradormPresets:
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
+        mock_client.write_gatt_char.side_effect = self._cancel_after_first_write(coordinator)
 
         await coordinator.controller.preset_memory(1)
 
