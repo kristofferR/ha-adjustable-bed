@@ -14,6 +14,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
@@ -21,6 +22,7 @@ from .const import (
     LEGGETT_VARIANTS,
     OCTO_VARIANTS,
     OKIMAT_VARIANTS,
+    OKIN_CB24_VARIANTS,
     OKIN_64BIT_VARIANTS,
     RICHMAT_VARIANTS,
     VARIANT_AUTO,
@@ -54,6 +56,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_KEESON: KEESON_VARIANTS,
     BED_TYPE_LEGGETT_PLATT: LEGGETT_VARIANTS,
     BED_TYPE_RICHMAT: RICHMAT_VARIANTS,

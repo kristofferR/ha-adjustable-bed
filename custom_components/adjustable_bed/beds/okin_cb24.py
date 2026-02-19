@@ -16,6 +16,13 @@ Commands follow the format: [0x05, 0x02, cmd3, cmd2, cmd1, cmd0, bed_selection]
 - Byte 6: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
 
 The 32-bit command values are identical to LeggettOkin protocol.
+
+Protocol families detected from the OEM SmartBed app:
+- NEW protocol (CB27New / CBNewProtocol): uses 0x2A/0xAA packet families.
+- OLD protocol (CB24/CB27/CB24AB/CB1221/Dacheng): uses 0x05 0x02 packets.
+
+Presets are one-shot for NEW protocol and continuous (300ms repeats) for OLD
+protocol, matching the app's callMemory behavior.
 """
 
 from __future__ import annotations
@@ -27,7 +34,17 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import NORDIC_UART_WRITE_CHAR_UUID
+from ..const import (
+    NORDIC_UART_WRITE_CHAR_UUID,
+    OKIN_CB24_VARIANT_CB24,
+    OKIN_CB24_VARIANT_CB24_AB,
+    OKIN_CB24_VARIANT_CB1221,
+    OKIN_CB24_VARIANT_CB27,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_DACHENG,
+    OKIN_CB24_VARIANT_NEW,
+    OKIN_CB24_VARIANT_OLD,
+)
 from .base import BedController
 from .okin_protocol import int_to_bytes
 
@@ -35,6 +52,36 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# OLD_PROTOCOL preset timing (matches OEM SmartBed app callMemory behavior).
+# The OEM app sends continuously at 300ms intervals; the actuator moves
+# incrementally per command.  55 repeats ≈ 16.5s covers typical full-travel
+# preset recalls.  The cancel-event mechanism allows early interruption.
+_PRESET_CONTINUOUS_COUNT = 55
+_PRESET_CONTINUOUS_DELAY_MS = 300
+
+# Device profile variants grouped by protocol family.
+_OLD_PROTOCOL_VARIANTS = frozenset(
+    {
+        OKIN_CB24_VARIANT_OLD,
+        OKIN_CB24_VARIANT_CB24,
+        OKIN_CB24_VARIANT_CB27,
+        OKIN_CB24_VARIANT_CB24_AB,
+        OKIN_CB24_VARIANT_CB1221,
+        OKIN_CB24_VARIANT_DACHENG,
+    }
+)
+_NEW_PROTOCOL_VARIANTS = frozenset({OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW})
+
+# CBNewProtocol memory command mapping (CB24 integer command -> memory index).
+_CBNEW_MEMORY_BY_COMMAND: dict[int, int] = {
+    0x08000000: 9,  # Flat
+    0x00001000: 1,  # Zero-G
+    0x00002000: 2,  # Memory 1 / Lounge
+    0x00004000: 3,  # Memory 2 / TV
+    0x00008000: 4,  # Anti-snore
+    0x00010000: 5,  # Memory 3
+}
 
 
 class OkinCB24Commands:
@@ -114,28 +161,102 @@ def build_cb24_command(command_value: int, bed_selection: int = 0x00) -> bytes:
     return bytes([0x05, 0x02, *int_to_bytes(command_value), bed_selection])
 
 
+def build_cbnew_motor_command(command_value: int) -> bytes:
+    """Build CBNewProtocol motor command ([0x2A, 0x00, 0x00, 0x01, 0x01, 0x04, ...])."""
+    return bytes(
+        [
+            0x2A,
+            0x00,
+            0x00,
+            0x01,
+            0x01,
+            0x04,
+            command_value & 0xFF,
+            (command_value >> 8) & 0xFF,
+            (command_value >> 16) & 0xFF,
+            (command_value >> 24) & 0xFF,
+        ]
+    )
+
+
+def build_cbnew_memory_command(memory_index: int) -> bytes:
+    """Build CBNewProtocol memory command ([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, idx])."""
+    return bytes([0x2A, 0x00, 0x00, 0x01, 0x03, 0x01, memory_index & 0xFF])
+
+
+def build_cbnew_stop_command() -> bytes:
+    """Build CBNewProtocol stop command ([0xAA, 0x00, 0x00, 0x01, 0x02, 0x00])."""
+    return bytes([0xAA, 0x00, 0x00, 0x01, 0x02, 0x00])
+
+
+def build_cbnew_massage_command(command_code: int) -> bytes:
+    """Build CBNewProtocol massage command ([0x2A, 0x00, 0x00, 0x02, 0x01, 0x01, code])."""
+    return bytes([0x2A, 0x00, 0x00, 0x02, 0x01, 0x01, command_code & 0xFF])
+
+
+def build_cbnew_light_command(is_on: bool) -> bytes:
+    """Build CBNewProtocol light command packet for discrete on/off."""
+    return bytes(
+        [
+            0xAA,
+            0x00,
+            0x00,
+            0x04,
+            0x01,
+            0x05,
+            0x00,
+            0x01 if is_on else 0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+        ]
+    )
+
+
 class OkinCB24Controller(BedController):
     """Controller for beds using Okin CB24 protocol over Nordic UART.
 
     Protocol discovered from SmartBed by Okin app analysis.
-    Uses 7-byte commands with 32-bit command values.
+    Uses both legacy CB24 packets and CBNew packets, depending on profile variant.
     Supports dual-bed configurations via bed selection byte.
     """
 
     def __init__(
-        self, coordinator: AdjustableBedCoordinator, bed_selection: int = 0x00
+        self,
+        coordinator: AdjustableBedCoordinator,
+        bed_selection: int = 0x00,
+        protocol_variant: str = OKIN_CB24_VARIANT_OLD,
     ) -> None:
         """Initialize the Okin CB24 controller.
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
             bed_selection: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
+            protocol_variant: CB24 profile variant (cb24/cb27/cb24_ab/cb1221/dacheng/cb27new)
         """
         super().__init__(coordinator)
         self._motor_state: dict[str, MotorDirection] = {}
         self._bed_selection = bed_selection
+        self._protocol_variant = protocol_variant
+        self._is_new_protocol = protocol_variant in _NEW_PROTOCOL_VARIANTS
+        if not self._is_new_protocol and protocol_variant not in _OLD_PROTOCOL_VARIANTS:
+            _LOGGER.warning(
+                "Unknown CB24 protocol variant '%s'; defaulting to OLD protocol handling",
+                protocol_variant,
+            )
+
+        self._lights_on = False
+        self._massage_on = False
+        self._massage_head_level = 0
+        self._massage_foot_level = 0
+        self._massage_mode = 0
+
         _LOGGER.debug(
-            "OkinCB24Controller initialized (bed_selection=%#x)", bed_selection
+            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s)",
+            bed_selection,
+            protocol_variant,
+            self._is_new_protocol,
         )
 
     @property
@@ -176,8 +297,8 @@ class OkinCB24Controller(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False - CB24 only supports toggle, not discrete on/off."""
-        return False
+        """Return True for CBNew profiles, False for legacy CB24 profiles."""
+        return self._is_new_protocol
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -210,7 +331,7 @@ class OkinCB24Controller(BedController):
         return True
 
     def _build_command(self, command_value: int) -> bytes:
-        """Build CB24 binary command.
+        """Build legacy CB24-style integer command packet.
 
         Args:
             command_value: 32-bit command value (0 to 0xFFFFFFFF)
@@ -219,6 +340,32 @@ class OkinCB24Controller(BedController):
             7-byte command: [0x05, 0x02, <4-byte-command-big-endian>, bed_selection]
         """
         return build_cb24_command(command_value, self._bed_selection)
+
+    def _build_motor_command(self, command_value: int) -> bytes:
+        """Build a movement command using the profile's packet family."""
+        if self._is_new_protocol:
+            return build_cbnew_motor_command(command_value)
+        return self._build_command(command_value)
+
+    def _build_stop_command(self) -> bytes:
+        """Build a STOP packet using the profile's packet family."""
+        if self._is_new_protocol:
+            return build_cbnew_stop_command()
+        return self._build_command(0)
+
+    def _build_preset_command(self, command_value: int) -> bytes:
+        """Build a preset packet using the profile's packet family."""
+        if not self._is_new_protocol:
+            return self._build_command(command_value)
+
+        memory_index = _CBNEW_MEMORY_BY_COMMAND.get(command_value)
+        if memory_index is None:
+            _LOGGER.warning(
+                "No CBNew memory mapping for preset %#x; falling back to legacy packet",
+                command_value,
+            )
+            return self._build_command(command_value)
+        return build_cbnew_memory_command(memory_index)
 
     def _get_move_command(self) -> int:
         """Calculate the combined motor movement command."""
@@ -247,7 +394,7 @@ class OkinCB24Controller(BedController):
                 pulse_count = self._coordinator.motor_pulse_count
                 pulse_delay = self._coordinator.motor_pulse_delay_ms
                 await self.write_command(
-                    self._build_command(command),
+                    self._build_motor_command(command),
                     repeat_count=pulse_count,
                     repeat_delay_ms=pulse_delay,
                 )
@@ -257,7 +404,7 @@ class OkinCB24Controller(BedController):
             try:
                 await asyncio.shield(
                     self.write_command(
-                        self._build_command(0),
+                        self._build_stop_command(),
                         cancel_event=asyncio.Event(),
                     )
                 )
@@ -319,19 +466,48 @@ class OkinCB24Controller(BedController):
         """Stop all motors."""
         self._motor_state = {}
         await self.write_command(
-            self._build_command(0),
+            self._build_stop_command(),
             cancel_event=asyncio.Event(),
         )
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command (one-shot, no STOP).
+        """Send a preset command using the appropriate protocol.
 
-        CB24 presets are autonomous: the actuator receives the command once and
-        moves to the saved position on its own.  The OEM app (callMemory for
-        NEW_PROTOCOL) sends a single packet and never follows up with STOP.
+        NEW_PROTOCOL (CB27New): One-shot — the actuator receives the command
+        once and moves to the saved position autonomously.
+
+        OLD_PROTOCOL (CB24/CB27/CB24AB): Continuous — the actuator moves
+        incrementally per command and needs repeated sends at 300ms intervals
+        (matching OEM SmartBed app callMemory behavior).  STOP is sent
+        afterward to signal completion.
         """
-        await self.write_command(self._build_command(command_value))
+        preset_command = self._build_preset_command(command_value)
+        if self._is_new_protocol:
+            await self.write_command(preset_command)
+        else:
+            try:
+                await self.write_command(
+                    preset_command,
+                    repeat_count=_PRESET_CONTINUOUS_COUNT,
+                    repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
+                )
+            finally:
+                # Send STOP to signal preset completion, shielded from
+                # cancellation (same pattern as _move_motor).
+                try:
+                    await asyncio.shield(
+                        self.write_command(
+                            self._build_stop_command(),
+                            cancel_event=asyncio.Event(),
+                        )
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except (BleakError, ConnectionError):
+                    _LOGGER.debug(
+                        "Failed to send stop after preset", exc_info=True
+                    )
 
     async def preset_flat(self) -> None:
         """Go to flat position."""
@@ -375,23 +551,48 @@ class OkinCB24Controller(BedController):
     # Light methods
     async def lights_toggle(self) -> None:
         """Toggle lights."""
+        if self._is_new_protocol:
+            if self._lights_on:
+                await self.lights_off()
+            else:
+                await self.lights_on()
+            return
         await self.write_command(self._build_command(OkinCB24Commands.TOGGLE_LIGHTS))
 
     async def lights_on(self) -> None:
-        """Turn on lights (via toggle - no discrete control)."""
+        """Turn on lights."""
+        if self._is_new_protocol:
+            await self.write_command(build_cbnew_light_command(True))
+            self._lights_on = True
+            return
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn off lights (via toggle - no discrete control)."""
+        """Turn off lights."""
+        if self._is_new_protocol:
+            await self.write_command(build_cbnew_light_command(False))
+            self._lights_on = False
+            return
         await self.lights_toggle()
 
     # Massage methods
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
+        if self._is_new_protocol:
+            level = min(3, self._massage_head_level + 1)
+            await self.write_command(build_cbnew_massage_command(79 + level))
+            self._massage_head_level = level
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_HEAD_UP))
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
+        if self._is_new_protocol:
+            level = max(0, self._massage_head_level - 1)
+            command_code = 83 if level == 0 else 79 + level
+            await self.write_command(build_cbnew_massage_command(command_code))
+            self._massage_head_level = level
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_HEAD_DOWN))
 
     async def massage_head_toggle(self) -> None:
@@ -400,10 +601,21 @@ class OkinCB24Controller(BedController):
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
+        if self._is_new_protocol:
+            level = min(3, self._massage_foot_level + 1)
+            await self.write_command(build_cbnew_massage_command(83 + level))
+            self._massage_foot_level = level
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_FEET_UP))
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
+        if self._is_new_protocol:
+            level = max(0, self._massage_foot_level - 1)
+            command_code = 87 if level == 0 else 83 + level
+            await self.write_command(build_cbnew_massage_command(command_code))
+            self._massage_foot_level = level
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_FEET_DOWN))
 
     async def massage_foot_toggle(self) -> None:
@@ -412,6 +624,15 @@ class OkinCB24Controller(BedController):
 
     async def massage_toggle(self) -> None:
         """Toggle all massage zones."""
+        if self._is_new_protocol:
+            self._massage_on = not self._massage_on
+            await self.write_command(
+                build_cbnew_massage_command(64 if self._massage_on else 65)
+            )
+            if not self._massage_on:
+                self._massage_head_level = 0
+                self._massage_foot_level = 0
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_ALL_TOGGLE))
 
     async def massage_intensity_up(self) -> None:
@@ -424,8 +645,18 @@ class OkinCB24Controller(BedController):
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
+        if self._is_new_protocol:
+            self._massage_on = False
+            self._massage_head_level = 0
+            self._massage_foot_level = 0
+            await self.write_command(build_cbnew_massage_command(65))
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_STOP_ALL))
 
     async def massage_mode_step(self) -> None:
         """Cycle through massage wave patterns."""
+        if self._is_new_protocol:
+            self._massage_mode = (self._massage_mode % 4) + 1
+            await self.write_command(build_cbnew_massage_command(65 + self._massage_mode))
+            return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_WAVE_STEP))

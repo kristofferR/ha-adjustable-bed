@@ -752,6 +752,28 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
+# OKIN CB24 profile variants (SmartBed app device profiles)
+# Source: com.okin.bedding.smartbedwifi model/device/*
+OKIN_CB24_VARIANT_OLD: Final = "cb_old"
+OKIN_CB24_VARIANT_NEW: Final = "cb_new"
+OKIN_CB24_VARIANT_CB24: Final = "cb24"
+OKIN_CB24_VARIANT_CB27: Final = "cb27"
+OKIN_CB24_VARIANT_CB24_AB: Final = "cb24_ab"
+OKIN_CB24_VARIANT_CB1221: Final = "cb1221"
+OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
+OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
+OKIN_CB24_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (recommended)",
+    OKIN_CB24_VARIANT_OLD: "OLD protocol (CB24/CB27/CB24AB/CB1221)",
+    OKIN_CB24_VARIANT_NEW: "NEW protocol (CB27New)",
+    OKIN_CB24_VARIANT_CB24: "CB24 profile (OLD protocol)",
+    OKIN_CB24_VARIANT_CB27: "CB27 profile (OLD protocol)",
+    OKIN_CB24_VARIANT_CB24_AB: "CB24AB profile (OLD protocol, split bed)",
+    OKIN_CB24_VARIANT_CB1221: "CB1221 profile (OLD protocol)",
+    OKIN_CB24_VARIANT_DACHENG: "Dacheng profile (OLD protocol)",
+    OKIN_CB24_VARIANT_CB27NEW: "CB27New profile (NEW protocol)",
+}
+
 # Keeson variants
 KEESON_VARIANT_BASE: Final = "base"
 KEESON_VARIANT_KSBT: Final = "ksbt"
@@ -1197,6 +1219,14 @@ OKIN_64BIT_VARIANTS: Final = {
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
+    OKIN_CB24_VARIANT_OLD,
+    OKIN_CB24_VARIANT_NEW,
+    OKIN_CB24_VARIANT_CB24,
+    OKIN_CB24_VARIANT_CB27,
+    OKIN_CB24_VARIANT_CB24_AB,
+    OKIN_CB24_VARIANT_CB1221,
+    OKIN_CB24_VARIANT_DACHENG,
+    OKIN_CB24_VARIANT_CB27NEW,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_ERGOMOTION,

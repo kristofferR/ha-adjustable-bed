@@ -67,6 +67,14 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     OCTO_VARIANT_STAR2,
+    OKIN_CB24_VARIANT_CB24,
+    OKIN_CB24_VARIANT_CB24_AB,
+    OKIN_CB24_VARIANT_CB1221,
+    OKIN_CB24_VARIANT_CB27,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_DACHENG,
+    OKIN_CB24_VARIANT_NEW,
+    OKIN_CB24_VARIANT_OLD,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_VARIANT_NORDIC,
@@ -150,7 +158,43 @@ async def create_controller(
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller
 
-        return OkinCB24Controller(coordinator, bed_selection=cb24_bed_selection)
+        # Detect SmartBed profile variant.
+        # OEM app behavior:
+        # - CB27NewDeviceProfile (NEW protocol): startswith("smartbed") and len == 18
+        # - CB24/CB27/CB24AB/CB1221/Dacheng (OLD protocol): all other CB24-family devices
+        profile_variant = OKIN_CB24_VARIANT_OLD
+        if device_name:
+            name_lower = device_name.lower()
+            if name_lower.startswith("smartbed") and len(device_name) == 18:
+                profile_variant = OKIN_CB24_VARIANT_CB27NEW
+                _LOGGER.debug("CB24 profile auto-detected: cb27new (name len=18)")
+            else:
+                profile_variant = OKIN_CB24_VARIANT_OLD
+                _LOGGER.debug(
+                    "CB24 profile auto-detected: cb_old (name len=%d)",
+                    len(device_name),
+                )
+
+        # Manual override via protocol_variant.
+        # Alias variants map to the corresponding protocol family.
+        if protocol_variant in {
+            OKIN_CB24_VARIANT_OLD,
+            OKIN_CB24_VARIANT_NEW,
+            OKIN_CB24_VARIANT_CB24,
+            OKIN_CB24_VARIANT_CB27,
+            OKIN_CB24_VARIANT_CB24_AB,
+            OKIN_CB24_VARIANT_CB1221,
+            OKIN_CB24_VARIANT_DACHENG,
+            OKIN_CB24_VARIANT_CB27NEW,
+        }:
+            profile_variant = protocol_variant
+            _LOGGER.debug("CB24 profile override: %s", profile_variant)
+
+        return OkinCB24Controller(
+            coordinator,
+            bed_selection=cb24_bed_selection,
+            protocol_variant=profile_variant,
+        )
 
     if bed_type == BED_TYPE_OKIN_ORE:
         from .beds.okin_ore import OkinOreController
