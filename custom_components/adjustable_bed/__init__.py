@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .beds.base import BedController
 
 import voluptuous as vol
+from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -140,14 +141,50 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AdjustableBedCoordinator(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    # Helper to create pairing issue for beds that require it
+    # Helper to create pairing issue — only when there's actual evidence of a pairing
+    # problem. Generic connection failures (timeout, device not found) should NOT
+    # trigger this, since the bed may just be temporarily unreachable after a restart.
     async def _maybe_create_pairing_issue() -> None:
         bed_type = entry.data.get(CONF_BED_TYPE)
         protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        if bed_type and requires_pairing(bed_type, protocol_variant):
-            await create_pairing_required_issue(
-                hass, entry.data.get(CONF_ADDRESS, "Unknown"), entry.data.get("name", entry.title)
+        if not (bed_type and requires_pairing(bed_type, protocol_variant)):
+            return
+
+        address = entry.data.get(CONF_ADDRESS, "")
+
+        # Check if the device is already paired/bonded at the OS level (BlueZ).
+        # If it is, the connection failure is transient — not a pairing problem.
+        if address:
+            ble_device = bluetooth.async_ble_device_from_address(
+                hass, address, connectable=True
             )
+            if ble_device is not None and isinstance(
+                getattr(ble_device, "details", None), dict
+            ):
+                props = ble_device.details.get("props", {})
+                if props.get("Paired") or props.get("Bonded"):
+                    _LOGGER.debug(
+                        "Bed %s is already paired/bonded at OS level — "
+                        "connection failure is transient, skipping pairing repair",
+                        address,
+                    )
+                    return
+
+        # Adapter explicitly doesn't support pairing (e.g. old ESPHome proxy)
+        if coordinator.pairing_supported is False:
+            await create_pairing_required_issue(
+                hass, address or "Unknown", entry.data.get("name", entry.title)
+            )
+            return
+
+        # Connection failed before pairing was even attempted (device not found,
+        # timeout, etc.). Don't create repair — HA will retry automatically and
+        # pairing will be attempted on the next successful connection.
+        _LOGGER.debug(
+            "Bed %s requires pairing but connection failed before pairing could be "
+            "attempted — not creating pairing repair (will retry automatically)",
+            address,
+        )
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)

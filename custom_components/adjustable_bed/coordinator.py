@@ -393,6 +393,14 @@ class AdjustableBedCoordinator:
         return self._client
 
     @property
+    def pairing_supported(self) -> bool | None:
+        """Return whether the Bluetooth adapter supports pairing.
+
+        None = not yet determined, True = supported, False = not supported.
+        """
+        return self._pairing_supported
+
+    @property
     def cancel_command(self) -> asyncio.Event:
         """Return the cancel command event."""
         return self._cancel_command
