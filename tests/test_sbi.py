@@ -373,11 +373,11 @@ class TestSBIController:
         mock_sbi_config_entry,
         mock_coordinator_connected,
     ):
-        """SBI should not advertise position feedback until parsing is validated."""
+        """SBI supports position feedback via pulse-to-angle lookup tables."""
         coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_position_feedback is False
+        assert coordinator.controller.supports_position_feedback is True
 
 
 # -----------------------------------------------------------------------------
@@ -552,3 +552,120 @@ class TestSBIMassage:
         call_data = calls[0][0][1]
         # MASSAGE_MODE_1 = 0x00100000 -> cmd2=0x10
         assert call_data[5] == 0x10
+
+
+# -----------------------------------------------------------------------------
+# Position Feedback Tests
+# -----------------------------------------------------------------------------
+
+
+class TestSBIPositionFeedback:
+    """Test SBI position feedback notification parsing."""
+
+    async def test_parse_notification_extracts_head_and_foot_angles(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Notification bytes 3-4 and 5-6 should be parsed as head/foot pulses."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        # Head pulse = 327 (1° in table), Foot pulse = 570 (1° in table)
+        # 327 = 0x0147 → bytes [3]=0x47, [4]=0x01 (little-endian)
+        # 570 = 0x023A → bytes [5]=0x3A, [6]=0x02 (little-endian)
+        data = bytes([0xED, 0x00, 0x00, 0x47, 0x01, 0x3A, 0x02, 0x00] + [0x00] * 8)
+        controller._parse_notification(data)
+
+        assert controller.head_angle == 1
+        assert controller.foot_angle == 1
+        assert callback.call_count == 2
+        callback.assert_any_call("back", 1.0)
+        callback.assert_any_call("legs", 1.0)
+
+    async def test_parse_notification_flat_position_is_zero(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry,
+        mock_coordinator_connected,
+    ):
+        """All-zero pulses should map to 0° for both motors."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        data = bytes([0xED, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] + [0x00] * 8)
+        controller._parse_notification(data)
+
+        assert controller.head_angle == 0
+        assert controller.foot_angle == 0
+        callback.assert_any_call("back", 0.0)
+        callback.assert_any_call("legs", 0.0)
+
+    async def test_parse_notification_inverts_values_above_32768(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Pulse values >= 32768 should be inverted (65535 - pulse)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        # Head pulse = 65535 - 327 = 65208 = 0xFEB8 → [3]=0xB8, [4]=0xFE
+        # After inversion: 65535 - 65208 = 327 → 1°
+        data = bytes([0xED, 0x00, 0x00, 0xB8, 0xFE, 0x00, 0x00, 0x00] + [0x00] * 8)
+        controller._parse_notification(data)
+
+        assert controller.head_angle == 1
+
+    async def test_parse_notification_ignores_short_packets(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Packets shorter than 7 bytes should be silently ignored."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        controller._parse_notification(bytes([0xED, 0x00, 0x00]))
+
+        callback.assert_not_called()
+
+    async def test_parse_notification_max_head_angle(
+        self,
+        hass: HomeAssistant,
+        mock_sbi_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Maximum head pulse (20413) should map to 60°."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sbi_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        # 20413 = 0x4FBD → [3]=0xBD, [4]=0x4F
+        data = bytes([0xED, 0x00, 0x00, 0xBD, 0x4F, 0x00, 0x00, 0x00] + [0x00] * 8)
+        controller._parse_notification(data)
+
+        assert controller.head_angle == 60
+        callback.assert_any_call("back", 60.0)

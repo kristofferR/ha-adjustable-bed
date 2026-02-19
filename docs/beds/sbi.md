@@ -118,7 +118,13 @@ Where:
 
 ## Position Feedback
 
-SBI is unique in providing calibrated position feedback via pulse-to-angle lookup tables.
+**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+
+Notifications are 16+ byte packets. Position data is extracted from:
+- **Bytes 3-4:** Head pulse count (little-endian 16-bit)
+- **Bytes 5-6:** Foot pulse count (little-endian 16-bit)
+
+Pulse values are converted to angles via calibrated lookup tables from the APK.
 
 ### Head Angle (0-60 degrees)
 
