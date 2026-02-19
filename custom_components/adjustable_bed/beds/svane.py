@@ -602,11 +602,47 @@ class SvaneController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position."""
+        """Go to flat position.
+
+        Sends the flatten command via multiple pathways for maximum firmware
+        compatibility. Some Svane firmware revisions respond to the MEMORY
+        characteristic (like preset_zero_g), while others use the POSITION
+        characteristic. We try MEMORY first since it's proven to work on
+        more devices, then fall back to POSITION.
+        """
+        cancel_event = self._coordinator.cancel_command
+
+        # Primary: write to MEMORY characteristic in HEAD service.
+        # This uses the same pathway as preset_zero_g which is confirmed
+        # working on LinonPI firmware. See:
+        # https://github.com/kristofferR/ha-adjustable-bed/issues/152
+        try:
+            await self._write_to_service_char(
+                SVANE_HEAD_SERVICE_UUID,
+                SVANE_CHAR_MEMORY_UUID,
+                SvaneCommands.FLATTEN,
+                repeat_count=3,
+                repeat_delay_ms=100,
+                cancel_event=cancel_event,
+            )
+        except (ConnectionError, BleakError):
+            _LOGGER.debug(
+                "MEMORY-path flatten failed, continuing with POSITION path",
+                exc_info=True,
+            )
+
+        if cancel_event is not None and cancel_event.is_set():
+            return
+
+        # Secondary: write to POSITION characteristic in both services
+        # (original approach, works on some firmware revisions).
+        # Use a small repeat count — presets are one-shot instructions,
+        # not continuous motor pulses.
         await self._write_preset_command(
             SvaneCommands.FLATTEN,
-            repeat_count=max(3, self._coordinator.motor_pulse_count),
+            repeat_count=3,
             repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+            memory_fallback=False,  # Already wrote to MEMORY above
         )
 
     async def preset_zero_g(self) -> None:

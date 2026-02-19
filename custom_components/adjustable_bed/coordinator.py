@@ -30,6 +30,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .adapter import (
+    AdapterSelectionResult,
     detect_esphome_proxy,
     discover_services,
     read_ble_device_info,
@@ -559,6 +560,10 @@ class AdjustableBedCoordinator:
             self._max_retries,
         )
         overall_start = time.monotonic()
+        # Track adapters that ran out of connection slots so we can try
+        # alternatives on subsequent retries (issue #152).
+        exhausted_adapters: set[str] = set()
+        adapter_result: AdapterSelectionResult | None = None
 
         for attempt in range(self._max_retries):
             attempt_start = time.monotonic()
@@ -611,9 +616,13 @@ class AdjustableBedCoordinator:
                 except Exception as err:
                     _LOGGER.debug("Could not get scanner count: %s", err)
 
-                # Select best adapter and get device
+                # Select best adapter and get device, excluding any adapters
+                # that previously ran out of connection slots
                 adapter_result = await select_adapter(
-                    self.hass, self._address, self._preferred_adapter
+                    self.hass,
+                    self._address,
+                    self._preferred_adapter,
+                    exclude_adapters=exhausted_adapters or None,
                 )
                 device = adapter_result.device
 
@@ -1011,13 +1020,27 @@ class AdjustableBedCoordinator:
 
             except (BleakError, TimeoutError, OSError) as err:
                 attempt_elapsed = time.monotonic() - attempt_start
+                err_str = str(err).lower()
                 # Categorize the error for clearer diagnostics
-                if isinstance(err, TimeoutError) or "timeout" in str(err).lower():
+                if isinstance(err, TimeoutError) or "timeout" in err_str:
                     error_category = "CONNECTION TIMEOUT"
-                elif "refused" in str(err).lower() or "rejected" in str(err).lower():
+                elif "refused" in err_str or "rejected" in err_str:
                     error_category = "CONNECTION REFUSED (another device may be connected)"
                 else:
                     error_category = "BLE ERROR"
+
+                # Detect connection slot exhaustion and exclude the adapter
+                # on subsequent retries so we try an alternative (issue #152).
+                if "connection slot" in err_str and adapter_result is not None:
+                    failed_source = adapter_result.source
+                    if failed_source:
+                        exhausted_adapters.add(failed_source)
+                        _LOGGER.info(
+                            "Adapter %s out of connection slots for %s, "
+                            "will try alternative adapter on next retry",
+                            failed_source,
+                            self._address,
+                        )
 
                 # Track connection error for diagnostics (issue #168)
                 self._last_connection_error = str(err)
