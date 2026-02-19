@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -344,7 +346,7 @@ class TestVibradormController:
         controller._characteristics_initialized = True
         controller._command_char_uuid = VIBRADORM_COMMAND_CHAR_UUID
 
-        async def _write_side_effect(char_uuid: str, *_args, **_kwargs):
+        async def _write_side_effect(char_uuid: str, *_args: Any, **_kwargs: Any) -> None:
             if str(char_uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID:
                 raise BleakCharacteristicNotFoundError(char_uuid)
             return None
@@ -389,9 +391,9 @@ class TestVibradormController:
         controller._characteristics_initialized = True
         controller._command_char_uuid = VIBRADORM_COMMAND_CHAR_UUID
 
-        call_count = 0
+        call_count: int = 0
 
-        async def _write_side_effect(char_uuid: str, *_args, **_kwargs):
+        async def _write_side_effect(char_uuid: str, *_args: Any, **_kwargs: Any) -> None:
             nonlocal call_count
             call_count += 1
             if call_count == 1 and str(char_uuid).lower() == VIBRADORM_COMMAND_CHAR_UUID:
@@ -415,6 +417,8 @@ class TestVibradormController:
         mock_coordinator_connected,
     ):
         """Controller should find command characteristic on non-Vibradorm services."""
+        del mock_coordinator_connected
+
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -445,6 +449,8 @@ class TestVibradormController:
         mock_coordinator_connected,
     ):
         """Controller should fall back to any writable char when no known UUIDs match."""
+        del mock_coordinator_connected
+
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -604,11 +610,11 @@ class TestVibradormPresets:
     """
 
     @staticmethod
-    def _cancel_after_first_write(coordinator):
+    def _cancel_after_first_write(coordinator: Any) -> Callable[..., Coroutine[Any, Any, None]]:
         """Return a side_effect that cancels after the first write."""
-        call_count = 0
+        call_count: int = 0
 
-        async def _side_effect(*_args, **_kwargs):
+        async def _side_effect(*_args: Any, **_kwargs: Any) -> None:
             nonlocal call_count
             call_count += 1
             if call_count == 1:

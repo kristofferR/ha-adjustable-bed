@@ -169,7 +169,6 @@ class VibradormController(BedController):
             return
 
         service_map = {str(service.uuid).lower(): service for service in client.services}
-        all_services = list(client.services)
         candidate_services = [
             service_map[service_uuid.lower()]
             for service_uuid in VIBRADORM_SERVICE_UUID_CANDIDATES
@@ -180,11 +179,11 @@ class VibradormController(BedController):
         # all services on the device. Some Vibradorm variants (or ESPHome proxy
         # configurations) may expose characteristics under different service UUIDs.
         if not candidate_services:
-            if force:
-                _LOGGER.debug(
-                    "No known Vibradorm services found; searching all %d services",
-                    len(all_services),
-                )
+            all_services = list(client.services)
+            _LOGGER.debug(
+                "No known Vibradorm services found; searching all %d services",
+                len(all_services),
+            )
             candidate_services = all_services
 
         selected_command_char = None
@@ -521,7 +520,7 @@ class VibradormController(BedController):
                     repeat_count=1,
                     cancel_event=asyncio.Event(),
                 )
-            except BleakError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
@@ -677,7 +676,7 @@ class VibradormController(BedController):
                     repeat_count=1,
                     cancel_event=asyncio.Event(),
                 )
-            except BleakError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug("Failed to send STOP command during preset cleanup")
 
     async def program_memory(self, memory_num: int) -> None:
