@@ -1,6 +1,6 @@
 # BedTech
 
-**Status:** ❓ Untested
+**Status:** ✅ Tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

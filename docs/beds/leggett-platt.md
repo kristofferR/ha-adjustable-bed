@@ -1,6 +1,6 @@
 # Leggett & Platt
 
-**Status:** ❓ Needs more testers
+**Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 

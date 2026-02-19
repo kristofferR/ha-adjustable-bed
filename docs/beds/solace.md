@@ -1,6 +1,6 @@
 # Solace
 
-**Status:** ⚠️ Untested
+**Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 

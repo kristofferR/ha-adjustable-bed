@@ -1,6 +1,6 @@
 # Nectar
 
-**Status:** ❓ Untested
+**Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) - [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)
 

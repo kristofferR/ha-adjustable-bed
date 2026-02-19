@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 39 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, and Vibradorm tested. Other brands need community testing.
+**Current status:** 39 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, Vibradorm, Octo, Okin UUID/Okimat, Okin CB24, SUTA, and BedTech tested. Other brands need community testing.
 
 ## GitHub Comment Approval
 
@@ -127,11 +127,11 @@ custom_components/adjustable_bed/
 | Leggett & Platt Okin | `LeggettOkinController` | Okin binary protocol | Service UUID `62741523-...` + name | Needs testing |
 | Leggett & Platt WiLinke | `LeggettWilinkeController` | WiLinke 5-byte protocol | Name prefix "MlRM*" | Needs testing |
 | Reverie | `ReverieController` | XOR checksum, position-based motors | Service UUID `1b1d9641-...` | Needs testing |
-| Okin UUID | `OkinUuidController` | Okin 6-byte via UUID, requires pairing | Service UUID `62741523-...` | Needs testing |
+| Okin UUID | `OkinUuidController` | Okin 6-byte via UUID, requires pairing | Service UUID `62741523-...` | ✅ Tested |
 | Okin Handle | `OkinHandleController` | Okin 6-byte via handle (0x0013) | Name patterns | Needs testing |
 | Okin 7-byte | `Okin7ByteController` | 7-byte via Okin service UUID | Service UUID `62741523-...` + name | Needs testing |
 | Okin Nordic | `OkinNordicController` | 7-byte via Nordic UART | Service UUID `6e400001-...` | Needs testing |
-| Okin CB24 | `OkinCB24Controller` | CB24 protocol via Nordic UART | Name patterns (SmartBed, Amada) | Needs testing |
+| Okin CB24 | `OkinCB24Controller` | CB24 protocol via Nordic UART | Name patterns (SmartBed, Amada) | ✅ Tested |
 | Okin ORE | `OkinOreController` | A5 5A format protocol | Service UUID `00001000-...` | Needs testing |
 | Okin FFE | `KeesonController(variant="okin")` | 0xE6 prefix, Keeson protocol | Name patterns ("okin", "cb-") + FFE5 UUID | Needs testing |
 | Okin 64-bit | `Okin64BitController` | 10-byte commands | Service UUID `62741523-...` | Needs testing |
@@ -139,12 +139,12 @@ custom_components/adjustable_bed/
 | Ergomotion | `KeesonController(variant="ergomotion")` | Keeson protocol with position feedback | Name patterns ("ergomotion", "ergo", "serta-i") | Needs testing |
 | Jiecang | `JiecangController` | Glide beds, Dream Motion app | Char UUID `0000ff01-...` | Needs testing |
 | Comfort Motion | `JiecangController` | Comfort Motion / Lierda protocol | Service UUID `0000ff12-...` | Needs testing |
-| Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | Needs testing |
+| Octo | `OctoController` | Standard or Star2 variant, PIN auth | Service UUID `0000ffe0-...` or `0000aa5c-...` | ✅ Tested |
 | Malouf NEW_OKIN | `MaloufNewOkinController` | NEW_OKIN 6-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
 | Malouf LEGACY_OKIN | `MaloufLegacyOkinController` | LEGACY_OKIN 7-byte protocol | Name patterns (Malouf, Lucid, CVB) | Needs testing |
 | Jensen | `JensenController` | 6-byte commands with PIN auth | Service UUID `00001234-...` or name "JMC*" | ✅ Tested |
 | Svane | `SvaneController` | LinonPI multi-service 2-byte commands | Service UUID `0000abcb-...` or name "Svane Bed" | ✅ Tested |
-| BedTech | `BedTechController` | 5-byte ASCII protocol | Service UUID `0000fee9-...` | Needs testing |
+| BedTech | `BedTechController` | 5-byte ASCII protocol | Service UUID `0000fee9-...` | ✅ Tested |
 | Sleepy's BOX15 | `SleepysBox15Controller` | 9-byte with checksum | Service UUID `0000ffe5-...` | Needs testing |
 | Sleepy's BOX24 | `SleepysBox24Controller` | 7-byte OKIN 64-bit | Service UUID `62741523-...` | Needs testing |
 | Reverie Nightstand | `ReverieNightstandController` | Protocol 110 | Service UUID `db801000-...` | Needs testing |
@@ -154,7 +154,7 @@ custom_components/adjustable_bed/
 | Cool Base | `CoolBaseController` | Keeson BaseI5 with fan control | Name patterns ("base-i5") | Needs testing |
 | Scott Living | `ScottLivingController` | 9-byte protocol | Manual selection | Needs testing |
 | SBI/Q-Plus | `SBIController` | Position feedback via pulse lookup | Manual selection | Needs testing |
-| SUTA | `SutaController` | AT command protocol (ASCII + CRLF) | Service UUID `0000fff0-...` + name "SUTA-*" | Needs testing |
+| SUTA | `SutaController` | AT command protocol (ASCII + CRLF) | Service UUID `0000fff0-...` + name "SUTA-*" | ✅ Tested |
 | TiMOTION AHF | `TiMOTIONAhfController` | 11-byte bitmask protocol | Service UUID `6e400001-...` + name "AHF*" | Needs testing |
 | Limoss | `LimossController` | TEA-encrypted protocol, position feedback | Service UUID `0000ffe0-...` + name patterns | Needs testing |
 | Diagnostic | `DiagnosticBedController` | Debug mode for unsupported beds | Manual selection only | Debug |

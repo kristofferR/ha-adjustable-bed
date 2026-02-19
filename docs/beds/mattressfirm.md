@@ -1,6 +1,6 @@
 # Mattress Firm 900
 
-**Status:** ⚠️ Untested
+**Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)
 

@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** Untested
+**Status:** ❓ Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
