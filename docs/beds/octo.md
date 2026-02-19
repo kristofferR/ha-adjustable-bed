@@ -39,7 +39,8 @@ The PIN is typically found in your Octo physical remote's settings menu, or in t
 |---------|-----------|
 | Motor Control | ✅ |
 | Position Feedback | ❌ |
-| Memory Presets | ❌ |
+| Memory Presets | ✅ (dynamically detected, Standard variant only) |
+| Both Up Preset | ✅ (Standard variant: moves head + legs together) |
 | Under-bed Lights | ✅ (Standard variant only) |
 | PIN Authentication | ✅ (Standard variant only) |
 

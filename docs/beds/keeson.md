@@ -41,17 +41,17 @@ Brands using Keeson/Ergomotion actuators:
 
 ## Features
 
-| Feature | BaseI4/I5 | KSBT | Ergomotion |
-|---------|-----------|------|------------|
-| Motor Control | ✅ | ✅ | ✅ |
-| Position Feedback | ❌ | ❌ | ✅ |
-| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) |
-| TV Preset | ❌ | ✅ | ✅ |
-| Anti-Snore Preset | ❌ | ✅ | ✅ |
-| Lounge Preset | ❌ | ✅ | ✅ |
-| Massage | ✅ | ✅ | ✅ |
-| Safety Lights | ✅ | ✅ | ✅ |
-| Zero-G | ✅ | ✅ | ✅ |
+| Feature | BaseI4/I5 | KSBT | Ergomotion | Okin | Serta | Sino |
+|---------|-----------|------|------------|------|-------|------|
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ |
+| TV Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Lounge Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## Protocol Variants
 
@@ -71,6 +71,12 @@ Brands using Keeson/Ergomotion actuators:
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
 - `0000ffe5-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffe9`)
 - `0000ffe0-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffe1`)
+
+### Sino Variant (Dynasty, INNOVA, BetterLiving)
+**Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
+**Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
+
+Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but with big-endian command byte ordering. Auto-detected by name pattern `okin-ble`.
 
 ### Ergomotion Variant (with Position Feedback)
 Same protocol as Base variant but with real-time position updates via BLE notifications.

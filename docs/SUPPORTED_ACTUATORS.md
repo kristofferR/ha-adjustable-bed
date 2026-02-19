@@ -118,6 +118,8 @@ These beds have their own dedicated integrations:
    - `VMAT*` → Vibradorm
    - `SUTA-*` → SUTA Smart Home (bed-frame variants)
    - `AHF*` → TiMOTION AHF
+   - `Limoss*`, `Stawett*` → Limoss
+   - `OKIN-BLE*` → Keeson (Sino variant, BetterLiving/Dynasty/INNOVA)
    - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
    - `Rize*`, `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
 

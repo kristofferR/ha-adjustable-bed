@@ -125,6 +125,8 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Cool Base | 10 | 100ms |
 | Scott Living | 10 | 100ms |
 | SBI/Q-Plus | 10 | 100ms |
+| SUTA | 7 | 150ms |
+| TiMOTION AHF | 10 | 100ms |
 | All others | 10 | 100ms |
 
 ### When to Adjust
@@ -149,6 +151,9 @@ Some beds support multiple protocol variants. Auto-detection usually works, but 
 | **Base** | BaseI4/BaseI5 protocol | Member's Mark, Purple, some Ergomotion |
 | **KSBT** | Nordic UART protocol | Older Keeson remotes |
 | **Ergomotion** | Base protocol with position feedback | Ergomotion-branded beds |
+| **Okin** | OKIN FFE (0xE6 prefix) | OKIN 13/15 series |
+| **Serta** | Serta MP Remote protocol | Serta Motion Perfect |
+| **Sino** | Big-endian packet format | Dynasty, INNOVA, BetterLiving |
 
 ### Leggett & Platt Variants
 

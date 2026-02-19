@@ -21,7 +21,7 @@
 | Motor Control | ✅ (2 motors: head, foot) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (1 slot) |
-| Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
+| Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore, Lounge) |
 | Massage | ✅ |
 | Light Control | ✅ (toggle) |
 | Fan Control | ✅ (left/right/sync, 3 levels) |

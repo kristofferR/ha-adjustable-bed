@@ -22,7 +22,7 @@
 |---------|-----------|
 | Motor Control | ✅ |
 | Position Feedback | ✅ |
-| Memory Presets | ✅ (4 slots) |
+| Memory Presets | ✅ (6 slots) |
 | Flat Preset | ✅ |
 | Light Control | ✅ |
 | Massage | ✅ (vibration toggle via CBI characteristic) |
@@ -57,6 +57,8 @@ Commands are single bytes written to the command characteristic:
 | Memory 2 | 15 | `0x0F` |
 | Memory 3 | 12 | `0x0C` |
 | Memory 4 | 26 | `0x1A` |
+| Memory 5 | 27 | `0x1B` |
+| Memory 6 | 28 | `0x1C` |
 
 ### Light Control
 
