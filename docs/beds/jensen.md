@@ -13,7 +13,7 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | JBG BLE | `com.hilding.jbg_ble` |
+| ✅ | Adjustable Sleep | `air.no.jensen.adjustablesleep` |
 
 ## PIN Authentication
 

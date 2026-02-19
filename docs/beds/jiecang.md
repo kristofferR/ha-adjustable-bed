@@ -20,7 +20,7 @@ Brands using Jiecang actuators:
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Jiecang Bed / Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed) | `com.jiecang.app.android.jiecangbed` |
-| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.app.android.bed` |
+| ✅ | LOGICDATA MOTIONrelax | `com.logicdata.motionrelax` |
 
 ## Features
 

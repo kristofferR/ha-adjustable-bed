@@ -14,7 +14,7 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | SUTA Smart Home | `com.shuta.smart_home` |
-| ✅ | SUTA (legacy stub app) | `com.shuta.suta` |
+| ✅ | SUTA (legacy stub app) | `com.shuta.suta_old` |
 
 ## Features
 

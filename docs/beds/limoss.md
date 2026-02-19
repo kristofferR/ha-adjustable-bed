@@ -14,7 +14,7 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | Limoss Remote | `com.limoss.limossremote` |
-| ✅ | Stawett | `com.limoss.stawett` |
+| ✅ | Stawett | `com.stawett` |
 
 ## Features
 

@@ -14,7 +14,7 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ⬜ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) | `com.richmat.lp2` |
+| ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) | `com.richmat.lp2` |
 
 ## Features
 
