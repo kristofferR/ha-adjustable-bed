@@ -209,7 +209,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
@@ -235,15 +235,15 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
-    async def test_migrate_v2_entry_is_noop(
+    async def test_migrate_v2_vibradorm_enables_angle_sensing(
         self,
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """Already-migrated entries should remain unchanged."""
+        """V2 Vibradorm entries should also enable angle sensing."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Vibradorm Migration V2 Test",
@@ -261,7 +261,33 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 2
+        assert entry.version == 3
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """V2 non-Vibradorm entries keep disable_angle_sensing unchanged."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Linak Migration V2 Test",
+            data={
+                **mock_config_entry_data,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:04",
+            entry_id="migration_linak_v2",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 3
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
 

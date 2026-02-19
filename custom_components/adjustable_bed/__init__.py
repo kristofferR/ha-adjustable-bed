@@ -88,7 +88,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 2:
+    if entry.version > 3:
         _LOGGER.error(
             "Cannot migrate config entry %s for %s from unsupported future version %s",
             entry.entry_id,
@@ -97,7 +97,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
-    if entry.version == 1:
+    if entry.version <= 2:
         new_data = {**entry.data}
 
         # Legacy Vibradorm entries defaulted angle sensing to disabled, so
@@ -113,7 +113,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.entry_id,
             )
 
-        hass.config_entries.async_update_entry(entry, data=new_data, version=2)
+        hass.config_entries.async_update_entry(entry, data=new_data, version=3)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

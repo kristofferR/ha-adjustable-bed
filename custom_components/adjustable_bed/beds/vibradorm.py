@@ -253,14 +253,44 @@ class VibradormController(BedController):
                 self._cbi_char_uuid = str(cbi_char.uuid)
                 break
 
+        selected_notify_char = None
         for service in candidate_services:
             notify_char = self._get_characteristic_by_uuid(service, VIBRADORM_NOTIFY_CHAR_UUID)
             if notify_char is None:
                 continue
             props = self._characteristic_properties(notify_char)
-            if "notify" in props:
-                self._notify_char_uuid = str(notify_char.uuid)
+            if "notify" in props or "indicate" in props:
+                selected_notify_char = notify_char
                 break
+
+        if selected_notify_char is None:
+            excluded_uuids = {
+                VIBRADORM_COMMAND_CHAR_UUID.lower(),
+                VIBRADORM_LIGHT_CHAR_UUID.lower(),
+                VIBRADORM_CBI_CHAR_UUID.lower(),
+            }
+            for service in candidate_services:
+                for char in getattr(service, "characteristics", []):
+                    props = self._characteristic_properties(char)
+                    if "notify" not in props and "indicate" not in props:
+                        continue
+                    char_uuid = str(char.uuid).lower()
+                    if char_uuid in excluded_uuids:
+                        continue
+                    selected_notify_char = char
+                    break
+                if selected_notify_char is not None:
+                    break
+
+        if selected_notify_char is not None:
+            resolved_notify_uuid = str(selected_notify_char.uuid)
+            if resolved_notify_uuid != self._notify_char_uuid:
+                _LOGGER.info(
+                    "Resolved Vibradorm notify characteristic: %s -> %s",
+                    self._notify_char_uuid,
+                    resolved_notify_uuid,
+                )
+            self._notify_char_uuid = resolved_notify_uuid
 
         self._characteristics_initialized = True
 
@@ -432,35 +462,49 @@ class VibradormController(BedController):
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
-        VMAT position notifications (from XMCMotorData.java / MainScreen):
-        - Byte 0: Frame marker (0x20)
-        - Byte 1: Message family (0x3F)
-        - Byte 2: Flags (bit 4 = init, bit 6 = sync)
-        - Byte 3: Reserved (0x00)
-        - Bytes 4-5: Motor 1 (back) position, 16-bit little-endian
-        - Bytes 6-7: Motor 2 (legs) position, 16-bit little-endian
-        - Bytes 8-9: Motor 3 (head) position, 16-bit little-endian
-        - Bytes 10-11: Motor 4 (feet) position, 16-bit little-endian
+        VMAT position notifications (from MainScreen / XMCMotorData) are observed
+        in two layouts:
+        - Long:  0x20, 0x3F, flags, reserved, [positions...]
+        - Short: 0x3F, flags, reserved, [positions...]
+
+        Position payload uses little-endian motor values:
+        - Motor 1 (back)
+        - Motor 2 (legs)
+        - Motor 3 (head)
+        - Motor 4 (feet)
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 8:
+        if len(data) < 7:
             _LOGGER.debug("Vibradorm notification too short: %s", data.hex())
             return
 
-        if data[0] != 0x20 or data[1] != 0x3F:
+        payload_offset: int
+        if data[0] == 0x20:
+            if len(data) < 8 or data[1] != 0x3F:
+                return
+            payload_offset = 4
+        elif data[0] == 0x3F:
+            payload_offset = 3
+        else:
             return
 
-        # Parse motor positions at correct offsets with little-endian byte order
-        back_raw = int.from_bytes(data[4:6], byteorder="little")
-        legs_raw = int.from_bytes(data[6:8], byteorder="little")
+        # Parse motor positions at payload offsets with little-endian byte order.
+        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="little")
+        legs_raw = int.from_bytes(
+            data[payload_offset + 2 : payload_offset + 4], byteorder="little"
+        )
 
         position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
 
-        if self._coordinator.motor_count >= 3 and len(data) >= 10:
-            position_updates["head"] = int.from_bytes(data[8:10], byteorder="little")
-        if self._coordinator.motor_count >= 4 and len(data) >= 12:
-            position_updates["feet"] = int.from_bytes(data[10:12], byteorder="little")
+        if self._coordinator.motor_count >= 3 and len(data) >= payload_offset + 6:
+            position_updates["head"] = int.from_bytes(
+                data[payload_offset + 4 : payload_offset + 6], byteorder="little"
+            )
+        if self._coordinator.motor_count >= 4 and len(data) >= payload_offset + 8:
+            position_updates["feet"] = int.from_bytes(
+                data[payload_offset + 6 : payload_offset + 8], byteorder="little"
+            )
 
         _LOGGER.debug(
             "Vibradorm position updates=%s raw=%s",
@@ -485,6 +529,29 @@ class VibradormController(BedController):
         try:
             await self.client.start_notify(self._notify_char_uuid, self._handle_notification)
             _LOGGER.info("Started position notifications for Vibradorm bed")
+        except BleakCharacteristicNotFoundError:
+            previous_char = self._notify_char_uuid
+            self._refresh_characteristics(force=True)
+            retry_char = self._notify_char_uuid
+
+            if retry_char == previous_char:
+                _LOGGER.warning(
+                    "Vibradorm notify characteristic %s not found, retrying after service refresh",
+                    retry_char,
+                )
+            else:
+                _LOGGER.warning(
+                    "Vibradorm notify characteristic %s not found, retrying with %s",
+                    previous_char,
+                    retry_char,
+                )
+
+            try:
+                await self.client.start_notify(retry_char, self._handle_notification)
+                _LOGGER.info("Started position notifications for Vibradorm bed")
+            except BleakError as err:
+                _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
+                self.log_discovered_services(level=logging.INFO)
         except BleakError as err:
             _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
             self.log_discovered_services(level=logging.INFO)
