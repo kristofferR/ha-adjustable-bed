@@ -352,6 +352,7 @@ class TestOkinCB24FactoryProfiles:
 
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB27NEW
+        assert controller._adaptive_preset_fallback is False
 
     @pytest.mark.asyncio
     async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self) -> None:
@@ -369,6 +370,7 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24_AB
         assert controller._is_new_protocol is False
+        assert controller._adaptive_preset_fallback is True
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(

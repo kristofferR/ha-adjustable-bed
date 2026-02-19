@@ -134,7 +134,7 @@ def _auto_detect_cb24_profile_variant(
 ) -> str:
     """Auto-detect SmartBed/CB24 profile variant from advertisement signals."""
     if manufacturer_data and MANUFACTURER_ID_OKIN in manufacturer_data:
-        okin_payload = bytes(manufacturer_data[MANUFACTURER_ID_OKIN])
+        okin_payload = manufacturer_data[MANUFACTURER_ID_OKIN]
         inferred_variant = _infer_cb24_variant_from_okin_payload(okin_payload)
         if inferred_variant:
             _LOGGER.debug(
