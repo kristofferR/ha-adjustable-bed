@@ -399,11 +399,16 @@ class KeesonController(BedController):
     def motor_translation_keys(self) -> dict[str, str] | None:
         """Return Keeson-specific translation keys for motor cover entities.
 
-        Keeson motor naming differs from standard naming:
+        Standard Keeson motor naming differs from standard naming:
         - "head" motor → controls back/upper body → use "keeson_back"
         - "tilt" motor → controls head/pillow → use "keeson_head"
         - "feet" motor → controls legs → use "keeson_legs"
+
+        BetterLiving/Sino beds use standard motor naming (head=head, feet=feet),
+        so no translation overrides are needed.
         """
+        if self._variant == KEESON_VARIANT_SINO:
+            return None
         return {
             "head": "keeson_back",
             "tilt": "keeson_head",
