@@ -499,13 +499,13 @@ class VibradormController(BedController):
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
-        VMAT position notifications are 12 bytes in the long format:
-          0x20, 0x3F, flags, reserved, M1lo, M1hi, M2lo, M2hi, M3lo, M3hi, M4lo, M4hi
+        VMAT position notifications are 11 bytes in the long format:
+          0x20, 0x3F, flags, M1hi, M1lo, M2hi, M2lo, M3hi, M3lo, M4hi, M4lo
 
         Or 10 bytes in the short format (without the 0x20 prefix):
-          0x3F, flags, reserved, M1lo, M1hi, M2lo, M2hi, M3lo, M3hi, M4lo, M4hi
+          0x3F, flags, M1hi, M1lo, M2hi, M2lo, M3hi, M3lo, M4hi, M4lo
 
-        Motor positions are little-endian uint16 values:
+        Motor positions are big-endian uint16 values:
         - Motor 1 (back/Kopf)
         - Motor 2 (legs/Oberschenkel)
         - Motor 3 (head/Nacken)
@@ -529,23 +529,23 @@ class VibradormController(BedController):
                     data[1],
                 )
                 return
-            if len(data) < 8:
+            if len(data) < 7:
                 _LOGGER.debug(
                     "Vibradorm position notification too short (%d bytes): %s",
                     len(data),
                     data.hex(),
                 )
                 return
-            payload_offset = 4
+            payload_offset = 3
         elif data[0] == 0x3F:
-            if len(data) < 7:
+            if len(data) < 6:
                 _LOGGER.debug(
                     "Vibradorm short position notification too short (%d bytes): %s",
                     len(data),
                     data.hex(),
                 )
                 return
-            payload_offset = 3
+            payload_offset = 2
         else:
             _LOGGER.debug(
                 "Vibradorm unknown notification: %s (header=0x%02X)",
@@ -554,23 +554,21 @@ class VibradormController(BedController):
             )
             return
 
-        # Parse motor positions as little-endian uint16 values.
-        back_raw = int.from_bytes(
-            data[payload_offset : payload_offset + 2], byteorder="little"
-        )
+        # Parse motor positions as big-endian uint16 values.
+        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="big")
         legs_raw = int.from_bytes(
-            data[payload_offset + 2 : payload_offset + 4], byteorder="little"
+            data[payload_offset + 2 : payload_offset + 4], byteorder="big"
         )
 
         position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
 
         if self._coordinator.motor_count >= 3 and len(data) >= payload_offset + 6:
             position_updates["head"] = int.from_bytes(
-                data[payload_offset + 4 : payload_offset + 6], byteorder="little"
+                data[payload_offset + 4 : payload_offset + 6], byteorder="big"
             )
         if self._coordinator.motor_count >= 4 and len(data) >= payload_offset + 8:
             position_updates["feet"] = int.from_bytes(
-                data[payload_offset + 6 : payload_offset + 8], byteorder="little"
+                data[payload_offset + 6 : payload_offset + 8], byteorder="big"
             )
 
         _LOGGER.debug(
