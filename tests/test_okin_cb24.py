@@ -153,6 +153,15 @@ class TestOkinCB24Controller:
             adaptive_preset_fallback=True,
         )
         controller.write_command = AsyncMock()
+        current_time = 1.0
+
+        def fake_now() -> float:
+            nonlocal current_time
+            value = current_time
+            current_time += 1.0
+            return value
+
+        controller._now = fake_now
 
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)

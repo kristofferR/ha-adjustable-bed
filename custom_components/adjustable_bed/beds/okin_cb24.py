@@ -262,6 +262,7 @@ class OkinCB24Controller(BedController):
         )
         self._last_one_shot_preset_command: int | None = None
         self._last_one_shot_preset_monotonic = 0.0
+        self._now = time.monotonic
         self._same_preset_retry_count = 0
         if not self._is_new_protocol and protocol_variant not in _LEGACY_PROTOCOL_VARIANTS:
             _LOGGER.warning(
@@ -505,7 +506,7 @@ class OkinCB24Controller(BedController):
         if not self._adaptive_preset_fallback:
             return False
 
-        now = _now if _now is not None else time.monotonic()
+        now = _now if _now is not None else self._now()
         if (
             self._last_one_shot_preset_command == command_value
             and now - self._last_one_shot_preset_monotonic
@@ -522,11 +523,13 @@ class OkinCB24Controller(BedController):
                 self._last_one_shot_preset_monotonic = now
                 return False
 
+            retry_count = self._same_preset_retry_count
             self._continuous_presets = True
             self._adaptive_preset_fallback = False
+            self._same_preset_retry_count = 0
             _LOGGER.debug(
                 "CB24 preset mode auto-promoted to continuous after %d retries for preset %#x",
-                self._same_preset_retry_count,
+                retry_count,
                 command_value,
             )
             return True
