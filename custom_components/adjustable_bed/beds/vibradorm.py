@@ -480,7 +480,7 @@ class VibradormController(BedController):
             )
             self._cbi_toggle = not self._cbi_toggle
         except BleakError as err:
-            _LOGGER.debug("Position request failed (non-critical): %s", err)
+            _LOGGER.warning("CmdGetStatusMotMon failed: %s", err)
 
     def _raw_to_angle(self, raw_value: int, motor: str) -> float:
         """Convert VMAT raw encoder position to an angle estimate."""
@@ -666,6 +666,15 @@ class VibradormController(BedController):
         but we can also actively request a position update via CmdGetStatusMotMon.
         """
         del motor_count  # Unused - all motors reported in one notification
+        await self._request_position_update()
+
+    async def read_non_notifying_positions(self) -> None:
+        """Actively poll positions via CmdGetStatusMotMon during movement.
+
+        Some Vibradorm models (e.g. MC4-MD08-BT-CBI) don't reliably deliver
+        passive BLE notifications through ESPHome proxies. This override
+        ensures position updates are actively requested during motor movement.
+        """
         await self._request_position_update()
 
     async def _motor_move_with_stop(self, command: int) -> None:
