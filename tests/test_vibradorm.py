@@ -908,26 +908,28 @@ class TestVibradormPositionFeedback:
         hass: HomeAssistant,
         mock_vibradorm_config_entry,
     ) -> None:
-        """Position packet should parse back/legs at correct offsets with LE."""
+        """Position packet should parse back/legs at correct offsets with BE."""
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         controller = VibradormController(coordinator)
 
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Real head-up data: 20 3F 02 00 22 19 00 00 00 00 00 00
-        # bytes[4:6] LE = 0x1922 = 6434 → back
-        # bytes[6:8] LE = 0x0000 = 0 → legs
+        # nRF Connect capture - back up: 20 3F 15 04 27 01 A7 00 00 00 00
+        # bytes[3:5] BE = 0x0427 = 1063 → back
+        # bytes[5:7] BE = 0x01A7 = 423 → legs
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x02, 0x00, 0x22, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([0x20, 0x3F, 0x15, 0x04, 0x27, 0x01, 0xA7, 0x00, 0x00, 0x00, 0x00]),
         )
 
-        # 6434 / 7000 * 68.0 ≈ 62.5
+        # 1063 / 7000 * 68.0 ≈ 10.3
+        # 423 / 14000 * 45.0 ≈ 1.4
         assert len(updates) == 2
         assert updates[0][0] == "back"
-        assert updates[0][1] == pytest.approx(62.5, abs=0.1)
-        assert updates[1] == ("legs", 0.0)
+        assert updates[0][1] == pytest.approx(10.3, abs=0.1)
+        assert updates[1][0] == "legs"
+        assert updates[1][1] == pytest.approx(1.4, abs=0.1)
 
     def test_short_position_packet_without_0x20_prefix_updates_angles(
         self,
@@ -941,17 +943,22 @@ class TestVibradormPositionFeedback:
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Layout without 0x20 prefix: 3F flags reserved [positions...]
+        # Short format (no 0x20 prefix): 3F flags [positions BE...]
+        # Same calibration data as long format test
+        # bytes[2:4] BE = 0x0427 = 1063 → back
+        # bytes[4:6] BE = 0x01A7 = 423 → legs
         controller._handle_notification(
             MagicMock(),
             bytearray([0x3F, 0x11, 0x04, 0x27, 0x01, 0xA7, 0x00, 0x00, 0x00, 0x00]),
         )
 
+        # 1063 / 7000 * 68.0 ≈ 10.3
+        # 423 / 14000 * 45.0 ≈ 1.4
         assert len(updates) == 2
         assert updates[0][0] == "back"
-        assert updates[0][1] == pytest.approx(2.9, abs=0.1)
+        assert updates[0][1] == pytest.approx(10.3, abs=0.1)
         assert updates[1][0] == "legs"
-        assert updates[1][1] == pytest.approx(0.5, abs=0.1)
+        assert updates[1][1] == pytest.approx(1.4, abs=0.1)
 
     def test_position_packet_legs_up(
         self,
@@ -965,17 +972,18 @@ class TestVibradormPositionFeedback:
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # Real feet-up data: 20 3F 02 00 00 00 18 36 00 00 00 00
-        # bytes[6:8] LE = 0x3618 = 13848 → legs
+        # Legs-up data: 20 3F 02 [back BE] [legs BE] ...
+        # bytes[3:5] BE = 0x0000 = 0 → back (flat)
+        # bytes[5:7] BE = 0x32C8 = 13000 → legs
         controller._handle_notification(
             MagicMock(),
-            bytearray([0x20, 0x3F, 0x02, 0x00, 0x00, 0x00, 0x18, 0x36, 0x00, 0x00, 0x00, 0x00]),
+            bytearray([0x20, 0x3F, 0x02, 0x00, 0x00, 0x32, 0xC8, 0x00, 0x00, 0x00, 0x00]),
         )
 
         assert updates[0] == ("back", 0.0)
         assert updates[1][0] == "legs"
-        # 13848 / 14000 * 45.0 ≈ 44.5
-        assert updates[1][1] == pytest.approx(44.5, abs=0.1)
+        # 13000 / 14000 * 45.0 ≈ 41.8
+        assert updates[1][1] == pytest.approx(41.8, abs=0.1)
 
     def test_4_motor_position_packet_parses_all_motors(
         self,
@@ -998,16 +1006,16 @@ class TestVibradormPositionFeedback:
         updates: list[tuple[str, float]] = []
         controller._notify_callback = lambda motor, value: updates.append((motor, value))
 
-        # All 4 motors with different values:
+        # All 4 motors with different values (big-endian at offset 3):
         # back=0x1922(6434), legs=0x3618(13848), head=0x0D80(3456), feet=0x1B58(7000)
         controller._handle_notification(
             MagicMock(),
             bytearray([
-                0x20, 0x3F, 0x02, 0x00,
-                0x22, 0x19,  # back LE
-                0x18, 0x36,  # legs LE
-                0x80, 0x0D,  # head LE
-                0x58, 0x1B,  # feet LE
+                0x20, 0x3F, 0x02,
+                0x19, 0x22,  # back BE
+                0x36, 0x18,  # legs BE
+                0x0D, 0x80,  # head BE
+                0x1B, 0x58,  # feet BE
             ]),
         )
 
