@@ -294,7 +294,7 @@ class BedController(ABC):
         """
         self._notify_callback = None
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002, B027
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: B027
         """Read current position data from all motor position characteristics.
 
         Default implementation is a no-op for beds without position feedback.

@@ -864,7 +864,7 @@ class TestStopAfterCancel:
         await coordinator.async_connect()
         coordinator._position_mode = "accuracy"
 
-        async def dummy_command(_controller):
+        async def dummy_command(_controller) -> None:
             return None
 
         with (

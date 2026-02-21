@@ -249,6 +249,7 @@ class TestVibradormController:
         mock_coordinator_connected,
     ):
         """Vibradorm should disable movement-time polling to avoid command interruption."""
+        del mock_coordinator_connected
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
         await coordinator.async_connect()
 
