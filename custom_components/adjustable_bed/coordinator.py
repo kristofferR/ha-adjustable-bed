@@ -1427,7 +1427,10 @@ class AdjustableBedCoordinator:
                 # Start position polling during movement if angle sensing enabled
                 poll_stop: asyncio.Event | None = None
                 poll_task: asyncio.Task[None] | None = None
-                if not self._disable_angle_sensing:
+                if (
+                    not self._disable_angle_sensing
+                    and self._controller.allow_position_polling_during_commands
+                ):
                     poll_stop = asyncio.Event()
                     poll_task = asyncio.create_task(
                         self._async_poll_positions_during_movement(poll_stop)
@@ -1574,7 +1577,10 @@ class AdjustableBedCoordinator:
                 # Start position polling during movement if angle sensing enabled
                 poll_stop: asyncio.Event | None = None
                 poll_task: asyncio.Task[None] | None = None
-                if not self._disable_angle_sensing:
+                if (
+                    not self._disable_angle_sensing
+                    and self._controller.allow_position_polling_during_commands
+                ):
                     poll_stop = asyncio.Event()
                     poll_task = asyncio.create_task(
                         self._async_poll_positions_during_movement(poll_stop)
