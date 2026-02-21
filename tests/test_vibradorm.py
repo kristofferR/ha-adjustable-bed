@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
+    VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
     VIBRADORM_NOTIFY_CHAR_UUID,
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
@@ -240,6 +241,18 @@ class TestVibradormController:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_position_feedback is True
+
+    async def test_disables_polling_during_commands(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Vibradorm should disable movement-time polling to avoid command interruption."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.allow_position_polling_during_commands is False
 
     async def test_supports_light_cycle(
         self,
@@ -486,6 +499,66 @@ class TestVibradormController:
         first_call_char_uuid = str(mock_client.start_notify.call_args_list[0].args[0]).lower()
         assert first_call_char_uuid == custom_notify_uuid
 
+    async def test_start_notify_fallback_ignores_service_changed_characteristic(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Fallback notify selection should not pick generic GATT service-changed char."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        custom_notify_uuid = "00009998-9f03-0de5-96c5-b8f4f3081186"
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic("00002a05-0000-1000-8000-00805f9b34fb", ["indicate"]),
+                _MockCharacteristic(custom_notify_uuid, ["notify"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.start_notify.reset_mock()
+
+        await controller.start_notify(lambda *_: None)
+
+        first_call_char_uuid = str(mock_client.start_notify.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == custom_notify_uuid
+
+    async def test_read_positions_skips_status_request_when_cbi_char_missing(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Status polling should be skipped when CBI characteristic is unavailable."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        primary_service = _MockService(
+            VIBRADORM_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_COMMAND_CHAR_UUID, ["write-without-response"]),
+                _MockCharacteristic(VIBRADORM_NOTIFY_CHAR_UUID, ["notify"]),
+            ],
+        )
+        mock_client.services = _MockServices([primary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.read_positions()
+
+        assert controller._has_cbi_characteristic is False
+        written_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
+        assert VIBRADORM_CBI_CHAR_UUID not in written_uuids
+
     async def test_resolves_command_char_on_unknown_service(
         self,
         hass: HomeAssistant,
@@ -524,7 +597,7 @@ class TestVibradormController:
         mock_vibradorm_config_entry,
         mock_coordinator_connected,
     ):
-        """Controller should fall back to any writable char when no known UUIDs match."""
+        """Controller should fall back to vendor writable char when known UUIDs are absent."""
         del mock_coordinator_connected
 
         coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
@@ -548,6 +621,68 @@ class TestVibradormController:
 
         first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
         assert first_call_char_uuid == custom_char_uuid
+
+    async def test_writable_fallback_ignores_non_vendor_characteristics(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Fallback command resolution must not select generic non-Vibradorm UUIDs."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic("00002a00-0000-1000-8000-00805f9b34fb", ["write"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        # If no vendor UUID is found, we keep the known default command UUID.
+        assert controller._command_char_uuid == VIBRADORM_COMMAND_CHAR_UUID
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == VIBRADORM_COMMAND_CHAR_UUID
+
+    async def test_start_notify_skips_non_vendor_notify_fallback(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Fallback notify resolution must not subscribe to generic non-Vibradorm UUIDs."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        unknown_service = _MockService(
+            "0000abcd-0000-1000-8000-00805f9b34fb",
+            [
+                _MockCharacteristic("00002a05-0000-1000-8000-00805f9b34fb", ["indicate"]),
+            ],
+        )
+        mock_client.services = _MockServices([unknown_service])
+        mock_client.start_notify.reset_mock()
+
+        await controller.start_notify(lambda *_: None)
+
+        assert controller._has_notify_characteristic is False
+        mock_client.start_notify.assert_not_called()
 
 
 class TestVibradormMovement:

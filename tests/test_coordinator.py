@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -836,6 +836,54 @@ class TestStopAfterCancel:
 
         # Counter should NOT have incremented
         assert coordinator._cancel_counter == initial_counter
+
+    @pytest.mark.usefixtures("mock_coordinator_connected")
+    async def test_execute_controller_command_skips_polling_when_controller_disables_it(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Movement-time polling should be skipped when controller marks it unsafe."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="poll_skip_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        coordinator._position_mode = "accuracy"
+
+        async def dummy_command(_controller):
+            return None
+
+        with (
+            patch.object(
+                type(coordinator.controller),
+                "allow_position_polling_during_commands",
+                new_callable=PropertyMock,
+                return_value=False,
+            ),
+            patch.object(
+                coordinator,
+                "_async_poll_positions_during_movement",
+                new_callable=AsyncMock,
+            ) as mock_poll_during_movement,
+            patch.object(coordinator, "_async_read_positions", new_callable=AsyncMock),
+        ):
+            await coordinator.async_execute_controller_command(dummy_command, cancel_running=False)
+
+        mock_poll_during_movement.assert_not_called()
 
     async def test_cancel_counter_prevents_stale_command_execution(
         self,

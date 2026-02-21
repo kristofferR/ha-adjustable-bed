@@ -47,6 +47,9 @@ VIBRADORM_COMMAND_UUID_CANDIDATES = (
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
 )
 
+_VIBRADORM_VENDOR_UUID_SUFFIX = "-9f03-0de5-96c5-b8f4f3081186"
+_GATT_SERVICE_CHANGED_CHAR_UUID = "00002a05-0000-1000-8000-00805f9b34fb"
+
 
 _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
     "back": 7000,
@@ -131,6 +134,9 @@ class VibradormController(BedController):
         self._notify_char_uuid: str = VIBRADORM_NOTIFY_CHAR_UUID
         self._characteristics_initialized: bool = False
         self._max_raw_estimate: dict[str, int] = _DEFAULT_MAX_RAW_ESTIMATE.copy()
+        self._has_notify_characteristic: bool = True
+        self._has_cbi_characteristic: bool = True
+        self._warned_missing_cbi: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -158,6 +164,11 @@ class VibradormController(BedController):
     def _characteristic_properties(characteristic: object) -> set[str]:
         """Return normalized characteristic properties."""
         return {prop.lower() for prop in getattr(characteristic, "properties", [])}
+
+    @staticmethod
+    def _is_vibradorm_vendor_uuid(char_uuid: str) -> bool:
+        """Return True for vendor UUIDs in the Vibradorm VMAT namespace."""
+        return char_uuid.lower().endswith(_VIBRADORM_VENDOR_UUID_SUFFIX)
 
     def _refresh_characteristics(self, *, force: bool = False) -> None:
         """Resolve runtime UUIDs for VMAT variants from discovered services."""
@@ -205,6 +216,7 @@ class VibradormController(BedController):
                 VIBRADORM_CBI_CHAR_UUID.lower(),
                 VIBRADORM_NOTIFY_CHAR_UUID.lower(),
             }
+            fallback_command_chars = []
             for service in candidate_services:
                 for char in getattr(service, "characteristics", []):
                     props = self._characteristic_properties(char)
@@ -213,10 +225,23 @@ class VibradormController(BedController):
                     char_uuid = str(char.uuid).lower()
                     if char_uuid in excluded_uuids:
                         continue
-                    selected_command_char = char
-                    break
-                if selected_command_char is not None:
-                    break
+                    fallback_command_chars.append(char)
+            if fallback_command_chars:
+                selected_command_char = next(
+                    (
+                        char
+                        for char in fallback_command_chars
+                        if self._is_vibradorm_vendor_uuid(str(char.uuid))
+                    ),
+                    None,
+                )
+                if selected_command_char is None:
+                    _LOGGER.warning(
+                        "No vendor-specific writable command characteristic found for %s; "
+                        "keeping default %s",
+                        self._coordinator.address,
+                        self._command_char_uuid,
+                    )
 
         if selected_command_char is not None:
             resolved_command_uuid = str(selected_command_char.uuid)
@@ -247,10 +272,13 @@ class VibradormController(BedController):
                 self._light_char_uuid = str(light_char.uuid)
                 break
 
+        self._has_cbi_characteristic = False
         for service in candidate_services:
             cbi_char = self._get_characteristic_by_uuid(service, VIBRADORM_CBI_CHAR_UUID)
             if cbi_char is not None:
                 self._cbi_char_uuid = str(cbi_char.uuid)
+                self._has_cbi_characteristic = True
+                self._warned_missing_cbi = False
                 break
 
         selected_notify_char = None
@@ -268,9 +296,11 @@ class VibradormController(BedController):
                 VIBRADORM_COMMAND_CHAR_UUID.lower(),
                 VIBRADORM_LIGHT_CHAR_UUID.lower(),
                 VIBRADORM_CBI_CHAR_UUID.lower(),
+                _GATT_SERVICE_CHANGED_CHAR_UUID,
             }
             if self._notify_char_uuid:
                 excluded_uuids.add(self._notify_char_uuid.lower())
+            fallback_notify_chars = []
             for service in candidate_services:
                 for char in getattr(service, "characteristics", []):
                     props = self._characteristic_properties(char)
@@ -279,10 +309,22 @@ class VibradormController(BedController):
                     char_uuid = str(char.uuid).lower()
                     if char_uuid in excluded_uuids:
                         continue
-                    selected_notify_char = char
-                    break
-                if selected_notify_char is not None:
-                    break
+                    fallback_notify_chars.append(char)
+            if fallback_notify_chars:
+                selected_notify_char = next(
+                    (
+                        char
+                        for char in fallback_notify_chars
+                        if self._is_vibradorm_vendor_uuid(str(char.uuid))
+                    ),
+                    None,
+                )
+                if selected_notify_char is None:
+                    _LOGGER.warning(
+                        "No vendor-specific notify characteristic found for %s; "
+                        "position feedback will be unavailable",
+                        self._coordinator.address,
+                    )
 
         if selected_notify_char is not None:
             resolved_notify_uuid = str(selected_notify_char.uuid)
@@ -293,6 +335,9 @@ class VibradormController(BedController):
                     resolved_notify_uuid,
                 )
             self._notify_char_uuid = resolved_notify_uuid
+            self._has_notify_characteristic = True
+        else:
+            self._has_notify_characteristic = False
 
         self._characteristics_initialized = True
 
@@ -321,6 +366,11 @@ class VibradormController(BedController):
     def supports_position_feedback(self) -> bool:
         """Return True - Vibradorm beds provide position notifications."""
         return True
+
+    @property
+    def allow_position_polling_during_commands(self) -> bool:
+        """Return False - CBI polling during movement interrupts hold-to-run motion."""
+        return False
 
     @property
     def supports_light_cycle(self) -> bool:
@@ -454,6 +504,16 @@ class VibradormController(BedController):
         )
         self._cbi_toggle = not self._cbi_toggle
 
+    def _log_missing_cbi_once(self, detail: str) -> None:
+        """Log missing CBI capability once per discovery cycle."""
+        if self._warned_missing_cbi:
+            return
+        _LOGGER.info(
+            "Vibradorm CBI characteristic unavailable (%s); active position reads disabled",
+            detail,
+        )
+        self._warned_missing_cbi = True
+
     async def _request_position_update(self) -> None:
         """Send CmdGetStatusMotMon to request position data from the bed.
 
@@ -472,6 +532,9 @@ class VibradormController(BedController):
             self._cbi_toggle,
         )
         self._refresh_characteristics()
+        if not self._has_cbi_characteristic:
+            self._log_missing_cbi_once("characteristic not discovered")
+            return
         try:
             await self._write_gatt_with_retry(
                 self._cbi_char_uuid,
@@ -479,6 +542,9 @@ class VibradormController(BedController):
                 response=self._write_with_response,
             )
             self._cbi_toggle = not self._cbi_toggle
+        except BleakCharacteristicNotFoundError:
+            self._has_cbi_characteristic = False
+            self._log_missing_cbi_once(f"{self._cbi_char_uuid} not found")
         except BleakError as err:
             _LOGGER.warning("CmdGetStatusMotMon failed: %s", err)
 
@@ -590,6 +656,12 @@ class VibradormController(BedController):
             return
 
         self._refresh_characteristics(force=True)
+        if not self._has_notify_characteristic:
+            _LOGGER.warning(
+                "No Vibradorm notify characteristic found on %s; position feedback unavailable",
+                self._coordinator.address,
+            )
+            return
 
         _LOGGER.debug(
             "Subscribing to Vibradorm notifications on characteristic %s",
@@ -607,6 +679,12 @@ class VibradormController(BedController):
         except BleakCharacteristicNotFoundError:
             previous_char = self._notify_char_uuid
             self._refresh_characteristics(force=True)
+            if not self._has_notify_characteristic:
+                _LOGGER.warning(
+                    "No Vibradorm notify characteristic found after refresh on %s",
+                    self._coordinator.address,
+                )
+                return
             retry_char = self._notify_char_uuid
 
             if retry_char == previous_char:
@@ -650,7 +728,7 @@ class VibradormController(BedController):
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
-        if self.client is None or not self.client.is_connected:
+        if self.client is None or not self.client.is_connected or not self._has_notify_characteristic:
             return
 
         try:
@@ -669,11 +747,11 @@ class VibradormController(BedController):
         await self._request_position_update()
 
     async def read_non_notifying_positions(self) -> None:
-        """Actively poll positions via CmdGetStatusMotMon during movement.
+        """Request a position update for diagnostic/manual polling flows.
 
-        Some Vibradorm models (e.g. MC4-MD08-BT-CBI) don't reliably deliver
-        passive BLE notifications through ESPHome proxies. This override
-        ensures position updates are actively requested during motor movement.
+        Coordinator movement-time polling is disabled for Vibradorm because
+        interleaving CBI status requests with hold-to-run commands can cause
+        stutter or premature motor stops.
         """
         await self._request_position_update()
 

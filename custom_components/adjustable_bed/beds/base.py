@@ -294,7 +294,7 @@ class BedController(ABC):
         """
         self._notify_callback = None
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002, B027
         """Read current position data from all motor position characteristics.
 
         Default implementation is a no-op for beds without position feedback.
@@ -611,6 +611,16 @@ class BedController(ABC):
     def supports_position_feedback(self) -> bool:
         """Return True if bed reports position feedback."""
         return False
+
+    @property
+    def allow_position_polling_during_commands(self) -> bool:
+        """Return True if movement-time position polling is safe for this protocol.
+
+        The coordinator may poll read_non_notifying_positions() while commands are
+        being sent. Controllers that use polling writes which can interrupt
+        hold-to-run motion should override this to False.
+        """
+        return True
 
     @property
     def supports_massage(self) -> bool:
