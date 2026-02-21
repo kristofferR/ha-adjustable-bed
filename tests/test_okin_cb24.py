@@ -144,7 +144,7 @@ class TestOkinCB24Controller:
 
     @pytest.mark.asyncio
     async def test_adaptive_cb24_promotes_to_continuous_after_retry(self) -> None:
-        """Auto legacy mode should switch to continuous presets after quick retry."""
+        """Auto legacy mode should switch after repeated quick same-preset retries."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(
@@ -153,20 +153,33 @@ class TestOkinCB24Controller:
             adaptive_preset_fallback=True,
         )
         controller.write_command = AsyncMock()
+        current_time = 1.0
+
+        def fake_now() -> float:
+            nonlocal current_time
+            value = current_time
+            current_time += 1.0
+            return value
+
+        controller._now = fake_now
 
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
 
-        assert controller.write_command.await_count == 3
+        assert controller.write_command.await_count == 4
         assert controller.write_command.await_args_list[0] == call(
             controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
         )
         assert controller.write_command.await_args_list[1] == call(
             controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
+        )
+        assert controller.write_command.await_args_list[2] == call(
+            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
             repeat_count=_PRESET_CONTINUOUS_COUNT,
             repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
-        assert controller.write_command.await_args_list[2].args[0] == controller._build_command(0)
+        assert controller.write_command.await_args_list[3].args[0] == controller._build_command(0)
         assert controller._continuous_presets is True
         assert controller._adaptive_preset_fallback is False
 

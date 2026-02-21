@@ -28,7 +28,8 @@ Preset behavior in this integration:
 - `cb_old` compatibility variant uses continuous presets at 300ms and sends
   STOP after completion.
 - Auto-detected legacy profiles can promote to continuous preset mode when the
-  same preset is retried quickly, avoiding manual profile changes.
+  same preset is retried repeatedly in a short window, avoiding manual profile
+  changes.
 """
 
 from __future__ import annotations
@@ -67,6 +68,7 @@ _LOGGER = logging.getLogger(__name__)
 _PRESET_CONTINUOUS_COUNT = 55
 _PRESET_CONTINUOUS_DELAY_MS = 300
 _ADAPTIVE_PRESET_RETRY_WINDOW_SECONDS = 12.0
+_ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT = 2
 
 # Device profile variants grouped by protocol and preset behavior.
 _LEGACY_PROTOCOL_VARIANTS = frozenset(
@@ -260,6 +262,8 @@ class OkinCB24Controller(BedController):
         )
         self._last_one_shot_preset_command: int | None = None
         self._last_one_shot_preset_monotonic = 0.0
+        self._now = time.monotonic
+        self._same_preset_retry_count = 0
         if not self._is_new_protocol and protocol_variant not in _LEGACY_PROTOCOL_VARIANTS:
             _LOGGER.warning(
                 "Unknown CB24 protocol variant '%s'; defaulting to OLD protocol handling",
@@ -498,24 +502,39 @@ class OkinCB24Controller(BedController):
     def _should_promote_presets_to_continuous(
         self, command_value: int, *, _now: float | None = None
     ) -> bool:
-        """Promote auto legacy presets to continuous when user retries quickly."""
+        """Promote auto legacy presets after repeated quick retries."""
         if not self._adaptive_preset_fallback:
             return False
 
-        now = _now if _now is not None else time.monotonic()
+        now = _now if _now is not None else self._now()
         if (
             self._last_one_shot_preset_command == command_value
             and now - self._last_one_shot_preset_monotonic
             <= _ADAPTIVE_PRESET_RETRY_WINDOW_SECONDS
         ):
+            self._same_preset_retry_count += 1
+            if self._same_preset_retry_count < _ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT:
+                _LOGGER.debug(
+                    "CB24 adaptive retry %d/%d for preset %#x before continuous promotion",
+                    self._same_preset_retry_count,
+                    _ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT,
+                    command_value,
+                )
+                self._last_one_shot_preset_monotonic = now
+                return False
+
+            retry_count = self._same_preset_retry_count
             self._continuous_presets = True
             self._adaptive_preset_fallback = False
+            self._same_preset_retry_count = 0
             _LOGGER.debug(
-                "CB24 preset mode auto-promoted to continuous after retrying preset %#x",
+                "CB24 preset mode auto-promoted to continuous after %d retries for preset %#x",
+                retry_count,
                 command_value,
             )
             return True
 
+        self._same_preset_retry_count = 0
         self._last_one_shot_preset_command = command_value
         self._last_one_shot_preset_monotonic = now
         return False
@@ -554,7 +573,8 @@ class OkinCB24Controller(BedController):
           and needs repeated sends at 300ms intervals; STOP is sent afterward.
         - `cb24`/`cb27`/`cb24_ab`/`cb1221`/`dacheng`: one-shot by default.
         - Auto mode can promote legacy presets to continuous when a preset is
-          retried quickly, avoiding manual compatibility changes.
+          retried repeatedly in a short window, avoiding manual compatibility
+          changes.
         """
         preset_command = self._build_preset_command(command_value)
 
