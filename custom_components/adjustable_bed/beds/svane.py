@@ -99,8 +99,11 @@ class SvaneController(BedController):
     # Capability properties
     @property
     def supports_preset_flat(self) -> bool:
-        """Return True - Svane beds support flat preset."""
-        return True
+        """Return False - hide flat until LinonPI flat is validated on hardware."""
+        # Issue #152: multiple Svane beds accept the write but ignore the FLATTEN
+        # command. Keep preset_flat() implementation for further protocol work,
+        # but hide the UI button to avoid a non-functional control.
+        return False
 
     @property
     def supports_preset_zero_g(self) -> bool:

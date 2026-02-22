@@ -151,11 +151,11 @@ class TestSvaneController:
         mock_svane_config_entry,
         mock_coordinator_connected,
     ):
-        """Svane should support flat preset."""
+        """Svane flat preset is hidden until validated on real hardware."""
         coordinator = AdjustableBedCoordinator(hass, mock_svane_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_preset_flat is True
+        assert coordinator.controller.supports_preset_flat is False
 
     async def test_supports_preset_zero_g(
         self,
