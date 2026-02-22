@@ -209,6 +209,29 @@ class BedTechController(BedController):
         """Build command bytes for the given command character."""
         return build_bedtech_command(cmd_char)
 
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a command using write-without-response.
+
+        The BedTech Android app (react-native-ble-plx) uses writeWithoutResponse
+        (WRITE_TYPE_NO_RESPONSE = 1) for all BLE writes. Using write-with-response
+        causes some commands (lights, lounge preset) to be silently ignored by the
+        bed firmware.
+        """
+        await self._write_gatt_with_retry(
+            self._char_uuid,
+            command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+            response=False,
+        )
+
     async def _send_command(self, cmd_char: str, repeat: int | None = None) -> None:
         """Send a command to the bed."""
         command = self._build_command(cmd_char)
