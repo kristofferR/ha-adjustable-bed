@@ -172,13 +172,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         bed_type = detection_result.bed_type
 
         if bed_type is None:
-            # Capture device info for troubleshooting
-            device_info = capture_device_info(discovery_info)
-            reason = determine_unsupported_reason(discovery_info)
+            # Check if device was excluded as a known non-bed device
+            is_excluded = any(
+                s.startswith("excluded:") for s in detection_result.signals
+            )
 
-            # Log detailed info and create Repairs issue
-            log_unsupported_device(device_info, reason)
-            await create_unsupported_device_issue(self.hass, device_info, reason)
+            if not is_excluded:
+                # Only create Repairs issue for genuinely unknown devices,
+                # not for devices already identified as non-bed (speakers, etc.)
+                device_info = capture_device_info(discovery_info)
+                reason = determine_unsupported_reason(discovery_info)
+                log_unsupported_device(device_info, reason)
+                await create_unsupported_device_issue(self.hass, device_info, reason)
 
             _LOGGER.debug(
                 "Device %s is not a supported bed type, aborting",
