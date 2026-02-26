@@ -144,6 +144,16 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         min_motors=2,  # Hip is independent of motor count
         max_angle=45,
     ),
+    AdjustableBedCoverEntityDescription(
+        key="bed_height",
+        translation_key="bed_height",
+        icon="mdi:arrow-up-down",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_bed_height_up(),
+        close_fn=lambda ctrl: ctrl.move_bed_height_down(),
+        stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
+        min_motors=2,  # Bed height is independent of motor count
+    ),
 )
 
 
@@ -262,8 +272,10 @@ async def async_setup_entry(
         is_reverie = coordinator.bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
 
         for description in COVER_DESCRIPTIONS:
-            # Skip tilt - only for Keeson/Ergomotion
+            # Special handling for tilt - only add if controller supports it
             if description.key == "tilt":
+                if controller is not None and controller.has_tilt_support:
+                    entities.append(AdjustableBedCover(coordinator, description))
                 continue
             # Special handling for lumbar - only add if controller supports it
             if description.key == "lumbar":
@@ -276,6 +288,10 @@ async def async_setup_entry(
             # Special handling for hip - only add if controller supports it
             elif description.key == "hip":
                 if controller is not None and controller.has_hip_support:
+                    entities.append(AdjustableBedCover(coordinator, description))
+            # Special handling for bed_height - only add if controller supports it
+            elif description.key == "bed_height":
+                if controller is not None and controller.has_bed_height_support:
                     entities.append(AdjustableBedCover(coordinator, description))
             elif motor_count >= description.min_motors:
                 # For Reverie beds, adjust max_angle for back/head motors

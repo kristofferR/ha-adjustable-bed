@@ -422,6 +422,9 @@
       "hip": {
         "name": "Hip"
       },
+      "bed_height": {
+        "name": "Bed Height"
+      },
       "keeson_back": {
         "name": "Back"
       },

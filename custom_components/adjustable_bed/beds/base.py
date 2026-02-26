@@ -608,6 +608,11 @@ class BedController(ABC):
         return False
 
     @property
+    def has_bed_height_support(self) -> bool:
+        """Return True if bed has bed height (Hi-Lo) control."""
+        return False
+
+    @property
     def supports_position_feedback(self) -> bool:
         """Return True if bed reports position feedback."""
         return False
@@ -815,6 +820,32 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't have hip motor
         """
         raise NotImplementedError("Hip motor not supported on this bed")
+
+    # Bed height (Hi-Lo) control (optional - raises/lowers entire bed frame)
+
+    async def move_bed_height_up(self) -> None:
+        """Raise entire bed frame (Hi-Lo up).
+
+        Raises:
+            NotImplementedError: If the bed doesn't have bed height control
+        """
+        raise NotImplementedError("Bed height control not supported on this bed")
+
+    async def move_bed_height_down(self) -> None:
+        """Lower entire bed frame (Hi-Lo down).
+
+        Raises:
+            NotImplementedError: If the bed doesn't have bed height control
+        """
+        raise NotImplementedError("Bed height control not supported on this bed")
+
+    async def move_bed_height_stop(self) -> None:
+        """Immediately stop bed height movement.
+
+        Raises:
+            NotImplementedError: If the bed doesn't have bed height control
+        """
+        raise NotImplementedError("Bed height control not supported on this bed")
 
     # Optional preset methods (may not be available on all beds)
     # These raise NotImplementedError by default. Subclasses override if supported.
