@@ -67,6 +67,10 @@ class MaloufCommands:
     MASSAGE_TIMER = 0x200
     MASSAGE_OFF = 0x2000000
 
+    # Hi-Lo (entire bed raise/lower)
+    BED_UP = 0x40000000    # Hi-Lo: raise entire bed
+    BED_DOWN = 0x80000000  # Hi-Lo: lower entire bed
+
 
 class MaloufNewOkinController(BedController):
     """Controller for Malouf beds using NEW_OKIN protocol.
@@ -112,6 +116,10 @@ class MaloufNewOkinController(BedController):
 
     @property
     def has_tilt_support(self) -> bool:
+        return True
+
+    @property
+    def has_bed_height_support(self) -> bool:
         return True
 
     @property
@@ -250,6 +258,21 @@ class MaloufNewOkinController(BedController):
 
     async def move_tilt_stop(self) -> None:
         """Stop tilt movement."""
+        await self.write_command(
+            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
+        )
+
+    # Bed height (Hi-Lo) control
+    async def move_bed_height_up(self) -> None:
+        """Raise entire bed (Hi-Lo up)."""
+        await self._move_with_stop(MaloufCommands.BED_UP)
+
+    async def move_bed_height_down(self) -> None:
+        """Lower entire bed (Hi-Lo down)."""
+        await self._move_with_stop(MaloufCommands.BED_DOWN)
+
+    async def move_bed_height_stop(self) -> None:
+        """Stop Hi-Lo movement."""
         await self.write_command(
             self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
         )
@@ -403,6 +426,10 @@ class MaloufLegacyOkinController(BedController):
         return True
 
     @property
+    def has_bed_height_support(self) -> bool:
+        return True
+
+    @property
     def supports_lights(self) -> bool:
         """Return True - these beds support lighting."""
         return True
@@ -542,6 +569,21 @@ class MaloufLegacyOkinController(BedController):
 
     async def move_tilt_stop(self) -> None:
         """Stop tilt movement."""
+        await self.write_command(
+            self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
+        )
+
+    # Bed height (Hi-Lo) control
+    async def move_bed_height_up(self) -> None:
+        """Raise entire bed (Hi-Lo up)."""
+        await self._move_with_stop(MaloufCommands.BED_UP)
+
+    async def move_bed_height_down(self) -> None:
+        """Lower entire bed (Hi-Lo down)."""
+        await self._move_with_stop(MaloufCommands.BED_DOWN)
+
+    async def move_bed_height_stop(self) -> None:
+        """Stop Hi-Lo movement."""
         await self.write_command(
             self._build_command(MaloufCommands.STOP), cancel_event=asyncio.Event()
         )

@@ -429,6 +429,12 @@
       },
       "keeson_legs": {
         "name": "Legs"
+      },
+      "hip": {
+        "name": "Hip"
+      },
+      "bed_height": {
+        "name": "Bed Height"
       }
     },
     "sensor": {
