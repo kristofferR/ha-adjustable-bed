@@ -278,7 +278,7 @@ async def async_setup_entry(
                     entities.append(AdjustableBedCover(coordinator, description))
                 continue
             # Special handling for lumbar - only add if controller supports it
-            if description.key == "lumbar":
+            elif description.key == "lumbar":
                 if controller is not None and controller.has_lumbar_support:
                     entities.append(AdjustableBedCover(coordinator, description))
             # Special handling for pillow - only add if controller supports it
