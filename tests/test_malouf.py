@@ -11,8 +11,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.malouf import (
     MaloufCommands,
-    MaloufLegacyOkinController,
-    MaloufNewOkinController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -107,6 +105,15 @@ class TestMaloufCommands:
         """Test dual motor commands are combinations of single flags."""
         assert MaloufCommands.DUAL_UP == MaloufCommands.HEAD_UP | MaloufCommands.FOOT_UP
         assert MaloufCommands.DUAL_DOWN == MaloufCommands.HEAD_DOWN | MaloufCommands.FOOT_DOWN
+
+    def test_bed_height_commands_combine_column_motors(self):
+        """Hi-Lo bed height is tilt+lumbar motors moving together."""
+        assert MaloufCommands.BED_HEIGHT_UP == (
+            MaloufCommands.HEAD_TILT_UP | MaloufCommands.LUMBAR_UP
+        )
+        assert MaloufCommands.BED_HEIGHT_DOWN == (
+            MaloufCommands.HEAD_TILT_DOWN | MaloufCommands.LUMBAR_DOWN
+        )
 
     def test_stop_command_is_zero(self):
         """Test STOP command is 0."""
@@ -324,6 +331,42 @@ class TestMaloufNewOkinMovement:
             response=True,
         )
 
+    async def test_move_bed_height_up_uses_combined_columns(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_new_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test Hi-Lo up sends the combined tilt+lumbar command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_bed_height_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_UP)
+        assert first_command == expected
+
+    async def test_move_bed_height_down_uses_combined_columns(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_new_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test Hi-Lo down sends the combined tilt+lumbar command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_bed_height_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_DOWN)
+        assert first_command == expected
+
 
 class TestMaloufNewOkinPresets:
     """Test Malouf NEW_OKIN preset commands."""
@@ -511,6 +554,46 @@ class TestMaloufLumbarAndTilt:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
         expected = coordinator.controller._build_command(MaloufCommands.HEAD_TILT_UP)
+        assert first_command == expected
+
+
+class TestMaloufLegacyOkinBedHeight:
+    """Test Malouf LEGACY_OKIN Hi-Lo command mapping."""
+
+    async def test_move_bed_height_up_uses_combined_columns(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_legacy_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test legacy Hi-Lo up sends the combined tilt+lumbar command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_bed_height_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_UP)
+        assert first_command == expected
+
+    async def test_move_bed_height_down_uses_combined_columns(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_legacy_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test legacy Hi-Lo down sends the combined tilt+lumbar command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_bed_height_down()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        first_command = calls[0][0][1]
+        expected = coordinator.controller._build_command(MaloufCommands.BED_HEIGHT_DOWN)
         assert first_command == expected
 
 
