@@ -67,9 +67,11 @@ class MaloufCommands:
     MASSAGE_TIMER = 0x200
     MASSAGE_OFF = 0x2000000
 
-    # Hi-Lo (entire bed raise/lower)
-    BED_UP = 0x40000000    # Hi-Lo: raise entire bed
-    BED_DOWN = 0x80000000  # Hi-Lo: lower entire bed
+    # Hi-Lo beds with two independent lift columns expose column motors as
+    # "tilt" (head end) and "lumbar" (foot end). Raise/lower whole-bed
+    # movement is both columns moving together.
+    BED_HEIGHT_UP = HEAD_TILT_UP | LUMBAR_UP
+    BED_HEIGHT_DOWN = HEAD_TILT_DOWN | LUMBAR_DOWN
 
 
 class MaloufNewOkinController(BedController):
@@ -264,12 +266,12 @@ class MaloufNewOkinController(BedController):
 
     # Bed height (Hi-Lo) control
     async def move_bed_height_up(self) -> None:
-        """Raise entire bed (Hi-Lo up)."""
-        await self._move_with_stop(MaloufCommands.BED_UP)
+        """Raise entire bed by lifting both head and foot columns."""
+        await self._move_with_stop(MaloufCommands.BED_HEIGHT_UP)
 
     async def move_bed_height_down(self) -> None:
-        """Lower entire bed (Hi-Lo down)."""
-        await self._move_with_stop(MaloufCommands.BED_DOWN)
+        """Lower entire bed by dropping both head and foot columns."""
+        await self._move_with_stop(MaloufCommands.BED_HEIGHT_DOWN)
 
     async def move_bed_height_stop(self) -> None:
         """Stop Hi-Lo movement."""
@@ -575,12 +577,12 @@ class MaloufLegacyOkinController(BedController):
 
     # Bed height (Hi-Lo) control
     async def move_bed_height_up(self) -> None:
-        """Raise entire bed (Hi-Lo up)."""
-        await self._move_with_stop(MaloufCommands.BED_UP)
+        """Raise entire bed by lifting both head and foot columns."""
+        await self._move_with_stop(MaloufCommands.BED_HEIGHT_UP)
 
     async def move_bed_height_down(self) -> None:
-        """Lower entire bed (Hi-Lo down)."""
-        await self._move_with_stop(MaloufCommands.BED_DOWN)
+        """Lower entire bed by dropping both head and foot columns."""
+        await self._move_with_stop(MaloufCommands.BED_HEIGHT_DOWN)
 
     async def move_bed_height_stop(self) -> None:
         """Stop Hi-Lo movement."""
