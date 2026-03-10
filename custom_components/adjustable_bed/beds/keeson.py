@@ -162,7 +162,7 @@ class KeesonController(BedController):
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
-            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or KEESON_VARIANT_PURPLE)
+            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or 'purple')
             char_uuid: The characteristic UUID to use for writing commands
             betterliving_presets: Use BetterLiving BED_DEFAULT preset values
             cb1322_presets: Use CB1322 sub-variant memory preset values
