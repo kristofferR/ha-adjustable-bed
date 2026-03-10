@@ -28,9 +28,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
-
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
@@ -43,6 +42,9 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Valid massage mode flags (byte 7 of massage command)
+_MASSAGE_MODES = (0x08, 0x10, 0x20)  # wave1, wave2, wave3
 
 
 class Box25Commands:
@@ -105,6 +107,11 @@ class Box25Commands:
     # ─── Massage exit ────────────────────────────────────────────────────
     MASSAGE_EXIT = bytes([0x05, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00])
 
+    # ─── Massage mode commands (08 02 prefix, 10 bytes) ──────────────────
+    MASSAGE_WAVE1 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])
+    MASSAGE_WAVE2 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00])
+    MASSAGE_WAVE3 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00])
+
 
 # Timing constants (seconds)
 _WAKE_DELAY = 0.15
@@ -137,6 +144,8 @@ class SleepysBox25Controller(BedController):
         self._foot_position: float | None = None
         self._lumbar_position: float | None = None
         self._is_moving = False
+        self._massage_active = False
+        self._massage_mode_index = 0  # Index into _MASSAGE_MODES
 
     # ─── BLE Properties ──────────────────────────────────────────────────
 
@@ -202,34 +211,41 @@ class SleepysBox25Controller(BedController):
     # ─── Init / Write Helpers ────────────────────────────────────────────
 
     async def _ensure_wake(self) -> None:
-        """Send wake command if needed (called before any init track)."""
+        """Send wake command to ensure the controller is responsive."""
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             Box25Commands.WAKE,
-            response=False,
         )
         await asyncio.sleep(_WAKE_DELAY)
 
     async def _ensure_motor_init(self) -> None:
-        """Ensure motor subsystem is initialized."""
+        """Ensure motor subsystem is initialized.
+
+        Sets the init flag only after the write succeeds. If the write
+        raises or is cancelled, the flag stays False so the next call
+        retries the handshake.
+        """
         if not self._motor_initialized:
             await self._ensure_wake()
             await self._write_gatt_with_retry(
                 self.control_characteristic_uuid,
                 Box25Commands.MOTOR_INIT,
-                response=False,
             )
             await asyncio.sleep(_INIT_DELAY)
             self._motor_initialized = True
 
     async def _ensure_massage_light_init(self) -> None:
-        """Ensure massage/light subsystem is initialized."""
+        """Ensure massage/light subsystem is initialized.
+
+        Sets the init flag only after the write succeeds. If the write
+        raises or is cancelled, the flag stays False so the next call
+        retries the handshake.
+        """
         if not self._massage_initialized:
             await self._ensure_wake()
             await self._write_gatt_with_retry(
                 self.control_characteristic_uuid,
                 Box25Commands.MASSAGE_LIGHT_INIT,
-                response=False,
             )
             await asyncio.sleep(_INIT_DELAY)
             self._massage_initialized = True
@@ -240,7 +256,6 @@ class SleepysBox25Controller(BedController):
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
-            response=False,
         )
 
     async def _write_massage_light_command(self, command: bytes) -> None:
@@ -249,7 +264,6 @@ class SleepysBox25Controller(BedController):
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
-            response=False,
         )
 
     async def write_command(
@@ -267,7 +281,6 @@ class SleepysBox25Controller(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
-            response=False,
         )
 
     # ─── Notification Handling ───────────────────────────────────────────
@@ -293,18 +306,26 @@ class SleepysBox25Controller(BedController):
             zone = raw[1]
             position = raw[2]
             if 0 <= position <= 100:
-                if zone == 0x00 and self._notify_callback:
+                if zone == 0x00:
                     self._head_position = float(position)
-                    self._notify_callback("head", float(position))
-                elif zone == 0x01 and self._notify_callback:
+                    if self._notify_callback:
+                        self._notify_callback("head", float(position))
+                elif zone == 0x01:
                     self._foot_position = float(position)
-                    self._notify_callback("feet", float(position))
-                elif zone == 0x02 and self._notify_callback:
+                    if self._notify_callback:
+                        self._notify_callback("feet", float(position))
+                elif zone == 0x02:
                     self._lumbar_position = float(position)
+                    # No standard callback key for lumbar in BedController;
+                    # store locally for future use
 
         # Massage mode response (10 bytes with 08 prefix)
         elif length >= 8 and raw[0] == 0x08:
-            pass  # Massage status tracked by entities if needed
+            mode_byte = raw[7]
+            self._massage_active = mode_byte != 0
+            # Track current mode index for cycling
+            if mode_byte in _MASSAGE_MODES:
+                self._massage_mode_index = _MASSAGE_MODES.index(mode_byte)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -337,7 +358,7 @@ class SleepysBox25Controller(BedController):
             except BleakError:
                 pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Positions are pushed via notifications, no polling needed."""
 
     # ─── Direct Position Control ─────────────────────────────────────────
@@ -353,14 +374,14 @@ class SleepysBox25Controller(BedController):
         cmd = bytes([0x03, 0xF0, zone, pos, 0x00])
         await self._write_motor_command(cmd)
 
-    def angle_to_native_position(self, motor: str, angle: float) -> int:
+    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
         """Convert angle to position (0-100 percentage-based)."""
         return int(max(0, min(100, angle)))
 
     # ─── Motor Control ───────────────────────────────────────────────────
 
     async def _send_stop(self) -> None:
-        """Send motor stop command."""
+        """Send motor stop command with a fresh cancel event."""
         stop_event = asyncio.Event()
         await self.write_command(Box25Commands.MOTOR_STOP, cancel_event=stop_event)
 
@@ -478,13 +499,17 @@ class SleepysBox25Controller(BedController):
 
     async def massage_off(self) -> None:
         """Exit massage mode."""
+        self._massage_active = False
         await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
 
     async def massage_toggle(self) -> None:
-        """Toggle massage (start wave_1 or stop)."""
-        # Start wave_1 mode
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        """Toggle massage: start wave_1 if off, exit if on."""
+        if self._massage_active:
+            await self.massage_off()
+        else:
+            self._massage_active = True
+            self._massage_mode_index = 0
+            await self._write_massage_light_command(Box25Commands.MASSAGE_WAVE1)
 
     async def massage_intensity_up(self) -> None:
         """Increase massage intensity (both zones)."""
@@ -513,6 +538,8 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(cmd)
 
     async def massage_mode_step(self) -> None:
-        """Cycle through massage wave modes."""
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
+        """Cycle through massage wave modes (wave1 → wave2 → wave3 → wave1)."""
+        self._massage_mode_index = (self._massage_mode_index + 1) % len(_MASSAGE_MODES)
+        mode_flag = _MASSAGE_MODES[self._massage_mode_index]
+        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, mode_flag, 0x00, 0x00])
         await self._write_massage_light_command(cmd)

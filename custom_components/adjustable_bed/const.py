@@ -1333,6 +1333,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
         BED_TYPE_VIBRADORM,
+        BED_TYPE_SLEEPYS_BOX25,
     }
 )
 
@@ -1344,6 +1345,7 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_SERTA,
         BED_TYPE_JENSEN,
+        BED_TYPE_SLEEPYS_BOX25,
     }
 )
 
