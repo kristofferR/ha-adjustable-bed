@@ -162,7 +162,7 @@ class KeesonController(BedController):
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
-            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or 'purple')
+            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or KEESON_VARIANT_PURPLE)
             char_uuid: The characteristic UUID to use for writing commands
             betterliving_presets: Use BetterLiving BED_DEFAULT preset values
             cb1322_presets: Use CB1322 sub-variant memory preset values
@@ -329,7 +329,7 @@ class KeesonController(BedController):
     @property
     def supports_preset_tv(self) -> bool:
         """KSBT and Ergomotion have TV preset; BaseI4/I5/Purple does not."""
-        return self._variant not in ["base", "purple"]
+        return self._variant not in ["base", KEESON_VARIANT_PURPLE]
 
     @property
     def supports_preset_anti_snore(self) -> bool:
@@ -355,7 +355,7 @@ class KeesonController(BedController):
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
         if self._variant == "ksbt":
             return 2  # Memory 1 (M button) and Memory 2 (TV button)
-        elif self._variant == "purple":
+        elif self._variant == KEESON_VARIANT_PURPLE:
             return 2  # Purple Premium has 2. Plus model bed supports 3, but we don't know what path it uses
         elif self._variant == "ergomotion":
             return 4  # Ergomotion may support all 4
@@ -367,12 +367,18 @@ class KeesonController(BedController):
     @property
     def supports_memory_programming(self) -> bool:
         """Return True for BetterLiving (save commands) and CB1322 (long-press save)."""
-        return self._betterliving_presets or self._cb1322_presets or self._variant == 'purple'
+        return self._betterliving_presets or self._cb1322_presets or self._variant == KEESON_VARIANT_PURPLE
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Keeson beds support under-bed/safety lighting."""
-        return (self._variant == "purple" and self._coordinator.has_massage) or self._variant != 'purple'
+        """Return True - Keeson beds support under-bed/safety lighting.
+        
+        Purple Premium Smart Base lacks lighting; Purple Plus (with massage) has it.
+        """
+        if self._variant == "purple":
+            # Plus model has massage and lighting; Premium base has neither
+            return self._coordinator.has_massage
+        return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -840,7 +846,7 @@ class KeesonController(BedController):
             )
         
         #Purple treats Memory 4 as memory 1
-        if self._variant == "purple" and memory_num == 1:
+        if self._variant == KEESON_VARIANT_PURPLE and memory_num == 1:
             memory_num = 4
 
         commands = {
@@ -875,8 +881,8 @@ class KeesonController(BedController):
                 )
             return
 
-        if self._cb1322_presets or self._variant == 'purple':
-            if self._variant == 'purple':
+        if self._cb1322_presets or self._variant == KEESON_VARIANT_PURPLE:
+            if self._variant == KEESON_VARIANT_PURPLE:
                 commands = {
                     1: KeesonCommands.PRESET_MEMORY_4,
                     2: KeesonCommands.PRESET_MEMORY_2,
@@ -921,8 +927,8 @@ class KeesonController(BedController):
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
-        if self._variant == "base":
-            _LOGGER.warning("TV preset is not available on BaseI4/I5 beds")
+        if self._variant in ["base",KEESON_VARIANT_PURPLE]:
+            _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
 

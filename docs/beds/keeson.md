@@ -43,7 +43,7 @@ Brands using Keeson/Ergomotion actuators:
 ## Features
 
 | Feature | BaseI4/I5 | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
-|---------|-----------|------|------------|------|-------|------|--------|
+|---------|-----------|------|------------|------|-------|------|------------------|-----------------------|
 | Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
 | Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
 | Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
@@ -83,7 +83,7 @@ Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but
 Same protocol as Base variant but with real-time position updates via BLE notifications.
 
 ### Purple Variant
-Same protocol as Base variant, but with support for Lounge and Anti-Snore presets. Additionally, Memory 2 is mapped to the typical Memory 4 address. Also supports saving memory presets by sending the recall command repeated 30x at 100ms. Note that only the "Premium" model bed has been tested, no functionality has been verified for the "Premium Plus" model.
+Same protocol as Base variant, but with support for Lounge and Anti-Snore presets. Additionally, Memory 1 is mapped to the typical Memory 4 address. Also supports saving memory presets by sending the recall command repeated 30x at 100ms. Note that only the "Premium" model bed has been tested, no functionality has been verified for the "Premium Plus" model.
 
 **Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
 
