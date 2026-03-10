@@ -60,6 +60,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -108,6 +109,7 @@ from .const import (
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SERTA_NAME_PATTERNS,
+    SLEEPYS_BOX25_NAME_PATTERNS,
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
@@ -348,6 +350,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
+    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane",
@@ -609,6 +612,29 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     confidence=0.3,
                     signals=signals,
                 )
+
+    # Check for Sleepy's Elite BOX25 Star - name pattern + Nordic UART service
+    # BOX25 Star devices advertise as "Star*" and use Nordic UART for multi-subsystem protocol
+    if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
+        from .const import NORDIC_UART_SERVICE_UUID
+
+        signals.append("name:sleepys_box25")
+        confidence = 0.3
+        if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:nordic_uart")
+            confidence = 0.9
+
+        _LOGGER.info(
+            "Detected Sleepy's Elite BOX25 Star bed at %s (name: %s)%s",
+            service_info.address,
+            service_info.name,
+            " with Nordic UART service" if confidence >= 0.9 else " by name pattern",
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_SLEEPYS_BOX25,
+            confidence=confidence,
+            signals=signals,
+        )
 
     # Check for TiMOTION AHF protocol by device name.
     # The protocol uses Nordic UART UUIDs, which are shared by many devices.

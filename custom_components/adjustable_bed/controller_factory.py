@@ -49,6 +49,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -617,6 +618,12 @@ async def create_controller(
 
         _LOGGER.debug("Using Sleepy's BOX24 controller")
         return SleepysBox24Controller(coordinator)
+
+    if bed_type == BED_TYPE_SLEEPYS_BOX25:
+        from .beds.sleepys_box25 import SleepysBox25Controller
+
+        _LOGGER.debug("Using Sleepy's BOX25 Star controller")
+        return SleepysBox25Controller(coordinator)
 
     if bed_type == BED_TYPE_SVANE:
         from .beds.svane import SvaneController

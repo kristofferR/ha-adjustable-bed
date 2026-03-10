@@ -121,6 +121,7 @@ BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
+BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
@@ -182,6 +183,8 @@ SUPPORTED_BED_TYPES: Final = [
     # Sleepy's Elite
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    # Sleepy's Elite BOX25 Star
+    BED_TYPE_SLEEPYS_BOX25,
     # Svane
     BED_TYPE_SVANE,
     # Vibradorm
@@ -643,6 +646,10 @@ MALOUF_NAME_PATTERNS: Final = ("malouf",)
 # Sleepy's Elite name patterns (MFRM = Mattress Firm)
 # These beds use the Sleepy's Elite app (com.okin.bedding.sleepy)
 SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
+
+# Sleepy's Elite BOX25 Star name pattern (DewertOkin BOX25 Star controller)
+# Devices advertise as "Star" + suffix (e.g., "Star1234")
+SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
 
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
