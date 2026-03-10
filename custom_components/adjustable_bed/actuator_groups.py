@@ -39,6 +39,7 @@ from .const import (
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_SERTA,
+    KEESON_VARIANT_PURPLE,
 )
 
 
@@ -116,6 +117,13 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Serta Motion Perfect",
                 "description": "Serta Motion Perfect III beds",
                 "hint": "Device name contains 'Serta' or 'Motion Perfect'",
+            },
+            {
+                "type": BED_TYPE_KEESON,
+                "variant": KEESON_VARIANT_PURPLE,
+                "label": "Purple Smart Base",
+                "description": "Purple Premium Smart Base",
+                "hint": "2023 and newer Purple beds with device name starting with 'Base-I5'",
             },
         ],
     },
