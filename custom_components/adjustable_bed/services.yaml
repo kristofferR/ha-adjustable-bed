@@ -54,7 +54,7 @@ stop_all:
 
 set_position:
   name: Set Motor Position
-  description: Move a motor to a specific position and stop when reached. Only works for beds with position feedback (Linak, Okimat, Reverie, Keeson, Ergomotion).
+  description: Move a motor to a specific position and stop when reached. Only works for beds with position feedback (Linak, Okimat, Reverie, Keeson, Ergomotion, BOX25 Star).
   fields:
     device_id:
       name: Device
@@ -80,7 +80,7 @@ set_position:
               value: feet
     position:
       name: Position
-      description: Target position (0-68° for back/head, 0-45° for legs/feet, 0-100% for Keeson/Ergomotion).
+      description: Target position (0-68° for back/head, 0-45° for legs/feet, 0-100% for Keeson/Ergomotion/BOX25 Star).
       required: true
       selector:
         number:

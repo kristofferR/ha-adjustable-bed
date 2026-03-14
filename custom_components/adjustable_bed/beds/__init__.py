@@ -48,6 +48,7 @@ from .reverie_nightstand import ReverieNightstandController
 from .richmat import RichmatController
 from .rondure import RondureController
 from .sbi import SBIController
+from .sleepys_box25 import SleepysBox25Controller
 from .scott_living import ScottLivingController
 from .solace import SolaceController
 from .suta import SutaController
@@ -85,6 +86,7 @@ __all__ = [
     "RondureController",
     "SBIController",
     "ScottLivingController",
+    "SleepysBox25Controller",
     "SolaceController",
     "SvaneController",
     "SutaController",

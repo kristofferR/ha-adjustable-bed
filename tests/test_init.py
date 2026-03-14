@@ -13,6 +13,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
     SERVICE_SAVE_PRESET,
+    SERVICE_SET_POSITION,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     async_migrate_entry,
@@ -22,6 +23,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
@@ -610,3 +612,192 @@ class TestServices:
                 },
                 blocking=True,
             )
+
+    async def test_set_position_service_accepts_box25_head_and_feet(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 set_position should accept head and feet only."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleepy's BOX25 Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:30",
+                CONF_NAME: "Sleepy's BOX25 Service Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:30",
+            entry_id="sleepys_box25_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator.async_seek_position = AsyncMock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "head",
+                "position": 50,
+            },
+            blocking=True,
+        )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "feet",
+                "position": 40,
+            },
+            blocking=True,
+        )
+
+        assert coordinator.async_seek_position.await_count == 2
+
+    async def test_set_position_service_rejects_box25_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 set_position should reject legacy back/legs motors."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleepy's BOX25 Invalid Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:31",
+                CONF_NAME: "Sleepy's BOX25 Invalid Service Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:31",
+            entry_id="sleepys_box25_invalid_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {
+                    "device_id": [device_id],
+                    "motor": "back",
+                    "position": 20,
+                },
+                blocking=True,
+            )
+
+        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {
+                    "device_id": [device_id],
+                    "motor": "legs",
+                    "position": 20,
+                },
+                blocking=True,
+            )
+
+    async def test_timed_move_service_accepts_box25_lumbar_and_tilt(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 timed_move should follow the controller's lumbar and tilt surface."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleepy's BOX25 Timed Move Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:32",
+                CONF_NAME: "Sleepy's BOX25 Timed Move Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:32",
+            entry_id="sleepys_box25_timed_move_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        controller = hass.data[DOMAIN][entry.entry_id].controller
+        controller.move_lumbar_up = AsyncMock()
+        controller.move_lumbar_stop = AsyncMock()
+        controller.move_tilt_up = AsyncMock()
+        controller.move_tilt_stop = AsyncMock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": [device_id],
+                "motor": "lumbar",
+                "direction": "up",
+                "duration_ms": 1000,
+            },
+            blocking=True,
+        )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": [device_id],
+                "motor": "tilt",
+                "direction": "up",
+                "duration_ms": 1000,
+            },
+            blocking=True,
+        )
+
+        controller.move_lumbar_up.assert_awaited_once()
+        controller.move_lumbar_stop.assert_awaited_once()
+        controller.move_tilt_up.assert_awaited_once()
+        controller.move_tilt_stop.assert_awaited_once()

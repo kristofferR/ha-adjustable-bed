@@ -25,6 +25,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
@@ -551,12 +552,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_placeholders={"device_name": coordinator.name},
                 )
 
-            # Define motor configurations
-            # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys
-            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet)
-            is_keeson_ergomotion = bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION)
+            # Define motor configurations.
+            # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
+            # For BOX25: only head and feet are valid, using direct percentage positions.
+            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
+            uses_percentage_positions = bed_type in (
+                BED_TYPE_KEESON,
+                BED_TYPE_ERGOMOTION,
+                BED_TYPE_SLEEPYS_BOX25,
+            )
 
-            if is_keeson_ergomotion:
+            if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
                 # Keeson/Ergomotion only have head and feet motors
                 valid_motors = {"head", "feet"}
                 motor_configs = {
@@ -573,6 +579,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
                         "max_value": 100.0,  # Percentage
+                    },
+                }
+            elif bed_type == BED_TYPE_SLEEPYS_BOX25:
+                valid_motors = {"head", "feet"}
+                motor_configs = {
+                    "head": {
+                        "position_key": "head",
+                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                        "max_value": 100.0,
+                    },
+                    "feet": {
+                        "position_key": "feet",
+                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                        "max_value": 100.0,
                     },
                 }
             else:
@@ -635,7 +659,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             # Validate position is in range
             if position < 0 or position > max_value:
-                unit = "%" if is_keeson_ergomotion else "°"
+                unit = "%" if uses_percentage_positions else "°"
                 raise ServiceValidationError(
                     f"Position {position} is out of range for motor '{motor}'. "
                     f"Valid range: 0-{max_value}{unit}",
