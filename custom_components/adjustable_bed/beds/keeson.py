@@ -32,6 +32,7 @@ from ..const import (
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
+    KEESON_VARIANT_PURPLE,
 )
 from .base import BedController, MotorControlSpec
 from .okin_protocol import int_to_bytes
@@ -161,7 +162,7 @@ class KeesonController(BedController):
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
-            variant: Protocol variant ('ksbt', 'base', or 'ergomotion')
+            variant: Protocol variant ('ksbt', 'base', 'ergomotion', or 'purple')
             char_uuid: The characteristic UUID to use for writing commands
             betterliving_presets: Use BetterLiving BED_DEFAULT preset values
             cb1322_presets: Use CB1322 sub-variant memory preset values
@@ -322,18 +323,18 @@ class KeesonController(BedController):
 
     @property
     def supports_preset_lounge(self) -> bool:
-        """KSBT and Ergomotion have the Lounge preset; BaseI4/I5 does not."""
-        return self._variant != "base"
+        """KSBT, Ergomotion, and Purple have the Lounge preset; BaseI4/I5 does not."""
+        return self._variant in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}
 
     @property
     def supports_preset_tv(self) -> bool:
-        """KSBT and Ergomotion have TV preset; BaseI4/I5 does not."""
-        return self._variant != "base"
+        """KSBT and Ergomotion have TV preset; BaseI4/I5/Purple does not."""
+        return self._variant in {"ksbt", "ergomotion"}
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        """KSBT and Ergomotion have anti-snore preset; BaseI4/I5 does not."""
-        return self._variant != "base"
+        """KSBT, Ergomotion, and Purple have anti-snore preset; BaseI4/I5 does not."""
+        return self._variant in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -348,11 +349,14 @@ class KeesonController(BedController):
         BetterLiving/CB1322: Slots 1-2 (from APK analysis)
         BaseI4/I5: Slot 3 only (from APK analysis)
         Ergomotion: 4 slots (needs verification)
+        Purple: 2 slots for premium base, 3 slot for plus. Slot 1 is mapped to the standard slot 4
         """
         if self._betterliving_presets or self._cb1322_presets:
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
         if self._variant == "ksbt":
             return 2  # Memory 1 (M button) and Memory 2 (TV button)
+        elif self._variant == KEESON_VARIANT_PURPLE:
+            return 2  # Purple Premium has 2. Plus model bed supports 3, but we don't know what path it uses
         elif self._variant == "ergomotion":
             return 4  # Ergomotion may support all 4
         else:
@@ -363,11 +367,17 @@ class KeesonController(BedController):
     @property
     def supports_memory_programming(self) -> bool:
         """Return True for BetterLiving (save commands) and CB1322 (long-press save)."""
-        return self._betterliving_presets or self._cb1322_presets
+        return self._betterliving_presets or self._cb1322_presets or self._variant == KEESON_VARIANT_PURPLE
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Keeson beds support under-bed/safety lighting."""
+        """Return True - Keeson beds support under-bed/safety lighting.
+        
+        Purple Premium Smart Base lacks lighting; Purple Plus (with massage) has it.
+        """
+        if self._variant == KEESON_VARIANT_PURPLE:
+            # Plus model has massage and lighting; Premium base has neither
+            return self._coordinator.has_massage
         return True
 
     @property
@@ -841,6 +851,7 @@ class KeesonController(BedController):
         - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
         - BetterLiving: Memory 1 (0x01000008), Memory 2 (0x01000009)
         - CB1322: Memory 1 (0x00010000), Memory 2 (0x00040000)
+        - Purple: Memory 1 (0x00010000), Memory 2 (0x00004000)
         """
         if self._betterliving_presets:
             commands = {
@@ -883,6 +894,10 @@ class KeesonController(BedController):
                 "Memory %d may not work on BaseI4/I5 beds. Memory 3 is more reliable.",
                 memory_num,
             )
+        
+        #Purple treats Memory 4 as memory 1
+        if self._variant == KEESON_VARIANT_PURPLE and memory_num == 1:
+            memory_num = 4
 
         commands = {
             1: KeesonCommands.PRESET_MEMORY_1,
@@ -897,7 +912,7 @@ class KeesonController(BedController):
         """Program current position to memory.
 
         BetterLiving BED_DEFAULT has dedicated save commands.
-        CB1322 emulates save by sending the recall command repeated 30x at 100ms
+        CB1322 and Purple emulates save by sending the recall command repeated 30x at 100ms
         (simulating a long press on the physical remote).
         Other Keeson variants don't support programming.
         """
@@ -916,11 +931,17 @@ class KeesonController(BedController):
                 )
             return
 
-        if self._cb1322_presets:
-            commands = {
-                1: CB1322Commands.PRESET_MEMORY_1,
-                2: CB1322Commands.PRESET_MEMORY_2,
-            }
+        if self._cb1322_presets or self._variant == KEESON_VARIANT_PURPLE:
+            if self._variant == KEESON_VARIANT_PURPLE:
+                commands = {
+                    1: KeesonCommands.PRESET_MEMORY_4,
+                    2: KeesonCommands.PRESET_MEMORY_2,
+                }
+            else:
+                commands = {
+                    1: CB1322Commands.PRESET_MEMORY_1,
+                    2: CB1322Commands.PRESET_MEMORY_2,
+                }
             if command := commands.get(memory_num):
                 await self.write_command(
                     self._build_command(command),
@@ -929,7 +950,8 @@ class KeesonController(BedController):
                 )
             else:
                 _LOGGER.warning(
-                    "CB1322 save memory %d not supported (valid: %s)",
+                    "%s save memory %d not supported (valid: %s)",
+                    self._variant,
                     memory_num,
                     sorted(commands.keys()),
                 )
@@ -947,23 +969,23 @@ class KeesonController(BedController):
             await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position (KSBT/Ergomotion 'M' button / Memory 1)."""
-        if self._variant == "base":
-            _LOGGER.warning("Lounge preset is not available on BaseI4/I5 beds")
+        """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
+        if self._variant not in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}:
+            _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE))
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
-        if self._variant == "base":
-            _LOGGER.warning("TV preset is not available on BaseI4/I5 beds")
+        if self._variant in ["base",KEESON_VARIANT_PURPLE]:
+            _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position (KSBT/Ergomotion only)."""
-        if self._variant == "base":
-            _LOGGER.warning("Anti-snore preset is not available on BaseI4/I5 beds")
+        """Go to anti-snore position (KSBT/Ergomotion/Purple only)."""
+        if self._variant not in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}:
+            _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
 

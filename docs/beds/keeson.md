@@ -2,7 +2,7 @@
 
 **Status:** ✅ Tested
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby) and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
 ## Known Models
 
@@ -38,20 +38,21 @@ Brands using Keeson/Ergomotion actuators:
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` |
 | ✅ | [Tempur Zero G Bed Base](https://play.google.com/store/apps/details?id=com.sfd.row) | `com.sfd.row` |
 | ✅ | [Member's Mark Base Remote](https://play.google.com/store/apps/details?id=com.sfd.mm) | `com.sfd.mm` |
+| ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 
 ## Features
 
-| Feature | BaseI4/I5 | KSBT | Ergomotion | Okin | Serta | Sino |
-|---------|-----------|------|------------|------|-------|------|
-| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ |
-| TV Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Lounge Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature | BaseI4/I5 | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
+|---------|-----------|------|------------|------|-------|------|------------------|-----------------------|
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
+| Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
+| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
+| TV Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
+| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
+| Lounge Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
+| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
+| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
+| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
 
 ## Protocol Variants
 
@@ -80,6 +81,9 @@ Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but
 
 ### Ergomotion Variant (with Position Feedback)
 Same protocol as Base variant but with real-time position updates via BLE notifications.
+
+### Purple Variant
+Same protocol as Base variant, but with support for Lounge and Anti-Snore presets. Additionally, Memory 1 is mapped to the typical Memory 4 address. Also supports saving memory presets by sending the recall command repeated 30x at 100ms. Note that only the "Premium" model bed has been tested, no functionality has been verified for the "Premium Plus" model.
 
 **Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
 
@@ -116,10 +120,10 @@ Position data includes:
 | Massage Foot Up | `0x00000400` | Increase foot massage |
 | Massage Head Up | `0x00000800` | Increase head massage |
 | Zero-G | `0x00001000` | Zero-G preset |
-| Memory 1 / Lounge | `0x00002000` | KSBT "M" button (not available on BaseI4/I5) |
-| Memory 2 / TV | `0x00004000` | KSBT TV button (not available on BaseI4/I5) |
-| Memory 3 / Anti-Snore | `0x00008000` | Memory 3 on BaseI4/I5, Anti-Snore on KSBT |
-| Memory 4 | `0x00010000` | Go to memory 4 |
+| Memory 1 / Lounge | `0x00002000` | KSBT "M" button, Lounge on Purple, not available on BaseI4/I5 |
+| Memory 2 / TV | `0x00004000` | KSBT TV button, Purple Memory 2, not available on BaseI4/I5  |
+| Memory 3 / Anti-Snore | `0x00008000` | Memory 3 on BaseI4/I5, Anti-Snore on KSBT and Purple |
+| Memory 4 | `0x00010000` | Go to memory 4, Maps to Memory 1 on Purple |
 | Toggle Lights | `0x00020000` | Toggle safety lights |
 | Massage Head Down | `0x00800000` | Decrease head massage |
 | Massage Foot Down | `0x01000000` | Decrease foot massage |
@@ -128,9 +132,9 @@ Position data includes:
 
 > **Note:** Command `0x00008000` has different meanings depending on the protocol variant:
 > - On **BaseI4/I5**: This is Memory 3 preset
-> - On **KSBT**: This is Anti-Snore preset
+> - On **KSBT and Purple**: This is Anti-Snore preset
 >
-> The TV, Lounge, and Anti-Snore presets are only available on KSBT beds. BaseI4/I5 beds (like Member's Mark) use different button layouts and may not support these commands.
+> The TV, Lounge, and Anti-Snore presets are only available on KSBT and Purple beds. BaseI4/I5 beds (like Member's Mark) use different button layouts and may not support these commands.
 
 ## Command Timing
 

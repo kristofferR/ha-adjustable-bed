@@ -66,6 +66,7 @@ from .const import (
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
+    KEESON_VARIANT_PURPLE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
@@ -446,6 +447,9 @@ async def create_controller(
         elif keeson_variant == KEESON_VARIANT_SERTA:
             _LOGGER.debug("Using Serta Keeson variant")
             return KeesonController(coordinator, variant="serta")
+        elif keeson_variant == KEESON_VARIANT_PURPLE:
+            _LOGGER.debug("Using Purple Keeson variant")
+            return KeesonController(coordinator, variant="purple")
         elif keeson_variant == KEESON_VARIANT_SINO:
             _LOGGER.debug("Using Sino Keeson variant (big-endian)")
             return KeesonController(

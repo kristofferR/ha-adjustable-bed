@@ -9,6 +9,7 @@ Use this information to identify which bed brands use which actuator systems.
 
 | App Name | Downloads | Package ID |
 |----------|-----------|------------|
+| Purple Smart Base | 10K+ | com.keeson.purpleBase |
 | ErgoSportive | 1K+ | `com.keeson.ergosportive` |
 | Sleep Assist | 1K+ | `com.keeson.sleepassistant` |
 | ErgoGuest | 50+ | `com.keeson.hotelguest` |
