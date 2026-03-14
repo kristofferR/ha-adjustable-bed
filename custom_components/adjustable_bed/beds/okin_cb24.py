@@ -240,6 +240,7 @@ class OkinCB24Controller(BedController):
         protocol_variant: str = OKIN_CB24_VARIANT_OLD,
         *,
         adaptive_preset_fallback: bool = False,
+        initial_continuous_presets: bool = False,
     ) -> None:
         """Initialize the Okin CB24 controller.
 
@@ -248,6 +249,7 @@ class OkinCB24Controller(BedController):
             bed_selection: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
             protocol_variant: CB24 profile variant (cb24/cb27/cb24_ab/cb1221/dacheng/cb27new)
             adaptive_preset_fallback: Enable automatic one-shot->continuous preset fallback
+            initial_continuous_presets: Reuse a previously learned continuous preset mode
         """
         super().__init__(coordinator)
         self._motor_state: dict[str, MotorDirection] = {}
@@ -255,7 +257,11 @@ class OkinCB24Controller(BedController):
         self._protocol_variant = protocol_variant
         self._is_new_protocol = protocol_variant in _NEW_PROTOCOL_VARIANTS
         self._continuous_presets = (
-            protocol_variant in _CONTINUOUS_PRESET_VARIANTS and not self._is_new_protocol
+            not self._is_new_protocol
+            and (
+                protocol_variant in _CONTINUOUS_PRESET_VARIANTS
+                or initial_continuous_presets
+            )
         )
         self._adaptive_preset_fallback = (
             adaptive_preset_fallback and not self._is_new_protocol and not self._continuous_presets
@@ -527,6 +533,7 @@ class OkinCB24Controller(BedController):
             self._continuous_presets = True
             self._adaptive_preset_fallback = False
             self._same_preset_retry_count = 0
+            self._coordinator.remember_cb24_continuous_presets()
             _LOGGER.debug(
                 "CB24 preset mode auto-promoted to continuous after %d retries for preset %#x",
                 retry_count,

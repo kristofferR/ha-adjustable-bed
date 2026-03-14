@@ -267,12 +267,22 @@ async def create_controller(
                 OKIN_CB24_VARIANT_DACHENG,
             }
         )
+        initial_continuous_presets = (
+            adaptive_preset_fallback and coordinator.cb24_continuous_presets_learned
+        )
+
+        if initial_continuous_presets:
+            _LOGGER.debug(
+                "Reusing learned CB24 continuous preset mode for %s",
+                coordinator.address,
+            )
 
         return OkinCB24Controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
             adaptive_preset_fallback=adaptive_preset_fallback,
+            initial_continuous_presets=initial_continuous_presets,
         )
 
     if bed_type == BED_TYPE_OKIN_ORE:

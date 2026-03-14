@@ -38,6 +38,7 @@ def _make_factory_coordinator() -> SimpleNamespace:
     return SimpleNamespace(
         client=None,
         cancel_command=None,
+        cb24_continuous_presets_learned=False,
         motor_pulse_count=10,
         motor_pulse_delay_ms=100,
         address="AA:BB:CC:DD:EE:FF",
@@ -147,6 +148,7 @@ class TestOkinCB24Controller:
         """Auto legacy mode should switch after repeated quick same-preset retries."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
+        coordinator.remember_cb24_continuous_presets = MagicMock()
         controller = OkinCB24Controller(
             coordinator,
             protocol_variant=OKIN_CB24_VARIANT_CB24,
@@ -180,6 +182,7 @@ class TestOkinCB24Controller:
             repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
         assert controller.write_command.await_args_list[3].args[0] == controller._build_command(0)
+        coordinator.remember_cb24_continuous_presets.assert_called_once_with()
         assert controller._continuous_presets is True
         assert controller._adaptive_preset_fallback is False
 
@@ -365,6 +368,26 @@ class TestOkinCB24FactoryProfiles:
 
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB27NEW
+        assert controller._adaptive_preset_fallback is False
+
+    @pytest.mark.asyncio
+    async def test_auto_detect_reuses_learned_continuous_preset_mode_after_reconnect(
+        self,
+    ) -> None:
+        """Factory should preserve learned CB24 continuous preset mode across reconnects."""
+        coordinator = _make_factory_coordinator()
+        coordinator.cb24_continuous_presets_learned = True
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_OKIN_CB24,
+            protocol_variant=None,
+            client=None,
+            device_name="SmartBed-Not18",
+        )
+
+        assert isinstance(controller, OkinCB24Controller)
+        assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
+        assert controller._continuous_presets is True
         assert controller._adaptive_preset_fallback is False
 
     @pytest.mark.asyncio
