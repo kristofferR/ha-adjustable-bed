@@ -33,7 +33,7 @@ from ..const import (
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 from .okin_protocol import int_to_bytes
 
 if TYPE_CHECKING:
@@ -414,6 +414,56 @@ class KeesonController(BedController):
             "tilt": "keeson_head",
             "feet": "keeson_legs",
         }
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Return the Keeson motor layout used by entities and timed move."""
+        translation_overrides = self.motor_translation_keys or {}
+        specs = [
+            MotorControlSpec(
+                key="head",
+                translation_key=translation_overrides.get("head", "head"),
+                open_fn=lambda ctrl: ctrl.move_head_up(),
+                close_fn=lambda ctrl: ctrl.move_head_down(),
+                stop_fn=lambda ctrl: ctrl.move_head_stop(),
+                position_key="back",
+            ),
+            MotorControlSpec(
+                key="feet",
+                translation_key=translation_overrides.get("feet", "feet"),
+                open_fn=lambda ctrl: ctrl.move_feet_up(),
+                close_fn=lambda ctrl: ctrl.move_feet_down(),
+                stop_fn=lambda ctrl: ctrl.move_feet_stop(),
+                position_key="legs",
+                max_angle=45,
+            ),
+        ]
+
+        if self._coordinator.motor_count >= 3 and self.has_tilt_support:
+            specs.append(
+                MotorControlSpec(
+                    key="tilt",
+                    translation_key=translation_overrides.get("tilt", "tilt"),
+                    open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                    close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                    stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                    max_angle=45,
+                )
+            )
+
+        if self._coordinator.motor_count >= 4 and self.has_lumbar_support:
+            specs.append(
+                MotorControlSpec(
+                    key="lumbar",
+                    translation_key=translation_overrides.get("lumbar", "lumbar"),
+                    open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                    close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                    stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                    max_angle=30,
+                )
+            )
+
+        return tuple(specs)
 
     # Massage timer - Keeson only has step command, no direct timer set
     # We cannot reliably emulate stepping without knowing current state

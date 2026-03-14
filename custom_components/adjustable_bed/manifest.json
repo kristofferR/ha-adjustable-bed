@@ -18,6 +18,10 @@
       "service_uuid": "0000fff0-0000-1000-8000-00805f9b34fb"
     },
     {
+      "service_uuid": "0000ffc0-0000-1000-8000-00805f9b34fb",
+      "connectable": true
+    },
+    {
       "service_uuid": "0000ffe5-0000-1000-8000-00805f9b34fb"
     },
     {
@@ -53,6 +57,9 @@
     },
     {
       "local_name": "SUTA*"
+    },
+    {
+      "local_name": "Mouselet*"
     },
     {
       "local_name": "JMC*"

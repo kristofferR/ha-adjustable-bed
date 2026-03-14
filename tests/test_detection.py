@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -43,6 +44,7 @@ from custom_components.adjustable_bed.const import (
     BEDTECH_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
+    KAIDI_DISCOVERY_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
     LEGGETT_GEN2_SERVICE_UUID,
@@ -107,6 +109,20 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[JENSEN_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_JENSEN
+
+    def test_detect_kaidi_by_payload_and_uuid(self):
+        """Test Kaidi detection by advertisement payload + FFC0 UUID."""
+        service_info = _make_service_info(
+            name="Mouselet",
+            service_uuids=[KAIDI_DISCOVERY_SERVICE_UUID],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KAIDI
+        assert result.confidence == 0.9
+        assert "uuid:kaidi" in result.signals
 
     def test_detect_vibradorm_by_uuid(self):
         """Test Vibradorm detection by unique service UUID."""

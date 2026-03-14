@@ -16,6 +16,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -218,6 +219,15 @@ async def create_controller(
         from .beds.okin_nordic import OkinNordicController
 
         return OkinNordicController(coordinator)
+
+    if bed_type == BED_TYPE_KAIDI:
+        from .beds.kaidi import KaidiController
+
+        return KaidiController(
+            coordinator,
+            device_name=device_name,
+            manufacturer_data=manufacturer_data,
+        )
 
     if bed_type == BED_TYPE_OKIN_CB24:
         from .beds.okin_cb24 import OkinCB24Controller

@@ -15,23 +15,20 @@ from homeassistant.components.cover import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    BED_TYPE_ERGOMOTION,
-    BED_TYPE_KEESON,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BEDS_WITH_PERCENTAGE_POSITIONS,
-    CONF_MOTOR_COUNT,
-    DEFAULT_MOTOR_COUNT,
     DOMAIN,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.base import BedController, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -164,7 +161,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed cover entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-    motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     controller = coordinator.controller
 
     # Skip motor cover entities if bed doesn't support motor control
@@ -183,136 +179,69 @@ async def async_setup_entry(
         )
         return
 
-    entities = []
+    if controller is None:
+        _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
+        return
 
-    # Keeson and Ergomotion beds use different motor naming:
-    # Head/Feet/Tilt/Lumbar instead of Back/Legs/Head/Feet
-    # Position data comes in as "back"/"legs", so we need position_key mapping
-    if coordinator.bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-        _LOGGER.debug(
-            "Setting up Keeson/Ergomotion covers for %s (motor_count=%d)",
-            coordinator.name,
-            motor_count,
-        )
-        # Find the specific descriptions we need
-        descriptions_by_key = {d.key: d for d in COVER_DESCRIPTIONS}
+    _async_remove_stale_cover_entities(hass, coordinator, controller)
 
-        # Get translation key overrides from controller
-        translation_overrides = (
-            controller.motor_translation_keys if controller is not None else None
-        ) or {}
-
-        # Create Keeson-specific head description that maps to "back" position data
-        # Keeson "head" motor = upper body, position reported as "back"
-        head_desc = descriptions_by_key["head"]
-        keeson_head_desc = AdjustableBedCoverEntityDescription(
-            key=head_desc.key,
-            translation_key=translation_overrides.get("head", head_desc.translation_key),
-            icon=head_desc.icon,
-            device_class=head_desc.device_class,
-            open_fn=head_desc.open_fn,
-            close_fn=head_desc.close_fn,
-            stop_fn=head_desc.stop_fn,
-            min_motors=2,
-            position_key="back",  # Map to "back" in position_data
-            max_angle=head_desc.max_angle,
-        )
-        entities.append(AdjustableBedCover(coordinator, keeson_head_desc))
-
-        # Create Keeson-specific feet description that maps to "legs" position data
-        # Keeson "feet" motor = lower body, position reported as "legs"
-        feet_desc = descriptions_by_key["feet"]
-        keeson_feet_desc = AdjustableBedCoverEntityDescription(
-            key=feet_desc.key,
-            translation_key=translation_overrides.get("feet", feet_desc.translation_key),
-            icon=feet_desc.icon,
-            device_class=feet_desc.device_class,
-            open_fn=feet_desc.open_fn,
-            close_fn=feet_desc.close_fn,
-            stop_fn=feet_desc.stop_fn,
-            min_motors=2,
-            position_key="legs",  # Map to "legs" in position_data
-            max_angle=feet_desc.max_angle,
-        )
-        entities.append(AdjustableBedCover(coordinator, keeson_feet_desc))
-
-        # Add tilt for 3+ motors if controller supports it
-        if (
-            motor_count >= 3
-            and "tilt" in descriptions_by_key
-            and controller is not None
-            and controller.has_tilt_support
-        ):
-            tilt_desc = descriptions_by_key["tilt"]
-            keeson_tilt_desc = AdjustableBedCoverEntityDescription(
-                key=tilt_desc.key,
-                translation_key=translation_overrides.get("tilt", tilt_desc.translation_key),
-                icon=tilt_desc.icon,
-                device_class=tilt_desc.device_class,
-                open_fn=tilt_desc.open_fn,
-                close_fn=tilt_desc.close_fn,
-                stop_fn=tilt_desc.stop_fn,
-                min_motors=tilt_desc.min_motors,
-                position_key=tilt_desc.position_key,
-                max_angle=tilt_desc.max_angle,
-            )
-            entities.append(AdjustableBedCover(coordinator, keeson_tilt_desc))
-
-        # Add lumbar for 4 motors if controller supports it
-        if (
-            motor_count >= 4
-            and "lumbar" in descriptions_by_key
-            and controller is not None
-            and controller.has_lumbar_support
-        ):
-            entities.append(AdjustableBedCover(coordinator, descriptions_by_key["lumbar"]))
-    else:
-        # Standard bed motor layout (Back/Legs/Head/Feet)
-        # Check if bed type needs adjusted max angles
-        is_reverie = coordinator.bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND)
-
-        for description in COVER_DESCRIPTIONS:
-            # Special handling for tilt - only add if controller supports it
-            if description.key == "tilt":
-                if controller is not None and controller.has_tilt_support:
-                    entities.append(AdjustableBedCover(coordinator, description))
-                continue
-            # Special handling for lumbar - only add if controller supports it
-            elif description.key == "lumbar":
-                if controller is not None and controller.has_lumbar_support:
-                    entities.append(AdjustableBedCover(coordinator, description))
-            # Special handling for pillow - only add if controller supports it
-            elif description.key == "pillow":
-                if controller is not None and controller.has_pillow_support:
-                    entities.append(AdjustableBedCover(coordinator, description))
-            # Special handling for hip - only add if controller supports it
-            elif description.key == "hip":
-                if controller is not None and controller.has_hip_support:
-                    entities.append(AdjustableBedCover(coordinator, description))
-            # Special handling for bed_height - only add if controller supports it
-            elif description.key == "bed_height":
-                if controller is not None and controller.has_bed_height_support:
-                    entities.append(AdjustableBedCover(coordinator, description))
-            elif motor_count >= description.min_motors:
-                # For Reverie beds, adjust max_angle for back/head motors
-                if is_reverie and description.key in ("back", "head"):
-                    adjusted_desc = AdjustableBedCoverEntityDescription(
-                        key=description.key,
-                        translation_key=description.translation_key,
-                        icon=description.icon,
-                        device_class=description.device_class,
-                        open_fn=description.open_fn,
-                        close_fn=description.close_fn,
-                        stop_fn=description.stop_fn,
-                        min_motors=description.min_motors,
-                        position_key=description.position_key,
-                        max_angle=REVERIE_BACK_MAX_ANGLE,
-                    )
-                    entities.append(AdjustableBedCover(coordinator, adjusted_desc))
-                else:
-                    entities.append(AdjustableBedCover(coordinator, description))
+    entities = [
+        AdjustableBedCover(coordinator, _build_cover_description(coordinator, spec))
+        for spec in controller.motor_control_specs
+    ]
 
     async_add_entities(entities)
+
+
+def _build_cover_description(
+    coordinator: AdjustableBedCoordinator,
+    spec: MotorControlSpec,
+) -> AdjustableBedCoverEntityDescription:
+    """Build a cover description from the controller-provided motor spec."""
+    templates_by_key = {description.key: description for description in COVER_DESCRIPTIONS}
+    template = templates_by_key[spec.key]
+    max_angle = spec.max_angle
+
+    if coordinator.bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND) and spec.key in (
+        "back",
+        "head",
+    ):
+        max_angle = REVERIE_BACK_MAX_ANGLE
+
+    return AdjustableBedCoverEntityDescription(
+        key=template.key,
+        translation_key=spec.translation_key,
+        icon=template.icon,
+        device_class=template.device_class,
+        open_fn=spec.open_fn,
+        close_fn=spec.close_fn,
+        stop_fn=spec.stop_fn,
+        position_key=spec.position_key,
+        max_angle=max_angle,
+    )
+
+
+def _async_remove_stale_cover_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    controller: BedController,
+) -> None:
+    """Remove stale cover entities that should no longer be exposed."""
+    if not controller.stale_motor_entity_keys:
+        return
+
+    registry = er.async_get(hass)
+    active_keys = {spec.key for spec in controller.motor_control_specs}
+
+    for key in controller.stale_motor_entity_keys:
+        if key in active_keys:
+            continue
+
+        unique_id = f"{coordinator.address}_{key}"
+        entity_id = registry.async_get_entity_id("cover", DOMAIN, unique_id)
+        if entity_id is not None:
+            registry.async_remove(entity_id)
+            _LOGGER.info("Removed stale cover entity %s for %s", entity_id, coordinator.name)
 
 
 class AdjustableBedCover(AdjustableBedEntity, CoverEntity):

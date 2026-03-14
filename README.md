@@ -69,10 +69,11 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA |
+| ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
 | ✅ [Limoss](docs/beds/limoss.md) | Limoss, Stawett |
 | ✅ [Jensen](docs/beds/jensen.md) | Jensen (JMC400, LinON Entry) |
 | ✅ [Svane](docs/beds/svane.md) | Svane |
-| ✅ [DewertOkin](docs/beds/dewertokin.md) | Rize, Simmons, Nectar, Resident, Symphony |
+| ✅ [DewertOkin](docs/beds/dewertokin.md) | Many older Rize models, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | Mattress Firm, iFlex |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
@@ -89,6 +90,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
+
+Some brands span multiple controller families. For example, many older Rize beds are DewertOkin, while newer `Mouselet`-advertising Rize beds use [Kaidi](docs/beds/kaidi.md).
 
 ## Will This Work With My Bed?
 

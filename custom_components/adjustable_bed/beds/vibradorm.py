@@ -3,7 +3,8 @@
 Protocol reverse-engineered from de.vibradorm.vra and com.vibradorm.vmatbasic APKs.
 
 Vibradorm beds (VMAT series) use a simple single-byte command format for motor control.
-Position feedback is available via notifications on a separate characteristic.
+Some variants expose additional CBI/notification characteristics, but the
+VMAT-BASIC-RF-CBI app flow still drives motor movement through 0x1526.
 
 Device name pattern: "VMAT*" (e.g., "VMATMEM047")
 Manufacturer ID: 944 (0x03B0)
@@ -48,7 +49,19 @@ VIBRADORM_COMMAND_UUID_CANDIDATES = (
 )
 
 _VIBRADORM_VENDOR_UUID_SUFFIX = "-9f03-0de5-96c5-b8f4f3081186"
+_BLUETOOTH_BASE_UUID_SUFFIX = "-0000-1000-8000-00805f9b34fb"
 _GATT_SERVICE_CHANGED_CHAR_UUID = "00002a05-0000-1000-8000-00805f9b34fb"
+_VMAT_BASIC_RF_CBI_MODEL = "vmat-basic-rf-cbi"
+_VIBRADORM_UUID_FAMILY_HEADS = {
+    uuid.split("-", 1)[0].lower()
+    for uuid in (
+        *VIBRADORM_SERVICE_UUID_CANDIDATES,
+        *VIBRADORM_COMMAND_UUID_CANDIDATES,
+        VIBRADORM_LIGHT_CHAR_UUID,
+        VIBRADORM_CBI_CHAR_UUID,
+        VIBRADORM_NOTIFY_CHAR_UUID,
+    )
+}
 
 
 _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
@@ -144,7 +157,32 @@ class VibradormController(BedController):
         return self._command_char_uuid
 
     @staticmethod
-    def _get_characteristic_by_uuid(service: object, char_uuid: str) -> object | None:
+    def _uuid_head(uuid_str: str) -> str:
+        """Return the UUID head used by VMAT aliases (e.g. ``00001526``)."""
+        return str(uuid_str).lower().split("-", 1)[0]
+
+    @classmethod
+    def _uuid_aliases(cls, uuid_str: str) -> set[str]:
+        """Return equivalent VMAT UUID aliases for proxy-normalized services."""
+        normalized_uuid = str(uuid_str).lower()
+        uuid_head = cls._uuid_head(normalized_uuid)
+        if uuid_head not in _VIBRADORM_UUID_FAMILY_HEADS:
+            return {normalized_uuid}
+
+        aliases = {normalized_uuid}
+        if normalized_uuid.endswith(_VIBRADORM_VENDOR_UUID_SUFFIX):
+            aliases.add(f"{uuid_head}{_BLUETOOTH_BASE_UUID_SUFFIX}")
+        elif normalized_uuid.endswith(_BLUETOOTH_BASE_UUID_SUFFIX):
+            aliases.add(f"{uuid_head}{_VIBRADORM_VENDOR_UUID_SUFFIX}")
+        return aliases
+
+    @classmethod
+    def _uuid_matches(cls, actual_uuid: str, expected_uuid: str) -> bool:
+        """Return True when UUIDs match directly or via VMAT proxy aliases."""
+        return str(actual_uuid).lower() in cls._uuid_aliases(expected_uuid)
+
+    @classmethod
+    def _get_characteristic_by_uuid(cls, service: object, char_uuid: str) -> object | None:
         """Get characteristic from a service by UUID with broad compatibility."""
         get_characteristic = getattr(service, "get_characteristic", None)
         if callable(get_characteristic):
@@ -156,7 +194,7 @@ class VibradormController(BedController):
                 return characteristic
 
         for characteristic in getattr(service, "characteristics", []):
-            if str(characteristic.uuid).lower() == char_uuid.lower():
+            if cls._uuid_matches(str(characteristic.uuid), char_uuid):
                 return characteristic
         return None
 
@@ -166,9 +204,55 @@ class VibradormController(BedController):
         return {prop.lower() for prop in getattr(characteristic, "properties", [])}
 
     @staticmethod
+    def _prefer_write_with_response(props: set[str]) -> bool:
+        """Choose response mode for a resolved command characteristic."""
+        if "write" in props:
+            return True
+        # ESPHome proxy/service-cache paths occasionally surface the known VMAT
+        # UUIDs without usable property metadata. The native apps use write with
+        # response for these control paths, so prefer that when we matched the
+        # exact protocol UUID but could not infer properties.
+        return "write-without-response" not in props
+
+    @staticmethod
     def _is_vibradorm_vendor_uuid(char_uuid: str) -> bool:
         """Return True for vendor UUIDs in the Vibradorm VMAT namespace."""
         return char_uuid.lower().endswith(_VIBRADORM_VENDOR_UUID_SUFFIX)
+
+    @classmethod
+    def _uuid_alias_set(cls, uuids: tuple[str, ...] | list[str] | set[str]) -> set[str]:
+        """Expand known VMAT UUIDs to include proxy-normalized aliases."""
+        alias_set: set[str] = set()
+        for uuid_str in uuids:
+            alias_set.update(cls._uuid_aliases(uuid_str))
+        return alias_set
+
+    @property
+    def _uses_app_strict_command_path(self) -> bool:
+        """Return True for variants where the OEM app only drives movement via 0x1526."""
+        model = getattr(self._coordinator, "_ble_model", None)
+        if not model:
+            return False
+        return str(model).strip().lower() == _VMAT_BASIC_RF_CBI_MODEL
+
+    def _command_uuid_candidates(self) -> tuple[str, ...]:
+        """Return command UUIDs to probe for the connected VMAT variant."""
+        if self._uses_app_strict_command_path:
+            return (VIBRADORM_COMMAND_CHAR_UUID,)
+        return VIBRADORM_COMMAND_UUID_CANDIDATES
+
+    @property
+    def _detected_model(self) -> str | None:
+        """Return the discovered BLE model when available."""
+        model = getattr(self._coordinator, "_ble_model", None)
+        if model:
+            return str(model)
+        get_model = getattr(self._coordinator, "_get_model", None)
+        if callable(get_model):
+            resolved_model = get_model()
+            if resolved_model:
+                return str(resolved_model)
+        return None
 
     def _refresh_characteristics(self, *, force: bool = False) -> None:
         """Resolve runtime UUIDs for VMAT variants from discovered services."""
@@ -179,11 +263,13 @@ class VibradormController(BedController):
         if client is None or client.services is None:
             return
 
-        service_map = {str(service.uuid).lower(): service for service in client.services}
         candidate_services = [
-            service_map[service_uuid.lower()]
-            for service_uuid in VIBRADORM_SERVICE_UUID_CANDIDATES
-            if service_uuid.lower() in service_map
+            service
+            for service in client.services
+            if any(
+                self._uuid_matches(str(service.uuid), service_uuid)
+                for service_uuid in VIBRADORM_SERVICE_UUID_CANDIDATES
+            )
         ]
 
         # When no known Vibradorm services are found, fall back to searching
@@ -198,7 +284,9 @@ class VibradormController(BedController):
             candidate_services = all_services
 
         selected_command_char = None
-        for char_uuid in VIBRADORM_COMMAND_UUID_CANDIDATES:
+        selected_command_without_props = None
+        command_candidates = self._command_uuid_candidates()
+        for char_uuid in command_candidates:
             for service in candidate_services:
                 char = self._get_characteristic_by_uuid(service, char_uuid)
                 if char is None:
@@ -207,15 +295,35 @@ class VibradormController(BedController):
                 if "write" in props or "write-without-response" in props:
                     selected_command_char = char
                     break
+                if selected_command_without_props is None:
+                    selected_command_without_props = char
             if selected_command_char is not None:
                 break
 
-        if selected_command_char is None:
-            excluded_uuids = {
-                VIBRADORM_LIGHT_CHAR_UUID.lower(),
-                VIBRADORM_CBI_CHAR_UUID.lower(),
-                VIBRADORM_NOTIFY_CHAR_UUID.lower(),
-            }
+        if selected_command_char is None and selected_command_without_props is not None:
+            selected_command_char = selected_command_without_props
+            _LOGGER.debug(
+                "Using Vibradorm command characteristic %s despite missing write properties",
+                selected_command_char.uuid,
+            )
+
+        if selected_command_char is None and self._uses_app_strict_command_path:
+            _LOGGER.warning(
+                "Expected Vibradorm movement characteristic %s was not found for %s "
+                "(model: %s); not falling back to 0x1528/0x1534 because the OEM app "
+                "uses 0x1526 only",
+                VIBRADORM_COMMAND_CHAR_UUID,
+                self._coordinator.address,
+                self._detected_model,
+            )
+        elif selected_command_char is None:
+            excluded_uuids = self._uuid_alias_set(
+                [
+                    VIBRADORM_LIGHT_CHAR_UUID,
+                    VIBRADORM_CBI_CHAR_UUID,
+                    VIBRADORM_NOTIFY_CHAR_UUID,
+                ]
+            )
             fallback_command_chars = []
             for service in candidate_services:
                 for char in getattr(service, "characteristics", []):
@@ -254,10 +362,7 @@ class VibradormController(BedController):
             self._command_char_uuid = resolved_command_uuid
 
             props = self._characteristic_properties(selected_command_char)
-            if "write" in props:
-                self._write_with_response = True
-            elif "write-without-response" in props:
-                self._write_with_response = False
+            self._write_with_response = self._prefer_write_with_response(props)
 
             _LOGGER.debug(
                 "Vibradorm write mode: %s (characteristic: %s, properties: %s)",
@@ -282,6 +387,7 @@ class VibradormController(BedController):
                 break
 
         selected_notify_char = None
+        selected_notify_without_props = None
         for service in candidate_services:
             notify_char = self._get_characteristic_by_uuid(service, VIBRADORM_NOTIFY_CHAR_UUID)
             if notify_char is None:
@@ -290,16 +396,27 @@ class VibradormController(BedController):
             if "notify" in props or "indicate" in props:
                 selected_notify_char = notify_char
                 break
+            if selected_notify_without_props is None:
+                selected_notify_without_props = notify_char
+
+        if selected_notify_char is None and selected_notify_without_props is not None:
+            selected_notify_char = selected_notify_without_props
+            _LOGGER.debug(
+                "Using Vibradorm notify characteristic %s despite missing notify properties",
+                selected_notify_char.uuid,
+            )
 
         if selected_notify_char is None:
-            excluded_uuids = {
-                VIBRADORM_COMMAND_CHAR_UUID.lower(),
-                VIBRADORM_LIGHT_CHAR_UUID.lower(),
-                VIBRADORM_CBI_CHAR_UUID.lower(),
-                _GATT_SERVICE_CHANGED_CHAR_UUID,
-            }
+            excluded_uuids = self._uuid_alias_set(
+                [
+                    VIBRADORM_COMMAND_CHAR_UUID,
+                    VIBRADORM_LIGHT_CHAR_UUID,
+                    VIBRADORM_CBI_CHAR_UUID,
+                    _GATT_SERVICE_CHANGED_CHAR_UUID,
+                ]
+            )
             if self._notify_char_uuid:
-                excluded_uuids.add(self._notify_char_uuid.lower())
+                excluded_uuids.update(self._uuid_aliases(self._notify_char_uuid))
             fallback_notify_chars = []
             for service in candidate_services:
                 for char in getattr(service, "characteristics", []):
@@ -364,8 +481,8 @@ class VibradormController(BedController):
 
     @property
     def supports_position_feedback(self) -> bool:
-        """Return True - Vibradorm beds provide position notifications."""
-        return True
+        """Return True for VMAT variants where the OEM app uses position feedback."""
+        return not self._uses_app_strict_command_path
 
     @property
     def allow_position_polling_during_commands(self) -> bool:
@@ -523,6 +640,15 @@ class VibradormController(BedController):
 
         Packet: [MSB(toggle | 0x3D), LSB(toggle | 0x3D), 0x3F]
         """
+        if self._uses_app_strict_command_path:
+            _LOGGER.debug(
+                "Skipping VMAT CmdGetStatusMotMon for %s (model %s does not use app-backed "
+                "position feedback)",
+                self._coordinator.address,
+                self._detected_model,
+            )
+            return
+
         toggle = 0x8000 if self._cbi_toggle else 0x0000
         value = toggle | 0x3D
         data = bytes([(value >> 8) & 0xFF, value & 0xFF, 0x3F])

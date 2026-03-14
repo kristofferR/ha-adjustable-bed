@@ -21,7 +21,7 @@ from ..const import (
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -72,6 +72,50 @@ class MaloufCommands:
     # movement is both columns moving together.
     BED_HEIGHT_UP = HEAD_TILT_UP | LUMBAR_UP
     BED_HEIGHT_DOWN = HEAD_TILT_DOWN | LUMBAR_DOWN
+
+
+def _malouf_hilo_motor_control_specs() -> tuple[MotorControlSpec, ...]:
+    """Return the Hi-Lo motor layout exposed by Malouf/OKIN protocol beds."""
+    return (
+        MotorControlSpec(
+            key="back",
+            translation_key="back",
+            open_fn=lambda ctrl: ctrl.move_back_up(),
+            close_fn=lambda ctrl: ctrl.move_back_down(),
+            stop_fn=lambda ctrl: ctrl.move_back_stop(),
+        ),
+        MotorControlSpec(
+            key="legs",
+            translation_key="legs",
+            open_fn=lambda ctrl: ctrl.move_legs_up(),
+            close_fn=lambda ctrl: ctrl.move_legs_down(),
+            stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+            max_angle=45,
+        ),
+        MotorControlSpec(
+            key="tilt",
+            translation_key="head_end_tilt",
+            open_fn=lambda ctrl: ctrl.move_tilt_up(),
+            close_fn=lambda ctrl: ctrl.move_tilt_down(),
+            stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+            max_angle=45,
+        ),
+        MotorControlSpec(
+            key="lumbar",
+            translation_key="foot_end_tilt",
+            open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+            close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+            stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+            max_angle=30,
+        ),
+        MotorControlSpec(
+            key="bed_height",
+            translation_key="bed_height",
+            open_fn=lambda ctrl: ctrl.move_bed_height_up(),
+            close_fn=lambda ctrl: ctrl.move_bed_height_down(),
+            stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
+        ),
+    )
 
 
 class MaloufNewOkinController(BedController):
@@ -148,6 +192,16 @@ class MaloufNewOkinController(BedController):
     def supports_memory_programming(self) -> bool:
         """Return False - Malouf beds don't support programming memory positions."""
         return False
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Return the exposed Hi-Lo motor layout."""
+        return _malouf_hilo_motor_control_specs()
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove duplicate legacy aliases that should no longer be exposed."""
+        return frozenset({"head", "feet"})
 
     def _build_command(self, command_value: int) -> bytes:
         """Build an 8-byte NEW_OKIN command.
@@ -455,6 +509,16 @@ class MaloufLegacyOkinController(BedController):
     def supports_memory_programming(self) -> bool:
         """Return False - Malouf beds don't support programming memory positions."""
         return False
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Return the exposed Hi-Lo motor layout."""
+        return _malouf_hilo_motor_control_specs()
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove duplicate legacy aliases that should no longer be exposed."""
+        return frozenset({"head", "feet"})
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a 9-byte LEGACY_OKIN command with checksum.

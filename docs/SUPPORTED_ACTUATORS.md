@@ -14,8 +14,9 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
 | [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
+| [Kaidi](beds/kaidi.md) | 🧪 Needs Testing | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
 | [Jensen](beds/jensen.md) | ✅ Supported | 1 memory preset, dynamic feature detection (lights, massage) |
-| [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (Rize, Simmons, etc.), multiple protocols |
+| [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
@@ -104,6 +105,7 @@ These beds have their own dedicated integrations:
 3. **Look at the device name** (shown during manual setup or in diagnostics):
    - `HHC*` → MotoSleep
    - `DPG*` or `Desk*` → Linak
+   - `Mouselet*` → Kaidi
    - `Nectar*` → Nectar
    - `Okimat*`, `Okin RF*`, `Okin BLE*` → Okimat
    - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
@@ -121,7 +123,8 @@ These beds have their own dedicated integrations:
    - `Limoss*`, `Stawett*` → Limoss
    - `OKIN-BLE*` → Keeson (Sino variant, BetterLiving/Dynasty/INNOVA)
    - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
-   - `Rize*`, `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
+   - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
+   - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
 
 4. **Use Diagnostic mode to find service UUIDs**: If unsure, add the device as "Diagnostic/Unknown" and run the `run_diagnostics` service. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
@@ -134,6 +137,7 @@ These beds have their own dedicated integrations:
    - Service `0000fee9-...` → Richmat WiLinke or BedTech
    - Service `00001525-...` → Vibradorm
    - Service `6e403587-...` → Remacro
+   - Service `0000ffc0-...` or `9e5d1e47-...` + name `Mouselet*` → Kaidi
 
 5. **Fallback**: If the device isn't visible to Home Assistant at all, use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify it exists and check the service UUIDs.
 

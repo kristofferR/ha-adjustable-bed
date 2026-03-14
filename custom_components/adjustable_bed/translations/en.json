@@ -421,6 +421,12 @@
       "tilt": {
         "name": "Tilt"
       },
+      "head_end_tilt": {
+        "name": "Head End Tilt"
+      },
+      "foot_end_tilt": {
+        "name": "Foot End Tilt"
+      },
       "keeson_back": {
         "name": "Back"
       },

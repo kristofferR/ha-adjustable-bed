@@ -6,10 +6,20 @@ from unittest.mock import MagicMock
 
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
-from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
+    CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    CONF_PREFERRED_ADAPTER,
+    DOMAIN,
+)
 
 
 class TestCoverEntities:
@@ -32,6 +42,94 @@ class TestCoverEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("cover.")
         ]
         assert len(cover_states) == 2  # back and legs for 2-motor bed
+
+    async def test_malouf_hilo_cover_entities_created(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Malouf Hi-Lo beds should expose back/legs/tilt/lumbar/bed_height only."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Malouf Hi-Lo Bed",
+            data={
+                "address": "AA:BB:CC:DD:EE:01",
+                "name": "Malouf Hi-Lo Bed",
+                CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:01",
+            entry_id="malouf_hilo_cover_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        active_keys = ("back", "legs", "tilt", "lumbar", "bed_height")
+
+        for key in active_keys:
+            assert registry.async_get_entity_id(
+                "cover", DOMAIN, f"AA:BB:CC:DD:EE:01_{key}"
+            ) is not None
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_head") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_feet") is None
+
+    async def test_malouf_hilo_cover_setup_removes_stale_head_and_feet(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Malouf Hi-Lo setup should remove stale duplicate head/feet cover entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Legacy Malouf Hi-Lo Bed",
+            data={
+                "address": "AA:BB:CC:DD:EE:02",
+                "name": "Legacy Malouf Hi-Lo Bed",
+                CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:02",
+            entry_id="legacy_malouf_hilo_cover_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:02_head",
+            config_entry=entry,
+            suggested_object_id="legacy_malouf_hi_lo_bed_head",
+        )
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:02_feet",
+            config_entry=entry,
+            suggested_object_id="legacy_malouf_hi_lo_bed_feet",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_head") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_feet") is None
 
     async def test_cover_open_close(
         self,

@@ -131,6 +131,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
+BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -203,6 +204,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SUTA,
     # TiMOTION AHF protocol
     BED_TYPE_TIMOTION_AHF,
+    # Kaidi (Rize/Floyd/ISleep)
+    BED_TYPE_KAIDI,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -353,6 +356,17 @@ SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
 TIMOTION_AHF_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
 TIMOTION_AHF_WRITE_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
 TIMOTION_AHF_NOTIFY_CHAR_UUID: Final = NORDIC_UART_READ_CHAR_UUID
+
+# Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
+# The bed advertises FFC0 and exposes the actual command transport on the
+# 9e5d1e47-... service/characteristics after connection.
+KAIDI_DISCOVERY_SERVICE_UUID: Final = "0000ffc0-0000-1000-8000-00805f9b34fb"
+KAIDI_MESH_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
+KAIDI_WRITE_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
+KAIDI_NOTIFY_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
+KAIDI_NAME_PATTERNS: Final = ("mouselet",)
+KAIDI_JOIN_PASSWORD: Final = b"1122"
+KAIDI_BROADCAST_VADDR: Final = 0xFFFFFFFF
 
 # Leggett & Platt specific UUIDs
 # Gen2 variant (Richmat-based, ASCII commands)

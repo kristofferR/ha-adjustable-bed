@@ -20,8 +20,11 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
+    BEDTECH_SERVICE_UUID,
+    BED_TYPE_BEDTECH,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
+    BED_TYPE_RICHMAT,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
@@ -29,12 +32,16 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    RICHMAT_REMOTE_AUTO,
+    VARIANT_AUTO,
     requires_pairing,
 )
 from .coordinator import AdjustableBedCoordinator
+from .detection import detect_richmat_remote_from_name
 from .unsupported import create_pairing_required_issue
 
 # Service constants
@@ -53,6 +60,15 @@ ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
+TIMED_MOVE_MOTOR_OPTIONS = (
+    "back",
+    "legs",
+    "head",
+    "feet",
+    "tilt",
+    "lumbar",
+    "bed_height",
+)
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
@@ -129,6 +145,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
+    await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
+
     _LOGGER.info(
         "Setting up Adjustable Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",
         entry.title,
@@ -221,6 +239,58 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
+
+
+async def _async_maybe_reclassify_legacy_bedtech_entry(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Correct legacy BedTech entries that were created for Richmat QRRM beds.
+
+    BedTech and Richmat WiLinke share the FEE9 service, and older versions of
+    the integration could persist QRRM devices as `bedtech`. That leaves the
+    entry sending BedTech preset/light bytes to a Richmat controller, which is
+    why issue #243 reported lounge and light commands either doing nothing or
+    triggering the wrong behavior.
+    """
+    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_BEDTECH:
+        return
+
+    address = entry.data.get(CONF_ADDRESS)
+    if not address:
+        return
+
+    service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
+    if service_info is None:
+        return
+
+    service_uuids = {
+        uuid.lower() for uuid in (getattr(service_info, "service_uuids", None) or [])
+    }
+    if BEDTECH_SERVICE_UUID.lower() not in service_uuids:
+        return
+
+    device_name = getattr(service_info, "name", None)
+    detected_remote = detect_richmat_remote_from_name(device_name)
+    if not detected_remote:
+        return
+
+    new_data = {
+        **entry.data,
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+    }
+    if entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO) == RICHMAT_REMOTE_AUTO:
+        new_data[CONF_RICHMAT_REMOTE] = detected_remote
+
+    hass.config_entries.async_update_entry(entry, data=new_data)
+    _LOGGER.warning(
+        "Corrected config entry %s (%s) from BedTech to Richmat because BLE name %r "
+        "matches Richmat remote %r on the shared FEE9 service",
+        entry.title,
+        entry.entry_id,
+        device_name,
+        detected_remote,
+    )
 
 
 async def _async_register_services(hass: HomeAssistant) -> None:
@@ -627,74 +697,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 )
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
-
-            # Get config entry for motor count validation
-            entry: ConfigEntry | None = None
-            for entry_id, existing_coord in hass.data[DOMAIN].items():
-                if existing_coord is coordinator:
-                    entry = hass.config_entries.async_get_entry(entry_id)
-                    break
-
-            if not entry:
-                raise ServiceValidationError(
-                    f"Could not find config entry for device {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-
-            bed_type = entry.data.get(CONF_BED_TYPE)
-            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-
-            # Define motor configurations for timed move
-            # For Keeson/Ergomotion: only head and feet are valid
-            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet)
-            is_keeson_ergomotion = bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION)
-
-            if is_keeson_ergomotion:
-                valid_motors = {"head", "feet"}
-                motor_configs: dict[str, dict[str, Any]] = {
-                    "head": {
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    },
-                    "feet": {
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    },
+            controller = await _get_controller_for_service(coordinator)
+            motor_configs = {
+                spec.key: {
+                    "move_up_fn": spec.open_fn,
+                    "move_down_fn": spec.close_fn,
+                    "move_stop_fn": spec.stop_fn,
                 }
-            else:
-                motor_configs = {
-                    "back": {
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "min_motors": 2,
-                    },
-                    "legs": {
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "min_motors": 2,
-                    },
-                    "head": {
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "min_motors": 3,
-                    },
-                    "feet": {
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "min_motors": 4,
-                    },
-                }
-                valid_motors = {
-                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
-                }
+                for spec in controller.motor_control_specs
+                if spec.key in TIMED_MOVE_MOTOR_OPTIONS
+            }
+            valid_motors = set(motor_configs)
 
             # Validate motor is valid for this bed
             if motor not in valid_motors:
@@ -774,7 +787,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
                     vol.Coerce(int),

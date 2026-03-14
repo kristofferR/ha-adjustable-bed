@@ -30,6 +30,21 @@
 | Lumbar | ✅ |
 | Head Tilt | ✅ |
 
+## Hi-Lo Layout
+
+Some OKIN/Malouf-protocol beds use a Hi-Lo actuator layout instead of the usual
+`back/legs/head/feet` ladder. For those beds, the integration exposes:
+
+- Back
+- Legs
+- Head End Tilt
+- Foot End Tilt
+- Bed Height
+
+`Bed Height` raises or lowers the whole frame by moving both lift columns
+together. `Head End Tilt` and `Foot End Tilt` control the two columns
+independently for lengthwise tilt.
+
 ## Protocol Variants
 
 Malouf beds use two distinct protocols. The integration auto-detects which one your bed uses.
