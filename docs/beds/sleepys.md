@@ -2,9 +2,7 @@
 
 **Status:** ❓ Needs testing
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
-
-**BOX25 Star credit:** Ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed) standalone integration
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 
 ## Known Models
 
