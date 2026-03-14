@@ -14,11 +14,13 @@ from custom_components.adjustable_bed import (
     SERVICE_GOTO_PRESET,
     SERVICE_SAVE_PRESET,
     SERVICE_STOP_ALL,
+    SERVICE_TIMED_MOVE,
     async_migrate_entry,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_RICHMAT,
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
@@ -525,3 +527,86 @@ class TestServices:
 
         # Verify command was sent
         mock_bleak_client.write_gatt_char.assert_called()
+
+    async def test_timed_move_service_accepts_malouf_bed_height(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Timed move should accept the Hi-Lo bed_height motor for Malouf layouts."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Malouf Timed Move Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:10",
+                CONF_NAME: "Malouf Timed Move Bed",
+                CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:10",
+            entry_id="malouf_timed_move_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": [device_id],
+                "motor": "bed_height",
+                "direction": "up",
+                "duration_ms": 1000,
+            },
+            blocking=True,
+        )
+
+        assert mock_bleak_client.write_gatt_char.call_count >= 1
+
+    async def test_timed_move_service_rejects_bed_height_for_standard_layout(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Timed move should reject bed_height for beds that do not expose it."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(ServiceValidationError, match="Valid motors: back, legs"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_TIMED_MOVE,
+                {
+                    "device_id": [device_id],
+                    "motor": "bed_height",
+                    "direction": "up",
+                    "duration_ms": 1000,
+                },
+                blocking=True,
+            )

@@ -60,6 +60,15 @@ ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
+TIMED_MOVE_MOTOR_OPTIONS = (
+    "back",
+    "legs",
+    "head",
+    "feet",
+    "tilt",
+    "lumbar",
+    "bed_height",
+)
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
@@ -688,74 +697,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 )
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
-
-            # Get config entry for motor count validation
-            entry: ConfigEntry | None = None
-            for entry_id, existing_coord in hass.data[DOMAIN].items():
-                if existing_coord is coordinator:
-                    entry = hass.config_entries.async_get_entry(entry_id)
-                    break
-
-            if not entry:
-                raise ServiceValidationError(
-                    f"Could not find config entry for device {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-
-            bed_type = entry.data.get(CONF_BED_TYPE)
-            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-
-            # Define motor configurations for timed move
-            # For Keeson/Ergomotion: only head and feet are valid
-            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet)
-            is_keeson_ergomotion = bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION)
-
-            if is_keeson_ergomotion:
-                valid_motors = {"head", "feet"}
-                motor_configs: dict[str, dict[str, Any]] = {
-                    "head": {
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    },
-                    "feet": {
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    },
+            controller = await _get_controller_for_service(coordinator)
+            motor_configs = {
+                spec.key: {
+                    "move_up_fn": spec.open_fn,
+                    "move_down_fn": spec.close_fn,
+                    "move_stop_fn": spec.stop_fn,
                 }
-            else:
-                motor_configs = {
-                    "back": {
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "min_motors": 2,
-                    },
-                    "legs": {
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "min_motors": 2,
-                    },
-                    "head": {
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "min_motors": 3,
-                    },
-                    "feet": {
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "min_motors": 4,
-                    },
-                }
-                valid_motors = {
-                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
-                }
+                for spec in controller.motor_control_specs
+                if spec.key in TIMED_MOVE_MOTOR_OPTIONS
+            }
+            valid_motors = set(motor_configs)
 
             # Validate motor is valid for this bed
             if motor not in valid_motors:
@@ -835,7 +787,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
+                vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
                     vol.Coerce(int),

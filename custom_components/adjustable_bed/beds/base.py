@@ -10,7 +10,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
@@ -20,6 +21,21 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
+
+
+@dataclass(frozen=True, slots=True)
+class MotorControlSpec:
+    """Describes a motor control surface exposed by a controller."""
+
+    key: str
+    translation_key: str
+    open_fn: MotorCommandCallable
+    close_fn: MotorCommandCallable
+    stop_fn: MotorCommandCallable
+    position_key: str | None = None
+    max_angle: int = 68
 
 
 class BedController(ABC):
@@ -690,6 +706,128 @@ class BedController(ABC):
         (e.g., "keeson_back", "keeson_legs", "keeson_head").
         """
         return None
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Return motor controls that should be exposed for this controller."""
+        translation_overrides = self.motor_translation_keys or {}
+        motor_count = self._coordinator.motor_count
+
+        def _spec(
+            key: str,
+            open_fn: MotorCommandCallable,
+            close_fn: MotorCommandCallable,
+            stop_fn: MotorCommandCallable,
+            *,
+            position_key: str | None = None,
+            max_angle: int = 68,
+        ) -> MotorControlSpec:
+            return MotorControlSpec(
+                key=key,
+                translation_key=translation_overrides.get(key, key),
+                open_fn=open_fn,
+                close_fn=close_fn,
+                stop_fn=stop_fn,
+                position_key=position_key,
+                max_angle=max_angle,
+            )
+
+        specs = [
+            _spec(
+                "back",
+                lambda ctrl: ctrl.move_back_up(),
+                lambda ctrl: ctrl.move_back_down(),
+                lambda ctrl: ctrl.move_back_stop(),
+            ),
+            _spec(
+                "legs",
+                lambda ctrl: ctrl.move_legs_up(),
+                lambda ctrl: ctrl.move_legs_down(),
+                lambda ctrl: ctrl.move_legs_stop(),
+                max_angle=45,
+            ),
+        ]
+
+        if motor_count >= 3:
+            specs.append(
+                _spec(
+                    "head",
+                    lambda ctrl: ctrl.move_head_up(),
+                    lambda ctrl: ctrl.move_head_down(),
+                    lambda ctrl: ctrl.move_head_stop(),
+                )
+            )
+
+        if motor_count >= 4:
+            specs.append(
+                _spec(
+                    "feet",
+                    lambda ctrl: ctrl.move_feet_up(),
+                    lambda ctrl: ctrl.move_feet_down(),
+                    lambda ctrl: ctrl.move_feet_stop(),
+                    max_angle=45,
+                )
+            )
+
+        if self.has_lumbar_support:
+            specs.append(
+                _spec(
+                    "lumbar",
+                    lambda ctrl: ctrl.move_lumbar_up(),
+                    lambda ctrl: ctrl.move_lumbar_down(),
+                    lambda ctrl: ctrl.move_lumbar_stop(),
+                    max_angle=30,
+                )
+            )
+
+        if self.has_pillow_support:
+            specs.append(
+                _spec(
+                    "pillow",
+                    lambda ctrl: ctrl.move_pillow_up(),
+                    lambda ctrl: ctrl.move_pillow_down(),
+                    lambda ctrl: ctrl.move_pillow_stop(),
+                )
+            )
+
+        if self.has_tilt_support:
+            specs.append(
+                _spec(
+                    "tilt",
+                    lambda ctrl: ctrl.move_tilt_up(),
+                    lambda ctrl: ctrl.move_tilt_down(),
+                    lambda ctrl: ctrl.move_tilt_stop(),
+                    max_angle=45,
+                )
+            )
+
+        if self.has_hip_support:
+            specs.append(
+                _spec(
+                    "hip",
+                    lambda ctrl: ctrl.move_hip_up(),
+                    lambda ctrl: ctrl.move_hip_down(),
+                    lambda ctrl: ctrl.move_hip_stop(),
+                    max_angle=45,
+                )
+            )
+
+        if self.has_bed_height_support:
+            specs.append(
+                _spec(
+                    "bed_height",
+                    lambda ctrl: ctrl.move_bed_height_up(),
+                    lambda ctrl: ctrl.move_bed_height_down(),
+                    lambda ctrl: ctrl.move_bed_height_stop(),
+                )
+            )
+
+        return tuple(specs)
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return motor entity keys that should be removed when this controller loads."""
+        return frozenset()
 
     # Lumbar motor control (optional - only some beds have this)
 

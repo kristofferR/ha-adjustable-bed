@@ -114,6 +114,12 @@ timed_move:
               value: head
             - label: Feet
               value: feet
+            - label: Tilt
+              value: tilt
+            - label: Lumbar
+              value: lumbar
+            - label: Bed Height
+              value: bed_height
     direction:
       name: Direction
       description: Direction to move the motor.

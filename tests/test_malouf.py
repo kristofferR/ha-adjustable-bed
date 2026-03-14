@@ -504,6 +504,51 @@ class TestMaloufCapabilities:
 
         assert coordinator.controller.memory_slot_count == 2
 
+    async def test_new_okin_exposes_hilo_motor_layout(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_new_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test NEW_OKIN exposes the Hi-Lo motor layout without head/feet aliases."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
+        await coordinator.async_connect()
+
+        specs = coordinator.controller.motor_control_specs
+
+        assert [spec.key for spec in specs] == [
+            "back",
+            "legs",
+            "tilt",
+            "lumbar",
+            "bed_height",
+        ]
+        assert specs[2].translation_key == "head_end_tilt"
+        assert specs[3].translation_key == "foot_end_tilt"
+        assert coordinator.controller.stale_motor_entity_keys == {"head", "feet"}
+
+    async def test_legacy_okin_exposes_hilo_motor_layout(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_legacy_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test LEGACY_OKIN exposes the Hi-Lo motor layout without head/feet aliases."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
+        await coordinator.async_connect()
+
+        specs = coordinator.controller.motor_control_specs
+
+        assert [spec.key for spec in specs] == [
+            "back",
+            "legs",
+            "tilt",
+            "lumbar",
+            "bed_height",
+        ]
+        assert specs[2].translation_key == "head_end_tilt"
+        assert specs[3].translation_key == "foot_end_tilt"
+
     async def test_does_not_support_memory_programming(
         self,
         hass: HomeAssistant,
