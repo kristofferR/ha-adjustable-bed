@@ -2,7 +2,7 @@
 
 **Status:** ✅ Tested
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby) and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
 ## Known Models
 
