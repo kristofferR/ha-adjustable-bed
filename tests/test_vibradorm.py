@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.exc import BleakCharacteristicNotFoundError
@@ -242,6 +242,19 @@ class TestVibradormController:
 
         assert coordinator.controller.supports_position_feedback is True
 
+    async def test_vmat_basic_rf_cbi_disables_position_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """VMAT-BASIC-RF-CBI should follow the OEM app's write-only control path."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        coordinator._ble_model = "VMAT-BASIC-RF-CBI"
+
+        assert coordinator.controller.supports_position_feedback is False
+
     async def test_disables_polling_during_commands(
         self,
         hass: HomeAssistant,
@@ -304,6 +317,33 @@ class TestVibradormController:
 
         first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
         assert first_call_char_uuid == VIBRADORM_SECONDARY_COMMAND_CHAR_UUID
+
+    async def test_vmat_basic_rf_cbi_does_not_use_secondary_command_uuid_for_movement(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """VMAT-BASIC-RF-CBI movement should stay on 0x1526 like the OEM app."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        coordinator._ble_model = "VMAT-BASIC-RF-CBI"
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        secondary_service = _MockService(
+            VIBRADORM_SECONDARY_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_SECONDARY_COMMAND_CHAR_UUID, ["read", "write"]),
+            ],
+        )
+        mock_client.services = _MockServices([secondary_service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == VIBRADORM_COMMAND_CHAR_UUID
 
     async def test_resolves_secondary_alt_command_characteristic(
         self,
@@ -591,6 +631,187 @@ class TestVibradormController:
 
         first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
         assert first_call_char_uuid == VIBRADORM_COMMAND_CHAR_UUID
+
+    async def test_resolves_command_char_on_standard_base_alias_service(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controller should accept VMAT UUIDs normalized to the Bluetooth base UUID."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        service_uuid = "00001525-0000-1000-8000-00805f9b34fb"
+        command_uuid = "00001526-0000-1000-8000-00805f9b34fb"
+        service = _MockService(
+            service_uuid,
+            [
+                _MockCharacteristic(command_uuid, ["write-without-response"]),
+            ],
+        )
+        mock_client.services = _MockServices([service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call_char_uuid = str(mock_client.write_gatt_char.call_args_list[0].args[0]).lower()
+        assert first_call_char_uuid == command_uuid
+
+    async def test_start_notify_and_position_request_use_standard_base_alias_uuids(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Notify and CBI resolution should accept VMAT UUIDs normalized to base UUIDs."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        service_uuid = "00001525-0000-1000-8000-00805f9b34fb"
+        command_uuid = "00001526-0000-1000-8000-00805f9b34fb"
+        cbi_uuid = "00001550-0000-1000-8000-00805f9b34fb"
+        notify_uuid = "00001551-0000-1000-8000-00805f9b34fb"
+        service = _MockService(
+            service_uuid,
+            [
+                _MockCharacteristic(command_uuid, ["write-without-response"]),
+                _MockCharacteristic(cbi_uuid, ["write-without-response"]),
+                _MockCharacteristic(notify_uuid, ["notify"]),
+            ],
+        )
+        mock_client.services = _MockServices([service])
+        mock_client.start_notify.reset_mock()
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.start_notify(lambda *_: None)
+        await controller.read_positions()
+
+        started_notify_uuid = str(mock_client.start_notify.call_args_list[0].args[0]).lower()
+        written_uuids = [str(call.args[0]).lower() for call in mock_client.write_gatt_char.call_args_list]
+
+        assert started_notify_uuid == notify_uuid
+        assert cbi_uuid in written_uuids
+
+    async def test_vmat_basic_rf_cbi_skips_position_request(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """VMAT-BASIC-RF-CBI should not send CmdGetStatusMotMon in normal operation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        coordinator._ble_model = "VMAT-BASIC-RF-CBI"
+        mock_client = coordinator._client
+        assert mock_client is not None
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.read_positions()
+
+        mock_client.write_gatt_char.assert_not_called()
+
+    async def test_async_connect_disables_angle_sensing_for_vmat_basic_rf_cbi(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """RF-CBI variants should skip angle sensing and notification startup at connect."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Vibradorm RF-CBI Test Bed",
+            data={**mock_vibradorm_config_entry_data, CONF_DISABLE_ANGLE_SENSING: False},
+            unique_id="AA:BB:CC:DD:EE:FC",
+            entry_id="vibradorm_rf_cbi_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new=AsyncMock(return_value=("Vibradorm GmbH", "VMAT-BASIC-RF-CBI")),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            connected = await coordinator.async_connect()
+
+        assert connected is True
+        assert coordinator.disable_angle_sensing is True
+        assert coordinator.controller.supports_position_feedback is False
+        coordinator._client.start_notify.assert_not_called()
+
+    async def test_resolves_exact_command_uuid_even_when_write_properties_missing(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Known VMAT command UUIDs should win even if proxy metadata omits write flags."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        service = _MockService(
+            VIBRADORM_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_COMMAND_CHAR_UUID, []),
+            ],
+        )
+        mock_client.services = _MockServices([service])
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.move_head_up()
+
+        first_call = mock_client.write_gatt_char.call_args_list[0]
+        assert str(first_call.args[0]).lower() == VIBRADORM_COMMAND_CHAR_UUID
+        assert first_call.kwargs["response"] is True
+
+    async def test_start_notify_uses_exact_notify_uuid_even_when_properties_missing(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Known VMAT notify UUIDs should win even if proxy metadata omits notify flags."""
+        del mock_coordinator_connected
+
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert isinstance(controller, VibradormController)
+        mock_client = coordinator._client
+        assert mock_client is not None
+
+        service = _MockService(
+            VIBRADORM_SERVICE_UUID,
+            [
+                _MockCharacteristic(VIBRADORM_COMMAND_CHAR_UUID, ["write"]),
+                _MockCharacteristic(VIBRADORM_NOTIFY_CHAR_UUID, []),
+            ],
+        )
+        mock_client.services = _MockServices([service])
+        mock_client.start_notify.reset_mock()
+
+        await controller.start_notify(lambda *_: None)
+
+        started_notify_uuid = str(mock_client.start_notify.call_args_list[0].args[0]).lower()
+        assert started_notify_uuid == VIBRADORM_NOTIFY_CHAR_UUID
 
     async def test_resolves_writable_char_on_unknown_service_fallback(
         self,

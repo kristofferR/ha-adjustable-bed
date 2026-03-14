@@ -69,6 +69,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SOLACE,
+    BED_TYPE_VIBRADORM,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
@@ -982,6 +983,19 @@ class AdjustableBedCoordinator:
                     manufacturer_data=manufacturer_data,
                 )
                 _LOGGER.debug("Controller created successfully")
+
+                if (
+                    self._bed_type == BED_TYPE_VIBRADORM
+                    and not self._disable_angle_sensing
+                    and not self._controller.supports_position_feedback
+                ):
+                    self._disable_angle_sensing = True
+                    _LOGGER.info(
+                        "Disabling angle sensing for %s: BLE model %s uses the OEM app's "
+                        "write-only VMAT control path without position feedback",
+                        self._address,
+                        self._ble_model or self._get_model(),
+                    )
 
                 if self._bed_type == BED_TYPE_LIMOSS and hasattr(
                     self._controller, "reset_max_raw_estimate"
