@@ -310,6 +310,55 @@ class TestJensenPinUnlockCommand:
         )
 
 
+class TestJensenNotificationStartup:
+    """Test Jensen notification startup behavior."""
+
+    async def test_start_notify_none_sends_pin_then_read_position(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test callback-less startup still warms up Jensen command acceptance."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.start_notify(None)
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) >= 2
+        assert calls[0].args == (
+            JENSEN_CHAR_UUID,
+            bytes([0x1E, 0x03, 0x00, 0x06, 0x00, 0x00]),
+        )
+        assert calls[0].kwargs == {"response": True}
+        assert calls[1].args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
+        assert calls[1].kwargs == {"response": True}
+
+    async def test_start_notify_none_keeps_position_updates_ignored(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test callback-less startup still ignores position notifications."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.start_notify(None)
+        coordinator.controller._handle_notification(
+            MagicMock(),
+            bytearray([0x10, 0x00, 0x00, 0x64, 0x00, 0x32]),
+        )
+
+        assert coordinator.controller._notify_callback is None
+        assert coordinator._position_data == {}
+
+
 class TestJensenCoordinatorAuthRefresh:
     """Test Jensen command auth refresh in coordinator command paths."""
 
@@ -454,10 +503,14 @@ class TestJensenMovement:
     def _get_motor_commands(self, calls):
         """Extract only motor commands (starting with 0x10) from call list.
 
-        Jensen beds send PIN unlock (0x1E) and config query (0x0A) during start_notify,
-        so we need to filter to just motor commands for movement tests.
+        Jensen beds send PIN unlock (0x1E), config query (0x0A), and a READ_POSITION
+        warm-up during start_notify, so we need to filter to just movement commands.
         """
-        return [call[0][1] for call in calls if call[0][1][0] == 0x10]
+        return [
+            call[0][1]
+            for call in calls
+            if call[0][1][0] == 0x10 and call[0][1] != JensenCommands.READ_POSITION
+        ]
 
     async def test_move_head_up(
         self,
@@ -552,6 +605,35 @@ class TestJensenMovement:
 
 class TestJensenPresets:
     """Test Jensen preset commands."""
+
+    async def test_first_flat_after_connect_has_jensen_warmup(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test fresh Jensen connections warm up before the first flat preset."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.async_execute_controller_command(
+            lambda ctrl: ctrl.preset_flat(),
+        )
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        warmup_index = next(
+            idx
+            for idx, write_call in enumerate(calls)
+            if write_call.args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
+        )
+        flat_index = next(
+            idx
+            for idx, write_call in enumerate(calls)
+            if write_call.args == (JENSEN_CHAR_UUID, JensenCommands.PRESET_FLAT)
+        )
+
+        assert warmup_index < flat_index
 
     async def test_preset_flat(
         self,

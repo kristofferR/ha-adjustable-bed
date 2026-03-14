@@ -69,6 +69,7 @@ Command types:
 ### PIN Unlock Command
 
 The PIN unlock command must be sent immediately after enabling notifications, before any other commands will work.
+The integration also sends a one-time `READ_POSITION` warm-up right after PIN unlock, even when angle sensing is disabled, because some Jensen beds ignore the first preset command after reconnect unless they have already seen a `0x10` command.
 
 | Command | Bytes (hex) | Notes |
 |---------|-------------|-------|

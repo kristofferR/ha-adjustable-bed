@@ -450,9 +450,10 @@ class JensenController(BedController):
             _LOGGER.debug("Sending Jensen PIN unlock command")
             await self.send_pin()
 
-            # Request initial position reading only if angle sensing is enabled
-            if callback is not None:
-                await self.read_positions()
+            # Jensen beds can ignore the first flat preset after reconnect unless they
+            # see a 0x10 command first. Always send one READ_POSITION warm-up even when
+            # angle sensing is disabled; with callback=None we still avoid state updates.
+            await self.read_positions()
 
         except BleakError as err:
             _LOGGER.warning("Failed to start Jensen notifications: %s", err)
