@@ -30,9 +30,10 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 
 **Protocol Selection:**
 
-- If your device name starts with **"Star"**, use the BOX25 Star variant
+- If your device name starts with **"Star"** and advertises Nordic UART, use the BOX25 Star variant
 - If your bed has **lumbar control** (but no Star name), use the BOX15 variant
 - If your bed has **OKIN 64-bit service UUID** (62741523-...), use BOX24
+- Octo Star2 beds also use `Star2` names, but they advertise the Octo Star2 UUID and are detected as Octo first
 - When in doubt, try BOX24 first (simplest protocol)
 
 ## Features
@@ -43,7 +44,7 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 | Lumbar Motor | ✅ | ❌ | ✅ |
 | Neck Tilt Motor | ❌ | ❌ | ✅ |
 | Position Feedback | ❌ | ❌ | ✅ (0-100%) |
-| Direct Position Control | ❌ | ❌ | ✅ |
+| Direct Position Control | ❌ | ❌ | ✅ (protocol: head/feet/lumbar) |
 | Memory Presets | ❌ | ❌ | ✅ (4 slots) |
 | Memory Programming | ❌ | ❌ | ✅ |
 | Flat Preset | ✅ | ✅ | ✅ |
@@ -152,6 +153,10 @@ A5 5A 00 00 00 40 02
 
 **BLE Device Name:** Starts with `Star` (e.g., `Star1234`)
 
+**Integration motor surface:** `head`, `feet`, `lumbar`, `tilt`
+
+**Integration direct-position surface:** `head` and `feet` sliders/services. The protocol also reports lumbar position and accepts direct lumbar position commands, but neck tilt does not currently have a protocol-backed position zone.
+
 The BOX25 Star uses a multi-subsystem protocol with a two-track initialization:
 
 1. **Wake:** Send `5A 0B 00 A5`, wait 150ms
@@ -211,7 +216,7 @@ Presets require a confirmation: send the preset command, then send `MOTOR_STOP` 
 
 ```text
 [0-1]  Header: 03 F0
-[2]    Zone (0x00=head, 0x01=foot, 0x02=core, 0x07=sync)
+[2]    Zone (0x00=head, 0x01=foot, 0x02=lumbar, 0x07=sync)
 [3]    Position (0-100)
 [4]    Reserved: 0x00
 ```
@@ -285,9 +290,10 @@ From app disassembly:
 
 ## Detection
 
-Sleepy's Elite beds are **auto-detected** by device name patterns:
+Sleepy's Elite beds are auto-detected by name plus BLE services:
 
-- Device names starting with "star" (case-insensitive) → BOX25 Star
+- Device names starting with "star" (case-insensitive) plus Nordic UART → BOX25 Star
+- Device names starting with "star" without Nordic UART are treated as a low-confidence BOX25 match because Octo Star2 uses similar names
 - Device names containing "sleepy" or "mfrm" (case-insensitive):
   - OKIN 64-bit service (62741523-...) → BOX24
   - FFE5 service (0000FFE5-...) → BOX15

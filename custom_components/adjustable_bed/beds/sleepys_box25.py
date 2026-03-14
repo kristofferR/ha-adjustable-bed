@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..const import NORDIC_UART_WRITE_CHAR_UUID
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -86,19 +86,18 @@ class Box25Commands:
     MEMORY_STORE_3 = bytes([0x05, 0x02, 0x00, 0x00, 0x04, 0x00, 0x00])
     MEMORY_STORE_4 = bytes([0x05, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00])
 
-    MEMORY_RECALL = {
-        1: MEMORY_RECALL_1,
-        2: MEMORY_RECALL_2,
-        3: MEMORY_RECALL_3,
-        4: MEMORY_RECALL_4,
-    }
-
-    MEMORY_STORE = {
-        1: MEMORY_STORE_1,
-        2: MEMORY_STORE_2,
-        3: MEMORY_STORE_3,
-        4: MEMORY_STORE_4,
-    }
+    MEMORY_RECALL: tuple[bytes, bytes, bytes, bytes] = (
+        MEMORY_RECALL_1,
+        MEMORY_RECALL_2,
+        MEMORY_RECALL_3,
+        MEMORY_RECALL_4,
+    )
+    MEMORY_STORE: tuple[bytes, bytes, bytes, bytes] = (
+        MEMORY_STORE_1,
+        MEMORY_STORE_2,
+        MEMORY_STORE_3,
+        MEMORY_STORE_4,
+    )
 
     # ─── Lighting (04 E0 prefix, 6 bytes) ────────────────────────────────
     LIGHT_OFF = bytes([0x04, 0xE0, 0x01, 0x00, 0x00, 0x00])
@@ -189,6 +188,10 @@ class SleepysBox25Controller(BedController):
         return True
 
     @property
+    def has_tilt_support(self) -> bool:
+        return True
+
+    @property
     def supports_lights(self) -> bool:
         return True
 
@@ -208,62 +211,154 @@ class SleepysBox25Controller(BedController):
     def supports_direct_position_control(self) -> bool:
         return True
 
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Expose the BOX25 motor surface using the integration's public motor names."""
+        return (
+            MotorControlSpec(
+                key="head",
+                translation_key="head",
+                open_fn=lambda ctrl: ctrl.move_head_up(),
+                close_fn=lambda ctrl: ctrl.move_head_down(),
+                stop_fn=lambda ctrl: ctrl.move_head_stop(),
+                position_key="head",
+                max_angle=100,
+            ),
+            MotorControlSpec(
+                key="feet",
+                translation_key="feet",
+                open_fn=lambda ctrl: ctrl.move_feet_up(),
+                close_fn=lambda ctrl: ctrl.move_feet_down(),
+                stop_fn=lambda ctrl: ctrl.move_feet_stop(),
+                position_key="feet",
+                max_angle=100,
+            ),
+            MotorControlSpec(
+                key="lumbar",
+                translation_key="lumbar",
+                open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                position_key="lumbar",
+                max_angle=100,
+            ),
+            MotorControlSpec(
+                key="tilt",
+                translation_key="head_end_tilt",
+                open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                max_angle=45,
+            ),
+        )
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove stale standard-layout entities from older BOX25 setups."""
+        return frozenset({"back", "legs"})
+
     # ─── Init / Write Helpers ────────────────────────────────────────────
 
-    async def _ensure_wake(self) -> None:
+    def _effective_cancel_event(
+        self,
+        cancel_event: asyncio.Event | None = None,
+    ) -> asyncio.Event | None:
+        """Return the command-specific cancel event, falling back to the coordinator event."""
+        return cancel_event if cancel_event is not None else self._coordinator.cancel_command
+
+    def _is_cancelled(self, cancel_event: asyncio.Event | None = None) -> bool:
+        """Return True when the active cancel event has been set."""
+        effective_cancel = self._effective_cancel_event(cancel_event)
+        return effective_cancel.is_set() if effective_cancel is not None else False
+
+    async def _ensure_wake(self, cancel_event: asyncio.Event | None = None) -> None:
         """Send wake command to ensure the controller is responsive."""
+        if self._is_cancelled(cancel_event):
+            return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             Box25Commands.WAKE,
+            cancel_event=cancel_event,
         )
+        if self._is_cancelled(cancel_event):
+            return
         await asyncio.sleep(_WAKE_DELAY)
 
-    async def _ensure_motor_init(self) -> None:
-        """Ensure motor subsystem is initialized.
+    async def _ensure_motor_init(self, cancel_event: asyncio.Event | None = None) -> None:
+        """Ensure motor subsystem is initialized."""
+        if self._motor_initialized or self._is_cancelled(cancel_event):
+            return
 
-        Sets the init flag only after the write succeeds. If the write
-        raises or is cancelled, the flag stays False so the next call
-        retries the handshake.
-        """
-        if not self._motor_initialized:
-            await self._ensure_wake()
-            await self._write_gatt_with_retry(
-                self.control_characteristic_uuid,
-                Box25Commands.MOTOR_INIT,
-            )
-            await asyncio.sleep(_INIT_DELAY)
-            self._motor_initialized = True
+        await self._ensure_wake(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid,
+            Box25Commands.MOTOR_INIT,
+            cancel_event=cancel_event,
+        )
+        if self._is_cancelled(cancel_event):
+            return
+        await asyncio.sleep(_INIT_DELAY)
+        if self._is_cancelled(cancel_event):
+            return
+        self._motor_initialized = True
 
-    async def _ensure_massage_light_init(self) -> None:
-        """Ensure massage/light subsystem is initialized.
+    async def _ensure_massage_light_init(
+        self,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Ensure massage/light subsystem is initialized."""
+        if self._massage_initialized or self._is_cancelled(cancel_event):
+            return
 
-        Sets the init flag only after the write succeeds. If the write
-        raises or is cancelled, the flag stays False so the next call
-        retries the handshake.
-        """
-        if not self._massage_initialized:
-            await self._ensure_wake()
-            await self._write_gatt_with_retry(
-                self.control_characteristic_uuid,
-                Box25Commands.MASSAGE_LIGHT_INIT,
-            )
-            await asyncio.sleep(_INIT_DELAY)
-            self._massage_initialized = True
+        await self._ensure_wake(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid,
+            Box25Commands.MASSAGE_LIGHT_INIT,
+            cancel_event=cancel_event,
+        )
+        if self._is_cancelled(cancel_event):
+            return
+        await asyncio.sleep(_INIT_DELAY)
+        if self._is_cancelled(cancel_event):
+            return
+        self._massage_initialized = True
 
-    async def _write_motor_command(self, command: bytes) -> None:
-        """Write a motor/preset command with motor init."""
-        await self._ensure_motor_init()
+    async def _write_motor_command(
+        self,
+        command: bytes,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a motor or preset command with motor init."""
+        if self._is_cancelled(cancel_event):
+            return
+        await self._ensure_motor_init(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
+            cancel_event=cancel_event,
         )
 
-    async def _write_massage_light_command(self, command: bytes) -> None:
-        """Write a massage/light command with massage/light init."""
-        await self._ensure_massage_light_init()
+    async def _write_massage_light_command(
+        self,
+        command: bytes,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write a massage or light command with subsystem init."""
+        if self._is_cancelled(cancel_event):
+            return
+        await self._ensure_massage_light_init(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
+            cancel_event=cancel_event,
         )
 
     async def write_command(
@@ -274,7 +369,11 @@ class SleepysBox25Controller(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a motor command with init sequence."""
-        await self._ensure_motor_init()
+        if self._is_cancelled(cancel_event):
+            return
+        await self._ensure_motor_init(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             command,
@@ -297,11 +396,8 @@ class SleepysBox25Controller(BedController):
 
         length = len(raw)
 
-        # Motor/movement status (7+ bytes with 05 prefix)
         if length >= 7 and raw[0] == 0x05:
             self._is_moving = any(b != 0 for b in raw[2:7])
-
-        # Position report (4+ bytes with 03 prefix)
         elif length >= 4 and raw[0] == 0x03:
             zone = raw[1]
             position = raw[2]
@@ -316,14 +412,11 @@ class SleepysBox25Controller(BedController):
                         self._notify_callback("feet", float(position))
                 elif zone == 0x02:
                     self._lumbar_position = float(position)
-                    # No standard callback key for lumbar in BedController;
-                    # store locally for future use
-
-        # Massage mode response (10 bytes with 08 prefix)
+                    if self._notify_callback:
+                        self._notify_callback("lumbar", float(position))
         elif length >= 8 and raw[0] == 0x08:
             mode_byte = raw[7]
             self._massage_active = mode_byte != 0
-            # Track current mode index for cycling
             if mode_byte in _MASSAGE_MODES:
                 self._massage_mode_index = _MASSAGE_MODES.index(mode_byte)
 
@@ -339,9 +432,7 @@ class SleepysBox25Controller(BedController):
             return
 
         try:
-            await client.start_notify(
-                NORDIC_UART_READ_CHAR_UUID, self._on_notification
-            )
+            await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
             _LOGGER.debug("Subscribed to BOX25 notifications")
         except BleakError:
             _LOGGER.warning("Could not subscribe to BOX25 notifications")
@@ -365,7 +456,13 @@ class SleepysBox25Controller(BedController):
 
     async def set_motor_position(self, motor: str, position: int) -> None:
         """Set a motor to a specific position (0-100)."""
-        zone_map = {"head": 0x00, "back": 0x00, "feet": 0x01, "legs": 0x01}
+        zone_map = {
+            "head": 0x00,
+            "back": 0x00,
+            "feet": 0x01,
+            "legs": 0x01,
+            "lumbar": 0x02,
+        }
         zone = zone_map.get(motor)
         if zone is None:
             raise ValueError(f"Unknown motor: {motor}")
@@ -446,13 +543,30 @@ class SleepysBox25Controller(BedController):
     async def move_neck_stop(self) -> None:
         await self._send_stop()
 
+    async def move_tilt_up(self) -> None:
+        """Expose the neck motor through the integration's standard tilt surface."""
+        await self.move_neck_up()
+
+    async def move_tilt_down(self) -> None:
+        """Expose the neck motor through the integration's standard tilt surface."""
+        await self.move_neck_down()
+
+    async def move_tilt_stop(self) -> None:
+        """Expose the neck motor through the integration's standard tilt surface."""
+        await self.move_neck_stop()
+
     # ─── Presets ─────────────────────────────────────────────────────────
 
     async def _send_preset(self, preset_cmd: bytes) -> None:
         """Send a preset command with the required confirm-with-stop pattern."""
-        await self._write_motor_command(preset_cmd)
-        await asyncio.sleep(_COMMAND_DELAY)
-        await self._write_motor_command(Box25Commands.MOTOR_STOP)
+        try:
+            await self._write_motor_command(preset_cmd)
+            await asyncio.sleep(_COMMAND_DELAY)
+        finally:
+            try:
+                await self._send_stop()
+            except (BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send STOP during BOX25 preset cleanup", exc_info=True)
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.PRESET_FLAT)
@@ -464,24 +578,30 @@ class SleepysBox25Controller(BedController):
         await self._send_preset(Box25Commands.PRESET_ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
-        """Move bed to lounge/relax position."""
+        """Move bed to lounge or relax position."""
         await self._send_preset(Box25Commands.PRESET_LOUNGE)
 
     async def preset_memory(self, memory_num: int) -> None:
-        cmd = Box25Commands.MEMORY_RECALL.get(memory_num)
-        if cmd is None:
+        if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_RECALL):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        await self._send_preset(cmd)
+        await self._send_preset(Box25Commands.MEMORY_RECALL[memory_num - 1])
 
     async def program_memory(self, memory_num: int) -> None:
-        cmd = Box25Commands.MEMORY_STORE.get(memory_num)
-        if cmd is None:
+        if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_STORE):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        await self._write_motor_command(cmd)
-        await asyncio.sleep(_COMMAND_DELAY)
-        await self._write_motor_command(Box25Commands.MOTOR_STOP)
+        try:
+            await self._write_motor_command(Box25Commands.MEMORY_STORE[memory_num - 1])
+            await asyncio.sleep(_COMMAND_DELAY)
+        finally:
+            try:
+                await self._send_stop()
+            except (BleakError, ConnectionError):
+                _LOGGER.debug(
+                    "Failed to send STOP during BOX25 memory-program cleanup",
+                    exc_info=True,
+                )
 
     # ─── Lights ──────────────────────────────────────────────────────────
 
@@ -492,7 +612,6 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
-        # No toggle command in protocol; default to on
         await self.lights_on()
 
     # ─── Massage ─────────────────────────────────────────────────────────
@@ -538,7 +657,7 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(cmd)
 
     async def massage_mode_step(self) -> None:
-        """Cycle through massage wave modes (wave1 → wave2 → wave3 → wave1)."""
+        """Cycle through massage wave modes (wave1 -> wave2 -> wave3 -> wave1)."""
         self._massage_mode_index = (self._massage_mode_index + 1) % len(_MASSAGE_MODES)
         mode_flag = _MASSAGE_MODES[self._massage_mode_index]
         cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, mode_flag, 0x00, 0x00])

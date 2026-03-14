@@ -643,27 +643,45 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     signals=signals,
                 )
 
+    # Check for Octo Star2 variant before generic Star* matching.
+    if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:octo_star2")
+        _LOGGER.info(
+            "Detected Octo Star2 bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
+
     # Check for Sleepy's Elite BOX25 Star - name pattern + Nordic UART service
     # BOX25 Star devices advertise as "Star*" and use Nordic UART for multi-subsystem protocol
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
         from .const import NORDIC_UART_SERVICE_UUID
 
         signals.append("name:sleepys_box25")
-        confidence = 0.3
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
             signals.append("uuid:nordic_uart")
-            confidence = 0.9
+            _LOGGER.info(
+                "Detected Sleepy's Elite BOX25 Star bed at %s (name: %s) with Nordic UART service",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_SLEEPYS_BOX25,
+                confidence=0.9,
+                signals=signals,
+            )
 
         _LOGGER.info(
-            "Detected Sleepy's Elite BOX25 Star bed at %s (name: %s)%s",
+            "Detected possible Sleepy's Elite BOX25 Star bed at %s (name: %s) by name pattern only",
             service_info.address,
             service_info.name,
-            " with Nordic UART service" if confidence >= 0.9 else " by name pattern",
         )
         return DetectionResult(
             bed_type=BED_TYPE_SLEEPYS_BOX25,
-            confidence=confidence,
+            confidence=0.3,
             signals=signals,
+            ambiguous_types=[BED_TYPE_OCTO],
         )
 
     # Check for TiMOTION AHF protocol by device name.
@@ -1141,16 +1159,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_SERTA, confidence=0.9, signals=signals)
-
-    # Check for Octo Star2 variant - service UUID detection
-    if OCTO_STAR2_SERVICE_UUID.lower() in service_uuids:
-        signals.append("uuid:octo_star2")
-        _LOGGER.info(
-            "Detected Octo Star2 bed at %s (name: %s)",
-            service_info.address,
-            service_info.name,
-        )
-        return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
     # Check for beds using FFE5 service UUID (Keeson, OKIN FFE, Malouf LEGACY, Serta)
     # Priority: Serta/Keeson name patterns > OKIN FFE > Keeson (default)

@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KEESON,
+    BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -201,6 +202,8 @@ async def async_setup_entry(
         )
 
         if has_position_feedback:
+            descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
+
             # Keeson and Ergomotion beds use different motor naming:
             # Head/Feet instead of Back/Legs, but position data still uses "back"/"legs" keys
             if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
@@ -209,9 +212,6 @@ async def async_setup_entry(
                     coordinator.name,
                     motor_count,
                 )
-
-                # Find the descriptions we need
-                descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
 
                 # Create head position (maps to "back" position data)
                 # Keeson/Ergomotion report percentage positions (0-100), not angles
@@ -254,6 +254,34 @@ async def async_setup_entry(
                     min_motors=2,
                 )
                 entities.append(AdjustableBedPositionNumber(coordinator, keeson_feet_desc))
+            elif bed_type == BED_TYPE_SLEEPYS_BOX25:
+                _LOGGER.debug(
+                    "Setting up BOX25 position numbers for %s",
+                    coordinator.name,
+                )
+
+                for key, position_key in (
+                    ("head_position", "head"),
+                    ("feet_position", "feet"),
+                ):
+                    description = descriptions_by_key[key]
+                    box25_desc = AdjustableBedNumberEntityDescription(
+                        key=description.key,
+                        translation_key=description.translation_key,
+                        icon=description.icon,
+                        native_min_value=0,
+                        native_max_value=100,
+                        native_step=1,
+                        native_unit_of_measurement="%",
+                        mode=description.mode,
+                        position_key=position_key,
+                        move_up_fn=description.move_up_fn,
+                        move_down_fn=description.move_down_fn,
+                        move_stop_fn=description.move_stop_fn,
+                        max_angle=100.0,
+                        min_motors=2,
+                    )
+                    entities.append(AdjustableBedPositionNumber(coordinator, box25_desc))
             else:
                 # Standard bed motor layout (Back/Legs/Head/Feet)
                 # Use configurable angle limits for beds that support angle-based positions

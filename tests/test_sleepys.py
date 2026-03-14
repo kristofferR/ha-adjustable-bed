@@ -5,11 +5,18 @@ Tests both BOX15 (9-byte with checksum) and BOX24 (7-byte) protocol variants.
 
 from __future__ import annotations
 
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.sleepys_box25 import (
+    Box25Commands,
+    SleepysBox25Controller,
+)
 from custom_components.adjustable_bed.beds.sleepys import (
     SleepysBox15Commands,
     SleepysBox15Controller,
@@ -20,6 +27,7 @@ from custom_components.adjustable_bed.beds.sleepys import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -27,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     KEESON_BASE_WRITE_CHAR_UUID,
+    NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX24_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -92,6 +101,36 @@ def mock_sleepys_box24_config_entry(
         data=mock_sleepys_box24_config_entry_data,
         unique_id="AA:BB:CC:DD:EE:FF",
         entry_id="sleepys_box24_test_entry",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.fixture
+def mock_sleepys_box25_config_entry_data() -> dict:
+    """Return mock config entry data for Sleepy's BOX25 bed."""
+    return {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:25",
+        CONF_NAME: "Sleepy's BOX25 Test",
+        CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+        CONF_MOTOR_COUNT: 4,
+        CONF_HAS_MASSAGE: False,
+        CONF_DISABLE_ANGLE_SENSING: False,
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+
+
+@pytest.fixture
+def mock_sleepys_box25_config_entry(
+    hass: HomeAssistant, mock_sleepys_box25_config_entry_data: dict
+) -> MockConfigEntry:
+    """Return a mock config entry for Sleepy's BOX25 bed."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Sleepy's BOX25 Test",
+        data=mock_sleepys_box25_config_entry_data,
+        unique_id="AA:BB:CC:DD:EE:25",
+        entry_id="sleepys_box25_test_entry",
     )
     entry.add_to_hass(hass)
     return entry
@@ -1129,3 +1168,147 @@ class TestSleepysProtocolDifferences:
         # BOX24: FOOT_UP=0x06, FOOT_DOWN=0x05
         assert SleepysBox24Commands.FOOT_UP == 0x06
         assert SleepysBox24Commands.FOOT_DOWN == 0x05
+
+
+class TestSleepysBox25Controller:
+    """Test SleepysBox25Controller."""
+
+    async def test_control_characteristic_uuid(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """BOX25 should use the Nordic UART write characteristic."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+
+        assert isinstance(coordinator.controller, SleepysBox25Controller)
+        assert coordinator.controller.control_characteristic_uuid == NORDIC_UART_WRITE_CHAR_UUID
+
+    async def test_motor_control_specs_expose_box25_layout(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """BOX25 should expose head/feet/lumbar/tilt and remove stale back/legs."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "lumbar",
+            "tilt",
+        ]
+        assert controller.motor_control_specs[3].translation_key == "head_end_tilt"
+        assert controller.stale_motor_entity_keys == {"back", "legs"}
+
+    async def test_lumbar_notifications_propagate(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Lumbar position notifications should reach coordinator callbacks."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        updates: list[tuple[str, float]] = []
+
+        await controller.start_notify(lambda key, value: updates.append((key, value)))
+
+        characteristic = MagicMock()
+        characteristic.uuid = "test-char"
+        controller._on_notification(characteristic, bytearray([0x03, 0x02, 55, 0x00]))
+
+        assert updates == [("lumbar", 55.0)]
+
+    async def test_cancelled_write_command_does_not_mark_init_complete(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Pre-cancelled writes should skip wake/init and leave init incomplete."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        mock_client = coordinator._client
+        cancel_event = asyncio.Event()
+        cancel_event.set()
+
+        with patch(
+            "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+            new=AsyncMock(),
+        ):
+            await controller.write_command(Box25Commands.HEAD_UP, cancel_event=cancel_event)
+
+        assert controller._motor_initialized is False
+        mock_client.write_gatt_char.assert_not_called()
+
+    async def test_preset_cleanup_always_sends_stop(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Preset failures should still run STOP cleanup."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with (
+            patch.object(
+                controller,
+                "_write_motor_command",
+                AsyncMock(side_effect=RuntimeError("boom")),
+            ),
+            patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
+            pytest.raises(RuntimeError, match="boom"),
+        ):
+            await controller.preset_flat()
+
+        mock_stop.assert_awaited_once()
+
+    async def test_program_memory_cleanup_always_sends_stop(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Memory-program failures should still run STOP cleanup."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with (
+            patch.object(
+                controller,
+                "_write_motor_command",
+                AsyncMock(side_effect=RuntimeError("boom")),
+            ),
+            patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
+            pytest.raises(RuntimeError, match="boom"),
+        ):
+            await controller.program_memory(1)
+
+        mock_stop.assert_awaited_once()
+
+    async def test_set_motor_position_supports_lumbar(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """BOX25 direct position control should use lumbar zone 0x02."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write:
+            await controller.set_motor_position("lumbar", 57)
+
+        mock_write.assert_awaited_once_with(bytes([0x03, 0xF0, 0x02, 57, 0x00]))

@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
@@ -54,6 +55,7 @@ from custom_components.adjustable_bed.const import (
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
+    NORDIC_UART_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
     REMACRO_SERVICE_UUID,
@@ -196,6 +198,17 @@ class TestDetectBedTypeByServiceUUID:
         )
         assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
+    def test_detect_sleepys_box25_by_name_and_nordic_uart(self):
+        """Star* plus Nordic UART should detect as BOX25."""
+        service_info = _make_service_info(
+            name="Star1234",
+            service_uuids=[NORDIC_UART_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert result.confidence == 0.9
+        assert "uuid:nordic_uart" in result.signals
+
     def test_detect_suta_by_fff0_uuid_and_name(self):
         """Test SUTA detection by FFF0 UUID + SUTA name pattern."""
         service_info = _make_service_info(
@@ -261,6 +274,14 @@ class TestDetectBedTypeByNamePattern:
         """Test MotoSleep detection by HHC prefix (uppercase)."""
         service_info = _make_service_info(name="HHC5678ABCD")
         assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
+
+    def test_detect_sleepys_box25_name_only_is_ambiguous(self):
+        """Star* without Nordic UART should remain a low-confidence BOX25 match."""
+        service_info = _make_service_info(name="Star1234")
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert result.confidence == 0.3
+        assert result.ambiguous_types == [BED_TYPE_OCTO]
 
     def test_detect_timotion_ahf_by_name(self):
         """Test TiMOTION AHF detection by AHF prefix."""

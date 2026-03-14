@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -131,6 +132,92 @@ class TestCoverEntities:
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_head") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_feet") is None
 
+    async def test_box25_cover_entities_use_box25_layout(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 should expose head/feet/lumbar/tilt covers, not back/legs."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleepy's BOX25 Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:25",
+                CONF_NAME: "Sleepy's BOX25 Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:25",
+            entry_id="sleepys_box25_cover_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        for key in ("head", "feet", "lumbar", "tilt"):
+            assert registry.async_get_entity_id(
+                "cover", DOMAIN, f"AA:BB:CC:DD:EE:25_{key}"
+            ) is not None
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:25_back") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:25_legs") is None
+
+    async def test_box25_cover_setup_removes_stale_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 setup should remove stale back/legs cover entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Legacy Sleepy's BOX25 Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:26",
+                CONF_NAME: "Legacy Sleepy's BOX25 Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:26",
+            entry_id="sleepys_box25_stale_cover_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:26_back",
+            config_entry=entry,
+            suggested_object_id="legacy_sleepys_box25_back",
+        )
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:26_legs",
+            config_entry=entry,
+            suggested_object_id="legacy_sleepys_box25_legs",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:26_back") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:26_legs") is None
+
     async def test_cover_open_close(
         self,
         hass: HomeAssistant,
@@ -202,6 +289,55 @@ class TestCoverEntities:
         )
 
         mock_bleak_client.write_gatt_char.assert_called()
+
+
+class TestNumberEntities:
+    """Test number entities."""
+
+    async def test_box25_number_entities_only_include_head_and_feet_position(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BOX25 should only create head_position and feet_position number entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleepy's BOX25 Numbers",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:27",
+                CONF_NAME: "Sleepy's BOX25 Numbers",
+                CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:27",
+            entry_id="sleepys_box25_number_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        assert registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:27_head_position"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:27_feet_position"
+        ) is not None
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_back_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_legs_position")
+            is None
+        )
 
 
 class TestButtonEntities:
