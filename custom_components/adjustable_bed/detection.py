@@ -28,6 +28,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -77,6 +78,9 @@ from .const import (
     ERGOMOTION_NAME_PATTERNS,
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
+    KAIDI_DISCOVERY_SERVICE_UUID,
+    KAIDI_MESH_SERVICE_UUID,
+    KAIDI_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_NAME_PATTERNS,
@@ -124,6 +128,7 @@ from .const import (
     # Detection result type
     DetectionResult,
 )
+from .kaidi_protocol import extract_kaidi_advertisement
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -331,6 +336,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
     BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, Serta)",
+    BED_TYPE_KAIDI: "Kaidi (Rize, Floyd, ISleep)",
     BED_TYPE_LINAK: "Linak",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
@@ -444,6 +450,30 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
 
     # Priority 2: Check for DewertOkin unique service UUID
+    kaidi_adv = extract_kaidi_advertisement(service_info.manufacturer_data)
+    has_kaidi_uuid = (
+        KAIDI_DISCOVERY_SERVICE_UUID.lower() in service_uuids
+        or KAIDI_MESH_SERVICE_UUID.lower() in service_uuids
+    )
+    has_kaidi_name = any(device_name.startswith(pattern) for pattern in KAIDI_NAME_PATTERNS)
+    if kaidi_adv and (has_kaidi_uuid or has_kaidi_name):
+        signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
+        if has_kaidi_uuid:
+            signals.append("uuid:kaidi")
+        if has_kaidi_name:
+            signals.append("name:mouselet")
+        confidence = 0.95 if KAIDI_MESH_SERVICE_UUID.lower() in service_uuids else 0.9
+        _LOGGER.info(
+            "Detected Kaidi bed at %s (name: %s) by advertisement payload",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_KAIDI,
+            confidence=confidence,
+            signals=signals,
+        )
+
     if DEWERTOKIN_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:dewertokin")
         _LOGGER.info(

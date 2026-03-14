@@ -22,6 +22,7 @@ Brand-specific controllers:
 from .base import BedController
 from .coolbase import CoolBaseController
 from .jensen import JensenController
+from .kaidi import KaidiController
 
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
@@ -71,6 +72,7 @@ __all__ = [
     "CoolBaseController",
     "JiecangController",
     "JensenController",
+    "KaidiController",
     "KeesonController",
     "LimossController",
     "LinakController",
