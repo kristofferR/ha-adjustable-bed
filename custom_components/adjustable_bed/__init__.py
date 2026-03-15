@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     BED_TYPE_BEDTECH,
@@ -101,6 +102,13 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the Adjustable Bed integration domain."""
+    hass.data.setdefault(DOMAIN, {})
+    await _async_register_services(hass)
+    return True
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate config entries to newer schema versions."""
     _LOGGER.debug(
@@ -178,6 +186,9 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+    await _async_register_services(hass)
+
     await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
 
@@ -262,14 +273,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Read initial positions in background (don't block startup)
     hass.async_create_task(coordinator.async_read_initial_positions())
 
-    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Register services if not already registered
-    await _async_register_services(hass)
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
@@ -1077,29 +1084,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await coordinator.async_disconnect()
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
-        # Unregister services if this was the last entry
-        if not hass.data[DOMAIN]:
-            _async_unregister_services(hass)
-
     return unload_ok
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options updates."""
     await hass.config_entries.async_reload(entry.entry_id)
-
-
-def _async_unregister_services(hass: HomeAssistant) -> None:
-    """Unregister Adjustable Bed services."""
-    for service in (
-        SERVICE_GOTO_PRESET,
-        SERVICE_SAVE_PRESET,
-        SERVICE_STOP_ALL,
-        SERVICE_SET_POSITION,
-        SERVICE_TIMED_MOVE,
-        SERVICE_RUN_DIAGNOSTICS,
-        SERVICE_GENERATE_SUPPORT_REPORT,
-    ):
-        if hass.services.has_service(DOMAIN, service):
-            hass.services.async_remove(DOMAIN, service)
-    _LOGGER.debug("Unregistered Adjustable Bed services")

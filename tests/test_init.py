@@ -11,7 +11,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
+    SERVICE_GENERATE_SUPPORT_REPORT,
     SERVICE_GOTO_PRESET,
+    SERVICE_RUN_DIAGNOSTICS,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_STOP_ALL,
@@ -87,6 +89,9 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
 
     async def test_setup_entry_connection_failed(
         self,
@@ -104,6 +109,9 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
 
     async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
         self,
@@ -181,14 +189,14 @@ class TestIntegrationUnload:
         assert mock_config_entry.state == ConfigEntryState.NOT_LOADED
         mock_bleak_client.disconnect.assert_called()
 
-    async def test_unload_last_entry_removes_services(
+    async def test_unload_last_entry_keeps_services_available(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Test unloading last entry removes services."""
+        """Test unloading last entry keeps services available for diagnostics."""
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -198,10 +206,12 @@ class TestIntegrationUnload:
         await hass.config_entries.async_unload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        # Services should be removed
-        assert not hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
-        assert not hass.services.has_service(DOMAIN, SERVICE_SAVE_PRESET)
-        assert not hass.services.has_service(DOMAIN, SERVICE_STOP_ALL)
+        # Services remain available so diagnostics can still be run without a loaded bed
+        assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+        assert hass.services.has_service(DOMAIN, SERVICE_SAVE_PRESET)
+        assert hass.services.has_service(DOMAIN, SERVICE_STOP_ALL)
+        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
 
     async def test_unload_keeps_services_with_remaining_entries(
         self,
@@ -244,8 +254,9 @@ class TestIntegrationUnload:
         await hass.config_entries.async_unload(second_entry.entry_id)
         await hass.async_block_till_done()
 
-        # Now services should be removed
-        assert not hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+        # Services remain available after the final entry unload
+        assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
+        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
 
 
 class TestMigration:
