@@ -55,8 +55,8 @@ body:
       description: |
         **To generate a diagnostic report:**
         1. Add your bed to Home Assistant using "Diagnostic/Unknown" as the bed type
-        2. Go to Developer Tools → Services
-        3. Call `adjustable_bed.generate_support_report` for your bed
+        2. Go to Developer Tools → Actions
+        3. Perform the `adjustable_bed.generate_support_report` action for your bed
         4. Attach the generated JSON file here
 
         This report contains all the BLE information we need (service UUIDs, device name, etc.) and is the easiest way to provide technical details.

@@ -61,9 +61,9 @@ body:
       label: Diagnostics / Support Report
       description: |
         **Quick Method (recommended):** Generate a support report with logs included:
-        1. Go to Developer Tools → Services
+        1. Go to Developer Tools → Actions
         2. Search for `adjustable_bed.generate_support_report`
-        3. Select your bed device and click "Call Service"
+        3. Select your bed device and click "Perform action"
         4. A notification will show the file location in your `/config/` folder
         5. Drag and drop the JSON file here
 
