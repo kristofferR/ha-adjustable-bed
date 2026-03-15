@@ -14,6 +14,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JENSEN,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -92,6 +93,11 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     "jiecang": {
         "display": "Jiecang",
         "description": "Glideaway, Dream Motion beds",
+        "variants": None,  # Single protocol
+    },
+    "kaidi": {
+        "display": "Kaidi",
+        "description": "Rize Remedy III, Floyd Home, ISleep (Mouselet devices)",
         "variants": None,  # Single protocol
     },
     "keeson": {
@@ -293,6 +299,7 @@ SINGLE_TYPE_GROUPS: Final[dict[str, str]] = {
     "ergomotion": BED_TYPE_ERGOMOTION,
     "jensen": BED_TYPE_JENSEN,
     "jiecang": BED_TYPE_JIECANG,
+    "kaidi": BED_TYPE_KAIDI,
     "linak": BED_TYPE_LINAK,
     "limoss": BED_TYPE_LIMOSS,
     "motosleep": BED_TYPE_MOTOSLEEP,
