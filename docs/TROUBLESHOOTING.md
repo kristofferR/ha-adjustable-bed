@@ -302,7 +302,7 @@ There are two ways to gather diagnostic information:
 
 | Feature | Debug Logging | Support Report |
 |---------|---------------|----------------|
-| **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Call `adjustable_bed.generate_support_report` service |
+| **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Perform the `adjustable_bed.generate_support_report` action |
 | **What it captures** | Real-time stream of all integration activity | Snapshot of device state at one moment |
 | **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, device info, GATT services |
 | **Size** | Large, includes unrelated entries from other integrations | Focused JSON file for one device |

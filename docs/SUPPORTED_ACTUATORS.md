@@ -126,7 +126,7 @@ These beds have their own dedicated integrations:
    - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
 
-4. **Use Diagnostic mode to find service UUIDs**: If unsure, add the device as "Diagnostic/Unknown" and run the `run_diagnostics` service. The output includes service UUIDs:
+4. **Use Diagnostic mode to find service UUIDs**: If unsure, add the device as "Diagnostic/Unknown" and run the `run_diagnostics` action. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant

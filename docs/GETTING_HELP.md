@@ -57,9 +57,9 @@ If you've found a bug, please file a [Bug Report](https://github.com/kristofferR
 
 The support report includes everything we need in one file:
 
-1. Go to **Developer Tools** → **Services**
+1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_report`
-3. Select your bed device and click **Call Service**
+3. Select your bed device and click **Perform action**
 4. A notification will show the file location (in your `/config/` folder)
 5. Attach the JSON file to your GitHub issue
 
@@ -106,7 +106,7 @@ If your bed isn't supported yet, file a [New Bed Support Request](https://github
 The easiest way is to use the integration's built-in tools:
 
 1. **Add the device in Diagnostic mode**: Settings → Integrations → Add Integration → Adjustable Bed → Manual entry → Select "Diagnostic/Unknown" as bed type
-2. **Run diagnostics**: Developer Tools → Services → `adjustable_bed.run_diagnostics` → Select your device
+2. **Run diagnostics**: Developer Tools → Actions → `adjustable_bed.run_diagnostics` → Select your device
 3. **Check the output file** in your `/config/` folder for service UUIDs and device info
 
 If your bed doesn't appear in Home Assistant at all (not visible to any Bluetooth adapter), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and is advertising.
@@ -143,14 +143,14 @@ Let us know if you can:
 
 For most troubleshooting, the **built-in diagnostics** provide everything needed:
 
-### Using run_diagnostics Service
+### Using run_diagnostics Action
 
-The `run_diagnostics` service captures GATT structure, device info, and notifications from your bed:
+The `run_diagnostics` action captures GATT structure, device info, and notifications from your bed:
 
-1. Go to **Developer Tools** → **Services**
+1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.run_diagnostics`
 3. Select your bed device (or enter a MAC address for unconfigured devices)
-4. Click **Call Service**
+4. Click **Perform action**
 5. Optionally operate your physical remote during capture to record notifications
 6. Find the JSON report in your `/config/` folder
 
