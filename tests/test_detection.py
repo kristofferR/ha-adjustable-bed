@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
+    KAIDI_MESH_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
     LEGGETT_GEN2_SERVICE_UUID,
@@ -112,8 +113,22 @@ class TestDetectBedTypeByServiceUUID:
         )
         assert detect_bed_type(service_info) == BED_TYPE_JENSEN
 
-    def test_detect_kaidi_by_payload_and_uuid(self):
-        """Test Kaidi detection by advertisement payload + FFC0 UUID."""
+    def test_detect_kaidi_by_manufacturer_data_only(self):
+        """Test Kaidi detection by manufacturer data alone (no UUID/name needed)."""
+        service_info = _make_service_info(
+            name="Unknown",
+            service_uuids=[],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KAIDI
+        assert result.confidence == 0.9
+        assert "manufacturer_payload:kaidi_type_2" in result.signals
+
+    def test_detect_kaidi_with_ffc0_uuid(self):
+        """Test Kaidi detection with FFC0 UUID gives higher confidence."""
         service_info = _make_service_info(
             name="Mouselet",
             service_uuids=[KAIDI_DISCOVERY_SERVICE_UUID],
@@ -123,7 +138,22 @@ class TestDetectBedTypeByServiceUUID:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_KAIDI
-        assert result.confidence == 0.9
+        assert result.confidence == 0.95
+        assert "uuid:kaidi" in result.signals
+        assert "name:kaidi" in result.signals
+
+    def test_detect_kaidi_with_mesh_uuid(self):
+        """Test Kaidi detection with mesh service UUID gives higher confidence."""
+        service_info = _make_service_info(
+            name="Unknown",
+            service_uuids=[KAIDI_MESH_SERVICE_UUID],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KAIDI
+        assert result.confidence == 0.95
         assert "uuid:kaidi" in result.signals
 
     def test_detect_vibradorm_by_uuid(self):

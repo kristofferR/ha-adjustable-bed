@@ -24,9 +24,12 @@ These apps share the same Kaidi OEM protocol family.
 
 ## Protocol Details
 
-**Advertised Service UUID:** `0000ffc0-0000-1000-8000-00805f9b34fb`  
-**Connected Service UUID:** `9e5d1e47-5c13-43a0-8635-82adffc0386f`  
-**Write Characteristic:** `9e5d1e47-5c13-43a0-8635-82adffc1386f`  
+**Advertised Service UUID:** `0000ffc0-0000-1000-8000-00805f9b34fb`
+**Advertised Name:** `Mouselet`
+**Manufacturer Data:** Company ID `0xFFFF` with marker bytes `0xC0FF`
+**Known MAC prefixes:** `00:95:69`, `F0:AC:D7`
+**GATT Service:** `9e5d1e47-5c13-43a0-8635-82adffc0386f`
+**Write Characteristic:** `9e5d1e47-5c13-43a0-8635-82adffc1386f`
 **Notify Characteristic:** `9e5d1e47-5c13-43a0-8635-82adffc2386f`
 
 ## How It Works

@@ -101,15 +101,41 @@ class KaidiController(BedController):
         cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
         if isinstance(cached_room_id, int):
             self._room_id = cached_room_id
+            _LOGGER.debug("Loaded cached room_id=%s from entry data", cached_room_id)
         if isinstance(cached_target_vaddr, int):
             self._target_vaddr = cached_target_vaddr
+            _LOGGER.debug("Loaded cached target_vaddr=%s from entry data", cached_target_vaddr)
+
+        if self._manufacturer_data:
+            _LOGGER.debug(
+                "Kaidi init manufacturer_data keys=%s, payload_lengths=%s",
+                list(self._manufacturer_data.keys()),
+                {k: len(v) for k, v in self._manufacturer_data.items()},
+            )
+            for company_id, payload in self._manufacturer_data.items():
+                _LOGGER.debug(
+                    "  company_id=%d (0x%04X): %s",
+                    company_id, company_id, payload.hex(),
+                )
+        else:
+            _LOGGER.debug("Kaidi init: no manufacturer_data available")
 
         advertisement = extract_kaidi_advertisement(self._manufacturer_data)
         if advertisement is not None:
+            _LOGGER.debug(
+                "Parsed Kaidi advertisement: type=%s room_id=%s vaddr=%s",
+                advertisement.adv_type, advertisement.room_id, advertisement.vaddr,
+            )
             if advertisement.room_id is not None:
                 self._room_id = advertisement.room_id
             if advertisement.vaddr is not None:
                 self._target_vaddr = advertisement.vaddr
+        elif self._manufacturer_data:
+            _LOGGER.warning(
+                "Manufacturer data present but not recognized as Kaidi advertisement "
+                "for %s - room ID cannot be extracted",
+                self._coordinator.address,
+            )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -247,6 +273,40 @@ class KaidiController(BedController):
         except TimeoutError as err:
             raise TimeoutError(f"Timed out waiting for Kaidi {name}") from err
 
+    def _try_resolve_room_id_from_ha(self) -> None:
+        """Attempt to resolve room ID from Home Assistant's Bluetooth scanner."""
+        hass = getattr(self._coordinator, "hass", None)
+        if hass is None:
+            return
+        try:
+            from ..kaidi_metadata import resolve_kaidi_advertisement
+            advertisement = resolve_kaidi_advertisement(
+                hass,
+                self._coordinator.address,
+                manufacturer_data=(self._manufacturer_data or None),
+            )
+            if advertisement is not None:
+                if advertisement.room_id is not None:
+                    self._room_id = advertisement.room_id
+                    _LOGGER.info(
+                        "Resolved Kaidi room ID %s from HA Bluetooth scanner for %s",
+                        self._room_id,
+                        self._coordinator.address,
+                    )
+                if advertisement.vaddr is not None and self._target_vaddr is None:
+                    self._target_vaddr = advertisement.vaddr
+                    _LOGGER.info(
+                        "Resolved Kaidi target vaddr %s from HA Bluetooth scanner for %s",
+                        self._target_vaddr,
+                        self._coordinator.address,
+                    )
+        except Exception:
+            _LOGGER.debug(
+                "Could not resolve Kaidi metadata from HA scanner for %s",
+                self._coordinator.address,
+                exc_info=True,
+            )
+
     async def _ensure_session_ready(self) -> None:
         """Ensure the Kaidi join sequence has completed."""
         if self._session_ready and self._target_vaddr is not None:
@@ -263,23 +323,49 @@ class KaidiController(BedController):
                     if self._target_vaddr is None:
                         self._target_vaddr = advertisement.vaddr
 
+            # Last resort: try to get manufacturer data from HA's Bluetooth scanner
+            if self._room_id is None:
+                _LOGGER.debug(
+                    "No Kaidi room ID from constructor data for %s, "
+                    "trying HA Bluetooth scanner...",
+                    self._coordinator.address,
+                )
+                self._try_resolve_room_id_from_ha()
+
             if self._room_id is None:
                 raise RuntimeError(
-                    "Kaidi room/home ID not found in advertisement data; the bed may need "
-                    "to be provisioned in the official app first."
+                    "Kaidi room/home ID not found in advertisement data for "
+                    f"{self._coordinator.address}. Ensure the bed is powered on and "
+                    "has been provisioned in the official Rize/Floyd/ISleep app. "
+                    "The bed must be broadcasting its mesh advertisement for the "
+                    "integration to extract the room ID."
                 )
 
             await self._ensure_notify_started()
 
+            join_packet = self._build_join_packet(self._room_id)
+            _LOGGER.debug(
+                "Sending Kaidi join packet for %s: room_id=%s, write_with_response=%s, "
+                "packet=%s",
+                self._coordinator.address,
+                self._room_id,
+                self._write_with_response,
+                join_packet.hex(),
+            )
             self._join_event.clear()
             self._join_status = None
             await self._write_gatt_with_retry(
                 KAIDI_WRITE_CHAR_UUID,
-                self._build_join_packet(self._room_id),
+                join_packet,
                 response=self._write_with_response,
             )
             await self._wait_for_event(self._join_event, timeout=5.0, name="join response")
 
+            _LOGGER.debug(
+                "Kaidi join response for %s: status=%s",
+                self._coordinator.address,
+                self._join_status,
+            )
             if self._join_status != 0:
                 raise RuntimeError(f"Kaidi join rejected with status {self._join_status}")
 

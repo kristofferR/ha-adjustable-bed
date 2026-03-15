@@ -360,13 +360,18 @@ TIMOTION_AHF_WRITE_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
 TIMOTION_AHF_NOTIFY_CHAR_UUID: Final = NORDIC_UART_READ_CHAR_UUID
 
 # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
-# The bed advertises FFC0 and exposes the actual command transport on the
-# 9e5d1e47-... service/characteristics after connection.
+# The bed advertises FFC0 service UUID, name "Mouselet", and manufacturer data
+# with BLE Company ID 0xFFFF and marker 0xC0FF. The OEM app discovers purely by
+# manufacturer data, but the other signals are present and useful for HA discovery.
+# The actual command transport is on the 9e5d1e47-... service/characteristics.
+KAIDI_MANUFACTURER_COMPANY_ID: Final = 0xFFFF
 KAIDI_DISCOVERY_SERVICE_UUID: Final = "0000ffc0-0000-1000-8000-00805f9b34fb"
 KAIDI_MESH_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
 KAIDI_WRITE_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
 KAIDI_NOTIFY_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
 KAIDI_NAME_PATTERNS: Final = ("mouselet",)
+# Known Kaidi OUI prefixes from decompiled app (getBtAddr MAC checks)
+KAIDI_MAC_PREFIXES: Final = ("00:95:69", "F0:AC:D7")
 KAIDI_JOIN_PASSWORD: Final = b"1122"
 KAIDI_BROADCAST_VADDR: Final = 0xFFFFFFFF
 

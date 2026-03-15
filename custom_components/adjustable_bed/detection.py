@@ -80,6 +80,7 @@ from .const import (
     JENSEN_NAME_PATTERNS,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
+    KAIDI_MAC_PREFIXES,
     KAIDI_MESH_SERVICE_UUID,
     KAIDI_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
@@ -452,24 +453,35 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             manufacturer_id=mfr_id,
         )
 
-    # Priority 2: Check for DewertOkin unique service UUID
+    # Priority 2: Kaidi detection - manufacturer data is the primary signal.
+    # The bed advertises FFC0 UUID, name "Mouselet", AND manufacturer data with
+    # Company ID 0xFFFF / marker 0xC0FF. Manufacturer data alone is sufficient
+    # for detection (matches the OEM app's discovery), but the other signals
+    # boost confidence when present.
     kaidi_adv = extract_kaidi_advertisement(service_info.manufacturer_data)
     has_kaidi_uuid = (
         KAIDI_DISCOVERY_SERVICE_UUID.lower() in service_uuids
         or KAIDI_MESH_SERVICE_UUID.lower() in service_uuids
     )
     has_kaidi_name = any(device_name.startswith(pattern) for pattern in KAIDI_NAME_PATTERNS)
-    if kaidi_adv and (has_kaidi_uuid or has_kaidi_name):
+    has_kaidi_mac = any(
+        service_info.address.upper().startswith(prefix)
+        for prefix in KAIDI_MAC_PREFIXES
+    )
+    if kaidi_adv:
         signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
         if has_kaidi_uuid:
             signals.append("uuid:kaidi")
         if has_kaidi_name:
-            signals.append("name:mouselet")
-        confidence = 0.95 if KAIDI_MESH_SERVICE_UUID.lower() in service_uuids else 0.9
+            signals.append("name:kaidi")
+        if has_kaidi_mac:
+            signals.append("mac:kaidi_oui")
+        confidence = 0.95 if has_kaidi_uuid else 0.9
         _LOGGER.info(
-            "Detected Kaidi bed at %s (name: %s) by advertisement payload",
+            "Detected Kaidi bed at %s (name: %s) by manufacturer data (type=%s)",
             service_info.address,
             service_info.name,
+            kaidi_adv.adv_type,
         )
         return DetectionResult(
             bed_type=BED_TYPE_KAIDI,
