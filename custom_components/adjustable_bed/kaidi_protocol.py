@@ -10,6 +10,7 @@ Home Assistant only needs a subset of that logic:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 KAIDI_ADV_MARKER = b"\xff\xff\xc0\xff"
@@ -122,6 +123,60 @@ def extract_kaidi_advertisement(
         if parsed is not None:
             return parsed
     return None
+
+
+def _kaidi_adv_rank(adv_type: int) -> int:
+    """Rank advertisement types by how much session metadata they carry."""
+    if adv_type == KAIDI_ADV_TYPE_BROADCAST:
+        return 3
+    if adv_type == KAIDI_ADV_TYPE_SINGLE:
+        return 2
+    if adv_type == KAIDI_ADV_TYPE_DISCOVERABLE:
+        return 1
+    return 0
+
+
+def merge_kaidi_advertisements(
+    advertisements: Iterable[KaidiAdvertisement | None],
+) -> KaidiAdvertisement | None:
+    """Merge multiple Kaidi advertisement snapshots into the best available state."""
+    merged: KaidiAdvertisement | None = None
+
+    for advertisement in advertisements:
+        if advertisement is None:
+            continue
+        if merged is None:
+            merged = advertisement
+            continue
+
+        adv_type = (
+            advertisement.adv_type
+            if _kaidi_adv_rank(advertisement.adv_type) > _kaidi_adv_rank(merged.adv_type)
+            else merged.adv_type
+        )
+        merged = KaidiAdvertisement(
+            adv_type=adv_type,
+            room_id=merged.room_id if merged.room_id is not None else advertisement.room_id,
+            vaddr=merged.vaddr if merged.vaddr is not None else advertisement.vaddr,
+            sofa_type=merged.sofa_type if merged.sofa_type is not None else advertisement.sofa_type,
+            company_id=(
+                merged.company_id
+                if merged.company_id is not None
+                else advertisement.company_id
+            ),
+        )
+
+    return merged
+
+
+def extract_best_kaidi_advertisement(
+    manufacturer_data_sets: Iterable[dict[int, bytes] | None],
+) -> KaidiAdvertisement | None:
+    """Parse and merge multiple manufacturer-data snapshots for one Kaidi device."""
+    return merge_kaidi_advertisements(
+        extract_kaidi_advertisement(manufacturer_data)
+        for manufacturer_data in manufacturer_data_sets
+    )
 
 
 def format_kaidi_node_address(node_bytes: bytes) -> str:

@@ -20,17 +20,20 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
-    BEDTECH_SERVICE_UUID,
     BED_TYPE_BEDTECH,
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
+    BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_TARGET_VADDR,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -43,6 +46,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .detection import detect_richmat_remote_from_name
+from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .unsupported import create_pairing_required_issue
 
 # Service constants
@@ -144,9 +148,38 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Cache Kaidi room/VADDR state from Bluetooth history for existing entries."""
+    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_KAIDI:
+        return
+
+    advertisement = resolve_kaidi_advertisement(
+        hass,
+        entry.data[CONF_ADDRESS],
+    )
+    if advertisement is None:
+        return
+
+    new_data = add_kaidi_entry_metadata(entry.data, advertisement)
+    if (
+        new_data.get(CONF_KAIDI_ROOM_ID) == entry.data.get(CONF_KAIDI_ROOM_ID)
+        and new_data.get(CONF_KAIDI_TARGET_VADDR) == entry.data.get(CONF_KAIDI_TARGET_VADDR)
+    ):
+        return
+
+    hass.config_entries.async_update_entry(entry, data=new_data)
+    _LOGGER.info(
+        "Cached Kaidi session metadata for %s (room_id=%s, target_vaddr=%s)",
+        entry.data[CONF_ADDRESS],
+        new_data.get(CONF_KAIDI_ROOM_ID),
+        new_data.get(CONF_KAIDI_TARGET_VADDR),
+    )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
+    _maybe_cache_kaidi_metadata(hass, entry)
 
     _LOGGER.info(
         "Setting up Adjustable Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",

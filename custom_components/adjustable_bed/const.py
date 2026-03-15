@@ -65,6 +65,8 @@ CONF_JENSEN_PIN: Final = "jensen_pin"
 CONF_CB24_BED_SELECTION: Final = "cb24_bed_selection"
 CONF_BACK_MAX_ANGLE: Final = "back_max_angle"
 CONF_LEGS_MAX_ANGLE: Final = "legs_max_angle"
+CONF_KAIDI_ROOM_ID: Final = "kaidi_room_id"
+CONF_KAIDI_TARGET_VADDR: Final = "kaidi_target_vaddr"
 
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0

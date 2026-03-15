@@ -22,6 +22,8 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..const import (
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_TARGET_VADDR,
     KAIDI_BROADCAST_VADDR,
     KAIDI_JOIN_PASSWORD,
     KAIDI_NOTIFY_CHAR_UUID,
@@ -94,10 +96,20 @@ class KaidiController(BedController):
         self._target_vaddr: int | None = None
         self._write_with_response = True
 
+        entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
+        cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
+        cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
+        if isinstance(cached_room_id, int):
+            self._room_id = cached_room_id
+        if isinstance(cached_target_vaddr, int):
+            self._target_vaddr = cached_target_vaddr
+
         advertisement = extract_kaidi_advertisement(self._manufacturer_data)
         if advertisement is not None:
-            self._room_id = advertisement.room_id
-            self._target_vaddr = advertisement.vaddr
+            if advertisement.room_id is not None:
+                self._room_id = advertisement.room_id
+            if advertisement.vaddr is not None:
+                self._target_vaddr = advertisement.vaddr
 
     @property
     def control_characteristic_uuid(self) -> str:

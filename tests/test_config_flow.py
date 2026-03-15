@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_WILINKE,
@@ -33,6 +34,8 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_TARGET_VADDR,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
@@ -41,6 +44,10 @@ from custom_components.adjustable_bed.const import (
     TIMOTION_AHF_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type
+from custom_components.adjustable_bed.kaidi_protocol import (
+    KAIDI_ADV_TYPE_BROADCAST,
+    KaidiAdvertisement,
+)
 
 
 class TestDetectBedType:
@@ -727,6 +734,48 @@ class TestManualFlow:
         assert result["data"][CONF_ADDRESS] == "11:22:33:44:55:66"
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
         assert result["data"][CONF_MOTOR_COUNT] == 3
+
+    async def test_manual_entry_caches_kaidi_metadata(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
+        """Manual Kaidi setup should cache room/VADDR metadata when available."""
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
+            return_value=KaidiAdvertisement(
+                adv_type=KAIDI_ADV_TYPE_BROADCAST,
+                room_id=0x12345678,
+                vaddr=0x01020304,
+            ),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:66",
+                    CONF_BED_TYPE: BED_TYPE_KAIDI,
+                    CONF_NAME: "Kaidi Bed",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
+        assert result["data"][CONF_KAIDI_TARGET_VADDR] == 0x01020304
 
     async def test_manual_entry_invalid_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry with invalid MAC address shows error."""

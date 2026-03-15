@@ -38,6 +38,7 @@ from .const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JENSEN,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
@@ -97,6 +98,7 @@ from .detection import (
     get_bed_type_options,
     is_mac_like_name,
 )
+from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .unsupported import (
     capture_device_info,
     create_unsupported_device_issue,
@@ -144,6 +146,23 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._disambiguated_bed_type: str | None = None
         self._show_full_bed_type_list: bool = False
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
+
+    def _maybe_add_kaidi_metadata(
+        self,
+        entry_data: dict[str, Any],
+        *,
+        manufacturer_data: dict[int, bytes] | None = None,
+    ) -> dict[str, Any]:
+        """Cache Kaidi room/VADDR state when this entry targets a Kaidi bed."""
+        if entry_data.get(CONF_BED_TYPE) != BED_TYPE_KAIDI:
+            return entry_data
+
+        advertisement = resolve_kaidi_advertisement(
+            self.hass,
+            entry_data[CONF_ADDRESS],
+            manufacturer_data=manufacturer_data,
+        )
+        return add_kaidi_entry_metadata(entry_data, advertisement)
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -405,6 +424,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                             entry_data[CONF_RICHMAT_REMOTE] = RICHMAT_REMOTE_AUTO
                     else:
                         entry_data[CONF_RICHMAT_REMOTE] = user_selected_remote
+                entry_data = self._maybe_add_kaidi_metadata(
+                    entry_data,
+                    manufacturer_data=self._discovery_info.manufacturer_data,
+                )
                 # If bed requires pairing, show pairing instructions
                 if selected_bed_type and requires_pairing(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
@@ -887,6 +910,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 if requires_pairing(bed_type, protocol_variant):
                     self._manual_data = entry_data
                     return await self.async_step_manual_pairing()
+                entry_data = self._maybe_add_kaidi_metadata(
+                    entry_data,
+                    manufacturer_data=self._discovery_info.manufacturer_data,
+                )
                 return self.async_create_entry(
                     title=user_input.get(CONF_NAME, "Adjustable Bed"),
                     data=entry_data,
@@ -1074,6 +1101,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if requires_pairing(bed_type, protocol_variant):
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
+                    entry_data = self._maybe_add_kaidi_metadata(entry_data)
                     return self.async_create_entry(
                         title=user_input.get(CONF_NAME, "Adjustable Bed"),
                         data=entry_data,
