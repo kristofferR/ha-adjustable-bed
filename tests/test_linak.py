@@ -9,7 +9,11 @@ from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.beds.linak import LinakCommands
-from custom_components.adjustable_bed.const import LINAK_CONTROL_CHAR_UUID
+from custom_components.adjustable_bed.const import (
+    LINAK_CONTROL_CHAR_UUID,
+    LINAK_POSITION_BACK_UUID,
+    LINAK_POSITION_LEG_UUID,
+)
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
@@ -98,6 +102,18 @@ class TestLinakController:
 
 class TestLinakMovement:
     """Test Linak movement commands."""
+
+    async def test_disables_polling_during_commands(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Linak should disable movement-time polling to avoid pulse interruption."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.allow_position_polling_during_commands is False
 
     async def test_move_head_up(
         self,
@@ -317,6 +333,34 @@ class TestLinakMassage:
 
 class TestLinakPositionData:
     """Test Linak position data handling."""
+
+    async def test_read_positions_continues_after_single_timeout(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A hung Linak characteristic should not block other position reads."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        async def read_side_effect(uuid: str) -> bytes:
+            if uuid == LINAK_POSITION_BACK_UUID:
+                raise TimeoutError
+            if uuid == LINAK_POSITION_LEG_UUID:
+                return bytes([0x12, 0x01])  # 274 / 548 = 22.5°
+            return b""
+
+        mock_bleak_client.read_gatt_char.side_effect = read_side_effect
+
+        await controller.read_positions()
+
+        callback.assert_called_once_with("legs", 22.5)
 
     async def test_handle_position_data(
         self,

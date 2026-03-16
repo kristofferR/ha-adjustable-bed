@@ -136,6 +136,11 @@ class LinakController(BedController):
         return True
 
     @property
+    def allow_position_polling_during_commands(self) -> bool:
+        """Return False - position reads can interrupt Linak's pulse stream."""
+        return False
+
+    @property
     def memory_slot_count(self) -> int:
         """Return 4 - Linak beds support memory slots 1-4."""
         return 4
@@ -287,6 +292,59 @@ class LinakController(BedController):
                 ", ".join(failed),
             )
 
+    def _build_position_characteristics(
+        self, motor_count: int
+    ) -> list[tuple[str, str, int, float]]:
+        """Return the readable/notifiable position characteristics for this bed."""
+        back_max_angle = self._coordinator.back_max_angle
+        legs_max_angle = self._coordinator.legs_max_angle
+        head_max_angle = self._coordinator.head_max_angle
+        feet_max_angle = self._coordinator.feet_max_angle
+
+        position_chars = [
+            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
+            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
+        ]
+
+        if motor_count > 2:
+            position_chars.append(
+                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
+            )
+
+        if motor_count > 3:
+            position_chars.append(
+                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
+            )
+
+        return position_chars
+
+    async def _read_position_characteristic(
+        self,
+        name: str,
+        uuid: str,
+        max_pos: int,
+        max_angle: float,
+        timeout_seconds: float = 0.75,
+    ) -> None:
+        """Read a single Linak position characteristic without blocking others."""
+        if self.client is None or not self.client.is_connected:
+            return
+
+        try:
+            async with asyncio.timeout(timeout_seconds):
+                async with self._ble_lock:
+                    data = await self.client.read_gatt_char(uuid)
+        except TimeoutError:
+            _LOGGER.debug("Timed out reading position for %s (UUID: %s)", name, uuid)
+            return
+        except BleakError as err:
+            _LOGGER.debug("Could not read position for %s (UUID: %s): %s", name, uuid, err)
+            return
+
+        if data:
+            _LOGGER.debug("Read position for %s: %s", name, data.hex())
+            self._handle_position_data(name, bytearray(data), max_pos, max_angle)
+
     def _handle_position_data(
         self, name: str, data: bytearray, max_position: int, max_angle: float
     ) -> None:
@@ -357,61 +415,21 @@ class LinakController(BedController):
             _LOGGER.warning("Cannot read positions: not connected")
             return
 
-        # Use configurable angle limits from coordinator
-        back_max_angle = self._coordinator.back_max_angle
-        legs_max_angle = self._coordinator.legs_max_angle
-        head_max_angle = self._coordinator.head_max_angle
-        feet_max_angle = self._coordinator.feet_max_angle
-
-        position_chars = [
-            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
-            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
-        ]
-
-        if motor_count > 2:
-            position_chars.append(
-                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
-            )
-
-        if motor_count > 3:
-            position_chars.append(
-                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
-            )
-
-        for name, uuid, max_pos, max_angle in position_chars:
-            try:
-                # Acquire BLE lock to prevent conflicts with concurrent writes
-                async with self._ble_lock:
-                    data = await self.client.read_gatt_char(uuid)
-                if data:
-                    _LOGGER.debug("Read position for %s: %s", name, data.hex())
-                    self._handle_position_data(name, bytearray(data), max_pos, max_angle)
-            except BleakError:
-                _LOGGER.debug("Could not read position for %s", name)
+        for name, uuid, max_pos, max_angle in self._build_position_characteristics(motor_count):
+            await self._read_position_characteristic(name, uuid, max_pos, max_angle)
 
     async def read_non_notifying_positions(self) -> None:
-        """Read positions only for motors that don't support notifications.
-
-        On Linak beds, only the back motor doesn't send notifications.
-        This is used for efficient polling during movement.
-        """
+        """Read positions for manual refresh flows that need a back-motor read."""
         if self.client is None or not self.client.is_connected:
             return
 
-        # Only back needs polling - legs sends notifications
-        # Use configurable angle limit from coordinator
-        back_max_angle = self._coordinator.back_max_angle
-        try:
-            # Acquire BLE lock to prevent conflicts with concurrent writes
-            async with self._ble_lock:
-                data = await self.client.read_gatt_char(LINAK_POSITION_BACK_UUID)
-            if data:
-                _LOGGER.debug("Polled back position: %s", data.hex())
-                self._handle_position_data(
-                    "back", bytearray(data), LINAK_BACK_MAX_POSITION, back_max_angle
-                )
-        except BleakError:
-            _LOGGER.debug("Failed to poll back position (may be disconnected)")
+        await self._read_position_characteristic(
+            "back",
+            LINAK_POSITION_BACK_UUID,
+            LINAK_BACK_MAX_POSITION,
+            self._coordinator.back_max_angle,
+            timeout_seconds=0.4,
+        )
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving.
