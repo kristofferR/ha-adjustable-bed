@@ -22,6 +22,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -184,6 +185,51 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
     )
 
 
+async def _async_finish_entry_setup(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+    *,
+    schedule_initial_position_read: bool,
+) -> bool:
+    """Store coordinator, forward platforms, and finish setup."""
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    if schedule_initial_position_read:
+        hass.async_create_task(coordinator.async_read_initial_positions())
+
+    _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
+    return True
+
+
+async def _async_setup_offline_diagnostic_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+    reason: str,
+) -> bool:
+    """Load a diagnostic entry even when initial BLE connection fails."""
+    from .beds.diagnostic import DiagnosticBedController
+
+    _LOGGER.warning(
+        "Loading diagnostic entry %s (%s) without an initial BLE connection so "
+        "diagnostic actions remain available: %s",
+        entry.title,
+        entry.data.get(CONF_ADDRESS),
+        reason,
+    )
+    coordinator._controller = DiagnosticBedController(coordinator)
+    return await _async_finish_entry_setup(
+        hass,
+        entry,
+        coordinator,
+        schedule_initial_position_read=False,
+    )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -256,6 +302,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             connected = await coordinator.async_connect()
     except TimeoutError:
         await _maybe_create_pairing_issue()
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
+            return await _async_setup_offline_diagnostic_entry(
+                hass,
+                entry,
+                coordinator,
+                reason=f"initial connection timed out after {SETUP_TIMEOUT:.0f}s",
+            )
         raise ConfigEntryNotReady(
             f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after {SETUP_TIMEOUT:.0f}s. "
             "The integration will retry automatically."
@@ -263,23 +316,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if not connected:
         await _maybe_create_pairing_issue()
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
+            return await _async_setup_offline_diagnostic_entry(
+                hass,
+                entry,
+                coordinator,
+                reason="device was not reachable during initial setup",
+            )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
         )
 
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
-
-    # Read initial positions in background (don't block startup)
-    hass.async_create_task(coordinator.async_read_initial_positions())
-
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-
-    _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
-    return True
+    return await _async_finish_entry_setup(
+        hass,
+        entry,
+        coordinator,
+        schedule_initial_position_read=True,
+    )
 
 
 async def _async_maybe_reclassify_legacy_bedtech_entry(

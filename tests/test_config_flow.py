@@ -654,7 +654,7 @@ class TestManualFlow:
         """Test manual select step shows all BLE devices."""
         # First go to user step and select manual
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -677,7 +677,7 @@ class TestManualFlow:
         """Test manual step goes to manual_entry when no devices are found."""
         # First go to user step (no beds discovered, but form still shown)
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -695,13 +695,44 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual_entry"
 
+    async def test_manual_non_connectable_device_still_shows_selection(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Manual flow should include non-connectable fallback records."""
+        non_connectable_info = MagicMock()
+        non_connectable_info.address = "11:22:33:44:55:66"
+        non_connectable_info.name = "Mouselet Test"
+        non_connectable_info.connectable = False
+        non_connectable_info.service_uuids = []
+        non_connectable_info.manufacturer_data = {}
+        non_connectable_info.source = "proxy_1"
+        non_connectable_info.device = MagicMock()
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            side_effect=([], [non_connectable_info]),
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual"
+
     async def test_manual_entry_creates_entry(
         self, hass: HomeAssistant, enable_custom_integrations
     ):
         """Test manual entry creates a config entry."""
         # First go to user step
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -740,7 +771,7 @@ class TestManualFlow:
     ):
         """Manual Kaidi setup should cache room/VADDR metadata when available."""
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -780,7 +811,7 @@ class TestManualFlow:
     async def test_manual_entry_invalid_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry with invalid MAC address shows error."""
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -816,7 +847,7 @@ class TestManualFlow:
     ):
         """Test manual entry normalizes MAC address format."""
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -858,7 +889,7 @@ class TestUserFlow:
     ):
         """Test user flow shows discovered devices."""
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -877,7 +908,7 @@ class TestUserFlow:
     ):
         """Test user can select manual entry from device list."""
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[mock_bluetooth_service_info],
         ):
             result = await hass.config_entries.flow.async_init(
@@ -911,7 +942,7 @@ class TestOptionsFlow:
         await hass.async_block_till_done()
 
         with patch(
-            "custom_components.adjustable_bed.config_flow.async_discovered_service_info",
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
         ):
             result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)

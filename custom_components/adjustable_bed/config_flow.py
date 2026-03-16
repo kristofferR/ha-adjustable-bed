@@ -8,7 +8,6 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
-    async_discovered_service_info,
 )
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -28,6 +27,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.translation import async_get_translations
 
+from .adapter import get_discovered_service_info
 from .actuator_groups import (
     ACTUATOR_GROUPS,
     SINGLE_TYPE_GROUPS,
@@ -626,8 +626,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         except Exception as err:
             _LOGGER.debug("Could not get scanner count: %s", err)
 
-        # Get all discovered devices
-        all_discovered = list(async_discovered_service_info(self.hass))
+        # Include non-connectable records as a fallback because some Bluetooth
+        # proxies have been observed to misclassify connectable beds.
+        all_discovered = get_discovered_service_info(
+            self.hass,
+            include_non_connectable=True,
+        )
         _LOGGER.debug(
             "Total BLE devices visible: %d",
             len(all_discovered),
@@ -786,9 +790,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get ALL BLE devices (not just beds)
         _LOGGER.debug("Scanning for ALL BLE devices for manual selection...")
 
-        all_discovered = list(async_discovered_service_info(self.hass, connectable=True))
+        all_discovered = get_discovered_service_info(
+            self.hass,
+            include_non_connectable=True,
+        )
         _LOGGER.debug(
-            "Total connectable BLE devices visible: %d",
+            "Total BLE devices visible for manual selection: %d",
             len(all_discovered),
         )
 
@@ -806,7 +813,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
         if not self._all_ble_devices:
-            _LOGGER.info("No BLE devices found, showing manual entry form")
+            _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
             return await self.async_step_manual_entry()
 
         # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
@@ -814,9 +821,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._all_ble_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices = {
-            address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_devices
-        }
+        devices = {}
+        for address, info in sorted_devices:
+            label = f"{info.name or 'Unknown'} ({address})"
+            if getattr(info, "connectable", True) is False:
+                label += " [scanner says non-connectable]"
+            devices[address] = label
         devices["manual_entry"] = "Enter address manually"
 
         return self.async_show_form(
@@ -1462,7 +1472,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         address_upper = address.upper()
         matching_service_info = None
 
-        for service_info in async_discovered_service_info(self.hass, connectable=True):
+        for service_info in get_discovered_service_info(
+            self.hass,
+            include_non_connectable=True,
+        ):
             if service_info.address.upper() != address_upper:
                 continue
             # Check adapter preference
@@ -1486,9 +1499,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         device = matching_service_info.device
         _LOGGER.debug(
-            "Found device %s via adapter %s",
+            "Found device %s via adapter %s (connectable=%s)",
             address,
             getattr(matching_service_info, "source", "unknown"),
+            getattr(matching_service_info, "connectable", None),
         )
 
         # Connect with pairing enabled - this handles both built-in HA Bluetooth
@@ -1533,9 +1547,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Get ALL BLE devices (not just beds)
         _LOGGER.debug("Scanning for ALL BLE devices for diagnostic mode...")
 
-        all_discovered = list(async_discovered_service_info(self.hass, connectable=True))
+        all_discovered = get_discovered_service_info(
+            self.hass,
+            include_non_connectable=True,
+        )
         _LOGGER.debug(
-            "Total connectable BLE devices visible: %d",
+            "Total BLE devices visible for diagnostic mode: %d",
             len(all_discovered),
         )
 
@@ -1553,7 +1570,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
         if not self._all_ble_devices:
-            _LOGGER.info("No BLE devices found, showing manual entry form")
+            _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
             return await self.async_step_diagnostic_manual()
 
         # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
@@ -1561,9 +1578,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._all_ble_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices = {
-            address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_devices
-        }
+        devices = {}
+        for address, info in sorted_devices:
+            label = f"{info.name or 'Unknown'} ({address})"
+            if getattr(info, "connectable", True) is False:
+                label += " [scanner says non-connectable]"
+            devices[address] = label
         devices["manual"] = "Enter address manually"
 
         return self.async_show_form(

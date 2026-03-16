@@ -33,6 +33,8 @@ from .adapter import (
     AdapterSelectionResult,
     detect_esphome_proxy,
     discover_services,
+    get_ble_device_with_fallback,
+    get_discovered_service_info,
     read_ble_device_info,
     select_adapter,
 )
@@ -656,8 +658,9 @@ class AdjustableBedCoordinator:
                     )
                     # Log what devices ARE visible
                     try:
-                        discovered = list(
-                            bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                        discovered = get_discovered_service_info(
+                            self.hass,
+                            include_non_connectable=True,
                         )
                         if discovered:
                             _LOGGER.debug(
@@ -666,11 +669,12 @@ class AdjustableBedCoordinator:
                             )
                             for svc_info in discovered[:10]:  # Limit to first 10
                                 _LOGGER.debug(
-                                    "  - %s (name: %s, rssi: %s, source: %s)",
+                                    "  - %s (name: %s, rssi: %s, source: %s, connectable: %s)",
                                     svc_info.address,
                                     svc_info.name or "Unknown",
                                     getattr(svc_info, "rssi", "N/A"),
                                     getattr(svc_info, "source", "N/A"),
+                                    getattr(svc_info, "connectable", None),
                                 )
                             if len(discovered) > 10:
                                 _LOGGER.debug("  ... and %d more devices", len(discovered) - 10)
@@ -694,6 +698,13 @@ class AdjustableBedCoordinator:
                     device.name or "Unknown",
                     device_source or "unknown",
                 )
+                if adapter_result.connectable is False:
+                    _LOGGER.warning(
+                        "Device %s was recovered from a non-connectable scanner record. "
+                        "This usually means the Bluetooth proxy or scanner classified the "
+                        "advertisement incorrectly.",
+                        self._address,
+                    )
                 _LOGGER.debug(
                     "Device details: address=%s, name=%s, details=%s",
                     device.address,
@@ -761,8 +772,9 @@ class AdjustableBedCoordinator:
                     selected_source: str | None = target_source,
                 ) -> BLEDevice:
                     """Return a fresh BLEDevice from the current scanner data."""
-                    discovered = bluetooth.async_discovered_service_info(
-                        self.hass, connectable=True
+                    discovered = get_discovered_service_info(
+                        self.hass,
+                        include_non_connectable=True,
                     )
                     for svc_info in discovered:
                         if svc_info.address.upper() != self._address:
@@ -770,9 +782,10 @@ class AdjustableBedCoordinator:
                         svc_source = getattr(svc_info, "source", None)
                         if selected_source is None or svc_source == selected_source:
                             _LOGGER.debug(
-                                "ble_device_callback returning device from %s (RSSI: %s)",
+                                "ble_device_callback returning device from %s (RSSI: %s, connectable=%s)",
                                 svc_source or "unknown",
                                 getattr(svc_info, "rssi", "N/A"),
+                                getattr(svc_info, "connectable", None),
                             )
                             return svc_info.device
 
@@ -783,11 +796,18 @@ class AdjustableBedCoordinator:
                             self._address,
                         )
 
-                    fallback = bluetooth.async_ble_device_from_address(
-                        self.hass, self._address, connectable=True
+                    fallback, connectable = get_ble_device_with_fallback(
+                        self.hass,
+                        self._address,
+                        allow_non_connectable=True,
                     )
                     if fallback is None:
                         raise BleakError(f"Device {self._address} not found")
+                    if connectable is False:
+                        _LOGGER.debug(
+                            "ble_device_callback falling back to non-connectable record for %s",
+                            self._address,
+                        )
                     return fallback
 
                 ble_device_callback: Callable[[], BLEDevice] | None = (

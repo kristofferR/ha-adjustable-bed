@@ -14,9 +14,9 @@ from typing import TYPE_CHECKING, Any
 from bleak import BleakClient
 from bleak.exc import BleakError
 from bleak_retry_connector import establish_connection
-from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 
+from .adapter import get_ble_device_with_fallback, find_service_info_by_address
 from .const import DEVICE_INFO_CHARS, DEVICE_INFO_SERVICE_UUID, DOMAIN
 
 if TYPE_CHECKING:
@@ -130,8 +130,10 @@ class BLEDiagnosticRunner:
 
         try:
             # Get advertisement data from HA Bluetooth
-            service_info = bluetooth.async_last_service_info(
-                self.hass, self.address, connectable=True
+            service_info, service_info_connectable = find_service_info_by_address(
+                self.hass,
+                self.address,
+                allow_non_connectable=True,
             )
             if service_info:
                 device_info["name"] = service_info.name
@@ -146,6 +148,7 @@ class BLEDiagnosticRunner:
                 advertisement_info["service_data"] = {
                     str(k): bytes(v).hex() for k, v in (service_info.service_data or {}).items()
                 }
+                advertisement_info["connectable"] = service_info_connectable
             else:
                 self._errors.append("No advertisement data available")
 
@@ -234,11 +237,22 @@ class BLEDiagnosticRunner:
         _LOGGER.info("Establishing new BLE connection to %s", self.address)
         self._using_coordinator_connection = False
 
-        device = bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
+        device, connectable = get_ble_device_with_fallback(
+            self.hass,
+            self.address,
+            allow_non_connectable=True,
+        )
         if device is None:
             error = f"Device {self.address} not found in Bluetooth scanner"
             self._errors.append(error)
             raise BleakError(error)
+        if connectable is False:
+            warning = (
+                f"Using non-connectable scanner record for {self.address}; "
+                "the Bluetooth proxy may be misclassifying the advertisement"
+            )
+            _LOGGER.warning(warning)
+            self._errors.append(warning)
 
         try:
             self._client = await establish_connection(

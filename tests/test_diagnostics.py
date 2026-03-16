@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -198,6 +198,39 @@ class TestDiagnosticsOutput:
         assert "class" in controller_info
         assert controller_info["class"] == "LinakController"
         assert "characteristic_uuid" in controller_info
+
+    async def test_diagnostics_uses_non_connectable_advertisement_fallback(
+        self,
+        hass: HomeAssistant,
+        mock_diagnostics_config_entry,
+        mock_coordinator_connected,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
+    ):
+        """Diagnostics should surface non-connectable fallback advertisement data."""
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN][mock_diagnostics_config_entry.entry_id] = coordinator
+
+        service_info = MagicMock()
+        service_info.name = "Mouselet"
+        service_info.rssi = -67
+        service_info.service_uuids = ["0000ffc0-0000-1000-8000-00805f9b34fb"]
+        service_info.manufacturer_data = {65535: b"\xc0\xff"}
+        service_info.source = "proxy_1"
+
+        with patch(
+            "custom_components.adjustable_bed.diagnostics.find_service_info_by_address",
+            return_value=(service_info, False),
+        ):
+            result = await async_get_config_entry_diagnostics(
+                hass,
+                mock_diagnostics_config_entry,
+            )
+
+        assert result["advertisement"]["device_name"] == "Mouselet"
+        assert result["advertisement"]["connectable"] is False
 
     async def test_diagnostics_supported_bed_types(
         self,

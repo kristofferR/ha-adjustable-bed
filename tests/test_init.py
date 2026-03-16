@@ -22,6 +22,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_RICHMAT,
@@ -112,6 +113,48 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
+
+    async def test_setup_entry_loads_diagnostic_device_without_connection(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """Diagnostic entries should still load so they can be targeted by actions."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Diagnostic Device",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:10",
+                CONF_NAME: "Diagnostic Device",
+                CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
+                CONF_MOTOR_COUNT: 0,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:10",
+            entry_id="diagnostic_entry_id",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller is not None
+        assert coordinator.controller.__class__.__name__ == "DiagnosticBedController"
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
 
     async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
         self,
