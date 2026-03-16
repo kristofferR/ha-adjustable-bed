@@ -100,6 +100,35 @@ def find_service_info_by_address(
     return None, False
 
 
+def get_service_info_snapshots_by_address(
+    hass: HomeAssistant,
+    address: str,
+    *,
+    allow_non_connectable: bool = False,
+) -> list[tuple[BluetoothServiceInfoBleak, bool]]:
+    """Return all current scanner snapshots for an address."""
+    normalized_address = address.upper()
+    snapshots: list[tuple[BluetoothServiceInfoBleak, bool]] = []
+
+    for service_info in get_discovered_service_info(
+        hass,
+        include_non_connectable=allow_non_connectable,
+    ):
+        if service_info.address.upper() != normalized_address:
+            continue
+        connectable = bool(getattr(service_info, "connectable", True))
+        snapshots.append((service_info, connectable))
+
+    snapshots.sort(
+        key=lambda item: (
+            item[1],
+            getattr(item[0], "rssi", RSSI_UNAVAILABLE),
+        ),
+        reverse=True,
+    )
+    return snapshots
+
+
 def get_ble_device_with_fallback(
     hass: HomeAssistant,
     address: str,
@@ -238,6 +267,7 @@ async def select_adapter(
                 except (ValueError, TypeError):
                     rssi_value = RSSI_UNAVAILABLE
                 svc_source = getattr(svc_info, "source", "unknown")
+                available_sources.append(f"{svc_source} (RSSI: {rssi_value})")
                 _LOGGER.debug("Auto-select candidate: source=%s, rssi=%s", svc_source, rssi_value)
                 if exclude_adapters and svc_source in exclude_adapters:
                     _LOGGER.debug(

@@ -881,6 +881,115 @@ class TestManualFlow:
 class TestUserFlow:
     """Test user-initiated flow with device selection."""
 
+    async def test_user_flow_select_diagnostic_browser(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Selecting the unsupported-device browser should show all BLE devices."""
+        unknown_info = MagicMock()
+        unknown_info.address = "11:22:33:44:55:66"
+        unknown_info.name = "Unknown Device"
+        unknown_info.connectable = False
+        unknown_info.service_uuids = []
+        unknown_info.manufacturer_data = {}
+        unknown_info.source = "proxy_1"
+        unknown_info.device = MagicMock()
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            side_effect=[[], [unknown_info]],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "diagnostic"},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "diagnostic"
+
+    async def test_diagnostic_browser_returns_mac_details_instead_of_creating_entry(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Selecting an unsupported device should abort with support-bundle instructions."""
+        unknown_info = MagicMock()
+        unknown_info.address = "11:22:33:44:55:66"
+        unknown_info.name = "Unknown Device"
+        unknown_info.connectable = False
+        unknown_info.service_uuids = []
+        unknown_info.manufacturer_data = {}
+        unknown_info.source = "proxy_1"
+        unknown_info.device = MagicMock()
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            side_effect=[[], [unknown_info]],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "diagnostic"},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: unknown_info.address},
+            )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "diagnostic_browser_ready"
+        assert result["description_placeholders"]["address"] == unknown_info.address
+        assert result["description_placeholders"]["source"] == "proxy_1"
+
+    async def test_diagnostic_manual_returns_bundle_instructions(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Manual unsupported-device lookup should finish without creating an entry."""
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+                side_effect=[[], []],
+            ),
+            patch(
+                "custom_components.adjustable_bed.config_flow.find_service_info_by_address",
+                return_value=(None, False),
+            ),
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "diagnostic"},
+            )
+
+            assert result["type"] == FlowResultType.FORM
+            assert result["step_id"] == "diagnostic_manual"
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:66",
+                    CONF_NAME: "Mystery Bed",
+                },
+            )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "diagnostic_browser_ready"
+        assert result["description_placeholders"]["address"] == "11:22:33:44:55:66"
+        assert result["description_placeholders"]["name"] == "Mystery Bed"
+
     async def test_user_flow_shows_discovered_devices(
         self,
         hass: HomeAssistant,

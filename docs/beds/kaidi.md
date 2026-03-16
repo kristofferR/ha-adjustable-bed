@@ -48,4 +48,4 @@ Home Assistant reproduces the app's startup flow:
 
 1. The bed must already be provisioned in the official app. Home Assistant does not currently implement the add-device/reset workflow.
 2. The current controller targets the single-bed command set used by standard head/foot bases.
-3. If your bed exposes different Kaidi behavior, open an issue and attach a support report plus any nRF Connect logs you can capture.
+3. If your bed exposes different Kaidi behavior, open an issue and attach a support bundle plus any nRF Connect logs you can capture.

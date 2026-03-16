@@ -1,9 +1,9 @@
 """Diagnostic controller for unsupported BLE devices.
 
 This controller provides a minimal implementation that allows users to add
-unsupported BLE devices to Home Assistant for diagnostic purposes. It enables
-running the run_diagnostics service to capture BLE protocol data that can
-help add support for new bed models.
+unsupported BLE devices to Home Assistant for diagnostic purposes. It exists
+for legacy entries only and helps keep support-bundle capture available even
+when the device cannot be classified yet.
 
 No motor control or position entities are created - this is purely for
 diagnostic data capture.

@@ -163,7 +163,7 @@ If your bed isn't auto-discovered:
 
 If your bed doesn't appear in Home Assistant at all (not visible to any adapter or proxy), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and check its range. If nRF Connect sees it but Home Assistant doesn't, the bed may be out of range of your HA Bluetooth adapter - consider adding an ESPHome proxy closer to the bed.
 
-**Tip:** If your bed type isn't recognized, you can add it in Diagnostic mode to capture BLE data. See [Getting Help](GETTING_HELP.md) for details.
+**Tip:** If your bed type isn't recognized, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. See [Getting Help](GETTING_HELP.md) for details.
 
 ---
 

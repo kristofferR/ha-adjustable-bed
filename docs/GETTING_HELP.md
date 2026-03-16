@@ -53,20 +53,21 @@ If you've found a bug, please file a [Bug Report](https://github.com/kristofferR
 - **Connection method** (built-in Bluetooth, USB adapter, or ESPHome proxy)
 - **Diagnostics file** (see below)
 
-### Generating a Support Report (Recommended)
+### Generating a Support Bundle (Recommended)
 
-The support report includes everything we need in one file:
+The support bundle includes everything we need in one file:
 
 1. Go to **Developer Tools** → **Actions**
-2. Search for `adjustable_bed.generate_support_report`
-3. Select your bed device and click **Perform action**
+2. Search for `adjustable_bed.generate_support_bundle`
+3. Select your bed device, or enter `target_address` for an unconfigured device, then click **Perform action**
 4. A notification will show the file location (in your `/config/` folder)
 5. Attach the JSON file to your GitHub issue
 
-The support report includes:
+The support bundle includes:
 - System info (HA version, Python version, platform)
 - Integration configuration and detected bed type
 - Connection status and BLE adapter info
+- BLE advertisements by source, detection reasoning, and GATT details
 - Recent error logs
 
 **Privacy note:** MAC addresses are partially redacted (manufacturer prefix kept), PINs and names are masked.
@@ -105,9 +106,10 @@ If your bed isn't supported yet, file a [New Bed Support Request](https://github
 
 The easiest way is to use the integration's built-in tools:
 
-1. **Add the device in Diagnostic mode**: Settings → Integrations → Add Integration → Adjustable Bed → Manual entry → Select "Diagnostic/Unknown" as bed type
-2. **Run diagnostics**: Developer Tools → Actions → `adjustable_bed.run_diagnostics` → Select your device
-3. **Check the output file** in your `/config/` folder for service UUIDs and device info
+1. **Find the MAC address if needed**: Settings → Integrations → Add Integration → Adjustable Bed → **Browse unsupported BLE devices**
+2. **Run the support bundle action**: Developer Tools → Actions → `adjustable_bed.generate_support_bundle`
+3. Select your configured bed, or enter `target_address` for an unsupported device
+4. **Check the output file** in your `/config/` folder for service UUIDs, detection details, and device info
 
 If your bed doesn't appear in Home Assistant at all (not visible to any Bluetooth adapter), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and is advertising.
 
@@ -131,9 +133,9 @@ Let us know if you can:
 
 | Scenario | Recommended Tool |
 |----------|------------------|
-| Troubleshooting a configured bed | Support report or diagnostics download |
+| Troubleshooting a configured bed | Support bundle or diagnostics download |
 | Finding your bed's MAC address | Integration shows discovered MACs when manually adding |
-| Identifying bed type/service UUIDs | `run_diagnostics` in Diagnostic mode |
+| Identifying bed type/service UUIDs | `generate_support_bundle` with `target_address` |
 | New bed support - capture what app sends | nRF Connect logging (see below) |
 | Device not visible to HA at all | nRF Connect to verify it exists |
 
@@ -143,12 +145,12 @@ Let us know if you can:
 
 For most troubleshooting, the **built-in diagnostics** provide everything needed:
 
-### Using run_diagnostics Action
+### Using generate_support_bundle Action
 
-The `run_diagnostics` action captures GATT structure, device info, and notifications from your bed:
+The `generate_support_bundle` action captures GATT structure, device info, scanner state, and notifications from your bed:
 
 1. Go to **Developer Tools** → **Actions**
-2. Search for `adjustable_bed.run_diagnostics`
+2. Search for `adjustable_bed.generate_support_bundle`
 3. Select your bed device (or enter a MAC address for unconfigured devices)
 4. Click **Perform action**
 5. Optionally operate your physical remote during capture to record notifications

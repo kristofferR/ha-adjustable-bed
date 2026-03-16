@@ -143,27 +143,27 @@ timed_move:
           unit_of_measurement: ms
           mode: box
 
-run_diagnostics:
-  name: Run BLE Diagnostics
-  description: Capture BLE protocol data from a device for troubleshooting and adding support for new bed models. Either provide a configured device or a target MAC address.
+generate_support_bundle:
+  name: Generate Support Bundle
+  description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, detection reasoning, GATT details, scanner state, and recent integration logs into one JSON file.
   fields:
     device_id:
       name: Device
-      description: A configured adjustable bed device to diagnose.
+      description: A configured adjustable bed device to capture.
       required: false
       selector:
         device:
           integration: adjustable_bed
     target_address:
       name: Target Address
-      description: Bluetooth MAC address of an unconfigured device (e.g., AA:BB:CC:DD:EE:FF). Use this to diagnose devices that haven't been set up yet.
+      description: Bluetooth MAC address of an unconfigured device (for example `AA:BB:CC:DD:EE:FF`).
       required: false
       example: "AA:BB:CC:DD:EE:FF"
       selector:
         text:
     capture_duration:
       name: Capture Duration
-      description: How long to capture notifications in seconds. Operate the physical remote during this time to generate data.
+      description: How long to capture notifications in seconds. Operate the physical remote during this time to generate useful traffic.
       required: false
       default: 120
       selector:
@@ -172,21 +172,9 @@ run_diagnostics:
           max: 300
           unit_of_measurement: seconds
           mode: box
-
-generate_support_report:
-  name: Generate Support Report
-  description: Generate a comprehensive debug report for submitting bug reports. Collects diagnostics, logs, and system information into a single file.
-  fields:
-    device_id:
-      name: Device
-      description: The adjustable bed device to generate the report for.
-      required: true
-      selector:
-        device:
-          integration: adjustable_bed
     include_logs:
       name: Include Recent Logs
-      description: Include recent log entries related to the integration.
+      description: Include recent Home Assistant log entries related to Bluetooth and this integration.
       required: false
       default: true
       selector:

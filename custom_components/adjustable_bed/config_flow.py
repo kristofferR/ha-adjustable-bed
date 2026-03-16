@@ -27,7 +27,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.translation import async_get_translations
 
-from .adapter import get_discovered_service_info
+from .adapter import find_service_info_by_address, get_discovered_service_info
 from .actuator_groups import (
     ACTUATOR_GROUPS,
     SINGLE_TYPE_GROUPS,
@@ -36,7 +36,6 @@ from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
     BED_MOTOR_PULSE_DEFAULTS,
-    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -163,6 +162,32 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             manufacturer_data=manufacturer_data,
         )
         return add_kaidi_entry_metadata(entry_data, advertisement)
+
+    def _async_abort_diagnostic_browser(
+        self,
+        *,
+        address: str,
+        name: str | None,
+        source: str | None,
+        connectable: bool | None,
+    ) -> ConfigFlowResult:
+        """Finish the BLE browser flow without creating a config entry."""
+        if connectable is True:
+            connectable_text = "Yes"
+        elif connectable is False:
+            connectable_text = "No (scanner says non-connectable)"
+        else:
+            connectable_text = "Unknown"
+
+        return self.async_abort(
+            reason="diagnostic_browser_ready",
+            description_placeholders={
+                "name": name or "Unknown",
+                "address": address,
+                "source": source or "unknown",
+                "connectable": connectable_text,
+            },
+        )
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -677,7 +702,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         devices.update(
             {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
         )
-        devices["diagnostic"] = "Diagnostic mode (unsupported device)"
+        devices["diagnostic"] = "Browse unsupported BLE devices"
 
         return self.async_show_form(
             step_id="user",
@@ -1525,34 +1550,30 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_diagnostic(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle diagnostic mode device selection.
-
-        Lists ALL visible BLE devices (not just recognized beds) so users can
-        add unsupported devices for diagnostic capture.
-        """
+        """Handle unsupported BLE device browsing."""
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
             if address == "manual":
-                _LOGGER.debug("User selected manual entry for diagnostic mode")
+                _LOGGER.debug("User selected manual entry for BLE browser")
                 return await self.async_step_diagnostic_manual()
 
-            _LOGGER.info("User selected device for diagnostic mode: %s", address)
-            # Normalize address to uppercase to match Bluetooth discovery
-            await self.async_set_unique_id(address.upper())
-            self._abort_if_unique_id_configured()
+            _LOGGER.info("User selected device from BLE browser: %s", address)
+            discovery_info = self._all_ble_devices[address]
+            return self._async_abort_diagnostic_browser(
+                address=discovery_info.address.upper(),
+                name=discovery_info.name,
+                source=getattr(discovery_info, "source", None),
+                connectable=getattr(discovery_info, "connectable", None),
+            )
 
-            self._discovery_info = self._all_ble_devices[address]
-            return await self.async_step_diagnostic_confirm()
-
-        # Get ALL BLE devices (not just beds)
-        _LOGGER.debug("Scanning for ALL BLE devices for diagnostic mode...")
+        _LOGGER.debug("Scanning for all BLE devices for browser mode...")
 
         all_discovered = get_discovered_service_info(
             self.hass,
             include_non_connectable=True,
         )
         _LOGGER.debug(
-            "Total BLE devices visible for diagnostic mode: %d",
+            "Total BLE devices visible for browser mode: %d",
             len(all_discovered),
         )
 
@@ -1565,7 +1586,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._all_ble_devices[discovery_info.address] = discovery_info
 
         _LOGGER.info(
-            "Diagnostic mode: found %d unconfigured BLE devices",
+            "BLE browser: found %d unconfigured BLE devices",
             len(self._all_ble_devices),
         )
 
@@ -1594,106 +1615,45 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_diagnostic_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Confirm diagnostic device setup."""
+        """Backward-compatible handler for old flow links."""
         assert self._discovery_info is not None
-
-        # Get discovery source for default adapter selection
-        discovery_source = getattr(self._discovery_info, "source", None) or ADAPTER_AUTO
-
-        if user_input is not None:
-            preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, discovery_source)
-            device_name = user_input.get(
-                CONF_NAME, self._discovery_info.name or "Diagnostic Device"
-            )
-            _LOGGER.info(
-                "Creating diagnostic device entry: name=%s, address=%s, adapter=%s",
-                device_name,
-                self._discovery_info.address,
-                preferred_adapter,
-            )
-
-            return self.async_create_entry(
-                title=device_name,
-                data={
-                    CONF_ADDRESS: self._discovery_info.address.upper(),
-                    CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
-                    CONF_NAME: device_name,
-                    CONF_MOTOR_COUNT: 0,  # No motors for diagnostic
-                    CONF_HAS_MASSAGE: False,
-                    CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_PREFERRED_ADAPTER: preferred_adapter,
-                },
-            )
-
-        # Get available Bluetooth adapters
-        adapters = get_available_adapters(self.hass)
-
-        return self.async_show_form(
-            step_id="diagnostic_confirm",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_NAME, default=self._discovery_info.name or "Diagnostic Device"
-                    ): str,
-                    vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(
-                        adapters
-                    ),
-                }
-            ),
-            description_placeholders={
-                "name": self._discovery_info.name or self._discovery_info.address,
-                "address": self._discovery_info.address,
-            },
+        return self._async_abort_diagnostic_browser(
+            address=self._discovery_info.address.upper(),
+            name=self._discovery_info.name,
+            source=getattr(self._discovery_info, "source", None),
+            connectable=getattr(self._discovery_info, "connectable", None),
         )
 
     async def async_step_diagnostic_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle manual MAC address entry for diagnostic mode."""
+        """Handle manual MAC address entry for BLE browser mode."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             address = user_input[CONF_ADDRESS].upper().replace("-", ":")
 
-            # Validate MAC address format
             if not is_valid_mac_address(address):
                 errors["base"] = "invalid_mac_address"
             else:
-                await self.async_set_unique_id(address)
-                self._abort_if_unique_id_configured()
-
-                preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-                device_name = user_input.get(CONF_NAME, "Diagnostic Device")
-                _LOGGER.info(
-                    "Creating diagnostic device entry (manual): name=%s, address=%s, adapter=%s",
-                    device_name,
+                service_info, connectable = find_service_info_by_address(
+                    self.hass,
                     address,
-                    preferred_adapter,
+                    allow_non_connectable=True,
                 )
-
-                return self.async_create_entry(
-                    title=device_name,
-                    data={
-                        CONF_ADDRESS: address,
-                        CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
-                        CONF_NAME: device_name,
-                        CONF_MOTOR_COUNT: 0,  # No motors for diagnostic
-                        CONF_HAS_MASSAGE: False,
-                        CONF_DISABLE_ANGLE_SENSING: True,
-                        CONF_PREFERRED_ADAPTER: preferred_adapter,
-                    },
+                return self._async_abort_diagnostic_browser(
+                    address=address,
+                    name=user_input.get(CONF_NAME) or getattr(service_info, "name", None),
+                    source=getattr(service_info, "source", None),
+                    connectable=connectable if service_info is not None else None,
                 )
-
-        # Get available Bluetooth adapters
-        adapters = get_available_adapters(self.hass)
 
         return self.async_show_form(
             step_id="diagnostic_manual",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_ADDRESS): str,
-                    vol.Optional(CONF_NAME, default="Diagnostic Device"): str,
-                    vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
+                    vol.Optional(CONF_NAME, default="Unknown BLE Device"): str,
                 }
             ),
             errors=errors,
