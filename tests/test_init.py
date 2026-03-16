@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
@@ -11,9 +12,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
-    SERVICE_GENERATE_SUPPORT_REPORT,
+    SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_RUN_DIAGNOSTICS,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_STOP_ALL,
@@ -22,6 +22,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_RICHMAT,
@@ -70,6 +71,7 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_SAVE_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_STOP_ALL)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
     async def test_setup_entry_connection_timeout(
         self,
@@ -90,8 +92,7 @@ class TestIntegrationSetup:
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
-        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
-        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
     async def test_setup_entry_connection_failed(
         self,
@@ -110,8 +111,49 @@ class TestIntegrationSetup:
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
-        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
-        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
+
+    async def test_setup_entry_loads_diagnostic_device_without_connection(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """Diagnostic entries should still load so they can be targeted by actions."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Diagnostic Device",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:10",
+                CONF_NAME: "Diagnostic Device",
+                CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
+                CONF_MOTOR_COUNT: 0,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:10",
+            entry_id="diagnostic_entry_id",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller is not None
+        assert coordinator.controller.__class__.__name__ == "DiagnosticBedController"
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
 
     async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
         self,
@@ -210,8 +252,7 @@ class TestIntegrationUnload:
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_SAVE_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_STOP_ALL)
-        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
-        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_REPORT)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
     async def test_unload_keeps_services_with_remaining_entries(
         self,
@@ -256,7 +297,7 @@ class TestIntegrationUnload:
 
         # Services remain available after the final entry unload
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
-        assert hass.services.has_service(DOMAIN, SERVICE_RUN_DIAGNOSTICS)
+        assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
 
 class TestMigration:
@@ -393,6 +434,70 @@ class TestMigration:
 
 class TestServices:
     """Test integration services."""
+
+    async def test_generate_support_bundle_service(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Test generate_support_bundle service delegates to the bundle generator."""
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
+                new=AsyncMock(return_value={"notifications": [], "errors": []}),
+            ) as mock_generate_support_bundle,
+            patch(
+                "custom_components.adjustable_bed.support_bundle.save_support_bundle",
+                return_value=Path("/tmp/support_bundle.json"),
+            ) as mock_save_support_bundle,
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_GENERATE_SUPPORT_BUNDLE,
+                {"device_id": [device_id]},
+                blocking=True,
+            )
+
+        mock_generate_support_bundle.assert_awaited_once()
+        kwargs = mock_generate_support_bundle.await_args.kwargs
+        assert kwargs["device_id"] == device_id
+        assert kwargs["entry"] == mock_config_entry
+        assert kwargs["coordinator"] == hass.data[DOMAIN][mock_config_entry.entry_id]
+        mock_save_support_bundle.assert_called_once()
+
+    async def test_generate_support_bundle_service_rejects_invalid_target_address(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Test generate_support_bundle validates raw MAC addresses."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        with pytest.raises(ServiceValidationError, match="Invalid MAC address format"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_GENERATE_SUPPORT_BUNDLE,
+                {"target_address": "not-a-mac"},
+                blocking=True,
+            )
 
     async def test_goto_preset_service(
         self,

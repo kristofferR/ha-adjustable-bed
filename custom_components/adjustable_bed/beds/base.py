@@ -8,6 +8,7 @@ command encoding and position reading.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Coroutine
@@ -19,6 +20,8 @@ from bleak.exc import BleakError
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+
+from ..diagnostic_payloads import format_payload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -224,6 +227,34 @@ class BedController(ABC):
             repeat_count,
             repeat_delay_ms,
         )
+
+        characteristic_handle: int | None = None
+        if client.services:
+            for service in client.services:
+                for characteristic in service.characteristics:
+                    if characteristic.uuid == char_uuid:
+                        characteristic_handle = getattr(characteristic, "handle", None)
+                        break
+                if characteristic_handle is not None:
+                    break
+
+        caller_frame = inspect.currentframe()
+        command_origin = None
+        if caller_frame is not None and caller_frame.f_back is not None:
+            command_origin = caller_frame.f_back.f_code.co_name
+
+        payload = format_payload(command)
+        if payload is not None:
+            self._coordinator.record_command_trace(
+                payload=payload,
+                characteristic_uuid=char_uuid,
+                characteristic_handle=characteristic_handle,
+                response=response,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                command_origin=command_origin,
+                controller_class=type(self).__name__,
+            )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():

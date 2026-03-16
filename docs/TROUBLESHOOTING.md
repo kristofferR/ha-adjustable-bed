@@ -296,15 +296,15 @@ Use these to identify your bed type in a BLE scanner:
 
 ## Debugging Tools
 
-### Debug Logging vs Support Report
+### Debug Logging vs Support Bundle
 
 There are two ways to gather diagnostic information:
 
-| Feature | Debug Logging | Support Report |
+| Feature | Debug Logging | Support Bundle |
 |---------|---------------|----------------|
-| **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Perform the `adjustable_bed.generate_support_report` action |
+| **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Perform the `adjustable_bed.generate_support_bundle` action |
 | **What it captures** | Real-time stream of all integration activity | Snapshot of device state at one moment |
-| **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, device info, GATT services |
+| **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, advertisements (per source), detection reasoning, GATT/descriptor details, notifications, buffered command trace, connection-attempt details |
 | **Size** | Large, includes unrelated entries from other integrations | Focused JSON file for one device |
 | **Best for** | "Why didn't this command work?" - seeing exact bytes sent | "What device do I have?" - sharing device info in bug reports |
 
@@ -313,7 +313,7 @@ There are two ways to gather diagnostic information:
 - Investigating connection failures or timeouts
 - Comparing expected vs actual command bytes
 
-**When to use Support Report:**
+**When to use Support Bundle:**
 - Opening a new GitHub issue
 - Sharing device information with developers
 - Documenting your bed's GATT services for protocol analysis
@@ -324,7 +324,7 @@ There are two ways to gather diagnostic information:
 
 If you've tried the troubleshooting steps above and still have issues, see the **[Getting Help Guide](GETTING_HELP.md)** for:
 
-- How to generate a support report with all the info we need
+- How to generate a support bundle with all the info we need
 - Filing a bug report on GitHub
 - Requesting support for a new bed
 - Capturing BLE protocol data for debugging

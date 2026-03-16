@@ -9,6 +9,7 @@ from bleak import BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.components import bluetooth
+from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant
 
 from .const import ADAPTER_AUTO, DEVICE_INFO_CHARS, DEVICE_INFO_SERVICE_UUID
@@ -26,7 +27,145 @@ class AdapterSelectionResult:
     device: BLEDevice | None
     source: str | None
     rssi: int | None
+    connectable: bool | None
     available_sources: list[str]
+
+
+def get_discovered_service_info(
+    hass: HomeAssistant,
+    *,
+    include_non_connectable: bool = False,
+) -> list[BluetoothServiceInfoBleak]:
+    """Return discovered BLE service info, optionally including non-connectable records.
+
+    Home Assistant keeps separate snapshots for connectable and non-connectable
+    advertisements. Some proxies have been observed to classify connectable beds
+    as non-connectable, so callers can opt into a fallback merge when the strict
+    connectable view is empty.
+    """
+
+    connectable_states = (True, False) if include_non_connectable else (True,)
+    discovered: list[BluetoothServiceInfoBleak] = []
+    seen: set[tuple[str, str | None]] = set()
+
+    for connectable in connectable_states:
+        for service_info in bluetooth.async_discovered_service_info(
+            hass,
+            connectable=connectable,
+        ):
+            key = (
+                service_info.address.upper(),
+                getattr(service_info, "source", None),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            discovered.append(service_info)
+
+    return discovered
+
+
+def find_service_info_by_address(
+    hass: HomeAssistant,
+    address: str,
+    *,
+    allow_non_connectable: bool = False,
+) -> tuple[BluetoothServiceInfoBleak | None, bool]:
+    """Return the latest service info snapshot for an address.
+
+    The boolean in the tuple indicates whether the matching snapshot came from
+    the connectable scanner view.
+    """
+
+    normalized_address = address.upper()
+    connectable_states = (True, False) if allow_non_connectable else (True,)
+
+    for connectable in connectable_states:
+        service_info = bluetooth.async_last_service_info(
+            hass,
+            normalized_address,
+            connectable=connectable,
+        )
+        if service_info is not None and service_info.address.upper() == normalized_address:
+            return service_info, connectable
+
+    if allow_non_connectable:
+        for service_info in get_discovered_service_info(
+            hass,
+            include_non_connectable=True,
+        ):
+            if service_info.address.upper() == normalized_address:
+                return service_info, bool(getattr(service_info, "connectable", False))
+
+    return None, False
+
+
+def get_service_info_snapshots_by_address(
+    hass: HomeAssistant,
+    address: str,
+    *,
+    allow_non_connectable: bool = False,
+) -> list[tuple[BluetoothServiceInfoBleak, bool]]:
+    """Return all current scanner snapshots for an address."""
+    normalized_address = address.upper()
+    snapshots: list[tuple[BluetoothServiceInfoBleak, bool]] = []
+
+    for service_info in get_discovered_service_info(
+        hass,
+        include_non_connectable=allow_non_connectable,
+    ):
+        if service_info.address.upper() != normalized_address:
+            continue
+        connectable = bool(getattr(service_info, "connectable", True))
+        snapshots.append((service_info, connectable))
+
+    snapshots.sort(
+        key=lambda item: (
+            item[1],
+            getattr(item[0], "rssi", RSSI_UNAVAILABLE),
+        ),
+        reverse=True,
+    )
+    return snapshots
+
+
+def get_ble_device_with_fallback(
+    hass: HomeAssistant,
+    address: str,
+    *,
+    allow_non_connectable: bool = False,
+) -> tuple[BLEDevice | None, bool]:
+    """Return a BLEDevice for an address, falling back to non-connectable state."""
+
+    normalized_address = address.upper()
+    device = bluetooth.async_ble_device_from_address(
+        hass,
+        normalized_address,
+        connectable=True,
+    )
+    if device is not None:
+        return device, True
+
+    if not allow_non_connectable:
+        return None, False
+
+    service_info, connectable = find_service_info_by_address(
+        hass,
+        normalized_address,
+        allow_non_connectable=True,
+    )
+    if service_info is not None and getattr(service_info, "device", None) is not None:
+        return service_info.device, connectable
+
+    device = bluetooth.async_ble_device_from_address(
+        hass,
+        normalized_address,
+        connectable=False,
+    )
+    if device is not None:
+        return device, False
+
+    return None, False
 
 
 async def select_adapter(
@@ -56,6 +195,7 @@ async def select_adapter(
     device: BLEDevice | None = None
     source: str | None = None
     rssi: int | None = None
+    connectable: bool | None = None
     available_sources: list[str] = []
 
     if preferred_adapter and preferred_adapter != ADAPTER_AUTO:
@@ -78,6 +218,7 @@ async def select_adapter(
                         device = service_info.device
                         source = svc_source
                         rssi = svc_rssi if isinstance(svc_rssi, int) else None
+                        connectable = True
                         _LOGGER.info(
                             "✓ Found device %s via preferred adapter %s (RSSI: %s)",
                             address,
@@ -126,6 +267,7 @@ async def select_adapter(
                 except (ValueError, TypeError):
                     rssi_value = RSSI_UNAVAILABLE
                 svc_source = getattr(svc_info, "source", "unknown")
+                available_sources.append(f"{svc_source} (RSSI: {rssi_value})")
                 _LOGGER.debug("Auto-select candidate: source=%s, rssi=%s", svc_source, rssi_value)
                 if exclude_adapters and svc_source in exclude_adapters:
                     _LOGGER.debug(
@@ -147,25 +289,32 @@ async def select_adapter(
                     device = svc_info.device
                     source = best_source
                     rssi = best_rssi if best_rssi != RSSI_UNAVAILABLE else None
+                    connectable = True
                     break
 
         # Final fallback to default lookup
         if device is None:
-            device = bluetooth.async_ble_device_from_address(hass, address, connectable=True)
+            device, connectable = get_ble_device_with_fallback(
+                hass,
+                address,
+                allow_non_connectable=True,
+            )
             if device:
                 fallback_source = "unknown"
                 if hasattr(device, "details") and isinstance(device.details, dict):
                     fallback_source = device.details.get("source", "unknown")
                 source = fallback_source
-                _LOGGER.info(
-                    "Using fallback adapter selection, device found via: %s",
-                    fallback_source,
-                )
+                info_message = "Using fallback adapter selection, device found via: %s"
+                log_args: tuple[object, ...] = (fallback_source,)
+                if connectable is False:
+                    info_message += " (scanner currently marks it non-connectable)"
+                _LOGGER.info(info_message, *log_args)
 
     return AdapterSelectionResult(
         device=device,
         source=source,
         rssi=rssi,
+        connectable=connectable,
         available_sources=available_sources,
     )
 

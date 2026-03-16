@@ -22,6 +22,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     BED_TYPE_BEDTECH,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -52,11 +53,10 @@ from .unsupported import create_pairing_required_issue
 
 # Service constants
 SERVICE_GOTO_PRESET = "goto_preset"
+SERVICE_GENERATE_SUPPORT_BUNDLE = "generate_support_bundle"
 SERVICE_SAVE_PRESET = "save_preset"
-SERVICE_STOP_ALL = "stop_all"
-SERVICE_RUN_DIAGNOSTICS = "run_diagnostics"
-SERVICE_GENERATE_SUPPORT_REPORT = "generate_support_report"
 SERVICE_SET_POSITION = "set_position"
+SERVICE_STOP_ALL = "stop_all"
 SERVICE_TIMED_MOVE = "timed_move"
 ATTR_PRESET = "preset"
 ATTR_MOTOR = "motor"
@@ -184,6 +184,51 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
     )
 
 
+async def _async_finish_entry_setup(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+    *,
+    schedule_initial_position_read: bool,
+) -> bool:
+    """Store coordinator, forward platforms, and finish setup."""
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    if schedule_initial_position_read:
+        hass.async_create_task(coordinator.async_read_initial_positions())
+
+    _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
+    return True
+
+
+async def _async_setup_offline_diagnostic_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+    reason: str,
+) -> bool:
+    """Load a diagnostic entry even when initial BLE connection fails."""
+    from .beds.diagnostic import DiagnosticBedController
+
+    _LOGGER.warning(
+        "Loading diagnostic entry %s (%s) without an initial BLE connection so "
+        "diagnostic actions remain available: %s",
+        entry.title,
+        entry.data.get(CONF_ADDRESS),
+        reason,
+    )
+    coordinator._controller = DiagnosticBedController(coordinator)
+    return await _async_finish_entry_setup(
+        hass,
+        entry,
+        coordinator,
+        schedule_initial_position_read=False,
+    )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -256,6 +301,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             connected = await coordinator.async_connect()
     except TimeoutError:
         await _maybe_create_pairing_issue()
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
+            return await _async_setup_offline_diagnostic_entry(
+                hass,
+                entry,
+                coordinator,
+                reason=f"initial connection timed out after {SETUP_TIMEOUT:.0f}s",
+            )
         raise ConfigEntryNotReady(
             f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after {SETUP_TIMEOUT:.0f}s. "
             "The integration will retry automatically."
@@ -263,23 +315,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if not connected:
         await _maybe_create_pairing_issue()
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
+            return await _async_setup_offline_diagnostic_entry(
+                hass,
+                entry,
+                coordinator,
+                reason="device was not reachable during initial setup",
+            )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
         )
 
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
-
-    # Read initial positions in background (don't block startup)
-    hass.async_create_task(coordinator.async_read_initial_positions())
-
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-
-    _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
-    return True
+    return await _async_finish_entry_setup(
+        hass,
+        entry,
+        coordinator,
+        schedule_initial_position_read=True,
+    )
 
 
 async def _async_maybe_reclassify_legacy_bedtech_entry(
@@ -861,211 +915,135 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
-    async def handle_run_diagnostics(call: ServiceCall) -> None:
-        """Handle run_diagnostics service call."""
+    async def handle_generate_support_bundle(call: ServiceCall) -> None:
+        """Handle generate_support_bundle service call."""
         from homeassistant.components.persistent_notification import async_create
 
-        from .ble_diagnostics import BLEDiagnosticRunner, save_diagnostic_report
+        from .support_bundle import generate_support_bundle, save_support_bundle
 
         device_ids = call.data.get(CONF_DEVICE_ID, [])
         target_address = call.data.get(ATTR_TARGET_ADDRESS)
         capture_duration = call.data.get(ATTR_CAPTURE_DURATION, DEFAULT_CAPTURE_DURATION)
+        include_logs = call.data.get(ATTR_INCLUDE_LOGS, True)
 
-        # Determine which address to use
         address: str | None = None
         coordinator: AdjustableBedCoordinator | None = None
+        entry: ConfigEntry | None = None
+        selected_device_id: str | None = None
 
         if target_address:
-            # Use the provided target address
             from .config_flow import is_valid_mac_address
 
             address = str(target_address).upper().replace("-", ":")
             if not is_valid_mac_address(address):
-                _LOGGER.error(
-                    "Invalid MAC address format for run_diagnostics: %s",
-                    target_address,
+                raise ServiceValidationError(
+                    f"Invalid MAC address format: {target_address}. "
+                    "Please provide a valid MAC address in the format "
+                    "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_mac_address",
                 )
-                async_create(
-                    hass,
-                    f"**Diagnostics Failed**\n\n"
-                    f"Invalid MAC address format: `{target_address}`\n\n"
-                    f"Please provide a valid MAC address in the format "
-                    f"`XX:XX:XX:XX:XX:XX` or `XX-XX-XX-XX-XX-XX`.",
-                    title="Adjustable Bed Diagnostics Error",
-                    notification_id="adjustable_bed_diagnostics_error",
-                )
-                return
             _LOGGER.info(
-                "Running diagnostics on unconfigured device at %s",
+                "Generating support bundle for unconfigured device at %s",
                 address,
             )
         elif device_ids:
-            # Use the first device ID to get the coordinator
-            device_id = device_ids[0]
-            coordinator = await _get_coordinator_from_device(hass, device_id)
+            selected_device_id = device_ids[0]
+            coordinator = await _get_coordinator_from_device(hass, selected_device_id)
             if coordinator:
                 address = coordinator.address
+                for entry_id, coord in hass.data.get(DOMAIN, {}).items():
+                    if coord is coordinator:
+                        entry = hass.config_entries.async_get_entry(entry_id)
+                        break
                 _LOGGER.info(
-                    "Running diagnostics on configured device %s at %s",
+                    "Generating support bundle for configured device %s at %s",
                     coordinator.name,
                     address,
                 )
             else:
-                _LOGGER.error(
-                    "Could not find Adjustable Bed device with ID %s for run_diagnostics service",
-                    device_id,
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID: {selected_device_id}. "
+                    "Please verify the device is configured and try again.",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
                 )
-                async_create(
-                    hass,
-                    f"**Diagnostics Failed**\n\n"
-                    f"Could not find Adjustable Bed device with ID: `{device_id}`\n\n"
-                    f"Please verify the device is configured and try again.",
-                    title="Adjustable Bed Diagnostics Error",
-                    notification_id="adjustable_bed_diagnostics_error",
-                )
-                return
         else:
-            _LOGGER.error("No device_id or target_address provided for run_diagnostics service")
-            async_create(
-                hass,
-                "**Diagnostics Failed**\n\n"
-                "No `device_id` or `target_address` was provided.\n\n"
+            raise ServiceValidationError(
+                "No device_id or target_address was provided. "
                 "Please specify either a configured device or a target MAC address.",
-                title="Adjustable Bed Diagnostics Error",
-                notification_id="adjustable_bed_diagnostics_error",
+                translation_domain=DOMAIN,
+                translation_key="missing_target",
             )
-            return
 
-        # Run diagnostics (address is guaranteed to be str at this point)
         assert address is not None
         try:
-            runner = BLEDiagnosticRunner(
+            report = await asyncio.wait_for(
+                generate_support_bundle(
+                    hass,
+                    address=address,
+                    capture_duration=capture_duration,
+                    include_logs=include_logs,
+                    coordinator=coordinator,
+                    entry=entry,
+                    device_id=selected_device_id,
+                ),
+                timeout=capture_duration + 120,
+            )
+            filepath = await hass.async_add_executor_job(
+                save_support_bundle,
                 hass,
+                report,
                 address,
-                capture_duration=capture_duration,
-                coordinator=coordinator,
             )
-            report = await runner.run_diagnostics()
-            filepath = save_diagnostic_report(hass, report, address)
 
-            # Create persistent notification
             async_create(
                 hass,
-                f"BLE diagnostic report saved to:\n\n`{filepath}`\n\n"
-                f"Captured {len(report.notifications)} notifications over {capture_duration} seconds.\n\n"
-                "Please attach this file when reporting the device.",
-                title="Adjustable Bed Diagnostic Report Ready",
-                notification_id=f"adjustable_bed_diagnostic_{address.replace(':', '_').lower()}",
+                f"Support bundle saved to:\n\n`{filepath}`\n\n"
+                f"Captured {len(report.get('notifications', []))} notifications over "
+                f"{capture_duration} seconds.\n\n"
+                "Attach this JSON file when reporting unsupported or broken beds.",
+                title="Adjustable Bed Support Bundle Ready",
+                notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
             )
-            _LOGGER.info("Diagnostic report saved to %s", filepath)
+            _LOGGER.info("Support bundle saved to %s", filepath)
+        except TimeoutError:
+            _LOGGER.exception(
+                "Support bundle generation timed out after %d seconds for %s",
+                capture_duration + 120,
+                address,
+            )
+            async_create(
+                hass,
+                f"Support bundle generation timed out after {capture_duration + 120} seconds "
+                f"for {address}.\n\n"
+                "The BLE diagnostics may be hanging. Check Bluetooth connectivity and try again.",
+                title="Adjustable Bed Support Bundle Timeout",
+                notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
+            )
+            raise
         except Exception as err:
-            _LOGGER.exception("Failed to run diagnostics for %s", address)
+            _LOGGER.exception("Failed to generate support bundle for %s", address)
             async_create(
                 hass,
-                f"Failed to run BLE diagnostics for {address}:\n\n{err}",
-                title="Adjustable Bed Diagnostic Error",
-                notification_id=f"adjustable_bed_diagnostic_error_{address.replace(':', '_').lower()}",
+                f"Failed to generate support bundle for {address}:\n\n{err}",
+                title="Adjustable Bed Support Bundle Error",
+                notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
             )
+            raise
 
     hass.services.async_register(
         DOMAIN,
-        SERVICE_RUN_DIAGNOSTICS,
-        handle_run_diagnostics,
+        SERVICE_GENERATE_SUPPORT_BUNDLE,
+        handle_generate_support_bundle,
         schema=vol.Schema(
             {
                 vol.Exclusive(CONF_DEVICE_ID, "target"): cv.ensure_list,
                 vol.Exclusive(ATTR_TARGET_ADDRESS, "target"): cv.string,
                 vol.Optional(ATTR_CAPTURE_DURATION, default=DEFAULT_CAPTURE_DURATION): vol.All(
-                    vol.Coerce(int), vol.Range(min=MIN_CAPTURE_DURATION, max=MAX_CAPTURE_DURATION)
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_CAPTURE_DURATION, max=MAX_CAPTURE_DURATION),
                 ),
-            }
-        ),
-    )
-
-    async def handle_generate_support_report(call: ServiceCall) -> None:
-        """Handle generate_support_report service call."""
-        from homeassistant.components.persistent_notification import async_create
-
-        from .support_report import generate_support_report, save_support_report
-
-        device_ids = call.data.get(CONF_DEVICE_ID, [])
-        include_logs = call.data.get(ATTR_INCLUDE_LOGS, True)
-
-        if not device_ids:
-            _LOGGER.error("No device_id provided for generate_support_report service")
-            async_create(
-                hass,
-                "No device was selected for the generate_support_report service.\n\n"
-                "Please select an Adjustable Bed device and try again.",
-                title="Adjustable Bed Support Report Error",
-                notification_id="adjustable_bed_support_report_no_device",
-            )
-            return
-
-        device_id = device_ids[0]
-        coordinator = await _get_coordinator_from_device(hass, device_id)
-        if not coordinator:
-            _LOGGER.error(
-                "Could not find Adjustable Bed device with ID %s for generate_support_report service",
-                device_id,
-            )
-            async_create(
-                hass,
-                f"Could not find Adjustable Bed device with ID:\n\n`{device_id}`\n\n"
-                "The device may have been removed or is no longer available.",
-                title="Adjustable Bed Support Report Error",
-                notification_id=f"adjustable_bed_support_report_not_found_{device_id[:8]}",
-            )
-            return
-
-        # Find the config entry for this coordinator
-        entry: ConfigEntry | None = None
-        for entry_id, coord in hass.data[DOMAIN].items():
-            if coord is coordinator:
-                entry = hass.config_entries.async_get_entry(entry_id)
-                break
-
-        if not entry:
-            _LOGGER.error("Could not find config entry for device %s", device_id)
-            return
-
-        try:
-            _LOGGER.info("Generating support report for %s", coordinator.name)
-            report = await generate_support_report(
-                hass, entry, coordinator, include_logs=include_logs
-            )
-            filepath = await hass.async_add_executor_job(
-                save_support_report, hass, report, coordinator.address
-            )
-
-            async_create(
-                hass,
-                f"Support report saved to:\n\n`{filepath}`\n\n"
-                "**How to submit a bug report:**\n"
-                "1. Go to [GitHub Issues](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml)\n"
-                "2. Fill out the form\n"
-                "3. Attach this JSON file to the issue\n\n"
-                "The report contains diagnostic information with sensitive data (MAC address) redacted.",
-                title="Adjustable Bed Support Report Ready",
-                notification_id=f"adjustable_bed_support_report_{coordinator.address.replace(':', '_').lower()}",
-            )
-            _LOGGER.info("Support report saved to %s", filepath)
-        except Exception as err:
-            _LOGGER.exception("Failed to generate support report")
-            async_create(
-                hass,
-                f"Failed to generate support report:\n\n{err}",
-                title="Adjustable Bed Support Report Error",
-                notification_id="adjustable_bed_support_report_error",
-            )
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_GENERATE_SUPPORT_REPORT,
-        handle_generate_support_report,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Optional(ATTR_INCLUDE_LOGS, default=True): cv.boolean,
             }
         ),

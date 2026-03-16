@@ -5,12 +5,12 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .adapter import find_service_info_by_address
 from .const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -78,7 +78,11 @@ async def async_get_config_entry_diagnostics(
 
     # Get advertisement data
     advertisement_info: dict[str, Any] = {}
-    service_info = bluetooth.async_last_service_info(hass, coordinator.address, connectable=True)
+    service_info, service_info_connectable = find_service_info_by_address(
+        hass,
+        coordinator.address,
+        allow_non_connectable=True,
+    )
     if service_info:
         advertisement_info = {
             # Use "device_name" to avoid redaction (name is useful for debugging)
@@ -94,7 +98,7 @@ async def async_get_config_entry_diagnostics(
                 if service_info.manufacturer_data
                 else []
             ),
-            "connectable": service_info.connectable,
+            "connectable": service_info_connectable,
         }
         if hasattr(service_info, "source"):
             advertisement_info["source"] = service_info.source

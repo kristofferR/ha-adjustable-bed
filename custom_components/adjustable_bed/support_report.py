@@ -16,6 +16,7 @@ from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .adapter import find_service_info_by_address
 from .const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -27,7 +28,7 @@ from .const import (
     SUPPORTED_BED_TYPES,
 )
 from .diagnostics_utils import get_gatt_summary
-from .redaction import redact_data
+from .redaction import redact_data, redact_pins_only
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -158,7 +159,11 @@ async def _get_bluetooth_info(
     info: dict[str, Any] = {}
 
     # Get last known advertisement data
-    service_info = bluetooth.async_last_service_info(hass, coordinator.address, connectable=True)
+    service_info, service_info_connectable = find_service_info_by_address(
+        hass,
+        coordinator.address,
+        allow_non_connectable=True,
+    )
     if service_info:
         # Guard against None values for optional BLE advertisement fields
         service_uuids = service_info.service_uuids or []
@@ -172,7 +177,7 @@ async def _get_bluetooth_info(
             "service_uuids": [str(uuid) for uuid in service_uuids],
             "manufacturer_data": {str(k): bytes(v).hex() for k, v in manufacturer_data.items()},
             "service_data": {str(k): bytes(v).hex() for k, v in service_data.items()},
-            "connectable": service_info.connectable,
+            "connectable": service_info_connectable,
         }
         # Include source info (adapter/proxy)
         if hasattr(service_info, "source"):
@@ -218,8 +223,8 @@ def _get_recent_logs() -> list[dict[str, str]]:
                         or "bluetooth" in record.name.lower()
                         or "bleak" in record.name.lower()
                     ):
-                        # Apply redaction to log messages to protect sensitive data
-                        redacted_message = redact_data({"msg": record.getMessage()})["msg"]
+                        # Only redact PINs in log messages — MACs/names are needed for debugging
+                        redacted_message = redact_pins_only({"msg": record.getMessage()})["msg"]
                         logs.append(
                             {
                                 "timestamp": datetime.fromtimestamp(

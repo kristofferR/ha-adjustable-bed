@@ -10,6 +10,7 @@ import random
 import time
 import traceback
 from collections.abc import Callable, Coroutine
+from collections import deque
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
@@ -33,6 +34,8 @@ from .adapter import (
     AdapterSelectionResult,
     detect_esphome_proxy,
     discover_services,
+    get_ble_device_with_fallback,
+    get_discovered_service_info,
     read_ble_device_info,
     select_adapter,
 )
@@ -116,11 +119,15 @@ from .const import (
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
+from .diagnostic_payloads import new_connection_attempt_details
 
 if TYPE_CHECKING:
     from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
+
+MAX_COMMAND_TRACE_ENTRIES = 100
+MAX_CONNECTION_ATTEMPT_DETAILS = 25
 
 
 class NotConnectedError(Exception):
@@ -251,6 +258,10 @@ class AdjustableBedCoordinator:
         # Adapter selection details for diagnostics (issue #168)
         self._actual_adapter: str | None = None
         self._available_adapters: list[str] = []
+        self._command_trace: deque[dict[str, Any]] = deque(maxlen=MAX_COMMAND_TRACE_ENTRIES)
+        self._connection_attempt_details: deque[dict[str, Any]] = deque(
+            maxlen=MAX_CONNECTION_ATTEMPT_DETAILS
+        )
 
         _LOGGER.debug(
             "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s, connection_profile: %s)",
@@ -444,6 +455,16 @@ class AdjustableBedCoordinator:
         }
 
     @property
+    def command_trace(self) -> list[dict[str, Any]]:
+        """Return recent integration-issued BLE writes."""
+        return list(self._command_trace)
+
+    @property
+    def connection_attempt_details(self) -> list[dict[str, Any]]:
+        """Return detailed recent connection attempts."""
+        return list(self._connection_attempt_details)
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this bed."""
         return DeviceInfo(
@@ -554,6 +575,33 @@ class AdjustableBedCoordinator:
             self._address,
         )
 
+    def record_command_trace(
+        self,
+        *,
+        payload: dict[str, Any],
+        characteristic_uuid: str,
+        characteristic_handle: int | None,
+        response: bool,
+        repeat_count: int,
+        repeat_delay_ms: int,
+        command_origin: str | None,
+        controller_class: str,
+    ) -> None:
+        """Record an integration-issued write for support bundles."""
+        self._command_trace.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "controller_class": controller_class,
+                "characteristic_uuid": characteristic_uuid,
+                "characteristic_handle": characteristic_handle,
+                "payload": payload,
+                "write_mode": "with_response" if response else "without_response",
+                "repeat_count": repeat_count,
+                "repeat_delay_ms": repeat_delay_ms,
+                "command_origin": command_origin,
+            }
+        )
+
     async def async_connect(self) -> bool:
         """Connect to the bed."""
         _LOGGER.debug("async_connect called for %s", self._address)
@@ -585,6 +633,7 @@ class AdjustableBedCoordinator:
 
         for attempt in range(self._max_retries):
             attempt_start = time.monotonic()
+            attempt_details = new_connection_attempt_details(attempt + 1, self._preferred_adapter)
             # Track connection attempt for diagnostics (issue #168)
             self._connection_attempt_count += 1
             self._last_connection_attempt = datetime.now(UTC)
@@ -642,10 +691,20 @@ class AdjustableBedCoordinator:
                     self._preferred_adapter,
                     exclude_adapters=exhausted_adapters or None,
                 )
+                attempt_details["selected_source"] = adapter_result.source
+                attempt_details["selected_rssi"] = adapter_result.rssi
+                attempt_details["selected_connectable"] = adapter_result.connectable
+                attempt_details["non_connectable_fallback_used"] = (
+                    adapter_result.connectable is False
+                )
+                attempt_details["visible_sources"] = list(adapter_result.available_sources)
                 device = adapter_result.device
 
                 if device is None:
                     lookup_elapsed = time.monotonic() - attempt_start
+                    attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
+                    attempt_details["total_elapsed_seconds"] = round(lookup_elapsed, 3)
+                    attempt_details["result"] = "device_not_found"
                     _LOGGER.warning(
                         "Device %s NOT FOUND in Bluetooth scanner after %.1fs (attempt %d/%d). "
                         "Bed may be powered off, out of range, or connected to another device.",
@@ -656,8 +715,9 @@ class AdjustableBedCoordinator:
                     )
                     # Log what devices ARE visible
                     try:
-                        discovered = list(
-                            bluetooth.async_discovered_service_info(self.hass, connectable=True)
+                        discovered = get_discovered_service_info(
+                            self.hass,
+                            include_non_connectable=True,
                         )
                         if discovered:
                             _LOGGER.debug(
@@ -666,11 +726,12 @@ class AdjustableBedCoordinator:
                             )
                             for svc_info in discovered[:10]:  # Limit to first 10
                                 _LOGGER.debug(
-                                    "  - %s (name: %s, rssi: %s, source: %s)",
+                                    "  - %s (name: %s, rssi: %s, source: %s, connectable: %s)",
                                     svc_info.address,
                                     svc_info.name or "Unknown",
                                     getattr(svc_info, "rssi", "N/A"),
                                     getattr(svc_info, "source", "N/A"),
+                                    getattr(svc_info, "connectable", None),
                                 )
                             if len(discovered) > 10:
                                 _LOGGER.debug("  ... and %d more devices", len(discovered) - 10)
@@ -678,6 +739,7 @@ class AdjustableBedCoordinator:
                             _LOGGER.debug("No BLE devices currently visible")
                     except Exception as err:
                         _LOGGER.debug("Could not enumerate visible devices: %s", err)
+                    self._connection_attempt_details.append(attempt_details)
                     # Don't sleep here - the retry backoff at loop start handles delays
                     continue
 
@@ -687,6 +749,7 @@ class AdjustableBedCoordinator:
                     device_source = device.details.get("source")
 
                 lookup_elapsed = time.monotonic() - attempt_start
+                attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
                 _LOGGER.info(
                     "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
                     self._address,
@@ -694,6 +757,13 @@ class AdjustableBedCoordinator:
                     device.name or "Unknown",
                     device_source or "unknown",
                 )
+                if adapter_result.connectable is False:
+                    _LOGGER.warning(
+                        "Device %s was recovered from a non-connectable scanner record. "
+                        "This usually means the Bluetooth proxy or scanner classified the "
+                        "advertisement incorrectly.",
+                        self._address,
+                    )
                 _LOGGER.debug(
                     "Device details: address=%s, name=%s, details=%s",
                     device.address,
@@ -761,8 +831,9 @@ class AdjustableBedCoordinator:
                     selected_source: str | None = target_source,
                 ) -> BLEDevice:
                     """Return a fresh BLEDevice from the current scanner data."""
-                    discovered = bluetooth.async_discovered_service_info(
-                        self.hass, connectable=True
+                    discovered = get_discovered_service_info(
+                        self.hass,
+                        include_non_connectable=True,
                     )
                     for svc_info in discovered:
                         if svc_info.address.upper() != self._address:
@@ -770,9 +841,10 @@ class AdjustableBedCoordinator:
                         svc_source = getattr(svc_info, "source", None)
                         if selected_source is None or svc_source == selected_source:
                             _LOGGER.debug(
-                                "ble_device_callback returning device from %s (RSSI: %s)",
+                                "ble_device_callback returning device from %s (RSSI: %s, connectable=%s)",
                                 svc_source or "unknown",
                                 getattr(svc_info, "rssi", "N/A"),
+                                getattr(svc_info, "connectable", None),
                             )
                             return svc_info.device
 
@@ -783,11 +855,18 @@ class AdjustableBedCoordinator:
                             self._address,
                         )
 
-                    fallback = bluetooth.async_ble_device_from_address(
-                        self.hass, self._address, connectable=True
+                    fallback, connectable = get_ble_device_with_fallback(
+                        self.hass,
+                        self._address,
+                        allow_non_connectable=True,
                     )
                     if fallback is None:
                         raise BleakError(f"Device {self._address} not found")
+                    if connectable is False:
+                        _LOGGER.debug(
+                            "ble_device_callback falling back to non-connectable record for %s",
+                            self._address,
+                        )
                     return fallback
 
                 ble_device_callback: Callable[[], BLEDevice] | None = (
@@ -886,9 +965,13 @@ class AdjustableBedCoordinator:
                 self._actual_adapter = actual_adapter
                 self._last_connection_error = None
                 self._last_connection_error_type = None
+                attempt_details["actual_source"] = actual_adapter
 
                 connect_elapsed = time.monotonic() - connect_start
                 total_elapsed = time.monotonic() - attempt_start
+                attempt_details["connect_elapsed_seconds"] = round(connect_elapsed, 3)
+                attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
+                attempt_details["result"] = "connected"
                 _LOGGER.info(
                     "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
@@ -921,7 +1004,12 @@ class AdjustableBedCoordinator:
                 )
 
                 # Discover services and log hierarchy
-                await discover_services(self._client, self._address)
+                attempt_details["service_discovery"]["attempted"] = True
+                service_discovery_success = await discover_services(self._client, self._address)
+                attempt_details["service_discovery"]["success"] = service_discovery_success
+                attempt_details["service_discovery"]["service_count"] = (
+                    len(list(self._client.services)) if self._client.services else 0
+                )
 
                 # Validate expected services are present (for beds requiring pairing)
                 if bed_requires_pairing and self._client.services:
@@ -1046,11 +1134,16 @@ class AdjustableBedCoordinator:
                 self._connection_source = actual_adapter
                 self._connection_rssi = adapter_result.rssi
                 self._notify_connection_state_change(True)
+                self._connection_attempt_details.append(attempt_details)
 
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
                 attempt_elapsed = time.monotonic() - attempt_start
+                attempt_details["total_elapsed_seconds"] = round(attempt_elapsed, 3)
+                attempt_details["result"] = "failed"
+                attempt_details["error"] = str(err)
+                attempt_details["error_type"] = type(err).__name__
                 err_str = str(err).lower()
                 # Categorize the error for clearer diagnostics
                 if isinstance(err, TimeoutError) or "timeout" in err_str:
@@ -1059,6 +1152,7 @@ class AdjustableBedCoordinator:
                     error_category = "CONNECTION REFUSED (another device may be connected)"
                 else:
                     error_category = "BLE ERROR"
+                attempt_details["error_category"] = error_category
 
                 # Detect connection slot exhaustion and exclude the adapter
                 # on subsequent retries so we try an alternative (issue #152).
@@ -1103,11 +1197,19 @@ class AdjustableBedCoordinator:
                             type(disconnect_err).__name__,
                         )
                     self._client = None
+                self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
             except Exception as err:
                 # Track connection error for diagnostics (issue #168)
                 self._last_connection_error = str(err)
                 self._last_connection_error_type = type(err).__name__
+                attempt_details["total_elapsed_seconds"] = round(
+                    time.monotonic() - attempt_start, 3
+                )
+                attempt_details["result"] = "failed"
+                attempt_details["error"] = str(err)
+                attempt_details["error_type"] = type(err).__name__
+                attempt_details["error_category"] = "UNEXPECTED ERROR"
 
                 _LOGGER.warning(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
@@ -1135,6 +1237,7 @@ class AdjustableBedCoordinator:
                             type(disconnect_err).__name__,
                         )
                     self._client = None
+                self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
 
         total_elapsed = time.monotonic() - overall_start

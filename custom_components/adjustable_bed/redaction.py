@@ -90,3 +90,30 @@ def redact_data(data: Any, depth: int = 0) -> Any:
         return redact_string(data)
     else:
         return data
+
+
+# Keys that contain actual secrets (PINs)
+_PIN_KEYS = {CONF_JENSEN_PIN, CONF_OCTO_PIN}
+
+
+def redact_pins_only(data: Any, depth: int = 0) -> Any:
+    """Recursively redact only PIN fields, leaving names/addresses/MACs intact.
+
+    Used for support bundles where BLE device names and MAC addresses are
+    essential debugging information and should not be stripped.
+    """
+    if depth > 20:
+        return data
+
+    if isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            key_lower = key.lower() if isinstance(key, str) else key
+            if key in _PIN_KEYS or key_lower in _PIN_KEYS:
+                result[key] = "**REDACTED**"
+            else:
+                result[key] = redact_pins_only(value, depth + 1)
+        return result
+    if isinstance(data, list):
+        return [redact_pins_only(item, depth + 1) for item in data]
+    return data
