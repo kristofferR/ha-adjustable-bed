@@ -1007,8 +1007,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
             )
             _LOGGER.info("Support bundle saved to %s", filepath)
-        except asyncio.TimeoutError:
-            _LOGGER.error(
+        except TimeoutError:
+            _LOGGER.exception(
                 "Support bundle generation timed out after %d seconds for %s",
                 capture_duration + 120,
                 address,
@@ -1021,6 +1021,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 title="Adjustable Bed Support Bundle Timeout",
                 notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
             )
+            raise
         except Exception as err:
             _LOGGER.exception("Failed to generate support bundle for %s", address)
             async_create(
@@ -1029,6 +1030,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 title="Adjustable Bed Support Bundle Error",
                 notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
             )
+            raise
 
     hass.services.async_register(
         DOMAIN,

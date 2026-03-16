@@ -114,7 +114,6 @@ def redact_pins_only(data: Any, depth: int = 0) -> Any:
             else:
                 result[key] = redact_pins_only(value, depth + 1)
         return result
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return [redact_pins_only(item, depth + 1) for item in data]
-    else:
-        return data
+    return data
