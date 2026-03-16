@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import UTC, datetime
 from typing import Any
 
 MAX_ASCII_PREVIEW_LENGTH = 64
@@ -94,3 +95,34 @@ def summarize_repeated_payloads(
         )
 
     return repeated
+
+
+def new_connection_attempt_details(attempt: int, preferred_adapter: str) -> dict[str, Any]:
+    """Return a fresh connection-attempt details dict.
+
+    Used by both ``coordinator.py`` and ``ble_diagnostics.py`` so the
+    schema stays in sync.
+    """
+    return {
+        "attempt": attempt,
+        "started_at": datetime.now(UTC).isoformat(),
+        "preferred_adapter": preferred_adapter,
+        "selected_source": None,
+        "actual_source": None,
+        "selected_rssi": None,
+        "selected_connectable": None,
+        "non_connectable_fallback_used": False,
+        "visible_sources": [],
+        "lookup_elapsed_seconds": None,
+        "connect_elapsed_seconds": None,
+        "total_elapsed_seconds": None,
+        "error": None,
+        "error_type": None,
+        "error_category": None,
+        "service_discovery": {
+            "attempted": False,
+            "success": None,
+            "service_count": None,
+        },
+        "result": "started",
+    }

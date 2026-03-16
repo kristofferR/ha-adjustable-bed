@@ -119,6 +119,7 @@ from .const import (
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
+from .diagnostic_payloads import new_connection_attempt_details
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -632,30 +633,7 @@ class AdjustableBedCoordinator:
 
         for attempt in range(self._max_retries):
             attempt_start = time.monotonic()
-            attempt_started_at = datetime.now(UTC)
-            attempt_details: dict[str, Any] = {
-                "attempt": attempt + 1,
-                "started_at": attempt_started_at.isoformat(),
-                "preferred_adapter": self._preferred_adapter,
-                "selected_source": None,
-                "actual_source": None,
-                "selected_rssi": None,
-                "selected_connectable": None,
-                "non_connectable_fallback_used": False,
-                "visible_sources": [],
-                "lookup_elapsed_seconds": None,
-                "connect_elapsed_seconds": None,
-                "total_elapsed_seconds": None,
-                "error": None,
-                "error_type": None,
-                "error_category": None,
-                "service_discovery": {
-                    "attempted": False,
-                    "success": None,
-                    "service_count": None,
-                },
-                "result": "started",
-            }
+            attempt_details = new_connection_attempt_details(attempt + 1, self._preferred_adapter)
             # Track connection attempt for diagnostics (issue #168)
             self._connection_attempt_count += 1
             self._last_connection_attempt = datetime.now(UTC)

@@ -936,20 +936,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             address = str(target_address).upper().replace("-", ":")
             if not is_valid_mac_address(address):
-                _LOGGER.error(
-                    "Invalid MAC address format for generate_support_bundle: %s",
-                    target_address,
+                raise ServiceValidationError(
+                    f"Invalid MAC address format: {target_address}. "
+                    "Please provide a valid MAC address in the format "
+                    "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_mac_address",
                 )
-                async_create(
-                    hass,
-                    f"**Support Bundle Failed**\n\n"
-                    f"Invalid MAC address format: `{target_address}`\n\n"
-                    f"Please provide a valid MAC address in the format "
-                    f"`XX:XX:XX:XX:XX:XX` or `XX-XX-XX-XX-XX-XX`.",
-                    title="Adjustable Bed Support Bundle Error",
-                    notification_id="adjustable_bed_support_bundle_error",
-                )
-                return
             _LOGGER.info(
                 "Generating support bundle for unconfigured device at %s",
                 address,
@@ -969,43 +962,33 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     address,
                 )
             else:
-                _LOGGER.error(
-                    "Could not find Adjustable Bed device with ID %s for generate_support_bundle service",
-                    selected_device_id,
+                raise ServiceValidationError(
+                    f"Could not find Adjustable Bed device with ID: {selected_device_id}. "
+                    "Please verify the device is configured and try again.",
+                    translation_domain=DOMAIN,
+                    translation_key="device_not_found",
                 )
-                async_create(
-                    hass,
-                    f"**Support Bundle Failed**\n\n"
-                    f"Could not find Adjustable Bed device with ID: `{selected_device_id}`\n\n"
-                    f"Please verify the device is configured and try again.",
-                    title="Adjustable Bed Support Bundle Error",
-                    notification_id="adjustable_bed_support_bundle_error",
-                )
-                return
         else:
-            _LOGGER.error(
-                "No device_id or target_address provided for generate_support_bundle service"
-            )
-            async_create(
-                hass,
-                "**Support Bundle Failed**\n\n"
-                "No `device_id` or `target_address` was provided.\n\n"
+            raise ServiceValidationError(
+                "No device_id or target_address was provided. "
                 "Please specify either a configured device or a target MAC address.",
-                title="Adjustable Bed Support Bundle Error",
-                notification_id="adjustable_bed_support_bundle_error",
+                translation_domain=DOMAIN,
+                translation_key="missing_target",
             )
-            return
 
         assert address is not None
         try:
-            report = await generate_support_bundle(
-                hass,
-                address=address,
-                capture_duration=capture_duration,
-                include_logs=include_logs,
-                coordinator=coordinator,
-                entry=entry,
-                device_id=selected_device_id,
+            report = await asyncio.wait_for(
+                generate_support_bundle(
+                    hass,
+                    address=address,
+                    capture_duration=capture_duration,
+                    include_logs=include_logs,
+                    coordinator=coordinator,
+                    entry=entry,
+                    device_id=selected_device_id,
+                ),
+                timeout=capture_duration + 120,
             )
             filepath = await hass.async_add_executor_job(
                 save_support_bundle,
@@ -1024,6 +1007,20 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
             )
             _LOGGER.info("Support bundle saved to %s", filepath)
+        except asyncio.TimeoutError:
+            _LOGGER.error(
+                "Support bundle generation timed out after %d seconds for %s",
+                capture_duration + 120,
+                address,
+            )
+            async_create(
+                hass,
+                f"Support bundle generation timed out after {capture_duration + 120} seconds "
+                f"for {address}.\n\n"
+                "The BLE diagnostics may be hanging. Check Bluetooth connectivity and try again.",
+                title="Adjustable Bed Support Bundle Timeout",
+                notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
+            )
         except Exception as err:
             _LOGGER.exception("Failed to generate support bundle for %s", address)
             async_create(

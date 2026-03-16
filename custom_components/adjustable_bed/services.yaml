@@ -149,14 +149,14 @@ generate_support_bundle:
   fields:
     device_id:
       name: Device
-      description: A configured adjustable bed device to capture.
+      description: A configured adjustable bed device to capture. Provide exactly one of `device_id` or `target_address`.
       required: false
       selector:
         device:
           integration: adjustable_bed
     target_address:
       name: Target Address
-      description: Bluetooth MAC address of an unconfigured device (for example `AA:BB:CC:DD:EE:FF`).
+      description: Bluetooth MAC address of an unconfigured device (for example `AA:BB:CC:DD:EE:FF`). Provide exactly one of `device_id` or `target_address`.
       required: false
       example: "AA:BB:CC:DD:EE:FF"
       selector:

@@ -485,21 +485,19 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test generate_support_bundle validates raw MAC addresses."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        with patch(
-            "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
-            new=AsyncMock(),
-        ) as mock_generate_support_bundle:
+        with pytest.raises(ServiceValidationError, match="Invalid MAC address format"):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_GENERATE_SUPPORT_BUNDLE,
                 {"target_address": "not-a-mac"},
                 blocking=True,
             )
-
-        mock_generate_support_bundle.assert_not_called()
 
     async def test_goto_preset_service(
         self,

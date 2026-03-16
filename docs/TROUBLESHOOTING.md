@@ -304,7 +304,7 @@ There are two ways to gather diagnostic information:
 |---------|---------------|----------------|
 | **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Perform the `adjustable_bed.generate_support_bundle` action |
 | **What it captures** | Real-time stream of all integration activity | Snapshot of device state at one moment |
-| **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, advertisements, detection reasoning, GATT services, notifications |
+| **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, advertisements (per source), detection reasoning, GATT/descriptor details, notifications, buffered command trace, connection-attempt details |
 | **Size** | Large, includes unrelated entries from other integrations | Focused JSON file for one device |
 | **Best for** | "Why didn't this command work?" - seeing exact bytes sent | "What device do I have?" - sharing device info in bug reports |
 

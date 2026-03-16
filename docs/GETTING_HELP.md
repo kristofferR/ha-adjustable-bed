@@ -60,17 +60,19 @@ The support bundle includes everything we need in one file:
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
 3. Select your bed device, or enter `target_address` for an unconfigured device, then click **Perform action**
-4. A notification will show the file location (in your `/config/` folder)
-5. Attach the JSON file to your GitHub issue
+4. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
+5. A notification will show the file location (in your `/config/` folder)
+6. Attach the JSON file to your GitHub issue
 
 The support bundle includes:
 - System info (HA version, Python version, platform)
 - Integration configuration and detected bed type
-- Connection status and BLE adapter info
-- BLE advertisements by source, detection reasoning, and GATT details
+- Connection status, BLE adapter info, and connection attempt details
+- BLE advertisements by source, detection reasoning, and GATT/descriptor details
+- Captured notifications and buffered command trace
 - Recent error logs
 
-**Privacy note:** MAC addresses are partially redacted (manufacturer prefix kept), PINs and names are masked.
+**Privacy note:** PINs are redacted. MAC addresses, device names, and other BLE identifiers are preserved since they are essential for debugging.
 
 ### Alternative: Download Diagnostics
 
@@ -151,7 +153,7 @@ The `generate_support_bundle` action captures GATT structure, device info, scann
 
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
-3. Select your bed device (or enter a MAC address for unconfigured devices)
+3. Select your bed device (or enter `target_address` for unconfigured devices)
 4. Click **Perform action**
 5. Optionally operate your physical remote during capture to record notifications
 6. Find the JSON report in your `/config/` folder

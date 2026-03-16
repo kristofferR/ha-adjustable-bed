@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import functools
-import json
 import logging
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient
@@ -37,6 +36,7 @@ from .detection import detect_bed_type_detailed
 from .diagnostic_payloads import (
     format_mapping_payloads,
     format_payload,
+    new_connection_attempt_details,
     payload_ascii_preview,
     summarize_repeated_payloads,
 )
@@ -49,6 +49,10 @@ _LOGGER = logging.getLogger(__name__)
 # Connection settings
 CONNECTION_TIMEOUT = 30.0
 DEFAULT_CAPTURE_DURATION = 120  # 2 minutes
+MAX_CAPTURED_NOTIFICATIONS = 5000
+
+# Timestamps above this value (approx. 2001-09-09) are treated as Unix epoch seconds
+_EPOCH_SECONDS_THRESHOLD = 1_000_000_000
 
 
 @dataclass
@@ -179,11 +183,11 @@ class BLEDiagnosticRunner:
 
         self._client: BleakClient | None = None
         self._using_coordinator_connection: bool = False
-        self._notifications: list[CapturedNotification] = []
+        self._notifications: deque[CapturedNotification] = deque(maxlen=MAX_CAPTURED_NOTIFICATIONS)
         self._errors: list[str] = []
         self._notification_lock = asyncio.Lock()
         self._diagnostic_notifications_started: bool = False
-        self._notification_payloads: dict[str, list[bytes]] = {}
+        self._notification_payloads: dict[str, deque[bytes]] = {}
         self._connection_attempt_details: list[dict[str, Any]] = []
         self._advertisement_snapshots: list[tuple[Any, bool]] = []
         self._selected_source: str | None = None
@@ -192,6 +196,7 @@ class BLEDiagnosticRunner:
         self._actual_source: str | None = None
         self._selected_ble_device: BLEDevice | None = None
         self._using_non_connectable_fallback: bool = False
+        self._background_tasks: set[asyncio.Task[None]] = set()
 
     async def run_diagnostics(self) -> DiagnosticReport:
         """Run full diagnostic capture on the device."""
@@ -308,29 +313,7 @@ class BLEDiagnosticRunner:
 
         for attempt in range(2):
             attempt_start = time.monotonic()
-            attempt_details: dict[str, Any] = {
-                "attempt": attempt + 1,
-                "started_at": datetime.now(UTC).isoformat(),
-                "preferred_adapter": preferred_adapter,
-                "selected_source": None,
-                "actual_source": None,
-                "selected_rssi": None,
-                "selected_connectable": None,
-                "non_connectable_fallback_used": False,
-                "visible_sources": [],
-                "lookup_elapsed_seconds": None,
-                "connect_elapsed_seconds": None,
-                "total_elapsed_seconds": None,
-                "error": None,
-                "error_type": None,
-                "error_category": None,
-                "service_discovery": {
-                    "attempted": False,
-                    "success": None,
-                    "service_count": None,
-                },
-                "result": "started",
-            }
+            attempt_details = new_connection_attempt_details(attempt + 1, preferred_adapter)
 
             adapter_result = await select_adapter(
                 self.hass,
@@ -526,7 +509,9 @@ class BLEDiagnosticRunner:
 
     def _raw_notify_callback(self, characteristic_uuid: str, data: bytes) -> None:
         """Handle raw notification from coordinator's controller."""
-        asyncio.create_task(self._handle_notification(characteristic_uuid, data))
+        task = asyncio.create_task(self._handle_notification(characteristic_uuid, data))
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
     async def _subscribe_to_notifications(self, services: list[ServiceInfo]) -> None:
         """Subscribe to all notifiable characteristics."""
@@ -645,7 +630,9 @@ class BLEDiagnosticRunner:
                 data_hex=payload.hex(),
             )
             self._notifications.append(notification)
-            self._notification_payloads.setdefault(characteristic_uuid, []).append(payload)
+            if characteristic_uuid not in self._notification_payloads:
+                self._notification_payloads[characteristic_uuid] = deque(maxlen=MAX_CAPTURED_NOTIFICATIONS)
+            self._notification_payloads[characteristic_uuid].append(payload)
 
         _LOGGER.debug(
             "Notification on %s: %s",
@@ -953,7 +940,7 @@ class BLEDiagnosticRunner:
         if isinstance(raw_time, datetime):
             return raw_time.isoformat()
         if isinstance(raw_time, (int, float)):
-            if raw_time > 1_000_000_000:
+            if raw_time > _EPOCH_SECONDS_THRESHOLD:
                 return datetime.fromtimestamp(raw_time, tz=UTC).isoformat()
             return raw_time
         return str(raw_time)
@@ -973,21 +960,3 @@ class BLEDiagnosticRunner:
         return str(value)
 
 
-def save_diagnostic_report(
-    hass: HomeAssistant,
-    report: DiagnosticReport,
-    address: str,
-) -> Path:
-    """Save diagnostic report to a JSON file in the config directory."""
-    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    address_safe = address.replace(":", "").lower()
-    filename = f"adjustable_bed_diagnostic_{address_safe}_{timestamp}.json"
-
-    config_dir = Path(hass.config.config_dir)
-    filepath = config_dir / filename
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(report.to_dict(), f, indent=2, default=str)
-
-    _LOGGER.info("Diagnostic report saved to %s", filepath)
-    return filepath

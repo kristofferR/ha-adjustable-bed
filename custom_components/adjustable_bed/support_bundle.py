@@ -10,13 +10,12 @@ from typing import Any
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .ble_diagnostics import BLEDiagnosticRunner
 from .const import DOMAIN, SUPPORTED_BED_TYPES
-from .redaction import redact_data
+from .redaction import redact_pins_only
 from .support_report import (
     _get_bluetooth_info,
     _get_connection_info,
@@ -107,7 +106,7 @@ async def generate_support_bundle(
         "errors": list(diagnostics_report.errors),
     }
 
-    return redact_data(report)  # type: ignore[no-any-return]
+    return redact_pins_only(report)  # type: ignore[no-any-return]
 
 
 async def _build_bluetooth_section(
@@ -159,7 +158,7 @@ def _build_connection_info_from_diagnostics(diagnostics_report: dict[str, Any]) 
         "is_connecting": False,
         "mtu_size": None,
         "services_discovered": len(gatt_services),
-        "service_uuids": [service.get("uuid") for service in gatt_services],
+        "service_uuids": [uuid for service in gatt_services if (uuid := service.get("uuid")) is not None],
     }
 
 
