@@ -79,6 +79,17 @@ class JiecangCommands:
     # Massage - Leg (data format: 0x14, 0x02, 0x08, level, checksum)
     LEG_MASSAGE_OFF = bytes.fromhex("f1f1140208001e7e")
 
+    # Massage control
+    MASSAGE_MODE = bytes.fromhex("f1f116010a217e")   # Cycle massage pattern
+    MASSAGE_START = bytes.fromhex("f1f1100108197e")   # Start massage
+    MASSAGE_STOP = bytes.fromhex("f1f11101081a7e")    # Stop massage
+
+    # Split bed motor commands (right side)
+    BACK_RIGHT_UP = bytes.fromhex("f1f1200101227e")
+    BACK_RIGHT_DOWN = bytes.fromhex("f1f1210101237e")
+    BACK_TOP_SPLIT_UP = bytes.fromhex("f1f1230101257e")
+    BACK_TOP_SPLIT_DOWN = bytes.fromhex("f1f1240101267e")
+
     @staticmethod
     def back_massage(level: int) -> bytes:
         """Create back massage command for level 0-10."""
@@ -341,6 +352,19 @@ class JiecangController(BedController):
         await self.write_command(JiecangCommands.LIGHT_TOGGLE)
 
     # Massage methods
+    async def massage_toggle(self) -> None:
+        """Toggle massage on/off."""
+        if self._massage_back_level > 0 or self._massage_leg_level > 0:
+            await self.write_command(JiecangCommands.MASSAGE_STOP)
+            self._massage_back_level = 0
+            self._massage_leg_level = 0
+        else:
+            await self.write_command(JiecangCommands.MASSAGE_START)
+
+    async def massage_mode_step(self) -> None:
+        """Cycle through massage patterns."""
+        await self.write_command(JiecangCommands.MASSAGE_MODE)
+
     async def massage_off(self) -> None:
         """Turn off massage."""
         self._massage_back_level = 0
