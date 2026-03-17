@@ -41,7 +41,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class RichmatCommands:
-    """Richmat command constants (command byte values)."""
+    """Richmat command constants (command byte values).
+
+    Verified from GM Bed Control APK v3.0.33 (com.desarketing.gmmotor)
+    and SleepFunction APK (com.richmat.sleepfunction).
+    """
 
     # Presets
     PRESET_FLAT = 0x31
@@ -50,8 +54,15 @@ class RichmatCommands:
     PRESET_MEMORY_1 = 0x2E
     PRESET_MEMORY_2 = 0x2F
     PRESET_MEMORY_3 = 0x30
+    PRESET_MEMORY_4 = 0xB2
+    PRESET_MEMORY_5 = 0xF4
     PRESET_TV = 0x58
     PRESET_ZERO_G = 0x45
+    PRESET_SIDE_SLEEPER = 0xBA
+    PRESET_YOGA = 0xF0
+    PRESET_SLEEP = 0x8E
+    PRESET_WAKEUP = 0x93
+    PRESET_FLAT_SLEEP = 0xF6
 
     # Program presets
     PROGRAM_ANTI_SNORE = 0x69
@@ -59,14 +70,36 @@ class RichmatCommands:
     PROGRAM_MEMORY_1 = 0x2B
     PROGRAM_MEMORY_2 = 0x2C
     PROGRAM_MEMORY_3 = 0x2D
+    PROGRAM_MEMORY_4 = 0xB3
+    PROGRAM_MEMORY_5 = 0xF5
     PROGRAM_TV = 0x64
     PROGRAM_ZERO_G = 0x66
+    PROGRAM_SIDE_SLEEPER = 0xBB
+    PROGRAM_YOGA = 0xF1
+    PROGRAM_SLEEP = 0x8F
+    PROGRAM_WAKEUP = 0x94
+    PROGRAM_FLAT_SLEEP = 0xF7
+
+    # Preset resets
+    RESET_MOTOR = 0xBE
+    RESET_TV = 0xCA
+    RESET_SNORE = 0xCB
+    RESET_ZERO_G = 0xCC
 
     # Massage
     MASSAGE_HEAD_STEP = 0x4C
     MASSAGE_FOOT_STEP = 0x4E
     MASSAGE_PATTERN_STEP = 0x48
     MASSAGE_TOGGLE = 0x5D
+    MASSAGE_HEAD_OFF = 0x98
+    MASSAGE_HEAD_1 = 0x99
+    MASSAGE_HEAD_2 = 0x9A
+    MASSAGE_HEAD_3 = 0x9B
+    MASSAGE_FOOT_OFF = 0x9C
+    MASSAGE_FOOT_1 = 0x9D
+    MASSAGE_FOOT_2 = 0x9E
+    MASSAGE_FOOT_3 = 0x9F
+    MASSAGE_THIRD_INC = 0xE0
 
     # Lights
     LIGHTS_TOGGLE = 0x3C
@@ -80,6 +113,30 @@ class RichmatCommands:
     MOTOR_FEET_DOWN = 0x27
     MOTOR_LUMBAR_UP = 0x41
     MOTOR_LUMBAR_DOWN = 0x42
+    MOTOR_5_UP = 0x71
+    MOTOR_5_DOWN = 0x72
+    MOTOR_6_UP = 0x73
+    MOTOR_6_DOWN = 0x74
+    MOTOR_7_UP = 0xD0
+    MOTOR_7_DOWN = 0xD1
+
+    # Combined motor movements
+    MOTOR_HEAD_FEET_UP = 0x29
+    MOTOR_HEAD_FEET_DOWN = 0x2A
+    MOTOR_LUMBAR_PILLOW_UP = 0x43
+    MOTOR_LUMBAR_PILLOW_DOWN = 0x44
+    MOTOR_FEET_LUMBAR_UP = 0x96
+    MOTOR_FEET_LUMBAR_DOWN = 0x97
+    MOTOR_LUMBAR_PILLOW_TILT_UP = 0x5B
+    MOTOR_LUMBAR_PILLOW_TILT_DOWN = 0x5C
+    MOTOR_ALL_UP = 0x56
+    MOTOR_ALL_DOWN = 0x57
+    MOTOR_HEAD_UP_FEET_DOWN = 0x21
+    MOTOR_HEAD_DOWN_FEET_UP = 0x22
+
+    # Sync mode (split king)
+    SYNC_ON = 0xBC
+    SYNC_OFF = 0xBD
 
     # End/Stop
     END = 0x6E
@@ -410,11 +467,13 @@ class RichmatController(BedController):
             1: RichmatCommands.PRESET_MEMORY_1,
             2: RichmatCommands.PRESET_MEMORY_2,
             3: RichmatCommands.PRESET_MEMORY_3,
+            4: RichmatCommands.PRESET_MEMORY_4,
+            5: RichmatCommands.PRESET_MEMORY_5,
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1-5)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
@@ -422,11 +481,13 @@ class RichmatController(BedController):
             1: RichmatCommands.PROGRAM_MEMORY_1,
             2: RichmatCommands.PROGRAM_MEMORY_2,
             3: RichmatCommands.PROGRAM_MEMORY_3,
+            4: RichmatCommands.PROGRAM_MEMORY_4,
+            5: RichmatCommands.PROGRAM_MEMORY_5,
         }
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1-5)", memory_num)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position.
@@ -445,12 +506,20 @@ class RichmatController(BedController):
         await self.write_command(self._build_command(RichmatCommands.PRESET_ANTI_SNORE))
 
     async def preset_tv(self) -> None:
-        """Go to TV/lounge position.
+        """Go to TV position.
 
         Presets are single-command triggered - the bed's internal controller
         handles moving to the position automatically after receiving one command.
         """
         await self.write_command(self._build_command(RichmatCommands.PRESET_TV))
+
+    async def preset_lounge(self) -> None:
+        """Go to lounge position."""
+        await self.write_command(self._build_command(RichmatCommands.PRESET_LOUNGE))
+
+    async def program_lounge(self) -> None:
+        """Program current position as lounge preset."""
+        await self.write_command(self._build_command(RichmatCommands.PROGRAM_LOUNGE))
 
     # Light methods
     async def lights_toggle(self) -> None:
