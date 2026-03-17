@@ -825,6 +825,7 @@ OKIN_CB24_VARIANTS: Final = {
 # Keeson variants
 KEESON_VARIANT_BASE: Final = "base"
 KEESON_VARIANT_KSBT: Final = "ksbt"
+KEESON_VARIANT_KSBT_CR: Final = "ksbt_cr"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
 KEESON_VARIANT_OKIN: Final = "okin"
 KEESON_VARIANT_SERTA: Final = "serta"
@@ -836,6 +837,7 @@ KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
     KEESON_VARIANT_KSBT: "KSBT (older Keeson remotes)",
+    KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",

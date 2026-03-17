@@ -30,6 +30,7 @@ from ..const import (
     KEESON_KSBT_FALLBACK_GATT_PAIRS,
     KEESON_KSBT_SERVICE_UUID,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_PURPLE,
@@ -188,8 +189,8 @@ class KeesonController(BedController):
         # Determine the characteristic UUID
         if char_uuid:
             self._char_uuid = char_uuid
-        elif variant == "ksbt":
-            # For KSBT variant, try to find a working characteristic UUID
+        elif variant in {"ksbt", KEESON_VARIANT_KSBT_CR}:
+            # For KSBT variants, try to find a working characteristic UUID
             self._char_uuid = self._detect_ksbt_characteristic_uuid()
         else:
             # For base/ergomotion variant, try to find a working characteristic UUID
@@ -316,6 +317,11 @@ class KeesonController(BedController):
         """Return the UUID of the control characteristic."""
         return self._char_uuid
 
+    @property
+    def _is_ksbt(self) -> bool:
+        """Return True if this is any KSBT variant (ksbt or ksbt_cr)."""
+        return self._variant in {"ksbt", KEESON_VARIANT_KSBT_CR}
+
     # Capability properties
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -324,17 +330,17 @@ class KeesonController(BedController):
     @property
     def supports_preset_lounge(self) -> bool:
         """KSBT, Ergomotion, and Purple have the Lounge preset; BaseI4/I5 does not."""
-        return self._variant in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}
+        return self._is_ksbt or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
 
     @property
     def supports_preset_tv(self) -> bool:
         """KSBT and Ergomotion have TV preset; BaseI4/I5/Purple does not."""
-        return self._variant in {"ksbt", "ergomotion"}
+        return self._is_ksbt or self._variant == "ergomotion"
 
     @property
     def supports_preset_anti_snore(self) -> bool:
         """KSBT, Ergomotion, and Purple have anti-snore preset; BaseI4/I5 does not."""
-        return self._variant in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}
+        return self._is_ksbt or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -353,7 +359,7 @@ class KeesonController(BedController):
         """
         if self._betterliving_presets or self._cb1322_presets:
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
-        if self._variant == "ksbt":
+        if self._is_ksbt:
             return 2  # Memory 1 (M button) and Memory 2 (TV button)
         elif self._variant == KEESON_VARIANT_PURPLE:
             return 2  # Purple Premium has 2. Plus model bed supports 3, but we don't know what path it uses
@@ -499,6 +505,9 @@ class KeesonController(BedController):
         if self._variant == "ksbt":
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
+        elif self._variant == KEESON_VARIANT_KSBT_CR:
+            # KSBT03CR: [0x05, 0x02, ...int_to_bytes(command), 0x00]
+            return bytes([0x05, 0x02] + int_to_bytes(command_value) + [0x00])
         else:
             # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5
@@ -970,7 +979,7 @@ class KeesonController(BedController):
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
-        if self._variant not in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}:
+        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE))
@@ -984,7 +993,7 @@ class KeesonController(BedController):
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (KSBT/Ergomotion/Purple only)."""
-        if self._variant not in {"ksbt", "ergomotion", KEESON_VARIANT_PURPLE}:
+        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
