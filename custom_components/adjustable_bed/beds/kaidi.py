@@ -179,7 +179,7 @@ KAIDI_PRODUCT_FAMILIES: dict[int, KaidiProductFamily] = {
     139: KaidiProductFamily(bed_ui=2),
     142: KaidiProductFamily(
         bed_ui=5, has_back=True, has_waist=True, has_all=True,
-        has_lights=True, has_massage=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
     ),
     143: KaidiProductFamily(bed_ui=2),
 }
