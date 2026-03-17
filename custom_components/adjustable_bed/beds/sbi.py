@@ -97,7 +97,7 @@ class SBICommands:
     PRESET_FLAT = 0x08000000  # cmd3=0x08
     PRESET_ZERO_G = 0x00001000  # cmd1=0x10
     PRESET_RESET = 0x08001000  # cmd1=0x10, cmd3=0x08
-    PRESET_MEMORY_1 = 0x00002000  # cmd1=0x20
+    PRESET_MEMORY_1 = 0x00010000  # cmd2=0x01 (MX remote btn_memory1)
     PRESET_MEMORY_2 = 0x00004000  # cmd1=0x40 (TV in some remotes)
     PRESET_TV = 0x00008000  # cmd1=0x80
 
