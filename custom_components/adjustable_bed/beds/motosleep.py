@@ -10,6 +10,7 @@ Device names start with "HHC" followed by hexadecimal characters (e.g., HHC36112
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -60,6 +61,9 @@ class MotoSleepCommands:
     MASSAGE_FOOT_DOWN = ord("F")
     MASSAGE_HEAD_OFF = ord("J")
     MASSAGE_FOOT_OFF = ord("I")
+
+    # Stop
+    STOP = ord("b")  # 0x62 - dedicated stop command, sent on button release
 
     # Lighting
     LIGHTS_TOGGLE = ord("A")
@@ -130,18 +134,29 @@ class MotoSleepController(BedController):
         """Build a 2-byte command: [0x24, char_code]."""
         return bytes([0x24, char_code])
 
-    async def _move_motor(self, command_char: int) -> None:
-        """Execute a movement command.
+    async def _send_stop(self) -> None:
+        """Send the dedicated stop command ($b / 0x62).
 
-        MotoSleep motors stop automatically when commands stop being sent,
-        similar to releasing a button on a physical remote. No explicit stop
-        command is needed or available for motors.
+        The APK sends stop 4 times with short delays for reliability.
+        We send it 3 times with a fresh cancel_event to ensure delivery.
         """
         await self.write_command(
-            self._build_command(command_char),
-            repeat_count=30,
+            self._build_command(MotoSleepCommands.STOP),
+            repeat_count=3,
             repeat_delay_ms=50,
+            cancel_event=asyncio.Event(),
         )
+
+    async def _move_motor(self, command_char: int) -> None:
+        """Execute a movement command, then send stop."""
+        try:
+            await self.write_command(
+                self._build_command(command_char),
+                repeat_count=30,
+                repeat_delay_ms=50,
+            )
+        finally:
+            await self._send_stop()
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -154,8 +169,7 @@ class MotoSleepController(BedController):
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
-        # MotoSleep doesn't have a dedicated stop command - signal cancellation
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
         """Move back up (same as head for MotoSleep)."""
@@ -167,7 +181,7 @@ class MotoSleepController(BedController):
 
     async def move_back_stop(self) -> None:
         """Stop back motor."""
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def move_legs_up(self) -> None:
         """Move legs up (same as feet for MotoSleep)."""
@@ -179,7 +193,7 @@ class MotoSleepController(BedController):
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -191,7 +205,7 @@ class MotoSleepController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def move_neck_up(self) -> None:
         """Move neck up."""
@@ -203,7 +217,7 @@ class MotoSleepController(BedController):
 
     async def move_neck_stop(self) -> None:
         """Stop neck motor."""
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def move_lumbar_up(self) -> None:
         """Move lumbar up."""
@@ -215,16 +229,11 @@ class MotoSleepController(BedController):
 
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar motor."""
-        self._coordinator.cancel_command.set()
+        await self._send_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors.
-
-        MotoSleep has no universal stop command. Motors stop automatically
-        when movement commands stop being sent. This method signals cancellation
-        to interrupt any ongoing command sequences.
-        """
-        self._coordinator.cancel_command.set()
+        """Stop all motors using dedicated stop command ($b / 0x62)."""
+        await self._send_stop()
 
     # Preset methods
     async def preset_flat(self) -> None:
