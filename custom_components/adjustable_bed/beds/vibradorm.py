@@ -141,6 +141,7 @@ class VibradormController(BedController):
         self._lights_on: bool = False
         self._write_with_response: bool = False
         self._cbi_toggle: bool = False  # Alternates 0x0000/0x8000 per CBI write
+        self._massage_on: bool = False
         self._command_char_uuid: str = VIBRADORM_COMMAND_CHAR_UUID
         self._light_char_uuid: str = VIBRADORM_LIGHT_CHAR_UUID
         self._cbi_char_uuid: str = VIBRADORM_CBI_CHAR_UUID
@@ -598,20 +599,26 @@ class VibradormController(BedController):
             cancel_event=cancel_event,
         )
 
-    async def _write_cbi_command(self, cmd: int) -> None:
-        """Write a 2-byte command to the CBI characteristic with toggle bit.
+    async def _write_cbi_command(self, cmd: int, extra_bytes: bytes = b"") -> None:
+        """Write a CBI command to the CBI characteristic with toggle bit.
 
         The toggle bit alternates between 0x0000 and 0x8000 on each send,
         matching the APK's MC.java behavior.
+
+        Args:
+            cmd: Command code (ORed with toggle bit)
+            extra_bytes: Additional bytes appended after the 2-byte header
+                (e.g., on/off byte for VRT, RGB values for mood light)
         """
         toggle = 0x8000 if self._cbi_toggle else 0x0000
         value = toggle | cmd
-        data = value.to_bytes(2, byteorder="big")
+        data = value.to_bytes(2, byteorder="big") + extra_bytes
         _LOGGER.debug(
-            "Writing CBI command: 0x%04X (cmd=0x%02X, toggle=%s)",
+            "Writing CBI command: 0x%04X (cmd=0x%02X, toggle=%s, extra=%s)",
             value,
             cmd,
             self._cbi_toggle,
+            extra_bytes.hex() if extra_bytes else "none",
         )
         self._refresh_characteristics()
         await self._write_gatt_with_retry(
@@ -1140,8 +1147,14 @@ class VibradormController(BedController):
 
     # Massage/vibration methods (via CBI characteristic)
     async def massage_toggle(self) -> None:
-        """Toggle vibration on/off via CBI characteristic."""
+        """Toggle vibration on/off via 3-byte CBI command.
+
+        APK CmdVRTOnOff format: [MSB(toggle|0x34), LSB(toggle|0x34), on_off]
+        where on_off=1 for ON, 0 for OFF.
+        """
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
-        await self._write_cbi_command(VibradormCommands.VRT_ON_OFF)
+        self._massage_on = not getattr(self, "_massage_on", False)
+        on_off = b"\x01" if self._massage_on else b"\x00"
+        await self._write_cbi_command(VibradormCommands.VRT_ON_OFF, extra_bytes=on_off)
