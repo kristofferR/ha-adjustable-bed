@@ -449,3 +449,21 @@ class RemacroController(BedController):
     async def lights_off(self) -> None:
         """Turn off under-bed light."""
         await self._send_command(RemacroCommands.LED_OFF)
+
+    # Heat control
+    async def heat_off(self) -> None:
+        """Turn off heating pad."""
+        await self._send_command(RemacroCommands.HEAT_OFF)
+
+    async def heat_set_mode(self, mode: int) -> None:
+        """Set heating pad mode (1-3). 0 turns off."""
+        commands = {
+            0: RemacroCommands.HEAT_OFF,
+            1: RemacroCommands.HEAT_M1,
+            2: RemacroCommands.HEAT_M2,
+            3: RemacroCommands.HEAT_M3,
+        }
+        if command := commands.get(mode):
+            await self._send_command(command)
+        else:
+            _LOGGER.warning("Invalid heat mode %d (valid: 0-3)", mode)
