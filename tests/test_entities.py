@@ -460,6 +460,9 @@ class TestButtonEntities:
         assert registry.async_get_entity_id(
             "number", DOMAIN, "AA:BB:CC:DD:EE:40_legs_position"
         ) is not None
+        assert registry.async_get_entity_id(
+            "cover", DOMAIN, "AA:BB:CC:DD:EE:40_lumbar"
+        ) is not None
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_head_position")
             is None
@@ -471,9 +474,12 @@ class TestButtonEntities:
         assert registry.async_get_entity_id(
             "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_toggle"
         ) is not None
-        assert registry.async_get_entity_id(
-            "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_mode_step"
-        ) is not None
+        assert (
+            registry.async_get_entity_id(
+                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_mode_step"
+            )
+            is None
+        )
         assert (
             registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_up")
             is None

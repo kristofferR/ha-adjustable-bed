@@ -246,9 +246,6 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         massage_timer_15=0x53,  # SEAT_1_MASSAGE_15 = 83
         massage_timer_30=0x54,  # SEAT_1_MASSAGE_30 = 84
         massage_timer_45=0x55,  # SEAT_1_MASSAGE_45 = 85
-        massage_mode_1=0x6B,  # SEAT_1_MASSAGE_MODE1 = 107
-        massage_mode_2=0x6E,  # SEAT_1_MASSAGE_MODE2 = 110
-        massage_mode_3=0x71,  # SEAT_1_MASSAGE_MODE3 = 113
     ),
     KAIDI_VARIANT_SEAT_2: KaidiCommandProfile(
         variant=KAIDI_VARIANT_SEAT_2,
@@ -292,9 +289,6 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         massage_timer_15=0x56,  # SEAT_2_MASSAGE_15 = 86
         massage_timer_30=0x57,  # SEAT_2_MASSAGE_30 = 87
         massage_timer_45=0x58,  # SEAT_2_MASSAGE_45 = 88
-        massage_mode_1=0x6C,  # SEAT_2_MASSAGE_MODE1 = 108
-        massage_mode_2=0x6F,  # SEAT_2_MASSAGE_MODE2 = 111
-        massage_mode_3=0x72,  # SEAT_2_MASSAGE_MODE3 = 114
     ),
     KAIDI_VARIANT_SEAT_3: KaidiCommandProfile(
         variant=KAIDI_VARIANT_SEAT_3,
@@ -307,6 +301,9 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         memory_save={1: 0x35, 2: 0x36, 3: 0x37, 4: 0x38},
         memory_recall={1: 0x39, 2: 0x3A, 3: 0x3B, 4: 0x3C},
         # Seat 3 has limited extended commands
+        waist_up=0x19,    # SEAT_3_WAIST_UP = 25
+        waist_down=0x1A,  # SEAT_3_WAIST_DOWN = 26
+        waist_stop=0x1B,  # SEAT_3_WAIST_STOP = 27
         neck_up=0x92,     # SEAT_3_NECK_UP = 146
         neck_down=0x93,   # SEAT_3_NECK_DOWN = 147
         neck_stop=0x94,   # SEAT_3_NECK_STOP = 148
@@ -319,10 +316,6 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         # Extended presets
         preset_book=0xA0,    # SEAT_3_BOOK = 160
         preset_leisure=0xA3,  # SEAT_3_LEISURE = 163
-        # Massage
-        massage_mode_1=0x6D,  # SEAT_3_MASSAGE_MODE1 = 109
-        massage_mode_2=0x70,  # SEAT_3_MASSAGE_MODE2 = 112
-        massage_mode_3=0x73,  # SEAT_3_MASSAGE_MODE3 = 115
     ),
 }
 
@@ -575,7 +568,6 @@ class KaidiController(BedController):
             self._coordinator.has_massage
             and (
                 self.supports_massage_toggle_control
-                or self.supports_massage_mode_step_control
                 or self.supports_massage_timer
             )
         )
@@ -595,6 +587,21 @@ class KaidiController(BedController):
     @property
     def supports_massage_timer(self) -> bool:
         return bool(self.massage_timer_options)
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        waist_commands_available = (
+            self._command_profile.waist_up is not None
+            and self._command_profile.waist_down is not None
+            and self._command_profile.waist_stop is not None
+        )
+        if not waist_commands_available:
+            return False
+
+        if self._variant == KAIDI_VARIANT_SEAT_3:
+            return True
+
+        return self._product_family.has_waist
 
     @property
     def massage_timer_options(self) -> list[int]:
@@ -1041,6 +1048,36 @@ class KaidiController(BedController):
     async def move_feet_stop(self) -> None:
         await self.move_legs_stop()
 
+    async def move_lumbar_up(self) -> None:
+        if not self.has_lumbar_support:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._move_with_stop_command(
+            self._command_profile.waist_up,
+            self._command_profile.waist_stop,
+        )
+
+    async def move_lumbar_down(self) -> None:
+        if not self.has_lumbar_support:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._move_with_stop_command(
+            self._command_profile.waist_down,
+            self._command_profile.waist_stop,
+        )
+
+    async def move_lumbar_stop(self) -> None:
+        if not self.has_lumbar_support:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support waist control"
+            )
+        await self._write_control_command(
+            self._command_profile.waist_stop,
+            cancel_event=asyncio.Event(),
+        )
+
     async def stop_all(self) -> None:
         if self._command_profile.stop_all is not None:
             await self._write_control_command(
@@ -1049,8 +1086,15 @@ class KaidiController(BedController):
             )
             return
 
-        await self.move_head_stop()
-        await self.move_legs_stop()
+        stop_commands = [
+            self._command_profile.head_stop,
+            self._command_profile.foot_stop,
+        ]
+        if self.has_lumbar_support:
+            stop_commands.append(self._command_profile.waist_stop)
+
+        for command_id in dict.fromkeys(stop_commands):
+            await self._write_control_command(command_id, cancel_event=asyncio.Event())
 
     # ------------------------------------------------------------------
     # Presets
@@ -1155,8 +1199,6 @@ class KaidiController(BedController):
             "massage start",
         )
         self._massage_active = True
-        if self._massage_mode_index == 0 and self._command_profile.massage_mode_1 is not None:
-            self._massage_mode_index = 1
 
     async def massage_off(self) -> None:
         """Turn off Kaidi massage when the profile exposes a stop command."""
@@ -1209,8 +1251,6 @@ class KaidiController(BedController):
         await self._write_control_command(command_id)
         self._massage_active = True
         self._massage_timer_mode = minutes
-        if self._massage_mode_index == 0 and self._command_profile.massage_mode_1 is not None:
-            self._massage_mode_index = 1
 
     def get_massage_state(self) -> dict[str, Any]:
         """Return the locally tracked Kaidi massage state."""

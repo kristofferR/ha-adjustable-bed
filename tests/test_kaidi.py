@@ -451,15 +451,16 @@ async def test_stop_all_uses_dedicated_command_when_available(mock_bleak_client:
 
 @pytest.mark.asyncio
 async def test_stop_all_falls_back_to_per_motor_stops(mock_bleak_client: MagicMock) -> None:
-    """Seat-3 (no stop_all) should stop head and foot motors explicitly."""
+    """Seat-3 (no stop_all) should stop every supported actuator explicitly."""
     controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_3)
 
     await controller.stop_all()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
-    assert len(calls) == 2
+    assert len(calls) == 3
     assert calls[0].args[1] == controller._build_control_packet(0x15)  # seat_3 head_stop
     assert calls[1].args[1] == controller._build_control_packet(0x18)  # seat_3 foot_stop
+    assert calls[2].args[1] == controller._build_control_packet(0x1B)  # seat_3 waist_stop
 
 
 @pytest.mark.asyncio
@@ -546,6 +547,24 @@ async def test_massage_timer_commands_update_local_state(
     assert len(calls) == 1
     assert calls[0].args[1] == controller._build_control_packet(0x54)
     assert controller.get_massage_state()["timer_mode"] == "30"
+    assert controller.get_massage_state()["mode"] is None
+
+
+@pytest.mark.asyncio
+async def test_verified_kaidi_profiles_do_not_expose_massage_mode_step(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """JS-only Kaidi massage mode buttons should stay disabled until verified."""
+    controller = await _prepare_controller(
+        mock_bleak_client,
+        variant=KAIDI_VARIANT_SEAT_1,
+    )
+    controller._product_id = 135
+
+    assert controller.supports_massage_mode_step_control is False
+
+    with pytest.raises(NotImplementedError, match="does not support massage modes"):
+        await controller.massage_mode_step()
 
 
 @pytest.mark.asyncio
@@ -566,6 +585,23 @@ async def test_discrete_light_control_follows_product_family_capability(
 
     assert unsupported.supports_discrete_light_control is False
     assert supported.supports_discrete_light_control is True
+
+
+@pytest.mark.asyncio
+async def test_seat_3_lumbar_commands_use_verified_waist_opcodes(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Seat_3 should expose waist control through the lumbar surface."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_3)
+
+    assert controller.has_lumbar_support is True
+
+    await controller.move_lumbar_up()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 2
+    assert calls[0].args[1] == controller._build_control_packet(0x19)
+    assert calls[1].args[1] == controller._build_control_packet(0x1B)
 
 
 @pytest.mark.asyncio
@@ -670,17 +706,26 @@ async def test_seat_1_2_preset_sends_both_sides(mock_bleak_client: MagicMock) ->
 # ---------------------------------------------------------------------------
 
 
-def test_all_seat_profiles_have_extended_commands() -> None:
-    """Seat_1 and seat_2 profiles should include back/waist/neck/light commands."""
+def test_primary_seat_profiles_have_verified_extended_commands() -> None:
+    """Seat_1 and seat_2 profiles should include verified Kaidi OEM commands."""
     for variant_key in (KAIDI_VARIANT_SEAT_1, KAIDI_VARIANT_SEAT_2):
         profile = KAIDI_COMMAND_PROFILES[variant_key]
         assert profile.back_up is not None, f"{variant_key} missing back_up"
         assert profile.waist_up is not None, f"{variant_key} missing waist_up"
         assert profile.neck_up is not None, f"{variant_key} missing neck_up"
         assert profile.light_on is not None, f"{variant_key} missing light_on"
-        assert profile.massage_mode_1 is not None, f"{variant_key} missing massage_mode_1"
+        assert profile.massage_start is not None, f"{variant_key} missing massage_start"
+        assert profile.massage_timer_15 is not None, f"{variant_key} missing massage_timer_15"
         assert profile.preset_book is not None, f"{variant_key} missing preset_book"
         assert profile.preset_leisure is not None, f"{variant_key} missing preset_leisure"
+
+
+def test_seat_3_profile_includes_verified_waist_commands() -> None:
+    """Seat_3 should carry the waist opcodes confirmed in PLDataTrans.java."""
+    profile = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_3]
+    assert profile.waist_up == 0x19
+    assert profile.waist_down == 0x1A
+    assert profile.waist_stop == 0x1B
 
 
 def test_seat_1_2_profile_uses_seat_1_values() -> None:

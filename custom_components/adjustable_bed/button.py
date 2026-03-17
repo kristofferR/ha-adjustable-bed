@@ -11,6 +11,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -449,37 +450,68 @@ async def async_setup_entry(
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
     controller = coordinator.controller
 
+    if controller is not None:
+        _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
+
     entities = []
     for description in BUTTON_DESCRIPTIONS:
-        if description.requires_massage and not has_massage:
-            continue
-        # Skip toggle_light if controller supports discrete light control (use switch instead)
-        if description.key == "toggle_light":
-            if controller and getattr(controller, "supports_discrete_light_control", False):
-                continue
-        # Skip buttons that require capabilities the controller doesn't have
-        if description.required_capability is not None:
-            if controller is None:
-                continue
-            if not getattr(controller, description.required_capability, False):
-                continue
-        # Check memory slot count for memory preset/program buttons
-        if description.memory_slot is not None and controller is not None:
-            slot_count = getattr(
-                controller, "memory_slot_count", 4
-            )  # Default to 4 for backward compat
-            if description.memory_slot > slot_count:
-                continue
-        # Skip program buttons if controller doesn't support memory programming
-        if (
-            description.is_program_button
-            and controller is not None
-            and not getattr(controller, "supports_memory_programming", False)
-        ):
+        if not _should_add_button(description, controller, has_massage):
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
     async_add_entities(entities)
+
+
+def _should_add_button(
+    description: AdjustableBedButtonEntityDescription,
+    controller: BedController | None,
+    has_massage: bool,
+) -> bool:
+    """Return whether the button should be exposed for the current controller."""
+    if description.requires_massage and not has_massage:
+        return False
+
+    if description.key == "toggle_light" and controller is not None:
+        if getattr(controller, "supports_discrete_light_control", False):
+            return False
+
+    if description.required_capability is not None:
+        if controller is None:
+            return False
+        if not getattr(controller, description.required_capability, False):
+            return False
+
+    if description.memory_slot is not None and controller is not None:
+        slot_count = getattr(controller, "memory_slot_count", 4)
+        if description.memory_slot > slot_count:
+            return False
+
+    if description.is_program_button and controller is not None:
+        if not getattr(controller, "supports_memory_programming", False):
+            return False
+
+    return True
+
+
+def _async_remove_stale_button_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    controller: BedController,
+    has_massage: bool,
+) -> None:
+    """Remove button entities that are no longer supported for this controller."""
+    registry = er.async_get(hass)
+    for description in BUTTON_DESCRIPTIONS:
+        if _should_add_button(description, controller, has_massage):
+            continue
+
+        entity_id = registry.async_get_entity_id(
+            "button",
+            DOMAIN,
+            f"{coordinator.address}_{description.key}",
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
