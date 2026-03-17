@@ -140,9 +140,9 @@ MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
 # Richmat remote code pattern (e.g., QRRM, V1RM, BURM, ZR10, ZR60)
 # Matches: 2 alphanumeric + "R" + "M" or "N" (like QRRM, V1RM, BURM, A0RN)
-# Or: "ZR" + 2 digits (like ZR10, ZR60)
+# Or: "ZR" + 2 alphanumeric chars (like ZR10, ZR60, ZRA2, ZRS3)
 # Case-insensitive via re.IGNORECASE
-RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[0-9]{2})", re.IGNORECASE)
+RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[a-z0-9]{2})", re.IGNORECASE)
 
 KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS

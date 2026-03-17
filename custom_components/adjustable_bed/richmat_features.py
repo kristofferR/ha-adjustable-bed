@@ -1,10 +1,16 @@
-"""Auto-generated Richmat remote code feature mapping.
+"""Richmat remote code feature mapping.
 
-This file is auto-generated from decompiled Richmat app data.
-Do not edit manually - regenerate with disassembly/generate_richmat_features.py
-
-Contains feature mappings for 492 Richmat remote codes extracted from
+Contains feature mappings for Richmat remote codes extracted from
 the official Richmat/RMControl app.
+
+Codes intentionally excluded (not adjustable beds):
+- wfrm, fwrm: Standing desk / table-lift interfaces (confirmed SURFACE_DESK in APK)
+- form: Unknown product type, found in only 1 app, no layout/device product class
+- warn: Unknown product type, found in 1-2 apps, no layout/device product class
+
+ZRS-series codes (zrs0-zrs6) are meta-selectors in the native app (SleepFunction) that
+redirect to sub-codes, but the Flutter app (rmcontrol2) treats them as device products.
+Added with conservative motor-only features.
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ from .const import RichmatFeatures
 _F = RichmatFeatures  # Shorthand for readability
 
 RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
+    "6brm": _F.MOTOR_HEAD | _F.MOTOR_FEET,  # Nordic UART variant, 170ms timing
     "a0rm": (
         _F.PRESET_FLAT |
         _F.PRESET_ANTI_SNORE |
@@ -123,6 +130,13 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.MOTOR_HEAD |
         _F.MOTOR_FEET
     ),
+    "a6rm": (
+        _F.PRESET_FLAT |
+        _F.PRESET_ZERO_G |
+        _F.PROGRAM_ZERO_G |
+        _F.MOTOR_HEAD |
+        _F.MOTOR_FEET
+    ),
     "a8rm": (
         _F.PRESET_FLAT |
         _F.PRESET_ZERO_G |
@@ -171,6 +185,25 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.PROGRAM_MEMORY_2 |
         _F.MOTOR_HEAD
     ),
+    "acrm": (
+        _F.PRESET_FLAT |
+        _F.PRESET_ANTI_SNORE |
+        _F.PRESET_LOUNGE |
+        _F.PRESET_TV |
+        _F.PRESET_ZERO_G |
+        _F.PROGRAM_ANTI_SNORE |
+        _F.PROGRAM_LOUNGE |
+        _F.PROGRAM_TV |
+        _F.PROGRAM_ZERO_G |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP |
+        _F.MASSAGE_FOOT_STEP |
+        _F.MASSAGE_MODE |
+        _F.MOTOR_HEAD |
+        _F.MOTOR_FEET |
+        _F.MOTOR_PILLOW
+    ),
+    "acrn": _F.MOTOR_HEAD | _F.MOTOR_FEET,
     "ahrm": (
         _F.PRESET_FLAT |
         _F.PRESET_ANTI_SNORE |
@@ -1864,6 +1897,15 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.MASSAGE_FOOT_STEP |
         _F.MASSAGE_MODE |
         _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD |
+        _F.MOTOR_FEET
+    ),
+    "fjrm": (
+        _F.PRESET_FLAT |
+        _F.PRESET_ZERO_G |
+        _F.PROGRAM_ZERO_G |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_HEAD_STEP |
         _F.MOTOR_HEAD |
         _F.MOTOR_FEET
     ),
@@ -5917,6 +5959,15 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.MOTOR_HEAD |
         _F.MOTOR_FEET
     ),
+    "y2rm": (
+        _F.PRESET_FLAT |
+        _F.PRESET_ZERO_G |
+        _F.PROGRAM_ZERO_G |
+        _F.UNDER_BED_LIGHTS |
+        _F.MASSAGE_TOGGLE |
+        _F.MOTOR_HEAD |
+        _F.MOTOR_FEET
+    ),
     "y3rm": (
         _F.PRESET_FLAT |
         _F.PRESET_TV |
@@ -6741,6 +6792,13 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.MOTOR_HEAD |
         _F.MOTOR_FEET
     ),
+    "zr90": (  # interfaceMap alias for s9rm
+        _F.PRESET_FLAT |
+        _F.PRESET_ANTI_SNORE |
+        _F.UNDER_BED_LIGHTS |
+        _F.MOTOR_HEAD |
+        _F.MOTOR_FEET
+    ),
     "zra0": (
         _F.PRESET_FLAT |
         _F.PRESET_ANTI_SNORE |
@@ -6787,6 +6845,10 @@ RICHMAT_REMOTE_FEATURES_GENERATED: Final[dict[str, RichmatFeatures]] = {
         _F.MOTOR_FEET |
         _F.MOTOR_LUMBAR
     ),
+    "zrs3": _F.MOTOR_HEAD | _F.MOTOR_FEET,  # L&P ADJBED mapping, meta-selector
+    "zrs4": _F.MOTOR_HEAD | _F.MOTOR_FEET,  # ZRS-series meta-selector
+    "zrs5": _F.MOTOR_HEAD | _F.MOTOR_FEET,  # ZRS-series meta-selector
+    "zrs6": _F.MOTOR_HEAD | _F.MOTOR_FEET,  # ZRS-series meta-selector
     "zsrm": (
         _F.PRESET_FLAT |
         _F.PRESET_ANTI_SNORE |
