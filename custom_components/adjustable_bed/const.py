@@ -140,6 +140,7 @@ BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
+BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_DIAGNOSTIC: Final = "diagnostic"
 
 # All supported bed types (includes both protocol-based and legacy names)
@@ -215,6 +216,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TIMOTION_AHF,
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
+    # Logicdata SimplicityFrame (SILVERmotion)
+    BED_TYPE_LOGICDATA,
 ]
 
 # Mapping from legacy bed types to their protocol-based equivalents
@@ -387,6 +390,12 @@ KAIDI_NAME_PATTERNS: Final = ("mouselet",)
 KAIDI_MAC_PREFIXES: Final = ("00:95:69", "F0:AC:D7")
 KAIDI_JOIN_PASSWORD: Final = b"1122"
 KAIDI_BROADCAST_VADDR: Final = 0xFFFFFFFF
+
+# Logicdata SimplicityFrame (SILVERmotion) - LogicLink BLE protocol
+# XXTEA encrypted, CRC16, SLIP framed
+LOGICDATA_SERVICE_UUID: Final = "b9934c43-5c91-462b-80a1-30fccc29d758"
+LOGICDATA_CHAR_UUID: Final = "b9934c44-5c91-462b-80a1-30fccc29d758"
+MANUFACTURER_ID_LOGICDATA: Final = 1351  # 0x0547
 
 # Leggett & Platt specific UUIDs
 # Gen2 variant (Richmat-based, ASCII commands)
@@ -1338,6 +1347,7 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_LOGICDATA,
 }
 
 # Bed type + variant combinations that require BLE pairing
@@ -1541,4 +1551,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # TiMOTION AHF: 100ms delay → 10 repeats = 1.0s total
     # Source: com.timotion.ahf ANALYSIS.md
     BED_TYPE_TIMOTION_AHF: (10, 100),
+    # Logicdata: 30ms delay → 10 repeats = 0.3s total
+    # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
+    BED_TYPE_LOGICDATA: (10, 30),
 }

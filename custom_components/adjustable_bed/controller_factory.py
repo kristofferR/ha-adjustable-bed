@@ -24,6 +24,7 @@ from .const import (
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
@@ -630,6 +631,11 @@ async def create_controller(
         from .beds.limoss import LimossController
 
         return LimossController(coordinator)
+
+    if bed_type == BED_TYPE_LOGICDATA:
+        from .beds.logicdata import LogicdataController
+
+        return LogicdataController(coordinator)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
         from .beds.okin_handle import OkinHandleController

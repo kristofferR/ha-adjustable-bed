@@ -32,6 +32,7 @@ from .leggett_okin import LeggettOkinController
 from .leggett_wilinke import LeggettWilinkeController
 from .limoss import LimossController
 from .linak import LinakController
+from .logicdata import LogicdataController
 from .motosleep import MotoSleepController
 from .octo import OctoController
 from .okin_7byte import Okin7ByteController
@@ -79,6 +80,7 @@ __all__ = [
     "KeesonController",
     "LimossController",
     "LinakController",
+    "LogicdataController",
     "MotoSleepController",
     "OctoController",
     "RemacroController",

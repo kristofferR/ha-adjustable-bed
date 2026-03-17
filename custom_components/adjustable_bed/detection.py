@@ -35,6 +35,7 @@ from .const import (
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
+    BED_TYPE_LOGICDATA,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MATTRESSFIRM,
@@ -94,6 +95,8 @@ from .const import (
     LEGGETT_RICHMAT_NAME_PATTERNS,
     LIMOSS_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
+    LOGICDATA_SERVICE_UUID,
+    MANUFACTURER_ID_LOGICDATA,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
@@ -215,6 +218,11 @@ def _check_manufacturer_data(
     # Source: de.vibradorm.vra app disassembly
     if MANUFACTURER_ID_VIBRADORM in manufacturer_data:
         return BED_TYPE_VIBRADORM, 0.95, MANUFACTURER_ID_VIBRADORM
+
+    # Logicdata: Company ID 1351 (0x0547)
+    # Source: at.silvermotion app disassembly
+    if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
+        return BED_TYPE_LOGICDATA, 0.95, MANUFACTURER_ID_LOGICDATA
 
     # Note: OKIN Automotive (ID 89) is NOT checked here because it should be
     # a fallback after UUID-based detection. See detect_bed_type_detailed().
@@ -355,6 +363,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REMACRO: "Remacro (CheersSleep, Jeromes, Slumberland, The Brick)",
     BED_TYPE_COMFORT_MOTION: "Comfort Motion (Lierda)",
     BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
+    BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
@@ -778,6 +787,16 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_REVERIE_NIGHTSTAND, confidence=1.0, signals=signals)
+
+    # Check for Logicdata SimplicityFrame (unique LogicLink UUID)
+    if LOGICDATA_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:logicdata")
+        _LOGGER.info(
+            "Detected Logicdata bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_LOGICDATA, confidence=1.0, signals=signals)
 
     # Check for Reverie (Protocol 108)
     if REVERIE_SERVICE_UUID.lower() in service_uuids:
