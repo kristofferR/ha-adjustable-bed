@@ -29,6 +29,8 @@ class SutaCommands:
     """SUTA AT command strings."""
 
     # Motor control
+    HEAD_UP = "AT+CTRL=BOTH HEAD UP"
+    HEAD_DOWN = "AT+CTRL=BOTH HEAD DOWN"
     BACK_UP = "AT+CTRL=BOTH BACK UP"
     BACK_DOWN = "AT+CTRL=BOTH BACK DOWN"
     FOOT_UP = "AT+CTRL=BOTH FOOT UP"
@@ -36,6 +38,17 @@ class SutaCommands:
     TILT_LUMBAR_UP = "AT+CTRL=BOTH T/L UP"
     TILT_LUMBAR_DOWN = "AT+CTRL=BOTH T/L DOWN"
     STOP_ALL = "AT+CTRL=BOTH STOP"
+
+    # Massage (timer, duty cycle, level per zone)
+    # Timer: "AT+MASS=BOTH <ZONE> T<param>" e.g. "AT+MASS=BOTH HEAD T00M"
+    MASSAGE_HEAD_TIMER = "AT+MASS=BOTH HEAD T"
+    MASSAGE_FOOT_TIMER = "AT+MASS=BOTH FOOT T"
+    # Duty cycle: values 00 (off), 20, 33, 50
+    MASSAGE_HEAD_DT = "AT+MASS=BOTH HEAD DT"
+    MASSAGE_FOOT_DT = "AT+MASS=BOTH FOOT DT"
+    # Level: values 00 (off), 10, 20, 30
+    MASSAGE_HEAD_LV = "AT+MASS=BOTH HEAD LV"
+    MASSAGE_FOOT_LV = "AT+MASS=BOTH FOOT LV"
 
     # Presets (recall)
     PRESET_FLAT = "AT+MODE=BOTH FLAT"
@@ -189,12 +202,12 @@ class SutaController(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move upper section up (mapped to BACK for compatibility)."""
-        await self.move_back_up()
+        """Move head/upper section up."""
+        await self._move_with_stop(self._build_command(SutaCommands.HEAD_UP))
 
     async def move_head_down(self) -> None:
-        """Move upper section down (mapped to BACK for compatibility)."""
-        await self.move_back_down()
+        """Move head/upper section down."""
+        await self._move_with_stop(self._build_command(SutaCommands.HEAD_DOWN))
 
     async def move_head_stop(self) -> None:
         """Stop head/back motor movement."""
@@ -325,3 +338,43 @@ class SutaController(BedController):
             await self.lights_off()
         else:
             await self.lights_on()
+
+    # Massage methods
+    # SUTA massage uses three parameters per zone: Timer (T), Duty Cycle (DT),
+    # and Level (LV). DT cycles: 00->20->33->50->00. LV cycles: 00->10->20->30->00.
+    async def massage_head_toggle(self) -> None:
+        """Cycle head massage duty cycle (00->20->33->50->00)."""
+        await self.write_command(
+            self._build_command(SutaCommands.MASSAGE_HEAD_DT + "20"),
+            repeat_count=2,
+            repeat_delay_ms=100,
+        )
+
+    async def massage_foot_toggle(self) -> None:
+        """Cycle foot massage duty cycle (00->20->33->50->00)."""
+        await self.write_command(
+            self._build_command(SutaCommands.MASSAGE_FOOT_DT + "20"),
+            repeat_count=2,
+            repeat_delay_ms=100,
+        )
+
+    async def massage_toggle(self) -> None:
+        """Toggle head massage timer (convenience alias)."""
+        await self.write_command(
+            self._build_command(SutaCommands.MASSAGE_HEAD_TIMER + "00M"),
+            repeat_count=2,
+            repeat_delay_ms=100,
+        )
+
+    async def massage_off(self) -> None:
+        """Turn off all massage by setting both zones to DT00."""
+        await self.write_command(
+            self._build_command(SutaCommands.MASSAGE_HEAD_DT + "00"),
+            repeat_count=2,
+            repeat_delay_ms=100,
+        )
+        await self.write_command(
+            self._build_command(SutaCommands.MASSAGE_FOOT_DT + "00"),
+            repeat_count=2,
+            repeat_delay_ms=100,
+        )

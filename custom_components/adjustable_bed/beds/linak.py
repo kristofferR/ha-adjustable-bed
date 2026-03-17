@@ -40,12 +40,16 @@ class LinakCommands:
     PRESET_MEMORY_2 = bytes([0x0F, 0x00])
     PRESET_MEMORY_3 = bytes([0x0C, 0x00])
     PRESET_MEMORY_4 = bytes([0x44, 0x00])
+    PRESET_MEMORY_5 = bytes([0x83, 0x00])
+    PRESET_MEMORY_6 = bytes([0x84, 0x00])
 
     # Program presets
     PROGRAM_MEMORY_1 = bytes([0x38, 0x00])
     PROGRAM_MEMORY_2 = bytes([0x39, 0x00])
     PROGRAM_MEMORY_3 = bytes([0x3A, 0x00])
     PROGRAM_MEMORY_4 = bytes([0x45, 0x00])
+    PROGRAM_MEMORY_5 = bytes([0x85, 0x00])
+    PROGRAM_MEMORY_6 = bytes([0x86, 0x00])
 
     # Under-bed lights
     LIGHTS_ON = bytes([0x92, 0x00])
@@ -142,8 +146,8 @@ class LinakController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 4 - Linak beds support memory slots 1-4."""
-        return 4
+        """Return 6 - Linak beds support memory slots 1-6."""
+        return 6
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -511,6 +515,8 @@ class LinakController(BedController):
             2: LinakCommands.PRESET_MEMORY_2,
             3: LinakCommands.PRESET_MEMORY_3,
             4: LinakCommands.PRESET_MEMORY_4,
+            5: LinakCommands.PRESET_MEMORY_5,
+            6: LinakCommands.PRESET_MEMORY_6,
         }
         if command := commands.get(memory_num):
             # Keep sending command while bed moves to preset position
@@ -523,6 +529,8 @@ class LinakController(BedController):
             2: LinakCommands.PROGRAM_MEMORY_2,
             3: LinakCommands.PROGRAM_MEMORY_3,
             4: LinakCommands.PROGRAM_MEMORY_4,
+            5: LinakCommands.PROGRAM_MEMORY_5,
+            6: LinakCommands.PROGRAM_MEMORY_6,
         }
         if command := commands.get(memory_num):
             await self.write_command(command)

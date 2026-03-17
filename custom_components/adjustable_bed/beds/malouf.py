@@ -662,20 +662,14 @@ class MaloufLegacyOkinController(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command 3x with 200ms delays, then STOP.
+        """Send a preset command 3x with 200ms delays.
 
         LEGACY_OKIN requires triple-send for reliable preset reception.
+        No STOP is sent after presets (APK sets shouldSendStopAfterPreset=false).
         """
         await self.write_command(
             self._build_command(command_value), repeat_count=3, repeat_delay_ms=200
         )
-        try:
-            await self.write_command(
-                self._build_command(MaloufCommands.STOP),
-                cancel_event=asyncio.Event(),
-            )
-        except (BleakError, ConnectionError):
-            _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
 
     async def preset_flat(self) -> None:
         """Go to flat position."""

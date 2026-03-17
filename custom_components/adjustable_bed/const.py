@@ -937,9 +937,11 @@ RICHMAT_REMOTE_I7RM: Final = "I7RM"
 RICHMAT_REMOTE_190_0055: Final = "190-0055"
 
 # Richmat WiLinke stop-byte compatibility.
-# Most Richmat remotes use END=0x6E, but some QRRM devices (issue #194)
-# require 0x5E to stop movement.
-RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset({"qrrm"})
+# Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
+# movement: QRRM remotes and BedTech BT6500 beds (issue #194).
+RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset(
+    {"qrrm", "bt6500"}
+)
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
