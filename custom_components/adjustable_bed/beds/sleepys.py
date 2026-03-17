@@ -27,49 +27,51 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SleepysBox15Commands:
-    """BOX15 protocol command values.
+    """BOX15 protocol command values (SMI-decoded from blutter output).
 
     9-byte packets with checksum:
-    [0xE6, 0xFE, 0x2C, motor_cmd, byte4, 0x00, byte6, 0x00, checksum]
+    [0xE6, 0xFE, 0x16, motor_cmd, byte4, 0x00, byte6, 0x00, checksum]
+
+    After SMI decode, this is identical to Keeson OKIN variant format.
     """
 
-    HEADER = bytes([0xE6, 0xFE, 0x2C])
+    HEADER = bytes([0xE6, 0xFE, 0x16])
 
-    # Motor commands (byte 3)
+    # Motor commands (byte 3) - SMI decoded (stored_value >> 1)
     STOP = 0x00
-    HEAD_UP = 0x02
-    HEAD_DOWN = 0x01
-    FOOT_UP = 0x08
-    FOOT_DOWN = 0x04
-    LUMBAR_UP = 0x20
-    LUMBAR_DOWN = 0x10
+    HEAD_UP = 0x01
+    HEAD_DOWN = 0x02
+    FOOT_UP = 0x04
+    FOOT_DOWN = 0x08
+    LUMBAR_UP = 0x10
+    LUMBAR_DOWN = 0x20
 
-    # Presets (byte 4 + byte 6 combinations)
+    # Presets (byte 4 + byte 6 combinations) - SMI decoded
     FLAT_BYTE4 = 0x00
-    FLAT_BYTE6 = 0x10
-    ZERO_G_BYTE4 = 0x20
+    FLAT_BYTE6 = 0x08
+    ZERO_G_BYTE4 = 0x10
     ZERO_G_BYTE6 = 0x00
 
 
 class SleepysBox24Commands:
-    """BOX24 protocol command values.
+    """BOX24 protocol command values (SMI-decoded from blutter output).
 
     7-byte packets (no checksum):
-    [0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40, motor_cmd]
+    [0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, motor_cmd]
     """
 
-    HEADER = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40])
+    HEADER = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20])
 
-    # Motor commands (byte 6)
+    # Motor commands (byte 6) - SMI decoded (stored_value >> 1)
     STOP = 0x00
-    HEAD_UP = 0x02
-    HEAD_DOWN = 0x01
-    FOOT_UP = 0x06
-    FOOT_DOWN = 0x05
+    HEAD_UP = 0x01
+    HEAD_DOWN = 0x02
+    FOOT_UP = 0x03
+    FOOT_DOWN = 0x04
 
-    # Presets (byte 6)
-    FLAT = 0xCC
-    ZERO_G = 0xC0
+    # Presets (byte 6) - SMI decoded
+    FLAT = 0x66
+    ZERO_G = 0x60
 
 
 def _calculate_box15_checksum(data: bytes) -> int:
@@ -91,7 +93,7 @@ class SleepysBox15Controller(BedController):
     - Service: 0000ffe5-0000-1000-8000-00805f9b34fb
     - Write characteristic: 0000ffe9-0000-1000-8000-00805f9b34fb
     - Command format: 9 bytes with checksum
-      [0xE6, 0xFE, 0x2C, motor_cmd, byte4, 0x00, byte6, 0x00, checksum]
+      [0xE6, 0xFE, 0x16, motor_cmd, byte4, 0x00, byte6, 0x00, checksum]
     - Checksum: (~sum(bytes[0:8])) & 0xFF
     """
 
@@ -315,7 +317,7 @@ class SleepysBox24Controller(BedController):
     - Service: 62741523-52f9-8864-b1ab-3b3a8d65950b (OKIN 64-bit)
     - Write characteristic: 62741625-52f9-8864-b1ab-3b3a8d65950b
     - Command format: 7 bytes (no checksum)
-      [0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40, motor_cmd]
+      [0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, motor_cmd]
     """
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
