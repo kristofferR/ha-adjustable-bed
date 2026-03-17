@@ -125,6 +125,7 @@ class BetterLivingCommands:
 
     PRESET_ZERO_G = 0x01000001
     PRESET_FLAT = 0x01000002
+    PRESET_ANTI_SNORE = 0x01000004
     PRESET_MEMORY_1 = 0x01000008
     PRESET_MEMORY_2 = 0x01000009
     STOP_POSITION = 0x01000000
@@ -339,8 +340,12 @@ class KeesonController(BedController):
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        """KSBT, Ergomotion, and Purple have anti-snore preset; BaseI4/I5 does not."""
-        return self._is_ksbt or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
+        """KSBT, Ergomotion, Purple, and BetterLiving have anti-snore preset."""
+        return (
+            self._is_ksbt
+            or self._betterliving_presets
+            or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
+        )
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -992,7 +997,10 @@ class KeesonController(BedController):
         await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position (KSBT/Ergomotion/Purple only)."""
+        """Go to anti-snore position."""
+        if self._betterliving_presets:
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE))
+            return
         if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
