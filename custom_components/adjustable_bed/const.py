@@ -785,21 +785,19 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
-# Kaidi variants
+# Kaidi variants — all OEM apps use SEAT_* commands exclusively.
+# BED_* constants from PLDataTrans.java are legacy/enterprise firmware and are
+# NOT used by any consumer mobile app (Rize, Floyd, ISleep).
 KAIDI_VARIANT_SEAT_1: Final = "seat_1"
 KAIDI_VARIANT_SEAT_2: Final = "seat_2"
 KAIDI_VARIANT_SEAT_3: Final = "seat_3"
-KAIDI_VARIANT_BED_1: Final = "bed_1"
-KAIDI_VARIANT_BED_2: Final = "bed_2"
-KAIDI_VARIANT_BED_12: Final = "bed_12"
+KAIDI_VARIANT_SEAT_1_2: Final = "seat_1_2"
 KAIDI_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
-    KAIDI_VARIANT_SEAT_1: "Seat 1 (single base / legacy)",
+    KAIDI_VARIANT_SEAT_1: "Seat 1 (single base)",
     KAIDI_VARIANT_SEAT_2: "Seat 2",
     KAIDI_VARIANT_SEAT_3: "Seat 3",
-    KAIDI_VARIANT_BED_1: "Bed 1",
-    KAIDI_VARIANT_BED_2: "Bed 2",
-    KAIDI_VARIANT_BED_12: "Bed 1+2",
+    KAIDI_VARIANT_SEAT_1_2: "Seat 1+2 (split/dual base)",
 }
 
 # OKIN CB24 profile variants (SmartBed app device profiles)
@@ -1274,9 +1272,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
-    KAIDI_VARIANT_BED_1,
-    KAIDI_VARIANT_BED_2,
-    KAIDI_VARIANT_BED_12,
+    KAIDI_VARIANT_SEAT_1_2,
     OKIN_CB24_VARIANT_OLD,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_CB24,

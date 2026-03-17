@@ -10,6 +10,11 @@ The transport is a custom packet format over BLE GATT:
 The mobile app performs a lightweight "join" against a room/home ID carried in
 the advertisement payload, then sends motor/preset commands as 4-byte control
 payloads wrapped in a mesh-style frame.
+
+All three OEM apps (Rize 1.3.0, ISleep 1.6.3, Floyd 1.0.7) use exclusively
+SEAT_* command values (1-167).  The BED_* constants (71-115) found in
+PLDataTrans.java are legacy/enterprise firmware values and are NOT used by any
+consumer mobile app.
 """
 
 from __future__ import annotations
@@ -17,7 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -30,10 +35,8 @@ from ..const import (
     KAIDI_BROADCAST_VADDR,
     KAIDI_JOIN_PASSWORD,
     KAIDI_NOTIFY_CHAR_UUID,
-    KAIDI_VARIANT_BED_1,
-    KAIDI_VARIANT_BED_12,
-    KAIDI_VARIANT_BED_2,
     KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
     KAIDI_WRITE_CHAR_UUID,
@@ -75,9 +78,14 @@ class KaidiCommands:
 
 @dataclass(frozen=True, slots=True)
 class KaidiCommandProfile:
-    """Command mapping for one Kaidi variant family."""
+    """Command mapping for one Kaidi variant family.
+
+    All values come from the SEAT_* instruction tables found in the de-minified
+    JS bundles of the Rize, ISleep, and Floyd Android apps.
+    """
 
     variant: str
+    # Core motors (all beds)
     head_up: int
     head_down: int
     head_stop: int
@@ -85,12 +93,104 @@ class KaidiCommandProfile:
     foot_down: int
     foot_stop: int
     stop_all: int | None = None
-    memory_save: dict[int, int] | None = None
-    memory_recall: dict[int, int] | None = None
+    # Memory presets
+    memory_save: dict[int, int] = field(default_factory=dict)
+    memory_recall: dict[int, int] = field(default_factory=dict)
+    # Standard presets
     preset_flat: int | None = None
     preset_zero_g: int | None = None
     preset_anti_snore: int | None = None
+    # Extended motors (3+ motor beds)
+    back_up: int | None = None
+    back_down: int | None = None
+    back_stop: int | None = None
+    waist_up: int | None = None
+    waist_down: int | None = None
+    waist_stop: int | None = None
+    neck_up: int | None = None
+    neck_down: int | None = None
+    neck_stop: int | None = None
+    all_up: int | None = None
+    all_down: int | None = None
+    all_stop: int | None = None
+    new_all_up: int | None = None
+    new_all_down: int | None = None
+    new_all_stop: int | None = None
+    # Lights
+    light_on: int | None = None
+    light_off: int | None = None
+    # Extended presets
+    preset_book: int | None = None
+    preset_leisure: int | None = None
+    # Massage
+    massage_mode_1: int | None = None
+    massage_mode_2: int | None = None
+    massage_mode_3: int | None = None
 
+
+# ---------------------------------------------------------------------------
+# Product family metadata
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class KaidiProductFamily:
+    """Capabilities for a product ID, derived from the OEM app's bedUI mapping."""
+
+    bed_ui: int
+    has_back: bool = False
+    has_waist: bool = False
+    has_neck: bool = False
+    has_all: bool = False
+    has_lights: bool = False
+    has_massage: bool = False
+    has_book: bool = False
+    has_leisure: bool = False
+
+
+# Product ID → capability set.  Derived from the Rize/Floyd/ISleep JS bundles.
+# bedUI 2: head + foot only
+# bedUI 3: back + foot + all
+# bedUI 4: back + foot + waist + all
+# bedUI 5-6: back + foot + waist + all + book + leisure presets
+# bedUI 7-8: back + foot + waist + all + leisure preset (+ neck for bedUI 8)
+KAIDI_PRODUCT_FAMILIES: dict[int, KaidiProductFamily] = {
+    129: KaidiProductFamily(bed_ui=2),
+    130: KaidiProductFamily(bed_ui=2),
+    131: KaidiProductFamily(bed_ui=3, has_back=True, has_all=True),
+    132: KaidiProductFamily(bed_ui=4, has_back=True, has_waist=True, has_all=True),
+    133: KaidiProductFamily(bed_ui=3, has_back=True, has_all=True),
+    134: KaidiProductFamily(bed_ui=4, has_back=True, has_waist=True, has_all=True),
+    135: KaidiProductFamily(
+        bed_ui=5, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
+    ),
+    136: KaidiProductFamily(
+        bed_ui=6, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_book=True, has_leisure=True,
+    ),
+    137: KaidiProductFamily(
+        bed_ui=7, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True, has_leisure=True,
+    ),
+    138: KaidiProductFamily(
+        bed_ui=8, has_back=True, has_waist=True, has_neck=True, has_all=True,
+        has_lights=True, has_massage=True, has_leisure=True,
+    ),
+    139: KaidiProductFamily(bed_ui=2),
+    142: KaidiProductFamily(
+        bed_ui=5, has_back=True, has_waist=True, has_all=True,
+        has_lights=True, has_massage=True,
+    ),
+    143: KaidiProductFamily(bed_ui=2),
+}
+
+# Default for beds without a known product ID.
+_DEFAULT_PRODUCT_FAMILY = KaidiProductFamily(bed_ui=2)
+
+
+# ---------------------------------------------------------------------------
+# Command profiles
+# ---------------------------------------------------------------------------
 
 KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
     KAIDI_VARIANT_SEAT_1: KaidiCommandProfile(
@@ -107,6 +207,32 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         preset_zero_g=0x62,
         preset_anti_snore=0x65,
         preset_flat=0x68,
+        # Extended motors
+        back_up=0x7A,     # SEAT_1_BACK_UP = 122
+        back_down=0x7B,   # SEAT_1_BACK_DOWN = 123
+        back_stop=0x7C,   # SEAT_1_BACK_STOP = 124
+        waist_up=0x83,    # SEAT_1_WAIST_UP = 131
+        waist_down=0x84,  # SEAT_1_WAIST_DOWN = 132
+        waist_stop=0x85,  # SEAT_1_WAIST_STOP = 133
+        neck_up=0x8C,     # SEAT_1_NECK_UP = 140
+        neck_down=0x8D,   # SEAT_1_NECK_DOWN = 141
+        neck_stop=0x8E,   # SEAT_1_NECK_STOP = 142
+        all_up=0x07,      # SEAT_1_ALL_UP = 7
+        all_down=0x08,    # SEAT_1_ALL_DOWN = 8
+        all_stop=0x09,    # SEAT_1_ALL_STOP = 9
+        new_all_up=0x95,  # SEAT_1_NEW_ALL_UP = 149
+        new_all_down=0x96,  # SEAT_1_NEW_ALL_DOWN = 150
+        new_all_stop=0x97,  # SEAT_1_NEW_ALL_STOP = 151
+        # Lights
+        light_on=0x5C,    # SEAT_1_BED_LIGHT_ON = 92
+        light_off=0x5D,   # SEAT_1_BED_LIGHT_OFF = 93
+        # Extended presets
+        preset_book=0x9E,    # SEAT_1_BOOK = 158
+        preset_leisure=0xA1,  # SEAT_1_LEISURE = 161
+        # Massage
+        massage_mode_1=0x6B,  # SEAT_1_MASSAGE_MODE1 = 107
+        massage_mode_2=0x6E,  # SEAT_1_MASSAGE_MODE2 = 110
+        massage_mode_3=0x71,  # SEAT_1_MASSAGE_MODE3 = 113
     ),
     KAIDI_VARIANT_SEAT_2: KaidiCommandProfile(
         variant=KAIDI_VARIANT_SEAT_2,
@@ -122,6 +248,29 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         preset_zero_g=0x63,
         preset_anti_snore=0x66,
         preset_flat=0x69,
+        # Extended motors
+        back_up=0x7D,     # SEAT_2_BACK_UP = 125
+        back_down=0x7E,   # SEAT_2_BACK_DOWN = 126
+        back_stop=0x7F,   # SEAT_2_BACK_STOP = 127
+        waist_up=0x86,    # SEAT_2_WAIST_UP = 134
+        waist_down=0x87,  # SEAT_2_WAIST_DOWN = 135
+        waist_stop=0x88,  # SEAT_2_WAIST_STOP = 136
+        neck_up=0x8F,     # SEAT_2_NECK_UP = 143
+        neck_down=0x90,   # SEAT_2_NECK_DOWN = 144
+        neck_stop=0x91,   # SEAT_2_NECK_STOP = 145
+        new_all_up=0x98,  # SEAT_2_NEW_ALL_UP = 152
+        new_all_down=0x99,  # SEAT_2_NEW_ALL_DOWN = 153
+        new_all_stop=0x9A,  # SEAT_2_NEW_ALL_STOP = 154
+        # Lights
+        light_on=0x5E,    # SEAT_2_BED_LIGHT_ON = 94
+        light_off=0x5F,   # SEAT_2_BED_LIGHT_OFF = 95
+        # Extended presets
+        preset_book=0x9F,    # SEAT_2_BOOK = 159
+        preset_leisure=0xA2,  # SEAT_2_LEISURE = 162
+        # Massage
+        massage_mode_1=0x6C,  # SEAT_2_MASSAGE_MODE1 = 108
+        massage_mode_2=0x6F,  # SEAT_2_MASSAGE_MODE2 = 111
+        massage_mode_3=0x72,  # SEAT_2_MASSAGE_MODE3 = 114
     ),
     KAIDI_VARIANT_SEAT_3: KaidiCommandProfile(
         variant=KAIDI_VARIANT_SEAT_3,
@@ -133,35 +282,77 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         foot_stop=0x18,
         memory_save={1: 0x35, 2: 0x36, 3: 0x37, 4: 0x38},
         memory_recall={1: 0x39, 2: 0x3A, 3: 0x3B, 4: 0x3C},
-    ),
-    KAIDI_VARIANT_BED_1: KaidiCommandProfile(
-        variant=KAIDI_VARIANT_BED_1,
-        head_up=0x47,
-        head_down=0x48,
-        head_stop=0x49,
-        foot_up=0x4D,
-        foot_down=0x4E,
-        foot_stop=0x4F,
-    ),
-    KAIDI_VARIANT_BED_2: KaidiCommandProfile(
-        variant=KAIDI_VARIANT_BED_2,
-        head_up=0x4A,
-        head_down=0x4B,
-        head_stop=0x4C,
-        foot_up=0x50,
-        foot_down=0x51,
-        foot_stop=0x52,
-    ),
-    KAIDI_VARIANT_BED_12: KaidiCommandProfile(
-        variant=KAIDI_VARIANT_BED_12,
-        head_up=0x53,
-        head_down=0x54,
-        head_stop=0x55,
-        foot_up=0x56,
-        foot_down=0x57,
-        foot_stop=0x58,
+        # Seat 3 has limited extended commands
+        neck_up=0x92,     # SEAT_3_NECK_UP = 146
+        neck_down=0x93,   # SEAT_3_NECK_DOWN = 147
+        neck_stop=0x94,   # SEAT_3_NECK_STOP = 148
+        new_all_up=0x9B,  # SEAT_3_NEW_ALL_UP = 155
+        new_all_down=0x9C,  # SEAT_3_NEW_ALL_DOWN = 156
+        new_all_stop=0x9D,  # SEAT_3_NEW_ALL_STOP = 157
+        # Lights
+        light_on=0x60,    # SEAT_3_BED_LIGHT_ON = 96
+        light_off=0x61,   # SEAT_3_BED_LIGHT_OFF = 97
+        # Extended presets
+        preset_book=0xA0,    # SEAT_3_BOOK = 160
+        preset_leisure=0xA3,  # SEAT_3_LEISURE = 163
+        # Massage
+        massage_mode_1=0x6D,  # SEAT_3_MASSAGE_MODE1 = 109
+        massage_mode_2=0x70,  # SEAT_3_MASSAGE_MODE2 = 112
+        massage_mode_3=0x73,  # SEAT_3_MASSAGE_MODE3 = 115
     ),
 }
+
+# seat_1_2 uses seat_1 as primary — dual-bed sending is handled by the controller
+KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1_2] = KaidiCommandProfile(
+    variant=KAIDI_VARIANT_SEAT_1_2,
+    **{
+        f.name: getattr(KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1], f.name)
+        for f in KaidiCommandProfile.__dataclass_fields__.values()
+        if f.name != "variant"
+    },
+)
+
+# Scalar command fields used to build the dual-bed command map.
+_PROFILE_SCALAR_FIELDS: tuple[str, ...] = (
+    "head_up", "head_down", "head_stop",
+    "foot_up", "foot_down", "foot_stop",
+    "stop_all",
+    "preset_flat", "preset_zero_g", "preset_anti_snore",
+    "back_up", "back_down", "back_stop",
+    "waist_up", "waist_down", "waist_stop",
+    "neck_up", "neck_down", "neck_stop",
+    "all_up", "all_down", "all_stop",
+    "new_all_up", "new_all_down", "new_all_stop",
+    "light_on", "light_off",
+    "preset_book", "preset_leisure",
+    "massage_mode_1", "massage_mode_2", "massage_mode_3",
+)
+
+
+def _build_dual_command_map(
+    primary: KaidiCommandProfile,
+    secondary: KaidiCommandProfile,
+) -> dict[int, int]:
+    """Build a mapping from primary command IDs to secondary command IDs.
+
+    Used by seat_1_2 to also send the seat_2 equivalent of every seat_1 command
+    so that both sides of a split/dual bed move together.
+    """
+    mapping: dict[int, int] = {}
+    for field_name in _PROFILE_SCALAR_FIELDS:
+        p = getattr(primary, field_name, None)
+        s = getattr(secondary, field_name, None)
+        if p is not None and s is not None:
+            mapping[p] = s
+    for slot, p_cmd in primary.memory_save.items():
+        s_cmd = secondary.memory_save.get(slot)
+        if s_cmd is not None:
+            mapping[p_cmd] = s_cmd
+    for slot, p_cmd in primary.memory_recall.items():
+        s_cmd = secondary.memory_recall.get(slot)
+        if s_cmd is not None:
+            mapping[p_cmd] = s_cmd
+    return mapping
 
 
 class KaidiController(BedController):
@@ -183,6 +374,15 @@ class KaidiController(BedController):
         self._variant = variant
         self._variant_source = variant_source
         self._command_profile = KAIDI_COMMAND_PROFILES[variant]
+
+        # For dual beds (seat_1_2), build a map from seat_1 → seat_2 commands
+        if variant == KAIDI_VARIANT_SEAT_1_2:
+            self._dual_map = _build_dual_command_map(
+                KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1],
+                KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_2],
+            )
+        else:
+            self._dual_map: dict[int, int] = {}
 
         self._notify_started = False
         self._session_ready = False
@@ -257,6 +457,21 @@ class KaidiController(BedController):
                 self._coordinator.address,
             )
 
+    # ------------------------------------------------------------------
+    # Product family helpers
+    # ------------------------------------------------------------------
+
+    @property
+    def _product_family(self) -> KaidiProductFamily:
+        """Return the capability set for this bed's product ID."""
+        if self._product_id is not None:
+            return KAIDI_PRODUCT_FAMILIES.get(self._product_id, _DEFAULT_PRODUCT_FAMILY)
+        return _DEFAULT_PRODUCT_FAMILY
+
+    # ------------------------------------------------------------------
+    # Capability properties
+    # ------------------------------------------------------------------
+
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
@@ -276,15 +491,26 @@ class KaidiController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        return self._command_profile.memory_recall is not None
+        return bool(self._command_profile.memory_recall)
 
     @property
     def memory_slot_count(self) -> int:
-        return len(self._command_profile.memory_recall or {})
+        return len(self._command_profile.memory_recall)
 
     @property
     def supports_memory_programming(self) -> bool:
-        return self._command_profile.memory_save is not None
+        return bool(self._command_profile.memory_save)
+
+    @property
+    def supports_lights(self) -> bool:
+        return (
+            self._command_profile.light_on is not None
+            and self._product_family.has_lights
+        )
+
+    # ------------------------------------------------------------------
+    # BLE transport
+    # ------------------------------------------------------------------
 
     def _refresh_write_mode(self) -> None:
         """Refresh write mode from discovered GATT characteristics when available."""
@@ -529,6 +755,10 @@ class KaidiController(BedController):
                 self._target_vaddr,
             )
 
+    # ------------------------------------------------------------------
+    # Command helpers
+    # ------------------------------------------------------------------
+
     async def write_command(
         self,
         command: bytes,
@@ -556,7 +786,11 @@ class KaidiController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Build and send a Kaidi control command."""
+        """Build and send a Kaidi control command.
+
+        For dual-bed variants (seat_1_2), also sends the seat_2 equivalent so
+        both sides of a split bed move together.
+        """
         await self._ensure_session_ready()
         await self._write_gatt_with_retry(
             KAIDI_WRITE_CHAR_UUID,
@@ -566,6 +800,16 @@ class KaidiController(BedController):
             cancel_event=cancel_event,
             response=self._write_with_response,
         )
+        secondary_id = self._dual_map.get(command_id)
+        if secondary_id is not None:
+            await self._write_gatt_with_retry(
+                KAIDI_WRITE_CHAR_UUID,
+                self._build_control_packet(secondary_id, param=param),
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=self._write_with_response,
+            )
 
     async def start_notify(
         self,
@@ -588,6 +832,10 @@ class KaidiController(BedController):
         await self.client.stop_notify(KAIDI_NOTIFY_CHAR_UUID)
         self._notify_started = False
 
+    # ------------------------------------------------------------------
+    # Movement helpers
+    # ------------------------------------------------------------------
+
     async def _move_with_stop_command(self, move_command: int, stop_command: int) -> None:
         """Send a movement command, then stop that motor."""
         try:
@@ -605,9 +853,9 @@ class KaidiController(BedController):
             except ConnectionError:
                 _LOGGER.debug("Kaidi cleanup stop skipped because device disconnected")
 
-    def _require_memory_command(self, command_map: dict[int, int] | None, memory_num: int) -> int:
+    def _require_memory_command(self, command_map: dict[int, int], memory_num: int) -> int:
         """Resolve a Kaidi memory command or raise a helpful error."""
-        if command_map is None:
+        if not command_map:
             raise NotImplementedError(
                 f"Kaidi variant {self._variant} does not expose memory presets"
             )
@@ -623,6 +871,10 @@ class KaidiController(BedController):
                 f"Kaidi variant {self._variant} does not support {label}"
             )
         await self._write_control_command(command_id)
+
+    # ------------------------------------------------------------------
+    # Core motor methods (all beds)
+    # ------------------------------------------------------------------
 
     async def move_head_up(self) -> None:
         await self._move_with_stop_command(
@@ -643,13 +895,25 @@ class KaidiController(BedController):
         )
 
     async def move_back_up(self) -> None:
-        await self.move_head_up()
+        p = self._command_profile
+        if p.back_up is not None and self._product_family.has_back:
+            await self._move_with_stop_command(p.back_up, p.back_stop)
+        else:
+            await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        await self.move_head_down()
+        p = self._command_profile
+        if p.back_down is not None and self._product_family.has_back:
+            await self._move_with_stop_command(p.back_down, p.back_stop)
+        else:
+            await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        await self.move_head_stop()
+        p = self._command_profile
+        if p.back_stop is not None and self._product_family.has_back:
+            await self._write_control_command(p.back_stop, cancel_event=asyncio.Event())
+        else:
+            await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
         await self._move_with_stop_command(
@@ -689,6 +953,10 @@ class KaidiController(BedController):
         await self.move_head_stop()
         await self.move_legs_stop()
 
+    # ------------------------------------------------------------------
+    # Presets
+    # ------------------------------------------------------------------
+
     async def preset_flat(self) -> None:
         await self._write_optional_control_command(
             self._command_profile.preset_flat,
@@ -720,3 +988,28 @@ class KaidiController(BedController):
             memory_num,
         )
         await self._write_control_command(command_id)
+
+    # ------------------------------------------------------------------
+    # Lights
+    # ------------------------------------------------------------------
+
+    async def lights_on(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.light_on,
+            "lights",
+        )
+
+    async def lights_off(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.light_off,
+            "lights",
+        )
+
+    # ------------------------------------------------------------------
+    # Massage
+    # ------------------------------------------------------------------
+
+    async def massage_toggle(self) -> None:
+        """Cycle through massage modes (mode 1 → 2 → 3 → off)."""
+        if self._command_profile.massage_mode_1 is not None:
+            await self._write_control_command(self._command_profile.massage_mode_1)

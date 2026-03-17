@@ -8,14 +8,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.kaidi import KaidiCommands, KaidiController
+from custom_components.adjustable_bed.beds.kaidi import (
+    KAIDI_COMMAND_PROFILES,
+    KaidiCommands,
+    KaidiController,
+)
 from custom_components.adjustable_bed.const import (
     CONF_KAIDI_ROOM_ID,
     KAIDI_BROADCAST_VADDR,
-    KAIDI_VARIANT_BED_1,
-    KAIDI_VARIANT_BED_12,
-    KAIDI_VARIANT_BED_2,
     KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
     VARIANT_AUTO,
@@ -97,6 +99,11 @@ async def _prepare_controller(
     return controller
 
 
+# ---------------------------------------------------------------------------
+# Protocol parsing tests
+# ---------------------------------------------------------------------------
+
+
 def test_parse_broadcast_advertisement_payload() -> None:
     """Broadcast advertisements should expose room ID and virtual address."""
     parsed = parse_kaidi_manufacturer_payload(
@@ -164,35 +171,67 @@ def test_format_kaidi_node_address() -> None:
     assert format_kaidi_node_address(bytes.fromhex("ffeeddccbbaa")) == "AA:BB:CC:DD:EE:FF"
 
 
+# ---------------------------------------------------------------------------
+# Variant resolution tests
+# ---------------------------------------------------------------------------
+
+
 def test_resolve_kaidi_variant_manual_override() -> None:
     """Manual variant overrides must win over advertised metadata."""
     resolution = resolve_kaidi_variant(
-        KAIDI_VARIANT_BED_2,
+        KAIDI_VARIANT_SEAT_2,
         product_id=129,
         sofa_acu_no=0x2004,
     )
 
-    assert resolution.variant == KAIDI_VARIANT_BED_2
+    assert resolution.variant == KAIDI_VARIANT_SEAT_2
     assert resolution.source == "manual_override"
 
 
-def test_resolve_kaidi_variant_prefers_exact_product_mapping() -> None:
-    """Exact OEM BED_TYPE mappings should take precedence over seat-bar heuristics."""
+def test_resolve_kaidi_variant_manual_override_seat_1_2() -> None:
+    """Manual seat_1_2 override should be accepted."""
     resolution = resolve_kaidi_variant(
-        VARIANT_AUTO,
-        product_id=130,
-        sofa_acu_no=0x2004,
+        KAIDI_VARIANT_SEAT_1_2,
+        product_id=129,
     )
 
-    assert resolution.variant == KAIDI_VARIANT_BED_12
-    assert resolution.source == "product_id"
+    assert resolution.variant == KAIDI_VARIANT_SEAT_1_2
+    assert resolution.source == "manual_override"
 
 
-def test_resolve_kaidi_variant_issue247_uses_sofa_acu_no() -> None:
-    """The issue-247 sofa metadata should resolve to the seat-1 profile."""
+def test_resolve_kaidi_variant_single_product_id() -> None:
+    """Single-base product IDs should resolve to seat_1."""
+    for pid in (129, 131, 132, 135, 136, 137, 138, 139, 142):
+        resolution = resolve_kaidi_variant(VARIANT_AUTO, product_id=pid)
+        assert resolution.variant == KAIDI_VARIANT_SEAT_1, f"product_id={pid}"
+        assert resolution.source == "product_id"
+
+
+def test_resolve_kaidi_variant_double_product_id() -> None:
+    """Double-base product IDs should resolve to seat_1_2."""
+    for pid in (130, 133, 134, 143):
+        resolution = resolve_kaidi_variant(VARIANT_AUTO, product_id=pid)
+        assert resolution.variant == KAIDI_VARIANT_SEAT_1_2, f"product_id={pid}"
+        assert resolution.source == "product_id"
+
+
+def test_resolve_kaidi_variant_issue247_uses_product_id() -> None:
+    """Product 136 (Rize Remedy 4) should resolve to seat_1 via product_id."""
     resolution = resolve_kaidi_variant(
         VARIANT_AUTO,
         product_id=136,
+        sofa_acu_no=0x2004,
+    )
+
+    assert resolution.variant == KAIDI_VARIANT_SEAT_1
+    assert resolution.source == "product_id"
+
+
+def test_resolve_kaidi_variant_sofa_acu_no_fallback() -> None:
+    """When product_id is unknown, seat-bar heuristic should be used."""
+    resolution = resolve_kaidi_variant(
+        VARIANT_AUTO,
+        product_id=999,
         sofa_acu_no=0x2004,
     )
 
@@ -214,12 +253,17 @@ def test_resolve_kaidi_variant_with_unknown_metadata_requires_override() -> None
     """Unknown Kaidi metadata should refuse to guess a profile automatically."""
     resolution = resolve_kaidi_variant(
         VARIANT_AUTO,
-        product_id=136,
+        product_id=999,
         sofa_acu_no=0x0000,
     )
 
     assert resolution.variant is None
     assert resolution.source == "unresolved_metadata"
+
+
+# ---------------------------------------------------------------------------
+# Session management tests
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -330,6 +374,11 @@ async def test_session_uses_cached_room_id_when_manufacturer_data_is_missing(
     assert controller._target_vaddr == 0x01020304
 
 
+# ---------------------------------------------------------------------------
+# Motor command tests
+# ---------------------------------------------------------------------------
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("variant", "move_command", "stop_command"),
@@ -337,9 +386,6 @@ async def test_session_uses_cached_room_id_when_manufacturer_data_is_missing(
         (KAIDI_VARIANT_SEAT_1, 0x01, 0x03),
         (KAIDI_VARIANT_SEAT_2, 0x0A, 0x0C),
         (KAIDI_VARIANT_SEAT_3, 0x13, 0x15),
-        (KAIDI_VARIANT_BED_1, 0x47, 0x49),
-        (KAIDI_VARIANT_BED_2, 0x4A, 0x4C),
-        (KAIDI_VARIANT_BED_12, 0x53, 0x55),
     ],
 )
 async def test_move_head_up_uses_variant_specific_command_profile(
@@ -366,9 +412,6 @@ async def test_move_head_up_uses_variant_specific_command_profile(
         (KAIDI_VARIANT_SEAT_1, 0x05, 0x06),
         (KAIDI_VARIANT_SEAT_2, 0x0E, 0x0F),
         (KAIDI_VARIANT_SEAT_3, 0x17, 0x18),
-        (KAIDI_VARIANT_BED_1, 0x4E, 0x4F),
-        (KAIDI_VARIANT_BED_2, 0x51, 0x52),
-        (KAIDI_VARIANT_BED_12, 0x57, 0x58),
     ],
 )
 async def test_move_legs_down_uses_variant_specific_command_profile(
@@ -402,15 +445,15 @@ async def test_stop_all_uses_dedicated_command_when_available(mock_bleak_client:
 
 @pytest.mark.asyncio
 async def test_stop_all_falls_back_to_per_motor_stops(mock_bleak_client: MagicMock) -> None:
-    """Profiles without stop-all should stop head and foot motors explicitly."""
-    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_BED_12)
+    """Seat-3 (no stop_all) should stop head and foot motors explicitly."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_3)
 
     await controller.stop_all()
 
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert len(calls) == 2
-    assert calls[0].args[1] == controller._build_control_packet(0x55)
-    assert calls[1].args[1] == controller._build_control_packet(0x58)
+    assert calls[0].args[1] == controller._build_control_packet(0x15)  # seat_3 head_stop
+    assert calls[1].args[1] == controller._build_control_packet(0x18)  # seat_3 foot_stop
 
 
 @pytest.mark.asyncio
@@ -488,23 +531,83 @@ async def test_memory_programming_commands_use_variant_specific_profile(
     assert calls[0].args[1] == controller._build_control_packet(expected_command)
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("variant", "method_name", "args"),
-    [
-        (KAIDI_VARIANT_BED_1, "preset_flat", ()),
-        (KAIDI_VARIANT_BED_2, "preset_memory", (1,)),
-        (KAIDI_VARIANT_BED_12, "program_memory", (1,)),
-    ],
-)
-async def test_bed_profiles_reject_unsupported_preset_and_memory_commands(
-    mock_bleak_client: MagicMock,
-    variant: str,
-    method_name: str,
-    args: tuple[int, ...],
-) -> None:
-    """Split-bed profiles should not expose unsupported seat preset helpers."""
-    controller = await _prepare_controller(mock_bleak_client, variant=variant)
+# ---------------------------------------------------------------------------
+# Dual-bed (seat_1_2) tests
+# ---------------------------------------------------------------------------
 
-    with pytest.raises(NotImplementedError):
-        await getattr(controller, method_name)(*args)
+
+@pytest.mark.asyncio
+async def test_seat_1_2_sends_both_sides_for_head_up(mock_bleak_client: MagicMock) -> None:
+    """seat_1_2 should send seat_1 HEAD_UP then seat_2 HEAD_UP."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+
+    await controller.move_head_up()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    # move: seat_1 head_up + seat_2 head_up, then stop: seat_1 head_stop + seat_2 head_stop
+    assert len(calls) == 4
+    assert calls[0].args[1] == controller._build_control_packet(0x01)  # SEAT_1_HEAD_UP
+    assert calls[1].args[1] == controller._build_control_packet(0x0A)  # SEAT_2_HEAD_UP
+    assert calls[2].args[1] == controller._build_control_packet(0x03)  # SEAT_1_HEAD_STOP
+    assert calls[3].args[1] == controller._build_control_packet(0x0C)  # SEAT_2_HEAD_STOP
+
+
+@pytest.mark.asyncio
+async def test_seat_1_2_stop_all_sends_both_sides(mock_bleak_client: MagicMock) -> None:
+    """seat_1_2 stop_all should send seat_1 STOP_ALL then seat_2 STOP_ALL."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+
+    await controller.stop_all()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 2
+    assert calls[0].args[1] == controller._build_control_packet(0x1C)  # SEAT_1_STOP_ALL
+    assert calls[1].args[1] == controller._build_control_packet(0x1D)  # SEAT_2_STOP_ALL
+
+
+@pytest.mark.asyncio
+async def test_seat_1_2_preset_sends_both_sides(mock_bleak_client: MagicMock) -> None:
+    """seat_1_2 presets should send for both seats."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+
+    await controller.preset_flat()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 2
+    assert calls[0].args[1] == controller._build_control_packet(0x68)  # SEAT_1_FLAT
+    assert calls[1].args[1] == controller._build_control_packet(0x69)  # SEAT_2_FLAT
+
+
+# ---------------------------------------------------------------------------
+# Extended command tests
+# ---------------------------------------------------------------------------
+
+
+def test_all_seat_profiles_have_extended_commands() -> None:
+    """Seat_1 and seat_2 profiles should include back/waist/neck/light commands."""
+    for variant_key in (KAIDI_VARIANT_SEAT_1, KAIDI_VARIANT_SEAT_2):
+        profile = KAIDI_COMMAND_PROFILES[variant_key]
+        assert profile.back_up is not None, f"{variant_key} missing back_up"
+        assert profile.waist_up is not None, f"{variant_key} missing waist_up"
+        assert profile.neck_up is not None, f"{variant_key} missing neck_up"
+        assert profile.light_on is not None, f"{variant_key} missing light_on"
+        assert profile.massage_mode_1 is not None, f"{variant_key} missing massage_mode_1"
+        assert profile.preset_book is not None, f"{variant_key} missing preset_book"
+        assert profile.preset_leisure is not None, f"{variant_key} missing preset_leisure"
+
+
+def test_seat_1_2_profile_uses_seat_1_values() -> None:
+    """seat_1_2 profile should have the same command values as seat_1."""
+    seat_1 = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1]
+    seat_1_2 = KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1_2]
+
+    assert seat_1_2.head_up == seat_1.head_up
+    assert seat_1_2.foot_down == seat_1.foot_down
+    assert seat_1_2.back_up == seat_1.back_up
+    assert seat_1_2.light_on == seat_1.light_on
+
+
+def test_no_bed_variant_profiles_exist() -> None:
+    """BED_* variant profiles must not exist — they used wrong command values."""
+    for key in KAIDI_COMMAND_PROFILES:
+        assert not key.startswith("bed_"), f"Found legacy BED profile: {key}"

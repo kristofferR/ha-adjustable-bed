@@ -819,7 +819,7 @@ class TestManualFlow:
         assert result["data"][CONF_KAIDI_SOFA_ACU_NO] == 0x2004
         assert result["data"][CONF_KAIDI_ADV_TYPE] == KAIDI_ADV_TYPE_BROADCAST
         assert result["data"][CONF_KAIDI_RESOLVED_VARIANT] == KAIDI_VARIANT_SEAT_1
-        assert result["data"][CONF_KAIDI_VARIANT_SOURCE] == "sofa_acu_no"
+        assert result["data"][CONF_KAIDI_VARIANT_SOURCE] == "product_id"
 
     async def test_manual_entry_invalid_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry with invalid MAC address shows error."""
