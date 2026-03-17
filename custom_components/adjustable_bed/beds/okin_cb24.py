@@ -159,6 +159,24 @@ class MotorDirection(Enum):
     STOP = "stop"
 
 
+def build_cb24_massage_intensity(
+    zone: int, intensity: int, bed_selection: int = 0x00
+) -> bytes:
+    """Build a 5-byte CB24 massage intensity packet.
+
+    Allows setting exact massage intensity level instead of stepping up/down.
+
+    Args:
+        zone: Massage zone (1=timer, 2=head, 3=feet, 4=wave)
+        intensity: Intensity level (0-4, 0=off)
+        bed_selection: Bed selection byte (0x00=default, 0xAA=bed A, 0xBB=bed B)
+
+    Returns:
+        5-byte command: [0x03, 0x03, zone, intensity, bed_selection]
+    """
+    return bytes([0x03, 0x03, zone & 0xFF, intensity & 0xFF, bed_selection])
+
+
 def build_cb24_command(command_value: int, bed_selection: int = 0x00) -> bytes:
     """Build a 7-byte CB24 protocol command.
 
@@ -748,3 +766,19 @@ class OkinCB24Controller(BedController):
             await self.write_command(build_cbnew_massage_command(65 + self._massage_mode))
             return
         await self.write_command(self._build_command(OkinCB24Commands.MASSAGE_WAVE_STEP))
+
+    async def massage_set_head_intensity(self, level: int) -> None:
+        """Set head massage to exact intensity level (0-4, 0=off)."""
+        level = max(0, min(4, level))
+        await self.write_command(
+            build_cb24_massage_intensity(2, level, self._bed_selection)
+        )
+        self._massage_head_level = level
+
+    async def massage_set_foot_intensity(self, level: int) -> None:
+        """Set foot massage to exact intensity level (0-4, 0=off)."""
+        level = max(0, min(4, level))
+        await self.write_command(
+            build_cb24_massage_intensity(3, level, self._bed_selection)
+        )
+        self._massage_foot_level = level
