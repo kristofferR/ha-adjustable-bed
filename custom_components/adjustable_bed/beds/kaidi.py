@@ -373,7 +373,13 @@ class KaidiController(BedController):
         self._manufacturer_data = dict(manufacturer_data or {})
         self._variant = variant
         self._variant_source = variant_source
-        self._command_profile = KAIDI_COMMAND_PROFILES[variant]
+        profile = KAIDI_COMMAND_PROFILES.get(variant)
+        if profile is None:
+            raise ValueError(
+                f"Unsupported Kaidi variant '{variant}'. "
+                f"Expected one of: {', '.join(sorted(KAIDI_COMMAND_PROFILES))}"
+            )
+        self._command_profile = profile
 
         # For dual beds (seat_1_2), build a map from seat_1 → seat_2 commands
         if variant == KAIDI_VARIANT_SEAT_1_2:

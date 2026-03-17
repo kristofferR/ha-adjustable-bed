@@ -30,6 +30,10 @@ KAIDI_MANUAL_VARIANTS: frozenset[str] = frozenset(
 # All three apps use ONLY SEAT_* commands.  Single-base products use seat_1,
 # dual-base products use seat_1 + seat_2 (seat_1_2).
 #
+# IDs 140-141 do not appear in any of the three APK versions and are
+# intentionally omitted.  Devices with unmapped IDs fall through to the
+# sofa_acu_no seat-bar heuristic or resolve to "unresolved_metadata".
+#
 # ID  | Name              | App         | bedUI | Classification
 # ----|-------------------|-------------|-------|---------------
 # 129 | BED_TYPE_SINGLE   | All         | 2     | seat_1
