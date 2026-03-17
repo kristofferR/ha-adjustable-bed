@@ -228,6 +228,11 @@ class TestSupportBundle:
 
         assert report["target"]["mode"] == "target_address"
         assert report["integration"]["configured_device"] is False
+        assert report["integration"]["kaidi_product_id"] is None
+        assert report["integration"]["kaidi_sofa_acu_no"] is None
+        assert report["integration"]["kaidi_adv_type"] is None
+        assert report["integration"]["kaidi_resolved_variant"] is None
+        assert report["integration"]["kaidi_variant_source"] is None
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
         assert report["bluetooth"]["advertisements_by_source"] == [{"source": "proxy_1"}]

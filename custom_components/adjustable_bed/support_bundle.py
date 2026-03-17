@@ -185,6 +185,13 @@ def _empty_integration_info(address: str) -> dict[str, Any]:
         "disable_angle_sensing": None,
         "preferred_adapter": None,
         "address": address,
+        "kaidi_room_id": None,
+        "kaidi_target_vaddr": None,
+        "kaidi_product_id": None,
+        "kaidi_sofa_acu_no": None,
+        "kaidi_adv_type": None,
+        "kaidi_resolved_variant": None,
+        "kaidi_variant_source": None,
         "configured_device": False,
     }
 

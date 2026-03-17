@@ -8,8 +8,17 @@ from typing import Any
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_KAIDI_ROOM_ID, CONF_KAIDI_TARGET_VADDR
+from .const import (
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
+)
 from .kaidi_protocol import KaidiAdvertisement, extract_best_kaidi_advertisement
+from .kaidi_variants import resolve_kaidi_variant_from_entry_data
 
 
 def resolve_kaidi_advertisement(
@@ -53,11 +62,23 @@ def add_kaidi_entry_metadata(
     updated = dict(entry_data)
 
     if advertisement is None:
-        return updated
+        resolution = resolve_kaidi_variant_from_entry_data(updated)
+    else:
+        updated[CONF_KAIDI_ADV_TYPE] = advertisement.adv_type
+        if advertisement.room_id is not None:
+            updated[CONF_KAIDI_ROOM_ID] = advertisement.room_id
+        if advertisement.vaddr is not None:
+            updated[CONF_KAIDI_TARGET_VADDR] = advertisement.vaddr
+        if advertisement.product_id is not None:
+            updated[CONF_KAIDI_PRODUCT_ID] = advertisement.product_id
+        if advertisement.sofa_acu_no is not None:
+            updated[CONF_KAIDI_SOFA_ACU_NO] = advertisement.sofa_acu_no
+        resolution = resolve_kaidi_variant_from_entry_data(updated)
 
-    if advertisement.room_id is not None:
-        updated[CONF_KAIDI_ROOM_ID] = advertisement.room_id
-    if advertisement.vaddr is not None:
-        updated[CONF_KAIDI_TARGET_VADDR] = advertisement.vaddr
+    updated[CONF_KAIDI_VARIANT_SOURCE] = resolution.source
+    if resolution.variant is not None:
+        updated[CONF_KAIDI_RESOLVED_VARIANT] = resolution.variant
+    else:
+        updated.pop(CONF_KAIDI_RESOLVED_VARIANT, None)
 
     return updated

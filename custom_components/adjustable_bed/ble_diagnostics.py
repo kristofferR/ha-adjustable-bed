@@ -40,6 +40,7 @@ from .diagnostic_payloads import (
     payload_ascii_preview,
     summarize_repeated_payloads,
 )
+from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -769,7 +770,7 @@ class BLEDiagnosticRunner:
         selected_for_connection: bool,
     ) -> dict[str, Any]:
         """Convert a Bluetooth service snapshot to a dictionary."""
-        return {
+        snapshot = {
             "captured_at": datetime.now(UTC).isoformat(),
             "address": service_info.address.upper(),
             "name": service_info.name,
@@ -785,6 +786,10 @@ class BLEDiagnosticRunner:
                 selected_for_connection and self._using_non_connectable_fallback
             ),
         }
+        kaidi_advertisement = extract_kaidi_advertisement(service_info.manufacturer_data)
+        if kaidi_advertisement is not None:
+            snapshot["kaidi"] = kaidi_advertisement_to_dict(kaidi_advertisement)
+        return snapshot
 
     def _build_device_section(self, service_info: Any | None) -> dict[str, Any]:
         """Build enriched device and backend info."""
@@ -958,5 +963,4 @@ class BLEDiagnosticRunner:
         if isinstance(value, (list, tuple, set)):
             return [self._serialize_value(item) for item in value]
         return str(value)
-
 

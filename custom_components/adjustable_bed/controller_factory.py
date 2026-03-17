@@ -57,6 +57,8 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     CB1322_MANUFACTURER_MARKERS,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_SINO_NAME_PATTERNS,
@@ -89,6 +91,8 @@ from .const import (
     SBI_VARIANT_BOTH,
     VARIANT_AUTO,
 )
+from .kaidi_protocol import extract_kaidi_advertisement
+from .kaidi_variants import resolve_kaidi_variant
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -224,10 +228,33 @@ async def create_controller(
     if bed_type == BED_TYPE_KAIDI:
         from .beds.kaidi import KaidiController
 
+        advertisement = extract_kaidi_advertisement(manufacturer_data)
+        entry_data = getattr(getattr(coordinator, "entry", None), "data", {})
+        resolution = resolve_kaidi_variant(
+            protocol_variant or VARIANT_AUTO,
+            product_id=(
+                advertisement.product_id
+                if advertisement is not None and advertisement.product_id is not None
+                else entry_data.get(CONF_KAIDI_PRODUCT_ID)
+            ),
+            sofa_acu_no=(
+                advertisement.sofa_acu_no
+                if advertisement is not None and advertisement.sofa_acu_no is not None
+                else entry_data.get(CONF_KAIDI_SOFA_ACU_NO)
+            ),
+        )
+        if resolution.variant is None:
+            raise ValueError(
+                "Kaidi product metadata could not be mapped to a command family. "
+                "Select a Kaidi protocol variant manually in options."
+            )
+
         return KaidiController(
             coordinator,
             device_name=device_name,
             manufacturer_data=manufacturer_data,
+            variant=resolution.variant,
+            variant_source=resolution.source,
         )
 
     if bed_type == BED_TYPE_OKIN_CB24:
@@ -269,7 +296,8 @@ async def create_controller(
             }
         )
         initial_continuous_presets = (
-            adaptive_preset_fallback and coordinator.cb24_continuous_presets_learned
+            adaptive_preset_fallback
+            and getattr(coordinator, "cb24_continuous_presets_learned", False)
         )
 
         if initial_continuous_presets:
