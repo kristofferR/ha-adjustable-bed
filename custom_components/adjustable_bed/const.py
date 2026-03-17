@@ -301,12 +301,18 @@ RICHMAT_WILINKE_CHAR_UUIDS: Final = [
 KEESON_KSBT_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 KEESON_KSBT_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
+# Extended Nordic UART variant (Ergomotion/SFD beds)
+KEESON_EXTENDED_NORDIC_SERVICE_UUID: Final = "6e400020-b5a3-f393-e0a9-e50e24dcca9e"
+KEESON_EXTENDED_NORDIC_CHAR_UUID: Final = "6e400021-b5a3-f393-e0a9-e50e24dcca9e"
+
 # KSBT fallback service/characteristic UUIDs
 # Some KSBT devices advertise with different service UUIDs but still use KSBT protocol
 KEESON_KSBT_FALLBACK_GATT_PAIRS: Final = [
-    # Fallback 1: FFE5/FFE9 (same as Base service)
+    # Fallback 1: Extended Nordic UART (Ergomotion 4.0, SFD beds)
+    ("6e400020-b5a3-f393-e0a9-e50e24dcca9e", "6e400021-b5a3-f393-e0a9-e50e24dcca9e"),
+    # Fallback 2: FFE5/FFE9 (same as Base service)
     ("0000ffe5-0000-1000-8000-00805f9b34fb", "0000ffe9-0000-1000-8000-00805f9b34fb"),
-    # Fallback 2: FFE0/FFE1
+    # Fallback 3: FFE0/FFE1
     ("0000ffe0-0000-1000-8000-00805f9b34fb", "0000ffe1-0000-1000-8000-00805f9b34fb"),
 ]
 

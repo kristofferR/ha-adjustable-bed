@@ -84,6 +84,7 @@ from .const import (
     KAIDI_MESH_SERVICE_UUID,
     KAIDI_NAME_PATTERNS,
     KEESON_BASE_SERVICE_UUID,
+    KEESON_EXTENDED_NORDIC_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
@@ -1221,6 +1222,16 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_MATTRESSFIRM, confidence=0.9, signals=signals)
+
+    # Check for Extended Nordic UART (Ergomotion/SFD beds) - maps to Keeson
+    if KEESON_EXTENDED_NORDIC_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:extended_nordic_uart")
+        _LOGGER.info(
+            "Detected Keeson/Ergomotion bed at %s (name: %s) - Extended Nordic UART UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.8, signals=signals)
 
     # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID
