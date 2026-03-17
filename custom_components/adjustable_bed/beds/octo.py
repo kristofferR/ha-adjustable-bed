@@ -319,7 +319,7 @@ class OctoController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Octo bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            "Writing command to Octo bed (%s): %s (repeat: %d, delay: %dms, response=False)",
             OCTO_CHAR_UUID,
             command.hex(),
             repeat_count,
@@ -333,7 +333,7 @@ class OctoController(BedController):
 
             try:
                 async with self._ble_lock:
-                    await self.client.write_gatt_char(OCTO_CHAR_UUID, command, response=True)
+                    await self.client.write_gatt_char(OCTO_CHAR_UUID, command, response=False)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
@@ -871,7 +871,7 @@ class OctoStar2Controller(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Octo Star2 bed (%s): %s (repeat: %d, delay: %dms, response=True)",
+            "Writing command to Octo Star2 bed (%s): %s (repeat: %d, delay: %dms, response=False)",
             OCTO_STAR2_CHAR_UUID,
             command.hex(),
             repeat_count,
@@ -885,7 +885,7 @@ class OctoStar2Controller(BedController):
 
             try:
                 async with self._ble_lock:
-                    await self.client.write_gatt_char(OCTO_STAR2_CHAR_UUID, command, response=True)
+                    await self.client.write_gatt_char(OCTO_STAR2_CHAR_UUID, command, response=False)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise
