@@ -1,12 +1,14 @@
-"""Reverie bed controller implementation.
+"""Reverie bed controller implementation (Protocol 108).
 
 Reverse engineering by Vitaliy and Richard Hopton (smartbed-mqtt).
+Protocol verified against Service108.java and BLEManager.java from com.reverie.reverie APK.
 
 Reverie beds use a protocol with XOR checksum:
 Command format: [0x55, ...bytes, XOR_checksum]
 where checksum = bytes XOR'd together XOR 0x55
 
-Reverie supports position-based motor control (0-100%).
+Supports both position-based motor control (0-100%) and linear motor commands.
+Position notifications are 9-byte packets containing head/foot position and wave levels.
 """
 
 from __future__ import annotations
@@ -29,7 +31,19 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ReverieCommands:
-    """Reverie command constants."""
+    """Reverie command constants.
+
+    Verified from Service108.java in com.reverie.reverie APK.
+    """
+
+    # Linear motor commands (ref: Service108.headPositionLinearAdd etc.)
+    HEAD_UP: ClassVar[list[int]] = [0x01]
+    FOOT_UP: ClassVar[list[int]] = [0x02]
+    HEAD_DOWN: ClassVar[list[int]] = [0x03]
+    FOOT_DOWN: ClassVar[list[int]] = [0x04]
+
+    # Stop all massage (ref: Service108.stopMassage)
+    STOP_MASSAGE: ClassVar[list[int]] = [0x35]
 
     # Presets
     PRESET_ZERO_G: ClassVar[list[int]] = [0x15]
@@ -64,7 +78,12 @@ class ReverieCommands:
 
     @staticmethod
     def massage_wave(level: int) -> list[int]:
-        """Create wave massage command with level (0-10)."""
+        """Create wave massage command with level (0-9).
+
+        APK uses string concatenation "4" + level producing 0x40-0x49.
+        Level 10 would produce 0x4A which is invalid.
+        """
+        level = min(9, max(0, level))
         return [0x40 + level]
 
     @staticmethod
@@ -88,6 +107,7 @@ class ReverieController(BedController):
         self._massage_head_level = 0
         self._massage_foot_level = 0
         self._massage_wave_level = 0
+        self._last_notification_hex: str | None = None
         _LOGGER.debug("ReverieController initialized")
 
     @property
@@ -186,21 +206,11 @@ class ReverieController(BedController):
             _LOGGER.warning("Unknown motor %s for Reverie position control", motor)
             return
 
-        try:
-            await self.write_command(
-                self._build_command(cmd),
-                repeat_count=100,
-                repeat_delay_ms=300,
-            )
-        finally:
-            # Always send STOP to ensure motor stops at target position
-            try:
-                await self.write_command(
-                    self._build_command(ReverieCommands.MOTOR_STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+        await self.write_command(
+            self._build_command(cmd),
+            repeat_count=3,
+            repeat_delay_ms=200,
+        )
 
     def _build_command(self, command_bytes: list[int]) -> bytes:
         """Build command with XOR checksum.
@@ -273,62 +283,49 @@ class ReverieController(BedController):
             _LOGGER.debug("Could not start notifications")
 
     def _parse_position_data(self, data: bytearray) -> None:
-        """Parse position data from notification.
+        """Parse 9-byte position notification from Protocol 108.
 
-        Reverie position notification format:
-        - Byte 0: 0x55 (header)
-        - Byte 1: Command type (0x51 = head, 0x52 = feet)
-        - Byte 2: Position (0-100)
-        - Byte 3: XOR checksum
+        Verified from BLEManager.m608xa6c5dfcb in com.reverie.reverie APK.
+        Notification format (9 bytes / 18 hex chars):
+        - Bytes 0-1: Header (unknown)
+        - Byte 2: Head position (0-100)
+        - Byte 3: Foot position (0-100)
+        - Byte 4: Head wave/massage level
+        - Byte 5: Foot wave/massage level
+        - Bytes 6-8: Unknown
         """
-        if len(data) < 4:
+        if len(data) != 9:
             return
 
-        # Verify header
-        if data[0] != 0x55:
-            _LOGGER.debug("Invalid Reverie notification header: %02x", data[0])
+        # Deduplicate identical notifications (matches APK behavior)
+        hex_str = data.hex()
+        if hex_str == self._last_notification_hex:
             return
+        self._last_notification_hex = hex_str
 
-        cmd_type = data[1]
-        position = data[2]
-        checksum = data[3]
+        head_position = data[2]
+        foot_position = data[3]
+        head_wave = data[4]
+        foot_wave = data[5]
 
-        # Verify XOR checksum (XOR of bytes 0-2 should equal byte 3)
-        calculated_checksum = data[0] ^ data[1] ^ data[2]
-        if checksum != calculated_checksum:
-            _LOGGER.debug(
-                "Invalid Reverie checksum: expected %02x, got %02x",
-                calculated_checksum,
-                checksum,
-            )
-            return
+        _LOGGER.debug(
+            "Reverie position update: head=%d%%, foot=%d%%, head_wave=%d, foot_wave=%d",
+            head_position,
+            foot_position,
+            head_wave,
+            foot_wave,
+        )
 
-        # Validate position is in range
-        if position > 100:
-            _LOGGER.debug("Invalid position value: %d", position)
-            return
+        # Update internal massage state from device feedback
+        self._massage_head_level = head_wave
+        self._massage_foot_level = foot_wave
 
-        # Map command type to motor name
-        # Use "back" and "legs" to match the sensor position_key expectations
-        # (sensors use "back" and "legs" for 2-motor beds)
-        motor_map = {
-            0x51: "back",  # head motor -> back position
-            0x52: "legs",  # feet motor -> legs position
-        }
-
-        motor_name = motor_map.get(cmd_type)
-        if motor_name and self._notify_callback:
+        if self._notify_callback:
             # Convert position (0-100) to angle estimate
-            # Assume max angle of ~60 degrees for back (head), ~45 for legs (feet)
-            angle = position * 0.6 if motor_name == "back" else position * 0.45
-
-            _LOGGER.debug(
-                "Reverie position update: %s = %d%% (%.1f°)",
-                motor_name,
-                position,
-                angle,
-            )
-            self._notify_callback(motor_name, angle)
+            if 0 <= head_position <= 100:
+                self._notify_callback("back", head_position * 0.6)
+            if 0 <= foot_position <= 100:
+                self._notify_callback("legs", foot_position * 0.45)
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
@@ -344,21 +341,25 @@ class ReverieController(BedController):
         Position updates are handled by _parse_position_data via start_notify.
         """
 
-    async def _move_to_position(self, motor: str, position: int) -> None:
-        """Move a motor to a specific position (0-100) and always send STOP at the end."""
-        if motor == "head":
-            cmd = ReverieCommands.motor_head(position)
-        else:
-            cmd = ReverieCommands.motor_feet(position)
+    async def _move_linear(
+        self,
+        command_bytes: list[int],
+        repeat_count: int = 60,
+        repeat_delay_ms: int = 500,
+    ) -> None:
+        """Move using linear motor command, then stop.
 
+        Linear commands (0x01-0x04) start continuous motor movement.
+        The command is repeated as a keep-alive until cancelled or complete.
+        STOP (0xFF) is always sent in the finally block.
+        """
         try:
             await self.write_command(
-                self._build_command(cmd),
-                repeat_count=100,
-                repeat_delay_ms=300,
+                self._build_command(command_bytes),
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
             )
         finally:
-            # Always send STOP with a fresh event so it's not affected by cancellation
             try:
                 await self.write_command(
                     self._build_command(ReverieCommands.MOTOR_STOP),
@@ -367,22 +368,25 @@ class ReverieController(BedController):
             except Exception:
                 _LOGGER.debug("Failed to send STOP command during cleanup")
 
-    # Motor control methods - Reverie uses position-based control
-    # For up/down we'll move incrementally toward 100/0
-    async def move_head_up(self) -> None:
-        """Move head up (to 100%)."""
-        await self._move_to_position("head", 100)
-
-    async def move_head_down(self) -> None:
-        """Move head down (to 0%)."""
-        await self._move_to_position("head", 0)
-
-    async def move_head_stop(self) -> None:
-        """Stop head motor."""
+    async def _send_stop(self) -> None:
+        """Send motor stop command."""
         await self.write_command(
             self._build_command(ReverieCommands.MOTOR_STOP),
             cancel_event=asyncio.Event(),
         )
+
+    # Motor control methods - uses linear commands (ref: Service108.java)
+    async def move_head_up(self) -> None:
+        """Move head up."""
+        await self._move_linear(ReverieCommands.HEAD_UP)
+
+    async def move_head_down(self) -> None:
+        """Move head down."""
+        await self._move_linear(ReverieCommands.HEAD_DOWN)
+
+    async def move_head_stop(self) -> None:
+        """Stop head motor."""
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
         """Move back up (same as head)."""
@@ -394,19 +398,19 @@ class ReverieController(BedController):
 
     async def move_back_stop(self) -> None:
         """Stop back motor."""
-        await self.move_head_stop()
+        await self._send_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (to 100%)."""
-        await self._move_to_position("feet", 100)
+        """Move legs up."""
+        await self._move_linear(ReverieCommands.FOOT_UP)
 
     async def move_legs_down(self) -> None:
-        """Move legs down (to 0%)."""
-        await self._move_to_position("feet", 0)
+        """Move legs down."""
+        await self._move_linear(ReverieCommands.FOOT_DOWN)
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self.move_head_stop()
+        await self._send_stop()
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -418,22 +422,19 @@ class ReverieController(BedController):
 
     async def move_feet_stop(self) -> None:
         """Stop feet motor."""
-        await self.move_head_stop()
+        await self._send_stop()
 
     async def stop_all(self) -> None:
         """Stop all motors."""
-        await self.write_command(
-            self._build_command(ReverieCommands.MOTOR_STOP),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position."""
         await self.write_command(
             self._build_command(ReverieCommands.PRESET_FLAT),
-            repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_count=3,
+            repeat_delay_ms=200,
         )
 
     async def preset_memory(self, memory_num: int) -> None:
@@ -447,8 +448,8 @@ class ReverieController(BedController):
         if command := commands.get(memory_num):
             await self.write_command(
                 self._build_command(command),
-                repeat_count=100,
-                repeat_delay_ms=300,
+                repeat_count=3,
+                repeat_delay_ms=200,
             )
 
     async def program_memory(self, memory_num: int) -> None:
@@ -469,12 +470,11 @@ class ReverieController(BedController):
 
     # Massage methods
     async def massage_off(self) -> None:
-        """Turn off massage."""
+        """Turn off all massage (ref: Service108.stopMassage, command 0x35)."""
         self._massage_head_level = 0
         self._massage_foot_level = 0
         self._massage_wave_level = 0
-        await self.write_command(self._build_command(ReverieCommands.massage_head(0)))
-        await self.write_command(self._build_command(ReverieCommands.massage_foot(0)))
+        await self.write_command(self._build_command(ReverieCommands.STOP_MASSAGE))
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
@@ -505,8 +505,8 @@ class ReverieController(BedController):
         )
 
     async def massage_mode_step(self) -> None:
-        """Step through wave massage levels."""
-        self._massage_wave_level = (self._massage_wave_level + 1) % 11
+        """Step through wave massage levels (0-9)."""
+        self._massage_wave_level = (self._massage_wave_level + 1) % 10
         await self.write_command(
             self._build_command(ReverieCommands.massage_wave(self._massage_wave_level))
         )
@@ -515,16 +515,16 @@ class ReverieController(BedController):
         """Go to zero gravity position."""
         await self.write_command(
             self._build_command(ReverieCommands.PRESET_ZERO_G),
-            repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_count=3,
+            repeat_delay_ms=200,
         )
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
         await self.write_command(
             self._build_command(ReverieCommands.PRESET_ANTI_SNORE),
-            repeat_count=100,
-            repeat_delay_ms=300,
+            repeat_count=3,
+            repeat_delay_ms=200,
         )
 
     # Direct massage intensity control
@@ -535,16 +535,16 @@ class ReverieController(BedController):
             zone: "head", "foot", or "wave"
             level: 0-10 (0 = off)
         """
-        # Clamp level to valid range
-        level = max(0, min(10, level))
-
         if zone == "head":
+            level = max(0, min(10, level))
             self._massage_head_level = level
             await self.write_command(self._build_command(ReverieCommands.massage_head(level)))
         elif zone == "foot":
+            level = max(0, min(10, level))
             self._massage_foot_level = level
             await self.write_command(self._build_command(ReverieCommands.massage_foot(level)))
         elif zone == "wave":
+            level = max(0, min(9, level))
             self._massage_wave_level = level
             await self.write_command(self._build_command(ReverieCommands.massage_wave(level)))
         else:

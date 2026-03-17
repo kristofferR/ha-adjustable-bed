@@ -19,10 +19,10 @@
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (position 0-100%) |
-| Position Feedback | ✅ (partial) |
+| Motor Control | ✅ (linear + position 0-100%) |
+| Position Feedback | ✅ (9-byte notifications) |
 | Memory Presets | ✅ (4 slots) |
-| Massage | ✅ (0-10 levels) |
+| Massage | ✅ (head/foot 0-10, wave 0-9) |
 | Wave Massage | ✅ |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore | ✅ |
@@ -50,21 +50,48 @@
 | Save Memory 4 | `0x24` | `55 24 71` |
 | Stop | `0xFF` | `55 FF AA` |
 
-### Motor Commands (Position-based)
+### Linear Motor Commands
+
+| Command | Payload | Full Packet |
+|---------|---------|-------------|
+| Head Up | `0x01` | `55 01 54` |
+| Foot Up | `0x02` | `55 02 57` |
+| Head Down | `0x03` | `55 03 56` |
+| Foot Down | `0x04` | `55 04 51` |
+| Stop | `0xFF` | `55 FF AA` |
+
+### Position Motor Commands
 
 | Command | Payload | Description |
 |---------|---------|-------------|
 | Head Position | `0x51 {pos}` | Move head to position (0-100) |
 | Feet Position | `0x52 {pos}` | Move feet to position (0-100) |
 
+### Massage Commands
+
+| Command | Payload | Description |
+|---------|---------|-------------|
+| Head Massage | `0x53 {level}` | Set head massage level (0-10) |
+| Foot Massage | `0x54 {level}` | Set foot massage level (0-10) |
+| Wave Massage | `0x40 + level` | Set wave massage level (0-9) |
+| Stop Massage | `0x35` | Stop all massage |
+
 ### Other Commands
 
 | Command | Payload |
 |---------|---------|
 | Lights Toggle | `0x5B 0x00` |
-| Head Massage | `0x53 {level}` (0-10) |
-| Foot Massage | `0x54 {level}` (0-10) |
-| Wave Massage | `0x40 + level` (0-10) |
+
+### Position Notifications (9 bytes)
+
+| Byte | Content |
+|------|---------|
+| 0-1 | Header |
+| 2 | Head position (0-100) |
+| 3 | Foot position (0-100) |
+| 4 | Head wave/massage level |
+| 5 | Foot wave/massage level |
+| 6-8 | Unknown |
 
 ## Protocol 110 (Characteristic-Based)
 
