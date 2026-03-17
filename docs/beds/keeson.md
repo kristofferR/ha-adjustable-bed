@@ -48,7 +48,7 @@ Brands using Keeson/Ergomotion actuators:
 | Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
 | Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
 | TV Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
-| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
+| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❓ |
 | Lounge Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
 | Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
 | Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
@@ -70,8 +70,15 @@ Brands using Keeson/Ergomotion actuators:
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
 
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
+- `6e400020-b5a3-f393-e0a9-e50e24dcca9e` (characteristic: `6e400021`) - Extended Nordic UART, used by some Ergomotion/SFD beds
 - `0000ffe5-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffe9`)
 - `0000ffe0-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffe1`)
+
+### KSBT03CR Variant
+**Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
+**Format:** 7 bytes `[0x05, 0x02, cmd3, cmd2, cmd1, cmd0, 0x00]` (big-endian)
+
+Auto-detected from device name prefix `ksbt03cr`. Uses the same 32-bit command values as standard KSBT; only the framing differs (7-byte packet with `0x05` prefix and trailing `0x00` byte instead of 6-byte packet with `0x04` prefix). Falls back to the same alternative service UUIDs as standard KSBT.
 
 ### Sino Variant (Dynasty, INNOVA, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
@@ -169,4 +176,5 @@ Member's Mark beds support independent control of left and right sides using a 9
 |-------------------|----------|
 | `base` | Standard FFE5/FFE9 (8-byte) |
 | `KSBT03C` | Nordic UART with 6-byte packets |
+| `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |

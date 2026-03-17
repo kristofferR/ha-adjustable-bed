@@ -32,10 +32,11 @@ Jensen beds require a 4-digit PIN for authentication. The integration uses **306
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
+| Go-to-Position | ✅ |
 | Position Feedback | ✅ |
 | Memory Presets | ✅ (1 slot) |
 | Flat Preset | ✅ |
-| Massage | ✅ (dynamic) |
+| Massage | ✅ (dynamic, variable intensity 0-10) |
 | Main Light | ✅ (dynamic) |
 | Under-bed Light | ✅ (dynamic) |
 | Fan | ❌ (detected but not implemented) |
@@ -116,7 +117,26 @@ Byte 4 contains the box type:
 - `4` = LinON Entry
 - `2` = Dynamique
 
+### Go-to-Position Command
+
+The bed supports absolute position seeking via the `M_GOTO_POS` command. Positions are 16-bit values (0-1000 range mapped from percentage).
+
+Format: `[0x10, 0x04, headMSB, headLSB, footMSB, footLSB]`
+
+| Field | Description |
+|-------|-------------|
+| Byte 0 | `0x10` - Motor command type |
+| Byte 1 | `0x04` - Go-to-position subcommand |
+| Bytes 2-3 | Head position as 16-bit big-endian (MSB, LSB) |
+| Bytes 4-5 | Foot position as 16-bit big-endian (MSB, LSB) |
+
+The command is sent repeatedly (with STOP at the end) while the bed moves to the target position.
+
 ### Massage Commands
+
+Massage commands use format: `[0x12, headIntensity, footIntensity, 0x00, hours, minutes]`
+
+**Toggle commands (fixed intensity 5):**
 
 | Command | Bytes (hex) |
 |---------|-------------|
@@ -124,6 +144,17 @@ Byte 4 contains the box type:
 | Head Massage On | `12 05 00 00 00 00` |
 | Foot Massage On | `12 00 05 00 00 00` |
 | Both Massage On | `12 05 05 00 00 00` |
+
+**Variable intensity (0-10 per zone):**
+
+Format: `[0x12, head_level, foot_level, 0x00, 0x00, 0x00]`
+
+| Field | Range | Description |
+|-------|-------|-------------|
+| head_level | 0-10 | Head massage intensity (0 = off) |
+| foot_level | 0-10 | Foot massage intensity (0 = off) |
+
+Both zones are set in a single command. To change one zone, include the current intensity of the other zone to preserve its state.
 
 ### Light Commands
 

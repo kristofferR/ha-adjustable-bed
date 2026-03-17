@@ -43,6 +43,7 @@
 | Neck Down | `24 51` | `$Q` | Lower neck |
 | Lumbar Up | `24 70` | `$p` | Raise lumbar |
 | Lumbar Down | `24 71` | `$q` | Lower lumbar |
+| Stop | `24 62` | `$b` | Stop all motors (button release) |
 
 ### Preset Commands
 
@@ -82,7 +83,7 @@ From app disassembly analysis:
 
 - **Motor commands:** Single command per button press (no repeat interval)
 - **Pattern:** Send command on press, motors stop when no command received
-- **Stop command:** Not required (controller handles stop)
+- **Stop command:** Dedicated `$b` (0x62) command sent on button release. Sent 3 times with 50ms delay using a fresh cancel event to ensure delivery.
 
 ## Supported Bed Model Variants
 

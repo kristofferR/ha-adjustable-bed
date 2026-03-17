@@ -20,10 +20,10 @@
 
 | Feature | Gen2 | Okin | MlRM |
 |---------|------|------|------|
-| Motor Control | Preset-based | ✅ | ✅ (discrete) |
+| Motor Control | ✅ (head, feet, pillow, lumbar) | ✅ (head, feet, tilt, lumbar) | ✅ (discrete) |
 | Position Feedback | ❌ | ❌ | ❌ |
 | Memory Presets | ✅ (4 slots) | ✅ (4 slots) | ✅ (2 slots) |
-| Massage | ✅ (0-10 levels) | ✅ | ✅ (discrete UP/DOWN) |
+| Massage | ✅ (0-10 levels) | ✅ (wave, timer) | ✅ (discrete UP/DOWN) |
 | Lighting | ✅ RGB | ✅ Toggle | ✅ Toggle |
 | Anti-Snore | ✅ | ❌ | ✅ |
 | Zero-G | ❌ | ✅ | ✅ |
@@ -78,6 +78,24 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 | Save Relax | `SMEM 4` |
 | Save Anti-Snore | `SNPOS 0` |
 
+### Motor Commands
+
+Format: `M {up}:{down}:{stop}` where each field is a comma-separated list of motor numbers.
+
+Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
+
+| Command | Text | Description |
+|---------|------|-------------|
+| Head Up | `M 0::123` | Head up, stop feet/pillow/lumbar |
+| Head Down | `M :0:123` | Head down, stop feet/pillow/lumbar |
+| Feet Up | `M 1::023` | Feet up, stop head/pillow/lumbar |
+| Feet Down | `M :1:023` | Feet down, stop head/pillow/lumbar |
+| Pillow Up | `M 2::013` | Pillow up, stop head/feet/lumbar |
+| Pillow Down | `M :2:013` | Pillow down, stop head/feet/lumbar |
+| Lumbar Up | `M 3::012` | Lumbar up, stop head/feet/pillow |
+| Lumbar Down | `M :3:012` | Lumbar down, stop head/feet/pillow |
+| Stop All | `M ::0123` | Stop all motors |
+
 ### Massage Commands
 
 | Command | Text |
@@ -103,6 +121,34 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 **Note:** Requires BLE pairing
 
 Uses same 32-bit command values as Keeson - see [Keeson commands](keeson.md#commands-32-bit-values).
+
+### Motor Commands
+
+| Command | 32-bit Value | Description |
+|---------|-------------|-------------|
+| Head Up | `0x00000001` | Raise head |
+| Head Down | `0x00000002` | Lower head |
+| Feet Up | `0x00000004` | Raise feet |
+| Feet Down | `0x00000008` | Lower feet |
+| Tilt Up | `0x00000010` | Raise tilt (pillow) |
+| Tilt Down | `0x00000020` | Lower tilt (pillow) |
+| Lumbar Up | `0x00000040` | Raise lumbar |
+| Lumbar Down | `0x00000080` | Lower lumbar |
+| Stop | `0x00000000` | Stop all motors |
+
+Multiple motors can be moved simultaneously by OR-ing their command values together.
+
+### Massage Commands
+
+| Command | 32-bit Value | Description |
+|---------|-------------|-------------|
+| Head Massage Up | `0x00000800` | Increase head massage intensity |
+| Head Massage Down | `0x00800000` | Decrease head massage intensity |
+| Foot Massage Up | `0x00000400` | Increase foot massage intensity |
+| Foot Massage Down | `0x01000000` | Decrease foot massage intensity |
+| Massage Step | `0x00000100` | Cycle through massage modes |
+| Massage Timer Step | `0x00000200` | Cycle through massage timer options |
+| Massage Wave Step | `0x10000000` | Cycle through massage wave patterns |
 
 ## MlRM Variant (WiLinke)
 

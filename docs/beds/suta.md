@@ -25,7 +25,7 @@
 | Memory Presets | ✅ (4 slots) |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
 | Under-bed Lights | ✅ (discrete on/off) |
-| Massage | ❌ (not exposed yet) |
+| Massage | ✅ (head/foot zones, timer/duty cycle/level) |
 
 ## Protocol Details
 
@@ -69,6 +69,8 @@ AT+CTRL=BOTH BACK UP\r\n
 
 | Action | Command |
 |--------|---------|
+| Head Up | `AT+CTRL=BOTH HEAD UP` |
+| Head Down | `AT+CTRL=BOTH HEAD DOWN` |
 | Back Up | `AT+CTRL=BOTH BACK UP` |
 | Back Down | `AT+CTRL=BOTH BACK DOWN` |
 | Legs/Foot Up | `AT+CTRL=BOTH FOOT UP` |
@@ -96,6 +98,21 @@ Note: `head` is mapped to the same upper actuator commands as `back` for compati
 |--------|---------|
 | Light On | `AT+ENABLE=LIGHT` |
 | Light Off | `AT+DISABLE=LIGHT` |
+
+### Massage
+
+Massage uses three parameters per zone: Timer (T), Duty Cycle (DT), and Level (LV).
+
+| Action | Command | Values |
+|--------|---------|--------|
+| Head Timer | `AT+MASS=BOTH HEAD T<param>` | e.g. `T00M` |
+| Foot Timer | `AT+MASS=BOTH FOOT T<param>` | e.g. `T00M` |
+| Head Duty Cycle | `AT+MASS=BOTH HEAD DT<value>` | `00` (off), `20`, `33`, `50` |
+| Foot Duty Cycle | `AT+MASS=BOTH FOOT DT<value>` | `00` (off), `20`, `33`, `50` |
+| Head Level | `AT+MASS=BOTH HEAD LV<value>` | `00` (off), `10`, `20`, `30` |
+| Foot Level | `AT+MASS=BOTH FOOT LV<value>` | `00` (off), `10`, `20`, `30` |
+
+Duty cycle cycles: `00` -> `20` -> `33` -> `50` -> `00`. Level cycles: `00` -> `10` -> `20` -> `30` -> `00`. Setting DT to `00` for both zones turns off all massage.
 
 ## Command Timing
 

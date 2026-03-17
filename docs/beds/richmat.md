@@ -54,7 +54,7 @@ Brands using Richmat actuators:
 |---------|-----------|
 | Motor Control | ✅ (up to 7 motors) |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (2 slots, 3 on some models) |
+| Memory Presets | ✅ (1-5 slots, varies by model) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
@@ -81,39 +81,141 @@ Brands using Richmat actuators:
 
 ### Commands (Single Byte)
 
+All variants use the same command byte values. For WiLinke/Prefix55/PrefixAA, the byte is wrapped in the 5-byte packet format described above.
+
+#### Motor Control
+
 | Command | Byte | Description |
 |---------|------|-------------|
 | Head Up | `0x24` | Raise head |
 | Head Down | `0x25` | Lower head |
 | Feet Up | `0x26` | Raise feet |
 | Feet Down | `0x27` | Lower feet |
-| Pillow Up | `0x3F` | Raise pillow |
-| Pillow Down | `0x40` | Lower pillow |
-| Lumbar Up | `0x41` | Raise lumbar |
-| Lumbar Down | `0x42` | Lower lumbar |
-| Stop | `0x6E` | Stop all |
+| Pillow Up | `0x3F` | Raise pillow (motor 3) |
+| Pillow Down | `0x40` | Lower pillow (motor 3) |
+| Lumbar Up | `0x41` | Raise lumbar (motor 4) |
+| Lumbar Down | `0x42` | Lower lumbar (motor 4) |
+| Motor 5 Up | `0x71` | Raise motor 5 |
+| Motor 5 Down | `0x72` | Lower motor 5 |
+| Motor 6 Up | `0x73` | Raise motor 6 |
+| Motor 6 Down | `0x74` | Lower motor 6 |
+| Motor 7 Up | `0xD0` | Raise motor 7 |
+| Motor 7 Down | `0xD1` | Lower motor 7 |
+| Stop | `0x6E` | Stop all motors |
+| Stop (compat) | `0x5E` | WiLinke compatibility stop (used by some remotes, e.g. QRRM) |
+
+Motors 5-7 are only present on select models (e.g., some table/lift actuators).
+
+#### Combined Motor Movements
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Head+Feet Up | `0x29` | Raise head and feet together |
+| Head+Feet Down | `0x2A` | Lower head and feet together |
+| All Up | `0x56` | Raise all motors |
+| All Down | `0x57` | Lower all motors |
+| Lumbar+Pillow Up | `0x43` | Raise lumbar and pillow together |
+| Lumbar+Pillow Down | `0x44` | Lower lumbar and pillow together |
+| Lumbar+Pillow Tilt Up | `0x5B` | Tilt lumbar and pillow up |
+| Lumbar+Pillow Tilt Down | `0x5C` | Tilt lumbar and pillow down |
+| Feet+Lumbar Up | `0x96` | Raise feet and lumbar together |
+| Feet+Lumbar Down | `0x97` | Lower feet and lumbar together |
+| Head Up + Feet Down | `0x21` | Inverse: head up while feet down |
+| Head Down + Feet Up | `0x22` | Inverse: head down while feet up |
+
+#### Presets
+
+| Command | Byte | Description |
+|---------|------|-------------|
 | Flat | `0x31` | Flat preset |
 | Zero-G | `0x45` | Zero-G preset |
 | Anti-Snore | `0x46` | Anti-snore preset |
 | TV | `0x58` | TV preset |
 | Lounge | `0x59` | Lounge preset |
+| Yoga | `0xF0` | Yoga preset |
+| Read | `0xF2` | Read preset |
+| Side Sleeper | `0xBA` | Side sleeper preset |
+| Sleep | `0x8E` | Sleep preset |
+| Wakeup | `0x93` | Wakeup preset |
+| Flat Sleep | `0xF6` | Flat sleep preset |
+
+#### Memory Presets
+
+| Command | Byte | Description |
+|---------|------|-------------|
 | Memory 1 | `0x2E` | Go to memory 1 |
 | Memory 2 | `0x2F` | Go to memory 2 |
-| Save Memory 1 | `0x2B` | Save memory 1 |
-| Save Memory 2 | `0x2C` | Save memory 2 |
+| Memory 3 | `0x30` | Go to memory 3 |
+| Memory 4 | `0xB2` | Go to memory 4 |
+| Memory 5 | `0xF4` | Go to memory 5 |
+| Save Memory 1 | `0x2B` | Save current position to memory 1 |
+| Save Memory 2 | `0x2C` | Save current position to memory 2 |
+| Save Memory 3 | `0x2D` | Save current position to memory 3 |
+| Save Memory 4 | `0xB3` | Save current position to memory 4 |
+| Save Memory 5 | `0xF5` | Save current position to memory 5 |
+
+#### Save Preset Positions
+
+| Command | Byte | Description |
+|---------|------|-------------|
 | Save Zero-G | `0x66` | Program zero-g position |
 | Save Anti-Snore | `0x69` | Program anti-snore position |
 | Save TV | `0x64` | Program TV position |
 | Save Lounge | `0x65` | Program lounge position |
-| Lights Toggle | `0x3C` | Toggle lights |
-| Massage Toggle | `0x5D` | Toggle massage |
-| Massage Head Step | `0x4C` | Cycle head massage |
-| Massage Foot Step | `0x4E` | Cycle foot massage |
+| Save Yoga | `0xF1` | Program yoga position |
+| Save Side Sleeper | `0xBB` | Program side sleeper position |
+| Save Sleep | `0x8F` | Program sleep position |
+| Save Wakeup | `0x94` | Program wakeup position |
+| Save Flat Sleep | `0xF7` | Program flat sleep position |
+
+#### Preset Resets
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Reset Motor | `0xBE` | Reset motor preset to factory |
+| Reset TV | `0xCA` | Reset TV preset to factory |
+| Reset Snore | `0xCB` | Reset anti-snore preset to factory |
+| Reset Zero-G | `0xCC` | Reset zero-G preset to factory |
+
+#### Massage
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Massage Toggle | `0x5D` | Toggle all massage on/off |
+| Massage Head Step | `0x4C` | Cycle head massage intensity |
+| Massage Foot Step | `0x4E` | Cycle foot massage intensity |
 | Massage Pattern Step | `0x48` | Cycle massage pattern |
-| Yoga | `0xF0` | Yoga preset |
-| Read | `0xF2` | Read preset |
-| Memory 3 | `0x30` | Go to memory 3 |
-| Save Memory 3 | `0x2D` | Save memory 3 |
+
+#### Discrete Massage Control
+
+Sets massage to a specific level instead of cycling.
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Head Massage Off | `0x98` | Turn off head massage |
+| Head Massage 1 | `0x99` | Head massage level 1 |
+| Head Massage 2 | `0x9A` | Head massage level 2 |
+| Head Massage 3 | `0x9B` | Head massage level 3 |
+| Foot Massage Off | `0x9C` | Turn off foot massage |
+| Foot Massage 1 | `0x9D` | Foot massage level 1 |
+| Foot Massage 2 | `0x9E` | Foot massage level 2 |
+| Foot Massage 3 | `0x9F` | Foot massage level 3 |
+| Third Motor Inc | `0xE0` | Increment third massage motor |
+
+#### Lights
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Lights Toggle | `0x3C` | Toggle under-bed lights |
+
+#### Sync Mode (Split King)
+
+For split king beds, sync mode causes both sides to move together.
+
+| Command | Byte | Description |
+|---------|------|-------------|
+| Sync On | `0xBC` | Enable sync mode |
+| Sync Off | `0xBD` | Disable sync mode |
 
 ## Command Timing
 

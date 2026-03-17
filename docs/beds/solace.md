@@ -50,7 +50,7 @@ Device names starting with:
 | Command | Bytes (hex) |
 |---------|-------------|
 | Head Up | `FF FF FF FF 05 00 00 00 01 16 C0` |
-| Head Down | `FF FF FF FF 05 00 00 00 02 57 81` |
+| Head Down | `FF FF FF FF 05 00 00 00 02 56 C1` |
 | Back Up | `FF FF FF FF 05 00 00 00 03 97 01` |
 | Back Down | `FF FF FF FF 05 00 00 00 04 D6 C3` |
 | Legs Up | `FF FF FF FF 05 00 00 00 06 57 02` |

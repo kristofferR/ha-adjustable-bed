@@ -88,6 +88,15 @@ Brands using Jiecang actuators:
 | Memory 2 (Set) | `f1 f1 0c 01 01 0e 7e` | Program memory preset 2 |
 | Memory 3 (Set) | `f1 f1 17 01 01 19 7e` | Program memory preset 3 |
 
+### Split Bed Motor Commands
+
+| Command | Bytes (hex) | Description |
+|---------|-------------|-------------|
+| Back Right Up | `f1 f1 20 01 01 22 7e` | Right-side back up (split bed) |
+| Back Right Down | `f1 f1 21 01 01 23 7e` | Right-side back down (split bed) |
+| Back Top Split Up | `f1 f1 23 01 01 25 7e` | Top split back up (split bed) |
+| Back Top Split Down | `f1 f1 24 01 01 26 7e` | Top split back down (split bed) |
+
 ### Massage Commands
 
 Massage commands use the format: `F1 F1` + zone + `02 08` + level + checksum + `7E`
@@ -99,6 +108,9 @@ Massage commands use the format: `F1 F1` + zone + `02 08` + level + checksum + `
 
 | Command | Bytes (hex) | Description |
 |---------|-------------|-------------|
+| Massage Start | `f1 f1 10 01 08 19 7e` | Start massage |
+| Massage Stop | `f1 f1 11 01 08 1a 7e` | Stop massage |
+| Massage Mode Cycle | `f1 f1 16 01 0a 21 7e` | Cycle massage pattern |
 | Back Massage Off | `f1 f1 12 02 08 00 1c 7e` | Turn off back massage |
 | Leg Massage Off | `f1 f1 14 02 08 00 1e 7e` | Turn off leg massage |
 
