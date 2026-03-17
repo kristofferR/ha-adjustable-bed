@@ -38,6 +38,7 @@ from .okin_7byte import Okin7ByteController
 
 # Protocol-based controllers
 from .okin_cb24 import OkinCB24Controller
+from .okin_cst import OkinCstController
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
 from .okin_ore import OkinOreController
@@ -61,6 +62,7 @@ __all__ = [
     "BedController",
     # Protocol-based controllers
     "OkinCB24Controller",
+    "OkinCstController",
     "OkinHandleController",
     "OkinOreController",
     "OkinUuidController",

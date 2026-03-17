@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
@@ -319,6 +320,12 @@ async def create_controller(
         from .beds.okin_ore import OkinOreController
 
         return OkinOreController(coordinator)
+
+    if bed_type == BED_TYPE_OKIN_CST:
+        from .beds.okin_cst import OkinCstController
+
+        _LOGGER.debug("Using OKIN CST controller (14-byte CSTProtocol)")
+        return OkinCstController(coordinator)
 
     if bed_type == BED_TYPE_MALOUF_NEW_OKIN:
         from .beds.malouf import MaloufNewOkinController

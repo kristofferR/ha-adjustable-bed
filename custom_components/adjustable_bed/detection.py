@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_OKIN_64BIT,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -329,6 +330,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
+    BED_TYPE_OKIN_CST: "Okin CST (Rize MF900, 14-byte dual-field)",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
     BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
@@ -843,10 +845,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             return DetectionResult(bed_type=BED_TYPE_OKIMAT, confidence=0.9, signals=signals)
 
         # Fallback: default to Okimat with warning about ambiguity
-        # This UUID is shared by Okimat, Leggett Okin, and OKIN 64-bit
+        # This UUID is shared by Okimat, Leggett Okin, OKIN 64-bit, and OKIN CST
         _LOGGER.warning(
             "Okin UUID detected but device name '%s' at %s doesn't match known patterns. "
-            "Defaulting to Okimat. Change to Leggett & Platt or OKIN 64-bit in settings if needed.",
+            "Defaulting to Okimat. Change to Leggett & Platt, OKIN 64-bit, or OKIN CST in settings if needed.",
             service_info.name,
             service_info.address,
         )
@@ -854,7 +856,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             bed_type=BED_TYPE_OKIMAT,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT],
+            ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
             requires_characteristic_check=True,
         )
 
