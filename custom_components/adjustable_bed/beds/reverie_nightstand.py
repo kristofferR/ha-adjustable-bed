@@ -69,9 +69,11 @@ class ReverieNightstandCommands:
     def store_memory(memory_num: int) -> int:
         """Get command value to store current position to memory (1-4).
 
-        Store Memory 1 = 0x54, Store Memory 2 = 0x55, etc.
+        Store Memory 1 = 0x84, Store Memory 2 = 0x85, etc.
+        APK uses hex2Byte(String.valueOf(position + 83)), which interprets
+        the decimal string "84" as hex 0x84.
         """
-        return memory_num + 83
+        return memory_num + 0x83
 
 
 class ReverieNightstandController(BedController):
