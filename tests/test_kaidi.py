@@ -47,7 +47,12 @@ ISSUE247_BROADCAST_PAYLOAD = bytes.fromhex(
 class _KaidiCoordinator(SimpleNamespace):
     """Minimal coordinator stub for Kaidi controller tests."""
 
-    def __init__(self, client: MagicMock, address: str = "AA:BB:CC:DD:EE:FF") -> None:
+    def __init__(
+        self,
+        client: MagicMock,
+        address: str = "AA:BB:CC:DD:EE:FF",
+        has_massage: bool = True,
+    ) -> None:
         super().__init__(
             client=client,
             cancel_command=asyncio.Event(),
@@ -56,6 +61,7 @@ class _KaidiCoordinator(SimpleNamespace):
             address=address,
             name="Kaidi Test Bed",
             entry=SimpleNamespace(data={}),
+            has_massage=has_massage,
             record_command_trace=MagicMock(),
         )
 
@@ -479,6 +485,87 @@ async def test_preset_commands_use_variant_specific_profile(
     calls = mock_bleak_client.write_gatt_char.await_args_list
     assert len(calls) == 1
     assert calls[0].args[1] == controller._build_control_packet(expected_command)
+
+
+@pytest.mark.asyncio
+async def test_book_and_leisure_presets_map_to_tv_and_lounge_capabilities(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Kaidi book/leisure opcodes should surface through the existing TV/lounge presets."""
+    controller = await _prepare_controller(
+        mock_bleak_client,
+        variant=KAIDI_VARIANT_SEAT_1,
+    )
+    controller._product_id = 135
+
+    assert controller.supports_preset_tv is True
+    assert controller.supports_preset_lounge is True
+
+    await controller.preset_tv()
+    await controller.preset_lounge()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 2
+    assert calls[0].args[1] == controller._build_control_packet(0x9E)
+    assert calls[1].args[1] == controller._build_control_packet(0xA1)
+
+
+@pytest.mark.asyncio
+async def test_direct_position_progress_commands_use_progress_parameter(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Kaidi direct position writes should send the APK-backed progress opcodes."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1)
+
+    await controller.set_motor_position("back", 37)
+    await controller.set_motor_position("legs", 64)
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 2
+    assert calls[0].args[1] == controller._build_control_packet(0x4D, param=37)
+    assert calls[1].args[1] == controller._build_control_packet(0x4F, param=64)
+
+
+@pytest.mark.asyncio
+async def test_massage_timer_commands_update_local_state(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Kaidi massage timers should send the correct opcode and update select state."""
+    controller = await _prepare_controller(
+        mock_bleak_client,
+        variant=KAIDI_VARIANT_SEAT_1,
+    )
+    controller._product_id = 135
+
+    assert controller.supports_massage_timer is True
+    assert controller.massage_timer_options == [15, 30, 45]
+
+    await controller.set_massage_timer(30)
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert len(calls) == 1
+    assert calls[0].args[1] == controller._build_control_packet(0x54)
+    assert controller.get_massage_state()["timer_mode"] == "30"
+
+
+@pytest.mark.asyncio
+async def test_discrete_light_control_follows_product_family_capability(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Kaidi should only expose discrete light control on light-capable product families."""
+    unsupported = await _prepare_controller(
+        mock_bleak_client,
+        variant=KAIDI_VARIANT_SEAT_1,
+    )
+    unsupported._product_id = 129
+    supported = await _prepare_controller(
+        mock_bleak_client,
+        variant=KAIDI_VARIANT_SEAT_1,
+    )
+    supported._product_id = 135
+
+    assert unsupported.supports_discrete_light_control is False
+    assert supported.supports_discrete_light_control is True
 
 
 @pytest.mark.asyncio

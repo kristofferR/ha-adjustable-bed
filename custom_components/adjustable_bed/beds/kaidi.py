@@ -23,7 +23,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
@@ -122,7 +122,15 @@ class KaidiCommandProfile:
     # Extended presets
     preset_book: int | None = None
     preset_leisure: int | None = None
+    # Direct position targeting
+    head_setting: int | None = None
+    leg_setting: int | None = None
     # Massage
+    massage_start: int | None = None
+    massage_stop: int | None = None
+    massage_timer_15: int | None = None
+    massage_timer_30: int | None = None
+    massage_timer_45: int | None = None
     massage_mode_1: int | None = None
     massage_mode_2: int | None = None
     massage_mode_3: int | None = None
@@ -229,7 +237,15 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         # Extended presets
         preset_book=0x9E,    # SEAT_1_BOOK = 158
         preset_leisure=0xA1,  # SEAT_1_LEISURE = 161
+        # Direct position targeting
+        head_setting=0x4D,  # SEAT_1_HEAD_SETTING = 77
+        leg_setting=0x4F,  # SEAT_1_LEG_SETTING = 79
         # Massage
+        massage_start=0x47,  # SEAT_1_MASSAGE_START = 71
+        massage_stop=0x48,  # SEAT_1_MASSAGE_STOP = 72
+        massage_timer_15=0x53,  # SEAT_1_MASSAGE_15 = 83
+        massage_timer_30=0x54,  # SEAT_1_MASSAGE_30 = 84
+        massage_timer_45=0x55,  # SEAT_1_MASSAGE_45 = 85
         massage_mode_1=0x6B,  # SEAT_1_MASSAGE_MODE1 = 107
         massage_mode_2=0x6E,  # SEAT_1_MASSAGE_MODE2 = 110
         massage_mode_3=0x71,  # SEAT_1_MASSAGE_MODE3 = 113
@@ -267,7 +283,15 @@ KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
         # Extended presets
         preset_book=0x9F,    # SEAT_2_BOOK = 159
         preset_leisure=0xA2,  # SEAT_2_LEISURE = 162
+        # Direct position targeting
+        head_setting=0x4E,  # SEAT_2_HEAD_SETTING = 78
+        leg_setting=0x50,  # SEAT_2_LEG_SETTING = 80
         # Massage
+        massage_start=0x49,  # SEAT_2_MASSAGE_START = 73
+        massage_stop=0x4A,  # SEAT_2_MASSAGE_STOP = 74
+        massage_timer_15=0x56,  # SEAT_2_MASSAGE_15 = 86
+        massage_timer_30=0x57,  # SEAT_2_MASSAGE_30 = 87
+        massage_timer_45=0x58,  # SEAT_2_MASSAGE_45 = 88
         massage_mode_1=0x6C,  # SEAT_2_MASSAGE_MODE1 = 108
         massage_mode_2=0x6F,  # SEAT_2_MASSAGE_MODE2 = 111
         massage_mode_3=0x72,  # SEAT_2_MASSAGE_MODE3 = 114
@@ -325,6 +349,9 @@ _PROFILE_SCALAR_FIELDS: tuple[str, ...] = (
     "new_all_up", "new_all_down", "new_all_stop",
     "light_on", "light_off",
     "preset_book", "preset_leisure",
+    "head_setting", "leg_setting",
+    "massage_start", "massage_stop",
+    "massage_timer_15", "massage_timer_30", "massage_timer_45",
     "massage_mode_1", "massage_mode_2", "massage_mode_3",
 )
 
@@ -405,6 +432,9 @@ class KaidiController(BedController):
         self._write_with_response = True
         self._product_id: int | None = None
         self._sofa_acu_no: int | None = None
+        self._massage_active = False
+        self._massage_mode_index = 0
+        self._massage_timer_mode = 0
 
         entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
         cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
@@ -496,6 +526,20 @@ class KaidiController(BedController):
         return self._command_profile.preset_anti_snore is not None
 
     @property
+    def supports_preset_tv(self) -> bool:
+        return (
+            self._command_profile.preset_book is not None
+            and self._product_family.has_book
+        )
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return (
+            self._command_profile.preset_leisure is not None
+            and self._product_family.has_leisure
+        )
+
+    @property
     def supports_memory_presets(self) -> bool:
         return bool(self._command_profile.memory_recall)
 
@@ -513,6 +557,55 @@ class KaidiController(BedController):
             self._command_profile.light_on is not None
             and self._product_family.has_lights
         )
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return self.supports_lights
+
+    @property
+    def supports_direct_position_control(self) -> bool:
+        return (
+            self._command_profile.head_setting is not None
+            and self._command_profile.leg_setting is not None
+        )
+
+    @property
+    def supports_massage(self) -> bool:
+        return (
+            self._coordinator.has_massage
+            and (
+                self.supports_massage_toggle_control
+                or self.supports_massage_mode_step_control
+                or self.supports_massage_timer
+            )
+        )
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return self._command_profile.massage_stop is not None
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._command_profile.massage_start is not None
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return self._command_profile.massage_mode_1 is not None
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_options)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        options: list[int] = []
+        if self._command_profile.massage_timer_15 is not None:
+            options.append(15)
+        if self._command_profile.massage_timer_30 is not None:
+            options.append(30)
+        if self._command_profile.massage_timer_45 is not None:
+            options.append(45)
+        return options
 
     # ------------------------------------------------------------------
     # BLE transport
@@ -981,6 +1074,18 @@ class KaidiController(BedController):
             "the anti-snore preset",
         )
 
+    async def preset_tv(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_book,
+            "the book preset",
+        )
+
+    async def preset_lounge(self) -> None:
+        await self._write_optional_control_command(
+            self._command_profile.preset_leisure,
+            "the leisure preset",
+        )
+
     async def preset_memory(self, memory_num: int) -> None:
         command_id = self._require_memory_command(
             self._command_profile.memory_recall,
@@ -1012,10 +1117,106 @@ class KaidiController(BedController):
         )
 
     # ------------------------------------------------------------------
+    # Direct position control
+    # ------------------------------------------------------------------
+
+    def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+        """Kaidi uses percentage-style progress writes for direct position targeting."""
+        return max(0, min(100, int(round(angle))))
+
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Set a Kaidi motor to a specific 0-100 progress target."""
+        normalized_motor = motor.lower()
+        if normalized_motor in ("back", "head"):
+            command_id = self._command_profile.head_setting
+        elif normalized_motor in ("legs", "feet"):
+            command_id = self._command_profile.leg_setting
+        else:
+            raise ValueError(f"Unknown Kaidi motor for direct position control: {motor}")
+
+        if command_id is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support direct {normalized_motor} positioning"
+            )
+        await self._write_control_command(command_id, param=max(0, min(100, int(position))))
+
+    # ------------------------------------------------------------------
     # Massage
     # ------------------------------------------------------------------
 
     async def massage_toggle(self) -> None:
-        """Cycle through massage modes (mode 1 → 2 → 3 → off)."""
-        if self._command_profile.massage_mode_1 is not None:
-            await self._write_control_command(self._command_profile.massage_mode_1)
+        """Toggle Kaidi massage on/off using the dedicated start/stop commands."""
+        if self._massage_active:
+            await self.massage_off()
+            return
+
+        await self._write_optional_control_command(
+            self._command_profile.massage_start,
+            "massage start",
+        )
+        self._massage_active = True
+        if self._massage_mode_index == 0 and self._command_profile.massage_mode_1 is not None:
+            self._massage_mode_index = 1
+
+    async def massage_off(self) -> None:
+        """Turn off Kaidi massage when the profile exposes a stop command."""
+        await self._write_optional_control_command(
+            self._command_profile.massage_stop,
+            "massage stop",
+        )
+        self._massage_active = False
+        self._massage_mode_index = 0
+        self._massage_timer_mode = 0
+
+    async def massage_mode_step(self) -> None:
+        """Cycle through the APK-backed Kaidi massage modes."""
+        mode_commands = [
+            command_id
+            for command_id in (
+                self._command_profile.massage_mode_1,
+                self._command_profile.massage_mode_2,
+                self._command_profile.massage_mode_3,
+            )
+            if command_id is not None
+        ]
+        if not mode_commands:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support massage modes"
+            )
+
+        next_mode_index = self._massage_mode_index % len(mode_commands)
+        await self._write_control_command(mode_commands[next_mode_index])
+        self._massage_active = True
+        self._massage_mode_index = next_mode_index + 1
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set the Kaidi massage timer to 15, 30, or 45 minutes."""
+        if minutes == 0:
+            await self.massage_off()
+            return
+
+        command_by_minutes = {
+            15: self._command_profile.massage_timer_15,
+            30: self._command_profile.massage_timer_30,
+            45: self._command_profile.massage_timer_45,
+        }
+        command_id = command_by_minutes.get(minutes)
+        if command_id is None:
+            raise ValueError(
+                f"Unsupported Kaidi massage timer value {minutes}; expected one of {self.massage_timer_options}"
+            )
+
+        await self._write_control_command(command_id)
+        self._massage_active = True
+        self._massage_timer_mode = minutes
+        if self._massage_mode_index == 0 and self._command_profile.massage_mode_1 is not None:
+            self._massage_mode_index = 1
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return the locally tracked Kaidi massage state."""
+        return {
+            "timer_mode": str(self._massage_timer_mode) if self._massage_timer_mode else None,
+            "head_active": self._massage_active,
+            "foot_active": self._massage_active,
+            "mode": self._massage_mode_index or None,
+        }

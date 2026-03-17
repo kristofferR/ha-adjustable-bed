@@ -135,7 +135,7 @@ class TestJensenCommands:
 
     def test_motor_stop_command_bytes(self):
         """Test MOTOR_STOP command is [0x10, 0x00, 0x00, 0x00, 0x00, 0x00]."""
-        assert JensenCommands.MOTOR_STOP == bytes([0x10, 0x00, 0x00, 0x00, 0x00, 0x00])
+        assert bytes([0x10, 0x00, 0x00, 0x00, 0x00, 0x00]) == JensenCommands.MOTOR_STOP
 
     def test_motor_head_up_command_bytes(self):
         """Test MOTOR_HEAD_UP command is [0x10, 0x01, ...]."""
@@ -492,6 +492,40 @@ class TestJensenCoordinatorAuthRefresh:
             call.set_motor_position("back", 123)
         )
         assert send_pin_idx < set_position_idx
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
+
+    async def test_async_seek_position_direct_control_without_current_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+    ):
+        """Direct-position controllers should not require existing position feedback."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._controller = MagicMock()
+        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.supports_direct_position_control = True
+        coordinator._controller.angle_to_native_position = MagicMock(return_value=55)
+        coordinator._controller.set_motor_position = AsyncMock()
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+
+        await coordinator.async_seek_position(
+            "back",
+            20.0,
+            lambda c: move_up(c),
+            lambda c: move_down(c),
+            lambda c: move_stop(c),
+        )
+
+        coordinator._controller.send_pin.assert_awaited_once()
+        coordinator._controller.set_motor_position.assert_awaited_once_with("back", 55)
+        assert coordinator.position_data["back"] == 20.0
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()

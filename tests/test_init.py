@@ -23,6 +23,7 @@ from custom_components.adjustable_bed import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_RICHMAT,
@@ -32,10 +33,13 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_PRODUCT_ID,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     DOMAIN,
+    KAIDI_VARIANT_SEAT_1,
 )
 
 
@@ -838,14 +842,115 @@ class TestServices:
                 blocking=True,
             )
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head"):
+    async def test_set_position_service_accepts_kaidi_back_and_legs_percentages(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Kaidi direct-position support should accept back/legs percentage targets."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Kaidi Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:41",
+                CONF_NAME: "Kaidi Service Bed",
+                CONF_BED_TYPE: BED_TYPE_KAIDI,
+                CONF_PROTOCOL_VARIANT: KAIDI_VARIANT_SEAT_1,
+                CONF_KAIDI_PRODUCT_ID: 135,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:41",
+            entry_id="kaidi_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator.async_seek_position = AsyncMock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "back",
+                "position": 75,
+            },
+            blocking=True,
+        )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "legs",
+                "position": 40,
+            },
+            blocking=True,
+        )
+
+        assert coordinator.async_seek_position.await_count == 2
+
+    async def test_set_position_service_rejects_kaidi_head_and_feet(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Kaidi direct-position support should not expose unsupported head/feet service motors."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Kaidi Invalid Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:42",
+                CONF_NAME: "Kaidi Invalid Service Bed",
+                CONF_BED_TYPE: BED_TYPE_KAIDI,
+                CONF_PROTOCOL_VARIANT: KAIDI_VARIANT_SEAT_1,
+                CONF_KAIDI_PRODUCT_ID: 135,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:42",
+            entry_id="kaidi_invalid_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
                 {
                     "device_id": [device_id],
-                    "motor": "legs",
-                    "position": 20,
+                    "motor": "head",
+                    "position": 50,
                 },
                 blocking=True,
             )

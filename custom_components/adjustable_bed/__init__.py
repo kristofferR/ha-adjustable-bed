@@ -607,6 +607,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
+            controller = await _get_controller_for_service(coordinator)
 
             # Get config entry for bed type and motor count
             entry: ConfigEntry | None = None
@@ -626,6 +627,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             bed_type = entry.data.get(CONF_BED_TYPE)
             motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
             protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+            supports_direct_position_control = bool(
+                getattr(controller, "supports_direct_position_control", False)
+            )
 
             # Validate bed supports position feedback
             # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
@@ -633,7 +637,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 bed_type == BED_TYPE_KEESON
                 and protocol_variant == KEESON_VARIANT_ERGOMOTION
             )
-            if not has_position_feedback:
+            if not has_position_feedback and not supports_direct_position_control:
                 raise ServiceValidationError(
                     f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
                     translation_domain=DOMAIN,
@@ -656,14 +660,33 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Define motor configurations.
             # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
             # For BOX25: only head and feet are valid, using direct percentage positions.
+            # For Kaidi: direct position writes expose back/legs percentage targets.
             # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
             uses_percentage_positions = bed_type in (
                 BED_TYPE_KEESON,
                 BED_TYPE_ERGOMOTION,
                 BED_TYPE_SLEEPYS_BOX25,
-            )
+            ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
-            if bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+            if bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
+                valid_motors = {"back", "legs"}
+                motor_configs = {
+                    "back": {
+                        "position_key": "back",
+                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                        "max_value": 100.0,
+                    },
+                    "legs": {
+                        "position_key": "legs",
+                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                        "max_value": 100.0,
+                    },
+                }
+            elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
                 # Keeson/Ergomotion only have head and feet motors
                 valid_motors = {"head", "feet"}
                 motor_configs = {

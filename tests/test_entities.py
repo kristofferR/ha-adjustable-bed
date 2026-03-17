@@ -11,15 +11,19 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_PRODUCT_ID,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    KAIDI_VARIANT_SEAT_1,
 )
 
 
@@ -402,6 +406,90 @@ class TestButtonEntities:
         # Base: memory presets (4) + program_memory (4) + stop_all (1) + connect (1) + disconnect (1) = 11
         # (Linak has memory_slot_count=4, supports_memory_programming=True, supports_preset_flat=False)
         assert len(button_states) == 22
+
+    async def test_kaidi_entities_expose_book_leisure_direct_position_and_filtered_massage(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Kaidi should expose the newly wired presets, direct-position controls, and clean light/massage entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Kaidi Feature Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:40",
+                CONF_NAME: "Kaidi Feature Bed",
+                CONF_BED_TYPE: BED_TYPE_KAIDI,
+                CONF_PROTOCOL_VARIANT: KAIDI_VARIANT_SEAT_1,
+                CONF_KAIDI_PRODUCT_ID: 135,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:40",
+            entry_id="kaidi_feature_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+
+        assert registry.async_get_entity_id(
+            "button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_tv"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_lounge"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "switch", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights"
+        ) is not None
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_toggle_light")
+            is None
+        )
+
+        assert registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:40_back_position"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:40_legs_position"
+        ) is not None
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_head_position")
+            is None
+        )
+
+        assert registry.async_get_entity_id(
+            "select", DOMAIN, "AA:BB:CC:DD:EE:40_massage_timer"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_toggle"
+        ) is not None
+        assert registry.async_get_entity_id(
+            "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_mode_step"
+        ) is not None
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_up")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_head_toggle"
+            )
+            is None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_foot_toggle"
+            )
+            is None
+        )
 
     async def test_preset_button_press(
         self,

@@ -9,8 +9,8 @@ import logging
 import random
 import time
 import traceback
-from collections.abc import Callable, Coroutine
 from collections import deque
+from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
@@ -2002,10 +2002,14 @@ class AdjustableBedCoordinator:
 
                 await self._async_refresh_controller_auth()
 
-                # Get current position, attempting a read if not available
-                # This must be done INSIDE the lock after ensuring connection
+                supports_direct_position_control = (
+                    self._controller.supports_direct_position_control
+                )
+
+                # Get current position, attempting a read if not available.
+                # Direct-position controllers can operate without a current reading.
                 current_angle = self._position_data.get(position_key)
-                if current_angle is None:
+                if current_angle is None and not supports_direct_position_control:
                     _LOGGER.debug(
                         "No position data for %s, attempting one-shot read",
                         position_key,
@@ -2018,7 +2022,10 @@ class AdjustableBedCoordinator:
                         )
 
                 # Check if already at target (within tolerance)
-                if abs(current_angle - target_angle) <= POSITION_TOLERANCE:
+                if (
+                    current_angle is not None
+                    and abs(current_angle - target_angle) <= POSITION_TOLERANCE
+                ):
                     _LOGGER.debug(
                         "Position %s already at target: %.1f (target: %.1f)",
                         position_key,
@@ -2027,16 +2034,23 @@ class AdjustableBedCoordinator:
                     )
                     return  # finally block handles disconnect
 
-                _LOGGER.info(
-                    "Seeking position %s from %.1f to %.1f",
-                    position_key,
-                    current_angle,
-                    target_angle,
-                )
+                if current_angle is None:
+                    _LOGGER.info(
+                        "Seeking position %s to %.1f without current feedback",
+                        position_key,
+                        target_angle,
+                    )
+                else:
+                    _LOGGER.info(
+                        "Seeking position %s from %.1f to %.1f",
+                        position_key,
+                        current_angle,
+                        target_angle,
+                    )
 
                 # Check if controller supports direct position control (e.g., Reverie)
                 # This bypasses the incremental seek loop for beds that can set positions directly
-                if self._controller.supports_direct_position_control:
+                if supports_direct_position_control:
                     native_position = self._controller.angle_to_native_position(
                         position_key, target_angle
                     )
@@ -2046,6 +2060,7 @@ class AdjustableBedCoordinator:
                         native_position,
                     )
                     await self._controller.set_motor_position(position_key, native_position)
+                    self._handle_position_update(position_key, target_angle)
                     return  # finally block handles disconnect timer
 
                 # Determine initial direction

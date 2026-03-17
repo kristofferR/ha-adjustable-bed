@@ -259,6 +259,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_off(),
+        required_capability="supports_massage_off_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_toggle",
@@ -267,6 +268,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_toggle(),
+        required_capability="supports_massage_toggle_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_up",
@@ -275,6 +277,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_up(),
+        required_capability="supports_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_all_down",
@@ -283,6 +286,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_intensity_down(),
+        required_capability="supports_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_toggle",
@@ -291,6 +295,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_toggle(),
+        required_capability="supports_head_massage_toggle_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_up",
@@ -299,6 +304,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_up(),
+        required_capability="supports_head_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_head_down",
@@ -307,6 +313,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_head_down(),
+        required_capability="supports_head_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_toggle",
@@ -315,6 +322,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_toggle(),
+        required_capability="supports_foot_massage_toggle_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_up",
@@ -323,6 +331,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_up(),
+        required_capability="supports_foot_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_foot_down",
@@ -331,6 +340,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_foot_down(),
+        required_capability="supports_foot_massage_intensity_step_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="massage_mode_step",
@@ -339,6 +349,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         requires_massage=True,
         cancel_movement=True,
         press_fn=lambda ctrl: ctrl.massage_mode_step(),
+        required_capability="supports_massage_mode_step_control",
     ),
     # Circulation massage buttons (only for beds with circulation massage support)
     AdjustableBedButtonEntityDescription(
@@ -383,7 +394,7 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         translation_key="toggle_light",
         icon="mdi:lightbulb",
         press_fn=lambda ctrl: ctrl.lights_toggle(),
-        required_capability="supports_lights",
+        required_capability="supports_light_toggle_control",
     ),
     AdjustableBedButtonEntityDescription(
         key="light_cycle",

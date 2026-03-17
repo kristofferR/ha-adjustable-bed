@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     BED_TYPE_ERGOMOTION,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
@@ -201,7 +202,11 @@ async def async_setup_entry(
             bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
         )
 
-        if has_position_feedback:
+        if has_position_feedback or (
+            bed_type == BED_TYPE_KAIDI
+            and controller is not None
+            and getattr(controller, "supports_direct_position_control", False)
+        ):
             descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
 
             # Keeson and Ergomotion beds use different motor naming:
@@ -282,6 +287,49 @@ async def async_setup_entry(
                         min_motors=2,
                     )
                     entities.append(AdjustableBedPositionNumber(coordinator, box25_desc))
+            elif bed_type == BED_TYPE_KAIDI and controller is not None:
+                _LOGGER.debug(
+                    "Setting up Kaidi direct-position numbers for %s",
+                    coordinator.name,
+                )
+
+                for key, position_key, max_value, icon in (
+                    ("back_position", "back", 100.0, "mdi:human-handsup"),
+                    ("legs_position", "legs", 100.0, "mdi:human-handsdown"),
+                ):
+                    entities.append(
+                        AdjustableBedPositionNumber(
+                            coordinator,
+                            AdjustableBedNumberEntityDescription(
+                                key=key,
+                                translation_key=key,
+                                icon=icon,
+                                native_min_value=0,
+                                native_max_value=max_value,
+                                native_step=1,
+                                native_unit_of_measurement="%",
+                                mode=NumberMode.SLIDER,
+                                position_key=position_key,
+                                move_up_fn=(
+                                    (lambda ctrl: ctrl.move_back_up())
+                                    if position_key == "back"
+                                    else (lambda ctrl: ctrl.move_legs_up())
+                                ),
+                                move_down_fn=(
+                                    (lambda ctrl: ctrl.move_back_down())
+                                    if position_key == "back"
+                                    else (lambda ctrl: ctrl.move_legs_down())
+                                ),
+                                move_stop_fn=(
+                                    (lambda ctrl: ctrl.move_back_stop())
+                                    if position_key == "back"
+                                    else (lambda ctrl: ctrl.move_legs_stop())
+                                ),
+                                max_angle=max_value,
+                                min_motors=2,
+                            ),
+                        )
+                    )
             else:
                 # Standard bed motor layout (Back/Legs/Head/Feet)
                 # Use configurable angle limits for beds that support angle-based positions

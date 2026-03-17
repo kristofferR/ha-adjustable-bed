@@ -625,6 +625,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_light_toggle_control(self) -> bool:
+        """Return True if the controller exposes a toggle-light command."""
+        return type(self).lights_toggle is not BedController.lights_toggle
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has separate on/off light commands."""
         return False
@@ -678,6 +683,55 @@ class BedController(ABC):
     def supports_massage(self) -> bool:
         """Return True if bed supports massage commands."""
         return False
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        """Return True if the controller exposes a massage-off command."""
+        return type(self).massage_off is not BedController.massage_off
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        """Return True if the controller exposes a massage toggle/start command."""
+        return type(self).massage_toggle is not BedController.massage_toggle
+
+    @property
+    def supports_massage_intensity_step_control(self) -> bool:
+        """Return True if the controller exposes overall massage up/down commands."""
+        return (
+            type(self).massage_intensity_up is not BedController.massage_intensity_up
+            and type(self).massage_intensity_down is not BedController.massage_intensity_down
+        )
+
+    @property
+    def supports_head_massage_toggle_control(self) -> bool:
+        """Return True if the controller exposes head-zone massage toggle control."""
+        return type(self).massage_head_toggle is not BedController.massage_head_toggle
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        """Return True if the controller exposes head-zone massage up/down commands."""
+        return (
+            type(self).massage_head_up is not BedController.massage_head_up
+            and type(self).massage_head_down is not BedController.massage_head_down
+        )
+
+    @property
+    def supports_foot_massage_toggle_control(self) -> bool:
+        """Return True if the controller exposes foot-zone massage toggle control."""
+        return type(self).massage_foot_toggle is not BedController.massage_foot_toggle
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        """Return True if the controller exposes foot-zone massage up/down commands."""
+        return (
+            type(self).massage_foot_up is not BedController.massage_foot_up
+            and type(self).massage_foot_down is not BedController.massage_foot_down
+        )
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        """Return True if the controller exposes a massage mode-cycle command."""
+        return type(self).massage_mode_step is not BedController.massage_mode_step
 
     @property
     def supports_motor_control(self) -> bool:
