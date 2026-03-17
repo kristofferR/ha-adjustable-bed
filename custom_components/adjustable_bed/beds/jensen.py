@@ -14,7 +14,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from enum import IntFlag
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -69,11 +69,29 @@ class JensenCommands:
     READ_POSITION = bytes([0x10, 0xFF, 0x00, 0x00, 0x00, 0x00])
     GET_STATUS = bytes([0x10, 0xFE, 0x00, 0x00, 0x00, 0x00])
 
+    # Go-to-position command (0x10 prefix with 0x04 param1)
+    # Format: [0x10, 0x04, headMSB, headLSB, footMSB, footLSB]
+    # Used for direct position seeking (M_GOTO_POS)
+    @staticmethod
+    def goto_position(head_raw: int, foot_raw: int) -> bytes:
+        """Build go-to-position command for absolute head/foot positions."""
+        return bytes([
+            0x10, 0x04,
+            (head_raw >> 8) & 0xFF, head_raw & 0xFF,
+            (foot_raw >> 8) & 0xFF, foot_raw & 0xFF,
+        ])
+
     # Massage commands (0x12 prefix)
+    # Format: [0x12, headIntensity, footIntensity, 0x00, hours, minutes]
     MASSAGE_OFF = bytes([0x12, 0x00, 0x00, 0x00, 0x00, 0x00])
     MASSAGE_HEAD_ON = bytes([0x12, 0x05, 0x00, 0x00, 0x00, 0x00])
     MASSAGE_FOOT_ON = bytes([0x12, 0x00, 0x05, 0x00, 0x00, 0x00])
     MASSAGE_BOTH_ON = bytes([0x12, 0x05, 0x05, 0x00, 0x00, 0x00])
+
+    @staticmethod
+    def massage_intensity(head_level: int, foot_level: int) -> bytes:
+        """Build massage command with variable intensity (0-10 per zone)."""
+        return bytes([0x12, head_level & 0xFF, foot_level & 0xFF, 0x00, 0x00, 0x00])
 
     # Light commands (0x13 prefix)
     # Format: [0x13, light_id, brightness, 0x00, 0x00, 0x50]
@@ -129,6 +147,8 @@ class JensenController(BedController):
         self._underbed_lights_on: bool = False
         self._massage_head_on: bool = False
         self._massage_foot_on: bool = False
+        self._massage_head_intensity: int = 0
+        self._massage_foot_intensity: int = 0
         self._write_with_response: bool = True
 
         # PIN for authentication - use provided PIN or default
@@ -233,6 +253,31 @@ class JensenController(BedController):
     def has_fan(self) -> bool:
         """Return True if bed has fan (determined dynamically)."""
         return bool(self._features & JensenFeatureFlags.FAN)
+
+    @property
+    def supports_direct_position_control(self) -> bool:
+        """Return True - Jensen beds support go-to-position (M_GOTO_POS)."""
+        return True
+
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Jensen beds report position via notifications."""
+        return True
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Return massage zones that support direct intensity control."""
+        zones: list[str] = []
+        if self.has_massage_head:
+            zones.append("head")
+        if self.has_massage_foot:
+            zones.append("foot")
+        return zones
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return maximum massage intensity level (0-10 scale)."""
+        return 10
 
     async def query_config(self) -> None:
         """Query bed capabilities after connection.
@@ -710,3 +755,121 @@ class JensenController(BedController):
             elif self.has_massage_foot:
                 await self.write_command(JensenCommands.MASSAGE_FOOT_ON)
                 self._massage_foot_on = True
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set massage intensity for a specific zone (0-10).
+
+        Args:
+            zone: Massage zone ("head" or "foot")
+            level: Intensity level (0 = off, 1-10 = intensity)
+        """
+        level = max(0, min(10, level))
+
+        if zone == "head":
+            head_level = level
+            foot_level = self._massage_foot_intensity if self._massage_foot_on else 0
+        elif zone == "foot":
+            head_level = self._massage_head_intensity if self._massage_head_on else 0
+            foot_level = level
+        else:
+            _LOGGER.warning("Unknown massage zone: %s", zone)
+            return
+
+        await self.write_command(JensenCommands.massage_intensity(head_level, foot_level))
+
+        # Update tracked state
+        if zone == "head":
+            self._massage_head_on = level > 0
+            self._massage_head_intensity = level
+        elif zone == "foot":
+            self._massage_foot_on = level > 0
+            self._massage_foot_intensity = level
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return current massage state for state feedback."""
+        return {
+            "head_intensity": self._massage_head_intensity if self._massage_head_on else 0,
+            "foot_intensity": self._massage_foot_intensity if self._massage_foot_on else 0,
+            "head_active": self._massage_head_on,
+            "foot_active": self._massage_foot_on,
+        }
+
+    # Direct position control
+    def _percentage_to_raw(self, percentage: float, motor: str) -> int:
+        """Convert percentage (0-100) to raw position value.
+
+        Args:
+            percentage: Position as percentage (0 = flat, 100 = max raised)
+            motor: Motor name ("head" or "foot")
+
+        Returns:
+            Raw 16-bit position value for the bed
+        """
+        if motor == "head":
+            pos_flat = HEAD_POS_FLAT
+            pos_max = HEAD_POS_MAX
+        else:
+            pos_flat = FOOT_POS_FLAT
+            pos_max = FOOT_POS_MAX
+
+        percentage = max(0.0, min(100.0, percentage))
+        if percentage == 0.0:
+            return pos_flat
+        return int(pos_flat + (percentage / 100.0) * (pos_max - pos_flat))
+
+    def angle_to_native_position(self, motor: str, angle: float) -> int:
+        """Convert an angle to native percentage (0-100) for Jensen.
+
+        Jensen uses raw position values internally, but the coordinator
+        interface works with 0-100 percentages.
+
+        Args:
+            motor: Motor name ("head", "back", "legs", "feet")
+            angle: Angle in degrees
+
+        Returns:
+            Position as percentage (0-100)
+        """
+        return int(angle)
+
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        """Set motors to specific positions using M_GOTO_POS command.
+
+        Args:
+            motor: Motor name ("head", "back", "legs", "feet")
+            position: Target position as percentage (0=flat, 100=max)
+        """
+        # Read current positions to preserve the other motor's position
+        # Default to flat if unknown
+        head_raw = HEAD_POS_FLAT
+        foot_raw = FOOT_POS_FLAT
+
+        if motor in ("head", "back"):
+            head_raw = self._percentage_to_raw(position, "head")
+        elif motor in ("feet", "legs"):
+            foot_raw = self._percentage_to_raw(position, "foot")
+        else:
+            _LOGGER.warning("Unknown motor %s for Jensen position control", motor)
+            return
+
+        try:
+            await self.write_command(
+                JensenCommands.goto_position(head_raw, foot_raw),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await asyncio.shield(
+                    self.write_command(
+                        JensenCommands.MOTOR_STOP,
+                        cancel_event=asyncio.Event(),
+                    )
+                )
+            except asyncio.CancelledError:
+                raise
+            except BleakError:
+                _LOGGER.debug(
+                    "Failed to send STOP command during set_motor_position cleanup",
+                    exc_info=True,
+                )

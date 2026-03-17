@@ -66,6 +66,8 @@ class LeggettOkinCommands:
     MASSAGE_FOOT_UP = 0x400
     MASSAGE_FOOT_DOWN = 0x1000000
     MASSAGE_STEP = 0x100
+    MASSAGE_TIMER_STEP = 0x200
+    MASSAGE_WAVE_STEP = 0x10000000
 
     # Lights
     TOGGLE_LIGHTS = 0x20000
@@ -131,6 +133,16 @@ class LeggettOkinController(BedController):
         """Return False - Okin beds don't support programming memory positions."""
         return False
 
+    @property
+    def has_tilt_support(self) -> bool:
+        """Return True - Okin beds have tilt (pillow) motor control."""
+        return True
+
+    @property
+    def has_lumbar_support(self) -> bool:
+        """Return True - Okin beds have lumbar motor control."""
+        return True
+
     def _build_command(self, command_value: int) -> bytes:
         """Build Okin binary command by delegating to build_okin_command.
 
@@ -154,6 +166,14 @@ class LeggettOkinController(BedController):
             command += LeggettOkinCommands.MOTOR_FEET_UP
         elif state.get("feet") == MotorDirection.DOWN:
             command += LeggettOkinCommands.MOTOR_FEET_DOWN
+        if state.get("tilt") == MotorDirection.UP:
+            command += LeggettOkinCommands.MOTOR_TILT_UP
+        elif state.get("tilt") == MotorDirection.DOWN:
+            command += LeggettOkinCommands.MOTOR_TILT_DOWN
+        if state.get("lumbar") == MotorDirection.UP:
+            command += LeggettOkinCommands.MOTOR_LUMBAR_UP
+        elif state.get("lumbar") == MotorDirection.DOWN:
+            command += LeggettOkinCommands.MOTOR_LUMBAR_DOWN
         return command
 
     async def _move_motor(self, motor: str, direction: MotorDirection) -> None:
@@ -371,3 +391,37 @@ class LeggettOkinController(BedController):
     async def massage_toggle(self) -> None:
         """Toggle massage / step through modes."""
         await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_STEP))
+
+    async def massage_wave_step(self) -> None:
+        """Step through massage wave patterns."""
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_WAVE_STEP))
+
+    async def massage_timer_step(self) -> None:
+        """Step through massage timer options."""
+        await self.write_command(self._build_command(LeggettOkinCommands.MASSAGE_TIMER_STEP))
+
+    # Tilt motor control
+    async def move_tilt_up(self) -> None:
+        """Move tilt (pillow) motor up."""
+        await self._move_motor("tilt", MotorDirection.UP)
+
+    async def move_tilt_down(self) -> None:
+        """Move tilt (pillow) motor down."""
+        await self._move_motor("tilt", MotorDirection.DOWN)
+
+    async def move_tilt_stop(self) -> None:
+        """Stop tilt motor."""
+        await self._move_motor("tilt", MotorDirection.STOP)
+
+    # Lumbar motor control
+    async def move_lumbar_up(self) -> None:
+        """Move lumbar motor up."""
+        await self._move_motor("lumbar", MotorDirection.UP)
+
+    async def move_lumbar_down(self) -> None:
+        """Move lumbar motor down."""
+        await self._move_motor("lumbar", MotorDirection.DOWN)
+
+    async def move_lumbar_stop(self) -> None:
+        """Stop lumbar motor."""
+        await self._move_motor("lumbar", MotorDirection.STOP)

@@ -59,8 +59,16 @@ class SvaneCommands:
     READ_POSITION: bytes = bytes([0x3F, 0xFF, 0x00, 0x00, 0x00, 0x00])  # TODO: for future position query support
 
     # Light commands (6-byte, written to LIGHT_ON_OFF characteristic)
-    LIGHT_ON: bytes = bytes([0x13, 0x02, 0x50, 0x01, 0x00, 0x50])  # brightness=80
+    # Format: [0x13, 0x02, brightness, 0x01, 0x00, 0x64]
+    # Brightness range: 0-100 (0x00-0x64)
+    LIGHT_ON: bytes = bytes([0x13, 0x02, 0x64, 0x01, 0x00, 0x64])  # brightness=100
     LIGHT_OFF: bytes = bytes([0x13, 0x02, 0x00, 0x00, 0x00, 0x00])
+
+    @staticmethod
+    def light_brightness(level: int) -> bytes:
+        """Build light brightness command (0-100)."""
+        clamped = max(0, min(100, level))
+        return bytes([0x13, 0x02, clamped, 0x01, 0x00, 0x64])
 
 
 class SvaneController(BedController):
@@ -129,6 +137,16 @@ class SvaneController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return True - Svane beds support discrete on/off light control."""
         return True
+
+    @property
+    def supports_light_level_control(self) -> bool:
+        """Return True - Svane beds support variable brightness (0-100)."""
+        return True
+
+    @property
+    def light_level_max(self) -> int:
+        """Return 100 - Svane brightness range is 0-100."""
+        return 100
 
     def _get_char_in_service(
         self, service_uuid: str, char_uuid: str
@@ -731,6 +749,21 @@ class SvaneController(BedController):
             SVANE_LIGHT_ON_OFF_UUID,
             SvaneCommands.LIGHT_OFF,
         )
+
+    async def set_light_level(self, level: int) -> None:
+        """Set light brightness level (0-100).
+
+        Args:
+            level: Brightness level (0 = off, 1-100 = brightness)
+        """
+        if level <= 0:
+            await self.lights_off()
+        else:
+            await self._write_to_service_char(
+                SVANE_LIGHT_SERVICE_UUID,
+                SVANE_LIGHT_ON_OFF_UUID,
+                SvaneCommands.light_brightness(level),
+            )
 
     async def lights_toggle(self) -> None:
         """Toggle under-bed lights.
