@@ -107,7 +107,7 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Malouf New OKIN | 10 | 100ms |
 | OKIN FFE | 7 | 150ms |
 | OKIN Nordic | 10 | 100ms |
-| Leggett WiLinke | 7 | 150ms |
+| Leggett WiLinke | 10 | 110ms |
 | Octo | 3 | 350ms |
 | Jiecang | 10 | 100ms |
 | Comfort Motion | 10 | 100ms |
@@ -127,6 +127,7 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | SBI/Q-Plus | 10 | 100ms |
 | SUTA | 7 | 150ms |
 | TiMOTION AHF | 10 | 100ms |
+| Logicdata | 10 | 30ms |
 | All others | 10 | 100ms |
 
 ### When to Adjust
@@ -150,6 +151,7 @@ Some beds support multiple protocol variants. Auto-detection usually works, but 
 | **Auto** | Auto-detect (recommended) | Most beds |
 | **Base** | BaseI4/BaseI5 protocol | Member's Mark, Purple, some Ergomotion |
 | **KSBT** | Nordic UART protocol | Older Keeson remotes |
+| **KSBT03CR** | 7-byte KSBT format (0x05 prefix) | KSBT03CR devices |
 | **Ergomotion** | Base protocol with position feedback | Ergomotion-branded beds |
 | **Okin** | OKIN FFE (0xE6 prefix) | OKIN 13/15 series |
 | **Serta** | Serta MP Remote protocol | Serta Motion Perfect |

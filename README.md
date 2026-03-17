@@ -88,6 +88,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Cool Base](docs/beds/coolbase.md) | Cool Base (Keeson with fan) |
 | ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
+| ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
+| ✅ [Okin CST](docs/beds/okin_cst.md) | Rize MF900 |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

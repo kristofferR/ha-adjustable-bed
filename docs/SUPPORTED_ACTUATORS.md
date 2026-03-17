@@ -4,18 +4,18 @@ This document provides an overview of supported bed brands. Click on a brand nam
 
 | Brand | Status | Key Features |
 |-------|--------|--------------|
-| [Linak](beds/linak.md) | ✅ Supported | Position feedback, 4 memory presets, massage, lights |
+| [Linak](beds/linak.md) | ✅ Supported | Position feedback, 6 memory presets, massage, lights |
 | [Keeson](beds/keeson.md) | ✅ Supported | Position feedback (Ergomotion), 4 presets, massage, lights |
-| [Richmat](beds/richmat.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
+| [Richmat](beds/richmat.md) | ✅ Supported | 1-5 memory presets, massage (discrete), lights, sync mode, motors 5-7 |
 | [MotoSleep](beds/motosleep.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
 | [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, lights |
 | [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G |
-| [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | 4 memory presets, massage (0-10), RGB lighting |
+| [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
-| [Jiecang](beds/jiecang.md) | ✅ Supported | Presets only (no direct motor), 2 memory slots |
+| [Jiecang](beds/jiecang.md) | ✅ Supported | Motor control, 3 memory slots, massage, split bed support |
 | [Kaidi](beds/kaidi.md) | 🧪 Needs Testing | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
-| [Jensen](beds/jensen.md) | ✅ Supported | 1 memory preset, dynamic feature detection (lights, massage) |
+| [Jensen](beds/jensen.md) | ✅ Supported | Go-to-position, variable massage (0-10), dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
@@ -33,6 +33,8 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [SBI/Q-Plus](beds/sbi.md) | 🧪 Needs Testing | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 🧪 Needs Testing | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | 🧪 Needs Testing | 4 motors, 8 presets, RGB lights, heat |
+| [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
+| [Okin CST](beds/okin_cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
 
 ---
 
@@ -125,6 +127,7 @@ These beds have their own dedicated integrations:
    - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
    - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
+   - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
@@ -138,6 +141,7 @@ These beds have their own dedicated integrations:
    - Service `00001525-...` → Vibradorm
    - Service `6e403587-...` → Remacro
    - Service `0000ffc0-...` or `9e5d1e47-...` + name `Mouselet*` → Kaidi
+   - Service `b9934c43-...` → Logicdata SimplicityFrame
 
 5. **Fallback**: If the device isn't visible to Home Assistant at all, use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify it exists and check the service UUIDs.
 

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 39 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, Vibradorm, Octo, Okin UUID/Okimat, Okin CB24, SUTA, and BedTech tested. Other brands need community testing.
+**Current status:** 43 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, Vibradorm, Octo, Okin UUID/Okimat, Okin CB24, SUTA, and BedTech tested. Other brands need community testing.
 
 ## GitHub Comment Approval
 
@@ -67,6 +67,8 @@ custom_components/adjustable_bed/
 │   ├── suta.py          # SUTA Smart Home AT protocol
 │   ├── timotion_ahf.py  # TiMOTION AHF 11-byte bitmask protocol
 │   ├── limoss.py        # Limoss / Stawett TEA-encrypted protocol
+│   ├── logicdata.py     # Logicdata SimplicityFrame XXTEA+CRC16+SLIP protocol
+│   ├── okin_cst.py      # Okin CSTProtocol 14-byte dual-field commands
 │   └── diagnostic.py    # Debug controller for unsupported beds
 ├── binary_sensor.py     # BLE connection status entity
 ├── button.py            # Preset and massage button entities
@@ -157,6 +159,8 @@ custom_components/adjustable_bed/
 | SUTA | `SutaController` | AT command protocol (ASCII + CRLF) | Service UUID `0000fff0-...` + name "SUTA-*" | ✅ Tested |
 | TiMOTION AHF | `TiMOTIONAhfController` | 11-byte bitmask protocol | Service UUID `6e400001-...` + name "AHF*" | Needs testing |
 | Limoss | `LimossController` | TEA-encrypted protocol, position feedback | Service UUID `0000ffe0-...` + name patterns | Needs testing |
+| Logicdata | `LogicdataController` | XXTEA+CRC16+SLIP encrypted protocol | Service UUID `b9934c43-...` or manufacturer ID 0x0547 | Needs testing |
+| Okin CST | `OkinCstController` | 14-byte CSTProtocol dual-field commands | Service UUID `62741523-...` + name patterns | Needs testing |
 | Diagnostic | `DiagnosticBedController` | Debug mode for unsupported beds | Manual selection only | Debug |
 
 ## Adding a New Bed Type
