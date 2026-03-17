@@ -156,6 +156,19 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.95
         assert "uuid:kaidi" in result.signals
 
+    def test_detect_kaidi_mouselet_not_excluded_by_generic_mouse_filter(self):
+        """Valid Kaidi manufacturer data should bypass the generic mouse exclusion."""
+        service_info = _make_service_info(
+            name="Mouselet",
+            service_uuids=[],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff025e270000e55d547fc5ec0200882004a101000000")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KAIDI
+        assert not any(signal == "excluded:mouse" for signal in result.signals)
+
     def test_detect_vibradorm_by_uuid(self):
         """Test Vibradorm detection by unique service UUID."""
         service_info = _make_service_info(

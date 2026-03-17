@@ -21,13 +21,21 @@ from .const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_KAIDI_ROOM_ID,
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
 from .diagnostics_utils import get_gatt_summary
+from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import redact_data, redact_pins_only
 
 if TYPE_CHECKING:
@@ -100,6 +108,13 @@ def _get_integration_info(entry: ConfigEntry) -> dict[str, Any]:
         "disable_angle_sensing": entry.data.get(CONF_DISABLE_ANGLE_SENSING),
         "preferred_adapter": entry.data.get(CONF_PREFERRED_ADAPTER),
         "address": entry.data.get(CONF_ADDRESS),
+        "kaidi_room_id": entry.data.get(CONF_KAIDI_ROOM_ID),
+        "kaidi_target_vaddr": entry.data.get(CONF_KAIDI_TARGET_VADDR),
+        "kaidi_product_id": entry.data.get(CONF_KAIDI_PRODUCT_ID),
+        "kaidi_sofa_acu_no": entry.data.get(CONF_KAIDI_SOFA_ACU_NO),
+        "kaidi_adv_type": entry.data.get(CONF_KAIDI_ADV_TYPE),
+        "kaidi_resolved_variant": entry.data.get(CONF_KAIDI_RESOLVED_VARIANT),
+        "kaidi_variant_source": entry.data.get(CONF_KAIDI_VARIANT_SOURCE),
     }
 
 
@@ -146,6 +161,8 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
             info["richmat_is_wilinke"] = controller._is_wilinke
         if hasattr(controller, "_variant"):
             info["variant"] = controller._variant
+        if hasattr(controller, "_variant_source"):
+            info["variant_source"] = controller._variant_source
         if hasattr(controller, "_char_uuid"):
             info["char_uuid"] = controller._char_uuid
 
@@ -179,6 +196,11 @@ async def _get_bluetooth_info(
             "service_data": {str(k): bytes(v).hex() for k, v in service_data.items()},
             "connectable": service_info_connectable,
         }
+        kaidi_advertisement = extract_kaidi_advertisement(manufacturer_data)
+        if kaidi_advertisement is not None:
+            info["last_advertisement"]["kaidi"] = kaidi_advertisement_to_dict(
+                kaidi_advertisement
+            )
         # Include source info (adapter/proxy)
         if hasattr(service_info, "source"):
             info["last_advertisement"]["source"] = service_info.source

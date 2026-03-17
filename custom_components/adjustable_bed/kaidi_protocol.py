@@ -31,7 +31,31 @@ class KaidiAdvertisement:
     room_id: int | None = None
     vaddr: int | None = None
     sofa_type: int | None = None
+    sofa_acu_no: int | None = None
+    product_id: int | None = None
     company_id: int | None = None
+
+
+@dataclass(frozen=True)
+class KaidiSeatBars:
+    """Decoded seat-bar counts from Kaidi's sofaAcuNo field."""
+
+    seat_1: int
+    seat_2: int
+    seat_3: int
+    is_store: bool
+
+    @property
+    def populated_seats(self) -> tuple[int, ...]:
+        """Return seat indexes that advertise at least one actuator bar."""
+        populated: list[int] = []
+        if self.seat_1 > 0:
+            populated.append(1)
+        if self.seat_2 > 0:
+            populated.append(2)
+        if self.seat_3 > 0:
+            populated.append(3)
+        return tuple(populated)
 
 
 def _le_u16(data: bytes) -> int:
@@ -42,6 +66,42 @@ def _le_u16(data: bytes) -> int:
 def _le_u32(data: bytes) -> int:
     """Parse a little-endian 32-bit integer."""
     return int.from_bytes(data[:4], "little")
+
+
+def _be_u16(data: bytes) -> int:
+    """Parse a big-endian 16-bit integer."""
+    return int.from_bytes(data[:2], "big")
+
+
+def decode_kaidi_sofa_acu_no(sofa_acu_no: int | None) -> KaidiSeatBars | None:
+    """Decode Kaidi's sofaAcuNo bitfield into per-seat actuator bars."""
+    if sofa_acu_no is None:
+        return None
+
+    return KaidiSeatBars(
+        seat_1=sofa_acu_no & 0x0F,
+        seat_2=(sofa_acu_no & 0x00F0) >> 4,
+        seat_3=(sofa_acu_no & 0x0F00) >> 8,
+        is_store=((sofa_acu_no & 0xF000) >> 12) != 0,
+    )
+
+
+def kaidi_advertisement_to_dict(advertisement: KaidiAdvertisement) -> dict[str, int | bool | None]:
+    """Serialize parsed Kaidi advertisement data for diagnostics output."""
+    seat_bars = decode_kaidi_sofa_acu_no(advertisement.sofa_acu_no)
+    return {
+        "adv_type": advertisement.adv_type,
+        "room_id": advertisement.room_id,
+        "vaddr": advertisement.vaddr,
+        "sofa_type": advertisement.sofa_type,
+        "sofa_acu_no": advertisement.sofa_acu_no,
+        "product_id": advertisement.product_id,
+        "company_id": advertisement.company_id,
+        "seat_1_bars": seat_bars.seat_1 if seat_bars else None,
+        "seat_2_bars": seat_bars.seat_2 if seat_bars else None,
+        "seat_3_bars": seat_bars.seat_3 if seat_bars else None,
+        "is_store": seat_bars.is_store if seat_bars else None,
+    }
 
 
 def normalize_kaidi_manufacturer_payload(payload: bytes) -> bytes | None:
@@ -76,10 +136,14 @@ def parse_kaidi_manufacturer_payload(payload: bytes) -> KaidiAdvertisement | Non
     if adv_type == KAIDI_ADV_TYPE_SINGLE:
         if len(normalized) < 18:
             return None
+        sofa_type = normalized[9]
+        sofa_acu_no = _be_u16(normalized[10:12])
         return KaidiAdvertisement(
             adv_type=adv_type,
             room_id=_le_u32(normalized[5:9]),
-            sofa_type=normalized[9],
+            sofa_type=sofa_type,
+            sofa_acu_no=sofa_acu_no,
+            product_id=sofa_type,
         )
 
     if adv_type == KAIDI_ADV_TYPE_BROADCAST:
@@ -87,25 +151,34 @@ def parse_kaidi_manufacturer_payload(payload: bytes) -> KaidiAdvertisement | Non
             return None
 
         sofa_type: int | None = None
+        sofa_acu_no: int | None = None
         if len(normalized) >= 21 and normalized[20] in (0xA0, 0xA1):
             sofa_type = normalized[17]
+            sofa_acu_no = _be_u16(normalized[18:20])
         elif len(normalized) >= 28:
             sofa_type = normalized[25]
+            sofa_acu_no = _be_u16(normalized[26:28])
 
         return KaidiAdvertisement(
             adv_type=adv_type,
             room_id=_le_u32(normalized[5:9]),
             vaddr=_le_u32(normalized[21:25]),
             sofa_type=sofa_type,
+            sofa_acu_no=sofa_acu_no,
+            product_id=sofa_type,
         )
 
     if adv_type == KAIDI_ADV_TYPE_DISCOVERABLE:
         if len(normalized) < 18:
             return None
+        sofa_type = normalized[15]
+        sofa_acu_no = _be_u16(normalized[16:18])
         return KaidiAdvertisement(
             adv_type=adv_type,
             company_id=_le_u16(normalized[11:13]),
-            sofa_type=normalized[15],
+            sofa_type=sofa_type,
+            sofa_acu_no=sofa_acu_no,
+            product_id=sofa_type,
         )
 
     return KaidiAdvertisement(adv_type=adv_type)
@@ -159,6 +232,16 @@ def merge_kaidi_advertisements(
             room_id=merged.room_id if merged.room_id is not None else advertisement.room_id,
             vaddr=merged.vaddr if merged.vaddr is not None else advertisement.vaddr,
             sofa_type=merged.sofa_type if merged.sofa_type is not None else advertisement.sofa_type,
+            sofa_acu_no=(
+                merged.sofa_acu_no
+                if merged.sofa_acu_no is not None
+                else advertisement.sofa_acu_no
+            ),
+            product_id=(
+                merged.product_id
+                if merged.product_id is not None
+                else advertisement.product_id
+            ),
             company_id=(
                 merged.company_id
                 if merged.company_id is not None

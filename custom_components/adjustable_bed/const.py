@@ -67,6 +67,11 @@ CONF_BACK_MAX_ANGLE: Final = "back_max_angle"
 CONF_LEGS_MAX_ANGLE: Final = "legs_max_angle"
 CONF_KAIDI_ROOM_ID: Final = "kaidi_room_id"
 CONF_KAIDI_TARGET_VADDR: Final = "kaidi_target_vaddr"
+CONF_KAIDI_PRODUCT_ID: Final = "kaidi_product_id"
+CONF_KAIDI_SOFA_ACU_NO: Final = "kaidi_sofa_acu_no"
+CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
+CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
+CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
 
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
@@ -360,10 +365,10 @@ TIMOTION_AHF_WRITE_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
 TIMOTION_AHF_NOTIFY_CHAR_UUID: Final = NORDIC_UART_READ_CHAR_UUID
 
 # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
-# The bed advertises FFC0 service UUID, name "Mouselet", and manufacturer data
-# with BLE Company ID 0xFFFF and marker 0xC0FF. The OEM app discovers purely by
-# manufacturer data, but the other signals are present and useful for HA discovery.
-# The actual command transport is on the 9e5d1e47-... service/characteristics.
+# Discovery is driven primarily by manufacturer data with BLE Company ID 0xFFFF
+# and marker 0xC0FF. Some devices also surface the "Mouselet" name and/or the
+# FFC0 discovery UUID, but those are supporting signals rather than the source
+# of truth. The actual command transport is on the 9e5d1e47-... service.
 KAIDI_MANUFACTURER_COMPANY_ID: Final = 0xFFFF
 KAIDI_DISCOVERY_SERVICE_UUID: Final = "0000ffc0-0000-1000-8000-00805f9b34fb"
 KAIDI_MESH_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
@@ -779,6 +784,23 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+
+# Kaidi variants
+KAIDI_VARIANT_SEAT_1: Final = "seat_1"
+KAIDI_VARIANT_SEAT_2: Final = "seat_2"
+KAIDI_VARIANT_SEAT_3: Final = "seat_3"
+KAIDI_VARIANT_BED_1: Final = "bed_1"
+KAIDI_VARIANT_BED_2: Final = "bed_2"
+KAIDI_VARIANT_BED_12: Final = "bed_12"
+KAIDI_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto-detect (recommended)",
+    KAIDI_VARIANT_SEAT_1: "Seat 1 (single base / legacy)",
+    KAIDI_VARIANT_SEAT_2: "Seat 2",
+    KAIDI_VARIANT_SEAT_3: "Seat 3",
+    KAIDI_VARIANT_BED_1: "Bed 1",
+    KAIDI_VARIANT_BED_2: "Bed 2",
+    KAIDI_VARIANT_BED_12: "Bed 1+2",
+}
 
 # OKIN CB24 profile variants (SmartBed app device profiles)
 # Source: com.okin.bedding.smartbedwifi model/device/*
@@ -1249,6 +1271,12 @@ OKIN_64BIT_VARIANTS: Final = {
 # All protocol variants (for validation)
 ALL_PROTOCOL_VARIANTS: Final = [
     VARIANT_AUTO,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_2,
+    KAIDI_VARIANT_SEAT_3,
+    KAIDI_VARIANT_BED_1,
+    KAIDI_VARIANT_BED_2,
+    KAIDI_VARIANT_BED_12,
     OKIN_CB24_VARIANT_OLD,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_CB24,

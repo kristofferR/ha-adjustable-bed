@@ -17,16 +17,25 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ..const import (
+    CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
     KAIDI_BROADCAST_VADDR,
     KAIDI_JOIN_PASSWORD,
     KAIDI_NOTIFY_CHAR_UUID,
+    KAIDI_VARIANT_BED_1,
+    KAIDI_VARIANT_BED_12,
+    KAIDI_VARIANT_BED_2,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_2,
+    KAIDI_VARIANT_SEAT_3,
     KAIDI_WRITE_CHAR_UUID,
 )
 from ..kaidi_protocol import extract_kaidi_advertisement, format_kaidi_node_address
@@ -42,7 +51,7 @@ KAIDI_PING_CHANNEL = 0xFF
 
 
 class KaidiCommands:
-    """Kaidi command bytes for single-bed control."""
+    """Legacy aliases for the Kaidi Seat 1 command bytes."""
 
     HEAD_UP = 0x01
     HEAD_DOWN = 0x02
@@ -51,20 +60,108 @@ class KaidiCommands:
     FOOT_DOWN = 0x05
     FOOT_STOP = 0x06
     STOP_ALL = 0x1C
-
     MEMORY_SAVE_1 = 0x25
     MEMORY_SAVE_2 = 0x26
     MEMORY_SAVE_3 = 0x27
     MEMORY_SAVE_4 = 0x28
-
     MEMORY_RECALL_1 = 0x29
     MEMORY_RECALL_2 = 0x2A
     MEMORY_RECALL_3 = 0x2B
     MEMORY_RECALL_4 = 0x2C
-
     PRESET_ZERO_G = 0x62
     PRESET_ANTI_SNORE = 0x65
     PRESET_FLAT = 0x68
+
+
+@dataclass(frozen=True, slots=True)
+class KaidiCommandProfile:
+    """Command mapping for one Kaidi variant family."""
+
+    variant: str
+    head_up: int
+    head_down: int
+    head_stop: int
+    foot_up: int
+    foot_down: int
+    foot_stop: int
+    stop_all: int | None = None
+    memory_save: dict[int, int] | None = None
+    memory_recall: dict[int, int] | None = None
+    preset_flat: int | None = None
+    preset_zero_g: int | None = None
+    preset_anti_snore: int | None = None
+
+
+KAIDI_COMMAND_PROFILES: dict[str, KaidiCommandProfile] = {
+    KAIDI_VARIANT_SEAT_1: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_SEAT_1,
+        head_up=0x01,
+        head_down=0x02,
+        head_stop=0x03,
+        foot_up=0x04,
+        foot_down=0x05,
+        foot_stop=0x06,
+        stop_all=0x1C,
+        memory_save={1: 0x25, 2: 0x26, 3: 0x27, 4: 0x28},
+        memory_recall={1: 0x29, 2: 0x2A, 3: 0x2B, 4: 0x2C},
+        preset_zero_g=0x62,
+        preset_anti_snore=0x65,
+        preset_flat=0x68,
+    ),
+    KAIDI_VARIANT_SEAT_2: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_SEAT_2,
+        head_up=0x0A,
+        head_down=0x0B,
+        head_stop=0x0C,
+        foot_up=0x0D,
+        foot_down=0x0E,
+        foot_stop=0x0F,
+        stop_all=0x1D,
+        memory_save={1: 0x2D, 2: 0x2E, 3: 0x2F, 4: 0x30},
+        memory_recall={1: 0x31, 2: 0x32, 3: 0x33, 4: 0x34},
+        preset_zero_g=0x63,
+        preset_anti_snore=0x66,
+        preset_flat=0x69,
+    ),
+    KAIDI_VARIANT_SEAT_3: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_SEAT_3,
+        head_up=0x13,
+        head_down=0x14,
+        head_stop=0x15,
+        foot_up=0x16,
+        foot_down=0x17,
+        foot_stop=0x18,
+        memory_save={1: 0x35, 2: 0x36, 3: 0x37, 4: 0x38},
+        memory_recall={1: 0x39, 2: 0x3A, 3: 0x3B, 4: 0x3C},
+    ),
+    KAIDI_VARIANT_BED_1: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_BED_1,
+        head_up=0x47,
+        head_down=0x48,
+        head_stop=0x49,
+        foot_up=0x4D,
+        foot_down=0x4E,
+        foot_stop=0x4F,
+    ),
+    KAIDI_VARIANT_BED_2: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_BED_2,
+        head_up=0x4A,
+        head_down=0x4B,
+        head_stop=0x4C,
+        foot_up=0x50,
+        foot_down=0x51,
+        foot_stop=0x52,
+    ),
+    KAIDI_VARIANT_BED_12: KaidiCommandProfile(
+        variant=KAIDI_VARIANT_BED_12,
+        head_up=0x53,
+        head_down=0x54,
+        head_stop=0x55,
+        foot_up=0x56,
+        foot_down=0x57,
+        foot_stop=0x58,
+    ),
+}
 
 
 class KaidiController(BedController):
@@ -76,11 +173,16 @@ class KaidiController(BedController):
         *,
         device_name: str | None = None,
         manufacturer_data: dict[int, bytes] | None = None,
+        variant: str = KAIDI_VARIANT_SEAT_1,
+        variant_source: str = "legacy_fallback",
     ) -> None:
         """Initialize the Kaidi controller."""
         super().__init__(coordinator)
         self._device_name = device_name
         self._manufacturer_data = dict(manufacturer_data or {})
+        self._variant = variant
+        self._variant_source = variant_source
+        self._command_profile = KAIDI_COMMAND_PROFILES[variant]
 
         self._notify_started = False
         self._session_ready = False
@@ -95,16 +197,24 @@ class KaidiController(BedController):
         self._own_vaddr: int | None = None
         self._target_vaddr: int | None = None
         self._write_with_response = True
+        self._product_id: int | None = None
+        self._sofa_acu_no: int | None = None
 
         entry_data = getattr(getattr(self._coordinator, "entry", None), "data", {})
         cached_room_id = entry_data.get(CONF_KAIDI_ROOM_ID)
         cached_target_vaddr = entry_data.get(CONF_KAIDI_TARGET_VADDR)
+        cached_product_id = entry_data.get(CONF_KAIDI_PRODUCT_ID)
+        cached_sofa_acu_no = entry_data.get(CONF_KAIDI_SOFA_ACU_NO)
         if isinstance(cached_room_id, int):
             self._room_id = cached_room_id
             _LOGGER.debug("Loaded cached room_id=%s from entry data", cached_room_id)
         if isinstance(cached_target_vaddr, int):
             self._target_vaddr = cached_target_vaddr
             _LOGGER.debug("Loaded cached target_vaddr=%s from entry data", cached_target_vaddr)
+        if isinstance(cached_product_id, int):
+            self._product_id = cached_product_id
+        if isinstance(cached_sofa_acu_no, int):
+            self._sofa_acu_no = cached_sofa_acu_no
 
         if self._manufacturer_data:
             _LOGGER.debug(
@@ -123,13 +233,23 @@ class KaidiController(BedController):
         advertisement = extract_kaidi_advertisement(self._manufacturer_data)
         if advertisement is not None:
             _LOGGER.debug(
-                "Parsed Kaidi advertisement: type=%s room_id=%s vaddr=%s",
-                advertisement.adv_type, advertisement.room_id, advertisement.vaddr,
+                "Parsed Kaidi advertisement: type=%s room_id=%s vaddr=%s product_id=%s sofa_acu_no=%s variant=%s (%s)",
+                advertisement.adv_type,
+                advertisement.room_id,
+                advertisement.vaddr,
+                advertisement.product_id,
+                advertisement.sofa_acu_no,
+                self._variant,
+                self._variant_source,
             )
             if advertisement.room_id is not None:
                 self._room_id = advertisement.room_id
             if advertisement.vaddr is not None:
                 self._target_vaddr = advertisement.vaddr
+            if advertisement.product_id is not None:
+                self._product_id = advertisement.product_id
+            if advertisement.sofa_acu_no is not None:
+                self._sofa_acu_no = advertisement.sofa_acu_no
         elif self._manufacturer_data:
             _LOGGER.warning(
                 "Manufacturer data present but not recognized as Kaidi advertisement "
@@ -143,24 +263,28 @@ class KaidiController(BedController):
         return KAIDI_WRITE_CHAR_UUID
 
     @property
+    def supports_preset_flat(self) -> bool:
+        return self._command_profile.preset_flat is not None
+
+    @property
     def supports_preset_zero_g(self) -> bool:
-        return True
+        return self._command_profile.preset_zero_g is not None
 
     @property
     def supports_preset_anti_snore(self) -> bool:
-        return True
+        return self._command_profile.preset_anti_snore is not None
 
     @property
     def supports_memory_presets(self) -> bool:
-        return True
+        return self._command_profile.memory_recall is not None
 
     @property
     def memory_slot_count(self) -> int:
-        return 4
+        return len(self._command_profile.memory_recall or {})
 
     @property
     def supports_memory_programming(self) -> bool:
-        return True
+        return self._command_profile.memory_save is not None
 
     def _refresh_write_mode(self) -> None:
         """Refresh write mode from discovered GATT characteristics when available."""
@@ -300,6 +424,10 @@ class KaidiController(BedController):
                         self._target_vaddr,
                         self._coordinator.address,
                     )
+                if advertisement.product_id is not None:
+                    self._product_id = advertisement.product_id
+                if advertisement.sofa_acu_no is not None:
+                    self._sofa_acu_no = advertisement.sofa_acu_no
         except Exception:
             _LOGGER.debug(
                 "Could not resolve Kaidi metadata from HA scanner for %s",
@@ -477,15 +605,40 @@ class KaidiController(BedController):
             except ConnectionError:
                 _LOGGER.debug("Kaidi cleanup stop skipped because device disconnected")
 
+    def _require_memory_command(self, command_map: dict[int, int] | None, memory_num: int) -> int:
+        """Resolve a Kaidi memory command or raise a helpful error."""
+        if command_map is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not expose memory presets"
+            )
+        try:
+            return command_map[memory_num]
+        except KeyError as err:
+            raise ValueError(f"Invalid Kaidi memory slot {memory_num}") from err
+
+    async def _write_optional_control_command(self, command_id: int | None, label: str) -> None:
+        """Send a variant-specific command that may not exist on all profiles."""
+        if command_id is None:
+            raise NotImplementedError(
+                f"Kaidi variant {self._variant} does not support {label}"
+            )
+        await self._write_control_command(command_id)
+
     async def move_head_up(self) -> None:
-        await self._move_with_stop_command(KaidiCommands.HEAD_UP, KaidiCommands.HEAD_STOP)
+        await self._move_with_stop_command(
+            self._command_profile.head_up,
+            self._command_profile.head_stop,
+        )
 
     async def move_head_down(self) -> None:
-        await self._move_with_stop_command(KaidiCommands.HEAD_DOWN, KaidiCommands.HEAD_STOP)
+        await self._move_with_stop_command(
+            self._command_profile.head_down,
+            self._command_profile.head_stop,
+        )
 
     async def move_head_stop(self) -> None:
         await self._write_control_command(
-            KaidiCommands.HEAD_STOP,
+            self._command_profile.head_stop,
             cancel_event=asyncio.Event(),
         )
 
@@ -499,14 +652,20 @@ class KaidiController(BedController):
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        await self._move_with_stop_command(KaidiCommands.FOOT_UP, KaidiCommands.FOOT_STOP)
+        await self._move_with_stop_command(
+            self._command_profile.foot_up,
+            self._command_profile.foot_stop,
+        )
 
     async def move_legs_down(self) -> None:
-        await self._move_with_stop_command(KaidiCommands.FOOT_DOWN, KaidiCommands.FOOT_STOP)
+        await self._move_with_stop_command(
+            self._command_profile.foot_down,
+            self._command_profile.foot_stop,
+        )
 
     async def move_legs_stop(self) -> None:
         await self._write_control_command(
-            KaidiCommands.FOOT_STOP,
+            self._command_profile.foot_stop,
             cancel_event=asyncio.Event(),
         )
 
@@ -520,42 +679,44 @@ class KaidiController(BedController):
         await self.move_legs_stop()
 
     async def stop_all(self) -> None:
-        await self._write_control_command(
-            KaidiCommands.STOP_ALL,
-            cancel_event=asyncio.Event(),
-        )
+        if self._command_profile.stop_all is not None:
+            await self._write_control_command(
+                self._command_profile.stop_all,
+                cancel_event=asyncio.Event(),
+            )
+            return
+
+        await self.move_head_stop()
+        await self.move_legs_stop()
 
     async def preset_flat(self) -> None:
-        await self._write_control_command(KaidiCommands.PRESET_FLAT)
+        await self._write_optional_control_command(
+            self._command_profile.preset_flat,
+            "the flat preset",
+        )
 
     async def preset_zero_g(self) -> None:
-        await self._write_control_command(KaidiCommands.PRESET_ZERO_G)
+        await self._write_optional_control_command(
+            self._command_profile.preset_zero_g,
+            "the Zero-G preset",
+        )
 
     async def preset_anti_snore(self) -> None:
-        await self._write_control_command(KaidiCommands.PRESET_ANTI_SNORE)
+        await self._write_optional_control_command(
+            self._command_profile.preset_anti_snore,
+            "the anti-snore preset",
+        )
 
     async def preset_memory(self, memory_num: int) -> None:
-        command_map = {
-            1: KaidiCommands.MEMORY_RECALL_1,
-            2: KaidiCommands.MEMORY_RECALL_2,
-            3: KaidiCommands.MEMORY_RECALL_3,
-            4: KaidiCommands.MEMORY_RECALL_4,
-        }
-        try:
-            command_id = command_map[memory_num]
-        except KeyError as err:
-            raise ValueError(f"Invalid Kaidi memory preset {memory_num}") from err
+        command_id = self._require_memory_command(
+            self._command_profile.memory_recall,
+            memory_num,
+        )
         await self._write_control_command(command_id)
 
     async def program_memory(self, memory_num: int) -> None:
-        command_map = {
-            1: KaidiCommands.MEMORY_SAVE_1,
-            2: KaidiCommands.MEMORY_SAVE_2,
-            3: KaidiCommands.MEMORY_SAVE_3,
-            4: KaidiCommands.MEMORY_SAVE_4,
-        }
-        try:
-            command_id = command_map[memory_num]
-        except KeyError as err:
-            raise ValueError(f"Invalid Kaidi memory slot {memory_num}") from err
+        command_id = self._require_memory_command(
+            self._command_profile.memory_save,
+            memory_num,
+        )
         await self._write_control_command(command_id)

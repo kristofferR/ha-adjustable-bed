@@ -419,11 +419,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     _LOGGER.debug("  Service UUIDs: %s", service_uuids)
     _LOGGER.debug("  Manufacturer data: %s", service_info.manufacturer_data)
 
+    # Parse Kaidi metadata up front so validated Kaidi advertisements are not
+    # discarded by the generic "mouse" exclusion before protocol detection.
+    kaidi_adv = extract_kaidi_advertisement(service_info.manufacturer_data)
+
     # Exclude devices that are clearly not beds based on name, but only when
     # they have generic/shared UUIDs. This preserves UUID-based detection for
     # beds with unique service UUIDs (e.g., a hypothetical "Linak Band" bed
     # with Linak's unique UUID would not be excluded by the "band" pattern).
-    if _has_only_generic_uuids(service_uuids):
+    if _has_only_generic_uuids(service_uuids) and kaidi_adv is None:
         for pattern in EXCLUDED_DEVICE_PATTERNS:
             if pattern in device_name:
                 _LOGGER.debug(
@@ -458,7 +462,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Company ID 0xFFFF / marker 0xC0FF. Manufacturer data alone is sufficient
     # for detection (matches the OEM app's discovery), but the other signals
     # boost confidence when present.
-    kaidi_adv = extract_kaidi_advertisement(service_info.manufacturer_data)
     has_kaidi_uuid = (
         KAIDI_DISCOVERY_SERVICE_UUID.lower() in service_uuids
         or KAIDI_MESH_SERVICE_UUID.lower() in service_uuids

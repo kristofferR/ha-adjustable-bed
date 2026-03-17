@@ -15,6 +15,13 @@ from .const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -23,6 +30,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .diagnostics_utils import get_gatt_summary
+from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import redact_data
 
 
@@ -70,6 +78,8 @@ async def async_get_config_entry_diagnostics(
             controller_info["richmat_is_wilinke"] = controller._is_wilinke
         if hasattr(controller, "_variant"):
             controller_info["variant"] = controller._variant
+        if hasattr(controller, "_variant_source"):
+            controller_info["variant_source"] = controller._variant_source
         if hasattr(controller, "_char_uuid"):
             controller_info["char_uuid"] = controller._char_uuid
 
@@ -100,6 +110,9 @@ async def async_get_config_entry_diagnostics(
             ),
             "connectable": service_info_connectable,
         }
+        kaidi_advertisement = extract_kaidi_advertisement(service_info.manufacturer_data)
+        if kaidi_advertisement is not None:
+            advertisement_info["kaidi"] = kaidi_advertisement_to_dict(kaidi_advertisement)
         if hasattr(service_info, "source"):
             advertisement_info["source"] = service_info.source
 
@@ -123,6 +136,13 @@ async def async_get_config_entry_diagnostics(
             "has_massage": entry.data.get(CONF_HAS_MASSAGE),
             "disable_angle_sensing": entry.data.get(CONF_DISABLE_ANGLE_SENSING),
             "preferred_adapter": entry.data.get(CONF_PREFERRED_ADAPTER),
+            "kaidi_room_id": entry.data.get(CONF_KAIDI_ROOM_ID),
+            "kaidi_target_vaddr": entry.data.get(CONF_KAIDI_TARGET_VADDR),
+            "kaidi_product_id": entry.data.get(CONF_KAIDI_PRODUCT_ID),
+            "kaidi_sofa_acu_no": entry.data.get(CONF_KAIDI_SOFA_ACU_NO),
+            "kaidi_adv_type": entry.data.get(CONF_KAIDI_ADV_TYPE),
+            "kaidi_resolved_variant": entry.data.get(CONF_KAIDI_RESOLVED_VARIANT),
+            "kaidi_variant_source": entry.data.get(CONF_KAIDI_VARIANT_SOURCE),
         },
         "coordinator": {
             "is_connected": is_connected,

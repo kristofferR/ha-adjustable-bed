@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     ADAPTER_AUTO,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
@@ -19,6 +20,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     KEESON_VARIANTS,
+    KAIDI_VARIANTS,
     LEGGETT_VARIANTS,
     OCTO_VARIANTS,
     OKIMAT_VARIANTS,
@@ -56,6 +58,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
     BED_TYPE_KEESON: KEESON_VARIANTS,
     BED_TYPE_LEGGETT_PLATT: LEGGETT_VARIANTS,

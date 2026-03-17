@@ -34,11 +34,17 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
+    KAIDI_VARIANT_SEAT_1,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
@@ -769,7 +775,7 @@ class TestManualFlow:
     async def test_manual_entry_caches_kaidi_metadata(
         self, hass: HomeAssistant, enable_custom_integrations
     ):
-        """Manual Kaidi setup should cache room/VADDR metadata when available."""
+        """Manual Kaidi setup should cache Kaidi metadata when available."""
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[],
@@ -789,6 +795,8 @@ class TestManualFlow:
                 adv_type=KAIDI_ADV_TYPE_BROADCAST,
                 room_id=0x12345678,
                 vaddr=0x01020304,
+                product_id=136,
+                sofa_acu_no=0x2004,
             ),
         ):
             result = await hass.config_entries.flow.async_configure(
@@ -807,6 +815,11 @@ class TestManualFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_KAIDI_ROOM_ID] == 0x12345678
         assert result["data"][CONF_KAIDI_TARGET_VADDR] == 0x01020304
+        assert result["data"][CONF_KAIDI_PRODUCT_ID] == 136
+        assert result["data"][CONF_KAIDI_SOFA_ACU_NO] == 0x2004
+        assert result["data"][CONF_KAIDI_ADV_TYPE] == KAIDI_ADV_TYPE_BROADCAST
+        assert result["data"][CONF_KAIDI_RESOLVED_VARIANT] == KAIDI_VARIANT_SEAT_1
+        assert result["data"][CONF_KAIDI_VARIANT_SOURCE] == "sofa_acu_no"
 
     async def test_manual_entry_invalid_mac(self, hass: HomeAssistant, enable_custom_integrations):
         """Test manual entry with invalid MAC address shows error."""

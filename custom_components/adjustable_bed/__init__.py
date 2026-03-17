@@ -34,8 +34,13 @@ from .const import (
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -169,18 +174,20 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
         return
 
     new_data = add_kaidi_entry_metadata(entry.data, advertisement)
-    if (
-        new_data.get(CONF_KAIDI_ROOM_ID) == entry.data.get(CONF_KAIDI_ROOM_ID)
-        and new_data.get(CONF_KAIDI_TARGET_VADDR) == entry.data.get(CONF_KAIDI_TARGET_VADDR)
-    ):
+    if new_data == dict(entry.data):
         return
 
     hass.config_entries.async_update_entry(entry, data=new_data)
     _LOGGER.info(
-        "Cached Kaidi session metadata for %s (room_id=%s, target_vaddr=%s)",
+        "Cached Kaidi metadata for %s (room_id=%s, target_vaddr=%s, product_id=%s, sofa_acu_no=%s, adv_type=%s, resolved_variant=%s, variant_source=%s)",
         entry.data[CONF_ADDRESS],
         new_data.get(CONF_KAIDI_ROOM_ID),
         new_data.get(CONF_KAIDI_TARGET_VADDR),
+        new_data.get(CONF_KAIDI_PRODUCT_ID),
+        new_data.get(CONF_KAIDI_SOFA_ACU_NO),
+        new_data.get(CONF_KAIDI_ADV_TYPE),
+        new_data.get(CONF_KAIDI_RESOLVED_VARIANT),
+        new_data.get(CONF_KAIDI_VARIANT_SOURCE),
     )
 
 

@@ -10,10 +10,18 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_KAIDI_ADV_TYPE,
+    CONF_KAIDI_PRODUCT_ID,
+    CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_ROOM_ID,
+    CONF_KAIDI_SOFA_ACU_NO,
+    CONF_KAIDI_TARGET_VADDR,
+    CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
@@ -250,3 +258,61 @@ class TestDiagnosticsOutput:
 
         assert len(result["supported_bed_types"]) > 0
         assert "linak" in result["supported_bed_types"]
+
+    async def test_diagnostics_include_kaidi_metadata_and_parsed_advertisement(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,  # noqa: ARG002
+    ):
+        """Diagnostics should include Kaidi config metadata and parsed manufacturer data."""
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Kaidi Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+                CONF_NAME: "Mouselet",
+                CONF_BED_TYPE: BED_TYPE_KAIDI,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_KAIDI_ROOM_ID: 0x275E,
+                CONF_KAIDI_TARGET_VADDR: 0x00000001,
+                CONF_KAIDI_PRODUCT_ID: 136,
+                CONF_KAIDI_SOFA_ACU_NO: 0x2004,
+                CONF_KAIDI_ADV_TYPE: 0x02,
+                CONF_KAIDI_RESOLVED_VARIANT: "seat_1",
+                CONF_KAIDI_VARIANT_SOURCE: "sofa_acu_no",
+            },
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="diagnostics_kaidi_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN][entry.entry_id] = coordinator
+
+        service_info = MagicMock()
+        service_info.name = "Mouselet"
+        service_info.rssi = -60
+        service_info.service_uuids = []
+        service_info.manufacturer_data = {
+            0xFFFF: bytes.fromhex("c0ff025e270000e55d547fc5ec0200882004a101000000")
+        }
+        service_info.source = "proxy_kaidi"
+
+        with patch(
+            "custom_components.adjustable_bed.diagnostics.find_service_info_by_address",
+            return_value=(service_info, True),
+        ):
+            result = await async_get_config_entry_diagnostics(hass, entry)
+
+        assert result["config"]["kaidi_product_id"] == 136
+        assert result["config"]["kaidi_sofa_acu_no"] == 0x2004
+        assert result["config"]["kaidi_resolved_variant"] == "seat_1"
+        assert result["advertisement"]["kaidi"]["product_id"] == 136
+        assert result["advertisement"]["kaidi"]["seat_1_bars"] == 4
+        assert result["advertisement"]["source"] == "proxy_kaidi"
