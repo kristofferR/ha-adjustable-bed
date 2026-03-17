@@ -629,6 +629,23 @@ async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None,
                 err,
             )
 
+    # Check for Nordic UART service before falling back to WiLinke W1.
+    # Devices with Nordic UART use single-byte commands, not 5-byte WiLinke packets.
+    from ..const import RICHMAT_NORDIC_SERVICE_UUID
+
+    nordic_service = None
+    try:
+        nordic_service = client.services.get_service(RICHMAT_NORDIC_SERVICE_UUID)
+    except Exception:
+        pass
+
+    if nordic_service:
+        _LOGGER.info(
+            "Found Nordic UART service, using single-byte Richmat variant (char: %s)",
+            RICHMAT_NORDIC_CHAR_UUID,
+        )
+        return False, RICHMAT_NORDIC_CHAR_UUID, True
+
     # Fall back to WiLinke W1 variant (like the Germany Motions app does)
     # The app defaults to W1 when no specific service is found, not Nordic.
     # W1 uses FEE9 service with d44bc439 characteristics.

@@ -84,9 +84,9 @@ class TestReverieNightstandCommands:
 
     def test_preset_mode_values(self):
         """Preset mode values should be correct."""
-        assert ReverieNightstandCommands.MODE_1 == 0x01
-        assert ReverieNightstandCommands.MODE_2 == 0x02
-        assert ReverieNightstandCommands.MODE_3 == 0x03
+        assert ReverieNightstandCommands.MODE_ZERO_G == 0x01
+        assert ReverieNightstandCommands.MODE_ANTI_SNORE == 0x02
+        assert ReverieNightstandCommands.MODE_FLAT == 0x03
 
     def test_memory_preset_calculation(self):
         """memory_preset() should return memory_num + 3."""
@@ -350,15 +350,15 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([ReverieNightstandCommands.MODE_1])
+        assert first_call[0][1] == bytes([ReverieNightstandCommands.MODE_FLAT])
 
-    async def test_preset_zero_g_writes_mode_2(
+    async def test_preset_zero_g_writes_mode_zero_g(
         self,
         hass: HomeAssistant,
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """preset_zero_g should write MODE_2 to presets characteristic."""
+        """preset_zero_g should write MODE_ZERO_G to presets characteristic."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -370,7 +370,7 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([ReverieNightstandCommands.MODE_2])
+        assert first_call[0][1] == bytes([ReverieNightstandCommands.MODE_ZERO_G])
 
     async def test_preset_memory_1_writes_correct_value(
         self,

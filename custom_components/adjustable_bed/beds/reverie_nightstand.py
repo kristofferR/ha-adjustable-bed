@@ -51,9 +51,11 @@ class ReverieNightstandCommands:
     LED_OFF: int = 0x00
 
     # Preset mode values (write to PRESETS characteristic)
-    MODE_1: int = 0x01
-    MODE_2: int = 0x02
-    MODE_3: int = 0x03
+    # Mode 1 = Zero-G, Mode 2 = Anti-Snore, Mode 3 = Flat
+    # Source: ReverieBLEProtocolV2.presetsMode in APK
+    MODE_ZERO_G: int = 0x01
+    MODE_ANTI_SNORE: int = 0x02
+    MODE_FLAT: int = 0x03
 
     @staticmethod
     def memory_preset(memory_num: int) -> int:
@@ -384,19 +386,19 @@ class ReverieNightstandController(BedController):
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position (Mode 1)."""
+        """Go to flat position (Mode 3)."""
         await self._write_to_char(
             REVERIE_NIGHTSTAND_PRESETS_UUID,
-            ReverieNightstandCommands.MODE_1,
+            ReverieNightstandCommands.MODE_FLAT,
             repeat_count=3,
             repeat_delay_ms=100,
         )
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position (Mode 2)."""
+        """Go to zero gravity position (Mode 1)."""
         await self._write_to_char(
             REVERIE_NIGHTSTAND_PRESETS_UUID,
-            ReverieNightstandCommands.MODE_2,
+            ReverieNightstandCommands.MODE_ZERO_G,
             repeat_count=3,
             repeat_delay_ms=100,
         )

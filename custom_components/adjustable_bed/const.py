@@ -1483,9 +1483,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN ORE: 300ms delay → 1 repeat = 0.3s per command (preset-based)
     # Source: com.ore.bedding.glideawaymontion ANALYSIS.md
     BED_TYPE_OKIN_ORE: (1, 300),
-    # Leggett WiLinke: 150ms delay → 7 repeats = 1.05s total
-    # Source: com.richmat.sleepfunction ANALYSIS.md - WiLinke protocol variant
-    BED_TYPE_LEGGETT_WILINKE: (7, 150),
+    # Leggett WiLinke: 110ms delay → 10 repeats = 1.1s total
+    # Source: RICHMAT_MASTER_ANALYSIS.md - MLRM devices use 110ms timing
+    BED_TYPE_LEGGETT_WILINKE: (10, 110),
     # OCTO: 350ms delay → 3 repeats = 1.05s total
     # Source: de.octoactuators.octosmartcontrolapp ANALYSIS.md
     BED_TYPE_OCTO: (3, 350),
