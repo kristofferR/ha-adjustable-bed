@@ -31,7 +31,7 @@ from ..const import (
     OCTO_PIN_KEEPALIVE_INTERVAL,
     OCTO_STAR2_CHAR_UUID,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -46,10 +46,19 @@ OCTO_MOTOR_3 = 0x08  # Third motor (lumbar/tilt) - for beds with CAP_MOTORCOUNT 
 OCTO_MOTOR_4 = 0x10  # Fourth motor - for beds with CAP_MOTORCOUNT > 3
 
 # Feature IDs
+OCTO_FEATURE_MOTORCOUNT = 0x000001  # Number of motors (CAP_MOTORCOUNT)
 OCTO_FEATURE_MEMCOUNT = 0x000002  # Number of memory positions
 OCTO_FEATURE_PIN = 0x000003
+OCTO_FEATURE_SYNCHRO = 0x000101  # Synchro/linked mode capability (CAP_SYNCHRO)
 OCTO_FEATURE_LIGHT = 0x000102
 OCTO_FEATURE_END = 0xFFFFFF  # End-of-features sentinel
+
+# Drivemode constants (CONFIG_SET_DRIVEMODE / CONFIG_GET_DRIVEMODE)
+OCTO_DRIVEMODE_SINGLE = 0x00  # CD_SINGLE - independent motor control
+OCTO_DRIVEMODE_SYNC = 0x01  # CD_SYNC - linked/synchro mode
+
+# Drivemode response timeout
+OCTO_DRIVEMODE_TIMEOUT = 3.0
 
 # Feature discovery timeout
 OCTO_FEATURE_TIMEOUT = 5.0
@@ -87,6 +96,10 @@ class OctoController(BedController):
         self._pin_locked: bool | None = None
         self._has_lights: bool | None = None  # None = not yet discovered
         self._memory_count: int | None = None  # None = not yet discovered
+        self._discovered_motor_count: int | None = None  # None = not yet discovered
+        self._has_synchro: bool | None = None  # None = not yet discovered
+        self._synchro_active: bool | None = None  # None = unknown
+        self._drivemode_event: asyncio.Event = asyncio.Event()
         self._features_loaded: asyncio.Event = asyncio.Event()
         self._features_complete: asyncio.Event = (
             asyncio.Event()
@@ -265,6 +278,24 @@ class OctoController(BedController):
             # End-of-features sentinel - all features have been received
             _LOGGER.debug("Feature discovery complete (received 0xFFFFFF sentinel)")
             self._features_complete.set()
+        elif feature_id == OCTO_FEATURE_MOTORCOUNT:
+            # value[0] = number of motors (typically 2-4)
+            self._discovered_motor_count = value[0] if value else None
+            _LOGGER.info(
+                "Motor count feature detected: %d motors (configured: %d)",
+                self._discovered_motor_count,
+                self._coordinator.motor_count,
+            )
+            if (
+                self._discovered_motor_count is not None
+                and self._discovered_motor_count != self._coordinator.motor_count
+            ):
+                _LOGGER.warning(
+                    "Octo bed reports %d motors but integration is configured for %d. "
+                    "Reconfigure the integration to match for correct motor controls",
+                    self._discovered_motor_count,
+                    self._coordinator.motor_count,
+                )
         elif feature_id == OCTO_FEATURE_PIN:
             # value[0] = hasPin (0x01 if bed has PIN feature)
             # value[1] = pinLock (0x01 if unlocked, other if locked)
@@ -275,6 +306,10 @@ class OctoController(BedController):
                 self._has_pin,
                 self._pin_locked,
             )
+        elif feature_id == OCTO_FEATURE_SYNCHRO:
+            # Presence of synchro feature means bed supports linked mode
+            self._has_synchro = True
+            _LOGGER.info("Synchro feature detected: bed supports linked/sync mode")
         elif feature_id == OCTO_FEATURE_MEMCOUNT:
             # value[0] = number of memory slots (typically 1-4)
             self._memory_count = value[0] if value else 0
@@ -303,6 +338,26 @@ class OctoController(BedController):
         # Handle feature response (0x21 0x71)
         if command[0] == 0x21 and command[1] == 0x71:
             self._handle_feature_response(packet_data)
+
+        # Handle CONFIG responses (0x11 = response to CONFIG 0x10)
+        if command[0] == 0x11:
+            if command[1] == 0x72:
+                # CONFIG_GET_DRIVEMODE response
+                if packet_data:
+                    self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
+                    _LOGGER.debug(
+                        "Drivemode response: %s",
+                        "sync" if self._synchro_active else "single",
+                    )
+                    self._drivemode_event.set()
+            elif command[1] == 0x71:
+                # CONFIG_SET_DRIVEMODE acknowledgment
+                if packet_data:
+                    self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
+                    _LOGGER.debug(
+                        "Drivemode set acknowledged: %s",
+                        "sync" if self._synchro_active else "single",
+                    )
 
     async def write_command(
         self,
@@ -436,6 +491,67 @@ class OctoController(BedController):
         """Return number of memory preset slots."""
         return self._memory_count if self._memory_count is not None else 0
 
+    @property
+    def discovered_motor_count(self) -> int | None:
+        """Return the motor count reported by the bed, or None if not yet discovered."""
+        return self._discovered_motor_count
+
+    @property
+    def supports_synchro(self) -> bool:
+        """Check if the bed supports synchro/linked mode.
+
+        Returns True only if CAP_SYNCHRO (0x000101) was detected during discovery.
+        """
+        if self._has_synchro is not None:
+            return self._has_synchro
+        return False
+
+    @property
+    def is_synchro_active(self) -> bool | None:
+        """Return current synchro/linked mode state, or None if unknown."""
+        return self._synchro_active
+
+    async def set_synchro(self, enabled: bool) -> None:
+        """Set synchro/linked drive mode.
+
+        Args:
+            enabled: True for linked/sync mode, False for independent/single mode.
+        """
+        if not self.supports_synchro:
+            _LOGGER.warning("This Octo bed doesn't support synchro/linked mode")
+            return
+
+        mode = OCTO_DRIVEMODE_SYNC if enabled else OCTO_DRIVEMODE_SINGLE
+        _LOGGER.info(
+            "Setting drive mode to %s",
+            "sync" if enabled else "single",
+        )
+        await self._write_octo_command(
+            command=[0x10, 0x71],  # CONFIG_SET_DRIVEMODE
+            data=[mode],
+        )
+        self._synchro_active = enabled
+
+    async def _query_drivemode(self) -> None:
+        """Query current drive mode from the bed."""
+        self._drivemode_event.clear()
+        try:
+            await self._write_octo_command(
+                command=[0x10, 0x72],  # CONFIG_GET_DRIVEMODE
+            )
+            await asyncio.wait_for(
+                self._drivemode_event.wait(),
+                timeout=OCTO_DRIVEMODE_TIMEOUT,
+            )
+            _LOGGER.info(
+                "Current drive mode: %s",
+                "sync" if self._synchro_active else "single",
+            )
+        except TimeoutError:
+            _LOGGER.debug("Drivemode query timed out")
+        except BleakError as err:
+            _LOGGER.debug("Drivemode query failed: %s", err)
+
     async def discover_features(self) -> bool:
         """Discover bed features including PIN requirement and lights.
 
@@ -474,6 +590,8 @@ class OctoController(BedController):
         self._pin_locked = None
         self._has_lights = None
         self._memory_count = None
+        self._discovered_motor_count = None
+        self._has_synchro = None
 
         _LOGGER.debug("Requesting bed features...")
 
@@ -493,14 +611,24 @@ class OctoController(BedController):
                     self._has_lights = False
                 if self._memory_count is None:
                     self._memory_count = 0
+                if self._has_synchro is None:
+                    self._has_synchro = False
 
                 _LOGGER.info(
-                    "Feature discovery complete: hasPin=%s, pinLocked=%s, hasLights=%s, memorySlots=%d",
+                    "Feature discovery complete: hasPin=%s, pinLocked=%s, hasLights=%s, "
+                    "memorySlots=%d, motorCount=%s, synchro=%s",
                     self._has_pin,
                     self._pin_locked,
                     self._has_lights,
                     self._memory_count,
+                    self._discovered_motor_count,
+                    self._has_synchro,
                 )
+
+                # Query current drivemode if synchro is supported
+                if self._has_synchro:
+                    await self._query_drivemode()
+
                 return True
             except TimeoutError:
                 _LOGGER.debug("Feature discovery timed out - bed may not support feature query")
@@ -509,6 +637,7 @@ class OctoController(BedController):
                 self._pin_locked = bool(self._pin)
                 self._has_lights = True  # Assume lights exist for backward compatibility
                 self._memory_count = 0  # Assume no memory support if not reported
+                self._has_synchro = False  # Assume no synchro if not reported
                 return False
 
         except BleakError as err:
@@ -547,7 +676,7 @@ class OctoController(BedController):
             cancel_event=asyncio.Event(),  # Don't cancel stop commands
         )
 
-    async def _move_with_stop(self, motor_bits: int, direction: str) -> None:
+    async def _octo_move_with_stop(self, motor_bits: int, direction: str) -> None:
         """Execute a movement command and always send STOP at the end."""
         try:
             await self._move_motor(motor_bits, direction)
@@ -556,12 +685,12 @@ class OctoController(BedController):
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head motor up."""
-        await self._move_with_stop(OCTO_MOTOR_HEAD, "up")
+        """Move head motor up (motor 1)."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "up")
 
     async def move_head_down(self) -> None:
-        """Move head motor down."""
-        await self._move_with_stop(OCTO_MOTOR_HEAD, "down")
+        """Move head motor down (motor 1)."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "down")
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
@@ -580,12 +709,12 @@ class OctoController(BedController):
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs motor up."""
-        await self._move_with_stop(OCTO_MOTOR_LEGS, "up")
+        """Move legs motor up (motor 2)."""
+        await self._octo_move_with_stop(OCTO_MOTOR_LEGS, "up")
 
     async def move_legs_down(self) -> None:
-        """Move legs motor down."""
-        await self._move_with_stop(OCTO_MOTOR_LEGS, "down")
+        """Move legs motor down (motor 2)."""
+        await self._octo_move_with_stop(OCTO_MOTOR_LEGS, "down")
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
@@ -603,9 +732,92 @@ class OctoController(BedController):
         """Stop feet motor."""
         await self.move_legs_stop()
 
+    # Motor 3 and 4 control methods (for beds with CAP_MOTORCOUNT > 2)
+    async def _move_motor3_up(self) -> None:
+        """Move third motor up."""
+        await self._octo_move_with_stop(OCTO_MOTOR_3, "up")
+
+    async def _move_motor3_down(self) -> None:
+        """Move third motor down."""
+        await self._octo_move_with_stop(OCTO_MOTOR_3, "down")
+
+    async def _move_motor3_stop(self) -> None:
+        """Stop third motor."""
+        await self._stop_motors()
+
+    async def _move_motor4_up(self) -> None:
+        """Move fourth motor up."""
+        await self._octo_move_with_stop(OCTO_MOTOR_4, "up")
+
+    async def _move_motor4_down(self) -> None:
+        """Move fourth motor down."""
+        await self._octo_move_with_stop(OCTO_MOTOR_4, "down")
+
+    async def _move_motor4_stop(self) -> None:
+        """Stop fourth motor."""
+        await self._stop_motors()
+
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self._stop_motors()
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Return motor controls for Octo beds.
+
+        Octo motors use bitmask addressing:
+        - Motor 1 (0x02): Head/Back
+        - Motor 2 (0x04): Legs
+        - Motor 3 (0x08): Third motor (for beds with CAP_MOTORCOUNT > 2)
+        - Motor 4 (0x10): Fourth motor (for beds with CAP_MOTORCOUNT > 3)
+
+        Motor 3/4 are mapped to "head" and "feet" entity keys to match the
+        standard cover entity naming convention.
+        """
+        motor_count = self._coordinator.motor_count
+
+        specs: list[MotorControlSpec] = [
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=lambda ctrl: ctrl.move_back_up(),
+                close_fn=lambda ctrl: ctrl.move_back_down(),
+                stop_fn=lambda ctrl: ctrl.move_back_stop(),
+            ),
+            MotorControlSpec(
+                key="legs",
+                translation_key="legs",
+                open_fn=lambda ctrl: ctrl.move_legs_up(),
+                close_fn=lambda ctrl: ctrl.move_legs_down(),
+                stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+                max_angle=45,
+            ),
+        ]
+
+        if motor_count >= 3:
+            specs.append(
+                MotorControlSpec(
+                    key="head",
+                    translation_key="head",
+                    open_fn=lambda ctrl: ctrl._move_motor3_up(),
+                    close_fn=lambda ctrl: ctrl._move_motor3_down(),
+                    stop_fn=lambda ctrl: ctrl._move_motor3_stop(),
+                )
+            )
+
+        if motor_count >= 4:
+            specs.append(
+                MotorControlSpec(
+                    key="feet",
+                    translation_key="feet",
+                    open_fn=lambda ctrl: ctrl._move_motor4_up(),
+                    close_fn=lambda ctrl: ctrl._move_motor4_down(),
+                    stop_fn=lambda ctrl: ctrl._move_motor4_stop(),
+                    max_angle=45,
+                )
+            )
+
+        return tuple(specs)
 
     @property
     def supports_preset_both_up(self) -> bool:
@@ -615,7 +827,7 @@ class OctoController(BedController):
     # Preset methods
     async def preset_both_up(self) -> None:
         """Move both head and legs up simultaneously."""
-        await self._move_with_stop(OCTO_MOTOR_HEAD | OCTO_MOTOR_LEGS, "up")
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD | OCTO_MOTOR_LEGS, "up")
 
     async def preset_flat(self) -> None:
         """Go to flat position.
@@ -623,7 +835,7 @@ class OctoController(BedController):
         Octo doesn't have a flat preset, so we move both motors down.
         """
         # Move both head and legs down simultaneously
-        await self._move_with_stop(OCTO_MOTOR_HEAD | OCTO_MOTOR_LEGS, "down")
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD | OCTO_MOTOR_LEGS, "down")
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset position.
@@ -850,6 +1062,15 @@ class OctoStar2Controller(BedController):
     def supports_memory_presets(self) -> bool:
         """Return False - Octo Star2 beds don't support memory presets."""
         return False
+
+    @property
+    def supports_synchro(self) -> bool:
+        """Star2 protocol doesn't support synchro/linked mode."""
+        return False
+
+    async def set_synchro(self, enabled: bool) -> None:
+        """No-op: Star2 protocol doesn't support synchro/linked mode."""
+        _LOGGER.warning("Octo Star2 beds don't support synchro/linked mode")
 
     @property
     def control_characteristic_uuid(self) -> str:

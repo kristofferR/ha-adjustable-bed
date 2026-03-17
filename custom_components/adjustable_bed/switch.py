@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import BED_TYPE_OCTO, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -31,6 +31,11 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     # Capability property name to check on controller (e.g., "supports_lights")
     required_capability: str | None = None
+    # Only create entity for these bed types (None = all bed types)
+    required_bed_types: tuple[str, ...] | None = None
+    # True if the switch has separate on/off commands (enables state tracking)
+    # When False, the switch is treated as toggle-only (no state tracking)
+    has_discrete_control: bool = False
 
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
@@ -41,6 +46,16 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
         required_capability="supports_discrete_light_control",
+    ),
+    AdjustableBedSwitchEntityDescription(
+        key="synchro_mode",
+        translation_key="synchro_mode",
+        icon="mdi:link-variant",
+        turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
+        turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
+        required_bed_types=(BED_TYPE_OCTO,),
+        entity_registry_enabled_default=False,
+        has_discrete_control=True,
     ),
 )
 
@@ -56,6 +71,10 @@ async def async_setup_entry(
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
+        # Skip switches restricted to specific bed types
+        if description.required_bed_types is not None:
+            if coordinator.bed_type not in description.required_bed_types:
+                continue
         # Skip switches that require capabilities the controller doesn't have
         if description.required_capability is not None:
             if controller is None:
@@ -96,7 +115,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
     def _supports_discrete_control(self) -> bool:
         """Check if controller supports discrete on/off (vs toggle-only)."""
-        return self._supports_discrete_light_control
+        return self._supports_discrete_light_control or self.entity_description.has_discrete_control
 
     def _cancel_auto_off_timer(self) -> None:
         """Cancel any pending auto-off timer."""

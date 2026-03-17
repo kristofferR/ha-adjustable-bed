@@ -37,11 +37,12 @@ The PIN is typically found in your Octo physical remote's settings menu, or in t
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ |
+| Motor Control | ✅ (2-4 motors, auto-detected via CAP_MOTORCOUNT) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Both Up Preset | ✅ (Standard variant: moves head + legs together) |
 | Under-bed Lights | ✅ (Standard variant only) |
+| Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
 
 ## Protocol Variants
@@ -64,11 +65,13 @@ Octo beds have at least two protocol variants. The integration auto-detects the 
 
 #### Motor Commands
 
-Motors are controlled via bit masks:
+Motors are controlled via bit masks (CAP_MOTORCOUNT determines how many are available):
 
-- Head motor: `0x02`
-- Legs motor: `0x04`
-- Both motors: `0x06`
+- Motor 1 (Head/Back): `0x02`
+- Motor 2 (Legs): `0x04`
+- Motor 3: `0x08` (beds with CAP_MOTORCOUNT > 2)
+- Motor 4: `0x10` (beds with CAP_MOTORCOUNT > 3)
+- Both motors 1+2: `0x06`
 
 | Command | Command Bytes | Data | Description |
 |---------|---------------|------|-------------|
@@ -82,6 +85,31 @@ Motors are controlled via bit masks:
 |---------|---------------|------|-------------|
 | Lights On | `[0x20, 0x72]` | `[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01]` | Turn on under-bed lights |
 | Lights Off | `[0x20, 0x72]` | `[0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x00]` | Turn off under-bed lights |
+
+#### Synchro/Linked Mode Commands
+
+For split-king beds with CAP_SYNCHRO capability, the drive mode can be toggled between independent (single) and linked (sync) operation:
+
+| Command | Command Bytes | Data | Description |
+|---------|---------------|------|-------------|
+| Set Single Mode | `[0x10, 0x71]` | `[0x00]` | Independent motor control |
+| Set Sync Mode | `[0x10, 0x71]` | `[0x01]` | Linked/synchro motor control |
+| Get Drive Mode | `[0x10, 0x72]` | none | Query current drive mode |
+
+The Synchro Mode switch entity is disabled by default. Enable it in the entity registry if your bed supports linked mode.
+
+#### Feature Discovery
+
+The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
+
+| Feature ID | Name | Value |
+|------------|------|-------|
+| `0x000001` | CAP_MOTORCOUNT | Motor count (2-4) |
+| `0x000002` | CAP_MEMCOUNT | Memory preset count |
+| `0x000003` | CAP_PIN | PIN requirement + lock state |
+| `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
+| `0x000102` | CAP_LIGHT | Under-bed light support |
+| `0xFFFFFF` | End sentinel | Marks end of feature list |
 
 #### PIN Authentication
 

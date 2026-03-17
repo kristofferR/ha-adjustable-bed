@@ -468,6 +468,9 @@
     "switch": {
       "under_bed_lights": {
         "name": "Under Bed Lights"
+      },
+      "synchro_mode": {
+        "name": "Synchro Mode"
       }
     },
     "binary_sensor": {

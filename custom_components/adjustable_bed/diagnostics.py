@@ -83,6 +83,14 @@ async def async_get_config_entry_diagnostics(
         if hasattr(controller, "_char_uuid"):
             controller_info["char_uuid"] = controller._char_uuid
 
+        # Add Octo-specific discovered features
+        if hasattr(controller, "discovered_motor_count"):
+            controller_info["discovered_motor_count"] = controller.discovered_motor_count
+        if hasattr(controller, "supports_synchro"):
+            controller_info["supports_synchro"] = controller.supports_synchro
+        if hasattr(controller, "is_synchro_active"):
+            controller_info["synchro_active"] = controller.is_synchro_active
+
     # Get position data
     position_data = dict(coordinator.position_data)
 
