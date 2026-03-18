@@ -946,6 +946,7 @@ RICHMAT_REMOTE_ZR10: Final = "ZR10"
 RICHMAT_REMOTE_ZR60: Final = "ZR60"
 RICHMAT_REMOTE_I7RM: Final = "I7RM"
 RICHMAT_REMOTE_190_0055: Final = "190-0055"
+RICHMAT_REMOTE_BT6500: Final = "BT6500"
 
 # Richmat WiLinke stop-byte compatibility.
 # Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
@@ -958,6 +959,7 @@ RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset(
 RICHMAT_REMOTES: Final = {
     RICHMAT_REMOTE_AUTO: "Auto (all features enabled)",
     RICHMAT_REMOTE_AZRN: "AZRN (Head, Pillow, Feet)",
+    RICHMAT_REMOTE_BT6500: "BT6500 (Head, Feet, Pillow, Lumbar, M1/M2, ZG, Anti-snore, TV, Lights)",
     RICHMAT_REMOTE_BURM: "BURM (Head, Feet, Massage, Lights)",
     RICHMAT_REMOTE_BVRM: "BVRM (Head, Feet, Massage)",
     RICHMAT_REMOTE_VIRM: "VIRM (Head, Feet, Pillow, Lumbar, Massage, Lights)",
@@ -1013,6 +1015,31 @@ RICHMAT_REMOTE_FEATURES: Final = {
         | _F.MOTOR_HEAD
         | _F.MOTOR_PILLOW
         | _F.MOTOR_FEET
+    ),
+    # BedTech BT6500 support bundle (#194) shows a QRRM-family bed with
+    # head/feet/pillow/lumbar controls plus M1/M2, TV, zero gravity,
+    # anti-snore, under-bed lights, and massage.
+    RICHMAT_REMOTE_BT6500: (
+        _F.PRESET_FLAT
+        | _F.PRESET_ANTI_SNORE
+        | _F.PRESET_MEMORY_1
+        | _F.PRESET_MEMORY_2
+        | _F.PRESET_TV
+        | _F.PRESET_ZERO_G
+        | _F.PROGRAM_ANTI_SNORE
+        | _F.PROGRAM_MEMORY_1
+        | _F.PROGRAM_MEMORY_2
+        | _F.PROGRAM_TV
+        | _F.PROGRAM_ZERO_G
+        | _F.UNDER_BED_LIGHTS
+        | _F.MASSAGE_HEAD_STEP
+        | _F.MASSAGE_FOOT_STEP
+        | _F.MASSAGE_MODE
+        | _F.MASSAGE_TOGGLE
+        | _F.MOTOR_HEAD
+        | _F.MOTOR_FEET
+        | _F.MOTOR_PILLOW
+        | _F.MOTOR_LUMBAR
     ),
     RICHMAT_REMOTE_BURM: (
         _F.PRESET_FLAT
@@ -1176,6 +1203,56 @@ RICHMAT_REMOTE_FEATURES: Final = {
     ),
 }
 
+# Some Richmat OEM apps expose a generic QRRM family in BLE, then ask the user
+# to pick the actual retail model. Use entry/device names to recover those
+# model-specific surfaces when we have enough context.
+RICHMAT_MODEL_REMOTE_ALIASES: Final[dict[str, str]] = {
+    "bt2000": "a7rm",
+    "bt2500": "t3rm",
+    "bt3000fh": "ufrm",
+    "bt3000": "ufrm",
+    "bt4000": "vcrm",
+    "bt6500": RICHMAT_REMOTE_BT6500.lower(),
+    "bt7000": "u5rm",
+}
+
+
+def resolve_richmat_remote_code(
+    remote_code: str | None,
+    *,
+    entry_title: str | None = None,
+    configured_name: str | None = None,
+    device_name: str | None = None,
+) -> str:
+    """Resolve a Richmat remote code using config and model-specific aliases.
+
+    QRRM is a selector family in OEM apps rather than a concrete remote surface.
+    If the config or device title includes a known retail model (for example
+    "BedTech BT6500"), prefer that model-specific surface over the generic QRRM
+    feature map.
+    """
+    normalized = (remote_code or RICHMAT_REMOTE_AUTO).lower()
+    if normalized not in {"", RICHMAT_REMOTE_AUTO, "qrrm"}:
+        return normalized
+
+    haystack = " ".join(
+        part.lower()
+        for part in (entry_title, configured_name, device_name)
+        if part
+    )
+    if not haystack:
+        return normalized or RICHMAT_REMOTE_AUTO
+
+    for model, resolved_remote in sorted(
+        RICHMAT_MODEL_REMOTE_ALIASES.items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    ):
+        if model in haystack:
+            return resolved_remote
+
+    return normalized or RICHMAT_REMOTE_AUTO
+
 
 def get_richmat_features(remote_code: str) -> RichmatFeatures:
     """Get features for a Richmat remote code.
@@ -1218,23 +1295,17 @@ def get_richmat_features(remote_code: str) -> RichmatFeatures:
 def get_richmat_motor_count(features: RichmatFeatures) -> int:
     """Get motor count from Richmat feature flags.
 
-    Counts the number of motor types present in the features:
-    - MOTOR_HEAD
-    - MOTOR_FEET
-    - MOTOR_PILLOW
-    - MOTOR_LUMBAR
+    Richmat beds use `motor_count` for the primary head/feet axes only.
+    Accessory actuators such as pillow and lumbar are exposed as dedicated
+    entities, not as extra back/head or legs/feet slots.
 
     Returns:
-        Motor count (0-4), minimum 2 for practical use.
+        Motor count (0-2), minimum 2 for practical use.
     """
     count = 0
     if features & RichmatFeatures.MOTOR_HEAD:
         count += 1
     if features & RichmatFeatures.MOTOR_FEET:
-        count += 1
-    if features & RichmatFeatures.MOTOR_PILLOW:
-        count += 1
-    if features & RichmatFeatures.MOTOR_LUMBAR:
         count += 1
     # Minimum 2 motors for practical use (head + feet is the baseline)
     return max(count, 2)

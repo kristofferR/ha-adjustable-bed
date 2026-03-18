@@ -115,7 +115,10 @@ from .const import (
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
     RICHMAT_REMOTE_AUTO,
+    get_richmat_features,
+    get_richmat_motor_count,
     requires_pairing,
+    resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
@@ -151,7 +154,18 @@ class AdjustableBedCoordinator:
             CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
         )
         self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
-        self._motor_count: int = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+        self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
+        if self._bed_type == BED_TYPE_RICHMAT:
+            self._richmat_remote = resolve_richmat_remote_code(
+                self._richmat_remote,
+                entry_title=entry.title,
+                configured_name=self._name,
+            )
+            self._motor_count = get_richmat_motor_count(
+                get_richmat_features(self._richmat_remote)
+            )
+        else:
+            self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
         self._disable_angle_sensing: bool = entry.data.get(
             CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
@@ -197,9 +211,6 @@ class AdjustableBedCoordinator:
 
         # Octo-specific configuration
         self._octo_pin: str = entry.data.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN)
-
-        # Richmat-specific configuration
-        self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
 
         # Jensen-specific configuration
         self._jensen_pin: str = entry.data.get(CONF_JENSEN_PIN, "")
@@ -1058,6 +1069,13 @@ class AdjustableBedCoordinator:
                             detected_remote,
                             device.name,
                         )
+                if self._bed_type == BED_TYPE_RICHMAT:
+                    richmat_remote = resolve_richmat_remote_code(
+                        richmat_remote,
+                        entry_title=self.entry.title,
+                        configured_name=self._name,
+                        device_name=device.name,
+                    )
 
                 manufacturer_data: dict[int, bytes] | None = None
                 advertisement = bluetooth.async_last_service_info(

@@ -32,7 +32,7 @@ from ..const import (
     RichmatFeatures,
     get_richmat_features,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -245,6 +245,57 @@ class RichmatController(BedController):
     @property
     def has_pillow_support(self) -> bool:
         return bool(self._features & RichmatFeatures.MOTOR_PILLOW)
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Expose the native Richmat layout without back/legs alias duplicates."""
+        specs = [
+            MotorControlSpec(
+                key="head",
+                translation_key="head",
+                open_fn=lambda ctrl: ctrl.move_head_up(),
+                close_fn=lambda ctrl: ctrl.move_head_down(),
+                stop_fn=lambda ctrl: ctrl.move_head_stop(),
+            ),
+            MotorControlSpec(
+                key="feet",
+                translation_key="feet",
+                open_fn=lambda ctrl: ctrl.move_feet_up(),
+                close_fn=lambda ctrl: ctrl.move_feet_down(),
+                stop_fn=lambda ctrl: ctrl.move_feet_stop(),
+                max_angle=45,
+            ),
+        ]
+
+        if self.has_pillow_support:
+            specs.append(
+                MotorControlSpec(
+                    key="pillow",
+                    translation_key="pillow",
+                    open_fn=lambda ctrl: ctrl.move_pillow_up(),
+                    close_fn=lambda ctrl: ctrl.move_pillow_down(),
+                    stop_fn=lambda ctrl: ctrl.move_pillow_stop(),
+                )
+            )
+
+        if self.has_lumbar_support:
+            specs.append(
+                MotorControlSpec(
+                    key="lumbar",
+                    translation_key="lumbar",
+                    open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                    close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                    stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                    max_angle=30,
+                )
+            )
+
+        return tuple(specs)
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove legacy generic motor aliases when Richmat layout changes."""
+        return frozenset({"back", "legs", "pillow", "lumbar"})
 
     @property
     def supports_lights(self) -> bool:

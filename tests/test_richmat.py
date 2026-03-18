@@ -21,11 +21,15 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     DOMAIN,
     RICHMAT_NORDIC_CHAR_UUID,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_VARIANT_NORDIC,
+    get_richmat_features,
+    get_richmat_motor_count,
+    resolve_richmat_remote_code,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -467,6 +471,71 @@ class TestRichmatFeatureDetection:
         assert controller.has_lumbar_support is True
         assert controller.supports_preset_zero_g is True
         assert controller.supports_preset_anti_snore is True
+
+    def test_bt6500_profile_restores_missing_presets(self):
+        """BT6500 should expose the preset set reported in issue #194."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="BT6500")
+
+        assert controller.supports_preset_zero_g is True
+        assert controller.supports_preset_anti_snore is True
+        assert controller.supports_preset_tv is True
+        assert controller.supports_memory_presets is True
+        assert controller.memory_slot_count == 2
+        assert controller.supports_lights is True
+        assert controller.has_pillow_support is True
+        assert controller.has_lumbar_support is True
+
+    def test_resolve_bt6500_title_alias_from_qrrm_family(self):
+        """BT6500 titles should resolve away from the generic QRRM profile."""
+        assert (
+            resolve_richmat_remote_code(
+                "qrrm",
+                entry_title="BedTech BT6500",
+                device_name="QRRM141291",
+            )
+            == "bt6500"
+        )
+
+    def test_richmat_motor_count_ignores_pillow_and_lumbar_axes(self):
+        """Richmat motor_count should only track the primary head/feet axes."""
+        features = get_richmat_features("BT6500")
+
+        assert get_richmat_motor_count(features) == 2
+
+    async def test_bt6500_motor_layout_avoids_back_and_legs_duplicates(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """Richmat BT6500 should expose head/feet/pillow/lumbar only."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="BedTech BT6500",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_MOTOR_COUNT: 4,
+                CONF_RICHMAT_REMOTE: "qrrm",
+            },
+            unique_id="57:4C:62:B0:EF:3D",
+            entry_id="richmat_bt6500_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert coordinator.motor_count == 2
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "pillow",
+            "lumbar",
+        ]
+        assert controller.stale_motor_entity_keys == {"back", "legs", "pillow", "lumbar"}
 
 
 class TestRichmatPresets:
