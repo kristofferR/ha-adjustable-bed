@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import bluetooth
@@ -271,19 +269,3 @@ def _get_recent_logs() -> list[dict[str, str]]:
 
     # Limit and return most recent
     return logs[-MAX_LOG_ENTRIES:]
-
-
-def save_support_report(hass: HomeAssistant, report: dict[str, Any], address: str) -> Path:
-    """Save support report to a JSON file in the config directory."""
-    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    address_safe = address.replace(":", "").lower()
-    filename = f"adjustable_bed_support_report_{address_safe}_{timestamp}.json"
-
-    config_dir = Path(hass.config.config_dir)
-    filepath = config_dir / filename
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, default=str)
-
-    _LOGGER.info("Support report saved to %s", filepath)
-    return filepath
