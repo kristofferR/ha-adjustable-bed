@@ -110,6 +110,11 @@ PLATFORMS: list[Platform] = [
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Adjustable Bed integration domain."""
     hass.data.setdefault(DOMAIN, {})
+
+    from .download import SupportBundleDownloadView
+
+    hass.http.register_view(SupportBundleDownloadView)
+
     await _async_register_services(hass)
     return True
 
@@ -949,6 +954,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         """Handle generate_support_bundle service call."""
         from homeassistant.components.persistent_notification import async_create
 
+        from .download import register_download
         from .support_bundle import generate_support_bundle, save_support_bundle
 
         device_ids = call.data.get(CONF_DEVICE_ID, [])
@@ -1027,12 +1033,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 address,
             )
 
+            download_url = register_download(hass, filepath)
+            notification_count = len(report.get("notifications", []))
             async_create(
                 hass,
-                f"Support bundle saved to:\n\n`{filepath}`\n\n"
-                f"Captured {len(report.get('notifications', []))} notifications over "
+                f"[**Download support bundle**]({download_url})\n\n"
+                f"Captured {notification_count} notifications over "
                 f"{capture_duration} seconds.\n\n"
-                "Attach this JSON file when reporting unsupported or broken beds.",
+                "Attach this JSON file when reporting unsupported or broken beds.\n\n"
+                f"File path: `{filepath}`",
                 title="Adjustable Bed Support Bundle Ready",
                 notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
             )
