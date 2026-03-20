@@ -95,9 +95,9 @@ If your bed isn't supported yet, file a [New Bed Support Request](https://github
 
 **Start by generating a support bundle** — it captures all the BLE data (service UUIDs, device name, GATT structure) needed to implement a new protocol. Without it, we cannot begin implementation.
 
-1. Add your bed to Home Assistant using "Diagnostic/Unknown" as the bed type
+1. Add the Adjustable Bed integration and select **"Diagnostic (unknown bed)"** as the bed type
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
-3. Select your bed device and click **Perform action**
+3. Select the device and click **Perform action**
 4. A notification will appear with a **download link** — click it to save the file
 5. Attach the JSON file to your issue
 
