@@ -117,8 +117,8 @@ class TestSvaneCommands:
         assert len(SvaneCommands.LIGHT_OFF) == 6
 
     def test_light_on_command(self):
-        """LIGHT_ON command should have brightness=80."""
-        assert bytes([0x13, 0x02, 0x50, 0x01, 0x00, 0x50]) == SvaneCommands.LIGHT_ON
+        """LIGHT_ON command should have brightness=100."""
+        assert bytes([0x13, 0x02, 0x64, 0x01, 0x00, 0x64]) == SvaneCommands.LIGHT_ON
 
     def test_light_off_command(self):
         """LIGHT_OFF command should be all zeros except header."""

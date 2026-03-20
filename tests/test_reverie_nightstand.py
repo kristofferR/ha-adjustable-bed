@@ -96,11 +96,11 @@ class TestReverieNightstandCommands:
         assert ReverieNightstandCommands.memory_preset(4) == 0x07
 
     def test_store_memory_calculation(self):
-        """store_memory() should return memory_num + 83."""
-        assert ReverieNightstandCommands.store_memory(1) == 0x54  # 84
-        assert ReverieNightstandCommands.store_memory(2) == 0x55  # 85
-        assert ReverieNightstandCommands.store_memory(3) == 0x56  # 86
-        assert ReverieNightstandCommands.store_memory(4) == 0x57  # 87
+        """store_memory() should return memory_num + 0x83."""
+        assert ReverieNightstandCommands.store_memory(1) == 0x84
+        assert ReverieNightstandCommands.store_memory(2) == 0x85
+        assert ReverieNightstandCommands.store_memory(3) == 0x86
+        assert ReverieNightstandCommands.store_memory(4) == 0x87
 
 
 # -----------------------------------------------------------------------------
@@ -418,7 +418,7 @@ class TestReverieNightstandPresets:
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """program_memory(1) should write 0x54 to presets characteristic."""
+        """program_memory(1) should write 0x84 to presets characteristic."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -430,7 +430,7 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([0x54])  # store_memory(1) = 84
+        assert first_call[0][1] == bytes([0x84])  # store_memory(1) = 0x84
 
     async def test_program_memory_4_writes_store_value(
         self,
@@ -438,7 +438,7 @@ class TestReverieNightstandPresets:
         mock_reverie_nightstand_config_entry,
         mock_coordinator_connected,
     ):
-        """program_memory(4) should write 0x57 to presets characteristic."""
+        """program_memory(4) should write 0x87 to presets characteristic."""
         coordinator = AdjustableBedCoordinator(
             hass, mock_reverie_nightstand_config_entry
         )
@@ -450,7 +450,7 @@ class TestReverieNightstandPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call = calls[0]
         assert first_call[0][0] == REVERIE_NIGHTSTAND_PRESETS_UUID
-        assert first_call[0][1] == bytes([0x57])  # store_memory(4) = 87
+        assert first_call[0][1] == bytes([0x87])  # store_memory(4) = 0x87
 
 
 class TestReverieNightstandLights:

@@ -182,21 +182,24 @@ class TestMotoSleepMovement:
         expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_FEET_UP)
         assert first_command == expected
 
-    async def test_move_head_stop_noop(
+    async def test_move_head_stop_sends_stop(
         self,
         hass: HomeAssistant,
         mock_motosleep_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head stop does nothing (MotoSleep stops when button released)."""
+        """Test move head stop sends the dedicated STOP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_stop()
 
-        # Should not send any command
-        mock_bleak_client.write_gatt_char.assert_not_called()
+        # Should send the STOP command ($b)
+        expected = coordinator.controller._build_command(MotoSleepCommands.STOP)
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) > 0
+        assert calls[0][0][1] == expected
 
     async def test_stop_all(
         self,
@@ -205,14 +208,17 @@ class TestMotoSleepMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test stop all cancels commands but sends no BLE data."""
+        """Test stop all sends the dedicated STOP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.stop_all()
 
-        # MotoSleep stop_all only cancels the running loop, doesn't send data
-        mock_bleak_client.write_gatt_char.assert_not_called()
+        # Should send the STOP command ($b)
+        expected = coordinator.controller._build_command(MotoSleepCommands.STOP)
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) > 0
+        assert calls[0][0][1] == expected
 
     async def test_move_neck_up(
         self,
@@ -250,21 +256,24 @@ class TestMotoSleepMovement:
         expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_NECK_DOWN)
         assert first_command == expected
 
-    async def test_move_neck_stop_noop(
+    async def test_move_neck_stop_sends_stop(
         self,
         hass: HomeAssistant,
         mock_motosleep_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move neck stop does nothing (MotoSleep stops when button released)."""
+        """Test move neck stop sends the dedicated STOP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_neck_stop()
 
-        # Should not send any command
-        mock_bleak_client.write_gatt_char.assert_not_called()
+        # Should send the STOP command ($b)
+        expected = coordinator.controller._build_command(MotoSleepCommands.STOP)
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) > 0
+        assert calls[0][0][1] == expected
 
     async def test_move_lumbar_up(
         self,
@@ -302,21 +311,24 @@ class TestMotoSleepMovement:
         expected = coordinator.controller._build_command(MotoSleepCommands.MOTOR_LUMBAR_DOWN)
         assert first_command == expected
 
-    async def test_move_lumbar_stop_noop(
+    async def test_move_lumbar_stop_sends_stop(
         self,
         hass: HomeAssistant,
         mock_motosleep_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move lumbar stop does nothing (MotoSleep stops when button released)."""
+        """Test move lumbar stop sends the dedicated STOP command."""
         coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_lumbar_stop()
 
-        # Should not send any command
-        mock_bleak_client.write_gatt_char.assert_not_called()
+        # Should send the STOP command ($b)
+        expected = coordinator.controller._build_command(MotoSleepCommands.STOP)
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) > 0
+        assert calls[0][0][1] == expected
 
 
 class TestMotoSleepCapabilities:

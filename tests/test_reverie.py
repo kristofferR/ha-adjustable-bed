@@ -127,7 +127,7 @@ class TestReverieController:
 
 
 class TestReverieMovement:
-    """Test Reverie movement commands (position-based)."""
+    """Test Reverie movement commands (linear motor commands with stop)."""
 
     async def test_move_head_up(
         self,
@@ -136,17 +136,20 @@ class TestReverieMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head up moves to 100%."""
+        """Test move head up sends linear HEAD_UP command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_up()
 
-        # Should send motor_head(100) command
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(ReverieCommands.motor_head(100))
+        expected = coordinator.controller._build_command(ReverieCommands.HEAD_UP)
         assert first_command == expected
+        # Last call should be STOP
+        last_command = calls[-1][0][1]
+        expected_stop = coordinator.controller._build_command(ReverieCommands.MOTOR_STOP)
+        assert last_command == expected_stop
 
     async def test_move_head_down(
         self,
@@ -155,7 +158,7 @@ class TestReverieMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head down moves to 0%."""
+        """Test move head down sends linear HEAD_DOWN command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
@@ -163,8 +166,12 @@ class TestReverieMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(ReverieCommands.motor_head(0))
+        expected = coordinator.controller._build_command(ReverieCommands.HEAD_DOWN)
         assert first_command == expected
+        # Last call should be STOP
+        last_command = calls[-1][0][1]
+        expected_stop = coordinator.controller._build_command(ReverieCommands.MOTOR_STOP)
+        assert last_command == expected_stop
 
     async def test_move_legs_up(
         self,
@@ -173,7 +180,7 @@ class TestReverieMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move legs up moves feet to 100%."""
+        """Test move legs up sends linear FOOT_UP command then STOP."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
@@ -181,8 +188,12 @@ class TestReverieMovement:
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(ReverieCommands.motor_feet(100))
+        expected = coordinator.controller._build_command(ReverieCommands.FOOT_UP)
         assert first_command == expected
+        # Last call should be STOP
+        last_command = calls[-1][0][1]
+        expected_stop = coordinator.controller._build_command(ReverieCommands.MOTOR_STOP)
+        assert last_command == expected_stop
 
     async def test_stop_all(
         self,
@@ -347,15 +358,16 @@ class TestReverieMassage:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage off command."""
+        """Test massage off sends STOP_MASSAGE command (0x35)."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_off()
 
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # Should send head(0) and foot(0) commands
-        assert len(calls) >= 2
+        expected = coordinator.controller._build_command(ReverieCommands.STOP_MASSAGE)
+        mock_bleak_client.write_gatt_char.assert_called_once_with(
+            REVERIE_CHAR_UUID, expected, response=True
+        )
 
     async def test_massage_head_up(
         self,
@@ -441,40 +453,44 @@ class TestReveriePositionNotifications:
         mock_reverie_config_entry,
         mock_coordinator_connected,
     ):
-        """Test parsing position notification data."""
+        """Test parsing 9-byte position notification data."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
         callback = MagicMock()
         coordinator.controller._notify_callback = callback
 
-        # Create mock position data: [0x55, 0x51, position, checksum]
-        data = bytearray([0x55, 0x51, 50, 0x55 ^ 0x51 ^ 50])
+        # 9-byte notification: [header0, header1, head_pos, foot_pos, head_wave, foot_wave, unk, unk, unk]
+        head_pos = 50
+        foot_pos = 30
+        data = bytearray([0x00, 0x00, head_pos, foot_pos, 0, 0, 0, 0, 0])
         coordinator.controller._parse_position_data(data)
 
-        # Callback should be called with back position (0x51 maps to "back" in the implementation)
-        callback.assert_called_once()
-        args = callback.call_args[0]
-        assert args[0] == "back"
+        # Callback should be called twice: once for back, once for legs
+        assert callback.call_count == 2
+        first_call = callback.call_args_list[0][0]
+        second_call = callback.call_args_list[1][0]
+        assert first_call[0] == "back"
+        assert first_call[1] == pytest.approx(head_pos * 0.6)
+        assert second_call[0] == "legs"
+        assert second_call[1] == pytest.approx(foot_pos * 0.45)
 
-    async def test_parse_position_data_invalid_header(
+    async def test_parse_position_data_invalid_length(
         self,
         hass: HomeAssistant,
         mock_reverie_config_entry,
         mock_coordinator_connected,
-        caplog,
     ):
-        """Test parsing position data with invalid header."""
+        """Test parsing position data with wrong length is ignored."""
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
         callback = MagicMock()
         coordinator.controller._notify_callback = callback
 
-        # Invalid header (not 0x55)
+        # Not 9 bytes - should be silently ignored
         data = bytearray([0x00, 0x51, 50, 0x00])
         coordinator.controller._parse_position_data(data)
 
-        # Callback should not be called
+        # Callback should not be called (data length != 9)
         callback.assert_not_called()
-        assert "Invalid Reverie notification header" in caplog.text

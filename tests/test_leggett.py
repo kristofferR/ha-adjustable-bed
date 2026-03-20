@@ -119,21 +119,23 @@ class TestLeggettOkinController:
 class TestLeggettMovement:
     """Test Leggett & Platt movement commands."""
 
-    async def test_move_head_up_gen2_warns(
+    async def test_move_head_up_gen2_sends_command(
         self,
         hass: HomeAssistant,
         mock_leggett_gen2_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
-        caplog,
     ):
-        """Test move head up on Gen2 logs warning (position-based control)."""
+        """Test move head up on Gen2 sends motor command."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_up()
 
-        assert "position-based control" in caplog.text
+        # _move_with_stop sends the motor command then MOTOR_STOP_ALL
+        assert mock_bleak_client.write_gatt_char.called
+        last_call = mock_bleak_client.write_gatt_char.call_args
+        assert last_call[0][1] == LeggettGen2Commands.MOTOR_STOP_ALL
 
     async def test_move_head_stop_gen2(
         self,
@@ -142,14 +144,14 @@ class TestLeggettMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head stop sends STOP command."""
+        """Test move head stop sends MOTOR_STOP_ALL command."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_stop()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.STOP, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MOTOR_STOP_ALL, response=True
         )
 
     async def test_stop_all_gen2(
@@ -159,14 +161,14 @@ class TestLeggettMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test stop all sends STOP command."""
+        """Test stop all sends MOTOR_STOP_ALL command."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.STOP, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MOTOR_STOP_ALL, response=True
         )
 
 

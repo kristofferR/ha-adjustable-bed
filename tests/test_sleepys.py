@@ -147,23 +147,23 @@ class TestSleepysBox15Commands:
     def test_header_is_3_bytes(self):
         """Header should be exactly 3 bytes."""
         assert len(SleepysBox15Commands.HEADER) == 3
-        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x2C])
+        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x16])
 
     def test_motor_command_values(self):
         """Verify motor command values."""
         assert SleepysBox15Commands.STOP == 0x00
-        assert SleepysBox15Commands.HEAD_UP == 0x02
-        assert SleepysBox15Commands.HEAD_DOWN == 0x01
-        assert SleepysBox15Commands.FOOT_UP == 0x08
-        assert SleepysBox15Commands.FOOT_DOWN == 0x04
-        assert SleepysBox15Commands.LUMBAR_UP == 0x20
-        assert SleepysBox15Commands.LUMBAR_DOWN == 0x10
+        assert SleepysBox15Commands.HEAD_UP == 0x01
+        assert SleepysBox15Commands.HEAD_DOWN == 0x02
+        assert SleepysBox15Commands.FOOT_UP == 0x04
+        assert SleepysBox15Commands.FOOT_DOWN == 0x08
+        assert SleepysBox15Commands.LUMBAR_UP == 0x10
+        assert SleepysBox15Commands.LUMBAR_DOWN == 0x20
 
     def test_preset_byte_values(self):
         """Verify preset command byte values."""
         assert SleepysBox15Commands.FLAT_BYTE4 == 0x00
-        assert SleepysBox15Commands.FLAT_BYTE6 == 0x10
-        assert SleepysBox15Commands.ZERO_G_BYTE4 == 0x20
+        assert SleepysBox15Commands.FLAT_BYTE6 == 0x08
+        assert SleepysBox15Commands.ZERO_G_BYTE4 == 0x10
         assert SleepysBox15Commands.ZERO_G_BYTE6 == 0x00
 
 
@@ -173,20 +173,20 @@ class TestSleepysBox24Commands:
     def test_header_is_6_bytes(self):
         """Header should be exactly 6 bytes."""
         assert len(SleepysBox24Commands.HEADER) == 6
-        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40])
+        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20])
 
     def test_motor_command_values(self):
         """Verify motor command values."""
         assert SleepysBox24Commands.STOP == 0x00
-        assert SleepysBox24Commands.HEAD_UP == 0x02
-        assert SleepysBox24Commands.HEAD_DOWN == 0x01
-        assert SleepysBox24Commands.FOOT_UP == 0x06
-        assert SleepysBox24Commands.FOOT_DOWN == 0x05
+        assert SleepysBox24Commands.HEAD_UP == 0x01
+        assert SleepysBox24Commands.HEAD_DOWN == 0x02
+        assert SleepysBox24Commands.FOOT_UP == 0x03
+        assert SleepysBox24Commands.FOOT_DOWN == 0x04
 
     def test_preset_command_values(self):
         """Verify preset command values."""
-        assert SleepysBox24Commands.FLAT == 0xCC
-        assert SleepysBox24Commands.ZERO_G == 0xC0
+        assert SleepysBox24Commands.FLAT == 0x66
+        assert SleepysBox24Commands.ZERO_G == 0x60
 
 
 # -----------------------------------------------------------------------------
@@ -199,41 +199,41 @@ class TestBox15Checksum:
 
     def test_checksum_is_inverted_sum(self):
         """Checksum should be one's complement of 8-bit sum."""
-        data = bytes([0xE6, 0xFE, 0x2C, 0x02, 0x00, 0x00, 0x00, 0x00])
+        data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
         data_sum = sum(data) & 0xFF
         expected_checksum = (~data_sum) & 0xFF
         assert _calculate_box15_checksum(data) == expected_checksum
 
     def test_checksum_head_up_command(self):
         """Verify checksum for HEAD_UP command."""
-        # [0xE6, 0xFE, 0x2C, 0x02, 0x00, 0x00, 0x00, 0x00]
-        data = bytes([0xE6, 0xFE, 0x2C, 0x02, 0x00, 0x00, 0x00, 0x00])
+        # [0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00]
+        data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
         checksum = _calculate_box15_checksum(data)
-        # Sum: 0xE6 + 0xFE + 0x2C + 0x02 = 0x1AC -> 0xAC, inverted = ~0xAC = 0x53
-        assert checksum == (~(0xE6 + 0xFE + 0x2C + 0x02)) & 0xFF
+        # Sum: 0xE6 + 0xFE + 0x16 + 0x01 = 0x195 -> 0x95, inverted = ~0x95 = 0x6A
+        assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x01)) & 0xFF
 
     def test_checksum_stop_command(self):
         """Verify checksum for STOP command."""
-        data = bytes([0xE6, 0xFE, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x00])
+        data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00])
         checksum = _calculate_box15_checksum(data)
-        # Sum: 0xE6 + 0xFE + 0x2C = 0x1AA -> 0xAA, inverted = ~0xAA = 0x55
-        assert checksum == (~(0xE6 + 0xFE + 0x2C)) & 0xFF
+        # Sum: 0xE6 + 0xFE + 0x16 = 0x194 -> 0x94, inverted = ~0x94 = 0x6B
+        assert checksum == (~(0xE6 + 0xFE + 0x16)) & 0xFF
 
     def test_checksum_flat_preset(self):
         """Verify checksum for FLAT preset command."""
-        # [0xE6, 0xFE, 0x2C, 0x00, 0x00, 0x00, 0x10, 0x00]
-        data = bytes([0xE6, 0xFE, 0x2C, 0x00, 0x00, 0x00, 0x10, 0x00])
+        # [0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00]
+        data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00])
         checksum = _calculate_box15_checksum(data)
-        # Sum: 0xE6 + 0xFE + 0x2C + 0x10 = 0x1BA -> 0xBA, inverted = ~0xBA = 0x45
-        assert checksum == (~(0xE6 + 0xFE + 0x2C + 0x10)) & 0xFF
+        # Sum: 0xE6 + 0xFE + 0x16 + 0x08 = 0x19C -> 0x9C, inverted = ~0x9C = 0x63
+        assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x08)) & 0xFF
 
     def test_checksum_zero_g_preset(self):
         """Verify checksum for ZERO_G preset command."""
-        # [0xE6, 0xFE, 0x2C, 0x00, 0x20, 0x00, 0x00, 0x00]
-        data = bytes([0xE6, 0xFE, 0x2C, 0x00, 0x20, 0x00, 0x00, 0x00])
+        # [0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00]
+        data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00])
         checksum = _calculate_box15_checksum(data)
-        # Sum: 0xE6 + 0xFE + 0x2C + 0x20 = 0x1CA -> 0xCA, inverted = ~0xCA = 0x35
-        assert checksum == (~(0xE6 + 0xFE + 0x2C + 0x20)) & 0xFF
+        # Sum: 0xE6 + 0xFE + 0x16 + 0x10 = 0x1A4 -> 0xA4, inverted = ~0xA4 = 0x5B
+        assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x10)) & 0xFF
 
 
 # -----------------------------------------------------------------------------
@@ -834,7 +834,7 @@ class TestSleepysBox24CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_command(SleepysBox24Commands.STOP)
-        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40, 0x00])
+        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, 0x00])
         assert command == expected
 
     async def test_flat_preset_command_format(
@@ -848,7 +848,7 @@ class TestSleepysBox24CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_command(SleepysBox24Commands.FLAT)
-        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40, 0xCC])
+        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, 0x66])
         assert command == expected
 
     async def test_zero_g_preset_command_format(
@@ -862,7 +862,7 @@ class TestSleepysBox24CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_command(SleepysBox24Commands.ZERO_G)
-        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40, 0xC0])
+        expected = bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20, 0x60])
         assert command == expected
 
 
@@ -1157,17 +1157,17 @@ class TestSleepysProtocolDifferences:
 
     def test_different_headers(self):
         """BOX15 and BOX24 use different header bytes."""
-        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x2C])
-        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x40])
+        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x16])
+        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20])
 
     def test_different_foot_command_values(self):
         """BOX15 and BOX24 use different values for foot commands."""
-        # BOX15: FOOT_UP=0x08, FOOT_DOWN=0x04
-        assert SleepysBox15Commands.FOOT_UP == 0x08
-        assert SleepysBox15Commands.FOOT_DOWN == 0x04
-        # BOX24: FOOT_UP=0x06, FOOT_DOWN=0x05
-        assert SleepysBox24Commands.FOOT_UP == 0x06
-        assert SleepysBox24Commands.FOOT_DOWN == 0x05
+        # BOX15: FOOT_UP=0x04, FOOT_DOWN=0x08
+        assert SleepysBox15Commands.FOOT_UP == 0x04
+        assert SleepysBox15Commands.FOOT_DOWN == 0x08
+        # BOX24: FOOT_UP=0x03, FOOT_DOWN=0x04
+        assert SleepysBox24Commands.FOOT_UP == 0x03
+        assert SleepysBox24Commands.FOOT_DOWN == 0x04
 
 
 class TestSleepysBox25Controller:

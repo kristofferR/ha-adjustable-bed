@@ -5,7 +5,7 @@ Protocol reverse-engineered by @kristofferR based on discovery from @Zrau5454.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -156,7 +156,10 @@ class TestOkinNordicController:
             call[0][1] for call in mock_client.write_gatt_char.call_args_list
         ]
 
-    async def test_preset_commands(self, mock_okin_nordic_coordinator: AdjustableBedCoordinator):
+    @patch("asyncio.sleep", new_callable=AsyncMock)
+    async def test_preset_commands(
+        self, _mock_sleep, mock_okin_nordic_coordinator: AdjustableBedCoordinator
+    ):
         """Test preset position commands."""
         controller = OkinNordicController(mock_okin_nordic_coordinator)
         mock_client = AsyncMock()

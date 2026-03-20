@@ -447,8 +447,10 @@ class TestOkinUuidPresets:
         # Verify it's the 0x2A value
         assert first_call[0][1][5] == 0x2A
 
+    @patch("asyncio.sleep", new_callable=AsyncMock)
     async def test_preset_memory_available(
         self,
+        _mock_sleep,
         hass: HomeAssistant,
         mock_okin_uuid_93329_config_entry,
         mock_coordinator_connected,

@@ -147,7 +147,7 @@ class TestOctoPinAuth:
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             OCTO_CHAR_UUID,
             expected_packet,
-            response=True,
+            response=False,
         )
 
     async def test_send_pin_skips_when_bed_not_locked(
@@ -217,7 +217,7 @@ class TestOctoCommands:
         ):
             mock_move.side_effect = RuntimeError("move failed")
             with pytest.raises(RuntimeError, match="move failed"):
-                await controller._move_with_stop(OCTO_MOTOR_HEAD, "up")
+                await controller._octo_move_with_stop(OCTO_MOTOR_HEAD, "up")
 
             mock_stop.assert_awaited_once()
 
@@ -243,7 +243,7 @@ class TestOctoCommands:
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             OCTO_CHAR_UUID,
             expected_on,
-            response=True,
+            response=False,
         )
 
         mock_bleak_client.write_gatt_char.reset_mock()
@@ -255,7 +255,7 @@ class TestOctoCommands:
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             OCTO_CHAR_UUID,
             expected_off,
-            response=True,
+            response=False,
         )
 
     async def test_stop_all_sends_stop_packet(
@@ -278,5 +278,5 @@ class TestOctoCommands:
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             OCTO_CHAR_UUID,
             expected_stop,
-            response=True,
+            response=False,
         )
