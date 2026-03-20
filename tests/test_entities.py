@@ -369,10 +369,10 @@ class TestButtonEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
-        # Linak has memory_slot_count=4 and supports_memory_programming=True, but supports_preset_flat=False
-        # Should have: memory presets (4) + program_memory (4) + stop_all (1) + connect (1) + disconnect (1) = 11
+        # Linak has memory_slot_count=6 and supports_memory_programming=True, but supports_preset_flat=False
+        # Should have: memory presets (6) + program_memory (6) + stop_all (1) + connect (1) + disconnect (1) = 15
         # Massage buttons are excluded because has_massage=False
-        assert len(button_states) == 11
+        assert len(button_states) == 15
 
     async def test_button_entities_with_massage(
         self,
@@ -402,10 +402,10 @@ class TestButtonEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
-        # Should have: base (11) + massage buttons (11) = 22
-        # Base: memory presets (4) + program_memory (4) + stop_all (1) + connect (1) + disconnect (1) = 11
-        # (Linak has memory_slot_count=4, supports_memory_programming=True, supports_preset_flat=False)
-        assert len(button_states) == 22
+        # Should have: base (15) + massage buttons (11) = 26
+        # Base: memory presets (6) + program_memory (6) + stop_all (1) + connect (1) + disconnect (1) = 15
+        # (Linak has memory_slot_count=6, supports_memory_programming=True, supports_preset_flat=False)
+        assert len(button_states) == 26
 
     async def test_kaidi_entities_expose_book_leisure_direct_position_and_filtered_massage(
         self,
