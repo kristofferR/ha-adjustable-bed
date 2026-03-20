@@ -11,6 +11,10 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 - **Single Connection**: Most beds only accept ONE Bluetooth connection at a time - disconnect manufacturer apps first
 - **Idle Disconnect**: The integration disconnects after 40 seconds of idle time to allow other devices to connect
 
+### Does Your Bed Have Bluetooth?
+
+Not all adjustable beds include Bluetooth — some use only radio frequency (RF) to communicate with their remote. If your bed doesn't have a companion app for your phone, or doesn't appear in any BLE scanner (like [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile)), it likely doesn't have Bluetooth at all. Check with your manufacturer to confirm. Known non-Bluetooth models include the GhostBed adjustable base with the Okin CB1522 controller ([discussion](https://github.com/kristofferR/ha-adjustable-bed/discussions/248)).
+
 ### Beds Requiring Bluetooth Pairing
 
 Some beds require OS-level Bluetooth pairing before the integration can communicate:
