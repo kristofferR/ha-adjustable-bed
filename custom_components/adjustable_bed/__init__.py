@@ -56,6 +56,8 @@ from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .unsupported import create_pairing_required_issue
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 # Service constants
 SERVICE_GOTO_PRESET = "goto_preset"
 SERVICE_GENERATE_SUPPORT_BUNDLE = "generate_support_bundle"
