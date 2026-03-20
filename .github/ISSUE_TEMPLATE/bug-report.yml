@@ -58,44 +58,33 @@ body:
   - type: textarea
     id: diagnostics
     attributes:
-      label: Diagnostics / Support Report
+      label: Support Bundle
       description: |
-        **Quick Method (recommended):** Generate a support report with logs included:
+        **This is the single most important thing you can attach.** Without it, we'll need to ask for one before we can investigate.
+
         1. Go to Developer Tools → Actions
-        2. Search for `adjustable_bed.generate_support_report`
+        2. Search for `adjustable_bed.generate_support_bundle`
         3. Select your bed device and click "Perform action"
-        4. A notification will show the file location in your `/config/` folder
+        4. Click the **download link** in the notification that appears
         5. Drag and drop the JSON file here
 
         **Alternative:** Download diagnostics from Settings → Integrations → Adjustable Bed → ⋮ → Download diagnostics
-
-        All files automatically redact sensitive data (MAC addresses are partially redacted, keeping the manufacturer prefix).
-      placeholder: "Drag and drop the diagnostics or support report JSON file here"
+      placeholder: "Drag and drop the support bundle JSON file here"
     validations:
       required: true
 
   - type: textarea
     id: logs
     attributes:
-      label: Relevant Logs
+      label: Additional Logs
       description: |
-        **Copy relevant log entries:**
-        1. Go to Settings → System → Logs
-        2. Click "Load Full Logs"
-        3. Filter by "adjustable_bed"
-        4. Copy any error or warning messages
-
-        **For detailed logs**, enable debug logging first:
-        ```yaml
-        logger:
-          logs:
-            custom_components.adjustable_bed: debug
-            homeassistant.components.bluetooth: debug
-            bluetooth: debug
-        ```
+        The support bundle already includes recent logs. Only add extra logs here if you have **debug logging** output that captures the specific issue:
+        1. Settings → Devices & Services → Adjustable Bed → ⋮ → Enable debug logging
+        2. Reproduce the issue
+        3. Disable debug logging (browser downloads the log file)
+        4. Paste or attach the relevant entries
       render: text
-      placeholder: |
-        2026-01-15 10:30:00 ERROR (MainThread) [custom_components.adjustable_bed] ...
+      placeholder: "Paste debug log entries here (optional — the support bundle already includes logs)"
     validations:
       required: false
 
@@ -125,5 +114,5 @@ body:
           required: true
         - label: I have searched for [existing issues](https://github.com/kristofferR/ha-adjustable-bed/issues)
           required: true
-        - label: I have attached the diagnostics or support report file
+        - label: I have attached a support bundle or diagnostics file
           required: true

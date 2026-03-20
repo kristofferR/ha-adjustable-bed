@@ -234,7 +234,7 @@ custom_components/adjustable_bed/
 | `adjustable_bed.set_position` | Move motor to a specific position |
 | `adjustable_bed.timed_move` | Move motor for a specified duration |
 | `adjustable_bed.run_diagnostics` | Capture BLE protocol data for debugging |
-| `adjustable_bed.generate_support_report` | Generate JSON support report with diagnostics (params: device_id, include_logs) |
+| `adjustable_bed.generate_support_bundle` | Generate JSON support bundle with diagnostics (params: device_id, include_logs) |
 
 ## Critical Implementation Details
 

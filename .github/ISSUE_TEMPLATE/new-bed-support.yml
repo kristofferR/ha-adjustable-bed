@@ -51,16 +51,16 @@ body:
   - type: textarea
     id: diagnostics
     attributes:
-      label: Diagnostic Report
+      label: Support Bundle
       description: |
-        **To generate a diagnostic report:**
+        **The support bundle captures all BLE data needed to implement your bed's protocol** (service UUIDs, GATT structure, device name, advertisements). Without it, we cannot begin implementation.
+
         1. Add your bed to Home Assistant using "Diagnostic/Unknown" as the bed type
         2. Go to Developer Tools → Actions
-        3. Perform the `adjustable_bed.generate_support_report` action for your bed
-        4. Attach the generated JSON file here
-
-        This report contains all the BLE information we need (service UUIDs, device name, etc.) and is the easiest way to provide technical details.
-      placeholder: "Drag and drop the support report JSON file here"
+        3. Search for `adjustable_bed.generate_support_bundle` and select your bed
+        4. Click the **download link** in the notification that appears
+        5. Drag and drop the JSON file here
+      placeholder: "Drag and drop the support bundle JSON file here"
     validations:
       required: true
 

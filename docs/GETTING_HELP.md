@@ -2,6 +2,8 @@
 
 Need help with the Adjustable Bed integration? This guide explains how to get support and what information we'll need.
 
+> **Before opening any issue, generate a support bundle.** It's the single most useful thing you can provide — it includes your configuration, BLE details, connection state, and recent logs all in one file. Without it, the first response to your issue will be a request to generate one.
+
 ## Quick Links
 
 | I need to... | Go here |
@@ -42,18 +44,11 @@ Please check these resources first:
 
 ## Reporting a Bug
 
-If you've found a bug, please file a [Bug Report](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml). To help us fix the issue quickly, you'll need to provide:
+If you've found a bug, please file a [Bug Report](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=bug-report.yml).
 
-### Required Information
+**Start by generating a support bundle** — it contains everything we need to investigate. Then fill in the issue template with a description of the problem, steps to reproduce, and any other context.
 
-- **Description** of the problem and expected behavior
-- **Steps to reproduce** the issue
-- **Bed type** configured in the integration
-- **Home Assistant version**
-- **Connection method** (built-in Bluetooth, USB adapter, or ESPHome proxy)
-- **Diagnostics file** (see below)
-
-### Generating a Support Bundle (Recommended)
+### Generating a Support Bundle
 
 The support bundle includes everything we need in one file:
 
@@ -61,7 +56,7 @@ The support bundle includes everything we need in one file:
 2. Search for `adjustable_bed.generate_support_bundle`
 3. Select your bed device, or enter `target_address` for an unconfigured device, then click **Perform action**
 4. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
-5. A notification will show the file location (in your `/config/` folder)
+5. A notification will appear with a **download link** — click it to save the file
 6. Attach the JSON file to your GitHub issue
 
 The support bundle includes:
@@ -96,22 +91,17 @@ This captures only the relevant logs for this integration, making it easier to d
 
 ## Requesting Support for a New Bed
 
-If your bed isn't supported yet, file a [New Bed Support Request](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=new-bed-support.yml). We'll need:
+If your bed isn't supported yet, file a [New Bed Support Request](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=new-bed-support.yml).
 
-### Required Information
+**Start by generating a support bundle** — it captures all the BLE data (service UUIDs, device name, GATT structure) needed to implement a new protocol. Without it, we cannot begin implementation.
 
-- **Bed manufacturer and model** (e.g., "Tempur-Pedic Ergo Extend")
-- **Bluetooth device name** shown when adding the device
-- **BLE Service UUIDs** from diagnostics output
+1. Add your bed to Home Assistant using "Diagnostic/Unknown" as the bed type
+2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
+3. Select your bed device and click **Perform action**
+4. A notification will appear with a **download link** — click it to save the file
+5. Attach the JSON file to your issue
 
-### How to Find BLE Information
-
-The easiest way is to use the integration's built-in tools:
-
-1. **Find the MAC address if needed**: Settings → Integrations → Add Integration → Adjustable Bed → **Browse unsupported BLE devices**
-2. **Run the support bundle action**: Developer Tools → Actions → `adjustable_bed.generate_support_bundle`
-3. Select your configured bed, or enter `target_address` for an unsupported device
-4. **Check the output file** in your `/config/` folder for service UUIDs, detection details, and device info
+Then fill in the rest of the template with your bed manufacturer/model, remote model number, and any other details.
 
 If your bed doesn't appear in Home Assistant at all (not visible to any Bluetooth adapter), use [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) on your phone to verify the device exists and is advertising.
 
