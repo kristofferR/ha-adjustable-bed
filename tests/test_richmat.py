@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.richmat import (
+    RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS,
     RichmatCommands,
     RichmatController,
 )
@@ -537,6 +538,132 @@ class TestRichmatFeatureDetection:
         ]
         assert controller.stale_motor_entity_keys == {"back", "legs", "pillow", "lumbar"}
 
+    def test_qrrm_wilinke_supports_rgb_light_and_timer(self):
+        """QRRM WiLinke remotes should expose RGB light and timer controls."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+
+        assert controller.light_protocol_family == "rgb_strip"
+        assert controller.supports_light_color_control is True
+        assert controller.supports_light_timer is True
+        assert controller.supports_discrete_light_control is True
+        assert controller.supports_explicit_light_on_control is True
+        assert controller.default_light_rgb_color == (1, 221, 255)
+        expected_options = ["Always On", *[f"{minute} min" for minute in range(1, 31)]]
+        assert controller.light_timer_options == expected_options
+
+    def test_i7rm_sleep_function_prefers_rgb_strip_protocol(self):
+        """Sleep Function 2.0 aliases should stay on the newer RGB-strip family."""
+        coordinator = MagicMock()
+        controller = RichmatController(
+            coordinator,
+            is_wilinke=True,
+            remote_code="i7rm",
+            device_name="Sleep Function 2.0",
+        )
+
+        assert controller.light_protocol_family == "rgb_strip"
+        assert controller.supports_discrete_light_control is True
+        assert controller.supports_explicit_light_on_control is True
+
+    def test_i7rm_without_sleep_function_hint_uses_legacy_rgb_protocol(self):
+        """Generic I7RM remotes should default to the older Java RGB family."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="i7rm")
+
+        assert controller.light_protocol_family == "legacy_rgb"
+        assert controller.supports_discrete_light_control is False
+
+    def test_non_i7rm_casper_name_hint_stays_on_legacy_rgb_protocol(self):
+        """Casper-style names should not promote unrelated WiLinke remotes to RGB-strip."""
+        coordinator = MagicMock()
+        controller = RichmatController(
+            coordinator,
+            is_wilinke=True,
+            remote_code="virm",
+            entry_title="Casper Adjustable Bed",
+        )
+
+        assert controller.light_protocol_family == "legacy_rgb"
+        assert controller.supports_discrete_light_control is False
+
+    def test_qrrm_nordic_does_not_assume_rgb_light_packets(self):
+        """The recovered RGB packets are WiLinke-specific and should not be used on Nordic."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=False, remote_code="qrrm")
+
+        assert controller.supports_light_color_control is False
+        assert controller.supports_light_timer is False
+
+    def test_build_qrrm_light_color_command(self):
+        """QRRM RGB light packets should match the recovered Casper/Richmat app format."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+
+        command = controller._build_light_color_command((1, 221, 255))
+
+        assert command == bytes.fromhex("040b01010001ddff0000ee")
+
+    def test_build_qrrm_light_power_command(self):
+        """QRRM RGB-strip power packets should use explicit on/off frames."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+
+        assert controller._build_light_power_command(is_on=True) == bytes.fromhex(
+            "040904010002000014"
+        )
+        assert controller._build_light_power_command(is_on=False) == bytes.fromhex(
+            "040904010000000012"
+        )
+
+    def test_build_qrrm_light_timer_command(self):
+        """QRRM timer packets should use minute values in the RGB-strip frame."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="qrrm")
+
+        assert controller._build_light_timer_command(3) == bytes.fromhex("040a0201000003000014")
+        assert controller._build_light_timer_command(10) == bytes.fromhex(
+            "040a020100000a00001b"
+        )
+        assert controller._build_light_timer_command(0) == bytes.fromhex("040a0201000000000011")
+
+    def test_virm_wilinke_supports_legacy_rgb_light_and_timer(self):
+        """Legacy WiLinke remotes with lights should expose the older RGB family."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="virm")
+
+        assert controller.light_protocol_family == "legacy_rgb"
+        assert controller.supports_light_color_control is True
+        assert controller.supports_light_timer is True
+        assert controller.supports_discrete_light_control is False
+        assert controller.supports_explicit_light_on_control is True
+        assert controller.default_light_rgb_color == (0, 255, 0)
+        assert controller.light_timer_options == RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS
+
+    def test_build_legacy_richmat_light_color_command(self):
+        """Legacy Richmat RGB packets should match the older Java OEM apps."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="virm")
+
+        command = controller._build_light_color_command((1, 221, 255))
+
+        assert command == bytes.fromhex("6e0cff017a6e0dddff57")
+
+    def test_build_legacy_richmat_light_power_on_command(self):
+        """Legacy Richmat light power-on should use the confirmed TX_LED packet."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="virm")
+
+        assert controller._build_legacy_light_power_on_command() == bytes.fromhex("6e0a000179")
+
+    def test_build_legacy_richmat_light_timer_command(self):
+        """Legacy Richmat timers should use seconds up to the 300-second app limit."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="virm")
+
+        assert controller._build_light_timer_command(180) == bytes.fromhex("6e0b00b42d")
+        assert controller._build_light_timer_command(0) == bytes.fromhex("6e0b000079")
+
 
 class TestRichmatPresets:
     """Test Richmat preset commands."""
@@ -608,6 +735,142 @@ class TestRichmatPresets:
         expected_cmd = coordinator.controller._build_command(RichmatCommands.PRESET_ANTI_SNORE)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
+
+
+class TestRichmatRgbLights:
+    """Test Richmat RGB light controls."""
+
+    async def test_set_legacy_richmat_light_color(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Legacy WiLinke Richmat beds should send the older RGB packet."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Richmat VIRM Bed",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "virm",
+            },
+            unique_id="57:4C:62:AA:BB:CC",
+            entry_id="richmat_virm_light_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_color((1, 221, 255))
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            bytes.fromhex("6e0cff017a6e0dddff57"),
+            response=True,
+        )
+
+    async def test_set_legacy_richmat_light_timer(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Legacy WiLinke Richmat beds should use the older second-based timer packet."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Richmat VIRM Bed",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "virm",
+            },
+            unique_id="57:4C:62:AA:BB:CC",
+            entry_id="richmat_virm_timer_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_timer("3 min")
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            bytes.fromhex("6e0b00b42d"),
+            response=True,
+        )
+
+    async def test_set_qrrm_light_color(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """QRRM WiLinke beds should send the recovered RGB packet."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper QRRM Bed",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "qrrm",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="richmat_qrrm_light_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_color((1, 221, 255))
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            bytes.fromhex("040b01010001ddff0000ee"),
+            response=True,
+        )
+
+    async def test_set_qrrm_light_timer(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """QRRM WiLinke beds should support minute-granular RGB-strip timers."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper QRRM Bed",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "qrrm",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="richmat_qrrm_timer_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_timer("3 min")
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            bytes.fromhex("040a0201000003000014"),
+            response=True,
+        )
 
     @pytest.mark.parametrize(
         "memory_num,expected_value",

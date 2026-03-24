@@ -362,10 +362,22 @@ async def create_controller(
     if bed_type == BED_TYPE_RICHMAT:
         from .beds.richmat import RichmatController, detect_richmat_variant
 
+        entry = getattr(coordinator, "entry", None)
+        richmat_kwargs = {
+            "entry_title": getattr(entry, "title", None),
+            "configured_name": getattr(coordinator, "name", None),
+            "device_name": device_name,
+        }
+
         # Use configured variant or auto-detect
         if protocol_variant == RICHMAT_VARIANT_NORDIC:
             _LOGGER.debug("Using Nordic Richmat variant (configured)")
-            return RichmatController(coordinator, is_wilinke=False, remote_code=richmat_remote)
+            return RichmatController(
+                coordinator,
+                is_wilinke=False,
+                remote_code=richmat_remote,
+                **richmat_kwargs,
+            )
         elif protocol_variant == RICHMAT_VARIANT_WILINKE:
             _LOGGER.debug("Using WiLinke Richmat variant (configured)")
             # Still need to detect correct char_uuid - different WiLinke devices use different UUIDs
@@ -378,6 +390,7 @@ async def create_controller(
                 char_uuid=char_uuid,
                 remote_code=richmat_remote,
                 write_with_response=write_with_response,
+                **richmat_kwargs,
             )
         elif protocol_variant == RICHMAT_VARIANT_PREFIX55:
             _LOGGER.debug("Using Prefix55 Richmat variant (configured)")
@@ -391,6 +404,7 @@ async def create_controller(
                 command_protocol=RICHMAT_PROTOCOL_PREFIX55,
                 char_uuid=char_uuid,
                 write_with_response=write_with_response,
+                **richmat_kwargs,
             )
         elif protocol_variant == RICHMAT_VARIANT_PREFIXAA:
             _LOGGER.debug("Using PrefixAA Richmat variant (configured)")
@@ -404,6 +418,7 @@ async def create_controller(
                 command_protocol=RICHMAT_PROTOCOL_PREFIXAA,
                 char_uuid=char_uuid,
                 write_with_response=write_with_response,
+                **richmat_kwargs,
             )
         else:
             # Auto-detect variant based on available services
@@ -417,6 +432,7 @@ async def create_controller(
                 char_uuid=char_uuid,
                 remote_code=richmat_remote,
                 write_with_response=write_with_response,
+                **richmat_kwargs,
             )
 
     if bed_type == BED_TYPE_KEESON:

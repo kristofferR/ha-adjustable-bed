@@ -39,6 +39,27 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB = "legacy_rgb"
+RICHMAT_LIGHT_PROTOCOL_RGB_STRIP = "rgb_strip"
+
+RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"bt6500", "qrrm"})
+RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS = ("casper",)
+RICHMAT_LIGHT_TIMER_ALWAYS_ON = "Always On"
+
+RICHMAT_RGB_STRIP_LIGHT_DEFAULT_COLOR = (1, 221, 255)
+RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES = 30
+RICHMAT_RGB_STRIP_LIGHT_TIMER_OPTIONS = [
+    RICHMAT_LIGHT_TIMER_ALWAYS_ON,
+    *(f"{minute} min" for minute in range(1, RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES + 1)),
+]
+
+RICHMAT_LEGACY_RGB_LIGHT_DEFAULT_COLOR = (0, 255, 0)
+RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS = 300
+RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS = [
+    RICHMAT_LIGHT_TIMER_ALWAYS_ON,
+    *(f"{minute} min" for minute in range(1, 6)),
+]
+
 
 class RichmatCommands:
     """Richmat command constants (command byte values).
@@ -154,6 +175,9 @@ class RichmatController(BedController):
         remote_code: str | None = None,
         command_protocol: str | None = None,
         write_with_response: bool = True,
+        entry_title: str | None = None,
+        configured_name: str | None = None,
+        device_name: str | None = None,
     ) -> None:
         """Initialize the Richmat controller.
 
@@ -164,6 +188,9 @@ class RichmatController(BedController):
             remote_code: The remote code for feature detection (e.g., "VIRM", "I7RM")
             command_protocol: Override the command protocol (single, wilinke, prefix55, prefixaa)
             write_with_response: Whether to use write-with-response for GATT writes
+            entry_title: Config entry title for Richmat model-specific hints
+            configured_name: User-configured name for Richmat model-specific hints
+            device_name: BLE device name for Richmat model-specific hints
         """
         super().__init__(coordinator)
         self._is_wilinke = is_wilinke
@@ -182,13 +209,19 @@ class RichmatController(BedController):
         else:
             self._command_protocol = RICHMAT_PROTOCOL_SINGLE
         self._stop_command_byte = self._resolve_stop_command_byte()
+        self._light_protocol_family = self._resolve_light_protocol_family(
+            entry_title=entry_title,
+            configured_name=configured_name,
+            device_name=device_name,
+        )
 
         _LOGGER.debug(
-            "RichmatController initialized (char: %s, protocol: %s, remote: %s, stop: 0x%02X, response: %s)",
+            "RichmatController initialized (char: %s, protocol: %s, remote: %s, stop: 0x%02X, light_protocol: %s, response: %s)",
             self._char_uuid,
             self._command_protocol,
             self._remote_code,
             self._stop_command_byte,
+            self._light_protocol_family,
             self._write_with_response,
         )
 
@@ -210,6 +243,43 @@ class RichmatController(BedController):
     def _build_stop_command(self) -> bytes:
         """Build stop command bytes using resolved stop compatibility byte."""
         return self._build_command(self._stop_command_byte)
+
+    def _resolve_light_protocol_family(
+        self,
+        *,
+        entry_title: str | None,
+        configured_name: str | None,
+        device_name: str | None,
+    ) -> str | None:
+        """Resolve the Richmat light packet family for this controller."""
+        if self._command_protocol != RICHMAT_PROTOCOL_WILINKE:
+            return None
+
+        remote_code = (self._remote_code or "").lower()
+        if remote_code in {"", RICHMAT_REMOTE_AUTO}:
+            return None
+
+        haystack = " ".join(
+            part.lower()
+            for part in (entry_title, configured_name, device_name)
+            if part
+        )
+
+        if remote_code in RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES:
+            return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
+
+        if remote_code == "i7rm" and "sleep function" in haystack:
+            return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
+
+        if remote_code == "i7rm" and any(
+            hint in haystack for hint in RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS
+        ):
+            return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
+
+        if not bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS):
+            return None
+
+        return RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -300,12 +370,58 @@ class RichmatController(BedController):
     @property
     def supports_lights(self) -> bool:
         """Return True if this bed supports under-bed lights."""
-        return bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS)
+        return bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS) or (
+            self._light_protocol_family is not None
+        )
+
+    @property
+    def light_protocol_family(self) -> str | None:
+        """Return the selected Richmat light packet family for this bed."""
+        return self._light_protocol_family
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return False - Richmat only supports toggle, not discrete on/off."""
-        return False
+        """Return True when the selected light family has separate on/off packets."""
+        return self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        """Return True when the selected Richmat light family has an explicit ON packet."""
+        return self._light_protocol_family in {
+            RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB,
+            RICHMAT_LIGHT_PROTOCOL_RGB_STRIP,
+        }
+
+    @property
+    def supports_light_color_control(self) -> bool:
+        """Return True for Richmat remotes with verified RGB light packets."""
+        return self._light_protocol_family in {
+            RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB,
+            RICHMAT_LIGHT_PROTOCOL_RGB_STRIP,
+        }
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the default Richmat RGB light color used by the OEM apps."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            return RICHMAT_RGB_STRIP_LIGHT_DEFAULT_COLOR
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            return RICHMAT_LEGACY_RGB_LIGHT_DEFAULT_COLOR
+        return None
+
+    @property
+    def supports_light_timer(self) -> bool:
+        """Return True for Richmat remotes with the dedicated under-bed light timer UI."""
+        return self.supports_light_color_control
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        """Return supported Richmat under-bed light timer options."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            return list(RICHMAT_RGB_STRIP_LIGHT_TIMER_OPTIONS)
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            return list(RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS)
+        return []
 
     @property
     def supports_memory_presets(self) -> bool:
@@ -360,6 +476,90 @@ class RichmatController(BedController):
         else:
             # Single/Nordic: just the command byte
             return bytes([command_byte])
+
+    @staticmethod
+    def _richmat_checksum(payload: bytes) -> int:
+        """Return the Richmat additive checksum for a single command segment."""
+        return sum(payload) & 0xFF
+
+    def _build_rgb_light_frame(self, command_id: int, payload: bytes) -> bytes:
+        """Build a Richmat RGB-strip frame with additive checksum."""
+        frame = bytearray((0x04, 0x00, command_id, 0x01, 0x00))
+        frame.extend(payload)
+        frame.extend((0x00, 0x00))
+        frame[1] = len(frame) + 1
+        frame.append(self._richmat_checksum(bytes(frame)))
+        return bytes(frame)
+
+    def _build_legacy_rgb_light_segment(self, command_id: int, payload: bytes) -> bytes:
+        """Build a legacy Richmat RGB-light command segment with checksum."""
+        if len(payload) != 2:
+            raise ValueError(f"Legacy Richmat light payload must be 2 bytes, got {payload!r}")
+
+        segment = bytes((0x6E, command_id, payload[0], payload[1]))
+        return segment + bytes((self._richmat_checksum(segment),))
+
+    def _build_legacy_light_power_on_command(self) -> bytes:
+        """Build the legacy Richmat light power-on packet from the Java OEM apps."""
+        if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            raise NotImplementedError("Legacy Richmat light power command not supported")
+
+        return self._build_legacy_rgb_light_segment(0x0A, bytes((0x00, 0x01)))
+
+    def _build_legacy_light_color_command(self, rgb_color: tuple[int, int, int]) -> bytes:
+        """Build the legacy Richmat RGB color packet."""
+        red, green, blue = rgb_color
+        if not all(0 <= value <= 255 for value in (red, green, blue)):
+            raise ValueError(f"RGB values must be between 0 and 255: {rgb_color}")
+
+        return self._build_legacy_rgb_light_segment(0x0C, bytes((0xFF, red))) + (
+            self._build_legacy_rgb_light_segment(0x0D, bytes((green, blue)))
+        )
+
+    def _build_legacy_light_timer_command(self, seconds: int) -> bytes:
+        """Build the legacy Richmat light timer packet."""
+        if not 0 <= seconds <= RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS:
+            raise ValueError(f"Legacy Richmat light timer must be 0-300 seconds: {seconds}")
+
+        return self._build_legacy_rgb_light_segment(
+            0x0B,
+            bytes(((seconds >> 8) & 0xFF, seconds & 0xFF)),
+        )
+
+    def _build_light_color_command(self, rgb_color: tuple[int, int, int]) -> bytes:
+        """Build the Richmat RGB color packet for the selected light family."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            return self._build_legacy_light_color_command(rgb_color)
+        if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            raise NotImplementedError("RGB light control not supported for this Richmat remote")
+
+        red, green, blue = rgb_color
+        if not all(0 <= value <= 255 for value in (red, green, blue)):
+            raise ValueError(f"RGB values must be between 0 and 255: {rgb_color}")
+
+        return self._build_rgb_light_frame(0x01, bytes((red, green, blue)))
+
+    def _build_light_power_command(self, *, is_on: bool) -> bytes:
+        """Build the Richmat QRRM-family RGB-strip power packet."""
+        if self._light_protocol_family != RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            raise NotImplementedError("Discrete light power control not supported")
+
+        return self._build_rgb_light_frame(0x04, bytes((0x02 if is_on else 0x00,)))
+
+    def _build_rgb_strip_light_timer_command(self, minutes: int) -> bytes:
+        """Build the Richmat QRRM-family RGB-strip timer packet."""
+        if minutes < 0:
+            raise ValueError(f"Timer minutes must be >= 0: {minutes}")
+
+        return self._build_rgb_light_frame(0x02, bytes(((minutes >> 8) & 0xFF, minutes & 0xFF)))
+
+    def _build_light_timer_command(self, value: int) -> bytes:
+        """Build the Richmat light timer packet for the selected light family."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            return self._build_rgb_strip_light_timer_command(value)
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            return self._build_legacy_light_timer_command(value)
+        raise NotImplementedError("Light timer not supported for this Richmat remote")
 
     async def write_command(
         self,
@@ -578,12 +778,55 @@ class RichmatController(BedController):
         await self.write_command(self._build_command(RichmatCommands.LIGHTS_TOGGLE))
 
     async def lights_on(self) -> None:
-        """Turn on under-bed lights (toggle-only, state unknown)."""
+        """Turn on under-bed lights."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            await self.write_command(self._build_light_power_command(is_on=True))
+            return
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            await self.write_command(self._build_legacy_light_power_on_command())
+            return
         await self.lights_toggle()
 
     async def lights_off(self) -> None:
-        """Turn off under-bed lights (toggle-only, state unknown)."""
+        """Turn off under-bed lights."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            await self.write_command(self._build_light_power_command(is_on=False))
+            return
         await self.lights_toggle()
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set the Richmat under-bed light RGB color."""
+        await self.write_command(self._build_light_color_command(rgb_color))
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        """Set the Richmat under-bed light auto-off timer."""
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_RGB_STRIP:
+            if timer_option == RICHMAT_LIGHT_TIMER_ALWAYS_ON:
+                minutes = 0
+            elif timer_option.endswith(" min") and timer_option.split()[0].isdigit():
+                minutes = int(timer_option.split()[0])
+            else:
+                minutes = -1
+
+            if not 0 <= minutes <= RICHMAT_RGB_STRIP_LIGHT_TIMER_MAX_MINUTES:
+                raise ValueError(f"Unsupported Richmat light timer option: {timer_option}")
+            await self.write_command(self._build_light_timer_command(minutes))
+            return
+
+        if self._light_protocol_family == RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB:
+            if timer_option == RICHMAT_LIGHT_TIMER_ALWAYS_ON:
+                seconds = 0
+            elif timer_option.endswith(" min") and timer_option.split()[0].isdigit():
+                seconds = int(timer_option.split()[0]) * 60
+            else:
+                seconds = -1
+
+            if not 0 <= seconds <= RICHMAT_LEGACY_RGB_LIGHT_TIMER_MAX_SECONDS:
+                raise ValueError(f"Unsupported Richmat light timer option: {timer_option}")
+            await self.write_command(self._build_light_timer_command(seconds))
+            return
+
+        raise NotImplementedError("Light timer not supported for this Richmat remote")
 
     # Massage methods
     async def massage_toggle(self) -> None:

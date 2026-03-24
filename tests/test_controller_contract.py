@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_VARIANT_OKIN,
     OCTO_VARIANT_STANDARD,
     RICHMAT_VARIANT_NORDIC,
+    RICHMAT_VARIANT_WILINKE,
     SBI_VARIANT_BOTH,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
@@ -34,6 +35,7 @@ SHARED_CAPABILITY_FLAGS: tuple[str, ...] = (
     "supports_light",
     "supports_under_bed_lights",
     "supports_discrete_light_control",
+    "supports_light_color_control",
     "supports_light_cycle",
     "supports_position_feedback",
     "supports_massage",
@@ -90,6 +92,17 @@ async def _create_controller_for_bed_type(bed_type: str) -> BedController:
     """Create a controller through the factory for the given bed type."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+
+    if bed_type == BED_TYPE_RICHMAT:
+        return await create_controller(
+            coordinator,
+            bed_type,
+            RICHMAT_VARIANT_WILINKE,
+            client,
+            device_name="Casper QRRM Bed",
+            richmat_remote="qrrm",
+        )
+
     variant = _protocol_variant_for_bed_type(bed_type)
     return await create_controller(coordinator, bed_type, variant, client)
 
@@ -369,6 +382,9 @@ async def test_declared_capabilities_map_to_implemented_methods(bed_type: str) -
     if controller.supports_discrete_light_control:
         assert _is_overridden(controller, "lights_on")
         assert _is_overridden(controller, "lights_off")
+
+    if controller.supports_light_color_control:
+        assert _is_overridden(controller, "set_light_color")
 
     if controller.supports_memory_presets:
         assert controller.memory_slot_count > 0
