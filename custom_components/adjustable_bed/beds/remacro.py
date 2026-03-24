@@ -480,6 +480,8 @@ class RemacroController(BedController):
             [serial, 0x01, 0x01, 0x05, brightness, B, G, R]
         """
         r, g, b = rgb_color
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
         brightness = 255
         dp = (r << 24) | (g << 16) | (b << 8) | brightness
         packet = self._build_packet(RemacroCommands.LED_RGBV, dp)
