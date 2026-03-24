@@ -979,6 +979,8 @@ class OctoController(BedController):
             rgbw_color: RGBW tuple with values from 0-255.
         """
         r, g, b, w = rgbw_color
+        if not all(0 <= v <= 255 for v in (r, g, b, w)):
+            raise ValueError(f"RGBW values must be 0-255, got {rgbw_color}")
         intensity = 255
         value_type = self._rgbwi_value_type if self._rgbwi_value_type is not None else 0x05
         await self._write_octo_command(
