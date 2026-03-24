@@ -59,6 +59,7 @@ Brands using Richmat actuators:
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
 | Yoga / Read Presets | ✅ (some models) |
+| Split-King Sync | ✅ (discrete on/off) |
 
 ## Protocol Variants
 
