@@ -367,6 +367,8 @@ class LeggettGen2Controller(BedController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Set light RGB color using RGBSET command."""
         r, g, b = rgb_color
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
         await self.write_command(LeggettGen2Commands.rgb_set(r, g, b, 255))
 
     # Massage methods
