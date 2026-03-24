@@ -1024,6 +1024,58 @@ class TestRichmatMassage:
         )
 
 
+class TestRichmatSync:
+    """Test Richmat split-king sync commands."""
+
+    async def test_supports_synchro(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test that Richmat controller reports sync support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_synchro is True
+
+    async def test_set_synchro_on(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test sync on sends 0xBC command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_synchro(True)
+
+        expected_cmd = coordinator.controller._build_command(RichmatCommands.SYNC_ON)
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
+        )
+
+    async def test_set_synchro_off(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test sync off sends 0xBD command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_synchro(False)
+
+        expected_cmd = coordinator.controller._build_command(RichmatCommands.SYNC_OFF)
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
+        )
+
+
 class TestRichmatPositionNotifications:
     """Test Richmat position notification handling."""
 
