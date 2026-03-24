@@ -625,7 +625,7 @@ class TestOctoRGBWIFeatureValuePair:
         result = controller._extract_feature_value_pair(data)
 
         assert result is not None
-        feature_id, value, value_type = result
+        feature_id, _, _ = result
         assert feature_id == OCTO_FEATURE_END
 
 
