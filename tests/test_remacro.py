@@ -544,13 +544,13 @@ class TestRemacroPresets:
 class TestRemacroLights:
     """Test Remacro light commands."""
 
-    async def test_lights_on_sends_led_rgbv_white(
+    async def test_lights_on_sends_led_w_preset(
         self,
         hass: HomeAssistant,
         mock_remacro_config_entry,
         mock_coordinator_connected,
     ):
-        """lights_on should send LED_RGBV with white color (255, 255, 255)."""
+        """lights_on should send LED_W white preset command."""
         coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -559,16 +559,9 @@ class TestRemacroLights:
 
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
-        # LED_RGBV = 1281 = 0x0501 in little-endian: [0x01, 0x05]
-        assert call_data[2] == 0x01
+        # LED_W = 1282 = 0x0502 in little-endian: [0x02, 0x05]
+        assert call_data[2] == 0x02
         assert call_data[3] == 0x05
-        # White (255,255,255) at brightness 255:
-        # dp = (255 << 24) | (255 << 16) | (255 << 8) | 255 = 0xFFFFFFFF
-        # LE bytes: [0xFF, 0xFF, 0xFF, 0xFF]
-        assert call_data[4] == 0xFF
-        assert call_data[5] == 0xFF
-        assert call_data[6] == 0xFF
-        assert call_data[7] == 0xFF
 
     async def test_lights_off_sends_led_off(
         self,
@@ -638,10 +631,10 @@ class TestRemacroRGBLight:
         controller = RemacroController(MagicMock())
         assert controller.supports_light_color_control is True
 
-    def test_supports_explicit_light_on_control(self):
-        """RemacroController should report explicit light-on support."""
+    def test_supports_explicit_light_on_control_is_false(self):
+        """set_light_color inherently turns LED on, no separate on command needed."""
         controller = RemacroController(MagicMock())
-        assert controller.supports_explicit_light_on_control is True
+        assert controller.supports_explicit_light_on_control is False
 
     def test_supports_discrete_light_control(self):
         """RemacroController should report discrete on/off support."""
@@ -891,7 +884,7 @@ class TestRemacroLightEntity:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Light turn_on should send lights_on + set_light_color via BLE."""
+        """Light turn_on should send set_light_color only (no redundant lights_on)."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Jeromes Remacro Bed",
@@ -928,15 +921,12 @@ class TestRemacroLightEntity:
             blocking=True,
         )
 
-        # lights_on() sends set_light_color(white), then set_light_color(requested)
-        # But the light entity calls lights_on() then set_light_color(target_rgb),
-        # and lights_on() itself calls set_light_color((255,255,255)).
-        # So we get 2 writes: white from lights_on + requested color from entity.
+        # supports_explicit_light_on_control is False, so only set_light_color is sent
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) >= 2
+        assert len(calls) == 1
 
-        # The final (second) write should be the requested color
-        final_data = calls[-1][0][1]
+        # The single write should be the requested color
+        final_data = calls[0][0][1]
         assert len(final_data) == 8
         # LED_RGBV command: [0x01, 0x05]
         assert final_data[2] == 0x01

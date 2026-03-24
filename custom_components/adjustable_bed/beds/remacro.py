@@ -188,7 +188,7 @@ class RemacroController(BedController):
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
-        return True  # Sending LED_RGBV turns on the LED
+        return False  # set_light_color (LED_RGBV) inherently turns on the LED
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -463,8 +463,8 @@ class RemacroController(BedController):
         await self._send_command(RemacroCommands.LED_W)
 
     async def lights_on(self) -> None:
-        """Turn on under-bed light (white via LED_RGBV)."""
-        await self.set_light_color((255, 255, 255))
+        """Turn on under-bed light (white preset)."""
+        await self._send_command(RemacroCommands.LED_W)
 
     async def lights_off(self) -> None:
         """Turn off under-bed light."""
