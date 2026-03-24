@@ -183,6 +183,22 @@ class RemacroController(BedController):
         return True
 
     @property
+    def supports_light_color_control(self) -> bool:
+        return True
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        return True  # Sending LED_RGBV turns on the LED
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return True  # Has explicit LED_OFF command
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        return (255, 255, 255)  # White
+
+    @property
     def has_lumbar_support(self) -> bool:
         """Return True - Remacro beds support lumbar control."""
         return True
@@ -447,12 +463,27 @@ class RemacroController(BedController):
         await self._send_command(RemacroCommands.LED_W)
 
     async def lights_on(self) -> None:
-        """Turn on under-bed light (white mode)."""
-        await self._send_command(RemacroCommands.LED_W)
+        """Turn on under-bed light (white via LED_RGBV)."""
+        await self.set_light_color((255, 255, 255))
 
     async def lights_off(self) -> None:
         """Turn off under-bed light."""
         await self._send_command(RemacroCommands.LED_OFF)
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set LED color using LED_RGBV command.
+
+        The 32-bit parameter encodes RGB + brightness as:
+            dp = (R << 24) | (G << 16) | (B << 8) | brightness
+
+        This is split into little-endian bytes 4-7 of the packet:
+            [serial, 0x01, 0x01, 0x05, brightness, B, G, R]
+        """
+        r, g, b = rgb_color
+        brightness = 255
+        dp = (r << 24) | (g << 16) | (b << 8) | brightness
+        packet = self._build_packet(RemacroCommands.LED_RGBV, dp)
+        await self.write_command(packet)
 
     # Heat control
     async def heat_off(self) -> None:

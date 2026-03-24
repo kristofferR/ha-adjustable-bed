@@ -537,13 +537,13 @@ class TestRemacroPresets:
 class TestRemacroLights:
     """Test Remacro light commands."""
 
-    async def test_lights_on_sends_led_w(
+    async def test_lights_on_sends_led_rgbv_white(
         self,
         hass: HomeAssistant,
         mock_remacro_config_entry,
         mock_coordinator_connected,
     ):
-        """lights_on should send LED_W command."""
+        """lights_on should send LED_RGBV with white color (255, 255, 255)."""
         coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -552,9 +552,16 @@ class TestRemacroLights:
 
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
-        # LED_W = 1282 = 0x0502 in little-endian: [0x02, 0x05]
-        assert call_data[2] == 0x02
+        # LED_RGBV = 1281 = 0x0501 in little-endian: [0x01, 0x05]
+        assert call_data[2] == 0x01
         assert call_data[3] == 0x05
+        # White (255,255,255) at brightness 255:
+        # dp = (255 << 24) | (255 << 16) | (255 << 8) | 255 = 0xFFFFFFFF
+        # LE bytes: [0xFF, 0xFF, 0xFF, 0xFF]
+        assert call_data[4] == 0xFF
+        assert call_data[5] == 0xFF
+        assert call_data[6] == 0xFF
+        assert call_data[7] == 0xFF
 
     async def test_lights_off_sends_led_off(
         self,
