@@ -362,4 +362,5 @@ class MotoSleepController(BedController):
         separate on/off commands. The enabled parameter is accepted for
         interface compatibility but the same command is sent regardless.
         """
+        _LOGGER.debug("Toggling sync mode (requested state: %s)", enabled)
         await self.write_command(self._build_command(MotoSleepCommands.SYNC))

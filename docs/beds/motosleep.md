@@ -77,7 +77,6 @@
 | Massage Head Off | `24 4A` | `$J` |
 | Massage Foot Off | `24 49` | `$I` |
 | Sync Toggle | `24 7A` | `$z` |
-| Sync | `24 7A` | `$z` |
 
 ## Command Timing
 
