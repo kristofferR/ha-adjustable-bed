@@ -68,6 +68,9 @@ class MotoSleepCommands:
     # Lighting
     LIGHTS_TOGGLE = ord("A")
 
+    # Sync (split king)
+    SYNC = ord("z")  # 0x7A - toggle sync mode
+
 
 class MotoSleepController(BedController):
     """Controller for MotoSleep beds."""
@@ -128,6 +131,11 @@ class MotoSleepController(BedController):
     @property
     def has_neck_support(self) -> bool:
         """Return True - MotoSleep beds support neck motor control."""
+        return True
+
+    @property
+    def supports_synchro(self) -> bool:
+        """Return True - MotoSleep beds support split-king sync toggle."""
         return True
 
     def _build_command(self, char_code: int) -> bytes:
@@ -345,3 +353,14 @@ class MotoSleepController(BedController):
             repeat_count=100,
             repeat_delay_ms=150,
         )
+
+    # Sync mode (split king)
+    async def set_synchro(self, enabled: bool) -> None:
+        """Toggle split-king sync mode.
+
+        MotoSleep uses a single toggle command ($z / 0x7A) — there are no
+        separate on/off commands. The enabled parameter is accepted for
+        interface compatibility but the same command is sent regardless.
+        """
+        _LOGGER.debug("Toggling sync mode (requested state: %s)", enabled)
+        await self.write_command(self._build_command(MotoSleepCommands.SYNC))

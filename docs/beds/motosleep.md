@@ -25,6 +25,7 @@
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore | ✅ |
+| Split-King Sync | ✅ (toggle) |
 
 ## Protocol Details
 
@@ -75,7 +76,7 @@
 | Massage Foot Down | `24 46` | `$F` |
 | Massage Head Off | `24 4A` | `$J` |
 | Massage Foot Off | `24 49` | `$I` |
-| Sync | `24 7A` | `$z` |
+| Sync Toggle | `24 7A` | `$z` |
 
 ## Command Timing
 

@@ -611,6 +611,58 @@ class TestMotoSleepMassage:
         )
 
 
+class TestMotoSleepSync:
+    """Test MotoSleep split-king sync commands."""
+
+    async def test_supports_synchro(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test that MotoSleep controller reports sync support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_synchro is True
+
+    async def test_set_synchro_sends_toggle(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test sync toggle sends $z (0x24, 0x7A) command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_synchro(True)
+
+        expected = bytes([0x24, MotoSleepCommands.SYNC])
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            MOTOSLEEP_CHAR_UUID, expected, response=True
+        )
+
+    async def test_set_synchro_off_sends_same_toggle(
+        self,
+        hass: HomeAssistant,
+        mock_motosleep_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test sync off sends same toggle command (no discrete off)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_motosleep_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_synchro(False)
+
+        expected = bytes([0x24, MotoSleepCommands.SYNC])
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            MOTOSLEEP_CHAR_UUID, expected, response=True
+        )
+
+
 class TestMotoSleepPositionNotifications:
     """Test MotoSleep position notification handling."""
 
