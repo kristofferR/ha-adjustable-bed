@@ -574,6 +574,19 @@ class TestRichmatFeatureDetection:
         assert controller.light_protocol_family == "legacy_rgb"
         assert controller.supports_discrete_light_control is False
 
+    def test_non_i7rm_casper_name_hint_stays_on_legacy_rgb_protocol(self):
+        """Casper-style names should not promote unrelated WiLinke remotes to RGB-strip."""
+        coordinator = MagicMock()
+        controller = RichmatController(
+            coordinator,
+            is_wilinke=True,
+            remote_code="virm",
+            entry_title="Casper Adjustable Bed",
+        )
+
+        assert controller.light_protocol_family == "legacy_rgb"
+        assert controller.supports_discrete_light_control is False
+
     def test_qrrm_nordic_does_not_assume_rgb_light_packets(self):
         """The recovered RGB packets are WiLinke-specific and should not be used on Nordic."""
         coordinator = MagicMock()

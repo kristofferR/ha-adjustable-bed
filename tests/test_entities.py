@@ -688,6 +688,34 @@ class TestLightEntities:
         mock_bleak_client.write_gatt_char.reset_mock()
         await hass.services.async_call(
             "light",
+            "turn_on",
+            {
+                "entity_id": entity_id,
+                "rgb_color": [255, 0, 0],
+            },
+            blocking=True,
+        )
+
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(
+                coordinator.controller.control_characteristic_uuid,
+                coordinator.controller._build_light_power_command(is_on=True),
+                response=True,
+            ),
+            call(
+                coordinator.controller.control_characteristic_uuid,
+                coordinator.controller._build_light_color_command((255, 0, 0)),
+                response=True,
+            ),
+        ]
+        state = hass.states.get(entity_id)
+        assert state is not None
+        assert state.state == STATE_ON
+        assert state.attributes["rgb_color"] == (255, 0, 0)
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
             "turn_off",
             {"entity_id": entity_id},
             blocking=True,

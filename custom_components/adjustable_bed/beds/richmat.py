@@ -271,7 +271,9 @@ class RichmatController(BedController):
         if remote_code == "i7rm" and "sleep function" in haystack:
             return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
 
-        if any(hint in haystack for hint in RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS):
+        if remote_code == "i7rm" and any(
+            hint in haystack for hint in RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS
+        ):
             return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
 
         if not bool(self._features & RichmatFeatures.UNDER_BED_LIGHTS):
