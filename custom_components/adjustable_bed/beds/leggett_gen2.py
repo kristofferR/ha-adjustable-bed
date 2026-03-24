@@ -141,6 +141,21 @@ class LeggettGen2Controller(BedController):
         return True
 
     @property
+    def supports_light_color_control(self) -> bool:
+        """Return True - Gen2 beds support RGB light color control."""
+        return True
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        """Return True - RGBSET command turns the light on."""
+        return True
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return default white color."""
+        return (255, 255, 255)
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return True - Gen2 beds support memory presets 1-4."""
         return True
@@ -348,6 +363,13 @@ class LeggettGen2Controller(BedController):
     async def lights_off(self) -> None:
         """Turn off lights."""
         await self.write_command(LeggettGen2Commands.RGB_OFF)
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set light RGB color using RGBSET command."""
+        r, g, b = rgb_color
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
+        await self.write_command(LeggettGen2Commands.rgb_set(r, g, b, 255))
 
     # Massage methods
     async def massage_off(self) -> None:
