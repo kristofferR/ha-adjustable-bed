@@ -131,6 +131,10 @@ class RemacroCommands:
     LED_M1 = 1289  # 0x0509 - Mode 1
     LED_M2 = 1290  # 0x050A - Mode 2
     LED_M3 = 1291  # 0x050B - Mode 3
+    LED_M4 = 1292  # 0x050C - Mode 4
+    LED_M5 = 1293  # 0x050D - Mode 5
+    LED_M6 = 1294  # 0x050E - Mode 6
+    LED_RGBV_SAVE = 1295  # 0x050F - Save custom RGB to device memory
 
     # Heat control
     HEAT_OFF = 28672  # 0x7000
@@ -177,6 +181,22 @@ class RemacroController(BedController):
     @property
     def supports_lights(self) -> bool:
         return True
+
+    @property
+    def supports_light_color_control(self) -> bool:
+        return True
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        return False  # set_light_color (LED_RGBV) inherently turns on the LED
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return True  # Has explicit LED_OFF command
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        return (255, 255, 255)  # White
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -443,12 +463,29 @@ class RemacroController(BedController):
         await self._send_command(RemacroCommands.LED_W)
 
     async def lights_on(self) -> None:
-        """Turn on under-bed light (white mode)."""
+        """Turn on under-bed light (white preset)."""
         await self._send_command(RemacroCommands.LED_W)
 
     async def lights_off(self) -> None:
         """Turn off under-bed light."""
         await self._send_command(RemacroCommands.LED_OFF)
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set LED color using LED_RGBV command.
+
+        The 32-bit parameter encodes RGB + brightness as:
+            dp = (R << 24) | (G << 16) | (B << 8) | brightness
+
+        This is split into little-endian bytes 4-7 of the packet:
+            [serial, 0x01, 0x01, 0x05, brightness, B, G, R]
+        """
+        r, g, b = rgb_color
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
+        brightness = 255
+        dp = (r << 24) | (g << 16) | (b << 8) | brightness
+        packet = self._build_packet(RemacroCommands.LED_RGBV, dp)
+        await self.write_command(packet)
 
     # Heat control
     async def heat_off(self) -> None:

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.remacro import (
@@ -174,6 +177,10 @@ class TestRemacroCommands:
         assert RemacroCommands.LED_M1 == 1289  # 0x0509
         assert RemacroCommands.LED_M2 == 1290  # 0x050A
         assert RemacroCommands.LED_M3 == 1291  # 0x050B
+        assert RemacroCommands.LED_M4 == 1292  # 0x050C
+        assert RemacroCommands.LED_M5 == 1293  # 0x050D
+        assert RemacroCommands.LED_M6 == 1294  # 0x050E
+        assert RemacroCommands.LED_RGBV_SAVE == 1295  # 0x050F
 
     def test_heat_commands(self):
         """Heat commands should be correct."""
@@ -537,13 +544,13 @@ class TestRemacroPresets:
 class TestRemacroLights:
     """Test Remacro light commands."""
 
-    async def test_lights_on_sends_led_w(
+    async def test_lights_on_sends_led_w_preset(
         self,
         hass: HomeAssistant,
         mock_remacro_config_entry,
         mock_coordinator_connected,
     ):
-        """lights_on should send LED_W command."""
+        """lights_on should send LED_W white preset command."""
         coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -609,3 +616,374 @@ class TestRemacroSerialNumber:
         # Should contain 1-255, then back to 1
         assert serials[:255] == list(range(1, 256))
         assert serials[255] == 1
+
+
+# -----------------------------------------------------------------------------
+# RGB Light Control Tests
+# -----------------------------------------------------------------------------
+
+
+class TestRemacroRGBLight:
+    """Test Remacro RGB light color control."""
+
+    def test_supports_light_color_control(self):
+        """RemacroController should report RGB light color support."""
+        controller = RemacroController(MagicMock())
+        assert controller.supports_light_color_control is True
+
+    def test_supports_explicit_light_on_control_is_false(self):
+        """set_light_color inherently turns LED on, no separate on command needed."""
+        controller = RemacroController(MagicMock())
+        assert controller.supports_explicit_light_on_control is False
+
+    def test_supports_discrete_light_control(self):
+        """RemacroController should report discrete on/off support."""
+        controller = RemacroController(MagicMock())
+        assert controller.supports_discrete_light_control is True
+
+    def test_default_light_rgb_color_is_white(self):
+        """Default RGB color should be white (255, 255, 255)."""
+        controller = RemacroController(MagicMock())
+        assert controller.default_light_rgb_color == (255, 255, 255)
+
+    def test_set_light_color_rgb_encoding(self):
+        """set_light_color should encode dp = (R << 24) | (G << 16) | (B << 8) | brightness."""
+        controller = RemacroController(MagicMock())
+
+        # R=255, G=0, B=128 with brightness=255
+        # dp = (255 << 24) | (0 << 16) | (128 << 8) | 255 = 0xFF0080FF
+        # Little-endian bytes 4-7: [0xFF, 0x80, 0x00, 0xFF]
+        packet = controller._build_packet(RemacroCommands.LED_RGBV, (255 << 24) | (0 << 16) | (128 << 8) | 255)
+
+        assert len(packet) == 8
+        # Command bytes: LED_RGBV = 1281 = 0x0501 LE: [0x01, 0x05]
+        assert packet[2] == 0x01
+        assert packet[3] == 0x05
+        # Parameter LE: [brightness=0xFF, B=0x80, G=0x00, R=0xFF]
+        assert packet[4] == 0xFF  # brightness
+        assert packet[5] == 0x80  # B
+        assert packet[6] == 0x00  # G
+        assert packet[7] == 0xFF  # R
+
+    def test_set_light_color_pure_red(self):
+        """Pure red (255, 0, 0) should encode correctly."""
+        controller = RemacroController(MagicMock())
+
+        # dp = (255 << 24) | (0 << 16) | (0 << 8) | 255 = 0xFF0000FF
+        packet = controller._build_packet(RemacroCommands.LED_RGBV, (255 << 24) | (0 << 16) | (0 << 8) | 255)
+
+        assert packet[4] == 0xFF  # brightness
+        assert packet[5] == 0x00  # B
+        assert packet[6] == 0x00  # G
+        assert packet[7] == 0xFF  # R
+
+    def test_set_light_color_pure_green(self):
+        """Pure green (0, 255, 0) should encode correctly."""
+        controller = RemacroController(MagicMock())
+
+        # dp = (0 << 24) | (255 << 16) | (0 << 8) | 255 = 0x00FF00FF
+        packet = controller._build_packet(RemacroCommands.LED_RGBV, (0 << 24) | (255 << 16) | (0 << 8) | 255)
+
+        assert packet[4] == 0xFF  # brightness
+        assert packet[5] == 0x00  # B
+        assert packet[6] == 0xFF  # G
+        assert packet[7] == 0x00  # R
+
+    def test_set_light_color_pure_blue(self):
+        """Pure blue (0, 0, 255) should encode correctly."""
+        controller = RemacroController(MagicMock())
+
+        # dp = (0 << 24) | (0 << 16) | (255 << 8) | 255 = 0x0000FFFF
+        packet = controller._build_packet(RemacroCommands.LED_RGBV, (0 << 24) | (0 << 16) | (255 << 8) | 255)
+
+        assert packet[4] == 0xFF  # brightness
+        assert packet[5] == 0xFF  # B
+        assert packet[6] == 0x00  # G
+        assert packet[7] == 0x00  # R
+
+    async def test_set_light_color_sends_correct_ble_command(
+        self,
+        hass: HomeAssistant,
+        mock_remacro_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_light_color should send LED_RGBV packet via BLE."""
+        coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.set_light_color((255, 0, 128))
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert len(call_data) == 8
+        # LED_RGBV = 0x0501 LE
+        assert call_data[2] == 0x01
+        assert call_data[3] == 0x05
+        # (255 << 24) | (0 << 16) | (128 << 8) | 255 = 0xFF0080FF
+        # LE: [0xFF, 0x80, 0x00, 0xFF]
+        assert call_data[4] == 0xFF  # brightness
+        assert call_data[5] == 0x80  # B
+        assert call_data[6] == 0x00  # G
+        assert call_data[7] == 0xFF  # R
+
+    async def test_lights_off_sends_led_off_with_zero_parameter(
+        self,
+        hass: HomeAssistant,
+        mock_remacro_config_entry,
+        mock_coordinator_connected,
+    ):
+        """lights_off should send LED_OFF (0x0500) with zero parameter."""
+        coordinator = AdjustableBedCoordinator(hass, mock_remacro_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.lights_off()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        # LED_OFF = 1280 = 0x0500 LE: [0x00, 0x05]
+        assert call_data[2] == 0x00
+        assert call_data[3] == 0x05
+        # Parameter should be zero
+        assert call_data[4] == 0x00
+        assert call_data[5] == 0x00
+        assert call_data[6] == 0x00
+        assert call_data[7] == 0x00
+
+
+class TestRemacroLightEntity:
+    """Test Remacro light entity integration."""
+
+    async def test_light_entity_created_for_remacro(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Remacro beds should expose a light entity."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jeromes Remacro Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:10",
+                CONF_NAME: "Jeromes Remacro Bed",
+                CONF_BED_TYPE: BED_TYPE_REMACRO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:10",
+            entry_id="remacro_light_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        assert registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights"
+        ) is not None
+
+    async def test_switch_entity_removed_when_light_entity_exists(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Legacy switch entity should be removed for Remacro beds with RGB light."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jeromes Remacro Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:11",
+                CONF_NAME: "Jeromes Remacro Bed",
+                CONF_BED_TYPE: BED_TYPE_REMACRO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:11",
+            entry_id="remacro_light_switch_removal_entry",
+        )
+        entry.add_to_hass(hass)
+
+        # Pre-create a stale switch entity
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:11_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="jeromes_remacro_bed_under_bed_lights",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Switch should have been removed
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:11_under_bed_lights")
+            is None
+        )
+        # Light entity should exist
+        assert registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:11_under_bed_lights"
+        ) is not None
+
+    async def test_toggle_light_button_removed_when_light_entity_exists(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Toggle light button should be removed for Remacro beds with RGB light."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jeromes Remacro Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:12",
+                CONF_NAME: "Jeromes Remacro Bed",
+                CONF_BED_TYPE: BED_TYPE_REMACRO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:12",
+            entry_id="remacro_light_button_removal_entry",
+        )
+        entry.add_to_hass(hass)
+
+        # Pre-create a stale toggle button
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:12_toggle_light",
+            config_entry=entry,
+            suggested_object_id="jeromes_remacro_bed_toggle_light",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Toggle button should have been removed
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:12_toggle_light")
+            is None
+        )
+
+    async def test_light_turn_on_sends_correct_ble_commands(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Light turn_on should send set_light_color only (no redundant lights_on)."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jeromes Remacro Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:13",
+                CONF_NAME: "Jeromes Remacro Bed",
+                CONF_BED_TYPE: BED_TYPE_REMACRO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:13",
+            entry_id="remacro_light_turn_on_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:13_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id, "rgb_color": [100, 200, 50]},
+            blocking=True,
+        )
+
+        # supports_explicit_light_on_control is False, so only set_light_color is sent
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+
+        # The single write should be the requested color
+        final_data = calls[0][0][1]
+        assert len(final_data) == 8
+        # LED_RGBV command: [0x01, 0x05]
+        assert final_data[2] == 0x01
+        assert final_data[3] == 0x05
+        # (100 << 24) | (200 << 16) | (50 << 8) | 255 = 0x64C832FF
+        # LE: [0xFF, 0x32, 0xC8, 0x64]
+        assert final_data[4] == 0xFF  # brightness
+        assert final_data[5] == 50  # B
+        assert final_data[6] == 200  # G
+        assert final_data[7] == 100  # R
+
+    async def test_light_turn_off_sends_led_off_command(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Light turn_off should send LED_OFF command via BLE."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Jeromes Remacro Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:14",
+                CONF_NAME: "Jeromes Remacro Bed",
+                CONF_BED_TYPE: BED_TYPE_REMACRO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:14",
+            entry_id="remacro_light_turn_off_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:14_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        # Should send LED_OFF command
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) >= 1
+        call_data = calls[0][0][1]
+        # LED_OFF = 0x0500 LE: [0x00, 0x05]
+        assert call_data[2] == 0x00
+        assert call_data[3] == 0x05
