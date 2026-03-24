@@ -10,6 +10,7 @@ This guide covers all configuration options available for the Adjustable Bed int
 - [Motor Pulse Settings](#motor-pulse-settings)
 - [Protocol Variants](#protocol-variants)
 - [Bed-Specific Settings](#bed-specific-settings)
+- [Split-King / Sync Mode](#split-king--sync-mode)
 - [Troubleshooting Tips](#troubleshooting-tips)
 
 ---
@@ -289,6 +290,44 @@ Increase the "Motor pulse delay" setting. Try 100ms, then 150ms if needed.
 - **Richmat beds:** Select your specific remote code in options
 - **Other beds:** Verify motor count matches your bed's actual motors
 - **Massage not showing:** Enable "Has massage" in options
+
+---
+
+## Split-King / Sync Mode
+
+Split-king beds have two independently adjustable sides connected to the same controller. The **Synchro Mode** switch lets you link or unlink both sides so they move together or independently — without physically connecting or disconnecting the sync cable.
+
+### Supported Beds
+
+| Bed Type | Sync Control | State Tracking |
+|----------|-------------|----------------|
+| Octo | On/Off | Precise (reads back from bed) |
+| Richmat | On/Off | Assumed (tracks commands sent) |
+| SUTA | On/Off | Assumed (tracks commands sent) |
+| MotoSleep | Toggle | Unreliable (toggle-only, no separate on/off) |
+
+### How to Enable
+
+The Synchro Mode switch is **disabled by default** to avoid confusion for users without split-king beds. To enable it:
+
+1. Go to **Settings** → **Devices & Services**
+2. Click on your adjustable bed device
+3. Under **Entities**, find **Synchro Mode** (it will show as disabled)
+4. Click on it and toggle **Enabled** on
+5. The switch will appear on your device's dashboard
+
+### How It Works
+
+- **Sync On:** Both sides of the bed move together when you control either side
+- **Sync Off:** Each side moves independently
+
+For beds with discrete on/off commands (Octo, Richmat, SUTA), the switch state accurately reflects whether sync is enabled. For MotoSleep, the sync command is a toggle — the switch state may drift if the physical remote is also used to toggle sync.
+
+### Tips
+
+- You can leave the physical sync cable connected and control sync mode via this switch instead
+- The sync state persists on the bed controller — it survives Home Assistant restarts
+- Add the switch to automations (e.g., enable sync at bedtime, disable in the morning for independent adjustment)
 
 ---
 
