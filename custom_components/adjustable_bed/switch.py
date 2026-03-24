@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import BED_TYPE_OCTO, DOMAIN
@@ -68,6 +69,7 @@ async def async_setup_entry(
     """Set up Adjustable Bed switch entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     controller = coordinator.controller
+    registry = er.async_get(hass)
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
@@ -76,6 +78,13 @@ async def async_setup_entry(
             and controller is not None
             and getattr(controller, "supports_light_color_control", False)
         ):
+            entity_id = registry.async_get_entity_id(
+                "switch",
+                DOMAIN,
+                f"{coordinator.address}_{description.key}",
+            )
+            if entity_id is not None:
+                registry.async_remove(entity_id)
             continue
         # Skip switches restricted to specific bed types
         if description.required_bed_types is not None:

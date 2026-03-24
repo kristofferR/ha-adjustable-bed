@@ -40,7 +40,11 @@ def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
     if not isinstance(value, (list, tuple)) or len(value) != 3:
         return None
 
-    rgb = tuple(int(channel) for channel in value)
+    try:
+        rgb = tuple(int(channel) for channel in value)
+    except (TypeError, ValueError):
+        return None
+
     if any(channel < 0 or channel > 255 for channel in rgb):
         return None
     return rgb

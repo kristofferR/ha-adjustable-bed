@@ -549,8 +549,8 @@ class TestRichmatFeatureDetection:
         assert controller.supports_discrete_light_control is True
         assert controller.supports_explicit_light_on_control is True
         assert controller.default_light_rgb_color == (1, 221, 255)
-        assert controller.light_timer_options[:4] == ["Always On", "1 min", "2 min", "3 min"]
-        assert controller.light_timer_options[-1] == "30 min"
+        expected_options = ["Always On", *[f"{minute} min" for minute in range(1, 31)]]
+        assert controller.light_timer_options == expected_options
 
     def test_i7rm_sleep_function_prefers_rgb_strip_protocol(self):
         """Sleep Function 2.0 aliases should stay on the newer RGB-strip family."""

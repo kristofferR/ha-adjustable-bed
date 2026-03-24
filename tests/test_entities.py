@@ -586,6 +586,13 @@ class TestLightEntities:
 
         registry = er.async_get(hass)
         registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "57:4C:62:C3:39:05_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="casper_qrrm_bed_under_bed_lights",
+        )
+        registry.async_get_or_create(
             "button",
             DOMAIN,
             "57:4C:62:C3:39:05_toggle_light",
@@ -686,11 +693,13 @@ class TestLightEntities:
             blocking=True,
         )
 
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            coordinator.controller.control_characteristic_uuid,
-            coordinator.controller._build_light_power_command(is_on=False),
-            response=True,
-        )
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(
+                coordinator.controller.control_characteristic_uuid,
+                coordinator.controller._build_light_power_command(is_on=False),
+                response=True,
+            )
+        ]
 
     async def test_richmat_qrrm_light_timer_select_supports_three_minutes(
         self,
