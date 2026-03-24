@@ -168,3 +168,56 @@ class TestSutaController:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) == 1
         assert calls[0][0][1] == _to_packet(SutaCommands.PRESET_TV)
+
+
+class TestSutaSync:
+    """Test SUTA split-king sync commands."""
+
+    async def test_supports_synchro(
+        self,
+        suta_coordinator,
+    ) -> None:
+        """Test that SUTA controller reports sync support."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:07",
+            name="SUTA-B201C",
+            entry_id="suta_test_entry_7",
+        )
+
+        assert coordinator.controller.supports_synchro is True
+
+    async def test_set_synchro_on(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Test sync on sends AT+SINSLAVE=ON command."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:08",
+            name="SUTA-B201D",
+            entry_id="suta_test_entry_8",
+        )
+
+        await coordinator.controller.set_synchro(True)
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+        assert calls[0][0][1] == _to_packet(SutaCommands.SYNC_SLAVE_ON)
+
+    async def test_set_synchro_off(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Test sync off sends AT+SINSLAVE=OFF command."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:09",
+            name="SUTA-B201E",
+            entry_id="suta_test_entry_9",
+        )
+
+        await coordinator.controller.set_synchro(False)
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert len(calls) == 1
+        assert calls[0][0][1] == _to_packet(SutaCommands.SYNC_SLAVE_OFF)
