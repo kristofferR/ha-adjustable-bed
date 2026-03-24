@@ -70,6 +70,10 @@ class SutaCommands:
     LIGHT_ON = "AT+ENABLE=LIGHT"
     LIGHT_OFF = "AT+DISABLE=LIGHT"
 
+    # Sync (split king)
+    SYNC_SLAVE_ON = "AT+SINSLAVE=ON"
+    SYNC_SLAVE_OFF = "AT+SINSLAVE=OFF"
+
 
 class SutaController(BedController):
     """Controller for SUTA Smart Home bed-frame devices."""
@@ -122,6 +126,11 @@ class SutaController(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
+        return True
+
+    @property
+    def supports_synchro(self) -> bool:
+        """Return True - SUTA beds support split-king sync slave mode."""
         return True
 
     def _build_command(self, command: str) -> bytes:
@@ -378,3 +387,13 @@ class SutaController(BedController):
             repeat_count=2,
             repeat_delay_ms=100,
         )
+
+    # Sync mode (split king)
+    async def set_synchro(self, enabled: bool) -> None:
+        """Enable or disable split-king sync slave mode.
+
+        When enabled, this side mirrors the other side's movements.
+        Sends AT+SINSLAVE=ON or AT+SINSLAVE=OFF.
+        """
+        cmd = SutaCommands.SYNC_SLAVE_ON if enabled else SutaCommands.SYNC_SLAVE_OFF
+        await self.write_command(self._build_command(cmd))
