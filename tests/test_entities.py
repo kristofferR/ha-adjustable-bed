@@ -776,7 +776,7 @@ class TestLightEntities:
             blocking=True,
         )
 
-        mock_bleak_client.write_gatt_char.assert_called_with(
+        mock_bleak_client.write_gatt_char.assert_called_once_with(
             coordinator.controller.control_characteristic_uuid,
             coordinator.controller._build_light_timer_command(3),
             response=True,
@@ -912,7 +912,7 @@ class TestLightEntities:
             blocking=True,
         )
 
-        mock_bleak_client.write_gatt_char.assert_called_with(
+        mock_bleak_client.write_gatt_char.assert_called_once_with(
             coordinator.controller.control_characteristic_uuid,
             coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE),
             response=True,
@@ -965,7 +965,7 @@ class TestLightEntities:
             blocking=True,
         )
 
-        mock_bleak_client.write_gatt_char.assert_called_with(
+        mock_bleak_client.write_gatt_char.assert_called_once_with(
             coordinator.controller.control_characteristic_uuid,
             coordinator.controller._build_light_timer_command(180),
             response=True,
