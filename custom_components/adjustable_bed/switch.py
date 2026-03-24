@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import BED_TYPE_OCTO, DOMAIN
+from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -54,7 +54,7 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:link-variant",
         turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
         turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
-        required_bed_types=(BED_TYPE_OCTO,),
+        required_capability="supports_synchro",
         entity_registry_enabled_default=False,
         has_discrete_control=True,
     ),
