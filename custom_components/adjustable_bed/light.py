@@ -123,7 +123,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             raise ValueError("No RGB color available for this light")
 
         async def _turn_on(ctrl: BedController) -> None:
-            if not self._attr_is_on and getattr(ctrl, "supports_discrete_light_control", False):
+            if not self._attr_is_on and getattr(
+                ctrl, "supports_explicit_light_on_control", False
+            ):
                 await ctrl.lights_on()
             await ctrl.set_light_color(target_rgb)
 

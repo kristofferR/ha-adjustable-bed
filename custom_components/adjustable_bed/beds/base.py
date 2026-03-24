@@ -635,6 +635,16 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_explicit_light_on_control(self) -> bool:
+        """Return True if bed has a dedicated light-on command.
+
+        Beds with discrete on/off inherently support explicit power-on.
+        Toggle-only controllers can override this when they still expose
+        an idempotent or otherwise dedicated light-on packet.
+        """
+        return self.supports_discrete_light_control
+
+    @property
     def supports_light_color_control(self) -> bool:
         """Return True if bed supports setting light RGB color directly."""
         return False
