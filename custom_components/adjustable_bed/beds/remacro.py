@@ -131,6 +131,10 @@ class RemacroCommands:
     LED_M1 = 1289  # 0x0509 - Mode 1
     LED_M2 = 1290  # 0x050A - Mode 2
     LED_M3 = 1291  # 0x050B - Mode 3
+    LED_M4 = 1292  # 0x050C - Mode 4
+    LED_M5 = 1293  # 0x050D - Mode 5
+    LED_M6 = 1294  # 0x050E - Mode 6
+    LED_RGBV_SAVE = 1295  # 0x050F - Save custom RGB to device memory
 
     # Heat control
     HEAT_OFF = 28672  # 0x7000
