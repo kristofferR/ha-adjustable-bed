@@ -966,6 +966,26 @@ class OctoController(BedController):
         """
         await self.lights_on()
 
+    async def set_light_color_rgbw(self, rgbw_color: tuple[int, int, int, int]) -> None:
+        """Set RGBWI light color.
+
+        Sends a SYSTEM_SET_CAPS packet for CAP_LIGHT_RGBWI (0x000104) with
+        R, G, B, W channels from the caller and intensity fixed at 255.
+
+        The valueType byte is echoed from the discovery response. If discovery
+        hasn't happened, falls back to 0x05.
+
+        Args:
+            rgbw_color: RGBW tuple with values from 0-255.
+        """
+        r, g, b, w = rgbw_color
+        intensity = 255
+        value_type = self._rgbwi_value_type if self._rgbwi_value_type is not None else 0x05
+        await self._write_octo_command(
+            command=[0x20, 0x72],
+            data=[0x00, 0x01, 0x04, 0x00, 0x01, 0x01, value_type, r, g, b, w, intensity],
+        )
+
     # PIN authentication and keep-alive methods
 
     async def send_pin(self) -> None:

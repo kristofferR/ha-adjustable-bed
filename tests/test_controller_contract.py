@@ -384,7 +384,9 @@ async def test_declared_capabilities_map_to_implemented_methods(bed_type: str) -
         assert _is_overridden(controller, "lights_off")
 
     if controller.supports_light_color_control:
-        assert _is_overridden(controller, "set_light_color")
+        assert _is_overridden(controller, "set_light_color") or _is_overridden(
+            controller, "set_light_color_rgbw"
+        )
 
     if controller.supports_memory_presets:
         assert controller.memory_slot_count > 0
