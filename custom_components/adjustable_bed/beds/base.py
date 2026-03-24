@@ -635,6 +635,19 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_light_color_control(self) -> bool:
+        """Return True if bed supports setting light RGB color directly."""
+        return False
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the default RGB color used when turning lights on.
+
+        Beds without direct light color support should return None.
+        """
+        return None
+
+    @property
     def has_lumbar_support(self) -> bool:
         """Return True if bed has lumbar motor control."""
         return False
@@ -1360,6 +1373,17 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support light level control
         """
         raise NotImplementedError("Light level control not supported on this bed")
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set light RGB color.
+
+        Args:
+            rgb_color: RGB tuple with values from 0-255
+
+        Raises:
+            NotImplementedError: If the bed doesn't support direct RGB color control
+        """
+        raise NotImplementedError("Light color control not supported on this bed")
 
     # Light timer control (optional - for beds with auto-off timer)
 

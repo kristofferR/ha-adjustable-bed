@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_UNAVAILABLE
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-# Import enable_custom_integrations fixture
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
 )
@@ -549,6 +550,199 @@ class TestSwitchEntities:
 
         # Should have under-bed lights switch
         assert len(switch_states) == 1
+
+
+class TestLightEntities:
+    """Test light entities."""
+
+    async def test_richmat_qrrm_light_entity_created_and_toggle_button_removed(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """QRRM beds should expose a light entity instead of the legacy toggle button."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper QRRM Bed",
+            data={
+                CONF_ADDRESS: "57:4C:62:C3:39:05",
+                CONF_NAME: "Casper QRRM Bed",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="richmat_qrrm_light_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            "57:4C:62:C3:39:05_toggle_light",
+            config_entry=entry,
+            suggested_object_id="casper_qrrm_bed_toggle_light",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id(
+            "light", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights"
+        ) is not None
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:C3:39:05_toggle_light")
+            is None
+        )
+        assert registry.async_get_entity_id(
+            "select", DOMAIN, "57:4C:62:C3:39:05_light_timer"
+        ) is not None
+
+    async def test_richmat_qrrm_light_turn_on_and_off(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """QRRM light entity should power on, set color, and power off explicitly."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper QRRM Bed",
+            data={
+                CONF_ADDRESS: "57:4C:62:C3:39:05",
+                CONF_NAME: "Casper QRRM Bed",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="richmat_qrrm_light_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {
+                "entity_id": entity_id,
+                "rgb_color": [1, 221, 255],
+            },
+            blocking=True,
+        )
+
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(
+                coordinator.controller.control_characteristic_uuid,
+                coordinator.controller._build_light_power_command(is_on=True),
+                response=True,
+            ),
+            call(
+                coordinator.controller.control_characteristic_uuid,
+                coordinator.controller._build_light_color_command((1, 221, 255)),
+                response=True,
+            ),
+        ]
+        state = hass.states.get(entity_id)
+        assert state is not None
+        assert state.state == STATE_ON
+        assert state.attributes["rgb_color"] == (1, 221, 255)
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            coordinator.controller._build_light_power_command(is_on=False),
+            response=True,
+        )
+
+    async def test_richmat_qrrm_light_timer_select_supports_three_minutes(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """QRRM timer select should expose minute-granular RGB-strip timers."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper QRRM Bed",
+            data={
+                CONF_ADDRESS: "57:4C:62:C3:39:05",
+                CONF_NAME: "Casper QRRM Bed",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="richmat_qrrm_light_timer_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "select", DOMAIN, "57:4C:62:C3:39:05_light_timer"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "select",
+            "select_option",
+            {"entity_id": entity_id, "option": "3 min"},
+            blocking=True,
+        )
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            coordinator.controller.control_characteristic_uuid,
+            coordinator.controller._build_light_timer_command(3),
+            response=True,
+        )
 
     async def test_switch_turn_on_off(
         self,

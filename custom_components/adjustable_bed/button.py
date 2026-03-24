@@ -472,7 +472,9 @@ def _should_add_button(
         return False
 
     if description.key == "toggle_light" and controller is not None:
-        if getattr(controller, "supports_discrete_light_control", False):
+        if getattr(controller, "supports_discrete_light_control", False) or getattr(
+            controller, "supports_light_color_control", False
+        ):
             return False
 
     if description.required_capability is not None:

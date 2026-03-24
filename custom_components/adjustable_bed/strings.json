@@ -465,6 +465,11 @@
         "name": "Massage: Timer Mode"
       }
     },
+    "light": {
+      "under_bed_lights": {
+        "name": "Under Bed Lights"
+      }
+    },
     "switch": {
       "under_bed_lights": {
         "name": "Under Bed Lights"

@@ -34,6 +34,7 @@ SHARED_CAPABILITY_FLAGS: tuple[str, ...] = (
     "supports_light",
     "supports_under_bed_lights",
     "supports_discrete_light_control",
+    "supports_light_color_control",
     "supports_light_cycle",
     "supports_position_feedback",
     "supports_massage",
@@ -369,6 +370,9 @@ async def test_declared_capabilities_map_to_implemented_methods(bed_type: str) -
     if controller.supports_discrete_light_control:
         assert _is_overridden(controller, "lights_on")
         assert _is_overridden(controller, "lights_off")
+
+    if controller.supports_light_color_control:
+        assert _is_overridden(controller, "set_light_color")
 
     if controller.supports_memory_presets:
         assert controller.memory_slot_count > 0

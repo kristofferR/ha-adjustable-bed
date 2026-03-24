@@ -71,6 +71,12 @@ async def async_setup_entry(
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
+        if (
+            description.key == "under_bed_lights"
+            and controller is not None
+            and getattr(controller, "supports_light_color_control", False)
+        ):
+            continue
         # Skip switches restricted to specific bed types
         if description.required_bed_types is not None:
             if coordinator.bed_type not in description.required_bed_types:
