@@ -26,6 +26,7 @@
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
 | Under-bed Lights | ✅ (discrete on/off) |
 | Massage | ✅ (head/foot zones, timer/duty cycle/level) |
+| Split-King Sync | ✅ (discrete on/off) |
 
 ## Protocol Details
 
@@ -98,6 +99,15 @@ Note: `head` is mapped to the same upper actuator commands as `back` for compati
 |--------|---------|
 | Light On | `AT+ENABLE=LIGHT` |
 | Light Off | `AT+DISABLE=LIGHT` |
+
+### Sync / Split King
+
+| Action | Command |
+|--------|---------|
+| Sync Slave On | `AT+SINSLAVE=ON` |
+| Sync Slave Off | `AT+SINSLAVE=OFF` |
+
+For split-king beds, enabling sync slave mode makes this side mirror the other side's movements.
 
 ### Massage
 
