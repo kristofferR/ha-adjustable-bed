@@ -319,6 +319,101 @@ class TestLeggettLights:
         )
 
 
+class TestLeggettGen2RgbLights:
+    """Test Leggett & Platt Gen2 RGB light controls."""
+
+    async def test_supports_light_color_control(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Gen2 controller reports RGB light color support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_light_color_control is True
+
+    async def test_supports_explicit_light_on_control(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Gen2 controller reports explicit light on support."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_explicit_light_on_control is True
+
+    async def test_default_light_rgb_color(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Gen2 controller returns white as default RGB color."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.default_light_rgb_color == (255, 255, 255)
+
+    async def test_set_light_color(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test set_light_color sends correct RGBSET ASCII command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_light_color((255, 0, 128))
+
+        expected = LeggettGen2Commands.rgb_set(255, 0, 128, 255)
+        assert expected == b"RGBSET 0:FF0080FF"
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
+        )
+
+    async def test_set_light_color_red(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test set_light_color with pure red produces correct hex."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_light_color((255, 0, 0))
+
+        expected = b"RGBSET 0:FF0000FF"
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
+        )
+
+    async def test_set_light_color_green(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Test set_light_color with pure green produces correct hex."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.set_light_color((0, 255, 0))
+
+        expected = b"RGBSET 0:00FF00FF"
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
+        )
+
+
 class TestLeggettMassage:
     """Test Leggett & Platt massage commands."""
 

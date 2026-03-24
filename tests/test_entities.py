@@ -8,10 +8,12 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAIL
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
 from custom_components.adjustable_bed.beds.richmat import RichmatCommands
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_RICHMAT,
@@ -26,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    LEGGETT_GEN2_WRITE_CHAR_UUID,
 )
 
 
@@ -970,6 +973,193 @@ class TestLightEntities:
             coordinator.controller._build_light_timer_command(180),
             response=True,
         )
+
+    async def test_leggett_gen2_light_entity_created_and_stale_entities_removed(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Leggett Gen2 should expose a light entity and remove stale switch/button."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Leggett Gen2 Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:10",
+                CONF_NAME: "Leggett Gen2 Bed",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:10",
+            entry_id="leggett_gen2_light_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        # Pre-create stale switch and button entities that should be removed
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:10_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="leggett_gen2_bed_under_bed_lights",
+        )
+        registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:10_toggle_light",
+            config_entry=entry,
+            suggested_object_id="leggett_gen2_bed_toggle_light",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        # Light entity should exist
+        assert registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights"
+        ) is not None
+        # Stale switch entity should be removed
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights")
+            is None
+        )
+        # Toggle button should not exist (hidden by supports_light_color_control)
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:10_toggle_light")
+            is None
+        )
+
+    async def test_leggett_gen2_light_turn_on_with_rgb_color(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Leggett Gen2 light turn_on with rgb_color should send lights_on + RGBSET."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Leggett Gen2 Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:11",
+                CONF_NAME: "Leggett Gen2 Bed",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:11",
+            entry_id="leggett_gen2_light_turn_on_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:11_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {
+                "entity_id": entity_id,
+                "rgb_color": [255, 0, 128],
+            },
+            blocking=True,
+        )
+
+        # Should send lights_on (white RGBSET) then set_light_color (custom RGBSET)
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(
+                LEGGETT_GEN2_WRITE_CHAR_UUID,
+                LeggettGen2Commands.rgb_set(255, 255, 255, 255),
+                response=True,
+            ),
+            call(
+                LEGGETT_GEN2_WRITE_CHAR_UUID,
+                b"RGBSET 0:FF0080FF",
+                response=True,
+            ),
+        ]
+        state = hass.states.get(entity_id)
+        assert state is not None
+        assert state.state == STATE_ON
+        assert state.attributes["rgb_color"] == (255, 0, 128)
+
+    async def test_leggett_gen2_light_turn_off(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Leggett Gen2 light turn_off should send RGBENABLE 0:0."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Leggett Gen2 Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:12",
+                CONF_NAME: "Leggett Gen2 Bed",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:12",
+            entry_id="leggett_gen2_light_turn_off_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:12_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        # Turn on first so we can turn off
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        # Should send lights_off which is RGBENABLE 0:0
+        assert mock_bleak_client.write_gatt_char.call_args_list == [
+            call(
+                LEGGETT_GEN2_WRITE_CHAR_UUID,
+                LeggettGen2Commands.RGB_OFF,
+                response=True,
+            )
+        ]
 
     async def test_switch_turn_on_off(
         self,
