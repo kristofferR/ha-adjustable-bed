@@ -459,6 +459,11 @@ class RichmatController(BedController):
             )
         )
 
+    @property
+    def supports_synchro(self) -> bool:
+        """Return True - Richmat beds support split-king sync mode."""
+        return True
+
     def _build_command(self, command_byte: int) -> bytes:
         """Build command bytes based on command protocol."""
         if self._command_protocol == RICHMAT_PROTOCOL_WILINKE:
@@ -844,6 +849,16 @@ class RichmatController(BedController):
     async def massage_mode_step(self) -> None:
         """Step through massage modes."""
         await self.write_command(self._build_command(RichmatCommands.MASSAGE_PATTERN_STEP))
+
+    # Sync mode (split king)
+    async def set_synchro(self, enabled: bool) -> None:
+        """Enable or disable split-king sync mode.
+
+        When enabled, both sides of a split-king bed move together.
+        Sends 0xBC (sync on) or 0xBD (sync off) as a single-shot command.
+        """
+        cmd = RichmatCommands.SYNC_ON if enabled else RichmatCommands.SYNC_OFF
+        await self.write_command(self._build_command(cmd))
 
 
 async def detect_richmat_variant(client: BleakClient) -> tuple[bool, str | None, bool]:
