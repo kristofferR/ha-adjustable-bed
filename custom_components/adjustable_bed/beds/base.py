@@ -650,6 +650,14 @@ class BedController(ABC):
         return False
 
     @property
+    def supported_color_mode(self) -> str | None:
+        """Return the color mode supported by the light.
+
+        Returns 'rgb', 'rgbw', or None if no color control is supported.
+        """
+        return None
+
+    @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
         """Return the default RGB color used when turning lights on.
 
@@ -1394,6 +1402,17 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support direct RGB color control
         """
         raise NotImplementedError("Light color control not supported on this bed")
+
+    async def set_light_color_rgbw(self, rgbw_color: tuple[int, int, int, int]) -> None:
+        """Set light RGBW color.
+
+        Args:
+            rgbw_color: RGBW tuple with values from 0-255
+
+        Raises:
+            NotImplementedError: If the bed doesn't support RGBW light control
+        """
+        raise NotImplementedError("RGBW light control not supported on this bed")
 
     # Light timer control (optional - for beds with auto-off timer)
 

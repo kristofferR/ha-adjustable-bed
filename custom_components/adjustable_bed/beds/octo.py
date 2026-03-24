@@ -51,6 +51,7 @@ OCTO_FEATURE_MEMCOUNT = 0x000002  # Number of memory positions
 OCTO_FEATURE_PIN = 0x000003
 OCTO_FEATURE_SYNCHRO = 0x000101  # Synchro/linked mode capability (CAP_SYNCHRO)
 OCTO_FEATURE_LIGHT = 0x000102
+OCTO_FEATURE_LIGHT_RGBWI = 0x000104
 OCTO_FEATURE_END = 0xFFFFFF  # End-of-features sentinel
 
 # Drivemode constants (CONFIG_SET_DRIVEMODE / CONFIG_GET_DRIVEMODE)
@@ -95,6 +96,8 @@ class OctoController(BedController):
         self._has_pin: bool | None = None  # None = not yet discovered
         self._pin_locked: bool | None = None
         self._has_lights: bool | None = None  # None = not yet discovered
+        self._has_rgbwi: bool = False  # True if CAP_LIGHT_RGBWI (0x000104) detected
+        self._rgbwi_value_type: int | None = None  # valueType byte from discovery response
         self._memory_count: int | None = None  # None = not yet discovered
         self._discovered_motor_count: int | None = None  # None = not yet discovered
         self._has_synchro: bool | None = None  # None = not yet discovered
@@ -233,19 +236,22 @@ class OctoController(BedController):
 
         return {"command": command, "data": data}
 
-    def _extract_feature_value_pair(self, data: list[int]) -> tuple[int, list[int]] | None:
-        """Extract a feature ID and value from data bytes.
+    def _extract_feature_value_pair(
+        self, data: list[int]
+    ) -> tuple[int, list[int], int | None] | None:
+        """Extract a feature ID, value, and valueType from data bytes.
 
         Data format:
         - 3 bytes: feature ID (big-endian)
         - 1 byte: flag (unused)
         - 1 byte: skip length
         - N bytes: skipped data
-        - 1 byte: unknown
+        - 1 byte: valueType (echoed back in SET commands)
         - remaining: value bytes
 
         Returns:
-            Tuple of (feature_id, value_bytes) or None if invalid.
+            Tuple of (feature_id, value_bytes, value_type) or None if invalid.
+            value_type may be None if the data is too short to contain it.
         """
         if len(data) < 6:
             return None
@@ -256,13 +262,19 @@ class OctoController(BedController):
         # Skip flag byte (index 3)
         skip_length = data[4]
 
-        # Calculate value start position: 5 (header) + skip_length + 1 (unknown byte)
+        # The valueType byte sits at index 5 + skip_length
+        value_type_index = 5 + skip_length
+        value_type: int | None = None
+        if value_type_index < len(data):
+            value_type = data[value_type_index]
+
+        # Calculate value start position: 5 (header) + skip_length + 1 (valueType byte)
         value_start = 5 + skip_length + 1
         if value_start > len(data):
             return None
 
         value = data[value_start:]
-        return (feature_id, value)
+        return (feature_id, value, value_type)
 
     def _handle_feature_response(self, data: list[int]) -> None:
         """Process feature data from a 0x21 0x71 response."""
@@ -271,8 +283,8 @@ class OctoController(BedController):
             _LOGGER.debug("Could not extract feature from data: %s", data)
             return
 
-        feature_id, value = result
-        _LOGGER.debug("Feature 0x%06x: %s", feature_id, value)
+        feature_id, value, value_type = result
+        _LOGGER.debug("Feature 0x%06x: %s (valueType=0x%02x)", feature_id, value, value_type or 0)
 
         if feature_id == OCTO_FEATURE_END:
             # End-of-features sentinel - all features have been received
@@ -319,6 +331,17 @@ class OctoController(BedController):
             # value[0] = current light state (0x01 = on, 0x00 = off)
             self._has_lights = True
             _LOGGER.info("Light feature detected: bed has under-bed lights")
+        elif feature_id == OCTO_FEATURE_LIGHT_RGBWI:
+            # CAP_LIGHT_RGBWI: RGB + White + Intensity control
+            # value = [R, G, B, W, I] each 0-255 (current state)
+            self._has_rgbwi = True
+            self._rgbwi_value_type = value_type
+            _LOGGER.info(
+                "RGBWI light feature detected: bed has RGB+White+Intensity lights "
+                "(valueType=0x%02x, current=%s)",
+                value_type or 0,
+                value,
+            )
 
         # Signal that we received at least one feature response
         self._features_loaded.set()
@@ -467,6 +490,32 @@ class OctoController(BedController):
         return True
 
     @property
+    def supports_light_color_control(self) -> bool:
+        """Return True if bed supports RGBWI light color control."""
+        return self._has_rgbwi
+
+    @property
+    def supported_color_mode(self) -> str | None:
+        """Return 'rgbw' for RGBWI beds, None otherwise."""
+        if self._has_rgbwi:
+            return "rgbw"
+        return None
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return default white color for RGBWI beds."""
+        if self._has_rgbwi:
+            return (255, 255, 255)
+        return None
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        """Return True if bed has a dedicated light-on command."""
+        if self._has_rgbwi:
+            return True
+        return self.supports_discrete_light_control
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has separate on/off light commands."""
         return self.supports_lights
@@ -589,6 +638,8 @@ class OctoController(BedController):
         self._has_pin = None
         self._pin_locked = None
         self._has_lights = None
+        self._has_rgbwi = False
+        self._rgbwi_value_type = None
         self._memory_count = None
         self._discovered_motor_count = None
         self._has_synchro = None
@@ -616,10 +667,11 @@ class OctoController(BedController):
 
                 _LOGGER.info(
                     "Feature discovery complete: hasPin=%s, pinLocked=%s, hasLights=%s, "
-                    "memorySlots=%d, motorCount=%s, synchro=%s",
+                    "hasRGBWI=%s, memorySlots=%d, motorCount=%s, synchro=%s",
                     self._has_pin,
                     self._pin_locked,
                     self._has_lights,
+                    self._has_rgbwi,
                     self._memory_count,
                     self._discovered_motor_count,
                     self._has_synchro,
@@ -913,6 +965,28 @@ class OctoController(BedController):
         This is a best-effort toggle that turns lights on.
         """
         await self.lights_on()
+
+    async def set_light_color_rgbw(self, rgbw_color: tuple[int, int, int, int]) -> None:
+        """Set RGBWI light color.
+
+        Sends a SYSTEM_SET_CAPS packet for CAP_LIGHT_RGBWI (0x000104) with
+        R, G, B, W channels from the caller and intensity fixed at 255.
+
+        The valueType byte is echoed from the discovery response. If discovery
+        hasn't happened, falls back to 0x05.
+
+        Args:
+            rgbw_color: RGBW tuple with values from 0-255.
+        """
+        r, g, b, w = rgbw_color
+        if not all(0 <= v <= 255 for v in (r, g, b, w)):
+            raise ValueError(f"RGBW values must be 0-255, got {rgbw_color}")
+        intensity = 255
+        value_type = self._rgbwi_value_type if self._rgbwi_value_type is not None else 0x05
+        await self._write_octo_command(
+            command=[0x20, 0x72],
+            data=[0x00, 0x01, 0x04, 0x00, 0x01, 0x01, value_type, r, g, b, w, intensity],
+        )
 
     # PIN authentication and keep-alive methods
 
