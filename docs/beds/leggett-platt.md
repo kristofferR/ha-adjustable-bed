@@ -108,11 +108,13 @@ Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
 
 ### Light Commands
 
-| Command | Text |
-|---------|------|
-| Get State | `GET STATE` |
-| RGB Off | `RGBENABLE 0:0` |
-| RGB Set | `RGBSET 0:{RRGGBBBB}` |
+Gen2 beds with RGB lighting expose a **Light** entity with a color picker instead of a simple on/off switch. The default color is white (255, 255, 255).
+
+| Command | Text | Description |
+|---------|------|-------------|
+| Get State | `GET STATE` | Query current bed state |
+| RGB Off | `RGBENABLE 0:0` | Turn off RGB lights |
+| RGB Set | `RGBSET 0:{RRGGBBBB}` | Set RGB color + brightness (hex RRGGBBBB, brightness fixed at FF) |
 
 ## Okin Variant (Binary)
 

@@ -56,7 +56,7 @@ Brands using Richmat actuators:
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (1-5 slots, varies by model) |
 | Massage | ✅ |
-| Under-bed Lights | ✅ |
+| Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
 | Yoga / Read Presets | ✅ (some models) |
 | Split-King Sync | ✅ (discrete on/off) |
@@ -205,9 +205,21 @@ Sets massage to a specific level instead of cycling.
 
 #### Lights
 
+Most Richmat beds have a simple white under-bed light controlled via toggle. Some models (Casper, certain QRRM/BT6500/I7RM remotes) have RGB light strips with full color control. RGB is available on WiLinke-variant beds when a specific remote code is configured (not "Auto").
+
+**RGB Strip protocol** (Casper, QRRM, BT6500, I7RM with Casper/SleepFunction): Framed packet format with explicit on/off, color, and timer commands. Timer range: 1-30 minutes or "Always On".
+
+**Legacy RGB protocol** (other WiLinke remotes with the lights feature flag): Segment-based packet format. Timer range: 1-5 minutes or "Always On".
+
+RGB-capable beds expose a **Light** entity with a color wheel instead of a simple on/off switch.
+
 | Command | Byte | Description |
 |---------|------|-------------|
-| Lights Toggle | `0x3C` | Toggle under-bed lights |
+| Lights Toggle | `0x3C` | Toggle under-bed lights (used when RGB is not available) |
+| Lights On | (protocol-specific) | Turn on under-bed lights explicitly |
+| Lights Off | (protocol-specific) | Turn off under-bed lights explicitly |
+| Set RGB Color | (protocol-specific) | Set light color via R/G/B values |
+| Set Timer | (protocol-specific) | Set auto-off timer duration |
 
 #### Sync Mode (Split King)
 

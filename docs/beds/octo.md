@@ -41,7 +41,7 @@ The PIN is typically found in your Octo physical remote's settings menu, or in t
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Both Up Preset | ✅ (Standard variant: moves head + legs together) |
-| Under-bed Lights | ✅ (Standard variant only) |
+| Under-bed Lights | ✅ (Standard variant only; RGBW color picker on beds with CAP_LIGHT_RGBWI) |
 | Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
 
@@ -108,8 +108,19 @@ The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
 | `0x000002` | CAP_MEMCOUNT | Memory preset count |
 | `0x000003` | CAP_PIN | PIN requirement + lock state |
 | `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
-| `0x000102` | CAP_LIGHT | Under-bed light support |
+| `0x000102` | CAP_LIGHT | Under-bed light support (on/off) |
+| `0x000104` | CAP_LIGHT_RGBWI | RGB + White + Intensity light control |
 | `0xFFFFFF` | End sentinel | Marks end of feature list |
+
+#### RGBWI Light Commands
+
+Beds with the `CAP_LIGHT_RGBWI` feature support full RGBW color control. The integration exposes a **Light** entity with an RGBW color picker instead of a simple on/off switch.
+
+Colors are set via `SYSTEM_SET_CAPS` packets targeting feature ID `0x000104`, with data `[R, G, B, W, I]` where each channel is 0-255. The intensity (I) channel is fixed at 255.
+
+| Command | Command Bytes | Data | Description |
+|---------|---------------|------|-------------|
+| Set RGBWI | `[0x20, 0x73]` | `[valueType, 0x00, 0x01, 0x04, R, G, B, W, 0xFF]` | Set light color (R/G/B/W channels + full intensity) |
 
 #### PIN Authentication
 

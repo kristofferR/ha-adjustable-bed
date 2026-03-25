@@ -30,7 +30,7 @@ These brands share the same OEM controller using the SynData protocol.
 | Memory Presets | ✅ (4 slots) |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore) |
 | Massage | ✅ (3 modes, 2 zones) |
-| RGB Lights | ✅ |
+| RGB Lights | ✅ (color picker) |
 | Heat Control | ✅ (model dependent) |
 
 ## Protocol Details

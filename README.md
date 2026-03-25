@@ -23,7 +23,7 @@
 
 - **Motor Control** - Raise/lower head, back, legs, and feet
 - **Memory Presets** - Jump to saved positions with one tap
-- **Under-bed Lights** - Toggle lights on supported beds
+- **Under-bed Lights** - RGB color control on supported beds, toggle on/off on others
 - **Massage Control** - Adjust massage intensity and patterns
 - **Position Feedback** - See current angles on supported beds
 - **Automations** - "Flat when leaving", "TV mode at 8pm", etc.

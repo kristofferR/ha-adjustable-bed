@@ -6,9 +6,9 @@ This document provides an overview of supported bed brands. Click on a brand nam
 |-------|--------|--------------|
 | [Linak](beds/linak.md) | ✅ Supported | Position feedback, 6 memory presets, massage, lights |
 | [Keeson](beds/keeson.md) | ✅ Supported | Position feedback (Ergomotion), 4 presets, massage, lights |
-| [Richmat](beds/richmat.md) | ✅ Supported | 1-5 memory presets, massage (discrete), lights, sync mode, motors 5-7 |
+| [Richmat](beds/richmat.md) | ✅ Supported | 1-5 memory presets, massage (discrete), RGB lights + timer, sync mode, motors 5-7 |
 | [MotoSleep](beds/motosleep.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
-| [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, lights |
+| [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, RGBW lights |
 | [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G |
 | [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
@@ -32,7 +32,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Scott Living](beds/scott-living.md) | 🧪 Needs Testing | 9-byte protocol |
 | [SBI/Q-Plus](beds/sbi.md) | 🧪 Needs Testing | Position feedback via pulse lookup |
 | [Rondure](beds/rondure.md) | 🧪 Needs Testing | 4 motors, split-king, massage, lights |
-| [Remacro](beds/remacro.md) | 🧪 Needs Testing | 4 motors, 8 presets, RGB lights, heat |
+| [Remacro](beds/remacro.md) | ✅ Supported | 4 motors, 8 presets, RGB lights, heat |
 | [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
 | [Okin CST](beds/okin_cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
 
