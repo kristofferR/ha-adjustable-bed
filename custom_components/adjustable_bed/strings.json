@@ -95,7 +95,7 @@
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
         },
         "data_description": {
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (older). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
+          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
           "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
@@ -124,7 +124,7 @@
         },
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
-          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (older). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
+          "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
           "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",

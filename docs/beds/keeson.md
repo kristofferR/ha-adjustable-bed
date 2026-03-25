@@ -10,6 +10,7 @@ Brands using Keeson/Ergomotion actuators:
 
 - Serta
 - Ergomotion
+- Ergomotion Rio 6.0 (advertises as `KSBT04...`, works with KSBT protocol)
 - Tempur Zero G / Tempur Curve
 - Beautyrest Black
 - ENSO
@@ -68,6 +69,8 @@ Brands using Keeson/Ergomotion actuators:
 ### KSBT Variant (Older Remotes)
 **Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
+
+Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
 - `6e400020-b5a3-f393-e0a9-e50e24dcca9e` (characteristic: `6e400021`) - Extended Nordic UART, used by some Ergomotion/SFD beds
@@ -176,5 +179,6 @@ Member's Mark beds support independent control of left and right sides using a 9
 |-------------------|----------|
 | `base` | Standard FFE5/FFE9 (8-byte) |
 | `KSBT03C` | Nordic UART with 6-byte packets |
+| `KSBT04C` | Nordic UART with 6-byte packets (used by some Ergomotion Sync beds, including Rio 6.0) |
 | `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |

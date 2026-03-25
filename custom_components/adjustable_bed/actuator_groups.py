@@ -102,7 +102,7 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
     },
     "keeson": {
         "display": "Keeson",
-        "description": "Purple, Member's Mark, GhostBed, Serta Motion Perfect, ErgoSportive",
+        "description": "Purple, Member's Mark, GhostBed, Serta Motion Perfect, some Ergomotion Sync beds",
         "variants": [
             {
                 "type": BED_TYPE_KEESON,
@@ -114,9 +114,9 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
             {
                 "type": BED_TYPE_KEESON,
                 "variant": KEESON_VARIANT_KSBT,
-                "label": "KSBT (older remotes)",
-                "description": "Older Keeson remotes with KSBT prefix",
-                "hint": "Device name starts with 'KSBT'",
+                "label": "KSBT (Nordic UART)",
+                "description": "KSBT Nordic UART beds, including some Ergomotion Sync models",
+                "hint": "Device name starts with 'KSBT03' or 'KSBT04'",
             },
             {
                 "type": BED_TYPE_KEESON,

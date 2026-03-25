@@ -853,7 +853,7 @@ KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
-    KEESON_VARIANT_KSBT: "KSBT (older Keeson remotes)",
+    KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",

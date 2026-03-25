@@ -111,7 +111,8 @@ These beds have their own dedicated integrations:
    - `Nectar*` → Nectar
    - `Okimat*`, `Okin RF*`, `Okin BLE*` → Okimat
    - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
-   - `Ergomotion*` or `Ergo*` → Keeson
+   - `Ergomotion*` or `Ergo*` → Keeson/Ergomotion
+   - `KSBT03*` or `KSBT04*` → Keeson KSBT (includes some Ergomotion Sync beds such as Rio 6.0)
    - `Jiecang*`, `JC-*`, or `Glide*` → Jiecang
    - `Dewert*`, `A H Beard*`, `Hankook*` → DewertOkin
    - `Serta*` or `Motion Perfect*` → Serta

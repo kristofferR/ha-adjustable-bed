@@ -151,7 +151,7 @@ Some beds support multiple protocol variants. Auto-detection usually works, but 
 |---------|-------------|---------|
 | **Auto** | Auto-detect (recommended) | Most beds |
 | **Base** | BaseI4/BaseI5 protocol | Member's Mark, Purple, some Ergomotion |
-| **KSBT** | Nordic UART protocol | Older Keeson remotes |
+| **KSBT** | Nordic UART protocol | KSBT03/KSBT04 devices, including some Ergomotion Sync beds |
 | **KSBT03CR** | 7-byte KSBT format (0x05 prefix) | KSBT03CR devices |
 | **Ergomotion** | Base protocol with position feedback | Ergomotion-branded beds |
 | **Okin** | OKIN FFE (0xE6 prefix) | OKIN 13/15 series |

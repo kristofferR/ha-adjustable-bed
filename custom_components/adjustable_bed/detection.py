@@ -349,7 +349,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ERGOMOTION: "Ergomotion",
     BED_TYPE_JIECANG: "Jiecang (Glide, Dream Motion)",
     BED_TYPE_JENSEN: "Jensen (JMC400, LinON Entry)",
-    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, Serta)",
+    BED_TYPE_KEESON: "Keeson (Member's Mark, Purple, some Ergomotion Sync beds)",
     BED_TYPE_KAIDI: "Kaidi (Rize, Floyd, ISleep)",
     BED_TYPE_LINAK: "Linak",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",

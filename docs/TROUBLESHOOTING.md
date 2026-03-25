@@ -186,8 +186,8 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 | Symptom | Try This Variant |
 |---------|------------------|
-| Member's Mark, Purple, ErgoMotion beds | Base (BaseI4/BaseI5) |
-| Older Keeson beds, Nordic UART | KSBT |
+| Member's Mark, Purple, ErgoMotion BaseI4/BaseI5 beds | Base (BaseI4/BaseI5) |
+| Older Keeson beds or `KSBT03*` / `KSBT04*` Nordic UART beds | KSBT |
 | Commands partially work | Try the other variant |
 
 ### Leggett & Platt Variant Selection
