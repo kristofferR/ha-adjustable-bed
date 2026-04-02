@@ -484,6 +484,34 @@ class TestDetectBedTypeByManufacturerData:
         assert result.confidence == 0.7  # Lower confidence as fallback
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
+    def test_detect_okin_cb24_nordic_uart_plus_manufacturer_id(self):
+        """Test CB24 detection when device has both Nordic UART UUID and OKIN mfr ID.
+
+        GitHub issue #309: Lucid L600 ("Smartbed237004683") advertises Nordic
+        UART service UUID AND OKIN manufacturer ID 89. Without this fix, the
+        Nordic UART check returns Richmat before the CB24 fallback is reached.
+        """
+        service_info = _make_service_info(
+            name="Smartbed237004683",
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"DOT\x00\x02"},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.confidence == 0.7
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
+        assert BED_TYPE_RICHMAT in result.ambiguous_types
+
+    def test_nordic_uart_without_okin_mfr_still_detects_richmat(self):
+        """Ensure Nordic UART without OKIN manufacturer ID still returns Richmat."""
+        service_info = _make_service_info(
+            name="SomeDevice",
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert result.confidence == 0.5
+
 
 class TestOkinUUIDDisambiguation:
     """Test disambiguation of beds sharing OKIN service UUID (62741523)."""

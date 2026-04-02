@@ -1258,6 +1258,24 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # These share the Nordic UART service UUID
     if RICHMAT_NORDIC_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:nordic_uart")
+
+        # If OKIN manufacturer ID is also present, this is likely a CB24 device
+        # (e.g., SmartBed by Okin / Lucid L600) that also advertises Nordic UART.
+        if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
+            signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
+            _LOGGER.info(
+                "Detected Okin CB24 bed at %s (name: %s) - Nordic UART + OKIN manufacturer ID",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_OKIN_CB24,
+                confidence=0.7,
+                signals=signals,
+                ambiguous_types=[BED_TYPE_RICHMAT, BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
+                manufacturer_id=MANUFACTURER_ID_OKIN,
+            )
+
         # This UUID is shared by Richmat, Keeson KSBT, Mattress Firm, and OKIN 64-bit
         _LOGGER.info(
             "Detected Richmat/Keeson bed at %s (name: %s) - Nordic UART UUID is ambiguous",
@@ -1273,8 +1291,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
 
     # Fallback: Check for OKIN Automotive manufacturer ID 89 (CB24 protocol)
-    # This is checked LAST to allow UUID-based detection to take priority.
-    # SmartBed by Okin devices advertise manufacturer ID but no service UUIDs.
+    # This catches SmartBed devices that advertise only manufacturer data.
+    # Devices with both Nordic UART + mfr ID 89 are handled above.
     if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
         signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
         _LOGGER.info(
