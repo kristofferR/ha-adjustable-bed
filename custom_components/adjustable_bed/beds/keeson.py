@@ -2,8 +2,10 @@
 
 Reverse engineering by alanbixby and Richard Hopton (smartbed-mqtt).
 
-Keeson beds (Member's Mark, Purple, Ergomotion, GhostBed) have several protocol variants:
+Keeson beds (Member's Mark, Purple, Ergomotion, GhostBed, Beautyrest) have several
+protocol variants:
 - KSBT: Simple 6-byte commands [0x04, 0x02, ...int_to_bytes(command)]
+- KSBT04C: 7-byte with NOT-checksum [0x04, 0x02, ...int_to_bytes(command), checksum]
 - BaseI4: 8-byte commands with XOR checksum
 - BaseI5: Same as BaseI4 with notification support
 - Ergomotion: Same as BaseI4/I5 but with position feedback via BLE notifications
@@ -31,6 +33,7 @@ from ..const import (
     KEESON_KSBT_SERVICE_UUID,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_PURPLE,
@@ -85,6 +88,15 @@ class KeesonCommands:
     MASSAGE_STEP = 0x100
     MASSAGE_TIMER_STEP = 0x200
     MASSAGE_WAVE_STEP = 0x10000000
+
+    # Additional massage commands (from Sleep Harmony / KSBT04C)
+    MASSAGE_LUMBAR = 0x400000
+    MASSAGE_LUMBAR_DOWN = 0x10000000  # Same value as MASSAGE_WAVE_STEP
+    MASSAGE_MODE_ONE = 0x80000
+    MASSAGE_MODE_TWO = 0x100000
+    MASSAGE_MODE_THREE = 0x200000
+    MASSAGE_ALL_STOP = 0x2000000
+    MASSAGE_ALL_TOGGLE = 0x4000000
 
     # Lights (standard Keeson)
     TOGGLE_SAFETY_LIGHTS = 0x20000
@@ -190,7 +202,7 @@ class KeesonController(BedController):
         # Determine the characteristic UUID
         if char_uuid:
             self._char_uuid = char_uuid
-        elif variant in {"ksbt", KEESON_VARIANT_KSBT_CR}:
+        elif variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}:
             # For KSBT variants, try to find a working characteristic UUID
             self._char_uuid = self._detect_ksbt_characteristic_uuid()
         else:
@@ -320,8 +332,8 @@ class KeesonController(BedController):
 
     @property
     def _is_ksbt(self) -> bool:
-        """Return True if this is any KSBT variant (ksbt or ksbt_cr)."""
-        return self._variant in {"ksbt", KEESON_VARIANT_KSBT_CR}
+        """Return True if this is any KSBT variant (ksbt, ksbt_cr, or ksbt04c)."""
+        return self._variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}
 
     # Capability properties
     @property
@@ -513,6 +525,12 @@ class KeesonController(BedController):
         elif self._variant == KEESON_VARIANT_KSBT_CR:
             # KSBT03CR: [0x05, 0x02, ...int_to_bytes(command), 0x00]
             return bytes([0x05, 0x02] + int_to_bytes(command_value) + [0x00])
+        elif self._variant == KEESON_VARIANT_KSBT04C:
+            # KSBT04C: [0x04, 0x02, ...int_to_bytes(command), checksum]
+            # Source: com.keeson.ssbaudio (Sleep Harmony) BleClient.buildInstruct0()
+            data = [0x04, 0x02] + int_to_bytes(command_value)
+            checksum = (~sum(data)) & 0xFF
+            return bytes(data + [checksum])
         else:
             # BaseI4/I5/OKIN/Serta/Ergomotion/Sino: [prefix, 0xfe, 0x16, ...int_bytes, checksum]
             # OKIN FFE (13/15 series) uses 0xE6 prefix, others use 0xE5

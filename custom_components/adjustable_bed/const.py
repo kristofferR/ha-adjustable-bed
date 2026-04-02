@@ -612,7 +612,8 @@ LINAK_NAME_PATTERNS: Final = ("bed ",)
 # - base-i5.XXXXXXXX (e.g., base-i5.00000682) - Note: base-i5 can also be Cool Base
 # - KSBTXXXXCXXXXXX (e.g., KSBT03C000015046)
 # - ORE-XXXXXXXXXXX (e.g., ORE-ac2170000d) - Dynasty, INNOVA beds (use ORE variant)
-KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-")
+# - smart_dfu - Beautyrest Baselogic Platinum (Keeson MC232FD, KSBT04C protocol)
+KEESON_NAME_PATTERNS: Final = ("base-i4.", "base-i5.", "ksbt", "ore-", "smart_dfu")
 
 # BetterLiving / related OKIN app naming that uses Keeson-Sino packet format (E5 FE 16, big-endian)
 # Source: com.ore.betterliving2 app disassembly
@@ -848,6 +849,7 @@ KEESON_VARIANT_OKIN: Final = "okin"
 KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
+KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -855,6 +857,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
     KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
+    KEESON_VARIANT_KSBT04C: "KSBT04C (7-byte with checksum, Beautyrest Baselogic)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
@@ -1375,6 +1378,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIN_CB24_VARIANT_CB27NEW,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
+    KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,

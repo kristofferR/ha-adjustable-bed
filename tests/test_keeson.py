@@ -113,6 +113,43 @@ class TestKeesonController:
         # Command 0x1 in big-endian
         assert command[2:] == bytes([0x00, 0x00, 0x00, 0x01])
 
+    async def test_build_command_ksbt04c(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test KSBT04C variant command format (7-byte with checksum)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant="ksbt04c")
+
+        # KSBT04C format: [0x04, 0x02, ...int_bytes, checksum]
+        # checksum = ~(sum of bytes 0-5) & 0xFF
+        command = controller._build_command(KeesonCommands.MOTOR_HEAD_UP)
+
+        assert len(command) == 7
+        assert command[:2] == bytes([0x04, 0x02])
+        assert command[2:6] == bytes([0x00, 0x00, 0x00, 0x01])
+        # Checksum: ~(0x04 + 0x02 + 0x00 + 0x00 + 0x00 + 0x01) = ~0x07 = 0xF8
+        assert command[6] == 0xF8
+
+        # Test FLAT preset (0x8000000)
+        flat_cmd = controller._build_command(KeesonCommands.PRESET_FLAT)
+        assert len(flat_cmd) == 7
+        assert flat_cmd[:2] == bytes([0x04, 0x02])
+        assert flat_cmd[2:6] == bytes([0x08, 0x00, 0x00, 0x00])
+        # Checksum: ~(0x04 + 0x02 + 0x08) = ~0x0E = 0xF1
+        assert flat_cmd[6] == 0xF1
+
+        # Test STOP (0x00)
+        stop_cmd = controller._build_command(0)
+        assert len(stop_cmd) == 7
+        assert stop_cmd[:6] == bytes([0x04, 0x02, 0x00, 0x00, 0x00, 0x00])
+        # Checksum: ~(0x04 + 0x02) = ~0x06 = 0xF9
+        assert stop_cmd[6] == 0xF9
+
     async def test_write_command(
         self,
         hass: HomeAssistant,

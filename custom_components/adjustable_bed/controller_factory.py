@@ -68,6 +68,7 @@ from .const import (
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
@@ -495,6 +496,13 @@ async def create_controller(
                     device_name,
                 )
                 keeson_variant = KEESON_VARIANT_KSBT_CR
+            elif normalized_name.startswith("ksbt04c") or normalized_name == "smart_dfu":
+                _LOGGER.info(
+                    "Auto-detected KSBT04C variant for %s (name: %s)",
+                    coordinator.address,
+                    device_name,
+                )
+                keeson_variant = KEESON_VARIANT_KSBT04C
             elif normalized_name.startswith("ksbt"):
                 keeson_variant = KEESON_VARIANT_KSBT
 
@@ -505,6 +513,9 @@ async def create_controller(
         elif keeson_variant == KEESON_VARIANT_KSBT_CR:
             _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
             return KeesonController(coordinator, variant="ksbt_cr")
+        elif keeson_variant == KEESON_VARIANT_KSBT04C:
+            _LOGGER.debug("Using KSBT04C Keeson variant (7-byte with checksum)")
+            return KeesonController(coordinator, variant="ksbt04c")
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
