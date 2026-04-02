@@ -53,6 +53,10 @@
 
 </details>
 
+## Support This Project
+
+If you find this integration useful, consider [sponsoring the project](https://github.com/sponsors/kristofferR) to help support ongoing development and new bed support.
+
 ## Supported Beds
 
 The names below refer to motor/actuator manufacturers. Your bed might use one of these internally - check the [Supported Actuators guide](docs/SUPPORTED_ACTUATORS.md) to find your bed brand.
