@@ -684,18 +684,65 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
     # Check for DewertOkin Star controllers - name pattern + Nordic UART service.
     # Both CB35 (Sealy Posturematic) and BOX25 Star (Sleepy's Elite) use Star* names
-    # with Nordic UART. They can't be distinguished from BLE advertisements alone,
-    # so both are presented as ambiguous options.
+    # with Nordic UART. The protocol version is encoded in positions 4-5 of the name:
+    #   Star35... = CB35 (protocol 35_22_01, 7-byte sequential commands)
+    #   Star25... = BOX25 (protocol 25_42_02, 10-byte bitmask commands)
+    # Source: com.okin.bedding.adjustbed blutter analysis; confirmed by real-world
+    # device names from Discord (Star352201011800=CB35, Star254202079996=BOX25).
+    # Post-connection, the adjustbed app also reads BLE characteristic 2A29
+    # (Manufacturer Name): exactly "STAR" confirms CB35.
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
         from .const import NORDIC_UART_SERVICE_UUID
 
         signals.append("name:dewertokin_star")
-        if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
+
+        # Parse protocol version from name digits (positions 4-5 of original name)
+        original_name = service_info.name or ""
+        star_digits = original_name[4:6] if len(original_name) >= 6 else ""
+        if star_digits:
+            signals.append(f"star_digits:{star_digits}")
+
+        has_nordic_uart = NORDIC_UART_SERVICE_UUID.lower() in service_uuids
+        if has_nordic_uart:
             signals.append("uuid:nordic_uart")
+
+        # High-confidence detection when protocol digits match a known version
+        if star_digits == "35" and has_nordic_uart:
             _LOGGER.info(
-                "Detected DewertOkin Star bed at %s (name: %s) with Nordic UART service",
+                "Detected DewertOkin CB35 Star bed at %s (name: %s, digits=%s) "
+                "with Nordic UART service",
                 service_info.address,
                 service_info.name,
+                star_digits,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_OKIN_CB35,
+                confidence=0.95,
+                signals=signals,
+            )
+
+        if star_digits == "25" and has_nordic_uart:
+            _LOGGER.info(
+                "Detected DewertOkin BOX25 Star bed at %s (name: %s, digits=%s) "
+                "with Nordic UART service",
+                service_info.address,
+                service_info.name,
+                star_digits,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_SLEEPYS_BOX25,
+                confidence=0.95,
+                signals=signals,
+            )
+
+        # Unknown digits or no Nordic UART -- fall back to ambiguous detection
+        if has_nordic_uart:
+            _LOGGER.info(
+                "Detected DewertOkin Star bed at %s (name: %s, digits=%s) "
+                "with Nordic UART service - unknown protocol version, presenting both options",
+                service_info.address,
+                service_info.name,
+                star_digits or "none",
             )
             return DetectionResult(
                 bed_type=BED_TYPE_OKIN_CB35,
