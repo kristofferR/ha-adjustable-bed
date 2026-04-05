@@ -2,8 +2,13 @@
 
 Reverse engineering by Bonopaws and Richard Hopton (smartbed-mqtt).
 
-Solace beds use 11-byte command packets with pre-defined command arrays.
-These are typically hospital/care beds.
+Solace beds use 11-byte command packets with CRC-16 Modbus checksums.
+Known brands: Woosa Sleep, Sealy, QMS-series, Solace hospital/care beds.
+
+The Solace protocol uses LATCHED motor control: send the move command once,
+the bed controller keeps the motor running until an explicit stop command
+is received. This differs from protocols that require continuous command
+pulses to maintain movement.
 """
 
 from __future__ import annotations
@@ -26,16 +31,12 @@ _LOGGER = logging.getLogger(__name__)
 class SolaceCommands:
     """Solace command constants (11-byte arrays)."""
 
-    # Presets
+    # Presets (autonomous — bed moves to target position on its own)
     PRESET_TV = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x05, 0x17, 0x03])
     PRESET_ZERO_G = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x09, 0x17, 0x06])
     PRESET_ANTI_SNORE = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x0F, 0x97, 0x04])
     PRESET_YOGA = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x4E, 0x57, 0x34])
-    PRESET_RISE = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x21, 0x17, 0x18])
-    PRESET_TILT_FORWARD = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x28, 0xD7, 0x1E])
     PRESET_FLAT_BED = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x08, 0xD6, 0xC6])
-    PRESET_DECLINE = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x22, 0x57, 0x19])
-    PRESET_TILT_BACKWARD = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x29, 0x16, 0xDE])
     PRESET_ALL_FLAT = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x2A, 0x56, 0xDF])
 
     # Memory presets (byte 7 contains memory slot)
@@ -78,6 +79,24 @@ class SolaceCommands:
     MASSAGE_FREQUENCY_UP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x14, 0xD7, 0x0F])
     MASSAGE_FREQUENCY_DOWN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x15, 0x16, 0xCF])
     MASSAGE_STOP = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x1C, 0xD6, 0xC9])
+
+    # Massage timers
+    MASSAGE_TIMER_10_MIN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x16, 0x56, 0xCE])
+    MASSAGE_TIMER_20_MIN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x17, 0x97, 0x0E])
+    MASSAGE_TIMER_30_MIN = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x18, 0xD7, 0x0A])
+
+    # Massage absolute level set (from Woosa app analysis)
+    MASSAGE_BACK_LEVEL_0 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x4F, 0x96, 0xF4])
+    MASSAGE_BACK_LEVEL_1 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x50, 0xD7, 0x3C])
+    MASSAGE_BACK_LEVEL_2 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x51, 0x16, 0xFC])
+    MASSAGE_BACK_LEVEL_3 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x52, 0x56, 0xFD])
+    MASSAGE_LEG_LEVEL_0 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x53, 0x97, 0x3D])
+    MASSAGE_LEG_LEVEL_1 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x54, 0xD6, 0xFF])
+    MASSAGE_LEG_LEVEL_2 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x55, 0x17, 0x3F])
+    MASSAGE_LEG_LEVEL_3 = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x56, 0x57, 0x3E])
+
+    # Light off (explicit, from Woosa app)
+    LIGHT_OFF = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x00, 0x00, 0x4B, 0x97, 0x37])
 
     # Circulation/Loop massage modes
     MASSAGE_CIRCULATION_FULL_BODY = bytes([0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x00, 0x05, 0x00, 0xE4, 0xC7, 0x4A])
@@ -149,14 +168,32 @@ class SolaceController(BedController):
         """Return True - Solace beds support programming memory positions."""
         return True
 
+    # Default latched movement duration in seconds.
+    # The motor runs for this long before auto-stop. Can be interrupted by stop.
+    _LATCHED_MOVE_DURATION: float = 5.0
+
     async def _send_stop(self) -> None:
         """Send STOP command with fresh cancel event."""
         await self.write_command(SolaceCommands.MOTOR_STOP, cancel_event=asyncio.Event())
 
     async def _move_with_stop(self, command: bytes) -> None:
-        """Execute a movement command with Solace-specific timing."""
+        """Execute a latched movement command with delayed stop.
+
+        Solace motors are latched: send move command once, motor keeps running
+        until a stop command is received. We send the move command, wait for a
+        fixed duration (interruptible by stop), then send stop.
+        """
         try:
-            await self.write_command(command, repeat_count=30, repeat_delay_ms=50)
+            # Send move command once (latched — controller holds motor state)
+            await self.write_command(command, cancel_event=asyncio.Event())
+            # Wait for movement duration, interruptible by coordinator's cancel event
+            try:
+                await asyncio.wait_for(
+                    self._coordinator.cancel_command.wait(),
+                    timeout=self._LATCHED_MOVE_DURATION,
+                )
+            except asyncio.TimeoutError:
+                pass  # Normal: completed full movement duration
         finally:
             try:
                 await self._send_stop()
@@ -222,10 +259,19 @@ class SolaceController(BedController):
             cancel_event=asyncio.Event(),
         )
 
+    async def _send_preset(self, command: bytes) -> None:
+        """Send a preset command with the required activation sequence.
+
+        The Woosa/QMS protocol requires: STOP → 200ms delay → preset command.
+        """
+        await self._send_stop()
+        await asyncio.sleep(0.2)
+        await self.write_command(command, cancel_event=asyncio.Event())
+
     # Preset methods
     async def preset_flat(self) -> None:
         """Go to flat position (single-shot, bed moves autonomously)."""
-        await self.write_command(SolaceCommands.PRESET_ALL_FLAT, repeat_count=3)
+        await self._send_preset(SolaceCommands.PRESET_ALL_FLAT)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (single-shot, bed moves autonomously)."""
@@ -237,7 +283,7 @@ class SolaceController(BedController):
             5: SolaceCommands.PRESET_MEMORY_5,
         }
         if command := commands.get(memory_num):
-            await self.write_command(command, repeat_count=3)
+            await self._send_preset(command)
         else:
             _LOGGER.warning("Invalid memory preset number: %d (valid: 1-5)", memory_num)
 
@@ -257,19 +303,19 @@ class SolaceController(BedController):
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position (single-shot, bed moves autonomously)."""
-        await self.write_command(SolaceCommands.PRESET_ZERO_G, repeat_count=3)
+        await self._send_preset(SolaceCommands.PRESET_ZERO_G)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position (single-shot, bed moves autonomously)."""
-        await self.write_command(SolaceCommands.PRESET_ANTI_SNORE, repeat_count=3)
+        await self._send_preset(SolaceCommands.PRESET_ANTI_SNORE)
 
     async def preset_tv(self) -> None:
         """Go to TV position (single-shot, bed moves autonomously)."""
-        await self.write_command(SolaceCommands.PRESET_TV, repeat_count=3)
+        await self._send_preset(SolaceCommands.PRESET_TV)
 
     async def preset_yoga(self) -> None:
         """Go to yoga position (single-shot, bed moves autonomously)."""
-        await self.write_command(SolaceCommands.PRESET_YOGA, repeat_count=3)
+        await self._send_preset(SolaceCommands.PRESET_YOGA)
 
     # Massage methods
     async def massage_head_up(self) -> None:
@@ -300,11 +346,39 @@ class SolaceController(BedController):
         """Stop all massage."""
         await self.write_command(SolaceCommands.MASSAGE_STOP)
 
-    # Hip motor support
-    @property
-    def has_hip_support(self) -> bool:
-        """Return True - Solace beds have hip motor."""
-        return True
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set massage intensity for a specific zone (absolute level).
+
+        Args:
+            zone: "back" or "leg"
+            level: 0-3 (0=off, 1=low, 2=medium, 3=high)
+        """
+        commands = {
+            "back": [
+                SolaceCommands.MASSAGE_BACK_LEVEL_0,
+                SolaceCommands.MASSAGE_BACK_LEVEL_1,
+                SolaceCommands.MASSAGE_BACK_LEVEL_2,
+                SolaceCommands.MASSAGE_BACK_LEVEL_3,
+            ],
+            "leg": [
+                SolaceCommands.MASSAGE_LEG_LEVEL_0,
+                SolaceCommands.MASSAGE_LEG_LEVEL_1,
+                SolaceCommands.MASSAGE_LEG_LEVEL_2,
+                SolaceCommands.MASSAGE_LEG_LEVEL_3,
+            ],
+        }
+        zone_commands = commands.get(zone)
+        if zone_commands is None:
+            _LOGGER.warning("Invalid massage zone: %s (valid: back, leg)", zone)
+            return
+        if 0 <= level < len(zone_commands):
+            await self.write_command(zone_commands[level])
+        else:
+            _LOGGER.warning("Invalid massage level: %d (valid: 0-3)", level)
+
+    # Hip motor support — not all Solace/QMS beds have a hip motor.
+    # The smartbed-mqtt reference only exposes Back, Legs, Lift, Tilt.
+    # Hip commands (0x0D/0x0E) exist in the protocol but are model-specific.
 
     async def move_hip_up(self) -> None:
         """Move hip motor up."""
@@ -318,7 +392,20 @@ class SolaceController(BedController):
         """Stop hip motor."""
         await self.move_head_stop()
 
-    # Light level control
+    # Light control
+    @property
+    def supports_lights(self) -> bool:
+        """Return True - Solace beds have lights."""
+        return True
+
+    async def lights_on(self) -> None:
+        """Turn lights on (set to max brightness)."""
+        await self.write_command(SolaceCommands.LIGHT_LEVEL_10)
+
+    async def lights_off(self) -> None:
+        """Turn lights off."""
+        await self.write_command(SolaceCommands.LIGHT_OFF)
+
     @property
     def supports_light_level_control(self) -> bool:
         """Return True - Solace beds support light level control."""
@@ -398,3 +485,27 @@ class SolaceController(BedController):
     async def massage_circulation_hip(self) -> None:
         """Start hip circulation massage."""
         await self.write_command(SolaceCommands.MASSAGE_CIRCULATION_HIP)
+
+    # Massage timer support
+    @property
+    def supports_massage_timer(self) -> bool:
+        """Return True - Solace beds support massage auto-off timers."""
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """Return available timer durations in minutes."""
+        return [10, 20, 30]
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set massage auto-off timer (0=off, 10/20/30 minutes)."""
+        commands = {
+            0: SolaceCommands.MASSAGE_STOP,
+            10: SolaceCommands.MASSAGE_TIMER_10_MIN,
+            20: SolaceCommands.MASSAGE_TIMER_20_MIN,
+            30: SolaceCommands.MASSAGE_TIMER_30_MIN,
+        }
+        if cmd := commands.get(minutes):
+            await self.write_command(cmd)
+        else:
+            _LOGGER.warning("Invalid massage timer: %d min (valid: 0, 10, 20, 30)", minutes)

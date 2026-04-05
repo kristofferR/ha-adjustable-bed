@@ -217,8 +217,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_flat()
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == SolaceCommands.PRESET_ALL_FLAT
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP  # STOP sent first
+        assert calls[1][0][1] == SolaceCommands.PRESET_ALL_FLAT
 
     async def test_preset_zero_g(
         self,
@@ -233,8 +234,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_zero_g()
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == SolaceCommands.PRESET_ZERO_G
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP
+        assert calls[1][0][1] == SolaceCommands.PRESET_ZERO_G
 
     async def test_preset_tv(
         self,
@@ -249,8 +251,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_tv()
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == SolaceCommands.PRESET_TV
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP
+        assert calls[1][0][1] == SolaceCommands.PRESET_TV
 
     async def test_preset_anti_snore(
         self,
@@ -265,8 +268,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_anti_snore()
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == SolaceCommands.PRESET_ANTI_SNORE
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP
+        assert calls[1][0][1] == SolaceCommands.PRESET_ANTI_SNORE
 
     async def test_preset_yoga(
         self,
@@ -281,8 +285,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_yoga()
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == SolaceCommands.PRESET_YOGA
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP
+        assert calls[1][0][1] == SolaceCommands.PRESET_YOGA
 
     @pytest.mark.parametrize(
         "memory_num,expected_command",
@@ -308,8 +313,9 @@ class TestSolacePresets:
 
         await coordinator.controller.preset_memory(memory_num)
 
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_command
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == SolaceCommands.MOTOR_STOP
+        assert calls[1][0][1] == expected_command
 
     @pytest.mark.parametrize(
         "memory_num,expected_command",

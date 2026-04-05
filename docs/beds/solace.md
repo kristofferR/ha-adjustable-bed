@@ -18,24 +18,27 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Motion Bed](https://play.google.com/store/apps/details?id=com.sn.blackdianqi) | `com.sn.blackdianqi` |
+| ✅ | [Woosa Sleep](https://play.google.com/store/apps/details?id=com.sn.woosa) | `com.sn.woosa` |
+
+Both apps are by the same developer (Zhejiang Tri Mix Technology / `com.sn` prefix) and use the same protocol.
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (head, back, legs, hip) |
+| Motor Control | ✅ (head, back, legs, lift, tilt) |
+| Hip Motor | ⚠️ Model-specific (not all beds have this) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (5 slots) |
-| Lift/Tilt | ✅ |
 | Zero-G / Anti-Snore / TV / Yoga | ✅ |
-| Massage | ✅ (zones + circulation modes) |
-| Lights | ✅ |
+| Massage | ✅ (zones + circulation modes + timers) |
+| Lights | ✅ (11 brightness levels + timers) |
 
 ## Protocol Details
 
 **Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
 **Characteristic UUID:** `0000ffe1-0000-1000-8000-00805f9b34fb`
-**Format:** 11-byte fixed packets
+**Format:** 11-byte fixed packets with CRC-16 Modbus checksum (bytes 9-10, little-endian, computed over bytes 0-8)
 
 ## Detection
 
@@ -146,4 +149,20 @@ From app disassembly analysis (Motion Bed):
 - **Stop Required:** Yes, explicit stop command on button release
 - **No continuous sending** - the bed controller maintains motor movement until a stop command is received
 
-Unlike other protocols that send repeated commands while the button is held, Solace/Motion Bed motors are latched - send move command on press, stop command on release.
+Unlike other protocols that send repeated commands while the button is held, Solace/Motion Bed motors are latched - send move command once, motor keeps running until stop command is received. The integration sends the move command, holds for 5 seconds, then sends stop. Pressing stop during movement interrupts immediately.
+
+## Notes
+
+### Woosa Sleep Dual-Device Detection
+
+Woosa Sleep beds may advertise **two** BLE devices:
+- `QMS-MQ-*` — the actual bed controller (Solace protocol, use this one)
+- `ECBLE*` — a secondary BLE module (detected as Remacro, does not respond to bed commands)
+
+Connect to the QMS-MQ device. The ECBLE device is not the bed controller.
+
+### Checksum Algorithm
+
+All 11-byte commands (type `05`) use **CRC-16 Modbus** (polynomial 0xA001) computed over the first 9 bytes. The 2-byte checksum is stored in little-endian format as bytes 9-10.
+
+Some auxiliary commands (sync, alarm — type `01`) use a simple byte-sum checksum instead.
