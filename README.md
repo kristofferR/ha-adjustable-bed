@@ -93,7 +93,8 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Scott Living](docs/beds/scott-living.md) | Scott Living |
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
-| ✅ [Okin CST](docs/beds/okin_cst.md) | Rize MF900 |
+| ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
+| ✅ [Okin CST](docs/beds/okin-cst.md) | Rize MF900 |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

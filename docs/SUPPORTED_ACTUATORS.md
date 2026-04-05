@@ -34,7 +34,8 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Rondure](beds/rondure.md) | 🧪 Needs Testing | 4 motors, split-king, massage, lights |
 | [Remacro](beds/remacro.md) | ✅ Supported | 4 motors, 8 presets, RGB lights, heat |
 | [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
-| [Okin CST](beds/okin_cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
+| [Okin CB35](beds/okin-cb35.md) | 🧪 Needs Testing | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
+| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
 
 ---
 
@@ -58,6 +59,8 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Mattress Firm 900](beds/mattressfirm.md) | 7-byte (32-bit cmd) | Nordic UART | ❌ No | Name starts with "iflex" |
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
+| [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Name patterns |
 
 **Key differences:**
 - **6-byte vs 7-byte vs 8-byte vs 10-byte**: Different command structures - not interchangeable
@@ -128,6 +131,7 @@ These beds have their own dedicated integrations:
    - `CheersSleep*`, `Jeromes*`, `Slumberland*`, `The Brick*` → Remacro
    - `Rize*` → Often [DewertOkin](beds/dewertokin.md), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
+   - `Star35*` → [Okin CB35](beds/okin-cb35.md) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:

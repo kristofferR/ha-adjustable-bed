@@ -122,6 +122,7 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Rondure | 25 | 50ms |
 | Remacro | 10 | 100ms |
 | OKIN CB24 | 3 | 300ms |
+| OKIN CB35 | 3 | 300ms |
 | OKIN ORE | 1 | 300ms |
 | Cool Base | 10 | 100ms |
 | Scott Living | 10 | 100ms |
