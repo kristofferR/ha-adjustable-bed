@@ -404,6 +404,42 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.lights_on(),
         required_capability="supports_light_cycle",
     ),
+    # Light/Sound therapy buttons (KSBT04C / Beautyrest Baselogic)
+    AdjustableBedButtonEntityDescription(
+        key="toggle_sound",
+        translation_key="toggle_sound",
+        icon="mdi:volume-high",
+        press_fn=lambda ctrl: ctrl.sound_toggle(),
+        required_capability="supports_sound_toggle",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="toggle_light_and_sound",
+        translation_key="toggle_light_and_sound",
+        icon="mdi:lightbulb-group",
+        press_fn=lambda ctrl: ctrl.light_and_sound_toggle(),
+        required_capability="supports_therapy_modes",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="therapy_mode_1",
+        translation_key="therapy_mode_1",
+        icon="mdi:numeric-1-circle",
+        press_fn=lambda ctrl: ctrl.therapy_mode_one(),
+        required_capability="supports_therapy_modes",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="therapy_mode_2",
+        translation_key="therapy_mode_2",
+        icon="mdi:numeric-2-circle",
+        press_fn=lambda ctrl: ctrl.therapy_mode_two(),
+        required_capability="supports_therapy_modes",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="therapy_mode_3",
+        translation_key="therapy_mode_3",
+        icon="mdi:numeric-3-circle",
+        press_fn=lambda ctrl: ctrl.therapy_mode_three(),
+        required_capability="supports_therapy_modes",
+    ),
     # Motor movement buttons (for discrete motor control beds)
     AdjustableBedButtonEntityDescription(
         key="head_up",

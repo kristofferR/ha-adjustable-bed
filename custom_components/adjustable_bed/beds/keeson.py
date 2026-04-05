@@ -102,6 +102,15 @@ class KeesonCommands:
     TOGGLE_SAFETY_LIGHTS = 0x20000
     TOGGLE_LIGHTS = 0x20000  # Alias for Ergomotion compatibility
 
+    # Light/Sound therapy (KSBT04C / Beautyrest Baselogic)
+    # These constants are in the firmware protocol (buildInstruct0) but the Sleep
+    # Harmony app never sends them from UI. The bed hardware supports them.
+    TOGGLE_SOUND = 0x10000  # Sound/noise generator toggle
+    TOGGLE_LIGHT_AND_SOUND = 0x40000  # Combined light + sound mode
+    THERAPY_MODE_ONE = 0x80000  # Mode 1 (Warm light / White noise)
+    THERAPY_MODE_TWO = 0x100000  # Mode 2 (Neutral light / Pink noise)
+    THERAPY_MODE_THREE = 0x200000  # Mode 3 (Cool light / Brown noise)
+
 
 class SinoCommands:
     """Sino (Dynasty, INNOVA) specific command constants.
@@ -335,6 +344,15 @@ class KeesonController(BedController):
         """Return True if this is any KSBT variant (ksbt, ksbt_cr, or ksbt04c)."""
         return self._variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}
 
+    @property
+    def _single_shot_count(self) -> int:
+        """Repeat count for single-shot commands (massage, presets, lights).
+
+        KSBT variants require sending twice per the Sleep Harmony app's singleSend().
+        The bed firmware uses the first send as wake/sync.
+        """
+        return 2 if self._is_ksbt else 1
+
     # Capability properties
     @property
     def supports_preset_zero_g(self) -> bool:
@@ -407,6 +425,16 @@ class KeesonController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return True for ORE variant (discrete on/off), False for others (toggle only)."""
         return self._variant == KEESON_VARIANT_SINO
+
+    @property
+    def supports_sound_toggle(self) -> bool:
+        """Return True for KSBT variants that have sound/noise generator hardware."""
+        return self._is_ksbt
+
+    @property
+    def supports_therapy_modes(self) -> bool:
+        """Return True for KSBT variants with light/sound therapy mode selection."""
+        return self._is_ksbt
 
     @property
     def has_tilt_support(self) -> bool:
@@ -870,9 +898,9 @@ class KeesonController(BedController):
     async def preset_flat(self) -> None:
         """Go to flat position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_FLAT))
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_FLAT), repeat_count=self._single_shot_count)
         else:
-            await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT))
+            await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT), repeat_count=self._single_shot_count)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset.
@@ -891,7 +919,7 @@ class KeesonController(BedController):
                 2: BetterLivingCommands.PRESET_MEMORY_2,
             }
             if command := commands.get(memory_num):
-                await self.write_command(self._build_command(command))
+                await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
             else:
                 _LOGGER.warning(
                     "BetterLiving memory %d not supported (valid: %s)",
@@ -906,7 +934,7 @@ class KeesonController(BedController):
                 2: CB1322Commands.PRESET_MEMORY_2,
             }
             if command := commands.get(memory_num):
-                await self.write_command(self._build_command(command))
+                await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
             else:
                 _LOGGER.warning(
                     "CB1322 memory %d not supported (valid: %s)",
@@ -938,7 +966,7 @@ class KeesonController(BedController):
             4: KeesonCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
+            await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory.
@@ -996,40 +1024,40 @@ class KeesonController(BedController):
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ZERO_G))
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
         else:
-            await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G))
+            await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
         if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE))
+        await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE), repeat_count=self._single_shot_count)
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
         if self._variant in ["base",KEESON_VARIANT_PURPLE]:
             _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_TV))
+        await self.write_command(self._build_command(KeesonCommands.PRESET_TV), repeat_count=self._single_shot_count)
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE))
+            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
             return
         if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE))
+        await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
 
     # Light methods
     async def lights_on(self) -> None:
         """Turn on safety lights."""
         if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
-            await self.write_command(self._build_command(SinoCommands.LIGHT_ON))
+            await self.write_command(self._build_command(SinoCommands.LIGHT_ON), repeat_count=self._single_shot_count)
             self._led_on = True
         else:
             # Other variants only have toggle
@@ -1039,7 +1067,7 @@ class KeesonController(BedController):
         """Turn off safety lights."""
         if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
-            await self.write_command(self._build_command(SinoCommands.LIGHT_OFF))
+            await self.write_command(self._build_command(SinoCommands.LIGHT_OFF), repeat_count=self._single_shot_count)
             self._led_on = False
         else:
             # Other variants only have toggle
@@ -1050,10 +1078,10 @@ class KeesonController(BedController):
         if self._variant == KEESON_VARIANT_SINO:
             # ORE doesn't have a toggle command; emulate it with tracked state.
             command = SinoCommands.LIGHT_OFF if self._led_on else SinoCommands.LIGHT_ON
-            await self.write_command(self._build_command(command))
+            await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
             self._led_on = not self._led_on
         else:
-            await self.write_command(self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS))
+            await self.write_command(self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS), repeat_count=self._single_shot_count)
 
     # Massage methods
     async def massage_toggle(self) -> None:
@@ -1065,20 +1093,22 @@ class KeesonController(BedController):
                 self._head_massage = 1
                 self._foot_massage = 1
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1)
+                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1),
+                    repeat_count=self._single_shot_count,
                 )
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1)
+                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1),
+                    repeat_count=self._single_shot_count,
                 )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_STEP))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_STEP), repeat_count=self._single_shot_count)
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
         if self._variant == KEESON_VARIANT_SINO:
             # Dynasty/INNOVA apps stop massage by setting both zones to intensity 0.
-            await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE))
-            await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE))
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE), repeat_count=self._single_shot_count)
+            await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE), repeat_count=self._single_shot_count)
             self._head_massage = 0
             self._foot_massage = 0
         else:
@@ -1092,10 +1122,11 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_UP))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_UP), repeat_count=self._single_shot_count)
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
@@ -1104,10 +1135,11 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN), repeat_count=self._single_shot_count)
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
@@ -1116,10 +1148,11 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_UP))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_UP), repeat_count=self._single_shot_count)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
@@ -1128,10 +1161,11 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN), repeat_count=self._single_shot_count)
 
     async def massage_intensity_up(self) -> None:
         """Increase all massage intensity."""
@@ -1141,16 +1175,25 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            # Standard Keeson doesn't have an all-intensity command
-            await super().massage_intensity_up()
+            # Standard Keeson: step both zones up
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_UP),
+                repeat_count=self._single_shot_count,
+            )
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_UP),
+                repeat_count=self._single_shot_count,
+            )
 
     async def massage_intensity_down(self) -> None:
         """Decrease all massage intensity."""
@@ -1160,16 +1203,25 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + self._head_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + self._foot_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            # Standard Keeson doesn't have an all-intensity command
-            await super().massage_intensity_down()
+            # Standard Keeson: step both zones down
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN),
+                repeat_count=self._single_shot_count,
+            )
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN),
+                repeat_count=self._single_shot_count,
+            )
 
     async def massage_mode_step(self) -> None:
         """Step through massage wave patterns."""
@@ -1178,10 +1230,11 @@ class KeesonController(BedController):
             await self.write_command(
                 self._build_command(
                     SinoCommands.MASSAGE_HEAD_WAVE_BASE + self._wave_massage
-                )
+                ),
+                repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP))
+            await self.write_command(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP), repeat_count=self._single_shot_count)
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage zone on/off."""
@@ -1189,16 +1242,21 @@ class KeesonController(BedController):
             if self._head_massage > 0:
                 self._head_massage = 0
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE)
+                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE),
+                    repeat_count=self._single_shot_count,
                 )
             else:
                 self._head_massage = 1
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1)
+                    self._build_command(SinoCommands.MASSAGE_HEAD_INTENSITY_BASE + 1),
+                    repeat_count=self._single_shot_count,
                 )
         else:
-            # Standard Keeson doesn't have per-zone toggle
-            await super().massage_head_toggle()
+            # Standard Keeson: step through head massage intensity (wraps max→0)
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_UP),
+                repeat_count=self._single_shot_count,
+            )
 
     async def massage_foot_toggle(self) -> None:
         """Toggle foot massage zone on/off."""
@@ -1206,16 +1264,57 @@ class KeesonController(BedController):
             if self._foot_massage > 0:
                 self._foot_massage = 0
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE)
+                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE),
+                    repeat_count=self._single_shot_count,
                 )
             else:
                 self._foot_massage = 1
                 await self.write_command(
-                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1)
+                    self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE + 1),
+                    repeat_count=self._single_shot_count,
                 )
         else:
-            # Standard Keeson doesn't have per-zone toggle
-            await super().massage_foot_toggle()
+            # Standard Keeson: step through foot massage intensity (wraps max→0)
+            await self.write_command(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_UP),
+                repeat_count=self._single_shot_count,
+            )
+
+    # Light/Sound therapy methods (KSBT04C / Beautyrest Baselogic)
+    async def sound_toggle(self) -> None:
+        """Toggle sound/noise generator."""
+        await self.write_command(
+            self._build_command(KeesonCommands.TOGGLE_SOUND),
+            repeat_count=self._single_shot_count,
+        )
+
+    async def light_and_sound_toggle(self) -> None:
+        """Toggle combined light and sound therapy."""
+        await self.write_command(
+            self._build_command(KeesonCommands.TOGGLE_LIGHT_AND_SOUND),
+            repeat_count=self._single_shot_count,
+        )
+
+    async def therapy_mode_one(self) -> None:
+        """Select therapy mode 1 (Warm light / White noise)."""
+        await self.write_command(
+            self._build_command(KeesonCommands.THERAPY_MODE_ONE),
+            repeat_count=self._single_shot_count,
+        )
+
+    async def therapy_mode_two(self) -> None:
+        """Select therapy mode 2 (Neutral light / Pink noise)."""
+        await self.write_command(
+            self._build_command(KeesonCommands.THERAPY_MODE_TWO),
+            repeat_count=self._single_shot_count,
+        )
+
+    async def therapy_mode_three(self) -> None:
+        """Select therapy mode 3 (Cool light / Brown noise)."""
+        await self.write_command(
+            self._build_command(KeesonCommands.THERAPY_MODE_THREE),
+            repeat_count=self._single_shot_count,
+        )
 
     def get_massage_state(self) -> dict[str, Any]:
         """Return current massage state from BLE notification feedback.

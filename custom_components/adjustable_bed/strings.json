@@ -397,6 +397,21 @@
       "light_cycle": {
         "name": "Light Cycle"
       },
+      "toggle_sound": {
+        "name": "Toggle Sound"
+      },
+      "toggle_light_and_sound": {
+        "name": "Toggle Light & Sound"
+      },
+      "therapy_mode_1": {
+        "name": "Therapy Mode 1"
+      },
+      "therapy_mode_2": {
+        "name": "Therapy Mode 2"
+      },
+      "therapy_mode_3": {
+        "name": "Therapy Mode 3"
+      },
       "stop": {
         "name": "Stop All"
       },
