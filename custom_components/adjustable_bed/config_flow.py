@@ -691,20 +691,22 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(self._discovered_devices),
         )
 
-        # Build device list - manual options first, then discovered beds, then diagnostic
-        devices: dict[str, str] = {
-            "select_by_brand": "Select by actuator brand (recommended)",
-            "manual": "Show all BLE devices",
-        }
-
         # Sort discovered beds: named devices first (alphabetically), then MAC-only/unnamed
         sorted_beds = sorted(
             self._discovered_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
-        devices.update(
-            {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
-        )
+
+        # Build device list - discovered beds first when available, then manual options
+        devices: dict[str, str] = {}
+        if sorted_beds:
+            devices.update(
+                {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
+            )
+            devices["select_by_brand"] = "Select by actuator brand"
+        else:
+            devices["select_by_brand"] = "Select by actuator brand (recommended)"
+        devices["manual"] = "Show all BLE devices"
         devices["diagnostic"] = "Browse unsupported BLE devices"
 
         return self.async_show_form(
