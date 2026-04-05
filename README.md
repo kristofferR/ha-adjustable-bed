@@ -69,7 +69,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
 | ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
-| ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, Woosa Sleep |
+| ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, Woosa Sleep, QMS |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
 | ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |

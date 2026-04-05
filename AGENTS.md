@@ -125,7 +125,7 @@ custom_components/adjustable_bed/
 | Richmat | `RichmatController` | Nordic (1-byte) or WiLinke (5-byte checksum) | Service UUIDs vary by variant | ✅ Tested |
 | Keeson | `KeesonController` | KSBT/BaseI4/I5/Ergomotion/Serta/Sino variants | Service UUID `0000ffe5-...` | ✅ Tested |
 | MotoSleep | `MotoSleepController` | 2-byte ASCII `[$, char]` | Device name starts with "HHC" | ✅ Tested |
-| Solace | `SolaceController` | 11-byte packets with built-in CRC | Service UUID `0000ffe0-...` | Needs testing |
+| Solace | `SolaceController` | 11-byte packets with CRC-16 Modbus, latched motors | Service UUID `0000ffe0-...` + name `QMS-*` | Needs testing |
 | Leggett & Platt Gen2 | `LeggettGen2Controller` | Gen2 ASCII commands | Service UUID `45e25100-...` | Needs testing |
 | Leggett & Platt Okin | `LeggettOkinController` | Okin binary protocol | Service UUID `62741523-...` + name | Needs testing |
 | Leggett & Platt WiLinke | `LeggettWilinkeController` | WiLinke 5-byte protocol | Name prefix "MlRM*" | Needs testing |

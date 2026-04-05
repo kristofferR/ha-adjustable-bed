@@ -9,7 +9,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Richmat](beds/richmat.md) | ✅ Supported | 1-5 memory presets, massage (discrete), RGB lights + timer, sync mode, motors 5-7 |
 | [MotoSleep](beds/motosleep.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
 | [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, RGBW lights |
-| [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G |
+| [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G, massage (zones + timers), lights (11 levels) |
 | [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
@@ -108,6 +108,7 @@ These beds have their own dedicated integrations:
 2. **Check the remote or controller** for brand markings.
 
 3. **Look at the device name** (shown during manual setup or in diagnostics):
+   - `QMS-*`, `QMS2*`, `QMS3*`, `QMS4*`, `S3-*`, `S4-*`, `S5-*`, `S6-*`, `SealyMF*` → Solace (Woosa Sleep, Sealy, QMS beds)
    - `HHC*` → MotoSleep
    - `DPG*` or `Desk*` → Linak
    - `Mouselet*` → Kaidi
@@ -144,6 +145,7 @@ These beds have their own dedicated integrations:
    - Service `6e400001-...` + name `AHF*` → TiMOTION AHF
    - Service `0000fee9-...` → Richmat WiLinke or BedTech
    - Service `00001525-...` → Vibradorm
+   - Service `0000ffe0-...` + name `QMS-*` or `S3-*` etc. → Solace (Woosa Sleep, Sealy, QMS)
    - Service `6e403587-...` → Remacro
    - Service `0000ffc0-...` or `9e5d1e47-...` + name `Mouselet*` → Kaidi
    - Service `b9934c43-...` → Logicdata SimplicityFrame
