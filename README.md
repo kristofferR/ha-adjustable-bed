@@ -7,6 +7,7 @@
   <a href="https://github.com/kristofferR/ha-adjustable-bed/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/kristofferR/ha-adjustable-bed/validate.yml?label=validation" alt="Validation"></a>
   <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Default-blue.svg" alt="HACS"></a>
   <img src="https://img.shields.io/badge/Home%20Assistant-2025.10%2B-blue" alt="Home Assistant 2025.10+">
+  <a href="https://github.com/sponsors/kristofferR"><img src="https://img.shields.io/badge/Sponsor-%E2%99%A1-ec6cb9" alt="Sponsor"></a>
 </p>
 
 <p align="center">
@@ -53,9 +54,9 @@
 
 </details>
 
-## Support This Project
+## Donate
 
-If you find this integration useful, consider [sponsoring the project](https://github.com/sponsors/kristofferR) to help support ongoing development and new bed support.
+If you love this integration, please consider [sending a thanks my way](https://github.com/sponsors/kristofferR).
 
 ## Supported Beds
 
