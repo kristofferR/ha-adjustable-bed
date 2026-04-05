@@ -20,7 +20,7 @@
 
 Uses the same 7-byte command frame as Okin Nordic:
 
-```
+```text
 [0x5A, 0x01, 0x03, 0x10, 0x30, CMD, 0xA5]
 ```
 
@@ -31,7 +31,8 @@ Uses the same 7-byte command frame as Okin Nordic:
 ### Init Sequence
 
 Only a wake command is needed:
-```
+
+```text
 5A 0B 00 A5
 ```
 

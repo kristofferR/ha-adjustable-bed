@@ -683,23 +683,23 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
     # Check for DewertOkin Star controllers - name pattern + Nordic UART service.
-    # Star* devices use the CB35 protocol (Sealy Posturematic, and possibly other
-    # DewertOkin-branded beds). The BOX25 multi-subsystem protocol (sleepys_box25)
-    # has never been confirmed on real hardware and remains an alternative.
+    # Both CB35 (Sealy Posturematic) and BOX25 Star (Sleepy's Elite) use Star* names
+    # with Nordic UART. They can't be distinguished from BLE advertisements alone,
+    # so both are presented as ambiguous options.
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
         from .const import NORDIC_UART_SERVICE_UUID
 
-        signals.append("name:okin_cb35")
+        signals.append("name:dewertokin_star")
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
             signals.append("uuid:nordic_uart")
             _LOGGER.info(
-                "Detected DewertOkin CB35 Star bed at %s (name: %s) with Nordic UART service",
+                "Detected DewertOkin Star bed at %s (name: %s) with Nordic UART service",
                 service_info.address,
                 service_info.name,
             )
             return DetectionResult(
                 bed_type=BED_TYPE_OKIN_CB35,
-                confidence=0.9,
+                confidence=0.65,
                 signals=signals,
                 ambiguous_types=[BED_TYPE_SLEEPYS_BOX25],
             )

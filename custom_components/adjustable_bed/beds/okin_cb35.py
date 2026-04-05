@@ -65,7 +65,7 @@ OKIN_CB35_CONFIG = Okin7ByteConfig(
     has_light_cycle=True,
     has_massage_intensity=True,
     massage_up_byte=0x60,
-    massage_down_byte=0x63,
+    massage_down_byte=0x61,
     extra_massage_modes=(0x52, 0x53, 0x54),
     massage_stop_byte=0x6F,
     lights_off_repeat=3,
@@ -88,7 +88,6 @@ class OkinCB35Controller(Okin7ByteController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the CB35 controller."""
         super().__init__(coordinator, config=OKIN_CB35_CONFIG)
-        self._massage_active = False
 
     # ─── Write override: CB35 requires write-without-response ─────────
 
@@ -164,6 +163,7 @@ class OkinCB35Controller(Okin7ByteController):
                 open_fn=lambda ctrl: ctrl.move_feet_up(),
                 close_fn=lambda ctrl: ctrl.move_feet_down(),
                 stop_fn=lambda ctrl: ctrl.move_feet_stop(),
+                max_angle=45,
             ),
             MotorControlSpec(
                 key="lumbar",
@@ -178,6 +178,7 @@ class OkinCB35Controller(Okin7ByteController):
                 open_fn=lambda ctrl: ctrl.move_neck_up(),
                 close_fn=lambda ctrl: ctrl.move_neck_down(),
                 stop_fn=lambda ctrl: ctrl.move_neck_stop(),
+                max_angle=30,
             ),
             MotorControlSpec(
                 key="tilt",
@@ -185,6 +186,7 @@ class OkinCB35Controller(Okin7ByteController):
                 open_fn=lambda ctrl: ctrl.move_tilt_up(),
                 close_fn=lambda ctrl: ctrl.move_tilt_down(),
                 stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                max_angle=45,
             ),
         )
 
@@ -215,16 +217,6 @@ class OkinCB35Controller(Okin7ByteController):
     async def move_tilt_stop(self) -> None:
         await self._send_stop()
 
-    # ─── Additional presets ───────────────────────────────────────────
-
-    @property
-    def supports_preset_read(self) -> bool:
-        return True
-
-    async def preset_read(self) -> None:
-        """Go to read position."""
-        await self._preset_with_stop(_cmd(0x12))
-
     # ─── Light brightness / color ─────────────────────────────────────
 
     async def light_brightness_up(self) -> None:
@@ -238,6 +230,16 @@ class OkinCB35Controller(Okin7ByteController):
     async def light_color_change(self) -> None:
         """Cycle light color."""
         await self.write_command(_cmd(0x70))
+
+    # ─── Massage: override inherited intensity (parent uses 0x40 frame) ─
+
+    async def massage_intensity_up(self) -> None:
+        """Increase overall massage strength (CB35 uses 0x30 frame, not 0x40)."""
+        await self.write_command(_cmd(0x60))
+
+    async def massage_intensity_down(self) -> None:
+        """Decrease overall massage strength (CB35 uses 0x30 frame, not 0x40)."""
+        await self.write_command(_cmd(0x61))
 
     # ─── Massage: separate head/foot strength ─────────────────────────
 
@@ -267,18 +269,17 @@ class OkinCB35Controller(Okin7ByteController):
         self.forward_raw_notification(characteristic.uuid, raw)
 
         if len(raw) < 2:
+            _LOGGER.debug("CB35 notification too short (%d bytes): %s", len(raw), raw.hex())
             return
 
         # Massage status: header A5 0B
         if raw[0] == 0xA5 and raw[1] == 0x0B and len(raw) >= 8:
-            self._massage_active = True
             _LOGGER.debug("CB35 massage status: %s", raw.hex())
 
-    async def start_notify(self, callback=None) -> None:
+    async def start_notify(self, callback=None) -> None:  # noqa: ARG002
         """Start listening for notifications via Nordic UART RX."""
         from ..const import NORDIC_UART_READ_CHAR_UUID
 
-        self._notify_callback = callback
         client = self.client
         if client is None or not client.is_connected:
             return
@@ -293,7 +294,6 @@ class OkinCB35Controller(Okin7ByteController):
         """Stop listening for notifications."""
         from ..const import NORDIC_UART_READ_CHAR_UUID
 
-        self._notify_callback = None
         client = self.client
         if client is not None and client.is_connected:
             try:

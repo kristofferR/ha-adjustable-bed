@@ -120,6 +120,17 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         min_motors=2,  # Pillow is independent of motor count
     ),
     AdjustableBedCoverEntityDescription(
+        key="neck",
+        translation_key="neck",
+        icon="mdi:head-outline",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_neck_up(),
+        close_fn=lambda ctrl: ctrl.move_neck_down(),
+        stop_fn=lambda ctrl: ctrl.move_neck_stop(),
+        min_motors=2,  # Neck is independent of motor count
+        max_angle=30,
+    ),
+    AdjustableBedCoverEntityDescription(
         key="tilt",
         translation_key="tilt",
         icon="mdi:angle-acute",

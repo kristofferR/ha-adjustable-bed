@@ -694,8 +694,10 @@ MALOUF_NAME_PATTERNS: Final = ("malouf",)
 # These beds use the Sleepy's Elite app (com.okin.bedding.sleepy)
 SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 
-# Sleepy's Elite BOX25 Star name pattern (DewertOkin BOX25 Star controller)
-# Devices advertise as "Star" + suffix (e.g., "Star1234")
+# DewertOkin Star controller name patterns (BOX25 Star / CB35 Star)
+# Devices advertise as "Star" + suffix (e.g., "Star352201011800")
+# Source: com.okin.bedding.sleepy (Sleepy's Elite) BOX25 Star analysis
+# Also used by Sealy Posturematic CB35 (com.okin.sealy)
 SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
 
 # Jensen name patterns (JMC400 / LinON Entry)

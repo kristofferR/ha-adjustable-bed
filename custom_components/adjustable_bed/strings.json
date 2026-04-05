@@ -417,6 +417,9 @@
       "pillow": {
         "name": "Pillow"
       },
+      "neck": {
+        "name": "Neck"
+      },
       "tilt": {
         "name": "Tilt"
       },
