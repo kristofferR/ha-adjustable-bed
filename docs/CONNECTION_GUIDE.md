@@ -48,6 +48,8 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 
 ## Connection Methods
 
+This integration requires an **active BLE connection** to send commands to your bed. You need one of the following:
+
 ### *Method 1: ESPHome Bluetooth Proxy (Recommended)*
 
 Use an ESP32 device running ESPHome as a Bluetooth proxy. This extends your Bluetooth range using WiFi.
@@ -66,6 +68,11 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 **Pros:** Simple setup, no additional hardware
 
 **Cons:** Limited range, may not work if HA host is far from bed
+
+
+### What Does NOT Work
+
+**Shelly devices** (Pro 3 EM, Plus series, etc.) can act as passive BLE scanners for Home Assistant — they will discover nearby Bluetooth devices, so your bed may appear in the Bluetooth integration. However, Shelly devices **cannot establish active BLE connections**, which means the Adjustable Bed integration cannot use them to send commands. You need an ESPHome Bluetooth Proxy or a local Bluetooth adapter instead.
 
 ---
 
