@@ -13,8 +13,23 @@
 | Signal | Value |
 |--------|-------|
 | Device name | Starts with `Star` (e.g., `Star352201011800`) |
+| Name digits 4-5 | `35` distinguishes CB35 from BOX25 (`25`) |
 | Service UUID | Nordic UART `6E400001-B5A3-F393-E0A9-E50E24DCCA9E` |
 | Manufacturer ID | 89 (OKIN) |
+| Manufacturer Name (2A29) | Exactly `STAR` (post-connection confirmation) |
+
+### Name Encoding
+
+DewertOkin Star device names encode the protocol version: `Star` + `[protocol digits]` + `[serial]`.
+
+| Name | Digits 4-5 | Protocol | Bed Type |
+|------|-----------|----------|----------|
+| `Star352201011800` | `35` | CB.35.22.01 | CB35 (this protocol) |
+| `Star254202079996` | `25` | 25_42_02 | BOX25 (Sleepy's Elite) |
+
+### Post-Connection Verification
+
+The `com.okin.bedding.adjustbed` app (which supports both CB35 and BOX25) reads BLE characteristic `2A29` (Manufacturer Name) from the Device Information Service (`180A`) after connecting. If it returns exactly `STAR` (4 bytes: 0x53 0x54 0x41 0x52), the device uses CB35. Otherwise it uses BOX25. The integration performs the same check to auto-correct if the name-based detection was wrong.
 
 ## Protocol
 
