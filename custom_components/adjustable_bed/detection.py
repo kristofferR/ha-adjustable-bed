@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_OKIN_64BIT,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
@@ -338,6 +339,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
+    BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
     BED_TYPE_OKIN_CST: "Okin CST (Rize MF900, 14-byte dual-field)",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
@@ -680,35 +682,38 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
-    # Check for Sleepy's Elite BOX25 Star - name pattern + Nordic UART service
-    # BOX25 Star devices advertise as "Star*" and use Nordic UART for multi-subsystem protocol
+    # Check for DewertOkin Star controllers - name pattern + Nordic UART service.
+    # Star* devices use the CB35 protocol (Sealy Posturematic, and possibly other
+    # DewertOkin-branded beds). The BOX25 multi-subsystem protocol (sleepys_box25)
+    # has never been confirmed on real hardware and remains an alternative.
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
         from .const import NORDIC_UART_SERVICE_UUID
 
-        signals.append("name:sleepys_box25")
+        signals.append("name:okin_cb35")
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
             signals.append("uuid:nordic_uart")
             _LOGGER.info(
-                "Detected Sleepy's Elite BOX25 Star bed at %s (name: %s) with Nordic UART service",
+                "Detected DewertOkin CB35 Star bed at %s (name: %s) with Nordic UART service",
                 service_info.address,
                 service_info.name,
             )
             return DetectionResult(
-                bed_type=BED_TYPE_SLEEPYS_BOX25,
+                bed_type=BED_TYPE_OKIN_CB35,
                 confidence=0.9,
                 signals=signals,
+                ambiguous_types=[BED_TYPE_SLEEPYS_BOX25],
             )
 
         _LOGGER.info(
-            "Detected possible Sleepy's Elite BOX25 Star bed at %s (name: %s) by name pattern only",
+            "Detected possible DewertOkin Star bed at %s (name: %s) by name pattern only",
             service_info.address,
             service_info.name,
         )
         return DetectionResult(
-            bed_type=BED_TYPE_SLEEPYS_BOX25,
+            bed_type=BED_TYPE_OKIN_CB35,
             confidence=0.3,
             signals=signals,
-            ambiguous_types=[BED_TYPE_OCTO],
+            ambiguous_types=[BED_TYPE_SLEEPYS_BOX25, BED_TYPE_OCTO],
         )
 
     # Check for TiMOTION AHF protocol by device name.

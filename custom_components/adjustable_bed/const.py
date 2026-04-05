@@ -126,6 +126,7 @@ BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
+BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
@@ -189,6 +190,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BEDTECH,
     # Jensen
     BED_TYPE_JENSEN,
+    # OKIN CB35 Star (Sealy Posturematic)
+    BED_TYPE_OKIN_CB35,
     # OKIN 64-bit
     BED_TYPE_OKIN_64BIT,
     # Sleepy's Elite
@@ -1569,6 +1572,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
     BED_TYPE_OKIN_CB24: (3, 300),
+    # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
+    # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
+    BED_TYPE_OKIN_CB35: (3, 300),
     # OKIN ORE: 300ms delay → 1 repeat = 0.3s per command (preset-based)
     # Source: com.ore.bedding.glideawaymontion ANALYSIS.md
     BED_TYPE_OKIN_ORE: (1, 300),

@@ -8,6 +8,7 @@ Protocol-based controllers:
 - OkinUuidController: Okin 6-byte via UUID, requires pairing
 - Okin7ByteController: 7-byte via Okin service UUID
 - OkinNordicController: 7-byte via Nordic UART (Mattress Firm 900)
+- OkinCB35Controller: CB35 7-byte via Nordic UART (Sealy Posturematic)
 - LeggettGen2Controller: Leggett & Platt Gen2 ASCII protocol
 - LeggettOkinController: Leggett & Platt Okin binary protocol
 - LeggettWilinkeController: Leggett & Platt WiLinke 5-byte protocol
@@ -39,6 +40,7 @@ from .okin_7byte import Okin7ByteController
 
 # Protocol-based controllers
 from .okin_cb24 import OkinCB24Controller
+from .okin_cb35 import OkinCB35Controller
 from .okin_cst import OkinCstController
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
@@ -63,6 +65,7 @@ __all__ = [
     "BedController",
     # Protocol-based controllers
     "OkinCB24Controller",
+    "OkinCB35Controller",
     "OkinCstController",
     "OkinHandleController",
     "OkinOreController",
