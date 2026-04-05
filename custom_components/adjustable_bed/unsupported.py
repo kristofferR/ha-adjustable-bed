@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_get as async_get_issue_registry,
+)
 
 from .const import DOMAIN
 
@@ -19,6 +24,10 @@ _LOGGER = logging.getLogger(__name__)
 
 GITHUB_REPO = "kristofferR/ha-adjustable-bed"
 GITHUB_NEW_ISSUE_URL = f"https://github.com/{GITHUB_REPO}/issues/new"
+
+# In-memory set of issue_ids already processed this session.
+# Prevents repeated registry lookups and log spam from BLE advertisements.
+_notified_devices: set[str] = set()
 
 
 @dataclass
@@ -136,16 +145,44 @@ def _generate_github_url(device_info: UnsupportedDeviceInfo, reason: str) -> str
     return f"{GITHUB_NEW_ISSUE_URL}{params}"
 
 
+def _make_unsupported_issue_id(device_info: UnsupportedDeviceInfo) -> str:
+    """Generate a stable issue ID, preferring device name over MAC address.
+
+    BLE devices may use randomized MAC addresses, so keying by name prevents
+    duplicate Repairs entries for the same device across address changes.
+    """
+    if device_info.name:
+        sanitized = re.sub(r"[^a-z0-9]", "_", device_info.name.lower()).strip("_")
+        if sanitized:
+            return f"unsupported_device_{sanitized}"
+    # Fallback to MAC for unnamed devices
+    return f"unsupported_device_{device_info.address.replace(':', '_').lower()}"
+
+
 async def create_unsupported_device_issue(
     hass: HomeAssistant,
     device_info: UnsupportedDeviceInfo,
     reason: str,
-) -> None:
-    """Create a persistent issue in the Repairs dashboard for an unsupported device."""
-    github_url = _generate_github_url(device_info, reason)
+) -> bool:
+    """Create a persistent issue in the Repairs dashboard for an unsupported device.
 
-    # Use address as unique identifier (normalized to avoid duplicates)
-    issue_id = f"unsupported_device_{device_info.address.replace(':', '_').lower()}"
+    Returns True if the issue was newly created, False if it already existed.
+    Deduplicates by device name (or MAC for unnamed devices) to handle BLE
+    address randomization and prevent repeated repairs after dismissal.
+    """
+    issue_id = _make_unsupported_issue_id(device_info)
+
+    # Fast path: already processed this session
+    if issue_id in _notified_devices:
+        return False
+
+    # Check if issue already exists in registry (respects dismissed state across restarts)
+    registry = async_get_issue_registry(hass)
+    if registry.async_get_issue(DOMAIN, issue_id) is not None:
+        _notified_devices.add(issue_id)
+        return False
+
+    github_url = _generate_github_url(device_info, reason)
 
     async_create_issue(
         hass,
@@ -163,10 +200,15 @@ async def create_unsupported_device_issue(
         },
     )
 
+    _notified_devices.add(issue_id)
+
     _LOGGER.debug(
-        "Created Repairs issue for unsupported device %s",
+        "Created Repairs issue for unsupported device %s (%s)",
+        device_info.name or "Unknown",
         device_info.address,
     )
+
+    return True
 
 
 async def create_pairing_required_issue(

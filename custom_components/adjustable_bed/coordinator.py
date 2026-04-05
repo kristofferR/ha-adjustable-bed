@@ -65,8 +65,10 @@ from .const import (
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
@@ -1056,6 +1058,35 @@ class AdjustableBedCoordinator:
                 )
                 self._ble_manufacturer = ble_manufacturer
                 self._ble_model = ble_model
+
+                # Post-connection protocol verification for DewertOkin Star devices.
+                # The adjustbed app (com.okin.bedding.adjustbed) reads BLE characteristic
+                # 2A29 (Manufacturer Name) after connecting: exactly "STAR" = CB35 protocol
+                # (35_22_01), anything else = BOX25 protocol (25_42_02).
+                if self._bed_type in (BED_TYPE_OKIN_CB35, BED_TYPE_SLEEPYS_BOX25):
+                    is_star_manufacturer = (
+                        ble_manufacturer is not None
+                        and ble_manufacturer.strip().upper() == "STAR"
+                    )
+                    if is_star_manufacturer and self._bed_type == BED_TYPE_SLEEPYS_BOX25:
+                        _LOGGER.warning(
+                            "BLE Manufacturer Name is 'STAR' for %s - this indicates a "
+                            "CB35 protocol device, but configured as BOX25. Auto-correcting "
+                            "to CB35. Source: com.okin.bedding.adjustbed 2A29 detection",
+                            self._address,
+                        )
+                        self._bed_type = BED_TYPE_OKIN_CB35
+                    elif not is_star_manufacturer and self._bed_type == BED_TYPE_OKIN_CB35:
+                        if ble_manufacturer is not None:
+                            _LOGGER.warning(
+                                "BLE Manufacturer Name is '%s' (not 'STAR') for %s - this "
+                                "indicates a BOX25 protocol device, but configured as CB35. "
+                                "Auto-correcting to BOX25. Source: com.okin.bedding.adjustbed "
+                                "2A29 detection",
+                                ble_manufacturer,
+                                self._address,
+                            )
+                            self._bed_type = BED_TYPE_SLEEPYS_BOX25
 
                 # If remote is set to auto, infer Richmat remote code from BLE name at runtime.
                 # This preserves compatibility for existing entries created before auto-code storage.

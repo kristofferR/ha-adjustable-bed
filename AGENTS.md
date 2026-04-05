@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Home Assistant custom integration for controlling smart adjustable beds via Bluetooth Low Energy (BLE). It replaces the broken `smartbed-mqtt` addon with a native HA integration that uses Home Assistant's Bluetooth stack directly.
 
-**Current status:** 43 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, Vibradorm, Octo, Okin UUID/Okimat, Okin CB24, SUTA, and BedTech tested. Other brands need community testing.
+**Current status:** 44 bed protocols implemented. Linak, Keeson, Richmat, MotoSleep, Jensen, Svane, Vibradorm, Octo, Okin UUID/Okimat, Okin CB24, SUTA, and BedTech tested. Other brands need community testing.
 
 ## GitHub Comment Approval
 
@@ -47,6 +47,7 @@ custom_components/adjustable_bed/
 │   ├── okin_7byte.py    # Okin 7-byte protocol
 │   ├── okin_nordic.py   # Okin 7-byte via Nordic UART
 │   ├── okin_cb24.py     # Okin CB24 protocol via Nordic UART
+│   ├── okin_cb35.py     # Okin CB35 Star protocol (Sealy Posturematic)
 │   ├── okin_ore.py      # Okin ORE protocol (A5 5A format)
 │   ├── okin_protocol.py # Shared Okin protocol utilities
 │   ├── okin_64bit.py    # OKIN 64-bit 10-byte protocol
@@ -134,6 +135,7 @@ custom_components/adjustable_bed/
 | Okin 7-byte | `Okin7ByteController` | 7-byte via Okin service UUID | Service UUID `62741523-...` + name | Needs testing |
 | Okin Nordic | `OkinNordicController` | 7-byte via Nordic UART | Service UUID `6e400001-...` | Needs testing |
 | Okin CB24 | `OkinCB24Controller` | CB24 protocol via Nordic UART | Name patterns (SmartBed, Amada) | ✅ Tested |
+| Okin CB35 | `OkinCB35Controller` | CB35 7-byte via Nordic UART (Sealy) | Name `Star35*` + Nordic UART + 2A29="STAR" | Needs testing |
 | Okin ORE | `OkinOreController` | A5 5A format protocol | Service UUID `00001000-...` | Needs testing |
 | Okin FFE | `KeesonController(variant="okin")` | 0xE6 prefix, Keeson protocol | Name patterns ("okin", "cb-") + FFE5 UUID | Needs testing |
 | Okin 64-bit | `Okin64BitController` | 10-byte commands | Service UUID `62741523-...` | Needs testing |

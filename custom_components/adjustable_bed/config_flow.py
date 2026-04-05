@@ -226,8 +226,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # not for devices already identified as non-bed (speakers, etc.)
                 device_info = capture_device_info(discovery_info)
                 reason = determine_unsupported_reason(discovery_info)
-                log_unsupported_device(device_info, reason)
-                await create_unsupported_device_issue(self.hass, device_info, reason)
+                created = await create_unsupported_device_issue(
+                    self.hass, device_info, reason
+                )
+                if created:
+                    log_unsupported_device(device_info, reason)
 
             _LOGGER.debug(
                 "Device %s is not a supported bed type, aborting",
