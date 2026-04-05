@@ -1866,8 +1866,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 self.config_entry,
                 data=new_data,
             )
-            # Reload integration to apply changes immediately
-            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(

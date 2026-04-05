@@ -55,7 +55,8 @@
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN"
+          "octo_pin": "Octo PIN",
+          "jensen_pin": "Jensen PIN"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect.",
@@ -68,7 +69,8 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead.",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN."
+          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060."
         }
       },
       "manual": {
@@ -253,6 +255,7 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
+          "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
           "legs_max_angle": "Maximum legs angle (degrees)"
         },
@@ -269,6 +272,7 @@
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300).",
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
         }
@@ -299,6 +303,12 @@
       },
       "preset_incline": {
         "name": "Incline"
+      },
+      "preset_both_up": {
+        "name": "Both Up"
+      },
+      "preset_yoga": {
+        "name": "Yoga"
       },
       "preset_memory_1": {
         "name": "Memory 1"
@@ -336,41 +346,50 @@
       "program_memory_6": {
         "name": "Save to Memory 6"
       },
-      "preset_both_up": {
-        "name": "Both Up"
-      },
       "massage_all_off": {
-        "name": "Massage Off"
+        "name": "Massage: Off"
       },
       "massage_all_toggle": {
-        "name": "Massage Toggle"
+        "name": "Massage: Toggle"
       },
       "massage_all_up": {
-        "name": "Massage Intensity Up"
+        "name": "Massage: Intensity Up"
       },
       "massage_all_down": {
-        "name": "Massage Intensity Down"
+        "name": "Massage: Intensity Down"
       },
       "massage_head_toggle": {
-        "name": "Head Massage Toggle"
+        "name": "Massage: Head Toggle"
       },
       "massage_head_up": {
-        "name": "Head Massage Up"
+        "name": "Massage: Head Up"
       },
       "massage_head_down": {
-        "name": "Head Massage Down"
+        "name": "Massage: Head Down"
       },
       "massage_foot_toggle": {
-        "name": "Foot Massage Toggle"
+        "name": "Massage: Foot Toggle"
       },
       "massage_foot_up": {
-        "name": "Foot Massage Up"
+        "name": "Massage: Foot Up"
       },
       "massage_foot_down": {
-        "name": "Foot Massage Down"
+        "name": "Massage: Foot Down"
       },
       "massage_mode_step": {
-        "name": "Massage Mode"
+        "name": "Massage: Mode"
+      },
+      "massage_circulation_full_body": {
+        "name": "Massage: Full Body Loop"
+      },
+      "massage_circulation_head": {
+        "name": "Massage: Head Loop"
+      },
+      "massage_circulation_leg": {
+        "name": "Massage: Leg Loop"
+      },
+      "massage_circulation_hip": {
+        "name": "Massage: Hip Loop"
       },
       "toggle_light": {
         "name": "Toggle Light"
@@ -431,6 +450,12 @@
       "foot_end_tilt": {
         "name": "Foot End Tilt"
       },
+      "hip": {
+        "name": "Hip"
+      },
+      "bed_height": {
+        "name": "Bed Height"
+      },
       "keeson_back": {
         "name": "Back"
       },
@@ -439,12 +464,6 @@
       },
       "keeson_legs": {
         "name": "Legs"
-      },
-      "hip": {
-        "name": "Hip"
-      },
-      "bed_height": {
-        "name": "Bed Height"
       }
     },
     "sensor": {
@@ -459,6 +478,15 @@
       },
       "feet_angle": {
         "name": "Feet Angle"
+      },
+      "massage_head_level": {
+        "name": "Massage: Head Level"
+      },
+      "massage_foot_level": {
+        "name": "Massage: Foot Level"
+      },
+      "massage_timer_mode": {
+        "name": "Massage: Timer Mode"
       }
     },
     "light": {
@@ -491,6 +519,26 @@
       },
       "feet_position": {
         "name": "Feet Position"
+      },
+      "massage_head_intensity": {
+        "name": "Massage: Head Intensity"
+      },
+      "massage_foot_intensity": {
+        "name": "Massage: Foot Intensity"
+      },
+      "massage_wave_intensity": {
+        "name": "Massage: Wave Intensity"
+      },
+      "light_level": {
+        "name": "Light Level"
+      }
+    },
+    "select": {
+      "massage_timer": {
+        "name": "Massage: Timer"
+      },
+      "light_timer": {
+        "name": "Light Timer"
       }
     }
   },
@@ -540,6 +588,46 @@
           "description": "Include recent log entries related to the integration."
         }
       }
+    },
+    "set_position": {
+      "name": "Set Motor Position",
+      "description": "Move a motor to a specific position and stop when reached.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "motor": {
+          "name": "Motor",
+          "description": "The motor to move (back, legs, head, or feet)."
+        },
+        "position": {
+          "name": "Position",
+          "description": "Target position (degrees or percentage depending on bed type)."
+        }
+      }
+    },
+    "timed_move": {
+      "name": "Timed Move",
+      "description": "Move a motor for a specified duration.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The adjustable bed device."
+        },
+        "motor": {
+          "name": "Motor",
+          "description": "The motor to move (back, legs, head, or feet)."
+        },
+        "direction": {
+          "name": "Direction",
+          "description": "Direction to move (up or down)."
+        },
+        "duration_ms": {
+          "name": "Duration (ms)",
+          "description": "How long to move the motor in milliseconds."
+        }
+      }
     }
   },
   "exceptions": {
@@ -554,6 +642,21 @@
     },
     "device_not_found": {
       "message": "Could not find Adjustable Bed device with ID {device_id}."
+    },
+    "devices_not_found": {
+      "message": "Could not find Adjustable Bed device(s) with ID(s): {device_ids}."
+    },
+    "position_feedback_not_supported": {
+      "message": "Device \"{device_name}\" (type: {bed_type}) does not support position feedback. Only Linak, Okimat, Reverie, Keeson, and Ergomotion beds support this feature."
+    },
+    "angle_sensing_disabled": {
+      "message": "Angle sensing is disabled for device \"{device_name}\". Enable angle sensing in the device configuration to use position control."
+    },
+    "invalid_motor_for_bed_type": {
+      "message": "Motor \"{motor}\" is not valid for device \"{device_name}\". Valid motors: {valid_motors}."
+    },
+    "invalid_position_range": {
+      "message": "Position {position} is out of range for motor \"{motor}\". Valid range: 0-{max_value}{unit}."
     }
   },
   "issues": {

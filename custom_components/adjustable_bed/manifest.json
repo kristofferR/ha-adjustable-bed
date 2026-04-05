@@ -122,6 +122,15 @@
     },
     {
       "service_uuid": "b9934c43-5c91-462b-80a1-30fccc29d758"
+    },
+    {
+      "service_uuid": "01000001-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000ff12-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "db801000-f324-29c3-38d1-85c0c2e86885"
     }
   ],
   "codeowners": ["@kristofferR"],

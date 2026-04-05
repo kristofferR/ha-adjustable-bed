@@ -159,11 +159,12 @@ class ReverieNightstandController(BedController):
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
                 return
 
-            try:
-                await self.client.write_gatt_char(char_uuid, command, response=True)
-            except BleakError:
-                _LOGGER.exception("Failed to write to %s", char_uuid)
-                raise
+            async with self._ble_lock:
+                try:
+                    await self.client.write_gatt_char(char_uuid, command, response=True)
+                except BleakError:
+                    _LOGGER.exception("Failed to write to %s", char_uuid)
+                    raise
 
             if i < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)

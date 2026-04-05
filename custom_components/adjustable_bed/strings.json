@@ -55,7 +55,8 @@
           "motor_pulse_delay_ms": "Motor pulse delay (ms)",
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "octo_pin": "Octo PIN"
+          "octo_pin": "Octo PIN",
+          "jensen_pin": "Jensen PIN"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect.",
@@ -68,7 +69,8 @@
           "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote. Recommended for beds that only allow one connection at a time.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead.",
-          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN."
+          "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060."
         }
       },
       "manual": {
@@ -245,6 +247,7 @@
           "disable_angle_sensing": "Disable angle sensing",
           "position_mode": "Position update mode",
           "preferred_adapter": "Bluetooth adapter",
+          "connection_profile": "Connection profile",
           "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
           "motor_pulse_count": "Motor pulse count",
@@ -252,6 +255,7 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
+          "jensen_pin": "Jensen PIN",
           "back_max_angle": "Maximum back angle (degrees)",
           "legs_max_angle": "Maximum legs angle (degrees)"
         },
@@ -260,6 +264,7 @@
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "position_mode": "Speed: faster button response. Accuracy: extra position read after each command.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
+          "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
@@ -267,6 +272,7 @@
           "disconnect_after_command": "Disconnect from the bed immediately after each command to free up the BLE connection for the physical remote.",
           "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (10-300).",
           "octo_pin": "PIN code for Octo bed authentication. Required to maintain connection. Leave empty if your bed doesn't require a PIN.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
         }
@@ -316,6 +322,12 @@
       "preset_memory_4": {
         "name": "Memory 4"
       },
+      "preset_memory_5": {
+        "name": "Memory 5"
+      },
+      "preset_memory_6": {
+        "name": "Memory 6"
+      },
       "program_memory_1": {
         "name": "Save to Memory 1"
       },
@@ -327,6 +339,12 @@
       },
       "program_memory_4": {
         "name": "Save to Memory 4"
+      },
+      "program_memory_5": {
+        "name": "Save to Memory 5"
+      },
+      "program_memory_6": {
+        "name": "Save to Memory 6"
       },
       "massage_all_off": {
         "name": "Massage: Off"
@@ -372,6 +390,9 @@
       },
       "massage_circulation_hip": {
         "name": "Massage: Hip Loop"
+      },
+      "toggle_light": {
+        "name": "Toggle Light"
       },
       "light_cycle": {
         "name": "Light Cycle"
