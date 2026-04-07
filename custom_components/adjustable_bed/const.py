@@ -305,6 +305,11 @@ RICHMAT_WILINKE_CHAR_UUIDS: Final = [
 ]
 
 # Keeson specific UUIDs
+# JSON/A00A variant (Juna Sleep, Linx, Ergo Health / ConnectedBed family)
+KEESON_JSON_SERVICE_UUID: Final = "0000a00a-0000-1000-8000-00805f9b34fb"
+KEESON_JSON_WRITE_CHAR_UUID: Final = "0000b002-0000-1000-8000-00805f9b34fb"
+KEESON_JSON_NOTIFY_CHAR_UUID: Final = "0000b004-0000-1000-8000-00805f9b34fb"
+
 # KSBT variant - primary UUIDs (Nordic UART Service)
 KEESON_KSBT_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 KEESON_KSBT_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
@@ -847,6 +852,7 @@ OKIN_CB24_VARIANTS: Final = {
 
 # Keeson variants
 KEESON_VARIANT_BASE: Final = "base"
+KEESON_VARIANT_JSON: Final = "json"
 KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_KSBT_CR: Final = "ksbt_cr"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
@@ -860,6 +866,7 @@ KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect",
     KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
+    KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
     KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
     KEESON_VARIANT_KSBT04C: "KSBT04C (7-byte with checksum, Beautyrest Baselogic)",
@@ -1382,6 +1389,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_CB27NEW,
     KEESON_VARIANT_BASE,
+    KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_ERGOMOTION,

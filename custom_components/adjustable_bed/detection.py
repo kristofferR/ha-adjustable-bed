@@ -89,6 +89,7 @@ from .const import (
     KEESON_BASE_SERVICE_UUID,
     KEESON_EXTENDED_NORDIC_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
     LEGGETT_GEN2_SERVICE_UUID,
@@ -96,14 +97,14 @@ from .const import (
     LEGGETT_RICHMAT_NAME_PATTERNS,
     LIMOSS_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
-    LOGICDATA_SERVICE_UUID,
-    MANUFACTURER_ID_LOGICDATA,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
+    LOGICDATA_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
     MALOUF_NAME_PATTERNS,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_LOGICDATA,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
     OCTO_NAME_PATTERNS,
@@ -558,6 +559,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         return DetectionResult(
             bed_type=BED_TYPE_JENSEN,
             confidence=0.9,
+            signals=signals,
+        )
+
+    # Check for Keeson JSON/A00A protocol family (Juna Sleep, Linx, Ergo Health)
+    if KEESON_JSON_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:keeson_json")
+        _LOGGER.info(
+            "Detected Keeson JSON/A00A bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_KEESON,
+            confidence=1.0,
             signals=signals,
         )
 

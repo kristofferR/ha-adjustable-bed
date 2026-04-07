@@ -16,6 +16,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SBI,
+    KEESON_JSON_SERVICE_UUID,
+    KEESON_VARIANT_JSON,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_OKIN,
@@ -227,6 +229,27 @@ async def test_factory_auto_detects_keeson_sino_variant_for_okin_ble_signature()
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_SINO
     assert getattr(controller, "_betterliving_presets", None) is True
+
+
+async def test_factory_auto_detects_keeson_json_variant_for_a00a_service() -> None:
+    """Keeson auto mode should select the JSON/A00A protocol family on A00A UUID."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[SimpleNamespace(uuid=KEESON_JSON_SERVICE_UUID)],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="Juna Sleep Bed",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_JSON
 
 
 async def test_factory_auto_detects_keeson_sino_for_okin_ble_name_single_uuid() -> None:

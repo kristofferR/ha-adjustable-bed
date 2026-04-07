@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,6 +25,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_JSON_WRITE_CHAR_UUID,
+    KEESON_VARIANT_JSON,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -150,6 +153,39 @@ class TestKeesonController:
         # Checksum: ~(0x04 + 0x02) = ~0x06 = 0xF9
         assert stop_cmd[6] == 0xF9
 
+    async def test_build_command_json_variant(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test JSON/A00A variant command envelope."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
+
+        command = controller._build_command(KeesonCommands.PRESET_ZERO_G)
+        payload = json.loads(command.decode())
+
+        assert controller.control_characteristic_uuid == KEESON_JSON_WRITE_CHAR_UUID
+        assert payload["code"] == 2
+        assert payload["cmd"] == {
+            "key": "00001000",
+            "ctrm": 1,
+            "km": 1,
+            "keykt": 0,
+        }
+
+        stop_command = controller._build_command(0)
+        stop_payload = json.loads(stop_command.decode())
+        assert stop_payload["cmd"] == {
+            "key": "00000000",
+            "ctrm": 0,
+            "km": 1,
+            "keykt": 0,
+        }
+
     async def test_write_command(
         self,
         hass: HomeAssistant,
@@ -258,6 +294,33 @@ class TestKeesonMovement:
         mock_bleak_client.write_gatt_char.assert_called_with(
             KEESON_BASE_WRITE_CHAR_UUID, expected_stop, response=True
         )
+
+    async def test_move_head_up_json_variant_uses_dual_motion_modes(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """JSON/A00A movement should send both known held-motion ctrm variants."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
+
+        await controller.move_head_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        payloads = [json.loads(call.args[1].decode()) for call in calls]
+        motion_payloads = [payload for payload in payloads if payload["cmd"]["key"] == "00000001"]
+
+        assert motion_payloads
+        assert {payload["cmd"]["ctrm"] for payload in motion_payloads} == {0, 1}
+        assert payloads[-1]["cmd"] == {
+            "key": "00000000",
+            "ctrm": 0,
+            "km": 1,
+            "keykt": 0,
+        }
 
 
 class TestKeesonPresets:

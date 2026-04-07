@@ -64,16 +64,18 @@ from .const import (
     CONF_KAIDI_SOFA_ACU_NO,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_SERVICE_UUID,
     KEESON_SINO_NAME_PATTERNS,
     # Variants and UUIDs
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
+    KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
-    KEESON_VARIANT_PURPLE,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
@@ -460,6 +462,14 @@ async def create_controller(
             if client is not None and client.services:
                 service_uuids = {service.uuid.lower() for service in client.services}
 
+            if KEESON_JSON_SERVICE_UUID.lower() in service_uuids:
+                _LOGGER.info(
+                    "Auto-detected Keeson JSON/A00A variant for %s (name: %s)",
+                    coordinator.address,
+                    device_name or "unknown",
+                )
+                keeson_variant = KEESON_VARIANT_JSON
+
             fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
             has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
             has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
@@ -513,7 +523,10 @@ async def create_controller(
                 keeson_variant = KEESON_VARIANT_KSBT
 
         # Use configured variant or default to base
-        if keeson_variant == KEESON_VARIANT_KSBT:
+        if keeson_variant == KEESON_VARIANT_JSON:
+            _LOGGER.debug("Using Keeson JSON/A00A variant")
+            return KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
+        elif keeson_variant == KEESON_VARIANT_KSBT:
             _LOGGER.debug("Using KSBT Keeson variant (configured)")
             return KeesonController(coordinator, variant="ksbt")
         elif keeson_variant == KEESON_VARIANT_KSBT_CR:
