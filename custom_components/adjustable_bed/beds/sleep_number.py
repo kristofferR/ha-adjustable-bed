@@ -576,6 +576,8 @@ class SleepNumberController(BedController):
         self._drain_readback_hint_queue()
 
         payload = self._format_bamkey_command(bamkey, *args)
+        # Sleep Number returns BamKey results over the notify/readback path on the
+        # same characteristic, so waiting for a GATT write response only adds latency.
         await self._write_gatt_with_retry(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
             self._build_bamkey_blob(payload),

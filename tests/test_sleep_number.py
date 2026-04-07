@@ -581,6 +581,14 @@ class TestSleepNumberController:
 
         assert await coordinator.controller._response_queue.get() == "PASS:ACK"
 
+    def test_parse_bamkey_blob_rejects_invalid_crc(self) -> None:
+        """Framed blobs with a corrupted checksum should fail CRC validation."""
+        blob = bytearray(_build_sleep_number_blob("PASS:ACK"))
+        blob[-1] ^= 0xFF
+
+        with pytest.raises(ValueError):
+            SleepNumberController._parse_bamkey_blob(bytes(blob))
+
     async def test_read_underbed_light_settings_updates_cached_state(
         self,
         sleep_number_coordinator,
