@@ -523,6 +523,96 @@ class TestCoordinatorControllerStateCallbacks:
         assert coordinator.controller_state["light_level"] == 3
         callback.assert_called_once_with(coordinator.controller_state)
 
+    async def test_register_controller_state_callback_retries_after_transient_failure(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Transient refresh failures should requeue readable light-state hydration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        light_state = {
+            "is_on": True,
+            "light_level": 2,
+            "light_timer_minutes": 30,
+            "light_timer_option": "30 min",
+        }
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_RETRY_DELAY",
+                0,
+            ),
+            patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new_callable=AsyncMock,
+                side_effect=[TimeoutError("retry"), light_state],
+            ) as mock_query,
+        ):
+            coordinator.register_controller_state_callback(callback)
+            await hass.async_block_till_done()
+            await hass.async_block_till_done()
+
+        assert mock_query.await_count == 2
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 2
+        callback.assert_called_once_with(coordinator.controller_state)
+
+    async def test_async_refresh_readable_light_state_retries_after_transient_failure(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Connect-time readable light refresh should requeue after transient failures."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.read_light_state = AsyncMock(side_effect=[TimeoutError("retry")])
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        coordinator._controller_state_callbacks.add(callback)
+
+        light_state = {
+            "is_on": True,
+            "light_level": 1,
+            "light_timer_minutes": 15,
+            "light_timer_option": "15 min",
+        }
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_RETRY_DELAY",
+                0,
+            ),
+            patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new_callable=AsyncMock,
+                return_value=light_state,
+            ) as mock_query,
+        ):
+            await coordinator._async_refresh_readable_light_state()
+            await hass.async_block_till_done()
+            await hass.async_block_till_done()
+
+        controller.read_light_state.assert_awaited_once()
+        mock_query.assert_awaited_once()
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 1
+        callback.assert_called_once_with(coordinator.controller_state)
+
 
 class TestCoordinatorDisconnectTimer:
     """Test coordinator idle disconnect timer."""

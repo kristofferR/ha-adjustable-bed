@@ -132,6 +132,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
+_READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 
 MAX_COMMAND_TRACE_ENTRIES = 100
 MAX_CONNECTION_ATTEMPT_DETAILS = 25
@@ -241,6 +242,7 @@ class AdjustableBedCoordinator:
         self._controller_state: dict[str, Any] = {}
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
+        self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
 
         # Connection state callbacks
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
@@ -1468,6 +1470,7 @@ class AdjustableBedCoordinator:
         _LOGGER.debug("async_disconnect called for %s", self._address)
         async with self._lock:
             self._cancel_disconnect_timer()
+            self._cancel_controller_state_refresh_retry()
             if self._controller_state_refresh_task is not None:
                 self._controller_state_refresh_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
@@ -2117,6 +2120,8 @@ class AdjustableBedCoordinator:
 
         def unregister() -> None:
             self._controller_state_callbacks.discard(callback_fn)
+            if not self._controller_state_callbacks:
+                self._cancel_controller_state_refresh_retry()
 
         return unregister
 
@@ -2153,6 +2158,8 @@ class AdjustableBedCoordinator:
         }
         if updates:
             self.handle_controller_state_updates(updates)
+        if not self._should_refresh_readable_light_state(force=False):
+            self._cancel_controller_state_refresh_retry()
 
     async def _async_refresh_readable_light_state(self) -> None:
         """Read light state from the controller and merge any fresh values."""
@@ -2160,36 +2167,48 @@ class AdjustableBedCoordinator:
         if controller is None:
             return
 
+        state: dict[str, Any] | None = None
+        cancelled_error: asyncio.CancelledError | None = None
+        should_retry = False
+        retry_allowed = True
         try:
             async with asyncio.timeout(_READABLE_LIGHT_STATE_TIMEOUT):
                 state = await controller.read_light_state()
-        except asyncio.CancelledError:
-            raise
+        except asyncio.CancelledError as err:
+            should_retry = True
+            cancelled_error = err
         except NotImplementedError:
             _LOGGER.debug(
                 "Controller %s does not expose readable light state",
                 self._bed_type,
             )
-            return
+            retry_allowed = False
         except (BleakError, ConnectionError, RuntimeError, TimeoutError, ValueError) as err:
             _LOGGER.debug(
                 "Failed to refresh readable light state for %s: %s",
                 self._address,
                 err,
             )
-            return
+            should_retry = True
         except Exception:
             _LOGGER.debug(
                 "Unexpected readable light state refresh failure for %s",
                 self._address,
                 exc_info=True,
             )
-            return
+            should_retry = True
 
-        self._merge_controller_light_state(state)
+        if state is not None:
+            self._merge_controller_light_state(state)
+        if retry_allowed and (should_retry or self._should_refresh_readable_light_state(force=False)):
+            self._schedule_controller_state_refresh(retry_delay=_READABLE_LIGHT_STATE_RETRY_DELAY)
+        if cancelled_error is not None:
+            raise cancelled_error
 
     async def _async_refresh_readable_light_state_task(self) -> None:
         """Run the controller-state refresh task and clear its tracking handle."""
+        should_retry = False
+        retry_allowed = True
         try:
 
             async def _read_light_state(controller: BedController) -> dict[str, Any]:
@@ -2203,30 +2222,57 @@ class AdjustableBedCoordinator:
                 )
             self._merge_controller_light_state(state)
         except asyncio.CancelledError:
+            should_retry = True
             raise
         except NotImplementedError:
             _LOGGER.debug(
                 "Controller %s does not expose readable light state",
                 self._bed_type,
             )
+            retry_allowed = False
         except (BleakError, ConnectionError, RuntimeError, TimeoutError, ValueError) as err:
             _LOGGER.debug(
                 "Failed to refresh readable light state for %s: %s",
                 self._address,
                 err,
             )
+            should_retry = True
         except Exception:
             _LOGGER.debug(
                 "Unexpected readable light state refresh failure for %s",
                 self._address,
                 exc_info=True,
             )
+            should_retry = True
         finally:
             self._controller_state_refresh_task = None
+            if retry_allowed and (
+                should_retry or self._should_refresh_readable_light_state(force=False)
+            ):
+                self._schedule_controller_state_refresh(
+                    retry_delay=_READABLE_LIGHT_STATE_RETRY_DELAY
+                )
 
-    def _schedule_controller_state_refresh(self) -> None:
+    @callback
+    def _cancel_controller_state_refresh_retry(self) -> None:
+        """Cancel any pending retry for readable light-state hydration."""
+        if self._controller_state_refresh_retry_timer is None:
+            return
+
+        self._controller_state_refresh_retry_timer.cancel()
+        self._controller_state_refresh_retry_timer = None
+
+    @callback
+    def _handle_controller_state_refresh_retry(self) -> None:
+        """Run a delayed readable light-state refresh retry."""
+        self._controller_state_refresh_retry_timer = None
+        self._schedule_controller_state_refresh()
+
+    @callback
+    def _schedule_controller_state_refresh(self, *, retry_delay: float = 0) -> None:
         """Schedule a one-shot controller-state refresh when entities need it."""
         if not self._should_refresh_readable_light_state(force=False):
+            self._cancel_controller_state_refresh_retry()
             return
 
         if (
@@ -2235,6 +2281,16 @@ class AdjustableBedCoordinator:
         ):
             return
 
+        if retry_delay > 0:
+            if self._controller_state_refresh_retry_timer is not None:
+                return
+            self._controller_state_refresh_retry_timer = self.hass.loop.call_later(
+                retry_delay,
+                self._handle_controller_state_refresh_retry,
+            )
+            return
+
+        self._cancel_controller_state_refresh_retry()
         self._controller_state_refresh_task = self.hass.async_create_task(
             self._async_refresh_readable_light_state_task()
         )
