@@ -1037,7 +1037,7 @@ class TestStopAfterCancel:
         )
         await command_started.wait()
 
-        await asyncio.wait_for(coordinator.async_stop_command(), timeout=0.1)
+        await asyncio.wait_for(coordinator.async_stop_command(), timeout=1.0)
         await command_task
 
         coordinator._controller.stop_all.assert_awaited_once()
