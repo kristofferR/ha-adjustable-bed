@@ -469,38 +469,38 @@ async def create_controller(
                     device_name or "unknown",
                 )
                 keeson_variant = KEESON_VARIANT_JSON
+            else:
+                fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
+                has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
+                has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
+                normalized_name = (device_name or "").lower()
+                is_okin_ble_name = any(
+                    normalized_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS
+                )
 
-            fallback_service_uuids = {uuid.lower() for uuid, _ in KEESON_FALLBACK_GATT_PAIRS}
-            has_fallback_uuid = bool(service_uuids & fallback_service_uuids)
-            has_dual_fallback_services = service_uuids >= KEESON_BETTERLIVING_SERVICE_UUIDS
-            normalized_name = (device_name or "").lower()
-            is_okin_ble_name = any(
-                normalized_name.startswith(pattern) for pattern in KEESON_SINO_NAME_PATTERNS
-            )
-
-            if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
-                # Check manufacturer name for CB1322 sub-variant (OKIN protocol)
-                mfr_lower = (ble_manufacturer or "").lower()
-                if any(marker in mfr_lower for marker in CB1322_MANUFACTURER_MARKERS):
-                    _LOGGER.info(
-                        "Auto-detected Keeson OKIN (CB1322) variant for %s "
-                        "(name: %s, manufacturer: %s)",
-                        coordinator.address,
-                        device_name or "unknown",
-                        ble_manufacturer,
-                    )
-                    keeson_variant = KEESON_VARIANT_OKIN
-                    keeson_cb1322_presets = True
-                else:
-                    _LOGGER.info(
-                        "Auto-detected Keeson Sino variant for %s "
-                        "(name: %s, services: %s)",
-                        coordinator.address,
-                        device_name or "unknown",
-                        sorted(service_uuids),
-                    )
-                    keeson_variant = KEESON_VARIANT_SINO
-                    keeson_betterliving_presets = True
+                if has_dual_fallback_services or (is_okin_ble_name and has_fallback_uuid):
+                    # Check manufacturer name for CB1322 sub-variant (OKIN protocol)
+                    mfr_lower = (ble_manufacturer or "").lower()
+                    if any(marker in mfr_lower for marker in CB1322_MANUFACTURER_MARKERS):
+                        _LOGGER.info(
+                            "Auto-detected Keeson OKIN (CB1322) variant for %s "
+                            "(name: %s, manufacturer: %s)",
+                            coordinator.address,
+                            device_name or "unknown",
+                            ble_manufacturer,
+                        )
+                        keeson_variant = KEESON_VARIANT_OKIN
+                        keeson_cb1322_presets = True
+                    else:
+                        _LOGGER.info(
+                            "Auto-detected Keeson Sino variant for %s "
+                            "(name: %s, services: %s)",
+                            coordinator.address,
+                            device_name or "unknown",
+                            sorted(service_uuids),
+                        )
+                        keeson_variant = KEESON_VARIANT_SINO
+                        keeson_betterliving_presets = True
 
         # Auto-detect KSBT sub-variant from device name
         if keeson_variant in (None, "", VARIANT_AUTO):

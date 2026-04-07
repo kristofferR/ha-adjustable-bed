@@ -1177,7 +1177,11 @@ class KeesonController(BedController):
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
-        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
+        if (
+            not self._is_ksbt
+            and not self._is_json_variant
+            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
+        ):
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE), repeat_count=self._single_shot_count)
@@ -1194,7 +1198,11 @@ class KeesonController(BedController):
         if self._betterliving_presets:
             await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
             return
-        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
+        if (
+            not self._is_ksbt
+            and not self._is_json_variant
+            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
+        ):
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)

@@ -69,6 +69,7 @@ Brands using Keeson/Ergomotion actuators:
 - `0000ffb0-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffb2`)
 
 ### JSON/A00A Variant (Juna, Linx, Ergo Health)
+
 **Primary Service UUID:** `0000a00a-0000-1000-8000-00805f9b34fb`  
 **Write Characteristic:** `0000b002-0000-1000-8000-00805f9b34fb`  
 **Indicate Characteristic:** `0000b004-0000-1000-8000-00805f9b34fb`
@@ -94,6 +95,7 @@ One-shot buttons use `ctrm=1, km=1, keykt=0`. Held motion is not fully uniform:
 The integration treats `0000a00a` as a distinct Keeson variant and uses the shared 32-bit command values, while accommodating the split held-motion metadata from the Juna/Linx app family.
 
 ### KSBT Variant (Older Remotes)
+
 **Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
 

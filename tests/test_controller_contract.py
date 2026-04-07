@@ -252,6 +252,34 @@ async def test_factory_auto_detects_keeson_json_variant_for_a00a_service() -> No
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_JSON
 
 
+async def test_factory_keeps_keeson_json_variant_when_fallback_uuids_are_also_present() -> None:
+    """A00A should take precedence over overlapping fallback UUID heuristics."""
+    coordinator = _FactoryCoordinator()
+    client = SimpleNamespace(
+        is_connected=True,
+        services=[
+            SimpleNamespace(uuid=KEESON_JSON_SERVICE_UUID),
+            SimpleNamespace(uuid="0000fff0-0000-1000-8000-00805f9b34fb"),
+            SimpleNamespace(uuid="0000ffb0-0000-1000-8000-00805f9b34fb"),
+        ],
+        address="AA:BB:CC:DD:EE:FF",
+    )
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_KEESON,
+        protocol_variant=VARIANT_AUTO,
+        client=client,
+        device_name="OKIN-BLE00000",
+        ble_manufacturer="BLE-4.0 Module",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_variant", None) == KEESON_VARIANT_JSON
+    assert getattr(controller, "_betterliving_presets", None) is False
+    assert getattr(controller, "_cb1322_presets", None) is False
+
+
 async def test_factory_auto_detects_keeson_sino_for_okin_ble_name_single_uuid() -> None:
     """OKIN-BLE name + single fallback UUID should select Sino with betterliving presets."""
     coordinator = _FactoryCoordinator()
