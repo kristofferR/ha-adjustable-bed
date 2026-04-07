@@ -2117,7 +2117,7 @@ class AdjustableBedCoordinator:
 
     def _should_refresh_readable_light_state(self, *, force: bool) -> bool:
         """Return True when controller light state should be refreshed from the bed."""
-        if not self._controller_state_callbacks:
+        if not force and not self._controller_state_callbacks:
             return False
 
         if self._client is None or not self._client.is_connected or self._controller is None:
@@ -2140,6 +2140,9 @@ class AdjustableBedCoordinator:
     @callback
     def _merge_controller_light_state(self, state: dict[str, Any]) -> None:
         """Merge readable light-state values into coordinator state."""
+        if "is_on" in state and "under_bed_lights_on" not in state:
+            state = {**state, "under_bed_lights_on": state["is_on"]}
+
         updates = {
             key: value for key, value in state.items() if self._controller_state.get(key) != value
         }

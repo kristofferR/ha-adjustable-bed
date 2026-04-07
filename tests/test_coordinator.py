@@ -472,7 +472,7 @@ class TestCoordinatorControllerStateCallbacks:
         controller.supports_under_bed_lights = True
         controller.read_light_state = AsyncMock(
             return_value={
-                "under_bed_lights_on": True,
+                "is_on": True,
                 "light_level": 3,
                 "light_timer_minutes": 15,
                 "light_timer_option": "15 min",
@@ -486,6 +486,7 @@ class TestCoordinatorControllerStateCallbacks:
 
         controller.read_light_state.assert_awaited_once()
         assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["is_on"] is True
         assert coordinator.controller_state["light_level"] == 3
         callback.assert_called_once_with(coordinator.controller_state)
 

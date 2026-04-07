@@ -105,6 +105,9 @@ class TestSleepNumberController:
         )
 
         assert coordinator.controller.requires_notification_channel is True
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 3
+        assert coordinator.controller_state["light_timer_option"] == "15 min"
 
     async def test_disables_position_polling_during_commands(
         self,
@@ -130,6 +133,7 @@ class TestSleepNumberController:
             name="Smart bed 0074EB",
             entry_id="sleep_number_set_position",
         )
+        mock_bleak_client.write_gatt_char.reset_mock()
 
         async def _write_side_effect(
             _char_uuid: str, payload: bytes, response: bool = False
@@ -264,7 +268,7 @@ class TestSleepNumberController:
             "left",
             expected_args=1,
         )
-        assert coordinator.controller.get_light_state() == {}
+        assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
 
     async def test_read_underbed_light_settings_updates_cached_state(
