@@ -36,7 +36,7 @@ def _build_sleep_number_blob(payload: str) -> bytes:
 
 def _decode_sleep_number_payload(payload: bytes) -> str:
     """Decode a framed Sleep Number blob back to its text payload."""
-    return SleepNumberController._decode_bamkey_text(payload)
+    return SleepNumberController._parse_bamkey_blob(payload)
 
 
 @pytest.fixture
@@ -401,6 +401,34 @@ class TestSleepNumberController:
         )
 
         assert await coordinator.controller._readback_hint_queue.get() is None
+
+    async def test_stop_notify_clears_session_state_when_client_is_already_disconnected(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """stop_notify should clear local Sleep Number session state even on early return."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:33",
+            name="Smart bed 0074F9",
+            entry_id="sleep_number_stop_notify_cleanup",
+        )
+        coordinator.controller._notify_started = True
+        coordinator.controller._bulk_notify_started = True
+        coordinator.controller._bed_presence_channel_primed = True
+        coordinator.controller._response_buffer.extend(_build_sleep_number_blob("PASS:ACK"))
+        coordinator.controller._response_queue.put_nowait("PASS:ACK")
+        coordinator.controller._readback_hint_queue.put_nowait(None)
+        mock_bleak_client.is_connected = False
+
+        await coordinator.controller.stop_notify()
+
+        assert coordinator.controller._notify_started is False
+        assert coordinator.controller._bulk_notify_started is False
+        assert coordinator.controller._bed_presence_channel_primed is False
+        assert coordinator.controller._response_buffer == bytearray()
+        assert coordinator.controller._response_queue.empty()
+        assert coordinator.controller._readback_hint_queue.empty()
 
     async def test_bamkey_notification_handler_reassembles_blob_chunks(
         self,

@@ -275,15 +275,14 @@ class SleepNumberController(BedController):
         """Unsubscribe from bamkey notifications."""
         self._notify_callback = None
         client = self.client
-        if client is None or not client.is_connected or not self._notify_started:
-            return
-
         try:
+            if client is None or not client.is_connected or not self._notify_started:
+                return
             await client.stop_notify(SLEEP_NUMBER_BAMKEY_CHAR_UUID)
         except BleakError:
             _LOGGER.debug("Failed to stop Sleep Number notifications", exc_info=True)
         finally:
-            if self._bulk_notify_started:
+            if client is not None and client.is_connected and self._bulk_notify_started:
                 try:
                     await client.stop_notify(SLEEP_NUMBER_BULK_TRANSFER_CHAR_UUID)
                 except BleakError:
@@ -293,6 +292,7 @@ class SleepNumberController(BedController):
                     )
             self._notify_started = False
             self._bulk_notify_started = False
+            self._bed_presence_channel_primed = False
             self._response_buffer.clear()
             self._drain_response_queue()
             self._drain_readback_hint_queue()
@@ -554,6 +554,7 @@ class SleepNumberController(BedController):
     async def _send_bamkey_raw_response(self, bamkey: str, *args: str) -> str:
         """Send a bamkey command and return the raw response text."""
         await self._ensure_notifications_started()
+        self._response_buffer.clear()
         self._drain_response_queue()
         self._drain_readback_hint_queue()
 
