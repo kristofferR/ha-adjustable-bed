@@ -1845,6 +1845,11 @@ class AdjustableBedCoordinator:
 
             try:
                 controller = await self._async_prepare_controller_operation(operation_name)
+                if self._cancel_counter > entry_cancel_count or self._cancel_command.is_set():
+                    _LOGGER.debug("Controller %s cancelled during preparation", operation_name)
+                    if raise_on_lock_cancel:
+                        raise asyncio.CancelledError
+                    return None
                 self._last_command_start = datetime.now(UTC)
 
                 poll_stop: asyncio.Event | None = None

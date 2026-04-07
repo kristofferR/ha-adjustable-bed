@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -457,6 +458,38 @@ class TestCoordinatorControllerStateCallbacks:
         result = await coordinator.async_execute_controller_query(_query)
 
         assert result == "ok"
+
+    async def test_async_execute_controller_query_raises_if_cancelled_during_preparation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Queries should abort before execution if cancellation lands during preparation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        query_executed = False
+
+        async def _prepare(operation_name: str):
+            del operation_name
+            coordinator._cancel_counter += 1
+            coordinator._cancel_command.set()
+            return coordinator.controller
+
+        async def _query(ctrl):
+            del ctrl
+            nonlocal query_executed
+            query_executed = True
+            return "ok"
+
+        with (
+            patch.object(coordinator, "_async_prepare_controller_operation", side_effect=_prepare),
+            pytest.raises(asyncio.CancelledError),
+        ):
+            await coordinator.async_execute_controller_query(_query)
+
+        assert not query_executed
 
     async def test_register_controller_state_callback_hydrates_light_state_when_missing(
         self,
@@ -980,6 +1013,37 @@ class TestStopAfterCancel:
 
         # Counter should NOT have incremented
         assert coordinator._cancel_counter == initial_counter
+
+    async def test_execute_controller_command_skips_execution_if_cancelled_during_preparation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Commands should not start once cancellation arrives during preparation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        command_executed = False
+
+        async def _prepare(operation_name: str):
+            del operation_name
+            coordinator._cancel_counter += 1
+            coordinator._cancel_command.set()
+            return coordinator.controller
+
+        async def tracked_command(controller):
+            del controller
+            nonlocal command_executed
+            command_executed = True
+
+        with patch.object(coordinator, "_async_prepare_controller_operation", side_effect=_prepare):
+            await coordinator.async_execute_controller_command(
+                tracked_command,
+                cancel_running=False,
+            )
+
+        assert not command_executed
 
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_execute_controller_command_skips_polling_when_controller_disables_it(
