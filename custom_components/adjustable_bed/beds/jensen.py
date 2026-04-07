@@ -160,6 +160,11 @@ class JensenController(BedController):
         """Return the UUID of the control characteristic."""
         return JENSEN_CHAR_UUID
 
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Jensen uses notifications for config reads and PIN-gated handshakes."""
+        return True
+
     def _build_pin_unlock_command(self) -> bytes:
         """Build the PIN unlock command from the configured PIN.
 

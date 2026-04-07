@@ -178,14 +178,14 @@
       },
       "bluetooth_pairing": {
         "title": "Bluetooth Pairing Required",
-        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
+        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
         "data": {
           "action": "Action"
         }
       },
       "manual_pairing": {
         "title": "Bluetooth Pairing Required",
-        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
+        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
         "data": {
           "action": "Action"
         }
@@ -520,6 +520,9 @@
     "binary_sensor": {
       "ble_connection": {
         "name": "BLE Connection"
+      },
+      "bed_presence": {
+        "name": "Bed Presence"
       }
     },
     "number": {

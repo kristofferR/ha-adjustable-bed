@@ -62,6 +62,7 @@ from .const import (
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -120,6 +121,7 @@ from .const import (
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SERTA_NAME_PATTERNS,
+    SLEEP_NUMBER_SERVICE_UUID,
     SLEEPYS_BOX25_NAME_PATTERNS,
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
@@ -369,6 +371,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
     BED_TYPE_SCOTT_LIVING: "Scott Living",
     BED_TYPE_SERTA: "Serta Motion Perfect",
+    BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
@@ -543,6 +546,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_JENSEN,
+            confidence=1.0,
+            signals=signals,
+        )
+
+    # Check for Sleep Number Climate 360 / FlexFit - unique Fuzion service UUID
+    if SLEEP_NUMBER_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:sleep_number")
+        _LOGGER.info(
+            "Detected Sleep Number bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_SLEEP_NUMBER,
             confidence=1.0,
             signals=signals,
         )

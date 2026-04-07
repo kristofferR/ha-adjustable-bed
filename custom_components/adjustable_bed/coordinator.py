@@ -12,7 +12,7 @@ import traceback
 from collections import deque
 from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -63,16 +63,16 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
-    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_UUID,
-    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     CONF_BACK_MAX_ANGLE,
@@ -130,6 +130,7 @@ if TYPE_CHECKING:
     from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
+T = TypeVar("T")
 
 MAX_COMMAND_TRACE_ENTRIES = 100
 MAX_CONNECTION_ATTEMPT_DETAILS = 25
@@ -163,9 +164,7 @@ class AdjustableBedCoordinator:
                 entry_title=entry.title,
                 configured_name=self._name,
             )
-            self._motor_count = get_richmat_motor_count(
-                get_richmat_features(self._richmat_remote)
-            )
+            self._motor_count = get_richmat_motor_count(get_richmat_features(self._richmat_remote))
         else:
             self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
@@ -238,6 +237,8 @@ class AdjustableBedCoordinator:
         # Position data from notifications
         self._position_data: dict[str, float] = {}
         self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
+        self._controller_state: dict[str, Any] = {}
+        self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
 
         # Connection state callbacks
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
@@ -261,7 +262,9 @@ class AdjustableBedCoordinator:
         self._last_connection_attempt: datetime | None = None
         self._last_connection_error: str | None = None
         self._last_connection_error_type: str | None = None
-        self._last_disconnect_reason: str | None = None  # "idle_timeout", "intentional", "unexpected"
+        self._last_disconnect_reason: str | None = (
+            None  # "idle_timeout", "intentional", "unexpected"
+        )
 
         # Command timing tracking for diagnostics (issue #168)
         self._last_command_start: datetime | None = None
@@ -390,6 +393,11 @@ class AdjustableBedCoordinator:
         return self._position_data
 
     @property
+    def controller_state(self) -> dict[str, Any]:
+        """Return non-position controller state."""
+        return self._controller_state
+
+    @property
     def is_connected(self) -> bool:
         """Return whether we are currently connected to the bed."""
         return self._client is not None and self._client.is_connected
@@ -443,7 +451,9 @@ class AdjustableBedCoordinator:
         return {
             "attempt_count": self._connection_attempt_count,
             "success_count": self._connection_success_count,
-            "last_attempt": self._last_connection_attempt.isoformat() if self._last_connection_attempt else None,
+            "last_attempt": self._last_connection_attempt.isoformat()
+            if self._last_connection_attempt
+            else None,
             "last_error": self._last_connection_error,
             "last_error_type": self._last_connection_error_type,
             "last_disconnect_reason": self._last_disconnect_reason,
@@ -462,9 +472,15 @@ class AdjustableBedCoordinator:
     def command_timing(self) -> dict[str, Any]:
         """Return command timing for diagnostics."""
         return {
-            "last_command_start": self._last_command_start.isoformat() if self._last_command_start else None,
-            "last_command_end": self._last_command_end.isoformat() if self._last_command_end else None,
-            "last_notify_received": self._last_notify_received.isoformat() if self._last_notify_received else None,
+            "last_command_start": self._last_command_start.isoformat()
+            if self._last_command_start
+            else None,
+            "last_command_end": self._last_command_end.isoformat()
+            if self._last_command_end
+            else None,
+            "last_notify_received": self._last_notify_received.isoformat()
+            if self._last_notify_received
+            else None,
         }
 
     @property
@@ -685,8 +701,7 @@ class AdjustableBedCoordinator:
                     try:
                         scanners = bluetooth.async_current_scanners(self.hass)
                         self._available_adapters = [
-                            getattr(scanner, "source", "unknown")
-                            for scanner in scanners
+                            getattr(scanner, "source", "unknown") for scanner in scanners
                         ]
                     except Exception as exc:
                         _LOGGER.debug(
@@ -1026,9 +1041,7 @@ class AdjustableBedCoordinator:
 
                 # Validate expected services are present (for beds requiring pairing)
                 if bed_requires_pairing and self._client.services:
-                    discovered_uuids = {
-                        svc.uuid.lower() for svc in self._client.services
-                    }
+                    discovered_uuids = {svc.uuid.lower() for svc in self._client.services}
                     _LOGGER.debug(
                         "Discovered service UUIDs for %s: %s",
                         self._name,
@@ -1065,8 +1078,7 @@ class AdjustableBedCoordinator:
                 # (35_22_01), anything else = BOX25 protocol (25_42_02).
                 if self._bed_type in (BED_TYPE_OKIN_CB35, BED_TYPE_SLEEPYS_BOX25):
                     is_star_manufacturer = (
-                        ble_manufacturer is not None
-                        and ble_manufacturer.strip().upper() == "STAR"
+                        ble_manufacturer is not None and ble_manufacturer.strip().upper() == "STAR"
                     )
                     if is_star_manufacturer and self._bed_type == BED_TYPE_SLEEPYS_BOX25:
                         _LOGGER.warning(
@@ -1822,26 +1834,105 @@ class AdjustableBedCoordinator:
                         # Otherwise, reset the idle disconnect timer
                         self._reset_disconnect_timer()
 
+    async def async_execute_controller_query(
+        self,
+        query_fn: Callable[[BedController], Coroutine[Any, Any, T]],
+        cancel_running: bool = False,
+        skip_disconnect: bool = False,
+    ) -> T:
+        """Execute a controller query and return its result.
+
+        Unlike movement commands, queries do not start movement-time position
+        polling or perform a final position read. They still reuse the same
+        command serialization, connection, and disconnect-timer behavior.
+        """
+        if cancel_running:
+            self._cancel_counter += 1
+            self._cancel_command.set()
+
+        entry_cancel_count = self._cancel_counter
+
+        async with self._command_lock:
+            self._cancel_disconnect_timer()
+
+            if self._cancel_counter > entry_cancel_count:
+                _LOGGER.debug("Controller query cancelled while waiting for lock")
+                if self._client is not None and self._client.is_connected:
+                    self._reset_disconnect_timer()
+                raise asyncio.CancelledError
+
+            try:
+                self._cancel_command.clear()
+
+                if not await self.async_ensure_connected(reset_timer=False):
+                    _LOGGER.error("Cannot execute query: not connected to bed")
+                    raise ConnectionError("Not connected to bed")
+
+                if self._controller is None:
+                    _LOGGER.error("Cannot execute query: no controller available")
+                    raise RuntimeError("No controller available")
+
+                await self._async_refresh_controller_auth()
+
+                self._last_command_start = datetime.now(UTC)
+                try:
+                    return await query_fn(self._controller)
+                finally:
+                    self._last_command_end = datetime.now(UTC)
+            except (ConnectionError, RuntimeError):
+                if (
+                    self._client is not None
+                    and self._client.is_connected
+                    and not self._disconnect_after_command
+                ):
+                    self._reset_disconnect_timer()
+                raise
+            finally:
+                if self._client is not None and self._client.is_connected:
+                    command_preempted = self._cancel_counter > entry_cancel_count
+                    if (
+                        self._disconnect_after_command
+                        and not skip_disconnect
+                        and not command_preempted
+                    ):
+                        _LOGGER.debug(
+                            "Disconnecting after query (disconnect_after_command=True) for %s",
+                            self._address,
+                        )
+                        await self.async_disconnect()
+                    else:
+                        if command_preempted:
+                            _LOGGER.debug(
+                                "Skipping disconnect for %s: newer command is pending",
+                                self._address,
+                            )
+                        self._reset_disconnect_timer()
+
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""
         if self._controller is None:
             _LOGGER.warning("Cannot start notifications: no controller available")
             return
 
-        # Jensen beds ALWAYS need start_notify() called, even with angle sensing disabled,
-        # because it sends the PIN unlock command required before any other commands work.
-        # The Jensen app sequence: enable notifications → PIN unlock → config query → commands
-        if self._bed_type == BED_TYPE_JENSEN:
+        requires_notify_channel = getattr(self._controller, "requires_notification_channel", False)
+        if not isinstance(requires_notify_channel, bool):
+            requires_notify_channel = False
+
+        # Some controllers depend on notifications for command responses or
+        # authentication even when angle sensing is disabled.
+        if requires_notify_channel:
             if self._disable_angle_sensing:
                 _LOGGER.info(
-                    "Starting notifications for Jensen bed %s (PIN unlock only; angle sensing disabled)",
+                    "Starting controller notifications for %s (%s requires notify channel with angle sensing disabled)",
                     self._address,
+                    self._bed_type,
                 )
                 await self._controller.start_notify(None)
             else:
                 _LOGGER.info(
-                    "Starting notifications for Jensen bed %s (required for PIN unlock)",
+                    "Starting controller notifications for %s (%s requires notify channel)",
                     self._address,
+                    self._bed_type,
                 )
                 await self._controller.start_notify(self._handle_position_update)
             return
@@ -1977,6 +2068,41 @@ class AdjustableBedCoordinator:
 
         return unregister
 
+    def register_controller_state_callback(
+        self, callback_fn: Callable[[dict[str, Any]], None]
+    ) -> Callable[[], None]:
+        """Register a callback for non-position controller state updates."""
+        self._controller_state_callbacks.add(callback_fn)
+
+        if self._controller_state:
+            try:
+                callback_fn(self._controller_state)
+            except Exception as err:
+                _LOGGER.warning("Controller state callback error during registration: %s", err)
+
+        def unregister() -> None:
+            self._controller_state_callbacks.discard(callback_fn)
+
+        return unregister
+
+    @callback
+    def handle_controller_state_update(self, key: str, value: Any) -> None:
+        """Store a single controller state value and notify listeners."""
+        self.handle_controller_state_updates({key: value})
+
+    @callback
+    def handle_controller_state_updates(self, updates: dict[str, Any]) -> None:
+        """Store controller state values and notify listeners."""
+        if not updates:
+            return
+
+        self._controller_state.update(updates)
+        for callback_fn in list(self._controller_state_callbacks):
+            try:
+                callback_fn(self._controller_state)
+            except Exception as err:
+                _LOGGER.warning("Controller state callback error: %s", err)
+
     def register_connection_state_callback(
         self, callback_fn: Callable[[bool], None]
     ) -> Callable[[], None]:
@@ -2051,9 +2177,7 @@ class AdjustableBedCoordinator:
 
                 await self._async_refresh_controller_auth()
 
-                supports_direct_position_control = (
-                    self._controller.supports_direct_position_control
-                )
+                supports_direct_position_control = self._controller.supports_direct_position_control
 
                 # Get current position, attempting a read if not available.
                 # Direct-position controllers can operate without a current reading.
@@ -2197,7 +2321,9 @@ class AdjustableBedCoordinator:
                                 await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             # Check if a new stop was requested while we were stopping
                             if self._cancel_counter > entry_cancel_count:
-                                _LOGGER.debug("New stop request during overshoot - aborting reversal")
+                                _LOGGER.debug(
+                                    "New stop request during overshoot - aborting reversal"
+                                )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_down_fn(self._controller)
@@ -2216,7 +2342,9 @@ class AdjustableBedCoordinator:
                                 await asyncio.sleep(0.3)  # Ensure stop completes before reversal
                             # Check if a new stop was requested while we were stopping
                             if self._cancel_counter > entry_cancel_count:
-                                _LOGGER.debug("New stop request during overshoot - aborting reversal")
+                                _LOGGER.debug(
+                                    "New stop request during overshoot - aborting reversal"
+                                )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
                             await move_up_fn(self._controller)

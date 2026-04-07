@@ -404,6 +404,61 @@ class TestCoordinatorPositionCallbacks:
         callback2.assert_called_once_with({"back": 45.0})
 
 
+class TestCoordinatorControllerStateCallbacks:
+    """Test coordinator controller-state callback handling."""
+
+    async def test_register_controller_state_callback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Test registering controller-state callbacks."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        callback = MagicMock()
+
+        unregister = coordinator.register_controller_state_callback(callback)
+
+        assert callback in coordinator._controller_state_callbacks
+        assert callable(unregister)
+
+    async def test_controller_state_update_triggers_callbacks(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Test controller-state updates trigger all callbacks."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        callback1 = MagicMock()
+        callback2 = MagicMock()
+
+        coordinator.register_controller_state_callback(callback1)
+        coordinator.register_controller_state_callback(callback2)
+
+        coordinator.handle_controller_state_updates({"under_bed_lights_on": True, "light_level": 2})
+
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        callback1.assert_called_once_with({"under_bed_lights_on": True, "light_level": 2})
+        callback2.assert_called_once_with({"under_bed_lights_on": True, "light_level": 2})
+
+    async def test_async_execute_controller_query_returns_result(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Queries should reuse coordinator connection handling and return a value."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        async def _query(ctrl):
+            del ctrl
+            return "ok"
+
+        result = await coordinator.async_execute_controller_query(_query)
+
+        assert result == "ok"
+
+
 class TestCoordinatorDisconnectTimer:
     """Test coordinator idle disconnect timer."""
 
@@ -519,6 +574,28 @@ class TestCoordinatorNotifications:
 
         # start_notify should be called for position characteristics
         assert mock_bleak_client.start_notify.call_count >= 1
+
+    async def test_start_notify_kept_for_response_driven_controller_when_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controllers that depend on notifications should keep them when sensing is disabled."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        coordinator.controller.start_notify = AsyncMock()
+
+        with patch.object(
+            type(coordinator.controller),
+            "requires_notification_channel",
+            new_callable=PropertyMock,
+            return_value=True,
+        ):
+            await coordinator.async_start_notify()
+
+        coordinator.controller.start_notify.assert_awaited_once_with(None)
 
 
 class TestMotorPulseConfiguration:
@@ -907,6 +984,7 @@ class TestStopAfterCancel:
 
         # First, acquire the lock by starting a command
         import asyncio
+
         async with coordinator._command_lock:
             # Start the command task (it will wait for lock and capture entry_cancel_count)
             task = asyncio.create_task(
@@ -959,6 +1037,7 @@ class TestStopAfterCancel:
             del controller
 
         import asyncio
+
         async with coordinator._command_lock:
             task = asyncio.create_task(
                 coordinator.async_execute_controller_command(tracked_command)

@@ -126,6 +126,7 @@ BED_TYPE_LIMOSS: Final = "limoss"  # Limoss / Stawett TEA-encrypted protocol
 BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
+BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
@@ -190,6 +191,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BEDTECH,
     # Jensen
     BED_TYPE_JENSEN,
+    # Sleep Number Climate 360 / Fuzion
+    BED_TYPE_SLEEP_NUMBER,
     # OKIN CB35 Star (Sealy Posturematic)
     BED_TYPE_OKIN_CB35,
     # OKIN 64-bit
@@ -735,6 +738,13 @@ SLEEPYS_BOX24_WRITE_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 JENSEN_SERVICE_UUID: Final = "00001234-0000-1000-8000-00805f9b34fb"
 JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 
+# Sleep Number Climate 360 / FlexFit specific UUIDs (Fuzion bamkey protocol)
+# Protocol reverse-engineered from com.selectcomfort.SleepIQ APK
+# Commands are UTF-8 text written to the BamKey characteristic and responses
+# arrive as notifications in PASS:/FAIL: form on the same characteristic.
+SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
+SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
+
 # Svane LinonPI specific UUIDs (multi-service architecture)
 # Protocol reverse-engineered from com.produktide.svane.svaneremote APK
 # Each motor has its own service with direction-specific characteristics
@@ -807,6 +817,15 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+
+# Sleep Number side selection variants
+SLEEP_NUMBER_VARIANT_LEFT: Final = "left"
+SLEEP_NUMBER_VARIANT_RIGHT: Final = "right"
+SLEEP_NUMBER_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (left side by default)",
+    SLEEP_NUMBER_VARIANT_LEFT: "Left side",
+    SLEEP_NUMBER_VARIANT_RIGHT: "Right side",
+}
 
 # Kaidi variants — all OEM apps use SEAT_* commands exclusively.
 # BED_* constants from PLDataTrans.java are legacy/enterprise firmware and are
@@ -1393,6 +1412,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
     LEGGETT_VARIANT_MLRM,
+    SLEEP_NUMBER_VARIANT_LEFT,
+    SLEEP_NUMBER_VARIANT_RIGHT,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_VARIANT_PREFIX55,
@@ -1428,6 +1449,7 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
+    BED_TYPE_SLEEP_NUMBER,
 }
 
 # Bed type + variant combinations that require BLE pairing
@@ -1482,6 +1504,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
+        BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
     }
@@ -1495,6 +1518,7 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_ERGOMOTION,
         BED_TYPE_SERTA,
         BED_TYPE_JENSEN,
+        BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_SLEEPYS_BOX25,
     }
 )

@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_OKIN_CB35,
@@ -65,6 +66,7 @@ from custom_components.adjustable_bed.const import (
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    SLEEP_NUMBER_SERVICE_UUID,
     SOLACE_SERVICE_UUID,
     SUTA_SERVICE_UUID,
     SVANE_HEAD_SERVICE_UUID,
@@ -73,6 +75,7 @@ from custom_components.adjustable_bed.const import (
     VIBRADORM_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import (
+    BED_TYPE_DISPLAY_NAMES,
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
@@ -113,6 +116,21 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[JENSEN_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_JENSEN
+
+    def test_detect_sleep_number_by_uuid(self):
+        """Sleep Number should detect from its unique Fuzion service UUID."""
+        service_info = _make_service_info(
+            name="Smart bed 0074E7",
+            service_uuids=[SLEEP_NUMBER_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SLEEP_NUMBER
+        assert result.confidence == 1.0
+        assert "uuid:sleep_number" in result.signals
+
+    def test_sleep_number_has_human_display_name(self):
+        """Sleep Number should appear with a readable label in selectors."""
+        assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER] == "Sleep Number Climate 360 / FlexFit"
 
     def test_detect_kaidi_by_manufacturer_data_only(self):
         """Test Kaidi detection by manufacturer data alone (no UUID/name needed)."""

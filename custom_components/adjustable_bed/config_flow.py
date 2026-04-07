@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEP_NUMBER,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
@@ -145,6 +146,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._disambiguated_bed_type: str | None = None
         self._show_full_bed_type_list: bool = False
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
+
+    @staticmethod
+    def _get_pairing_instructions(bed_type: str | None) -> str:
+        """Return pairing instructions tailored to the selected bed type."""
+        if bed_type == BED_TYPE_SLEEP_NUMBER:
+            return (
+                "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
+                "2. Click 'Pair Now'"
+            )
+        return (
+            "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
+            "2. Click 'Pair Now'"
+        )
 
     def _maybe_add_kaidi_metadata(
         self,
@@ -1354,6 +1368,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
+            "pairing_instructions": self._get_pairing_instructions(
+                self._manual_data.get(CONF_BED_TYPE)
+            ),
         }
 
         if user_input is not None:
@@ -1417,6 +1434,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
+            "pairing_instructions": self._get_pairing_instructions(
+                self._manual_data.get(CONF_BED_TYPE)
+            ),
         }
 
         if user_input is not None:

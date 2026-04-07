@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
@@ -28,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
@@ -54,6 +56,24 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
+
+
+class TestPairingInstructions:
+    """Test bed-specific pairing guidance."""
+
+    def test_sleep_number_pairing_instructions_use_side_button(self):
+        """Sleep Number should show its side-button pairing guidance."""
+        instructions = AdjustableBedConfigFlow._get_pairing_instructions(BED_TYPE_SLEEP_NUMBER)
+
+        assert "side pairing button" in instructions
+        assert "blue light blinks" in instructions
+
+    def test_default_pairing_instructions_remain_generic(self):
+        """Other pairing-required beds should keep the generic fallback guidance."""
+        instructions = AdjustableBedConfigFlow._get_pairing_instructions(BED_TYPE_OKIMAT)
+
+        assert "lamp button" in instructions
+        assert "unplug for 30+ seconds" in instructions
 
 
 class TestDetectBedType:

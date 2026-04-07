@@ -520,6 +520,9 @@
     "binary_sensor": {
       "ble_connection": {
         "name": "BLE Connection"
+      },
+      "bed_presence": {
+        "name": "Bed Presence"
       }
     },
     "number": {

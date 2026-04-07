@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -29,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    SLEEP_NUMBER_VARIANT_LEFT,
 )
 
 
@@ -86,9 +88,10 @@ class TestCoverEntities:
         active_keys = ("back", "legs", "tilt", "lumbar", "bed_height")
 
         for key in active_keys:
-            assert registry.async_get_entity_id(
-                "cover", DOMAIN, f"AA:BB:CC:DD:EE:01_{key}"
-            ) is not None
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:01_{key}")
+                is not None
+            )
 
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_head") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_feet") is None
@@ -172,9 +175,10 @@ class TestCoverEntities:
 
         registry = er.async_get(hass)
         for key in ("head", "feet", "lumbar", "tilt"):
-            assert registry.async_get_entity_id(
-                "cover", DOMAIN, f"AA:BB:CC:DD:EE:25_{key}"
-            ) is not None
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:25_{key}")
+                is not None
+            )
 
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:25_back") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:25_legs") is None
@@ -333,12 +337,14 @@ class TestNumberEntities:
         from homeassistant.helpers import entity_registry as er
 
         registry = er.async_get(hass)
-        assert registry.async_get_entity_id(
-            "number", DOMAIN, "AA:BB:CC:DD:EE:27_head_position"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "number", DOMAIN, "AA:BB:CC:DD:EE:27_feet_position"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_head_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_feet_position")
+            is not None
+        )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_back_position")
             is None
@@ -347,6 +353,63 @@ class TestNumberEntities:
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_legs_position")
             is None
         )
+
+
+class TestSleepNumberEntities:
+    """Test Sleep Number specific entity setup."""
+
+    async def test_sleep_number_entities_include_underbed_light_and_presence(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Sleep Number should expose its light controls and disabled-by-default presence sensor."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number Feature Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:41",
+                CONF_NAME: "Sleep Number Feature Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_PROTOCOL_VARIANT: SLEEP_NUMBER_VARIANT_LEFT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:41",
+            entry_id="sleep_number_feature_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:41_under_bed_lights")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:41_light_level")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_light_timer")
+            is not None
+        )
+
+        presence_entity_id = registry.async_get_entity_id(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_bed_presence",
+        )
+        assert presence_entity_id is not None
+        assert hass.states.get(presence_entity_id) is None
 
 
 class TestButtonEntities:
@@ -445,44 +508,46 @@ class TestButtonEntities:
 
         registry = er.async_get(hass)
 
-        assert registry.async_get_entity_id(
-            "button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_tv"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_lounge"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "switch", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights"
-        ) is not None
         assert (
-            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_toggle_light")
-            is None
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_tv")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_preset_lounge")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_toggle_light") is None
         )
 
-        assert registry.async_get_entity_id(
-            "number", DOMAIN, "AA:BB:CC:DD:EE:40_back_position"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "number", DOMAIN, "AA:BB:CC:DD:EE:40_legs_position"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "cover", DOMAIN, "AA:BB:CC:DD:EE:40_lumbar"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_back_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_legs_position")
+            is not None
+        )
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:40_lumbar") is not None
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_head_position")
             is None
         )
 
-        assert registry.async_get_entity_id(
-            "select", DOMAIN, "AA:BB:CC:DD:EE:40_massage_timer"
-        ) is not None
-        assert registry.async_get_entity_id(
-            "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_toggle"
-        ) is not None
         assert (
-            registry.async_get_entity_id(
-                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_mode_step"
-            )
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:40_massage_timer")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_all_toggle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_mode_step")
             is None
         )
         assert (
@@ -490,15 +555,11 @@ class TestButtonEntities:
             is None
         )
         assert (
-            registry.async_get_entity_id(
-                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_head_toggle"
-            )
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_head_toggle")
             is None
         )
         assert (
-            registry.async_get_entity_id(
-                "button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_foot_toggle"
-            )
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:40_massage_foot_toggle")
             is None
         )
 
@@ -606,20 +667,21 @@ class TestLightEntities:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        assert registry.async_get_entity_id(
-            "light", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("light", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights")
+            is not None
+        )
         assert (
             registry.async_get_entity_id("switch", DOMAIN, "57:4C:62:C3:39:05_under_bed_lights")
             is None
         )
         assert (
-            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:C3:39:05_toggle_light")
-            is None
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:C3:39:05_toggle_light") is None
         )
-        assert registry.async_get_entity_id(
-            "select", DOMAIN, "57:4C:62:C3:39:05_light_timer"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:62:C3:39:05_light_timer")
+            is not None
+        )
 
     async def test_richmat_qrrm_light_turn_on_and_off(
         self,
@@ -766,9 +828,7 @@ class TestLightEntities:
         from homeassistant.helpers import entity_registry as er
 
         registry = er.async_get(hass)
-        entity_id = registry.async_get_entity_id(
-            "select", DOMAIN, "57:4C:62:C3:39:05_light_timer"
-        )
+        entity_id = registry.async_get_entity_id("select", DOMAIN, "57:4C:62:C3:39:05_light_timer")
         assert entity_id is not None
 
         mock_bleak_client.write_gatt_char.reset_mock()
@@ -825,20 +885,21 @@ class TestLightEntities:
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-        assert registry.async_get_entity_id(
-            "light", DOMAIN, "57:4C:62:C3:39:06_under_bed_lights"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("light", DOMAIN, "57:4C:62:C3:39:06_under_bed_lights")
+            is not None
+        )
         assert (
             registry.async_get_entity_id("switch", DOMAIN, "57:4C:62:C3:39:06_under_bed_lights")
             is None
         )
         assert (
-            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:C3:39:06_toggle_light")
-            is None
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:C3:39:06_toggle_light") is None
         )
-        assert registry.async_get_entity_id(
-            "select", DOMAIN, "57:4C:62:C3:39:06_light_timer"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:62:C3:39:06_light_timer")
+            is not None
+        )
 
     async def test_richmat_legacy_rgb_light_turn_on_and_off(
         self,
@@ -955,9 +1016,7 @@ class TestLightEntities:
         from homeassistant.helpers import entity_registry as er
 
         registry = er.async_get(hass)
-        entity_id = registry.async_get_entity_id(
-            "select", DOMAIN, "57:4C:62:C3:39:06_light_timer"
-        )
+        entity_id = registry.async_get_entity_id("select", DOMAIN, "57:4C:62:C3:39:06_light_timer")
         assert entity_id is not None
 
         mock_bleak_client.write_gatt_char.reset_mock()
@@ -1021,9 +1080,10 @@ class TestLightEntities:
         await hass.async_block_till_done()
 
         # Light entity should exist
-        assert registry.async_get_entity_id(
-            "light", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights"
-        ) is not None
+        assert (
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights")
+            is not None
+        )
         # Stale switch entity should be removed
         assert (
             registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:10_under_bed_lights")
@@ -1031,8 +1091,7 @@ class TestLightEntities:
         )
         # Toggle button should not exist (hidden by supports_light_color_control)
         assert (
-            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:10_toggle_light")
-            is None
+            registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:10_toggle_light") is None
         )
 
     async def test_leggett_gen2_light_turn_on_with_rgb_color(
