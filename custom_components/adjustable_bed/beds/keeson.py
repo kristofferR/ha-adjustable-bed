@@ -603,7 +603,7 @@ class KeesonController(BedController):
                     continue
 
                 props = {prop.lower() for prop in getattr(char, "properties", [])}
-                if "write" in props and "write-without-response" not in props:
+                if "write" in props:
                     self._write_with_response = True
                 elif "write-without-response" in props:
                     self._write_with_response = False

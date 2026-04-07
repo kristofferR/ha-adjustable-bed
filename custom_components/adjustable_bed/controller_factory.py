@@ -526,7 +526,7 @@ async def create_controller(
         if keeson_variant == KEESON_VARIANT_JSON:
             _LOGGER.debug("Using Keeson JSON/A00A variant")
             return KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
-        elif keeson_variant == KEESON_VARIANT_KSBT:
+        if keeson_variant == KEESON_VARIANT_KSBT:
             _LOGGER.debug("Using KSBT Keeson variant (configured)")
             return KeesonController(coordinator, variant="ksbt")
         elif keeson_variant == KEESON_VARIANT_KSBT_CR:

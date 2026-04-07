@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -202,6 +203,36 @@ class TestKeesonController:
 
         mock_bleak_client.write_gatt_char.assert_called_with(
             KEESON_BASE_WRITE_CHAR_UUID, command, response=True
+        )
+
+    async def test_write_command_prefers_write_with_response_when_both_modes_exist(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Dual-mode characteristics should keep write-with-response enabled."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
+        mock_bleak_client.services = [
+            SimpleNamespace(
+                characteristics=[
+                    SimpleNamespace(
+                        uuid=KEESON_JSON_WRITE_CHAR_UUID,
+                        properties=["write", "write-without-response"],
+                    )
+                ]
+            )
+        ]
+
+        command = controller._build_command(KeesonCommands.PRESET_ZERO_G)
+        await controller.write_command(command)
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            KEESON_JSON_WRITE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_not_connected(
