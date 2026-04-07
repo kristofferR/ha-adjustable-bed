@@ -117,6 +117,14 @@ class BedController(ABC):
             except Exception:
                 _LOGGER.debug("Error in raw notification callback", exc_info=True)
 
+    def forward_controller_state_update(self, key: str, value: Any) -> None:
+        """Forward non-position controller state to the coordinator."""
+        self._coordinator.handle_controller_state_update(key, value)
+
+    def forward_controller_state_updates(self, updates: dict[str, Any]) -> None:
+        """Forward multiple non-position controller state values at once."""
+        self._coordinator.handle_controller_state_updates(updates)
+
     @property
     def client(self) -> BleakClient | None:
         """Return the BLE client."""
@@ -620,6 +628,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_bed_presence(self) -> bool:
+        """Return True if bed supports occupancy/bed-presence queries."""
+        return False
+
+    @property
     def supports_light_cycle(self) -> bool:
         """Return True if bed supports light cycle control."""
         return False
@@ -698,6 +711,18 @@ class BedController(ABC):
     @property
     def supports_position_feedback(self) -> bool:
         """Return True if bed reports position feedback."""
+        return False
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Return True if commands depend on BLE notifications for responses/auth.
+
+        Most controllers only use notifications for position feedback, so they can
+        skip subscription when angle sensing is disabled. Controllers that receive
+        command acknowledgements, query responses, or authentication handshakes over
+        notifications should override this to keep their notify channel active even
+        when angle sensing is off.
+        """
         return False
 
     @property
@@ -1362,6 +1387,27 @@ class BedController(ABC):
         """
         return {}
 
+    def get_light_state(self) -> dict[str, Any]:
+        """Return current light state for state feedback.
+
+        Supported keys vary by controller. Common keys:
+        - is_on: bool
+        - light_level: int
+        - light_timer_option: str
+        - light_timer_minutes: int
+        """
+        return {}
+
+    async def read_light_state(self) -> dict[str, Any]:
+        """Query current light state from the bed when supported.
+
+        Controllers with readable light state should override this and update any
+        internal caches before returning the latest state dictionary.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support readable light state"
+        )
+
     # Light level control (optional - for beds with brightness adjustment)
 
     @property
@@ -1454,6 +1500,15 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support light timer
         """
         raise NotImplementedError("Light timer not supported on this bed")
+
+    async def read_bed_presence(self) -> bool | None:
+        """Read bed occupancy state for the configured side.
+
+        Returns:
+            True if the side is occupied, False if it is not occupied,
+            or None if the bed reports an unknown state.
+        """
+        raise NotImplementedError("Bed presence not supported on this bed")
 
     @property
     def supports_fan_control(self) -> bool:

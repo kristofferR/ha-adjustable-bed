@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -127,6 +127,28 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         )
         # Timer handle for auto-off state updates (e.g., Octo lights turn off after 5 min)
         self._auto_off_timer: asyncio.TimerHandle | None = None
+        self._state_unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Register for controller-state updates when available."""
+        await super().async_added_to_hass()
+        if self.entity_description.key != "under_bed_lights":
+            return
+        self._state_unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Update the switch when the controller publishes light state."""
+        if "under_bed_lights_on" not in state:
+            return
+        self._attr_is_on = bool(state["under_bed_lights_on"])
+        if self._attr_is_on:
+            self._schedule_auto_off_timer()
+        else:
+            self._cancel_auto_off_timer()
+        self.async_write_ha_state()
 
     def _supports_discrete_control(self) -> bool:
         """Check if controller supports discrete on/off (vs toggle-only)."""
@@ -169,9 +191,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self.async_write_ha_state()
 
         # Schedule the timer using the event loop
-        self._auto_off_timer = self.hass.loop.call_later(
-            auto_off_seconds, auto_off_callback
-        )
+        self._auto_off_timer = self.hass.loop.call_later(auto_off_seconds, auto_off_callback)
         _LOGGER.debug(
             "Scheduled auto-off timer for %s in %d seconds",
             self.entity_description.key,
@@ -180,6 +200,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up when entity is removed."""
+        if self._state_unregister_callback:
+            self._state_unregister_callback()
         self._cancel_auto_off_timer()
         await super().async_will_remove_from_hass()
 
