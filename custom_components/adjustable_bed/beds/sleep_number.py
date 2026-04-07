@@ -1,22 +1,29 @@
 """Sleep Number Climate 360 / FlexFit controller.
 
 This implements Select Comfort's Fuzion "bamkey" BLE protocol used by the
-SleepIQ app. Commands are UTF-8 text sent to a single GATT characteristic and
-responses arrive as notifications on that same characteristic.
+SleepIQ app. Commands are UTF-8 text wrapped in the app's `fUzIoN` blob framing
+and sent to a single GATT characteristic. Responses normally arrive as
+notifications on that same characteristic, with a readable fallback used for
+bed-presence polling.
 """
 
 from __future__ import annotations
 
 import asyncio
+import binascii
 import contextlib
+import json
 import logging
+import struct
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
 
 from ..const import (
+    SLEEP_NUMBER_AUTH_CHAR_UUID,
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
+    SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
@@ -29,6 +36,9 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 _BAMKEY_RESPONSE_TIMEOUT = 7.5
+_BAMKEY_BLOB_PREAMBLE = b"fUzIoN"
+_BAMKEY_BLOB_HEADER_LENGTH = len(_BAMKEY_BLOB_PREAMBLE) + 4
+_BAMKEY_BLOB_MIN_LENGTH = _BAMKEY_BLOB_HEADER_LENGTH + 4
 _SLEEP_NUMBER_MIN_POSITION = 0
 _SLEEP_NUMBER_MAX_POSITION = 100
 _SLEEP_NUMBER_LIGHT_TIMER_OPTIONS = (0, 15, 30, 45, 60, 120, 180)
@@ -47,6 +57,7 @@ _SLEEP_NUMBER_LIGHT_VALUE_TO_LEVEL = {
 class SleepNumberCommands:
     """Fuzion bamkey command names used by Adjustable Bed support."""
 
+    MULTIPLE_BAMKEYS_VIA_JSON = "BAMG"
     GET_ACTUATOR_POSITION = "ACTG"
     SET_ACTUATOR_TARGET_POSITION = "ACTS"
     HALT_ACTUATOR = "ACTH"
@@ -80,10 +91,12 @@ class SleepNumberController(BedController):
         self._side = self._normalize_side(side)
         self._notify_started = False
         self._response_queue: asyncio.Queue[str] = asyncio.Queue()
+        self._response_buffer = bytearray()
         self._underbed_light_level: str | None = None
         self._underbed_light_timer_minutes: int | None = None
         self._underbed_light_last_active_level = "high"
         self._bed_presence_state: str | None = None
+        self._bed_presence_channel_primed = False
 
     @staticmethod
     def _normalize_side(side: str | None) -> str:
@@ -231,6 +244,7 @@ class SleepNumberController(BedController):
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")
 
+        self._response_buffer.clear()
         await client.start_notify(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
             self._handle_bamkey_notification,
@@ -250,6 +264,8 @@ class SleepNumberController(BedController):
             _LOGGER.debug("Failed to stop Sleep Number notifications", exc_info=True)
         finally:
             self._notify_started = False
+            self._response_buffer.clear()
+            self._drain_response_queue()
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read the current head and foot target positions for the selected side."""
@@ -356,24 +372,32 @@ class SleepNumberController(BedController):
 
     async def read_bed_presence(self) -> bool | None:
         """Read occupancy state for the configured bed side."""
-        response = await self._send_bamkey_command(
-            SleepNumberCommands.GET_BED_PRESENCE,
-            self._side,
-            expected_args=1,
+        await self._ensure_bed_presence_channel_primed()
+
+        try:
+            response = await self._send_bamkey_command(
+                SleepNumberCommands.GET_BED_PRESENCE,
+                self._side,
+                expected_args=1,
+            )
+            return self._publish_bed_presence(response[0])
+        except (TimeoutError, ValueError) as err:
+            _LOGGER.debug(
+                "Sleep Number LBPG notify query failed for %s, falling back to characteristic read: %s",
+                self._coordinator.address,
+                err,
+            )
+
+        grouped_response = await self._send_bamkey_read_query(
+            SleepNumberCommands.MULTIPLE_BAMKEYS_VIA_JSON,
+            json.dumps(
+                [{"bamkey": SleepNumberCommands.GET_BED_PRESENCE, "args": self._side}],
+                separators=(",", ":"),
+            ),
         )
-        presence = self._normalize_bed_presence(response[0])
-        self._bed_presence_state = presence
-        self.forward_controller_state_updates(
-            {
-                "bed_presence": presence,
-                "bed_presence_side": self._side,
-            }
+        return self._publish_bed_presence(
+            self._parse_grouped_bed_presence_response(grouped_response)
         )
-        if presence == "in":
-            return True
-        if presence == "out":
-            return False
-        return None
 
     async def preset_flat(self) -> None:
         await self._send_preset(SleepNumberPresets.FLAT)
@@ -486,6 +510,21 @@ class SleepNumberController(BedController):
         if not self._notify_started:
             await self.start_notify(self._notify_callback)
 
+    async def _ensure_bed_presence_channel_primed(self) -> None:
+        """Prime the BLE side channels Sleep Number needs before LBPG polls."""
+        if self._bed_presence_channel_primed:
+            return
+
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Not connected to bed")
+
+        for char_uuid in (SLEEP_NUMBER_AUTH_CHAR_UUID, SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID):
+            async with self.ble_lock:
+                await client.read_gatt_char(char_uuid)
+
+        self._bed_presence_channel_primed = True
+
     async def _send_bamkey_command(
         self,
         bamkey: str,
@@ -496,10 +535,10 @@ class SleepNumberController(BedController):
         await self._ensure_notifications_started()
         self._drain_response_queue()
 
-        payload = bamkey if not args else f"{bamkey} {' '.join(args)}"
+        payload = self._format_bamkey_command(bamkey, *args)
         await self._write_gatt_with_retry(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
-            payload.encode("utf-8"),
+            self._build_bamkey_blob(payload),
             response=True,
         )
 
@@ -535,6 +574,31 @@ class SleepNumberController(BedController):
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
         return self._parse_bamkey_response(bamkey, raw_response, expected_args)
+
+    async def _send_bamkey_read_query(self, bamkey: str, *args: str) -> str:
+        """Send a bamkey command and read the response directly from the characteristic."""
+        await self._ensure_notifications_started()
+        self._drain_response_queue()
+
+        payload = self._format_bamkey_command(bamkey, *args)
+        await self._write_gatt_with_retry(
+            SLEEP_NUMBER_BAMKEY_CHAR_UUID,
+            self._build_bamkey_blob(payload),
+            response=True,
+        )
+
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Not connected to bed")
+
+        try:
+            async with asyncio.timeout(_BAMKEY_RESPONSE_TIMEOUT):
+                async with self.ble_lock:
+                    raw_response = bytes(await client.read_gatt_char(SLEEP_NUMBER_BAMKEY_CHAR_UUID))
+        except TimeoutError as err:
+            raise TimeoutError(f"{bamkey} timed out waiting for readable response") from err
+
+        return self._decode_bamkey_text(raw_response)
 
     def _drain_response_queue(self) -> None:
         """Discard stale bamkey responses before sending a new command."""
@@ -582,11 +646,136 @@ class SleepNumberController(BedController):
         raw = bytes(data)
         self.forward_raw_notification(SLEEP_NUMBER_BAMKEY_CHAR_UUID, raw)
 
+        try:
+            for decoded in self._extract_bamkey_text_responses(raw):
+                self._response_queue.put_nowait(decoded)
+        except ValueError:
+            _LOGGER.debug("Failed to decode Sleep Number bamkey notification", exc_info=True)
+
+    def _extract_bamkey_text_responses(self, raw: bytes) -> list[str]:
+        """Extract zero or more decoded bamkey payloads from the notification stream."""
+        if not raw:
+            return []
+
+        if not self._response_buffer and not raw.startswith(_BAMKEY_BLOB_PREAMBLE):
+            decoded = raw.decode("utf-8", errors="ignore").strip()
+            return [decoded] if decoded else []
+
+        self._response_buffer.extend(raw)
+        responses: list[str] = []
+
+        while self._response_buffer:
+            preamble_index = self._response_buffer.find(_BAMKEY_BLOB_PREAMBLE)
+            if preamble_index == -1:
+                self._response_buffer.clear()
+                return responses
+            if preamble_index > 0:
+                del self._response_buffer[:preamble_index]
+
+            if len(self._response_buffer) < _BAMKEY_BLOB_HEADER_LENGTH:
+                return responses
+
+            total_length = struct.unpack("<I", self._response_buffer[6:10])[0]
+            if total_length < _BAMKEY_BLOB_MIN_LENGTH:
+                raise ValueError(f"Invalid Sleep Number blob length: {total_length}")
+            if len(self._response_buffer) < total_length:
+                return responses
+
+            frame = bytes(self._response_buffer[:total_length])
+            del self._response_buffer[:total_length]
+            responses.append(self._parse_bamkey_blob(frame))
+
+        return responses
+
+    @staticmethod
+    def _format_bamkey_command(bamkey: str, *args: str) -> str:
+        """Format a bamkey request payload."""
+        return bamkey if not args else f"{bamkey} {' '.join(args)}"
+
+    @staticmethod
+    def _build_bamkey_blob(payload: str) -> bytes:
+        """Wrap a bamkey payload in the Fuzion blob framing used by SleepIQ."""
+        encoded_payload = payload.encode("utf-8")
+        total_length = _BAMKEY_BLOB_HEADER_LENGTH + len(encoded_payload) + 4
+        header = _BAMKEY_BLOB_PREAMBLE + struct.pack("<I", total_length)
+        checksum = binascii.crc32(header + encoded_payload) & 0xFFFFFFFF
+        return header + encoded_payload + struct.pack("<I", checksum)
+
+    @staticmethod
+    def _decode_bamkey_text(raw: bytes) -> str:
+        """Decode either a framed blob or a plain-text bamkey response."""
+        if raw.startswith(_BAMKEY_BLOB_PREAMBLE):
+            return SleepNumberController._parse_bamkey_blob(raw)
+
         decoded = raw.decode("utf-8", errors="ignore").strip()
         if not decoded:
-            return
+            raise ValueError("Sleep Number returned an empty response")
+        return decoded
 
-        self._response_queue.put_nowait(decoded)
+    @staticmethod
+    def _parse_bamkey_blob(frame: bytes) -> str:
+        """Decode and validate a single Sleep Number Fuzion blob."""
+        if len(frame) < _BAMKEY_BLOB_MIN_LENGTH:
+            raise ValueError("Sleep Number response blob is too short")
+        if not frame.startswith(_BAMKEY_BLOB_PREAMBLE):
+            raise ValueError("Sleep Number response blob is missing the Fuzion preamble")
+
+        total_length = struct.unpack("<I", frame[6:10])[0]
+        if total_length != len(frame):
+            raise ValueError(
+                f"Sleep Number response blob length mismatch: {len(frame)} != {total_length}"
+            )
+
+        payload = frame[_BAMKEY_BLOB_HEADER_LENGTH:-4]
+        expected_crc = struct.unpack("<I", frame[-4:])[0]
+        actual_crc = binascii.crc32(frame[:-4]) & 0xFFFFFFFF
+        if actual_crc != expected_crc:
+            raise ValueError("Sleep Number response blob failed CRC validation")
+
+        decoded = payload.decode("utf-8", errors="ignore").strip()
+        if not decoded:
+            raise ValueError("Sleep Number response blob contained an empty payload")
+        return decoded
+
+    def _publish_bed_presence(self, value: str) -> bool | None:
+        """Normalize and publish a Sleep Number bed presence state."""
+        presence = self._normalize_bed_presence(value)
+        self._bed_presence_state = presence
+        self.forward_controller_state_updates(
+            {
+                "bed_presence": presence,
+                "bed_presence_side": self._side,
+            }
+        )
+        if presence == "in":
+            return True
+        if presence == "out":
+            return False
+        return None
+
+    @staticmethod
+    def _parse_grouped_bed_presence_response(response: str) -> str:
+        """Extract the first LBPG result from a grouped BAMG response."""
+        payload = response.strip()
+        if payload.startswith("PASS:"):
+            payload = payload.removeprefix("PASS:").strip()
+
+        try:
+            values = json.loads(payload)
+        except json.JSONDecodeError as err:
+            raise ValueError(f"Invalid Sleep Number BAMG response: {response}") from err
+
+        if not isinstance(values, list) or len(values) != 1:
+            raise ValueError(f"Unexpected Sleep Number BAMG bed-presence response: {response}")
+
+        value = values[0]
+        if not isinstance(value, str):
+            raise ValueError(f"Unexpected Sleep Number BAMG bed-presence item: {value!r}")
+        if value.startswith("PASS:"):
+            return value.removeprefix("PASS:").strip()
+        if value.startswith("FAIL"):
+            raise ValueError(f"Sleep Number BAMG bed-presence query failed: {value}")
+        return value.strip()
 
     @staticmethod
     def _motor_to_actuator(motor: str) -> str:

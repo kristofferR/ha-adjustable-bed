@@ -9,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -18,12 +19,24 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    SLEEP_NUMBER_AUTH_CHAR_UUID,
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
+    SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+
+def _build_sleep_number_blob(payload: str) -> bytes:
+    """Return a framed Sleep Number blob for transport assertions."""
+    return SleepNumberController._build_bamkey_blob(payload)
+
+
+def _decode_sleep_number_payload(payload: bytes) -> str:
+    """Decode a framed Sleep Number blob back to its text payload."""
+    return SleepNumberController._decode_bamkey_text(payload)
 
 
 @pytest.fixture
@@ -139,10 +152,10 @@ class TestSleepNumberController:
             _char_uuid: str, payload: bytes, response: bool = False
         ) -> None:
             del response
-            assert payload == b"ACTS left head 57"
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 57"
             coordinator.controller._handle_bamkey_notification(
                 None,
-                bytearray(b"PASS:ACK"),
+                bytearray(_build_sleep_number_blob("PASS:ACK")),
             )
 
         mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
@@ -155,7 +168,7 @@ class TestSleepNumberController:
         )
         mock_bleak_client.write_gatt_char.assert_awaited_once_with(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
-            b"ACTS left head 57",
+            _build_sleep_number_blob("ACTS left head 57"),
             response=True,
         )
 
@@ -270,6 +283,87 @@ class TestSleepNumberController:
         )
         assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
+
+    async def test_read_bed_presence_primes_required_characteristics_once(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """LBPG should prime the Auth and TransferInfo reads once per connection."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2E",
+            name="Smart bed 0074F4",
+            entry_id="sleep_number_presence_prime",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(side_effect=[["out"], ["in"]])
+        mock_bleak_client.read_gatt_char.reset_mock()
+
+        first = await coordinator.controller.read_bed_presence()
+        second = await coordinator.controller.read_bed_presence()
+
+        assert first is False
+        assert second is True
+        mock_bleak_client.read_gatt_char.assert_has_awaits(
+            [
+                call(SLEEP_NUMBER_AUTH_CHAR_UUID),
+                call(SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID),
+            ]
+        )
+        assert mock_bleak_client.read_gatt_char.await_count == 2
+
+    async def test_read_bed_presence_falls_back_to_readable_bamg_response(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """LBPG should fall back to the readable BAMG path when notify polling times out."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2F",
+            name="Smart bed 0074F5",
+            entry_id="sleep_number_presence_fallback",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(
+            side_effect=TimeoutError("notify timeout")
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) in {
+                SLEEP_NUMBER_AUTH_CHAR_UUID,
+                SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
+            }:
+                return b""
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return _build_sleep_number_blob('PASS:["PASS:in"]')
+            return b""
+
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        presence = await coordinator.controller.read_bed_presence()
+
+        assert presence is True
+        assert _decode_sleep_number_payload(
+            mock_bleak_client.write_gatt_char.await_args.args[1]
+        ) == 'BAMG [{"bamkey":"LBPG","args":"left"}]'
+
+    async def test_bamkey_notification_handler_reassembles_blob_chunks(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Chunked bamkey notifications should be reassembled before parsing."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:30",
+            name="Smart bed 0074F6",
+            entry_id="sleep_number_chunked_notification",
+        )
+        blob = _build_sleep_number_blob("PASS:ACK")
+
+        coordinator.controller._handle_bamkey_notification(None, bytearray(blob[:8]))
+        assert coordinator.controller._response_queue.empty()
+
+        coordinator.controller._handle_bamkey_notification(None, bytearray(blob[8:]))
+
+        assert await coordinator.controller._response_queue.get() == "PASS:ACK"
 
     async def test_read_underbed_light_settings_updates_cached_state(
         self,
