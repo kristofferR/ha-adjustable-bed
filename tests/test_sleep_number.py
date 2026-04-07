@@ -177,6 +177,26 @@ class TestSleepNumberController:
             ]
         )
 
+    async def test_stop_all_attempts_both_actuators_when_one_stop_fails(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """stop_all should still try the second actuator if the first stop fails."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2C",
+            name="Smart bed 0074F2",
+            entry_id="sleep_number_stop_all_best_effort",
+        )
+        coordinator.controller._send_stop_for_motor = AsyncMock(
+            side_effect=[TimeoutError("head timeout"), None]
+        )
+
+        with pytest.raises(ExceptionGroup) as exc_info:
+            await coordinator.controller.stop_all()
+
+        assert len(exc_info.value.exceptions) == 1
+        coordinator.controller._send_stop_for_motor.assert_has_awaits([call("back"), call("legs")])
+
     async def test_read_positions_maps_head_and_foot_to_back_and_legs(
         self,
         sleep_number_coordinator,
@@ -272,6 +292,27 @@ class TestSleepNumberController:
         assert (
             coordinator.controller._coordinator.controller_state["light_timer_option"] == "45 min"
         )
+
+    async def test_read_light_state_returns_cached_underbed_light_values(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """read_light_state should issue UBLG and return the hydrated state snapshot."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2D",
+            name="Smart bed 0074F3",
+            entry_id="sleep_number_read_light_state",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=["high", "15"])
+
+        state = await coordinator.controller.read_light_state()
+
+        assert state == {
+            "is_on": True,
+            "light_level": 3,
+            "light_timer_minutes": 15,
+            "light_timer_option": "15 min",
+        }
 
     async def test_lights_on_preserves_timer_and_last_active_level(
         self,

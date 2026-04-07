@@ -1398,6 +1398,16 @@ class BedController(ABC):
         """
         return {}
 
+    async def read_light_state(self) -> dict[str, Any]:
+        """Query current light state from the bed when supported.
+
+        Controllers with readable light state should override this and update any
+        internal caches before returning the latest state dictionary.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support readable light state"
+        )
+
     # Light level control (optional - for beds with brightness adjustment)
 
     @property

@@ -180,7 +180,9 @@
         "title": "Bluetooth Pairing Required",
         "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
         "data": {
-          "action": "Action"
+          "action": "Action",
+          "pairing_instructions_generic": "Pairing instructions (generic)",
+          "pairing_instructions_sleep_number": "Pairing instructions (Sleep Number)"
         },
         "data_description": {
           "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",

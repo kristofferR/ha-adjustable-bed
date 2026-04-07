@@ -458,6 +458,37 @@ class TestCoordinatorControllerStateCallbacks:
 
         assert result == "ok"
 
+    async def test_register_controller_state_callback_hydrates_light_state_when_missing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """First controller-state subscriber should trigger readable light-state hydration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.read_light_state = AsyncMock(
+            return_value={
+                "under_bed_lights_on": True,
+                "light_level": 3,
+                "light_timer_minutes": 15,
+                "light_timer_option": "15 min",
+            }
+        )
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        coordinator.register_controller_state_callback(callback)
+        await hass.async_block_till_done()
+
+        controller.read_light_state.assert_awaited_once()
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 3
+        callback.assert_called_once_with(coordinator.controller_state)
+
 
 class TestCoordinatorDisconnectTimer:
     """Test coordinator idle disconnect timer."""
@@ -851,6 +882,41 @@ class TestStopAfterCancel:
 
         # Disconnect timer should still be set (reset after stop)
         assert coordinator._disconnect_timer is not None
+
+    async def test_stop_command_cancels_active_controller_operation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Stop should preempt an in-flight controller operation instead of waiting for timeout."""
+        del mock_bleak_client
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._controller.stop_all = AsyncMock()
+
+        import asyncio
+
+        command_started = asyncio.Event()
+
+        async def blocking_command(controller):
+            del controller
+            command_started.set()
+            await asyncio.Event().wait()
+
+        command_task = asyncio.create_task(
+            coordinator.async_execute_controller_command(
+                blocking_command,
+                cancel_running=False,
+            )
+        )
+        await command_started.wait()
+
+        await asyncio.wait_for(coordinator.async_stop_command(), timeout=0.1)
+        await command_task
+
+        coordinator._controller.stop_all.assert_awaited_once()
 
     async def test_stop_command_when_not_connected(
         self,

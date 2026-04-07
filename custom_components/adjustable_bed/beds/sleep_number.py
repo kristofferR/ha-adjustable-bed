@@ -8,6 +8,7 @@ responses arrive as notifications on that same characteristic.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -319,8 +320,15 @@ class SleepNumberController(BedController):
         await self.move_legs_stop()
 
     async def stop_all(self) -> None:
-        await self._send_stop_for_motor("back")
-        await self._send_stop_for_motor("legs")
+        errors: list[Exception] = []
+        for motor in ("back", "legs"):
+            try:
+                await self._send_stop_for_motor(motor)
+            except Exception as err:
+                errors.append(err)
+
+        if errors:
+            raise ExceptionGroup("Failed to stop one or more Sleep Number actuators", errors)
 
     async def lights_on(self) -> None:
         """Turn on the underbed light using the last active or default level."""
@@ -424,6 +432,11 @@ class SleepNumberController(BedController):
         self._store_underbed_light_state(level, timer_minutes)
         return level, timer_minutes
 
+    async def read_light_state(self) -> dict[str, Any]:
+        """Read and return the current underbed light state."""
+        await self._read_underbed_light_settings()
+        return self.get_light_state()
+
     async def _ensure_underbed_light_settings_loaded(self) -> None:
         """Load underbed light settings once before mutating them."""
         if self._underbed_light_level is None or self._underbed_light_timer_minutes is None:
@@ -490,10 +503,37 @@ class SleepNumberController(BedController):
             response=True,
         )
 
-        raw_response = await asyncio.wait_for(
-            self._response_queue.get(),
-            timeout=_BAMKEY_RESPONSE_TIMEOUT,
-        )
+        response_task = asyncio.create_task(self._response_queue.get())
+        cancel_task = asyncio.create_task(self._coordinator.cancel_command.wait())
+        try:
+            done, pending = await asyncio.wait(
+                {response_task, cancel_task},
+                timeout=_BAMKEY_RESPONSE_TIMEOUT,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for task in pending:
+                task.cancel()
+            for task in pending:
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+            if response_task in done:
+                raw_response = response_task.result()
+            elif cancel_task in done:
+                response_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await response_task
+                raise asyncio.CancelledError
+            else:
+                raise TimeoutError(f"{bamkey} timed out waiting for response")
+        finally:
+            for task in (response_task, cancel_task):
+                if task.done():
+                    continue
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
         return self._parse_bamkey_response(bamkey, raw_response, expected_args)
 
     def _drain_response_queue(self) -> None:
