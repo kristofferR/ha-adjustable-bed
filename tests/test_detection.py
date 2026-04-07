@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -37,7 +38,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
-    BED_TYPE_OKIN_CB35,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.const import (
     KAIDI_MESH_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
@@ -116,6 +117,17 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[JENSEN_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_JENSEN
+
+    def test_detect_keeson_json_by_uuid(self):
+        """Test Keeson JSON/A00A detection by unique service UUID."""
+        service_info = _make_service_info(
+            name="Juna Sleep Bed",
+            service_uuids=[KEESON_JSON_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KEESON
+        assert result.confidence == 1.0
+        assert "uuid:keeson_json" in result.signals
 
     def test_detect_sleep_number_by_uuid(self):
         """Sleep Number should detect from its unique Fuzion service UUID."""

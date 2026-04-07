@@ -16,6 +16,7 @@ All use 32-bit command values for motor and preset operations.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -28,15 +29,19 @@ from ..const import (
     KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_NOTIFY_CHAR_UUID,
+    KEESON_JSON_SERVICE_UUID,
+    KEESON_JSON_WRITE_CHAR_UUID,
     KEESON_KSBT_CHAR_UUID,
     KEESON_KSBT_FALLBACK_GATT_PAIRS,
     KEESON_KSBT_SERVICE_UUID,
     KEESON_VARIANT_ERGOMOTION,
-    KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_SINO,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_SINO,
 )
 from .base import BedController, MotorControlSpec
 from .okin_protocol import int_to_bytes
@@ -101,16 +106,6 @@ class KeesonCommands:
     # Lights (standard Keeson)
     TOGGLE_SAFETY_LIGHTS = 0x20000
     TOGGLE_LIGHTS = 0x20000  # Alias for Ergomotion compatibility
-
-    # Light/Sound therapy (KSBT04C / Beautyrest Baselogic)
-    # These constants are in the firmware protocol (buildInstruct0) but the Sleep
-    # Harmony app never sends them from UI. The bed hardware supports them.
-    TOGGLE_SOUND = 0x10000  # Sound/noise generator toggle
-    TOGGLE_LIGHT_AND_SOUND = 0x40000  # Combined light + sound mode
-    THERAPY_MODE_ONE = 0x80000  # Mode 1 (Warm light / White noise)
-    THERAPY_MODE_TWO = 0x100000  # Mode 2 (Neutral light / Pink noise)
-    THERAPY_MODE_THREE = 0x200000  # Mode 3 (Cool light / Brown noise)
-
 
 class SinoCommands:
     """Sino (Dynasty, INNOVA) specific command constants.
@@ -196,6 +191,8 @@ class KeesonController(BedController):
         self._cb1322_presets = cb1322_presets
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
+        self._write_with_response = True
+        self._write_mode_initialized = False
 
         # Position feedback state (for ergomotion variant)
         self._head_position: int | None = None
@@ -211,6 +208,8 @@ class KeesonController(BedController):
         # Determine the characteristic UUID
         if char_uuid:
             self._char_uuid = char_uuid
+        elif variant == KEESON_VARIANT_JSON:
+            self._char_uuid = self._detect_json_characteristic_uuid()
         elif variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}:
             # For KSBT variants, try to find a working characteristic UUID
             self._char_uuid = self._detect_ksbt_characteristic_uuid()
@@ -218,8 +217,12 @@ class KeesonController(BedController):
             # For base/ergomotion variant, try to find a working characteristic UUID
             self._char_uuid = self._detect_characteristic_uuid()
 
-        # Notify characteristic for ergomotion variant
-        self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
+        # Notify characteristic for variants with BLE feedback.
+        self._notify_char_uuid = (
+            KEESON_JSON_NOTIFY_CHAR_UUID
+            if variant == KEESON_VARIANT_JSON
+            else KEESON_BASE_NOTIFY_CHAR_UUID
+        )
 
         _LOGGER.debug(
             "KeesonController initialized (variant: %s, char: %s)",
@@ -280,6 +283,32 @@ class KeesonController(BedController):
         )
         self.log_discovered_services(level=logging.INFO)
         return KEESON_BASE_WRITE_CHAR_UUID
+
+    def _detect_json_characteristic_uuid(self) -> str:
+        """Detect the JSON/A00A write characteristic UUID from available services."""
+        client = self.client
+        if client is None or client.services is None:
+            _LOGGER.debug("No BLE services available, using default JSON/A00A UUID")
+            return KEESON_JSON_WRITE_CHAR_UUID
+
+        services_map = {str(service.uuid).lower(): service for service in client.services}
+        json_service = services_map.get(KEESON_JSON_SERVICE_UUID.lower())
+        if json_service is not None:
+            char = json_service.get_characteristic(KEESON_JSON_WRITE_CHAR_UUID)
+            if char is not None:
+                _LOGGER.debug("Found JSON/A00A service with expected characteristic")
+                return KEESON_JSON_WRITE_CHAR_UUID
+            _LOGGER.debug(
+                "JSON/A00A service found but characteristic %s not present",
+                KEESON_JSON_WRITE_CHAR_UUID,
+            )
+
+        _LOGGER.warning(
+            "No recognized JSON/A00A service/characteristic found. "
+            "Falling back to the default Keeson JSON write UUID."
+        )
+        self.log_discovered_services(level=logging.INFO)
+        return KEESON_JSON_WRITE_CHAR_UUID
 
     def _detect_ksbt_characteristic_uuid(self) -> str:
         """Detect the correct write characteristic UUID for KSBT variant.
@@ -345,6 +374,11 @@ class KeesonController(BedController):
         return self._variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}
 
     @property
+    def _is_json_variant(self) -> bool:
+        """Return True when using the Keeson JSON/A00A command family."""
+        return self._variant == KEESON_VARIANT_JSON
+
+    @property
     def _single_shot_count(self) -> int:
         """Repeat count for single-shot commands (massage, presets, lights).
 
@@ -360,19 +394,24 @@ class KeesonController(BedController):
 
     @property
     def supports_preset_lounge(self) -> bool:
-        """KSBT, Ergomotion, and Purple have the Lounge preset; BaseI4/I5 does not."""
-        return self._is_ksbt or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
+        """Return True when the 0x2000 preset should be exposed."""
+        return (
+            self._is_ksbt
+            or self._is_json_variant
+            or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
+        )
 
     @property
     def supports_preset_tv(self) -> bool:
-        """KSBT and Ergomotion have TV preset; BaseI4/I5/Purple does not."""
-        return self._is_ksbt or self._variant == "ergomotion"
+        """Return True when the 0x4000 preset should be exposed."""
+        return self._is_ksbt or self._is_json_variant or self._variant == "ergomotion"
 
     @property
     def supports_preset_anti_snore(self) -> bool:
         """KSBT, Ergomotion, Purple, and BetterLiving have anti-snore preset."""
         return (
             self._is_ksbt
+            or self._is_json_variant
             or self._betterliving_presets
             or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
         )
@@ -390,8 +429,11 @@ class KeesonController(BedController):
         BetterLiving/CB1322: Slots 1-2 (from APK analysis)
         BaseI4/I5: Slot 3 only (from APK analysis)
         Ergomotion: 4 slots (needs verification)
+        JSON/A00A: Quest proves slots 1-4; other remotes reuse some addresses
         Purple: 2 slots for premium base, 3 slot for plus. Slot 1 is mapped to the standard slot 4
         """
+        if self._is_json_variant:
+            return 4
         if self._betterliving_presets or self._cb1322_presets:
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
         if self._is_ksbt:
@@ -413,9 +455,13 @@ class KeesonController(BedController):
     @property
     def supports_lights(self) -> bool:
         """Return True - Keeson beds support under-bed/safety lighting.
-        
+
         Purple Premium Smart Base lacks lighting; Purple Plus (with massage) has it.
         """
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            # The guessed KSBT04C light/audio mappings are not verified and field
+            # reports showed they were wrong or unsafe. Hide them until captured.
+            return False
         if self._variant == KEESON_VARIANT_PURPLE:
             # Plus model has massage and lighting; Premium base has neither
             return self._coordinator.has_massage
@@ -427,14 +473,11 @@ class KeesonController(BedController):
         return self._variant == KEESON_VARIANT_SINO
 
     @property
-    def supports_sound_toggle(self) -> bool:
-        """Return True for KSBT variants that have sound/noise generator hardware."""
-        return self._is_ksbt
-
-    @property
-    def supports_therapy_modes(self) -> bool:
-        """Return True for KSBT variants with light/sound therapy mode selection."""
-        return self._is_ksbt
+    def supports_light_toggle_control(self) -> bool:
+        """Return whether the toggle-light button should be exposed."""
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            return False
+        return super().supports_light_toggle_control
 
     @property
     def has_tilt_support(self) -> bool:
@@ -468,7 +511,7 @@ class KeesonController(BedController):
         BetterLiving/Sino beds use standard motor naming (head=head, feet=feet),
         so no translation overrides are needed.
         """
-        if self._variant == KEESON_VARIANT_SINO:
+        if self._variant == KEESON_VARIANT_SINO or self._is_json_variant:
             return None
         return {
             "head": "keeson_back",
@@ -545,8 +588,75 @@ class KeesonController(BedController):
             return 10  # Sino uses 0-10 scale
         return 6  # Keeson/Ergomotion use 0-6 scale
 
+    def _refresh_write_mode(self) -> None:
+        """Resolve whether the selected characteristic prefers write-with-response."""
+        if self._write_mode_initialized:
+            return
+
+        client = self.client
+        if client is None or client.services is None:
+            return
+
+        for service in client.services:
+            for char in service.characteristics:
+                if str(char.uuid).lower() != self._char_uuid.lower():
+                    continue
+
+                props = {prop.lower() for prop in getattr(char, "properties", [])}
+                if "write" in props:
+                    self._write_with_response = True
+                elif "write-without-response" in props:
+                    self._write_with_response = False
+
+                _LOGGER.debug(
+                    "Keeson write mode: response=%s (char=%s props=%s)",
+                    self._write_with_response,
+                    self._char_uuid,
+                    getattr(char, "properties", []),
+                )
+                self._write_mode_initialized = True
+                return
+
+        self._write_mode_initialized = True
+
+    def _json_device_identifier(self) -> str:
+        """Return the device identifier used by the JSON/A00A protocol."""
+        for candidate in (
+            getattr(self._coordinator, "name", None),
+            getattr(self.client, "address", None),
+            getattr(self._coordinator, "address", None),
+        ):
+            if candidate:
+                return str(candidate)
+        return "unknown"
+
+    def _build_json_command(
+        self,
+        command_value: int,
+        *,
+        ctrm: int,
+        km: int,
+        keykt: int,
+    ) -> bytes:
+        """Build a JSON/A00A command payload from the Juna/Linx protocol family."""
+        payload = {
+            "code": 2,
+            "dvid": self._json_device_identifier(),
+            "cmd": {
+                "key": f"{command_value:08x}",
+                "ctrm": ctrm,
+                "km": km,
+                "keykt": keykt,
+            },
+        }
+        return json.dumps(payload, separators=(",", ":")).encode()
+
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes based on protocol variant."""
+        if self._is_json_variant:
+            if command_value == 0:
+                return self._build_json_command(command_value, ctrm=0, km=1, keykt=0)
+            return self._build_json_command(command_value, ctrm=1, km=1, keykt=0)
         if self._variant == "ksbt":
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
@@ -581,6 +691,7 @@ class KeesonController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
+        self._refresh_write_mode()
         _LOGGER.debug(
             "Writing command to Keeson bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
@@ -593,6 +704,7 @@ class KeesonController(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=self._write_with_response,
         )
 
     async def start_notify(
@@ -795,11 +907,18 @@ class KeesonController(BedController):
 
         try:
             if command:
-                await self.write_command(
-                    self._build_command(command),
-                    repeat_count=self._coordinator.motor_pulse_count,
-                    repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-                )
+                if self._is_json_variant:
+                    await self._write_json_motion_command(
+                        command,
+                        repeat_count=self._coordinator.motor_pulse_count,
+                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                    )
+                else:
+                    await self.write_command(
+                        self._build_command(command),
+                        repeat_count=self._coordinator.motor_pulse_count,
+                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                    )
         finally:
             # Always send stop with a fresh event so it's not affected by cancellation
             self._motor_state = {}
@@ -810,6 +929,34 @@ class KeesonController(BedController):
                 )
             except Exception:
                 _LOGGER.debug("Failed to send STOP command during cleanup")
+
+    async def _write_json_motion_command(
+        self,
+        command_value: int,
+        *,
+        repeat_count: int,
+        repeat_delay_ms: int,
+    ) -> None:
+        """Send held-motion JSON commands compatible with all known Juna A00A remotes.
+
+        Quest uses `ctrm=0` for held movement while Rewind/Restore/Relax use
+        `ctrm=1`. Sending both start forms keeps one controller compatible with
+        the known Juna/Linx remote families without requiring an extra option.
+        """
+        for index in range(repeat_count):
+            cancel_event = self._coordinator.cancel_command
+            if cancel_event.is_set():
+                _LOGGER.debug("JSON motion cancelled after %d/%d writes", index, repeat_count)
+                return
+
+            for ctrm in (1, 0):
+                await self.write_command(
+                    self._build_json_command(command_value, ctrm=ctrm, km=3, keykt=1),
+                    cancel_event=cancel_event,
+                )
+
+            if index < repeat_count - 1:
+                await asyncio.sleep(repeat_delay_ms / 1000)
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -954,7 +1101,7 @@ class KeesonController(BedController):
                 "Memory %d may not work on BaseI4/I5 beds. Memory 3 is more reliable.",
                 memory_num,
             )
-        
+
         #Purple treats Memory 4 as memory 1
         if self._variant == KEESON_VARIANT_PURPLE and memory_num == 1:
             memory_num = 4
@@ -1030,7 +1177,11 @@ class KeesonController(BedController):
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
-        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
+        if (
+            not self._is_ksbt
+            and not self._is_json_variant
+            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
+        ):
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE), repeat_count=self._single_shot_count)
@@ -1047,7 +1198,11 @@ class KeesonController(BedController):
         if self._betterliving_presets:
             await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
             return
-        if not self._is_ksbt and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}:
+        if (
+            not self._is_ksbt
+            and not self._is_json_variant
+            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
+        ):
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
         await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
@@ -1055,6 +1210,8 @@ class KeesonController(BedController):
     # Light methods
     async def lights_on(self) -> None:
         """Turn on safety lights."""
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            raise NotImplementedError("KSBT04C light control is not yet verified")
         if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
             await self.write_command(self._build_command(SinoCommands.LIGHT_ON), repeat_count=self._single_shot_count)
@@ -1065,6 +1222,8 @@ class KeesonController(BedController):
 
     async def lights_off(self) -> None:
         """Turn off safety lights."""
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            raise NotImplementedError("KSBT04C light control is not yet verified")
         if self._variant == KEESON_VARIANT_SINO:
             # ORE variant has discrete on/off commands
             await self.write_command(self._build_command(SinoCommands.LIGHT_OFF), repeat_count=self._single_shot_count)
@@ -1075,6 +1234,8 @@ class KeesonController(BedController):
 
     async def lights_toggle(self) -> None:
         """Toggle safety lights."""
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            raise NotImplementedError("KSBT04C light control is not yet verified")
         if self._variant == KEESON_VARIANT_SINO:
             # ORE doesn't have a toggle command; emulate it with tracked state.
             command = SinoCommands.LIGHT_OFF if self._led_on else SinoCommands.LIGHT_ON
@@ -1280,41 +1441,25 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
 
-    # Light/Sound therapy methods (KSBT04C / Beautyrest Baselogic)
     async def sound_toggle(self) -> None:
-        """Toggle sound/noise generator."""
-        await self.write_command(
-            self._build_command(KeesonCommands.TOGGLE_SOUND),
-            repeat_count=self._single_shot_count,
-        )
+        """Raise until KSBT04C sound control is verified from captured traffic."""
+        raise NotImplementedError("KSBT04C sound control is not yet verified")
 
     async def light_and_sound_toggle(self) -> None:
-        """Toggle combined light and sound therapy."""
-        await self.write_command(
-            self._build_command(KeesonCommands.TOGGLE_LIGHT_AND_SOUND),
-            repeat_count=self._single_shot_count,
-        )
+        """Raise until KSBT04C light+sound control is verified from traffic."""
+        raise NotImplementedError("KSBT04C light+sound control is not yet verified")
 
     async def therapy_mode_one(self) -> None:
-        """Select therapy mode 1 (Warm light / White noise)."""
-        await self.write_command(
-            self._build_command(KeesonCommands.THERAPY_MODE_ONE),
-            repeat_count=self._single_shot_count,
-        )
+        """Raise until KSBT04C therapy mode packets are captured."""
+        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
 
     async def therapy_mode_two(self) -> None:
-        """Select therapy mode 2 (Neutral light / Pink noise)."""
-        await self.write_command(
-            self._build_command(KeesonCommands.THERAPY_MODE_TWO),
-            repeat_count=self._single_shot_count,
-        )
+        """Raise until KSBT04C therapy mode packets are captured."""
+        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
 
     async def therapy_mode_three(self) -> None:
-        """Select therapy mode 3 (Cool light / Brown noise)."""
-        await self.write_command(
-            self._build_command(KeesonCommands.THERAPY_MODE_THREE),
-            repeat_count=self._single_shot_count,
-        )
+        """Raise until KSBT04C therapy mode packets are captured."""
+        raise NotImplementedError("KSBT04C therapy mode control is not yet verified")
 
     def get_massage_state(self) -> dict[str, Any]:
         """Return current massage state from BLE notification feedback.

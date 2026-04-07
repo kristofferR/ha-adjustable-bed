@@ -39,21 +39,23 @@ Brands using Keeson/Ergomotion actuators:
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` |
 | ✅ | [Tempur Zero G Bed Base](https://play.google.com/store/apps/details?id=com.sfd.row) | `com.sfd.row` |
 | ✅ | [Member's Mark Base Remote](https://play.google.com/store/apps/details?id=com.sfd.mm) | `com.sfd.mm` |
+| ✅ | Linx | `com.keeson.connectedbed` |
+| ✅ | Juna Sleep | `com.keeson.junasleep` |
 | ✅ | [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) | `com.keeson.purpleBase` |
 
 ## Features
 
-| Feature | BaseI4/I5 | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
-|---------|-----------|------|------------|------|-------|------|------------------|-----------------------|
-| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
-| Position Feedback | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
-| Memory Presets | ✅ (slots 3-4) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
-| TV Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
-| Anti-Snore Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❓ |
-| Lounge Preset | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
-| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
-| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
-| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
+| Feature | BaseI4/I5 | JSON/A00A | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
+|---------|-----------|------------|------|------------|------|-------|------|------------------|-----------------------|
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
+| Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
+| Memory Presets | ✅ (slots 3-4) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-2) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
+| TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
+| Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❓ |
+| Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
+| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
+| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
+| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
 
 ## Protocol Variants
 
@@ -66,11 +68,39 @@ Brands using Keeson/Ergomotion actuators:
 - `0000fff0-0000-1000-8000-00805f9b34fb` (characteristic: `0000fff2`)
 - `0000ffb0-0000-1000-8000-00805f9b34fb` (characteristic: `0000ffb2`)
 
+### JSON/A00A Variant (Juna, Linx, Ergo Health)
+
+**Primary Service UUID:** `0000a00a-0000-1000-8000-00805f9b34fb`  
+**Write Characteristic:** `0000b002-0000-1000-8000-00805f9b34fb`  
+**Indicate Characteristic:** `0000b004-0000-1000-8000-00805f9b34fb`
+
+This family uses a JSON envelope instead of the older binary Keeson packets:
+
+```json
+{"code":2,"dvid":"<ble name>","cmd":{"key":"00001000","ctrm":1,"km":1,"keykt":0}}
+```
+
+Known remote families from the OEM apps:
+
+- `Quest`
+- `Rewind`
+- `Restore`
+- `Relax`
+
+One-shot buttons use `ctrm=1, km=1, keykt=0`. Held motion is not fully uniform:
+
+- `Quest` uses `ctrm=0, km=3, keykt=1`
+- `Rewind`, `Restore`, and `Relax` use `ctrm=1, km=3, keykt=1`
+
+The integration treats `0000a00a` as a distinct Keeson variant and uses the shared 32-bit command values, while accommodating the split held-motion metadata from the Juna/Linx app family.
+
 ### KSBT Variant (Older Remotes)
+
 **Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
+Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
 
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
 - `6e400020-b5a3-f393-e0a9-e50e24dcca9e` (characteristic: `6e400021`) - Extended Nordic UART, used by some Ergomotion/SFD beds
@@ -143,8 +173,9 @@ Position data includes:
 > **Note:** Command `0x00008000` has different meanings depending on the protocol variant:
 > - On **BaseI4/I5**: This is Memory 3 preset
 > - On **KSBT and Purple**: This is Anti-Snore preset
+> - On **Juna/Linx JSON remotes**: It may be Memory 3, Sleep, or another remote-specific preset depending on the remote family
 >
-> The TV, Lounge, and Anti-Snore presets are only available on KSBT and Purple beds. BaseI4/I5 beds (like Member's Mark) use different button layouts and may not support these commands.
+> The `0x00002000`, `0x00004000`, `0x00008000`, and `0x00010000` addresses are reused by multiple Keeson remote families. On Juna/Linx they can correspond to `M`, `Read`, `TV`, `Sleep`, or memory slots depending on the chosen remote.
 
 ## Command Timing
 
@@ -174,6 +205,10 @@ Member's Mark beds support independent control of left and right sides using a 9
 | `0x02` | Side B (Left) |
 
 ## Device Detection
+
+Unique service UUID auto-detection:
+
+- `0000a00a-0000-1000-8000-00805f9b34fb` -> JSON/A00A variant
 
 | Device Name Prefix | Protocol |
 |-------------------|----------|
