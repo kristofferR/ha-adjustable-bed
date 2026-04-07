@@ -93,9 +93,10 @@ FAIL:2
 | Set foot target | `ACTS <side> foot <0-100>` |
 | Stop head | `ACTH <side> head` |
 | Stop foot | `ACTH <side> foot` |
-| Stop all | `ACHA` |
+| Stop configured side | `ACTH <side> head` and `ACTH <side> foot` |
 
 `head` is mapped to the integration's `back` actuator and `foot` is mapped to `legs`.
+The protocol also exposes a global `ACHA` halt, but the integration avoids it so one side does not stop its split-base partner.
 
 ### Presets
 
@@ -106,12 +107,12 @@ FAIL:2
 | Anti-Snore | `ACSP <side> snore 0` |
 | TV | `ACSP <side> watch_tv 0` |
 
-### Under Bed Light
+### Under-Bed Light
 
 | Action | Command |
 |--------|---------|
 | Read light settings | `UBLG` |
-| Set light level and timer | `UBLS <off|low|medium|high> <minutes>` |
+| Set light level and timer | `UBLS <off\|low\|medium\|high> <minutes>` |
 
 The integration exposes:
 

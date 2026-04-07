@@ -27,11 +27,11 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.translation import async_get_translations
 
-from .adapter import find_service_info_by_address, get_discovered_service_info
 from .actuator_groups import (
     ACTUATOR_GROUPS,
     SINGLE_TYPE_GROUPS,
 )
+from .adapter import find_service_info_by_address, get_discovered_service_info
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -147,17 +147,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._show_full_bed_type_list: bool = False
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
-    @staticmethod
-    def _get_pairing_instructions(bed_type: str | None) -> str:
+    async def _get_pairing_instructions(self, bed_type: str | None) -> str:
         """Return pairing instructions tailored to the selected bed type."""
+        translations = await async_get_translations(
+            self.hass, self.hass.config.language, "config", {DOMAIN}
+        )
         if bed_type == BED_TYPE_SLEEP_NUMBER:
-            return (
+            return translations.get(
+                f"component.{DOMAIN}.config.step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
-                "2. Click 'Pair Now'"
+                "2. Click 'Pair Now'",
             )
-        return (
+        return translations.get(
+            f"component.{DOMAIN}.config.step.bluetooth_pairing.data_description.pairing_instructions_generic",
             "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
-            "2. Click 'Pair Now'"
+            "2. Click 'Pair Now'",
         )
 
     def _maybe_add_kaidi_metadata(
@@ -231,18 +235,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if bed_type is None:
             # Check if device was excluded as a known non-bed device
-            is_excluded = any(
-                s.startswith("excluded:") for s in detection_result.signals
-            )
+            is_excluded = any(s.startswith("excluded:") for s in detection_result.signals)
 
             if not is_excluded:
                 # Only create Repairs issue for genuinely unknown devices,
                 # not for devices already identified as non-bed (speakers, etc.)
                 device_info = capture_device_info(discovery_info)
                 reason = determine_unsupported_reason(discovery_info)
-                created = await create_unsupported_device_issue(
-                    self.hass, device_info, reason
-                )
+                created = await create_unsupported_device_issue(self.hass, device_info, reason)
                 if created:
                     log_unsupported_device(device_info, reason)
 
@@ -1368,7 +1368,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
-            "pairing_instructions": self._get_pairing_instructions(
+            "pairing_instructions": await self._get_pairing_instructions(
                 self._manual_data.get(CONF_BED_TYPE)
             ),
         }
@@ -1434,7 +1434,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
-            "pairing_instructions": self._get_pairing_instructions(
+            "pairing_instructions": await self._get_pairing_instructions(
                 self._manual_data.get(CONF_BED_TYPE)
             ),
         }

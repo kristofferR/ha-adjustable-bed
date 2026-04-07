@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from bleak.exc import BleakError
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -20,6 +22,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+
+if TYPE_CHECKING:
+    from .beds.base import BedController
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -196,7 +203,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
     async def async_update(self) -> None:
         """Query the latest bed presence from the controller."""
 
-        async def _read_presence(ctrl: Any) -> bool | None:
+        async def _read_presence(ctrl: BedController) -> bool | None:
             return await ctrl.read_bed_presence()
 
         try:
@@ -206,3 +213,5 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
             )
         except asyncio.CancelledError:
             return
+        except (BleakError, ConnectionError, RuntimeError, TimeoutError, ValueError) as err:
+            _LOGGER.debug("Bed presence poll failed for %s: %s", self._coordinator.address, err)

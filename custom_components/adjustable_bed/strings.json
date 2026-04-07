@@ -178,14 +178,18 @@
       },
       "bluetooth_pairing": {
         "title": "Bluetooth Pairing Required",
-        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
+        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
         "data": {
           "action": "Action"
+        },
+        "data_description": {
+          "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",
+          "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'"
         }
       },
       "manual_pairing": {
         "title": "Bluetooth Pairing Required",
-        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
+        "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
         "data": {
           "action": "Action"
         }

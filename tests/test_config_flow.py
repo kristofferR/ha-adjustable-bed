@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -61,16 +61,52 @@ from custom_components.adjustable_bed.kaidi_protocol import (
 class TestPairingInstructions:
     """Test bed-specific pairing guidance."""
 
-    def test_sleep_number_pairing_instructions_use_side_button(self):
+    async def test_sleep_number_pairing_instructions_use_side_button(
+        self, hass: HomeAssistant
+    ) -> None:
         """Sleep Number should show its side-button pairing guidance."""
-        instructions = AdjustableBedConfigFlow._get_pairing_instructions(BED_TYPE_SLEEP_NUMBER)
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_get_translations",
+            new=AsyncMock(
+                return_value={
+                    (
+                        "component.adjustable_bed.config.step.bluetooth_pairing."
+                        "data_description.pairing_instructions_sleep_number"
+                    ): (
+                        "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
+                        "2. Click 'Pair Now'"
+                    )
+                }
+            ),
+        ):
+            instructions = await flow._get_pairing_instructions(BED_TYPE_SLEEP_NUMBER)
 
         assert "side pairing button" in instructions
         assert "blue light blinks" in instructions
 
-    def test_default_pairing_instructions_remain_generic(self):
+    async def test_default_pairing_instructions_remain_generic(self, hass: HomeAssistant) -> None:
         """Other pairing-required beds should keep the generic fallback guidance."""
-        instructions = AdjustableBedConfigFlow._get_pairing_instructions(BED_TYPE_OKIMAT)
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_get_translations",
+            new=AsyncMock(
+                return_value={
+                    (
+                        "component.adjustable_bed.config.step.bluetooth_pairing."
+                        "data_description.pairing_instructions_generic"
+                    ): (
+                        "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
+                        "2. Click 'Pair Now'"
+                    )
+                }
+            ),
+        ):
+            instructions = await flow._get_pairing_instructions(BED_TYPE_OKIMAT)
 
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions

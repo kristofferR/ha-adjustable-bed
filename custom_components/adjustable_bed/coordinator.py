@@ -1712,69 +1712,89 @@ class AdjustableBedCoordinator:
                         # Otherwise, reset the idle disconnect timer
                         self._reset_disconnect_timer()
 
-    async def async_execute_controller_command(
+    async def _async_prepare_controller_operation(self, operation_name: str) -> BedController:
+        """Ensure the controller is connected and authenticated before use."""
+        self._cancel_command.clear()
+
+        if not await self.async_ensure_connected(reset_timer=False):
+            _LOGGER.error("Cannot execute %s: not connected to bed", operation_name)
+            raise ConnectionError("Not connected to bed")
+
+        controller = self._controller
+        if controller is None:
+            _LOGGER.error("Cannot execute %s: no controller available", operation_name)
+            raise RuntimeError("No controller available")
+
+        await self._async_refresh_controller_auth()
+        return controller
+
+    async def _async_finish_controller_operation(
         self,
-        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
-        cancel_running: bool = True,
-        skip_disconnect: bool = False,
+        *,
+        entry_cancel_count: int,
+        skip_disconnect: bool,
+        operation_name: str,
     ) -> None:
-        """Execute a controller command with proper serialization.
+        """Handle disconnect timer reset or disconnect after an operation completes."""
+        if self._client is None or not self._client.is_connected:
+            return
 
-        This ensures commands are serialized through the command lock,
-        optionally cancels any running command, and properly resets the disconnect timer.
+        command_preempted = self._cancel_counter > entry_cancel_count
+        if self._disconnect_after_command and not skip_disconnect and not command_preempted:
+            _LOGGER.debug(
+                "Disconnecting after %s (disconnect_after_command=True) for %s",
+                operation_name,
+                self._address,
+            )
+            await self.async_disconnect()
+            return
 
-        Args:
-            command_fn: An async callable that takes the controller as argument.
-            cancel_running: If True, cancel any running command before executing.
-            skip_disconnect: If True, skip the disconnect_after_command behavior.
-                Use this for keep-alive commands that need the connection to persist.
-        """
+        if command_preempted:
+            _LOGGER.debug(
+                "Skipping disconnect for %s: newer command is pending",
+                self._address,
+            )
+        self._reset_disconnect_timer()
+
+    async def _async_execute_controller_operation(
+        self,
+        operation_fn: Callable[[BedController], Coroutine[Any, Any, T]],
+        *,
+        cancel_running: bool,
+        skip_disconnect: bool,
+        raise_on_lock_cancel: bool,
+        enable_position_polling: bool,
+        read_positions_after_operation: bool,
+        operation_name: str,
+    ) -> T | None:
+        """Execute a controller operation with shared locking and connection handling."""
         if cancel_running:
-            # Cancel any running command immediately
             self._cancel_counter += 1
             self._cancel_command.set()
 
-        # Capture cancel count at entry
         entry_cancel_count = self._cancel_counter
 
         async with self._command_lock:
-            # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._cancel_disconnect_timer()
 
-            # Check if we were cancelled while waiting for the lock
             if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Controller command cancelled while waiting for lock")
-                # Handle disconnect timer since we're bailing out without executing
+                _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
                 if self._client is not None and self._client.is_connected:
-                    # A newer command superseded this one while it waited for lock.
-                    # Keep the connection alive to avoid disconnect/reconnect thrash
-                    # between back-to-back commands.
                     self._reset_disconnect_timer()
-                return
+                if raise_on_lock_cancel:
+                    raise asyncio.CancelledError
+                return None
 
             try:
-                # Clear cancel signal for this command
-                self._cancel_command.clear()
-
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot execute command: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
-
-                if self._controller is None:
-                    _LOGGER.error("Cannot execute command: no controller available")
-                    raise RuntimeError("No controller available")
-
-                await self._async_refresh_controller_auth()
-
-                # Track command timing for diagnostics (issue #168)
+                controller = await self._async_prepare_controller_operation(operation_name)
                 self._last_command_start = datetime.now(UTC)
 
-                # Start position polling during movement if angle sensing enabled
                 poll_stop: asyncio.Event | None = None
                 poll_task: asyncio.Task[None] | None = None
                 if (
-                    not self._disable_angle_sensing
-                    and self._controller.allow_position_polling_during_commands
+                    enable_position_polling
+                    and not self._disable_angle_sensing
+                    and controller.allow_position_polling_during_commands
                 ):
                     poll_stop = asyncio.Event()
                     poll_task = asyncio.create_task(
@@ -1782,11 +1802,9 @@ class AdjustableBedCoordinator:
                     )
 
                 try:
-                    await command_fn(self._controller)
+                    result = await operation_fn(controller)
                 finally:
-                    # Track command end time for diagnostics (issue #168)
                     self._last_command_end = datetime.now(UTC)
-                    # Stop polling
                     if poll_stop is not None:
                         poll_stop.set()
                     if poll_task is not None:
@@ -1794,16 +1812,18 @@ class AdjustableBedCoordinator:
                         with contextlib.suppress(asyncio.CancelledError):
                             await poll_task
 
-                # Final position read after command
-                if not self._disable_angle_sensing and not self._cancel_command.is_set():
+                if (
+                    read_positions_after_operation
+                    and not self._disable_angle_sensing
+                    and not self._cancel_command.is_set()
+                ):
                     if self._position_mode == POSITION_MODE_ACCURACY:
-                        # Accuracy mode: wait for read to complete
                         await self._async_read_positions()
                     else:
-                        # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
                         self.hass.async_create_task(self._async_read_positions_background())
+
+                return result
             except (ConnectionError, RuntimeError):
-                # On connection/controller errors, reset timer if not disconnecting after commands
                 if (
                     self._client is not None
                     and self._client.is_connected
@@ -1812,27 +1832,28 @@ class AdjustableBedCoordinator:
                     self._reset_disconnect_timer()
                 raise
             finally:
-                if self._client is not None and self._client.is_connected:
-                    command_preempted = self._cancel_counter > entry_cancel_count
-                    # Disconnect immediately if configured to do so (unless skip_disconnect)
-                    if (
-                        self._disconnect_after_command
-                        and not skip_disconnect
-                        and not command_preempted
-                    ):
-                        _LOGGER.debug(
-                            "Disconnecting after command (disconnect_after_command=True) for %s",
-                            self._address,
-                        )
-                        await self.async_disconnect()
-                    else:
-                        if command_preempted:
-                            _LOGGER.debug(
-                                "Skipping disconnect for %s: newer command is pending",
-                                self._address,
-                            )
-                        # Otherwise, reset the idle disconnect timer
-                        self._reset_disconnect_timer()
+                await self._async_finish_controller_operation(
+                    entry_cancel_count=entry_cancel_count,
+                    skip_disconnect=skip_disconnect,
+                    operation_name=operation_name,
+                )
+
+    async def async_execute_controller_command(
+        self,
+        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+        cancel_running: bool = True,
+        skip_disconnect: bool = False,
+    ) -> None:
+        """Execute a controller command with proper serialization."""
+        await self._async_execute_controller_operation(
+            command_fn,
+            cancel_running=cancel_running,
+            skip_disconnect=skip_disconnect,
+            raise_on_lock_cancel=False,
+            enable_position_polling=True,
+            read_positions_after_operation=True,
+            operation_name="command",
+        )
 
     async def async_execute_controller_query(
         self,
@@ -1840,73 +1861,17 @@ class AdjustableBedCoordinator:
         cancel_running: bool = False,
         skip_disconnect: bool = False,
     ) -> T:
-        """Execute a controller query and return its result.
-
-        Unlike movement commands, queries do not start movement-time position
-        polling or perform a final position read. They still reuse the same
-        command serialization, connection, and disconnect-timer behavior.
-        """
-        if cancel_running:
-            self._cancel_counter += 1
-            self._cancel_command.set()
-
-        entry_cancel_count = self._cancel_counter
-
-        async with self._command_lock:
-            self._cancel_disconnect_timer()
-
-            if self._cancel_counter > entry_cancel_count:
-                _LOGGER.debug("Controller query cancelled while waiting for lock")
-                if self._client is not None and self._client.is_connected:
-                    self._reset_disconnect_timer()
-                raise asyncio.CancelledError
-
-            try:
-                self._cancel_command.clear()
-
-                if not await self.async_ensure_connected(reset_timer=False):
-                    _LOGGER.error("Cannot execute query: not connected to bed")
-                    raise ConnectionError("Not connected to bed")
-
-                if self._controller is None:
-                    _LOGGER.error("Cannot execute query: no controller available")
-                    raise RuntimeError("No controller available")
-
-                await self._async_refresh_controller_auth()
-
-                self._last_command_start = datetime.now(UTC)
-                try:
-                    return await query_fn(self._controller)
-                finally:
-                    self._last_command_end = datetime.now(UTC)
-            except (ConnectionError, RuntimeError):
-                if (
-                    self._client is not None
-                    and self._client.is_connected
-                    and not self._disconnect_after_command
-                ):
-                    self._reset_disconnect_timer()
-                raise
-            finally:
-                if self._client is not None and self._client.is_connected:
-                    command_preempted = self._cancel_counter > entry_cancel_count
-                    if (
-                        self._disconnect_after_command
-                        and not skip_disconnect
-                        and not command_preempted
-                    ):
-                        _LOGGER.debug(
-                            "Disconnecting after query (disconnect_after_command=True) for %s",
-                            self._address,
-                        )
-                        await self.async_disconnect()
-                    else:
-                        if command_preempted:
-                            _LOGGER.debug(
-                                "Skipping disconnect for %s: newer command is pending",
-                                self._address,
-                            )
-                        self._reset_disconnect_timer()
+        """Execute a controller query and return its result."""
+        result = await self._async_execute_controller_operation(
+            query_fn,
+            cancel_running=cancel_running,
+            skip_disconnect=skip_disconnect,
+            raise_on_lock_cancel=True,
+            enable_position_polling=False,
+            read_positions_after_operation=False,
+            operation_name="query",
+        )
+        return cast(T, result)
 
     async def async_start_notify(self) -> None:
         """Start listening for position notifications."""

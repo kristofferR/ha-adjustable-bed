@@ -106,6 +106,19 @@ class TestSleepNumberController:
 
         assert coordinator.controller.requires_notification_channel is True
 
+    async def test_disables_position_polling_during_commands(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Sleep Number should not poll positions while another bamkey command is in flight."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2A",
+            name="Smart bed 0074F0",
+            entry_id="sleep_number_no_poll_during_commands",
+        )
+
+        assert coordinator.controller.allow_position_polling_during_commands is False
+
     async def test_set_motor_position_writes_bamkey_and_waits_for_ack(
         self,
         sleep_number_coordinator,
@@ -140,6 +153,28 @@ class TestSleepNumberController:
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
             b"ACTS left head 57",
             response=True,
+        )
+
+    async def test_stop_all_only_stops_the_configured_side(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """stop_all should not send the global ACHA halt on split bases."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2B",
+            name="Smart bed 0074F1",
+            entry_id="sleep_number_stop_all",
+            protocol_variant=SLEEP_NUMBER_VARIANT_RIGHT,
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.stop_all()
+
+        coordinator.controller._send_bamkey_command.assert_has_awaits(
+            [
+                call("ACTH", "right", "head"),
+                call("ACTH", "right", "foot"),
+            ]
         )
 
     async def test_read_positions_maps_head_and_foot_to_back_and_legs(

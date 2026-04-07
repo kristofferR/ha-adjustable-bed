@@ -162,6 +162,11 @@ class SleepNumberController(BedController):
         return True
 
     @property
+    def allow_position_polling_during_commands(self) -> bool:
+        """Sleep Number bamkey commands must own the response queue exclusively."""
+        return False
+
+    @property
     def supports_preset_zero_g(self) -> bool:
         return True
 
@@ -197,7 +202,7 @@ class SleepNumberController(BedController):
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
         """Convert direct-position values to Sleep Number's 0-100 native range."""
-        return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, int(round(angle))))
+        return max(_SLEEP_NUMBER_MIN_POSITION, min(_SLEEP_NUMBER_MAX_POSITION, round(angle)))
 
     def get_light_state(self) -> dict[str, Any]:
         """Return the last known underbed light state."""
@@ -314,7 +319,8 @@ class SleepNumberController(BedController):
         await self.move_legs_stop()
 
     async def stop_all(self) -> None:
-        await self._send_bamkey_command(SleepNumberCommands.HALT_ALL_ACTUATORS)
+        await self._send_stop_for_motor("back")
+        await self._send_stop_for_motor("legs")
 
     async def lights_on(self) -> None:
         """Turn on the underbed light using the last active or default level."""
