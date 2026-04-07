@@ -84,6 +84,8 @@ def mock_bleak_client() -> MagicMock:
     from bleak import BleakClient
 
     client = MagicMock(spec=BleakClient)
+    notify_callbacks: dict[str, object] = {}
+
     client.is_connected = True
     client.address = TEST_ADDRESS
     client.mtu_size = 23
@@ -93,12 +95,27 @@ def mock_bleak_client() -> MagicMock:
     # Return None for service lookups to avoid false positives in variant detection
     client.services.get_service = MagicMock(return_value=None)
 
+    async def _start_notify(char_uuid: str, callback) -> None:
+        notify_callbacks[char_uuid] = callback
+
+    async def _stop_notify(char_uuid: str) -> None:
+        notify_callbacks.pop(char_uuid, None)
+
+    async def _write_gatt_char(char_uuid: str, data: bytes, response: bool = False) -> None:
+        del response
+        callback = notify_callbacks.get(char_uuid)
+        if callback is None:
+            return
+
+        if data.decode("utf-8", errors="ignore").strip() == "UBLG":
+            callback(char_uuid, bytearray(b"PASS:high 15"))
+
     client.connect = AsyncMock(return_value=True)
     client.disconnect = AsyncMock()
-    client.write_gatt_char = AsyncMock()
+    client.write_gatt_char = AsyncMock(side_effect=_write_gatt_char)
     client.read_gatt_char = AsyncMock(return_value=b"")
-    client.start_notify = AsyncMock()
-    client.stop_notify = AsyncMock()
+    client.start_notify = AsyncMock(side_effect=_start_notify)
+    client.stop_notify = AsyncMock(side_effect=_stop_notify)
 
     return client
 

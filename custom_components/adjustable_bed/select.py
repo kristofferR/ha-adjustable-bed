@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -173,14 +173,33 @@ class AdjustableBedLightTimerSelect(AdjustableBedEntity, SelectEntity):
 
         # Use options directly from controller (already formatted)
         self._attr_options = timer_options
+        self._unregister_callback = None
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is removed from hass."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+        """Write state when the controller publishes light updates."""
+        if "light_timer_option" in state:
+            self.async_write_ha_state()
 
     @property
     def current_option(self) -> str | None:
-        """Return the current timer setting.
-
-        Note: Light timer state is not tracked - returns None (unknown).
-        The bed does not report current timer setting back.
-        """
+        """Return the current timer setting when the controller tracks it."""
+        option = self._coordinator.controller_state.get("light_timer_option")
+        if option in self._attr_options:
+            return option
         return None
 
     async def async_select_option(self, option: str) -> None:

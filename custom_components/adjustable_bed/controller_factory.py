@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_SBI,
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -96,6 +97,8 @@ from .const import (
     RICHMAT_VARIANT_WILINKE,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SBI_VARIANT_BOTH,
+    SLEEP_NUMBER_VARIANT_LEFT,
+    SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -726,6 +729,15 @@ async def create_controller(
         from .beds.jensen import JensenController
 
         return JensenController(coordinator, pin=jensen_pin)
+
+    if bed_type == BED_TYPE_SLEEP_NUMBER:
+        from .beds.sleep_number import SleepNumberController
+
+        side = protocol_variant or VARIANT_AUTO
+        if side not in {VARIANT_AUTO, SLEEP_NUMBER_VARIANT_LEFT, SLEEP_NUMBER_VARIANT_RIGHT}:
+            _LOGGER.debug("Unknown Sleep Number side variant %s, defaulting to auto", side)
+            side = VARIANT_AUTO
+        return SleepNumberController(coordinator, side=side)
 
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController

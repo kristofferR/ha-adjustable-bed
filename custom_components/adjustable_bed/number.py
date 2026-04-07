@@ -20,6 +20,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
@@ -330,6 +331,34 @@ async def async_setup_entry(
                             ),
                         )
                     )
+            elif bed_type == BED_TYPE_SLEEP_NUMBER:
+                _LOGGER.debug(
+                    "Setting up Sleep Number direct-position numbers for %s",
+                    coordinator.name,
+                )
+
+                for description in NUMBER_DESCRIPTIONS[:2]:
+                    entities.append(
+                        AdjustableBedPositionNumber(
+                            coordinator,
+                            AdjustableBedNumberEntityDescription(
+                                key=description.key,
+                                translation_key=description.translation_key,
+                                icon=description.icon,
+                                native_min_value=0,
+                                native_max_value=100,
+                                native_step=1,
+                                native_unit_of_measurement="%",
+                                mode=description.mode,
+                                position_key=description.position_key,
+                                move_up_fn=description.move_up_fn,
+                                move_down_fn=description.move_down_fn,
+                                move_stop_fn=description.move_stop_fn,
+                                max_angle=100.0,
+                                min_motors=2,
+                            ),
+                        )
+                    )
             else:
                 # Standard bed motor layout (Back/Legs/Head/Feet)
                 # Use configurable angle limits for beds that support angle-based positions
@@ -549,15 +578,34 @@ class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is removed from hass."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Write state when the controller publishes light updates."""
+        if "light_level" in state:
+            self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
-        """Return the current light level.
-
-        Note: Light level state is not tracked - returns None (unknown).
-        The bed does not report current light level back.
-        """
-        return None
+        """Return the current light level when the controller tracks it."""
+        level = self._coordinator.controller_state.get("light_level")
+        if level is None:
+            return None
+        return float(level)
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the light level."""

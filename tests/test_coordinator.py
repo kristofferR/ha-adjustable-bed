@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -83,6 +84,57 @@ class TestCoordinatorConnection:
 
         assert result is True
         assert coordinator.controller is not None
+
+    async def test_connect_arms_disconnect_timer_after_post_connect_hydration(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Idle timer should start only after post-connect hydration completes."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        call_order: list[str] = []
+
+        async def _start_notify() -> None:
+            call_order.append("notify")
+
+        async def _refresh_light_state() -> None:
+            call_order.append("light")
+
+        def _reset_timer() -> None:
+            call_order.append("timer")
+
+        with (
+            patch.object(
+                coordinator,
+                "async_start_notify",
+                new_callable=AsyncMock,
+                side_effect=_start_notify,
+            ) as mock_start_notify,
+            patch.object(
+                coordinator,
+                "_should_refresh_readable_light_state",
+                return_value=True,
+            ),
+            patch.object(
+                coordinator,
+                "_async_refresh_readable_light_state",
+                new_callable=AsyncMock,
+                side_effect=_refresh_light_state,
+            ) as mock_refresh,
+            patch.object(
+                coordinator,
+                "_reset_disconnect_timer",
+                side_effect=_reset_timer,
+            ) as mock_reset_timer,
+        ):
+            result = await coordinator.async_connect()
+
+        assert result is True
+        mock_start_notify.assert_awaited_once()
+        mock_refresh.assert_awaited_once()
+        mock_reset_timer.assert_called_once()
+        assert call_order == ["notify", "light", "timer"]
 
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_connect_closes_stale_connections_before_connect(
@@ -404,6 +456,306 @@ class TestCoordinatorPositionCallbacks:
         callback2.assert_called_once_with({"back": 45.0})
 
 
+class TestCoordinatorControllerStateCallbacks:
+    """Test coordinator controller-state callback handling."""
+
+    async def test_register_controller_state_callback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Test registering controller-state callbacks."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        callback = MagicMock()
+
+        unregister = coordinator.register_controller_state_callback(callback)
+
+        assert callback in coordinator._controller_state_callbacks
+        assert callable(unregister)
+
+    async def test_controller_state_update_triggers_callbacks(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Test controller-state updates trigger all callbacks."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        callback1 = MagicMock()
+        callback2 = MagicMock()
+
+        coordinator.register_controller_state_callback(callback1)
+        coordinator.register_controller_state_callback(callback2)
+
+        coordinator.handle_controller_state_updates({"under_bed_lights_on": True, "light_level": 2})
+
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        callback1.assert_called_once_with({"under_bed_lights_on": True, "light_level": 2})
+        callback2.assert_called_once_with({"under_bed_lights_on": True, "light_level": 2})
+
+    async def test_async_execute_controller_query_returns_result(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Queries should reuse coordinator connection handling and return a value."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        async def _query(ctrl):
+            del ctrl
+            return "ok"
+
+        result = await coordinator.async_execute_controller_query(_query)
+
+        assert result == "ok"
+
+    async def test_async_execute_controller_query_raises_if_cancelled_during_preparation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Queries should abort before execution if cancellation lands during preparation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        query_executed = False
+
+        async def _prepare(operation_name: str):
+            del operation_name
+            coordinator._cancel_counter += 1
+            coordinator._cancel_command.set()
+            return coordinator.controller
+
+        async def _query(ctrl):
+            del ctrl
+            nonlocal query_executed
+            query_executed = True
+            return "ok"
+
+        with (
+            patch.object(coordinator, "_async_prepare_controller_operation", side_effect=_prepare),
+            pytest.raises(asyncio.CancelledError),
+        ):
+            await coordinator.async_execute_controller_query(_query)
+
+        assert not query_executed
+
+    async def test_register_controller_state_callback_hydrates_light_state_when_missing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """First controller-state subscriber should trigger readable light-state hydration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.supports_discrete_light_control = True
+        controller.supports_light_level_control = True
+        controller.supports_light_timer = True
+        controller.read_light_state = AsyncMock(
+            return_value={
+                "is_on": True,
+                "light_level": 3,
+                "light_timer_minutes": 15,
+                "light_timer_option": "15 min",
+            }
+        )
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        coordinator.register_controller_state_callback(callback)
+        await hass.async_block_till_done()
+
+        controller.read_light_state.assert_awaited_once()
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["is_on"] is True
+        assert coordinator.controller_state["light_level"] == 3
+        callback.assert_called_once_with(coordinator.controller_state)
+
+    async def test_register_controller_state_callback_retries_after_transient_failure(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Transient refresh failures should requeue readable light-state hydration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.supports_discrete_light_control = True
+        controller.supports_light_level_control = True
+        controller.supports_light_timer = True
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        light_state = {
+            "is_on": True,
+            "light_level": 2,
+            "light_timer_minutes": 30,
+            "light_timer_option": "30 min",
+        }
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_RETRY_DELAY",
+                0,
+            ),
+            patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new_callable=AsyncMock,
+                side_effect=[TimeoutError("retry"), light_state],
+            ) as mock_query,
+        ):
+            coordinator.register_controller_state_callback(callback)
+            await hass.async_block_till_done()
+            await hass.async_block_till_done()
+
+        assert mock_query.await_count == 2
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 2
+        callback.assert_called_once_with(coordinator.controller_state)
+
+    async def test_register_controller_state_callback_stops_after_partial_success(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A successful partial read should not trigger endless follow-up retries."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.supports_discrete_light_control = False
+        controller.supports_light_level_control = True
+        controller.supports_light_timer = False
+        coordinator._controller = controller
+
+        callback = MagicMock()
+
+        with patch.object(
+            coordinator,
+            "async_execute_controller_query",
+            new_callable=AsyncMock,
+            return_value={"light_level": 2},
+        ) as mock_query:
+            coordinator.register_controller_state_callback(callback)
+            await hass.async_block_till_done()
+            await hass.async_block_till_done()
+
+        mock_query.assert_awaited_once()
+        assert coordinator.controller_state["light_level"] == 2
+        assert coordinator._controller_state_refresh_completed is True
+        callback.assert_called_once_with(coordinator.controller_state)
+
+    async def test_register_controller_state_callback_limits_transport_retries(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Transport failures should retry only a bounded number of times."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.supports_discrete_light_control = True
+        controller.supports_light_level_control = False
+        controller.supports_light_timer = False
+        coordinator._controller = controller
+
+        callback = MagicMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_RETRY_DELAY",
+                0,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_MAX_RETRIES",
+                2,
+            ),
+            patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new_callable=AsyncMock,
+                side_effect=[
+                    TimeoutError("retry-1"),
+                    TimeoutError("retry-2"),
+                    TimeoutError("retry-3"),
+                    TimeoutError("retry-4"),
+                ],
+            ) as mock_query,
+        ):
+            coordinator.register_controller_state_callback(callback)
+            for _ in range(5):
+                await hass.async_block_till_done()
+
+        assert mock_query.await_count == 3
+        assert coordinator._controller_state_refresh_completed is True
+        callback.assert_not_called()
+
+    async def test_async_refresh_readable_light_state_retries_after_transient_failure(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Connect-time readable light refresh should requeue after transient failures."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.supports_under_bed_lights = True
+        controller.supports_discrete_light_control = True
+        controller.supports_light_level_control = True
+        controller.supports_light_timer = True
+        controller.read_light_state = AsyncMock(side_effect=[TimeoutError("retry")])
+        coordinator._controller = controller
+
+        callback = MagicMock()
+        coordinator._controller_state_callbacks.add(callback)
+
+        light_state = {
+            "is_on": True,
+            "light_level": 1,
+            "light_timer_minutes": 15,
+            "light_timer_option": "15 min",
+        }
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator._READABLE_LIGHT_STATE_RETRY_DELAY",
+                0,
+            ),
+            patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new_callable=AsyncMock,
+                return_value=light_state,
+            ) as mock_query,
+        ):
+            await coordinator._async_refresh_readable_light_state()
+            await hass.async_block_till_done()
+            await hass.async_block_till_done()
+
+        controller.read_light_state.assert_awaited_once()
+        mock_query.assert_awaited_once()
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+        assert coordinator.controller_state["light_level"] == 1
+        callback.assert_called_once_with(coordinator.controller_state)
+
+
 class TestCoordinatorDisconnectTimer:
     """Test coordinator idle disconnect timer."""
 
@@ -432,6 +784,27 @@ class TestCoordinatorDisconnectTimer:
         await coordinator.async_disconnect()
 
         assert coordinator._disconnect_timer is None
+
+    async def test_disconnect_clears_intentional_disconnect_after_cleanup(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Manual disconnect should skip reconnect but not leave the flag latched."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        async def _disconnect() -> None:
+            coordinator._on_disconnect(mock_bleak_client)
+
+        mock_bleak_client.disconnect.side_effect = _disconnect
+
+        await coordinator.async_disconnect()
+
+        assert coordinator._reconnect_timer is None
+        assert coordinator._intentional_disconnect is False
 
 
 class TestCoordinatorWriteCommand:
@@ -519,6 +892,28 @@ class TestCoordinatorNotifications:
 
         # start_notify should be called for position characteristics
         assert mock_bleak_client.start_notify.call_count >= 1
+
+    async def test_start_notify_kept_for_response_driven_controller_when_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Controllers that depend on notifications should keep them when sensing is disabled."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        coordinator.controller.start_notify = AsyncMock()
+
+        with patch.object(
+            type(coordinator.controller),
+            "requires_notification_channel",
+            new_callable=PropertyMock,
+            return_value=True,
+        ):
+            await coordinator.async_start_notify()
+
+        coordinator.controller.start_notify.assert_awaited_once_with(None)
 
 
 class TestMotorPulseConfiguration:
@@ -775,6 +1170,39 @@ class TestStopAfterCancel:
         # Disconnect timer should still be set (reset after stop)
         assert coordinator._disconnect_timer is not None
 
+    async def test_stop_command_cancels_active_controller_operation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Stop should preempt an in-flight controller operation instead of waiting for timeout."""
+        del mock_bleak_client
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._controller.stop_all = AsyncMock()
+
+        command_started = asyncio.Event()
+
+        async def blocking_command(controller):
+            del controller
+            command_started.set()
+            await asyncio.Event().wait()
+
+        command_task = asyncio.create_task(
+            coordinator.async_execute_controller_command(
+                blocking_command,
+                cancel_running=False,
+            )
+        )
+        await command_started.wait()
+
+        await asyncio.wait_for(coordinator.async_stop_command(), timeout=1.0)
+        await command_task
+
+        coordinator._controller.stop_all.assert_awaited_once()
+
     async def test_stop_command_when_not_connected(
         self,
         hass: HomeAssistant,
@@ -836,6 +1264,37 @@ class TestStopAfterCancel:
 
         # Counter should NOT have incremented
         assert coordinator._cancel_counter == initial_counter
+
+    async def test_execute_controller_command_skips_execution_if_cancelled_during_preparation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Commands should not start once cancellation arrives during preparation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        command_executed = False
+
+        async def _prepare(operation_name: str):
+            del operation_name
+            coordinator._cancel_counter += 1
+            coordinator._cancel_command.set()
+            return coordinator.controller
+
+        async def tracked_command(controller):
+            del controller
+            nonlocal command_executed
+            command_executed = True
+
+        with patch.object(coordinator, "_async_prepare_controller_operation", side_effect=_prepare):
+            await coordinator.async_execute_controller_command(
+                tracked_command,
+                cancel_running=False,
+            )
+
+        assert not command_executed
 
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_execute_controller_command_skips_polling_when_controller_disables_it(
@@ -906,7 +1365,6 @@ class TestStopAfterCancel:
             command_executed = True
 
         # First, acquire the lock by starting a command
-        import asyncio
         async with coordinator._command_lock:
             # Start the command task (it will wait for lock and capture entry_cancel_count)
             task = asyncio.create_task(
@@ -958,7 +1416,6 @@ class TestStopAfterCancel:
         async def tracked_command(controller):
             del controller
 
-        import asyncio
         async with coordinator._command_lock:
             task = asyncio.create_task(
                 coordinator.async_execute_controller_command(tracked_command)
@@ -998,8 +1455,6 @@ class TestStopAfterCancel:
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
         coordinator.async_disconnect = AsyncMock()
-
-        import asyncio
 
         command_started = asyncio.Event()
 

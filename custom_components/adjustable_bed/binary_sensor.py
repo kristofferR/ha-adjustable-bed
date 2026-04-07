@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from bleak.exc import BleakError
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -20,6 +23,11 @@ from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
+if TYPE_CHECKING:
+    from .beds.base import BedController
+
+_LOGGER = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedBinarySensorEntityDescription(BinarySensorEntityDescription):
@@ -33,6 +41,12 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    AdjustableBedBinarySensorEntityDescription(
+        key="bed_presence",
+        translation_key="bed_presence",
+        device_class=BinarySensorDeviceClass.OCCUPANCY,
+        entity_registry_enabled_default=False,
+    ),
 )
 
 
@@ -43,11 +57,15 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed binary sensor entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-
-    entities = [
-        AdjustableBedConnectionSensor(coordinator, description)
-        for description in BINARY_SENSOR_DESCRIPTIONS
-    ]
+    controller = coordinator.controller
+    entities: list[BinarySensorEntity] = []
+    for description in BINARY_SENSOR_DESCRIPTIONS:
+        if description.key == "bed_presence":
+            if controller is None or not getattr(controller, "supports_bed_presence", False):
+                continue
+            entities.append(AdjustableBedPresenceSensor(coordinator, description))
+            continue
+        entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
     async_add_entities(entities)
 
@@ -121,3 +139,79 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
             attrs["state_detail"] = "disconnected"
 
         return attrs
+
+
+class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
+    """Binary sensor entity for adjustable bed occupancy state."""
+
+    entity_description: AdjustableBedBinarySensorEntityDescription
+
+    _attr_should_poll = True
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedBinarySensorEntityDescription,
+    ) -> None:
+        """Initialize the presence sensor."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_change
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is removed from hass."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_change(self, state: dict[str, Any]) -> None:
+        """Write state when the controller publishes a presence update."""
+        if "bed_presence" in state:
+            self.async_write_ha_state()
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True when the configured side is occupied."""
+        presence = self._coordinator.controller_state.get("bed_presence")
+        if presence == "in":
+            return True
+        if presence == "out":
+            return False
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional presence metadata."""
+        attrs: dict[str, Any] = {}
+        side = self._coordinator.controller_state.get("bed_presence_side")
+        if side is not None:
+            attrs["side"] = side
+        presence = self._coordinator.controller_state.get("bed_presence")
+        if presence is not None:
+            attrs["presence_state"] = presence
+        return attrs
+
+    async def async_update(self) -> None:
+        """Query the latest bed presence from the controller."""
+
+        async def _read_presence(ctrl: BedController) -> bool | None:
+            return await ctrl.read_bed_presence()
+
+        try:
+            await self._coordinator.async_execute_controller_query(
+                _read_presence,
+                cancel_running=False,
+            )
+        except asyncio.CancelledError:
+            return
+        except (BleakError, ConnectionError, RuntimeError, TimeoutError, ValueError) as err:
+            _LOGGER.debug("Bed presence poll failed for %s: %s", self._coordinator.address, err)
