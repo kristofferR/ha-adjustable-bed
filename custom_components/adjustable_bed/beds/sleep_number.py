@@ -768,7 +768,9 @@ class SleepNumberController(BedController):
 
             frame = bytes(self._response_buffer[:total_length])
             del self._response_buffer[:total_length]
-            responses.append(self._parse_bamkey_blob(frame))
+            decoded = self._parse_bamkey_blob(frame)
+            if self._looks_like_bamkey_response(decoded):
+                responses.append(decoded)
 
         return responses
 

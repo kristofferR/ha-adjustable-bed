@@ -225,11 +225,17 @@ class TestSleepNumberController:
             assert _decode_sleep_number_payload(payload) == "ACTS left head 43"
             coordinator.controller._handle_bamkey_notification(None, bytearray(b"hint"))
 
-        read_responses = iter((b"hint", _build_sleep_number_blob("PASS:ACK")))
+        read_responses = [b"hint", _build_sleep_number_blob("PASS:ACK")]
+        read_call_count = 0
 
         async def _read_side_effect(target) -> bytes:
+            nonlocal read_call_count
             if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
-                return next(read_responses)
+                if read_call_count >= len(read_responses):
+                    pytest.fail(f"Unexpected extra read call #{read_call_count + 1}")
+                response = read_responses[read_call_count]
+                read_call_count += 1
+                return response
             return b""
 
         mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
@@ -238,6 +244,41 @@ class TestSleepNumberController:
         await coordinator.controller.set_motor_position("back", 43)
 
         assert mock_bleak_client.read_gatt_char.await_count == 2
+
+    async def test_set_motor_position_ignores_framed_placeholder_notification(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Framed trigger tokens should fall through to readback instead of completing early."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:37",
+            name="Smart bed 0074FD",
+            entry_id="sleep_number_set_position_framed_placeholder",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 45"
+            coordinator.controller._handle_bamkey_notification(
+                None,
+                bytearray(_build_sleep_number_blob("hint")),
+            )
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return _build_sleep_number_blob("PASS:ACK")
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        await coordinator.controller.set_motor_position("back", 45)
+
+        mock_bleak_client.read_gatt_char.assert_awaited_with(SLEEP_NUMBER_BAMKEY_CHAR_UUID)
 
     async def test_cancelled_bamkey_command_does_not_write(
         self,
