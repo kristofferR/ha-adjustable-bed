@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, call
+import asyncio
+from unittest.mock import ANY, AsyncMock, MagicMock, call
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -204,6 +205,96 @@ class TestSleepNumberController:
 
         mock_bleak_client.read_gatt_char.assert_awaited_with(SLEEP_NUMBER_BAMKEY_CHAR_UUID)
 
+    async def test_set_motor_position_ignores_placeholder_readback_until_ack(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Hint-driven readback should keep polling until a real bamkey response arrives."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:34",
+            name="Smart bed 0074FA",
+            entry_id="sleep_number_set_position_readback_placeholder",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 43"
+            coordinator.controller._handle_bamkey_notification(None, bytearray(b"hint"))
+
+        read_responses = iter((b"hint", _build_sleep_number_blob("PASS:ACK")))
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return next(read_responses)
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        await coordinator.controller.set_motor_position("back", 43)
+
+        assert mock_bleak_client.read_gatt_char.await_count == 2
+
+    async def test_cancelled_bamkey_command_does_not_write(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Regular bamkey commands should abort before writing when already cancelled."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:35",
+            name="Smart bed 0074FB",
+            entry_id="sleep_number_cancelled_command",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+        cancel_event = asyncio.Event()
+        cancel_event.set()
+
+        with pytest.raises(asyncio.CancelledError):
+            await coordinator.controller._send_bamkey_raw_response(
+                "ACTS",
+                "left",
+                "head",
+                "44",
+                cancel_event=cancel_event,
+            )
+
+        mock_bleak_client.write_gatt_char.assert_not_awaited()
+
+    async def test_stop_motor_uses_fresh_cancel_event(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """HALT should still be sent even when the coordinator cancel signal is already set."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:36",
+            name="Smart bed 0074FC",
+            entry_id="sleep_number_stop_fresh_cancel",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+        coordinator.cancel_command.set()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTH left head"
+            coordinator.controller._handle_bamkey_notification(
+                None,
+                bytearray(_build_sleep_number_blob("PASS:ACK")),
+            )
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+
+        await coordinator.controller.move_back_stop()
+
+        mock_bleak_client.write_gatt_char.assert_awaited_once()
+
     async def test_stop_all_only_stops_the_configured_side(
         self,
         sleep_number_coordinator,
@@ -221,8 +312,8 @@ class TestSleepNumberController:
 
         coordinator.controller._send_bamkey_command.assert_has_awaits(
             [
-                call("ACTH", "right", "head"),
-                call("ACTH", "right", "foot"),
+                call("ACTH", "right", "head", cancel_event=ANY),
+                call("ACTH", "right", "foot", cancel_event=ANY),
             ]
         )
 

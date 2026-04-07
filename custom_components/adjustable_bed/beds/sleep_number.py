@@ -327,6 +327,7 @@ class SleepNumberController(BedController):
             SleepNumberCommands.HALT_ACTUATOR,
             self._side,
             self._motor_to_actuator(motor),
+            cancel_event=asyncio.Event(),
         )
 
     async def move_head_up(self) -> None:
@@ -546,14 +547,30 @@ class SleepNumberController(BedController):
         bamkey: str,
         *args: str,
         expected_args: int = 0,
+        cancel_event: asyncio.Event | None = None,
     ) -> list[str]:
         """Send a bamkey command and parse the matching response."""
-        raw_response = await self._send_bamkey_raw_response(bamkey, *args)
+        raw_response = await self._send_bamkey_raw_response(
+            bamkey,
+            *args,
+            cancel_event=cancel_event,
+        )
         return self._parse_bamkey_response(bamkey, raw_response, expected_args)
 
-    async def _send_bamkey_raw_response(self, bamkey: str, *args: str) -> str:
+    async def _send_bamkey_raw_response(
+        self,
+        bamkey: str,
+        *args: str,
+        cancel_event: asyncio.Event | None = None,
+    ) -> str:
         """Send a bamkey command and return the raw response text."""
+        effective_cancel = cancel_event or self._coordinator.cancel_command
+        if effective_cancel.is_set():
+            raise asyncio.CancelledError
+
         await self._ensure_notifications_started()
+        if effective_cancel.is_set():
+            raise asyncio.CancelledError
         self._response_buffer.clear()
         self._drain_response_queue()
         self._drain_readback_hint_queue()
@@ -562,12 +579,13 @@ class SleepNumberController(BedController):
         await self._write_gatt_with_retry(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
             self._build_bamkey_blob(payload),
+            cancel_event=effective_cancel,
             response=False,
         )
         deadline = asyncio.get_running_loop().time() + _BAMKEY_RESPONSE_TIMEOUT
         response_task = asyncio.create_task(self._response_queue.get())
         hint_task = asyncio.create_task(self._readback_hint_queue.get())
-        cancel_task = asyncio.create_task(self._coordinator.cancel_command.wait())
+        cancel_task = asyncio.create_task(effective_cancel.wait())
         try:
             while True:
                 timeout = deadline - asyncio.get_running_loop().time()
@@ -592,7 +610,8 @@ class SleepNumberController(BedController):
                     hint_task = asyncio.create_task(self._readback_hint_queue.get())
                     try:
                         return await self._read_bamkey_response_after_hint(
-                            timeout=deadline - asyncio.get_running_loop().time()
+                            remaining_timeout=deadline - asyncio.get_running_loop().time(),
+                            cancel_event=effective_cancel,
                         )
                     except (TimeoutError, ValueError):
                         _LOGGER.debug(
@@ -617,15 +636,20 @@ class SleepNumberController(BedController):
         while not self._readback_hint_queue.empty():
             self._readback_hint_queue.get_nowait()
 
-    async def _read_bamkey_response_after_hint(self, *, timeout: float) -> str:
+    async def _read_bamkey_response_after_hint(
+        self,
+        *,
+        remaining_timeout: float,
+        cancel_event: asyncio.Event,
+    ) -> str:
         """Read the BamKey characteristic after a notification indicates fresh data."""
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")
 
-        deadline = asyncio.get_running_loop().time() + timeout
+        deadline = asyncio.get_running_loop().time() + remaining_timeout
         while True:
-            if self._coordinator.cancel_command.is_set():
+            if cancel_event.is_set():
                 raise asyncio.CancelledError
 
             remaining = deadline - asyncio.get_running_loop().time()
@@ -640,7 +664,13 @@ class SleepNumberController(BedController):
             if not raw_response:
                 continue
 
-            return self._decode_bamkey_text(raw_response)
+            try:
+                decoded = self._decode_bamkey_text(raw_response)
+            except ValueError:
+                continue
+            if not self._looks_like_bamkey_response(decoded):
+                continue
+            return decoded
 
     def _parse_bamkey_response(
         self,
