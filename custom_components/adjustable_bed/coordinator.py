@@ -643,8 +643,7 @@ class AdjustableBedCoordinator:
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Connect to the bed (must hold lock)."""
-        # Clear intentional disconnect flag when explicitly connecting
-        # This ensures the flag persists through late disconnect callbacks
+        # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
         self._intentional_disconnect = False
 
         if self._client is not None and self._client.is_connected:
@@ -1173,9 +1172,6 @@ class AdjustableBedCoordinator:
                     # Reset Limoss normalization state on each connection.
                     cast(Any, self._controller).reset_max_raw_estimate()
 
-                if reset_timer:
-                    self._reset_disconnect_timer()
-
                 # Start position notifications (no-op if angle sensing disabled)
                 await self.async_start_notify()
 
@@ -1196,6 +1192,9 @@ class AdjustableBedCoordinator:
 
                 if self._should_refresh_readable_light_state(force=True):
                     await self._async_refresh_readable_light_state()
+
+                if reset_timer:
+                    self._reset_disconnect_timer()
 
                 # Store connection metadata for binary sensor
                 self._last_connected = datetime.now(UTC)
@@ -1511,8 +1510,7 @@ class AdjustableBedCoordinator:
                     # (don't rely on _on_disconnect callback which may not fire on clean disconnect)
                     self._last_disconnected = datetime.now(UTC)
                     self._notify_connection_state_change(False)
-                    # Note: _intentional_disconnect is NOT cleared here
-                    # It persists until an explicit reconnect to handle late disconnect callbacks
+                    self._intentional_disconnect = False
 
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""

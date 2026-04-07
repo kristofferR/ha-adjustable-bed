@@ -85,6 +85,57 @@ class TestCoordinatorConnection:
         assert result is True
         assert coordinator.controller is not None
 
+    async def test_connect_arms_disconnect_timer_after_post_connect_hydration(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Idle timer should start only after post-connect hydration completes."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        call_order: list[str] = []
+
+        async def _start_notify() -> None:
+            call_order.append("notify")
+
+        async def _refresh_light_state() -> None:
+            call_order.append("light")
+
+        def _reset_timer() -> None:
+            call_order.append("timer")
+
+        with (
+            patch.object(
+                coordinator,
+                "async_start_notify",
+                new_callable=AsyncMock,
+                side_effect=_start_notify,
+            ) as mock_start_notify,
+            patch.object(
+                coordinator,
+                "_should_refresh_readable_light_state",
+                return_value=True,
+            ),
+            patch.object(
+                coordinator,
+                "_async_refresh_readable_light_state",
+                new_callable=AsyncMock,
+                side_effect=_refresh_light_state,
+            ) as mock_refresh,
+            patch.object(
+                coordinator,
+                "_reset_disconnect_timer",
+                side_effect=_reset_timer,
+            ) as mock_reset_timer,
+        ):
+            result = await coordinator.async_connect()
+
+        assert result is True
+        mock_start_notify.assert_awaited_once()
+        mock_refresh.assert_awaited_once()
+        mock_reset_timer.assert_called_once()
+        assert call_order == ["notify", "light", "timer"]
+
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_connect_closes_stale_connections_before_connect(
         self,
@@ -642,6 +693,27 @@ class TestCoordinatorDisconnectTimer:
         await coordinator.async_disconnect()
 
         assert coordinator._disconnect_timer is None
+
+    async def test_disconnect_clears_intentional_disconnect_after_cleanup(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Manual disconnect should skip reconnect but not leave the flag latched."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        async def _disconnect() -> None:
+            coordinator._on_disconnect(mock_bleak_client)
+
+        mock_bleak_client.disconnect.side_effect = _disconnect
+
+        await coordinator.async_disconnect()
+
+        assert coordinator._reconnect_timer is None
+        assert coordinator._intentional_disconnect is False
 
 
 class TestCoordinatorWriteCommand:
