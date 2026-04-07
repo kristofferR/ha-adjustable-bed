@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import binascii
+import struct
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -83,8 +85,30 @@ def mock_bleak_client() -> MagicMock:
     """Mock BleakClient."""
     from bleak import BleakClient
 
+    sleep_number_preamble = b"fUzIoN"
     client = MagicMock(spec=BleakClient)
     notify_callbacks: dict[str, object] = {}
+    readable_values: dict[str, bytes] = {}
+
+    def _build_sleep_number_blob(payload: str) -> bytes:
+        encoded = payload.encode("utf-8")
+        total_length = len(sleep_number_preamble) + 4 + len(encoded) + 4
+        header = sleep_number_preamble + struct.pack("<I", total_length)
+        checksum = binascii.crc32(header + encoded) & 0xFFFFFFFF
+        return header + encoded + struct.pack("<I", checksum)
+
+    def _decode_sleep_number_payload(data: bytes) -> str | None:
+        if data.startswith(sleep_number_preamble):
+            total_length = struct.unpack("<I", data[6:10])[0]
+            if total_length != len(data):
+                return None
+            expected_crc = struct.unpack("<I", data[-4:])[0]
+            if binascii.crc32(data[:-4]) & 0xFFFFFFFF != expected_crc:
+                return None
+            return data[10:-4].decode("utf-8", errors="ignore").strip()
+
+        decoded = data.decode("utf-8", errors="ignore").strip()
+        return decoded or None
 
     client.is_connected = True
     client.address = TEST_ADDRESS
@@ -103,17 +127,23 @@ def mock_bleak_client() -> MagicMock:
 
     async def _write_gatt_char(char_uuid: str, data: bytes, response: bool = False) -> None:
         del response
+        decoded_payload = _decode_sleep_number_payload(data)
         callback = notify_callbacks.get(char_uuid)
-        if callback is None:
+        if callback is None or decoded_payload is None:
             return
 
-        if data.decode("utf-8", errors="ignore").strip() == "UBLG":
-            callback(char_uuid, bytearray(b"PASS:high 15"))
+        if decoded_payload == "UBLG":
+            response_payload = _build_sleep_number_blob("PASS:high 15")
+            readable_values[char_uuid] = response_payload
+            callback(char_uuid, bytearray(response_payload))
+
+    async def _read_gatt_char(target) -> bytes:
+        return readable_values.get(str(target), b"")
 
     client.connect = AsyncMock(return_value=True)
     client.disconnect = AsyncMock()
     client.write_gatt_char = AsyncMock(side_effect=_write_gatt_char)
-    client.read_gatt_char = AsyncMock(return_value=b"")
+    client.read_gatt_char = AsyncMock(side_effect=_read_gatt_char)
     client.start_notify = AsyncMock(side_effect=_start_notify)
     client.stop_notify = AsyncMock(side_effect=_stop_notify)
 

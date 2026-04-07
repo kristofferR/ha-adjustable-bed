@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, call
+import asyncio
+from unittest.mock import ANY, AsyncMock, MagicMock, call
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -18,12 +20,24 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    SLEEP_NUMBER_AUTH_CHAR_UUID,
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
+    SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+
+def _build_sleep_number_blob(payload: str) -> bytes:
+    """Return a framed Sleep Number blob for transport assertions."""
+    return SleepNumberController._build_bamkey_blob(payload)
+
+
+def _decode_sleep_number_payload(payload: bytes) -> str:
+    """Decode a framed Sleep Number blob back to its text payload."""
+    return SleepNumberController._parse_bamkey_blob(payload)
 
 
 @pytest.fixture
@@ -139,10 +153,10 @@ class TestSleepNumberController:
             _char_uuid: str, payload: bytes, response: bool = False
         ) -> None:
             del response
-            assert payload == b"ACTS left head 57"
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 57"
             coordinator.controller._handle_bamkey_notification(
                 None,
-                bytearray(b"PASS:ACK"),
+                bytearray(_build_sleep_number_blob("PASS:ACK")),
             )
 
         mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
@@ -155,9 +169,172 @@ class TestSleepNumberController:
         )
         mock_bleak_client.write_gatt_char.assert_awaited_once_with(
             SLEEP_NUMBER_BAMKEY_CHAR_UUID,
-            b"ACTS left head 57",
-            response=True,
+            _build_sleep_number_blob("ACTS left head 57"),
+            response=False,
         )
+
+    async def test_set_motor_position_reads_ack_after_notification_hint(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Commands should support the notify-then-readback response flow."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:31",
+            name="Smart bed 0074F7",
+            entry_id="sleep_number_set_position_readback",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 42"
+            coordinator.controller._handle_bamkey_notification(None, bytearray(b"hint"))
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return _build_sleep_number_blob("PASS:ACK")
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        await coordinator.controller.set_motor_position("back", 42)
+
+        mock_bleak_client.read_gatt_char.assert_awaited_with(SLEEP_NUMBER_BAMKEY_CHAR_UUID)
+
+    async def test_set_motor_position_ignores_placeholder_readback_until_ack(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Hint-driven readback should keep polling until a real bamkey response arrives."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:34",
+            name="Smart bed 0074FA",
+            entry_id="sleep_number_set_position_readback_placeholder",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 43"
+            coordinator.controller._handle_bamkey_notification(None, bytearray(b"hint"))
+
+        read_responses = [b"hint", _build_sleep_number_blob("PASS:ACK")]
+        read_call_count = 0
+
+        async def _read_side_effect(target) -> bytes:
+            nonlocal read_call_count
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                if read_call_count >= len(read_responses):
+                    pytest.fail(f"Unexpected extra read call #{read_call_count + 1}")
+                response = read_responses[read_call_count]
+                read_call_count += 1
+                return response
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        await coordinator.controller.set_motor_position("back", 43)
+
+        assert mock_bleak_client.read_gatt_char.await_count == 2
+
+    async def test_set_motor_position_ignores_framed_placeholder_notification(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Framed trigger tokens should fall through to readback instead of completing early."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:37",
+            name="Smart bed 0074FD",
+            entry_id="sleep_number_set_position_framed_placeholder",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTS left head 45"
+            coordinator.controller._handle_bamkey_notification(
+                None,
+                bytearray(_build_sleep_number_blob("hint")),
+            )
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return _build_sleep_number_blob("PASS:ACK")
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        await coordinator.controller.set_motor_position("back", 45)
+
+        mock_bleak_client.read_gatt_char.assert_awaited_with(SLEEP_NUMBER_BAMKEY_CHAR_UUID)
+
+    async def test_cancelled_bamkey_command_does_not_write(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Regular bamkey commands should abort before writing when already cancelled."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:35",
+            name="Smart bed 0074FB",
+            entry_id="sleep_number_cancelled_command",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+        cancel_event = asyncio.Event()
+        cancel_event.set()
+
+        with pytest.raises(asyncio.CancelledError):
+            await coordinator.controller._send_bamkey_raw_response(
+                "ACTS",
+                "left",
+                "head",
+                "44",
+                cancel_event=cancel_event,
+            )
+
+        mock_bleak_client.write_gatt_char.assert_not_awaited()
+
+    async def test_stop_motor_uses_fresh_cancel_event(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """HALT should still be sent even when the coordinator cancel signal is already set."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:36",
+            name="Smart bed 0074FC",
+            entry_id="sleep_number_stop_fresh_cancel",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+        coordinator.cancel_command.set()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == "ACTH left head"
+            coordinator.controller._handle_bamkey_notification(
+                None,
+                bytearray(_build_sleep_number_blob("PASS:ACK")),
+            )
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+
+        await coordinator.controller.move_back_stop()
+
+        mock_bleak_client.write_gatt_char.assert_awaited_once()
 
     async def test_stop_all_only_stops_the_configured_side(
         self,
@@ -176,8 +353,8 @@ class TestSleepNumberController:
 
         coordinator.controller._send_bamkey_command.assert_has_awaits(
             [
-                call("ACTH", "right", "head"),
-                call("ACTH", "right", "foot"),
+                call("ACTH", "right", "head", cancel_event=ANY),
+                call("ACTH", "right", "foot", cancel_event=ANY),
             ]
         )
 
@@ -251,25 +428,166 @@ class TestSleepNumberController:
         self,
         sleep_number_coordinator,
     ) -> None:
-        """LBPG should map `in` to an occupied binary sensor state."""
+        """Grouped BAMG LBPG responses should map `in` to an occupied state."""
         coordinator = await sleep_number_coordinator(
             address="AA:BB:CC:DD:EE:28",
             name="Smart bed 0074EE",
             entry_id="sleep_number_presence",
         )
-        coordinator.controller._send_bamkey_command = AsyncMock(return_value=["in"])
+        coordinator.controller._send_bamkey_raw_response = AsyncMock(return_value='PASS:["PASS:in"]')
 
         presence = await coordinator.controller.read_bed_presence()
 
         assert presence is True
         assert coordinator.controller._bed_presence_state == "in"
-        assert coordinator.controller._send_bamkey_command.await_args == call(
-            "LBPG",
-            "left",
-            expected_args=1,
+        assert coordinator.controller._send_bamkey_raw_response.await_args == call(
+            "BAMG",
+            '[{"bamkey":"LBPG","args":"left"}]',
         )
         assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
+
+    async def test_read_bed_presence_primes_required_characteristics_once(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """LBPG should prime the Auth and TransferInfo reads once per connection."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2E",
+            name="Smart bed 0074F4",
+            entry_id="sleep_number_presence_prime",
+        )
+        coordinator.controller._send_bamkey_raw_response = AsyncMock(
+            side_effect=['PASS:["PASS:out"]', 'PASS:["PASS:in"]']
+        )
+        mock_bleak_client.read_gatt_char.reset_mock()
+
+        first = await coordinator.controller.read_bed_presence()
+        second = await coordinator.controller.read_bed_presence()
+
+        assert first is False
+        assert second is True
+        mock_bleak_client.read_gatt_char.assert_has_awaits(
+            [
+                call(SLEEP_NUMBER_AUTH_CHAR_UUID),
+                call(SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID),
+            ]
+        )
+        assert mock_bleak_client.read_gatt_char.await_count == 2
+
+    async def test_read_bed_presence_reads_characteristic_after_notification_hint(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """LBPG should use a notify-triggered readback when the notification is only a hint."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2F",
+            name="Smart bed 0074F5",
+            entry_id="sleep_number_presence_fallback",
+        )
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        async def _write_side_effect(
+            _char_uuid: str, payload: bytes, response: bool = False
+        ) -> None:
+            assert response is False
+            assert _decode_sleep_number_payload(payload) == 'BAMG [{"bamkey":"LBPG","args":"left"}]'
+            coordinator.controller._handle_bamkey_notification(None, bytearray(b"hint"))
+
+        async def _read_side_effect(target) -> bytes:
+            if str(target) in {
+                SLEEP_NUMBER_AUTH_CHAR_UUID,
+                SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID,
+            }:
+                return b""
+            if str(target) == SLEEP_NUMBER_BAMKEY_CHAR_UUID:
+                return _build_sleep_number_blob('PASS:["PASS:in"]')
+            return b""
+
+        mock_bleak_client.write_gatt_char.side_effect = _write_side_effect
+        mock_bleak_client.read_gatt_char = AsyncMock(side_effect=_read_side_effect)
+
+        presence = await coordinator.controller.read_bed_presence()
+
+        assert presence is True
+        assert _decode_sleep_number_payload(
+            mock_bleak_client.write_gatt_char.await_args.args[1]
+        ) == 'BAMG [{"bamkey":"LBPG","args":"left"}]'
+
+    async def test_bulk_transfer_notification_triggers_readback_hint(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Secondary Sleep Number notifications should queue a BamKey readback."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:32",
+            name="Smart bed 0074F8",
+            entry_id="sleep_number_bulk_hint",
+        )
+
+        coordinator.controller._handle_bamkey_readback_hint_notification(
+            None,
+            bytearray(b"\x01"),
+        )
+
+        assert await coordinator.controller._readback_hint_queue.get() is None
+
+    async def test_stop_notify_clears_session_state_when_client_is_already_disconnected(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """stop_notify should clear local Sleep Number session state even on early return."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:33",
+            name="Smart bed 0074F9",
+            entry_id="sleep_number_stop_notify_cleanup",
+        )
+        coordinator.controller._notify_started = True
+        coordinator.controller._bulk_notify_started = True
+        coordinator.controller._bed_presence_channel_primed = True
+        coordinator.controller._response_buffer.extend(_build_sleep_number_blob("PASS:ACK"))
+        coordinator.controller._response_queue.put_nowait("PASS:ACK")
+        coordinator.controller._readback_hint_queue.put_nowait(None)
+        mock_bleak_client.is_connected = False
+
+        await coordinator.controller.stop_notify()
+
+        assert coordinator.controller._notify_started is False
+        assert coordinator.controller._bulk_notify_started is False
+        assert coordinator.controller._bed_presence_channel_primed is False
+        assert coordinator.controller._response_buffer == bytearray()
+        assert coordinator.controller._response_queue.empty()
+        assert coordinator.controller._readback_hint_queue.empty()
+
+    async def test_bamkey_notification_handler_reassembles_blob_chunks(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Chunked bamkey notifications should be reassembled before parsing."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:30",
+            name="Smart bed 0074F6",
+            entry_id="sleep_number_chunked_notification",
+        )
+        blob = _build_sleep_number_blob("PASS:ACK")
+
+        coordinator.controller._handle_bamkey_notification(None, bytearray(blob[:8]))
+        assert coordinator.controller._response_queue.empty()
+
+        coordinator.controller._handle_bamkey_notification(None, bytearray(blob[8:]))
+
+        assert await coordinator.controller._response_queue.get() == "PASS:ACK"
+
+    def test_parse_bamkey_blob_rejects_invalid_crc(self) -> None:
+        """Framed blobs with a corrupted checksum should fail CRC validation."""
+        blob = bytearray(_build_sleep_number_blob("PASS:ACK"))
+        blob[-1] ^= 0xFF
+
+        with pytest.raises(ValueError):
+            SleepNumberController._parse_bamkey_blob(bytes(blob))
 
     async def test_read_underbed_light_settings_updates_cached_state(
         self,
