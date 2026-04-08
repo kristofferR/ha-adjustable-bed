@@ -183,6 +183,16 @@ Some beds support multiple protocol variants. Auto-detection usually works, but 
 | **Standard** | Standard Octo protocol | Most Octo beds |
 | **Star2** | Octo Remote Star2 | Star2 receivers |
 
+### Sleep Number Variants
+
+These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting.
+
+| Variant | Description | Use For |
+|---------|-------------|---------|
+| **Auto** | Auto-detect (recommended, defaults to the left side) | Most Sleep Number bases |
+| **Left** | Force the left side | Split bases when you want the left side only |
+| **Right** | Force the right side | Split bases when you want the right side only |
+
 ### Okimat Variants
 
 Okimat beds use different remote codes that determine available features and command values.

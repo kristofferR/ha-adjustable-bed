@@ -1,4 +1,4 @@
-# Sleep Number Climate 360 / FlexFit
+# Sleep Number
 
 **Status:** Needs testing
 
@@ -8,6 +8,7 @@
 
 - Sleep Number Climate 360 bases advertising as `Smart bed *`
 - Sleep Number FlexFit / FlexFit Smart bases using the Fuzion bamkey protocol
+- Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds advertising the MCR UART service
 
 ## Apps
 
@@ -17,11 +18,16 @@
 
 ## Pairing
 
-Sleep Number control requires BLE pairing before Home Assistant can connect.
+Pairing depends on the Sleep Number BLE protocol family:
 
-To enter pairing mode, hold the side pairing button until the indicator flashes blue, then pair from Home Assistant or your system Bluetooth settings.
+- **Fuzion / Climate 360 / FlexFit (`Smart bed *`)**: BLE pairing is required before Home Assistant can connect.
+- **BAM / MCR (`ffffd1fd-...`, older i8 / 360 FlexFit 2)**: basic BLE control usually works without OS-level pairing.
+
+For Fuzion bases, enter pairing mode by holding the side pairing button until the indicator flashes blue, then pair from Home Assistant or your system Bluetooth settings.
 
 ## Features
+
+### Fuzion / Climate 360 / FlexFit
 
 | Feature | Supported |
 |---------|-----------|
@@ -34,11 +40,28 @@ To enter pairing mode, hold the side pairing button until the indicator flashes 
 | TV Preset | ✅ |
 | Numbered Memory Presets | ❌ |
 | Under Bed Lights | ✅ |
-| Presence Detection | ✅ (polling binary sensor, disabled by default) |
+| Sleep Number Setting | ✅ |
+| Presence Detection | ✅ (left/right polling sensors, disabled by default) |
+| Cooling / Frosty | ✅ |
+| Heating / Heidi | ✅ |
+| Footwarming | ✅ |
+
+### BAM / MCR (older i8 / 360 FlexFit 2)
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ❌ |
+| Direct Position Control | ❌ |
+| Position Feedback | ❌ |
+| Side-specific Firmness | ✅ |
+| Side-specific Foundation Presets | ✅ |
+| Under Bed Lights | ✅ |
+| Presence Detection | ⚠️ Only if the firmware exposes chamber occupancy bytes |
+| Cooling / Heating / Footwarming | ❌ |
 
 ## Current Integration Scope
 
-The integration currently controls one side of the base per config entry.
+The Fuzion controller currently controls one side of the base per config entry.
 
 - `auto` protocol variant defaults to the left side
 - `left` explicitly targets the left side
@@ -46,40 +69,48 @@ The integration currently controls one side of the base per config entry.
 
 This keeps the implementation compatible with the current entity model while still exposing split-base control.
 
+Older BAM/MCR bases use a different controller path. They expose both firmness sides from one config entry and create separate left/right firmness numbers plus left/right foundation preset selects.
+
 ## Protocol Details
 
+### Fuzion / Climate 360 / FlexFit
+
 **Service UUID:** `09d23fae-90e6-44c2-95b6-0b3d0f1abf25`  
-**Characteristic UUID:** `421e00f3-ae76-4c49-ab6e-39e4df4a5333`  
-**Format:** UTF-8 bamkey commands and notification responses  
+**BamKey UUID:** `421e00f3-ae76-4c49-ab6e-39e4df4a5333`  
+**Auth UUID:** `8d4675a5-b5fa-42b2-b587-0ee71c46b709`  
+**Transfer Info UUID:** `e8d06e2a-c987-48f8-93a8-4d18d56b4337`  
+**Bulk Transfer Notify UUID:** `0ec9a5a3-8ac3-4582-92f3-1666421f323d`  
+**Format:** `fUzIoN` framed bamkey blobs with CRC validation  
 **Pairing Required:** Yes
 
 ## Detection
 
-Auto-detection uses the unique Sleep Number Fuzion service UUID:
+Auto-detection uses the unique Sleep Number service UUID for each protocol family:
 
 - `09d23fae-90e6-44c2-95b6-0b3d0f1abf25`
+- `ffffd1fd-388d-938b-344a-939d1f6efee0`
 
 Typical device names look like:
 
 - `Smart bed 0074E7`
+- `64:DB:A0:07:DD:02`
 
 ## Command Format
 
-Commands are plain UTF-8 strings written to the bamkey characteristic:
+The logical command payloads are bamkey strings:
 
 ```text
 <BAMKEY> <arg1> <arg2> ...
 ```
 
-Responses arrive as notifications on the same characteristic:
+The integration wraps those payloads in the SleepIQ app's `fUzIoN` framing, writes them to the BamKey characteristic without response, and accepts either of these response flows:
 
 ```text
-PASS:ACK
-PASS:<payload>
-FAIL:0
-FAIL:1
-FAIL:2
+1. Full framed response arrives as a notification
+2. A notify hint/ack arrives, then the integration reads the BamKey characteristic to fetch the framed response
 ```
+
+It also primes the Auth and Transfer Info characteristics once per connection before occupancy reads, and listens on the bulk-transfer notify characteristic because some beds use it during the readback flow.
 
 ## Implemented Commands
 
@@ -124,11 +155,93 @@ The integration exposes:
 
 | Action | Command |
 |--------|---------|
-| Read occupancy | `LBPG <side>` |
+| Read occupancy | `BAMG [{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]` |
 
-The `Bed Presence` binary sensor tracks the configured side (`left` or `right`). It is disabled by default because it requires active polling over BLE.
+The integration exposes `Left Bed Presence` and `Right Bed Presence` binary sensors. Both are disabled by default because they require active polling over BLE.
+
+### Sleep Number Setting
+
+| Action | Command |
+|--------|---------|
+| Read Sleep Number setting | `PSNG <side>` |
+| Set Sleep Number setting | `PSNS <side> <5-100>` |
+
+The integration exposes a `Sleep Number Setting` number entity for the configured side.
+
+### Climate / Thermal Controls
+
+The SleepIQ app internally names the two thermal hardware modules **Frosty**
+(the "Cooling Module", cooling-only) and **Heidi** (the "Core Temperature
+Module", which supports both heating *and* cooling). Only one is typically
+present on a given bed; Heidi is the more modern superset.
+
+| Action | Command |
+|--------|---------|
+| Check footwarming presence | `FWPG <side>` |
+| Read footwarming state | `FWTG <side>` |
+| Set footwarming level/timer | `FWTS <side> <off\|low\|medium\|high> <minutes>` |
+| Check cooling-module (Frosty) presence | `CLPG <side>` |
+| Read cooling-module mode | `CLMG <side>` |
+| Set cooling-module mode/timer | `CLMS <side> <mode> <minutes>` |
+| Check core-temperature-module (Heidi) presence | `THPG <side>` |
+| Read core-temperature-module mode | `THMG <side>` |
+| Set core-temperature-module mode/timer | `THMS <side> <mode> <minutes>` |
+
+Mode values come from the SleepIQ app's `ThermalMode` enum:
+
+- `off`
+- `cooling_pull_low`, `cooling_pull_med`, `cooling_pull_high` — Frosty + Heidi
+- `cooling_push_high` — Heidi only (exposed as the `boost` preset)
+- `heating_push_low`, `heating_push_med`, `heating_push_high` — Heidi only
+
+Turning Frosty or Heidi off sends `timer=0` to match the SleepIQ app's
+behaviour. Footwarming keeps the current remaining timer when turned off, also
+matching the app.
+
+The integration exposes a single unified `Climate` climate entity that
+routes to whichever module the bed has, plus a separate `Footwarming` climate
+entity:
+
+- `Climate`
+  - HVAC modes: `off`, `cool`, and (Heidi only) `heat`
+  - Preset modes: `low`, `medium`, `high`, and (Heidi only) `boost`
+- `Footwarming` climate entity with `low`, `medium`, and `high` presets
+- `Climate Timer` select (`30 min` through `10 hr`) and `Footwarming Timer`
+  select (`30 min` through `6 hr`)
 
 ## Notes
 
 1. Position values are already native percentages, so the integration exposes 0-100 direct-position controls instead of degree-based sliders.
-2. Command acknowledgements and query responses depend on BLE notifications, so the integration keeps the notification channel subscribed even when angle sensing is disabled.
+2. Command acknowledgements and query responses depend on the notification/readback path, so the integration keeps the BamKey notification channel subscribed even when angle sensing is disabled.
+3. Occupancy polling sends a grouped `BAMG` request for both sides in one call, then publishes separate left/right binary sensors.
+
+## BAM / MCR Notes
+
+Older BAM/MCR Sleep Number beds use a binary request/response protocol instead of BamKey text commands.
+
+- **Service UUID:** `ffffd1fd-388d-938b-344a-939d1f6efee0`
+- **Notify UUID:** `ffffd1fd-388d-938b-344a-939d1f6efee1`
+- **Write UUID:** `ffffd1fd-388d-938b-344a-939d1f6efee2`
+- **Transport:** MCR binary frames with `0x16 0x16` sync bytes and Fletcher-style CRC
+- **Known device names:** the BLE name may just be the MAC address
+
+The integration currently exposes:
+
+- `Sleep Number Setting Left` and `Sleep Number Setting Right` number entities
+- `Foundation Preset Left` and `Foundation Preset Right` selects
+- `Under Bed Lights` switch
+
+Implemented BAM/MCR operations:
+
+- init handshake
+- read left/right firmness
+- set left/right firmness
+- trigger left/right foundation presets (`Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`)
+- read and write under-bed light state
+- chamber-type query for optional occupancy support
+
+Current BAM/MCR limitations:
+
+- no live head/foot cover entities yet
+- no climate entities
+- tested 0.4.x BAM firmware returns only a short chamber payload, so occupancy sensors are not created unless the firmware exposes real occupancy bytes

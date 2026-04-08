@@ -23,6 +23,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 >
 > - **Okimat/Okin** refers to Okimat-branded beds that use the Okin protocol (requires pairing).
 > - **Leggett & Platt** appears in multiple rows because different models use different protocols/generations (Gen2, Okin variant, MlRM/WiLinke).
+> - **Sleep Number** includes both newer Climate 360 / FlexFit Fuzion bases and older BAM/MCR bases such as some i8 / 360 FlexFit 2 beds. Fuzion bases typically appear as `Smart bed *` in OS Bluetooth menus, but the integration itself identifies them by their GATT service UUID — the device name is only a human hint to help you pick the right row in this table during pairing.
 >
 > To determine which row applies to your bed, check the label on your bed frame or controller, look at your remote's branding, or consult your manufacturer's manual.
 
@@ -30,17 +31,26 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
 | Leggett & Platt Okin variant | ✅ Yes |
+| Logicdata SimplicityFrame | ✅ Yes |
+| Vibradorm | ✅ Yes |
+| Sleep Number Climate 360 / FlexFit (Fuzion) | ✅ Yes |
+| Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No |
 | Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
 | Nectar | ❌ No |
 | DewertOkin | ❌ No |
-| All other beds | ❌ No |
+| Most other beds | ❌ No |
+
+*Note: the two Sleep Number entries are separate bed types, not variants of the same one — Sleep Number Fuzion always requires pairing, Sleep Number BAM/MCR never does. Leggett & Platt only requires pairing on its Okin variant.*
 
 **How to pair (if required):**
 1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
 2. On your Home Assistant host or phone, open Bluetooth settings
-3. Pair with the bed (may appear as "OKIN", "Okimat", or similar)
+3. Pair with the bed (may appear as `OKIN`, `Okimat`, `Smart bed 123456`, or similar)
 4. Then add the integration in Home Assistant
+
+For Sleep Number Climate 360 / FlexFit Fuzion bases, hold the side pairing button until the blue light blinks.
+Older Sleep Number BAM/MCR bases connect without OS-level pairing.
 
 **Note:** If you're using an ESPHome Bluetooth Proxy, you may need to pair on the device running Home Assistant, not on your phone.
 

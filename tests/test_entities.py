@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -358,13 +359,14 @@ class TestNumberEntities:
 class TestSleepNumberEntities:
     """Test Sleep Number specific entity setup."""
 
-    async def test_sleep_number_entities_include_underbed_light_and_presence(
+    async def test_sleep_number_entities_include_presence_sleep_number_and_climate_controls(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Sleep Number should expose its light controls and disabled-by-default presence sensor."""
+        """Sleep Number should expose light, split presence, sleep-number, and climate entities."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleep Number Feature Bed",
@@ -402,14 +404,155 @@ class TestSleepNumberEntities:
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_light_timer")
             is not None
         )
+        sleep_number_entity_id = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_setting",
+        )
+        assert sleep_number_entity_id is not None
+        assert hass.states.get(sleep_number_entity_id).state == "45.0"
 
-        presence_entity_id = registry.async_get_entity_id(
+        left_presence_entity_id = registry.async_get_entity_id(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_bed_presence_left",
+        )
+        assert left_presence_entity_id is not None
+        assert hass.states.get(left_presence_entity_id) is None
+        right_presence_entity_id = registry.async_get_entity_id(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_bed_presence_right",
+        )
+        assert right_presence_entity_id is not None
+        assert hass.states.get(right_presence_entity_id) is None
+        # The legacy single-side ``bed_presence`` entity must still be
+        # registered so users upgrading from the pre-split release keep
+        # their dashboards/automations working. Like the per-side
+        # sensors, it is disabled by default.
+        legacy_presence_entity_id = registry.async_get_entity_id(
             "binary_sensor",
             DOMAIN,
             "AA:BB:CC:DD:EE:41_bed_presence",
         )
-        assert presence_entity_id is not None
-        assert hass.states.get(presence_entity_id) is None
+        assert legacy_presence_entity_id is not None
+        assert hass.states.get(legacy_presence_entity_id) is None
+
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_thermal_timer")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "select", DOMAIN, "AA:BB:CC:DD:EE:41_footwarming_timer"
+            )
+            is not None
+        )
+
+        thermal_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate",
+        )
+        footwarming_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_climate",
+        )
+        assert thermal_entity_id is not None
+        assert footwarming_entity_id is not None
+        # The mock bed has Heidi present with heating_push_low active, so the
+        # unified thermal entity should report heating.
+        thermal_state = hass.states.get(thermal_entity_id)
+        assert thermal_state.state == "heat"
+        assert thermal_state.attributes["backend"] == "heidi"
+        assert "cool" in thermal_state.attributes["hvac_modes"]
+        assert "heat" in thermal_state.attributes["hvac_modes"]
+        # `boost` is cooling-only and must not be advertised while the
+        # entity is currently in HEAT mode, so the preset list is the base
+        # three presets here.
+        assert thermal_state.attributes["preset_modes"] == ["low", "medium", "high"]
+        assert hass.states.get(footwarming_entity_id).state == "heat"
+
+    async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Older Sleep Number BAM/MCR beds should expose side-specific firmness and preset entities."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:57",
+                CONF_NAME: "64:DB:A0:07:DD:08",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:57",
+            entry_id="sleep_number_mcr_feature_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+
+        under_bed_lights = registry.async_get_entity_id(
+            "switch",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_under_bed_lights",
+        )
+        left_sleep_number = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_sleep_number_setting_left",
+        )
+        right_sleep_number = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_sleep_number_setting_right",
+        )
+        left_preset = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_foundation_preset_left",
+        )
+        right_preset = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_foundation_preset_right",
+        )
+
+        assert under_bed_lights is not None
+        assert left_sleep_number is not None
+        assert right_sleep_number is not None
+        assert left_preset is not None
+        assert right_preset is not None
+        assert hass.states.get(left_sleep_number).state == "35.0"
+        assert hass.states.get(right_sleep_number).state == "65.0"
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:57_sleep_number_setting")
+            is None
+        )
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:57_back") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:57_legs") is None
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:57_bed_presence_left",
+            )
+            is None
+        )
 
 
 class TestButtonEntities:

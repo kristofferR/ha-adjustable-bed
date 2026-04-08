@@ -23,10 +23,13 @@
 ## Features
 
 - **Motor Control** - Raise/lower head, back, legs, and feet
+- **Direct Position Control** - Native 0-100 target controls on supported beds
 - **Memory Presets** - Jump to saved positions with one tap
 - **Under-bed Lights** - RGB color control on supported beds, toggle on/off on others
+- **Climate Controls** - Cooling, heating, and footwarming on supported beds
 - **Massage Control** - Adjust massage intensity and patterns
 - **Position Feedback** - See current angles on supported beds
+- **Presence Sensors** - Occupancy sensors on supported beds
 - **Automations** - "Flat when leaving", "TV mode at 8pm", etc.
 
 ## Need Help?
@@ -84,6 +87,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
+| 🧪 [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
@@ -109,7 +113,7 @@ Some brands span multiple controller families. For example, many older Rize beds
 
 **Still stuck?** [Open an issue](https://github.com/kristofferR/ha-adjustable-bed/issues) with your bed brand/model and we'll help!
 
-**Other beds:** [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) and [Sleep Number](https://www.home-assistant.io/integrations/sleepiq/) have their own integrations. 
+**Other beds:** [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) still has its own integration. Sleep Number BLE bases are supported here, including newer Climate 360 / FlexFit and older BAM/MCR i8 variants; see the [Sleep Number guide](docs/beds/sleep_number.md).
 
 **WiFi and cloud-based beds [won't be supported](https://github.com/kristofferR/ha-adjustable-bed/issues/167)** — this is a Bluetooth-only integration for the reasons stated in the link.
 

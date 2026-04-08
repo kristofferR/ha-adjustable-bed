@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -135,6 +135,15 @@ class AdjustableBedMassageNumberEntityDescription(NumberEntityDescription):
     massage_zone: str  # "head", "foot", "wave"
 
 
+@dataclass(frozen=True, kw_only=True)
+class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
+    """Describes a side-specific number entity backed by controller state."""
+
+    state_key: str
+    setter_name: str
+    side: str
+
+
 MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, ...] = (
     AdjustableBedMassageNumberEntityDescription(
         key="massage_head_intensity",
@@ -177,6 +186,42 @@ LIGHT_LEVEL_DESCRIPTION = NumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
+)
+
+SLEEP_NUMBER_SETTING_DESCRIPTION = NumberEntityDescription(
+    key="sleep_number_setting",
+    translation_key="sleep_number_setting",
+    icon="mdi:bed-queen",
+    native_min_value=5,
+    native_max_value=100,
+    native_step=5,
+    mode=NumberMode.SLIDER,
+)
+
+SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescription(
+    key="sleep_number_setting_left",
+    translation_key="sleep_number_setting_left",
+    icon="mdi:bed-queen-outline",
+    native_min_value=5,
+    native_max_value=100,
+    native_step=5,
+    mode=NumberMode.SLIDER,
+    state_key="sleep_number_left",
+    setter_name="set_sleep_number_setting_for_side",
+    side="left",
+)
+
+SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescription(
+    key="sleep_number_setting_right",
+    translation_key="sleep_number_setting_right",
+    icon="mdi:bed-queen-outline",
+    native_min_value=5,
+    native_max_value=100,
+    native_step=5,
+    mode=NumberMode.SLIDER,
+    state_key="sleep_number_right",
+    setter_name="set_sleep_number_setting_for_side",
+    side="right",
 )
 
 
@@ -438,6 +483,53 @@ async def async_setup_entry(
         )
         entities.append(AdjustableBedLightLevelNumber(coordinator, light_adjusted))
 
+    sleep_number_sides = tuple(getattr(controller, "sleep_number_setting_sides", ()))
+    if sleep_number_sides:
+        _LOGGER.debug(
+            "Setting up side-specific Sleep Number controls for %s (sides: %s)",
+            coordinator.name,
+            sleep_number_sides,
+        )
+        for side_description in (
+            SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
+            SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
+        ):
+            if side_description.side not in sleep_number_sides:
+                continue
+            entities.append(
+                AdjustableBedSideStateNumber(
+                    coordinator,
+                    AdjustableBedSideStateNumberEntityDescription(
+                        key=side_description.key,
+                        translation_key=side_description.translation_key,
+                        icon=side_description.icon,
+                        native_min_value=getattr(controller, "sleep_number_setting_min", 5),
+                        native_max_value=getattr(controller, "sleep_number_setting_max", 100),
+                        native_step=getattr(controller, "sleep_number_setting_step", 5),
+                        mode=side_description.mode,
+                        state_key=side_description.state_key,
+                        setter_name=side_description.setter_name,
+                        side=side_description.side,
+                    ),
+                )
+            )
+    elif controller is not None and getattr(controller, "supports_sleep_number_setting", False):
+        _LOGGER.debug("Setting up Sleep Number setting control for %s", coordinator.name)
+        entities.append(
+            AdjustableBedSleepNumberSettingNumber(
+                coordinator,
+                NumberEntityDescription(
+                    key=SLEEP_NUMBER_SETTING_DESCRIPTION.key,
+                    translation_key=SLEEP_NUMBER_SETTING_DESCRIPTION.translation_key,
+                    icon=SLEEP_NUMBER_SETTING_DESCRIPTION.icon,
+                    native_min_value=getattr(controller, "sleep_number_setting_min", 5),
+                    native_max_value=getattr(controller, "sleep_number_setting_max", 100),
+                    native_step=getattr(controller, "sleep_number_setting_step", 5),
+                    mode=SLEEP_NUMBER_SETTING_DESCRIPTION.mode,
+                ),
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -621,3 +713,132 @@ class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
             await ctrl.set_light_level(level)
 
         await self._coordinator.async_execute_controller_command(_set_level)
+
+
+class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
+    """Number entity for Sleep Number firmness setting control."""
+
+    entity_description: NumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: NumberEntityDescription,
+    ) -> None:
+        """Initialize the Sleep Number setting entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is removed from hass."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Write state when the controller publishes Sleep Number changes."""
+        if "sleep_number" in state:
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current Sleep Number setting."""
+        value = self._coordinator.controller_state.get("sleep_number")
+        if value is None:
+            return None
+        return float(value)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return side metadata for the configured Sleep Number setting."""
+        attrs: dict[str, Any] = {}
+        side = self._coordinator.controller_state.get("sleep_number_side")
+        if side is not None:
+            attrs["side"] = side
+        return attrs
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the Sleep Number setting."""
+        setting = round(value)
+
+        _LOGGER.info(
+            "Sleep Number setting requested: %d (device: %s)",
+            setting,
+            self._coordinator.name,
+        )
+
+        async def _set_sleep_number(ctrl: BedController) -> None:
+            await cast(Any, ctrl).set_sleep_number_setting(setting)
+
+        await self._coordinator.async_execute_controller_command(_set_sleep_number)
+
+
+class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
+    """Number entity backed by a side-specific controller-state value."""
+
+    entity_description: AdjustableBedSideStateNumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: AdjustableBedSideStateNumberEntityDescription,
+    ) -> None:
+        """Initialize the side-specific number entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Register for controller-state updates."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up the callback."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Refresh when the tracked controller-state key changes."""
+        if self.entity_description.state_key in state:
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current side-specific value."""
+        value = self._coordinator.controller_state.get(self.entity_description.state_key)
+        if value is None:
+            return None
+        return float(value)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the side served by this number entity."""
+        return {"side": self.entity_description.side}
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the side-specific value through the controller."""
+        setting = round(value)
+
+        async def _set_value(ctrl: BedController) -> None:
+            await getattr(cast(Any, ctrl), self.entity_description.setter_name)(
+                self.entity_description.side,
+                setting,
+            )
+
+        await self._coordinator.async_execute_controller_command(_set_value)

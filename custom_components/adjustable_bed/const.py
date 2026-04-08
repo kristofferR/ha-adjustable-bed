@@ -127,6 +127,7 @@ BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol wi
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
+BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
@@ -193,6 +194,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JENSEN,
     # Sleep Number Climate 360 / Fuzion
     BED_TYPE_SLEEP_NUMBER,
+    # Sleep Number BAM / MCR
+    BED_TYPE_SLEEP_NUMBER_MCR,
     # OKIN CB35 Star (Sealy Posturematic)
     BED_TYPE_OKIN_CB35,
     # OKIN 64-bit
@@ -752,6 +755,12 @@ SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
 SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
 SLEEP_NUMBER_BULK_TRANSFER_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
+
+# Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
+# Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing
+SLEEP_NUMBER_MCR_SERVICE_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee0"
+SLEEP_NUMBER_MCR_TX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee1"
+SLEEP_NUMBER_MCR_RX_CHAR_UUID: Final = "ffffd1fd-388d-938b-344a-939d1f6efee2"
 
 # Svane LinonPI specific UUIDs (multi-service architecture)
 # Protocol reverse-engineered from com.produktide.svane.svaneremote APK
@@ -1516,6 +1525,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
         BED_TYPE_SLEEP_NUMBER,
+        BED_TYPE_SLEEP_NUMBER_MCR,
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
     }

@@ -72,6 +72,8 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
+    BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
@@ -1190,8 +1192,12 @@ class AdjustableBedCoordinator:
                         await self._controller.send_pin()
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
 
-                # For Jensen beds: query dynamic features (lights, massage)
-                if self._bed_type == BED_TYPE_JENSEN:
+                # Beds with connect-time feature discovery/state hydration.
+                if self._bed_type in {
+                    BED_TYPE_JENSEN,
+                    BED_TYPE_SLEEP_NUMBER,
+                    BED_TYPE_SLEEP_NUMBER_MCR,
+                }:
                     if hasattr(self._controller, "query_config"):
                         await self._controller.query_config()
 

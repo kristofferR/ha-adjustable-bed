@@ -33,6 +33,9 @@ _LOGGER = logging.getLogger(__name__)
 class AdjustableBedBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes an Adjustable Bed binary sensor entity."""
 
+    state_key: str | None = None
+    side: str | None = None
+
 
 BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ...] = (
     AdjustableBedBinarySensorEntityDescription(
@@ -46,6 +49,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
         translation_key="bed_presence",
         device_class=BinarySensorDeviceClass.OCCUPANCY,
         entity_registry_enabled_default=False,
+        state_key="bed_presence",
     ),
 )
 
@@ -63,7 +67,29 @@ async def async_setup_entry(
         if description.key == "bed_presence":
             if controller is None or not getattr(controller, "supports_bed_presence", False):
                 continue
+            # Always create the legacy single-side sensor as a compatibility
+            # alias. The controller already publishes its `bed_presence`
+            # state for the configured side, so existing dashboards and
+            # automations referencing `..._bed_presence` keep working after
+            # upgrading to the split-sensor build. The sensor is still
+            # disabled by default, matching the previous release.
             entities.append(AdjustableBedPresenceSensor(coordinator, description))
+
+            bed_presence_sides = tuple(getattr(controller, "bed_presence_sides", ()))
+            for side in bed_presence_sides:
+                entities.append(
+                    AdjustableBedPresenceSensor(
+                        coordinator,
+                        AdjustableBedBinarySensorEntityDescription(
+                            key=f"bed_presence_{side}",
+                            translation_key=f"bed_presence_{side}",
+                            device_class=BinarySensorDeviceClass.OCCUPANCY,
+                            entity_registry_enabled_default=False,
+                            state_key=f"bed_presence_{side}",
+                            side=side,
+                        ),
+                    )
+                )
             continue
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
@@ -175,13 +201,15 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
     @callback
     def _handle_controller_state_change(self, state: dict[str, Any]) -> None:
         """Write state when the controller publishes a presence update."""
-        if "bed_presence" in state:
+        state_key = self.entity_description.state_key or self.entity_description.key
+        if state_key in state:
             self.async_write_ha_state()
 
     @property
     def is_on(self) -> bool | None:
         """Return True when the configured side is occupied."""
-        presence = self._coordinator.controller_state.get("bed_presence")
+        state_key = self.entity_description.state_key or self.entity_description.key
+        presence = self._coordinator.controller_state.get(state_key)
         if presence == "in":
             return True
         if presence == "out":
@@ -192,19 +220,28 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional presence metadata."""
         attrs: dict[str, Any] = {}
-        side = self._coordinator.controller_state.get("bed_presence_side")
+        side = self.entity_description.side or self._coordinator.controller_state.get("bed_presence_side")
         if side is not None:
             attrs["side"] = side
-        presence = self._coordinator.controller_state.get("bed_presence")
+        state_key = self.entity_description.state_key or self.entity_description.key
+        presence = self._coordinator.controller_state.get(state_key)
         if presence is not None:
             attrs["presence_state"] = presence
         return attrs
 
     async def async_update(self) -> None:
-        """Query the latest bed presence from the controller."""
+        """Query the latest bed presence from the controller.
+
+        Home Assistant calls ``async_update`` independently on every enabled
+        poll-driven entity. For beds where a single BLE query refreshes
+        occupancy for *both* sides at once (e.g. Sleep Number's grouped
+        BAMG read), the controller's ``read_bed_presence_cached`` coalesces
+        follow-up polls with a short TTL so we never run the same BLE
+        query more than once per cycle.
+        """
 
         async def _read_presence(ctrl: BedController) -> bool | None:
-            return await ctrl.read_bed_presence()
+            return await ctrl.read_bed_presence_cached()
 
         try:
             await self._coordinator.async_execute_controller_query(

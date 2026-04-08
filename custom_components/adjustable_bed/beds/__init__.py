@@ -16,7 +16,8 @@ Protocol-based controllers:
 Brand-specific controllers:
 - RichmatController, KeesonController, LinakController,
   ReverieController, JiecangController, LimossController, SolaceController, MotoSleepController, OctoController,
-  RemacroController, RondureController, CoolBaseController, ScottLivingController, SleepNumberController, SBIController,
+  RemacroController, RondureController, CoolBaseController, ScottLivingController, SleepNumberController,
+  SleepNumberMcrController, SBIController,
   SutaController, TiMOTIONAhfController
 """
 
@@ -55,6 +56,7 @@ from .sbi import SBIController
 from .sleepys_box25 import SleepysBox25Controller
 from .scott_living import ScottLivingController
 from .sleep_number import SleepNumberController
+from .sleep_number_mcr import SleepNumberMcrController
 from .solace import SolaceController
 from .suta import SutaController
 from .svane import SvaneController
@@ -95,6 +97,7 @@ __all__ = [
     "SBIController",
     "ScottLivingController",
     "SleepNumberController",
+    "SleepNumberMcrController",
     "SleepysBox25Controller",
     "SolaceController",
     "SvaneController",
