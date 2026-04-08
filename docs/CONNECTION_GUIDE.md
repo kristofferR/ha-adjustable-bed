@@ -31,13 +31,17 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
 | Leggett & Platt Okin variant | ✅ Yes |
+| Logicdata SimplicityFrame | ✅ Yes |
+| Vibradorm | ✅ Yes |
 | Sleep Number Climate 360 / FlexFit (Fuzion, `Smart bed *`) | ✅ Yes |
 | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No (usually) |
 | Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
 | Nectar | ❌ No |
 | DewertOkin | ❌ No |
-| All other beds | ❌ No |
+| Most other beds | ❌ No |
+
+*This table lists the beds where pairing behaviour is known. For the authoritative list, see `BEDS_REQUIRING_PAIRING` and `BED_TYPE_VARIANTS_REQUIRING_PAIRING` in `custom_components/adjustable_bed/const.py`.*
 
 **How to pair (if required):**
 1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)

@@ -151,6 +151,10 @@ class TestSleepNumberMcrController:
         controller._response_buffer.clear()
         controller._response_frames.clear()
         controller._response_event.clear()
+        # Simulate an in-flight request so the correlation check in
+        # _handle_mcr_notification accepts the frame. Function 20 is the
+        # under-bed light read; the response carries side 3 (outlet index).
+        controller._outstanding_request_key = (20, 3)
         response = controller._build_frame(
             command_type=1,
             status=0x42,

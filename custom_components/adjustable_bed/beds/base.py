@@ -1510,6 +1510,16 @@ class BedController(ABC):
         """
         raise NotImplementedError("Bed presence not supported on this bed")
 
+    async def read_bed_presence_cached(self) -> bool | None:
+        """Read bed occupancy with dedup-safe caching for entity polling.
+
+        Default implementation just calls ``read_bed_presence``. Controllers
+        that group multiple sides into a single BLE query can override this
+        to suppress rapid follow-up polls when several binary sensors share
+        the same underlying query.
+        """
+        return await self.read_bed_presence()
+
     @property
     def supports_fan_control(self) -> bool:
         """Return True if bed supports fan commands."""

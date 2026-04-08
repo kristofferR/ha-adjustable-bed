@@ -41,6 +41,12 @@ _BAMKEY_BLOB_PREAMBLE = b"fUzIoN"
 _BAMKEY_BLOB_HEADER_LENGTH = len(_BAMKEY_BLOB_PREAMBLE) + 4
 _BAMKEY_BLOB_MIN_LENGTH = _BAMKEY_BLOB_HEADER_LENGTH + 4
 _BAMKEY_READBACK_TRIGGER_DELAY = 0.05
+# Time-to-live for the cached bed presence result. Multiple binary sensors
+# (legacy + per-side) all poll independently via Home Assistant's entity
+# update cycle, but `read_bed_presence` already refreshes both sides in one
+# BAMG query. The TTL deduplicates rapid follow-up polls so we never run the
+# same BLE query more than once per cycle.
+_BED_PRESENCE_POLL_TTL_SECONDS = 5.0
 _SLEEP_NUMBER_MIN_POSITION = 0
 _SLEEP_NUMBER_MAX_POSITION = 100
 _SLEEP_NUMBER_SLEEP_SETTING_MIN = 5
@@ -176,6 +182,8 @@ class SleepNumberController(BedController):
         self._bed_presence_states: dict[str, str] = {}
         self._bed_presence_state: str | None = None
         self._bed_presence_channel_primed = False
+        self._bed_presence_lock = asyncio.Lock()
+        self._bed_presence_last_poll_monotonic: float = 0.0
         self._sleep_number_setting: int | None = None
         self._footwarming_present = False
         self._footwarming_level = "off"
@@ -648,14 +656,52 @@ class SleepNumberController(BedController):
         )
 
     async def read_bed_presence(self) -> bool | None:
-        """Read occupancy state for the configured bed side."""
+        """Read occupancy state for the configured bed side.
+
+        Always sends a fresh BAMG query. Callers that need to deduplicate
+        rapid polls across multiple binary-sensor entities should use
+        ``read_bed_presence_cached`` instead, which applies a TTL cache on
+        top of this method.
+        """
         states = await self._read_bed_presence_states()
+        self._bed_presence_last_poll_monotonic = asyncio.get_running_loop().time()
         return self._presence_state_to_bool(states[self._side])
 
+    async def read_bed_presence_cached(self) -> bool | None:
+        """Read bed presence with a short TTL cache for entity polling.
+
+        The unified thermal/occupancy data path means one BAMG query already
+        refreshes both ``bed_presence_left`` and ``bed_presence_right``. When
+        both per-side sensors are enabled in Home Assistant they poll
+        independently on their own update cycles, so this method deduplicates
+        follow-up polls that arrive within the TTL window.
+        """
+        async with self._bed_presence_lock:
+            now = asyncio.get_running_loop().time()
+            if (
+                self._bed_presence_states
+                and now - self._bed_presence_last_poll_monotonic
+                < _BED_PRESENCE_POLL_TTL_SECONDS
+            ):
+                cached = self._bed_presence_states.get(self._side)
+                if cached is not None:
+                    return self._presence_state_to_bool(cached)
+            return await self.read_bed_presence()
+
     async def query_config(self) -> None:
-        """Load Sleep Number feature state needed for entity creation."""
-        with contextlib.suppress(BleakError, ConnectionError, TimeoutError, ValueError):
+        """Load Sleep Number feature state needed for entity creation.
+
+        Only protocol-level failures (``ValueError``: bad payload, unsupported
+        bamkey, etc.) are swallowed here. Transport failures (``BleakError``,
+        ``ConnectionError``, ``TimeoutError``) are allowed to propagate so a
+        single flaky BLE read does not silently suppress the corresponding
+        entities for the rest of the setup; the caller will retry the
+        connection on its next cycle.
+        """
+        try:
             await self.read_sleep_number_setting()
+        except ValueError:
+            _LOGGER.debug("Sleep Number setting query returned an unexpected payload", exc_info=True)
 
         await self._query_optional_presence_feature(
             presence_bamkey=SleepNumberCommands.GET_FOOTWARMING_PRESENCE,
@@ -672,8 +718,13 @@ class SleepNumberController(BedController):
             store_present=self._store_heidi_present,
             read_state=self.read_heidi_state,
         )
-        with contextlib.suppress(BleakError, ConnectionError, TimeoutError, ValueError):
+        try:
             await self.read_bed_presence()
+        except (TypeError, ValueError):
+            _LOGGER.debug(
+                "Sleep Number bed presence query returned an unexpected payload",
+                exc_info=True,
+            )
 
     async def read_sleep_number_setting(self) -> int:
         """Read the configured side's Sleep Number setting."""
@@ -1037,19 +1088,38 @@ class SleepNumberController(BedController):
         store_present: Callable[[bool], None],
         read_state: Callable[[], Any],
     ) -> None:
-        """Query a presence-gated optional Sleep Number feature."""
+        """Query a presence-gated optional Sleep Number feature.
+
+        Only protocol-level rejections (``ValueError``: e.g. unknown bamkey or
+        unparseable payload) are interpreted as "feature absent". Transport
+        failures (``BleakError`` / ``ConnectionError`` / ``TimeoutError``) are
+        re-raised so the connect cycle can retry — otherwise a single flaky
+        BLE read on first connect would suppress the entity for the entire
+        session.
+        """
         try:
             present = await self._read_feature_presence(presence_bamkey)
-        except (BleakError, ConnectionError, TimeoutError, ValueError):
-            _LOGGER.debug("Sleep Number optional feature query failed: %s", presence_bamkey)
+        except ValueError:
+            _LOGGER.debug(
+                "Sleep Number optional feature %s reported as unsupported by the bed",
+                presence_bamkey,
+                exc_info=True,
+            )
+            store_present(False)
             return
 
         store_present(present)
         if not present:
             return
 
-        with contextlib.suppress(BleakError, ConnectionError, TimeoutError, ValueError):
+        try:
             await read_state()
+        except ValueError:
+            _LOGGER.debug(
+                "Sleep Number optional feature %s state query returned an unexpected payload",
+                presence_bamkey,
+                exc_info=True,
+            )
 
     async def _read_feature_presence(self, bamkey: str) -> bool:
         """Read a boolean-like Sleep Number Presence bamkey."""
@@ -1119,14 +1189,19 @@ class SleepNumberController(BedController):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish footwarming state."""
+        """Persist and publish footwarming state.
+
+        Mirrors ``_store_frosty_state`` / ``_store_heidi_state``: only the
+        explicit ``selected_timer_minutes`` updates the cached user
+        selection. The countdown lives in
+        ``_footwarming_remaining_time_minutes`` /
+        ``_footwarming_total_remaining_time_minutes``.
+        """
         self._footwarming_level = level
         self._footwarming_remaining_time_minutes = remaining_minutes
         self._footwarming_total_remaining_time_minutes = total_remaining_minutes
         if selected_timer_minutes is not None:
             self._footwarming_timer_minutes = selected_timer_minutes
-        elif total_remaining_minutes > 0:
-            self._footwarming_timer_minutes = total_remaining_minutes
         if level != "off":
             self._footwarming_last_active_level = level
         self._publish_footwarming_state()
@@ -1164,13 +1239,19 @@ class SleepNumberController(BedController):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish Frosty (cooling module) state."""
+        """Persist and publish Frosty (cooling module) state.
+
+        ``selected_timer_minutes`` is the user-selected duration that should
+        be used for resume-on. ``remaining_minutes`` is the live countdown
+        from CLMG and is intentionally NOT used to overwrite the selection,
+        otherwise the cached timer would drift to non-canonical values like
+        "1 hr 47 min" and ``turn_thermal_on`` would resume the shortened
+        countdown.
+        """
         self._frosty_mode = mode
         self._frosty_remaining_time_minutes = remaining_minutes
         if selected_timer_minutes is not None:
             self._frosty_timer_minutes = selected_timer_minutes
-        elif remaining_minutes > 0:
-            self._frosty_timer_minutes = remaining_minutes
         if mode != "off":
             preset = _FROSTY_MODE_TO_COOLING_PRESET.get(mode)
             if preset is not None:
@@ -1209,13 +1290,15 @@ class SleepNumberController(BedController):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish Heidi (core temperature module) state."""
+        """Persist and publish Heidi (core temperature module) state.
+
+        Same rationale as ``_store_frosty_state``: keep the user-selected
+        timer separate from the live countdown so it never drifts.
+        """
         self._heidi_mode = mode
         self._heidi_remaining_time_minutes = remaining_minutes
         if selected_timer_minutes is not None:
             self._heidi_timer_minutes = selected_timer_minutes
-        elif remaining_minutes > 0:
-            self._heidi_timer_minutes = remaining_minutes
         if mode != "off":
             hvac_mode, preset = self._heidi_hvac_and_preset(mode)
             if preset is not None:
@@ -1627,7 +1710,9 @@ class SleepNumberController(BedController):
         states: dict[str, str] = {}
         for side, value in zip(_SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES, values, strict=True):
             if not isinstance(value, str):
-                raise ValueError(f"Unexpected Sleep Number BAMG bed-presence item: {value!r}")
+                raise TypeError(
+                    f"Unexpected Sleep Number BAMG bed-presence item: {value!r}"
+                )
             if value.startswith("PASS:"):
                 states[side] = value.removeprefix("PASS:").strip()
                 continue

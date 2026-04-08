@@ -457,7 +457,10 @@ class TestSleepNumberEntities:
         assert thermal_state.attributes["backend"] == "heidi"
         assert "cool" in thermal_state.attributes["hvac_modes"]
         assert "heat" in thermal_state.attributes["hvac_modes"]
-        assert "boost" in thermal_state.attributes["preset_modes"]
+        # `boost` is cooling-only and must not be advertised while the
+        # entity is currently in HEAT mode, so the preset list is the base
+        # three presets here.
+        assert thermal_state.attributes["preset_modes"] == ["low", "medium", "high"]
         assert hass.states.get(footwarming_entity_id).state == "heat"
 
     async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(

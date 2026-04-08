@@ -28,7 +28,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 _THERMAL_CLIMATE_PRESETS_BASE: tuple[str, ...] = ("low", "medium", "high")
-_THERMAL_CLIMATE_PRESETS_WITH_BOOST: tuple[str, ...] = ("low", "medium", "high", "boost")
+# `boost` corresponds to Heidi's SPECIAL_HIGH_COOLING ThermalMode and is
+# strictly cooling-only (no heating equivalent in the SleepIQ enum). It must
+# never be forwarded to the controller while the entity is in HEAT mode.
+_THERMAL_CLIMATE_BOOST_PRESET: str = "boost"
+_THERMAL_CLIMATE_HEAT_FALLBACK_PRESET: str = "high"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -182,13 +186,19 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
 
     @property
     def preset_modes(self) -> list[str]:
-        """Return available preset modes, expanding boost when the backend supports it."""
+        """Return available preset modes, expanding boost when valid.
+
+        ``boost`` is only meaningful for the cooling path (Heidi's
+        SPECIAL_HIGH_COOLING). It is hidden when the entity is currently in
+        HEAT mode so the UI cannot offer impossible combinations.
+        """
         presets = list(self.entity_description.base_preset_modes)
         if (
             self.entity_description.key == "sleep_number_thermal_climate"
             and getattr(self._coordinator.controller, "thermal_supports_boost", False)
+            and self.hvac_mode != HVACMode.HEAT
         ):
-            presets.append("boost")
+            presets.append(_THERMAL_CLIMATE_BOOST_PRESET)
         return presets
 
     def _backend_supports_heating(self) -> bool:
@@ -276,8 +286,15 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         if self.entity_description.key == "sleep_number_thermal_climate":
             # Resume using the last active preset, but routed to the requested
             # hvac_mode so users can flip between heat and cool without having
-            # to re-pick a preset.
+            # to re-pick a preset. ``boost`` is cooling-only and would be an
+            # invalid mode for heating, so downgrade to the high preset when
+            # switching from cool/boost to heat.
             preset = self.preset_mode or "low"
+            if (
+                hvac_mode == HVACMode.HEAT
+                and preset == _THERMAL_CLIMATE_BOOST_PRESET
+            ):
+                preset = _THERMAL_CLIMATE_HEAT_FALLBACK_PRESET
             await self._async_call_thermal_preset(preset, hvac_mode)
             return
         await self.async_turn_on()
@@ -292,10 +309,26 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             if current_hvac == HVACMode.OFF:
                 # Default to the backend's last active HVAC mode (Heidi) or
                 # COOL (Frosty). The controller's set_thermal_preset resolves
-                # this when hvac_mode is None.
-                target: HVACMode | None = None
+                # this when hvac_mode is None — but ``boost`` is cooling-only,
+                # so force COOL when the user picks it from an off state to
+                # avoid an impossible combination if Heidi's last active was
+                # heating.
+                target: HVACMode | None
+                if preset_mode == _THERMAL_CLIMATE_BOOST_PRESET:
+                    target = HVACMode.COOL
+                else:
+                    target = None
             else:
                 target = current_hvac
+            # Belt-and-braces: never forward boost into a heat-mode call.
+            if (
+                target == HVACMode.HEAT
+                and preset_mode == _THERMAL_CLIMATE_BOOST_PRESET
+            ):
+                raise ValueError(
+                    f"`boost` is a cooling-only preset for {self.entity_id}; "
+                    "switch to cool first"
+                )
             await self._async_call_thermal_preset(preset_mode, target)
             return
 

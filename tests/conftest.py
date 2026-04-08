@@ -93,8 +93,6 @@ def mock_bleak_client() -> MagicMock:
     client = MagicMock(spec=BleakClient)
     notify_callbacks: dict[str, object] = {}
     readable_values: dict[str, bytes] = {}
-    mcr_mac_parts = TEST_ADDRESS.split(":")
-    mcr_bed_address = (int(mcr_mac_parts[-2], 16) << 8) | int(mcr_mac_parts[-1], 16)
     sleep_number_state: dict[str, object] = {
         "underbed_light_level": "high",
         "underbed_light_timer": 15,
@@ -234,12 +232,18 @@ def mock_bleak_client() -> MagicMock:
         else:
             return None
 
+        # Echo the request's address fields back so this mock actually
+        # exercises the controller's target/echo encoding. Hard-coding
+        # ``mcr_bed_address`` would mask any controller bug that mis-encoded
+        # the bed-address derived from the BLE MAC.
+        request_target = int(request["target"])
+        request_echo = int(request["echo"])
         return _build_mcr_frame(
             command_type=1,
-            target=mcr_bed_address,
+            target=request_target,
             sub_address=int(request["sub_address"]),
             status=int(request["status"]),
-            echo=mcr_bed_address,
+            echo=request_echo if request_echo else request_target,
             function_code=function_code | 0x80,
             side=side,
             payload=response_payload,

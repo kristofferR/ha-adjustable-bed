@@ -17,7 +17,6 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -63,37 +62,34 @@ async def async_setup_entry(
     """Set up Adjustable Bed binary sensor entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     controller = coordinator.controller
-    registry = er.async_get(hass)
     entities: list[BinarySensorEntity] = []
     for description in BINARY_SENSOR_DESCRIPTIONS:
         if description.key == "bed_presence":
             if controller is None or not getattr(controller, "supports_bed_presence", False):
                 continue
-            bed_presence_sides = tuple(getattr(controller, "bed_presence_sides", ()))
-            if bed_presence_sides:
-                stale_entity_id = registry.async_get_entity_id(
-                    "binary_sensor",
-                    DOMAIN,
-                    f"{coordinator.address}_{description.key}",
-                )
-                if stale_entity_id is not None:
-                    registry.async_remove(stale_entity_id)
-                for side in bed_presence_sides:
-                    entities.append(
-                        AdjustableBedPresenceSensor(
-                            coordinator,
-                            AdjustableBedBinarySensorEntityDescription(
-                                key=f"bed_presence_{side}",
-                                translation_key=f"bed_presence_{side}",
-                                device_class=BinarySensorDeviceClass.OCCUPANCY,
-                                entity_registry_enabled_default=False,
-                                state_key=f"bed_presence_{side}",
-                                side=side,
-                            ),
-                        )
-                    )
-                continue
+            # Always create the legacy single-side sensor as a compatibility
+            # alias. The controller already publishes its `bed_presence`
+            # state for the configured side, so existing dashboards and
+            # automations referencing `..._bed_presence` keep working after
+            # upgrading to the split-sensor build. The sensor is still
+            # disabled by default, matching the previous release.
             entities.append(AdjustableBedPresenceSensor(coordinator, description))
+
+            bed_presence_sides = tuple(getattr(controller, "bed_presence_sides", ()))
+            for side in bed_presence_sides:
+                entities.append(
+                    AdjustableBedPresenceSensor(
+                        coordinator,
+                        AdjustableBedBinarySensorEntityDescription(
+                            key=f"bed_presence_{side}",
+                            translation_key=f"bed_presence_{side}",
+                            device_class=BinarySensorDeviceClass.OCCUPANCY,
+                            entity_registry_enabled_default=False,
+                            state_key=f"bed_presence_{side}",
+                            side=side,
+                        ),
+                    )
+                )
             continue
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
@@ -234,10 +230,18 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         return attrs
 
     async def async_update(self) -> None:
-        """Query the latest bed presence from the controller."""
+        """Query the latest bed presence from the controller.
+
+        Home Assistant calls ``async_update`` independently on every enabled
+        poll-driven entity. For beds where a single BLE query refreshes
+        occupancy for *both* sides at once (e.g. Sleep Number's grouped
+        BAMG read), the controller's ``read_bed_presence_cached`` coalesces
+        follow-up polls with a short TTL so we never run the same BLE
+        query more than once per cycle.
+        """
 
         async def _read_presence(ctrl: BedController) -> bool | None:
-            return await ctrl.read_bed_presence()
+            return await ctrl.read_bed_presence_cached()
 
         try:
             await self._coordinator.async_execute_controller_query(

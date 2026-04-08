@@ -111,6 +111,12 @@ class SleepNumberMcrController(BedController):
         self._response_buffer = bytearray()
         self._response_frames: list[_McrFrame] = []
         self._response_event = asyncio.Event()
+        # Correlation key for the currently outstanding request, used to
+        # ignore late notifications from the previous command and avoid
+        # waking on unrelated frames. Each entry is a
+        # ``(function_code, side)`` tuple matching the request that was
+        # sent. ``None`` means no request is in flight.
+        self._outstanding_request_key: tuple[int, int] | None = None
         self._sleep_numbers: dict[str, int | None] = {"left": None, "right": None}
         self._foundation_presets: dict[str, str | None] = {"left": None, "right": None}
         self._under_bed_lights_on: bool | None = None
@@ -513,7 +519,14 @@ class SleepNumberMcrController(BedController):
         timeout: float = 5.0,
         cancel_event: asyncio.Event | None = None,
     ) -> list[_McrFrame]:
-        """Write an MCR frame and wait for its notification response."""
+        """Write an MCR frame and wait for the matching notification response.
+
+        Replies are correlated to the outstanding request via
+        ``(function_code, side)``. The notification handler ignores any
+        unrelated parsed frames (late replies from prior commands, stray
+        broadcasts) so the waiter only wakes once a frame that actually
+        matches this request is reassembled and parsed.
+        """
         frame = self._build_frame(
             command_type=command_type,
             status=status,
@@ -522,44 +535,43 @@ class SleepNumberMcrController(BedController):
             payload=payload,
             sub_address=self._bed_address if sub_address is None else sub_address,
         )
+        # Set correlation BEFORE clearing state, so any in-flight notification
+        # parsing on the event loop sees the new key.
+        self._outstanding_request_key = (function_code & 0x7F, side & 0x0F)
         self._response_buffer.clear()
         self._response_frames.clear()
         self._response_event.clear()
 
-        await self._async_write_frame(frame, cancel_event=cancel_event)
-
         try:
-            async with asyncio.timeout(timeout):
-                await self._response_event.wait()
-        except TimeoutError as err:
-            raise TimeoutError(
-                f"Timed out waiting for Sleep Number MCR response func={function_code}"
-            ) from err
+            await self._async_write_frame(frame, cancel_event=cancel_event)
 
-        return list(self._response_frames)
+            try:
+                async with asyncio.timeout(timeout):
+                    await self._response_event.wait()
+            except TimeoutError as err:
+                raise TimeoutError(
+                    f"Timed out waiting for Sleep Number MCR response func={function_code}"
+                ) from err
+
+            return list(self._response_frames)
+        finally:
+            self._outstanding_request_key = None
 
     async def _async_write_frame(
         self, frame: bytes, *, cancel_event: asyncio.Event | None = None
     ) -> None:
-        """Write an MCR frame, preferring write-with-response for BLE proxies."""
-        try:
-            await self._write_gatt_with_retry(
-                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
-                frame,
-                cancel_event=cancel_event,
-                response=True,
-            )
-        except Exception as err:
-            _LOGGER.debug(
-                "Sleep Number MCR write-with-response failed, retrying without response: %s",
-                err,
-            )
-            await self._write_gatt_with_retry(
-                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
-                frame,
-                cancel_event=cancel_event,
-                response=False,
-            )
+        """Write an MCR frame using write-with-response.
+
+        MCR is a request/response transport. Write-without-response would let
+        the caller proceed past commands the bed never confirmed, so we never
+        fall back to it — write failures must surface to the caller.
+        """
+        await self._write_gatt_with_retry(
+            SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+            frame,
+            cancel_event=cancel_event,
+            response=True,
+        )
 
     def _handle_mcr_notification(self, _sender: object, data: bytearray) -> None:
         """Handle an MCR notification frame."""
@@ -569,6 +581,15 @@ class SleepNumberMcrController(BedController):
         parsed_frame = False
         for frame in self._extract_response_frames():
             parsed_frame = True
+            if not self._frame_matches_outstanding_request(frame):
+                _LOGGER.debug(
+                    "Ignoring Sleep Number MCR notification that does not match"
+                    " the outstanding request (func=%s side=%s outstanding=%s)",
+                    frame.function_code,
+                    frame.side,
+                    self._outstanding_request_key,
+                )
+                continue
             self._response_frames.append(frame)
             self._response_event.set()
         if not parsed_frame:
@@ -576,6 +597,24 @@ class SleepNumberMcrController(BedController):
                 "Sleep Number MCR notification buffered awaiting more data: %s",
                 raw.hex(),
             )
+
+    def _frame_matches_outstanding_request(self, frame: _McrFrame) -> bool:
+        """Return True when ``frame`` is the response to the in-flight request."""
+        if self._outstanding_request_key is None:
+            return False
+        if not frame.is_response:
+            return False
+        expected_func, expected_side = self._outstanding_request_key
+        if frame.function_code != expected_func:
+            return False
+        # The MCR firmware sometimes echoes a different side nibble for
+        # bed-wide queries (e.g. ``_MCR_SIDE_ALL`` reads). Treat the request
+        # as matching whenever the side either matches exactly or the
+        # request was sent against ``_MCR_SIDE_ALL`` /
+        # ``_MCR_SIDE_BOTH_CHAMBERS``.
+        if expected_side in {_MCR_SIDE_ALL, _MCR_SIDE_BOTH_CHAMBERS}:
+            return True
+        return frame.side == expected_side
 
     def _extract_response_frames(self) -> list[_McrFrame]:
         """Parse as many complete MCR frames as possible from the notification buffer."""
