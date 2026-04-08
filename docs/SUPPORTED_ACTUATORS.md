@@ -22,6 +22,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 | [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
+| [Sleep Number](beds/sleep_number.md) | 🧪 Needs Testing | Direct position, side selection, under-bed lights, presence, climate |
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
 | [Svane](beds/svane.md) | ✅ Supported | LinonPI protocol, multi-service |
 | [Vibradorm](beds/vibradorm.md) | ✅ Supported | Position feedback, 4 memory presets, lights |
@@ -91,13 +92,14 @@ Beds that won't be supported:
 
 Note: LOGICDATA MOTIONrelax BLE beds are supported under [Jiecang](beds/jiecang.md) (Lierda protocol).
 
-If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an addon or make a seperate integration for WiFi/Cloud adjustable beds. 
+If you have one of these beds, consider running [smartbed-mqtt](https://github.com/richardhopton/smartbed-mqtt) as an addon or make a separate integration for WiFi/Cloud adjustable beds.
 
 ### Other Integrations
 
 These beds have their own dedicated integrations:
 - **Eight Sleep** — Use the [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) integration
-- **Sleep Number** — Use the [SleepIQ](https://www.home-assistant.io/integrations/sleepiq/) integration
+
+Sleep Number Climate 360 / FlexFit BLE bases are supported by this integration. See [Sleep Number](beds/sleep_number.md) for the current feature set and pairing notes.
 
 ---
 
@@ -123,6 +125,7 @@ These beds have their own dedicated integrations:
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
    - `Malouf*`, `Structures*` → Malouf
+   - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit)
    - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
    - `VMAT*` → Vibradorm
    - `SUTA-*` → SUTA Smart Home (bed-frame variants)
@@ -147,6 +150,7 @@ These beds have their own dedicated integrations:
    - Service `00001525-...` → Vibradorm
    - Service `0000ffe0-...` + name `QMS-*` or `S3-*` etc. → Solace (Woosa Sleep, Sealy, QMS)
    - Service `6e403587-...` → Remacro
+   - Service `09d23fae-...` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit)
    - Service `0000ffc0-...` or `9e5d1e47-...` + name `Mouselet*` → Kaidi
    - Service `b9934c43-...` → Logicdata SimplicityFrame
 

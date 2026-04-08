@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import binascii
+import json
 import struct
 from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -89,6 +90,38 @@ def mock_bleak_client() -> MagicMock:
     client = MagicMock(spec=BleakClient)
     notify_callbacks: dict[str, object] = {}
     readable_values: dict[str, bytes] = {}
+    sleep_number_state: dict[str, object] = {
+        "underbed_light_level": "high",
+        "underbed_light_timer": 15,
+        "left": {
+            "sleep_number": 45,
+            "bed_presence": "in",
+            "footwarming_present": True,
+            "footwarming_level": "medium",
+            "footwarming_remaining": 90,
+            "footwarming_total": 120,
+            "frosty_present": True,
+            "frosty_mode": "cooling_pull_low",
+            "frosty_remaining": 120,
+            "heidi_present": True,
+            "heidi_mode": "heating_push_low",
+            "heidi_remaining": 120,
+        },
+        "right": {
+            "sleep_number": 65,
+            "bed_presence": "out",
+            "footwarming_present": True,
+            "footwarming_level": "off",
+            "footwarming_remaining": 0,
+            "footwarming_total": 0,
+            "frosty_present": True,
+            "frosty_mode": "off",
+            "frosty_remaining": 0,
+            "heidi_present": True,
+            "heidi_mode": "off",
+            "heidi_remaining": 0,
+        },
+    }
 
     def _build_sleep_number_blob(payload: str) -> bytes:
         encoded = payload.encode("utf-8")
@@ -129,12 +162,112 @@ def mock_bleak_client() -> MagicMock:
         del response
         decoded_payload = _decode_sleep_number_payload(data)
         callback = notify_callbacks.get(char_uuid)
-        if callback is None or decoded_payload is None:
+        if decoded_payload is None:
             return
 
+        response_text: str | None = None
         if decoded_payload == "UBLG":
-            response_payload = _build_sleep_number_blob("PASS:high 15")
-            readable_values[char_uuid] = response_payload
+            response_text = (
+                "PASS:"
+                f"{sleep_number_state['underbed_light_level']} "
+                f"{sleep_number_state['underbed_light_timer']}"
+            )
+        elif decoded_payload.startswith("UBLS "):
+            _, level, timer = decoded_payload.split(" ", maxsplit=2)
+            sleep_number_state["underbed_light_level"] = level
+            sleep_number_state["underbed_light_timer"] = int(timer)
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("PSNG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = f"PASS:{side_state['sleep_number']}"
+        elif decoded_payload.startswith("PSNS "):
+            _, side, value = decoded_payload.split(" ", maxsplit=2)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["sleep_number"] = int(value)
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("FWPG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = "PASS:true" if side_state["footwarming_present"] else "PASS:false"
+        elif decoded_payload.startswith("FWTG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = (
+                "PASS:"
+                f"{side_state['footwarming_level']} "
+                f"{side_state['footwarming_remaining']} "
+                f"{side_state['footwarming_total']}"
+            )
+        elif decoded_payload.startswith("FWTS "):
+            _, side, level, timer = decoded_payload.split(" ", maxsplit=3)
+            timer_minutes = int(timer)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["footwarming_level"] = level
+            side_state["footwarming_remaining"] = 0 if level == "off" else timer_minutes
+            side_state["footwarming_total"] = 0 if level == "off" else timer_minutes
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("CLPG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = "PASS:true" if side_state["frosty_present"] else "PASS:false"
+        elif decoded_payload.startswith("CLMG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = f"PASS:{side_state['frosty_mode']} {side_state['frosty_remaining']}"
+        elif decoded_payload.startswith("CLMS "):
+            _, side, mode, timer = decoded_payload.split(" ", maxsplit=3)
+            timer_minutes = int(timer)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["frosty_mode"] = mode
+            side_state["frosty_remaining"] = 0 if mode == "off" else timer_minutes
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("THPG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = "PASS:true" if side_state["heidi_present"] else "PASS:false"
+        elif decoded_payload.startswith("THMG "):
+            _, side = decoded_payload.split(" ", maxsplit=1)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            response_text = f"PASS:{side_state['heidi_mode']} {side_state['heidi_remaining']}"
+        elif decoded_payload.startswith("THMS "):
+            _, side, mode, timer = decoded_payload.split(" ", maxsplit=3)
+            timer_minutes = int(timer)
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["heidi_mode"] = mode
+            side_state["heidi_remaining"] = 0 if mode == "off" else timer_minutes
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("BAMG "):
+            payload = decoded_payload.removeprefix("BAMG ").strip()
+            queries = json.loads(payload)
+            grouped_values: list[str] = []
+            for query in queries:
+                if query["bamkey"] != "LBPG":
+                    grouped_values.append("FAIL:0")
+                    continue
+                side = query["args"]
+                side_state = sleep_number_state[side]
+                assert isinstance(side_state, dict)
+                grouped_values.append(f"PASS:{side_state['bed_presence']}")
+            response_text = f"PASS:{json.dumps(grouped_values, separators=(',', ':'))}"
+
+        if response_text is None:
+            return
+
+        response_payload = _build_sleep_number_blob(response_text)
+        readable_values[char_uuid] = response_payload
+        if callback is not None:
             callback(char_uuid, bytearray(response_payload))
 
     async def _read_gatt_char(target) -> bytes:

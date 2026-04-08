@@ -358,13 +358,13 @@ class TestNumberEntities:
 class TestSleepNumberEntities:
     """Test Sleep Number specific entity setup."""
 
-    async def test_sleep_number_entities_include_underbed_light_and_presence(
+    async def test_sleep_number_entities_include_presence_sleep_number_and_climate_controls(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Sleep Number should expose its light controls and disabled-by-default presence sensor."""
+        """Sleep Number should expose light, split presence, sleep-number, and climate entities."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleep Number Feature Bed",
@@ -402,14 +402,65 @@ class TestSleepNumberEntities:
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_light_timer")
             is not None
         )
+        sleep_number_entity_id = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_setting",
+        )
+        assert sleep_number_entity_id is not None
+        assert hass.states.get(sleep_number_entity_id).state == "45.0"
 
-        presence_entity_id = registry.async_get_entity_id(
+        left_presence_entity_id = registry.async_get_entity_id(
             "binary_sensor",
             DOMAIN,
-            "AA:BB:CC:DD:EE:41_bed_presence",
+            "AA:BB:CC:DD:EE:41_bed_presence_left",
         )
-        assert presence_entity_id is not None
-        assert hass.states.get(presence_entity_id) is None
+        assert left_presence_entity_id is not None
+        assert hass.states.get(left_presence_entity_id) is None
+        right_presence_entity_id = registry.async_get_entity_id(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_bed_presence_right",
+        )
+        assert right_presence_entity_id is not None
+        assert hass.states.get(right_presence_entity_id) is None
+
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_cooling_timer")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_heating_timer")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "select", DOMAIN, "AA:BB:CC:DD:EE:41_footwarming_timer"
+            )
+            is not None
+        )
+
+        cooling_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_cooling_climate",
+        )
+        heating_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_heating_climate",
+        )
+        footwarming_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_climate",
+        )
+        assert cooling_entity_id is not None
+        assert heating_entity_id is not None
+        assert footwarming_entity_id is not None
+        assert hass.states.get(cooling_entity_id).state == "cool"
+        assert hass.states.get(heating_entity_id).state == "heat"
+        assert hass.states.get(footwarming_entity_id).state == "heat"
 
 
 class TestButtonEntities:

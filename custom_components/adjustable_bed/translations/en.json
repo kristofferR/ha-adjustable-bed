@@ -529,6 +529,12 @@
       },
       "bed_presence": {
         "name": "Bed Presence"
+      },
+      "bed_presence_left": {
+        "name": "Left Bed Presence"
+      },
+      "bed_presence_right": {
+        "name": "Right Bed Presence"
       }
     },
     "number": {
@@ -555,6 +561,9 @@
       },
       "light_level": {
         "name": "Light Level"
+      },
+      "sleep_number_setting": {
+        "name": "Sleep Number Setting"
       }
     },
     "select": {
@@ -563,6 +572,26 @@
       },
       "light_timer": {
         "name": "Light Timer"
+      },
+      "cooling_timer": {
+        "name": "Cooling Timer"
+      },
+      "heating_timer": {
+        "name": "Heating Timer"
+      },
+      "footwarming_timer": {
+        "name": "Footwarming Timer"
+      }
+    },
+    "climate": {
+      "cooling_climate": {
+        "name": "Cooling"
+      },
+      "heating_climate": {
+        "name": "Heating"
+      },
+      "footwarming_climate": {
+        "name": "Footwarming"
       }
     }
   },

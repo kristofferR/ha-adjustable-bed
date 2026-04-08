@@ -34,7 +34,11 @@ To enter pairing mode, hold the side pairing button until the indicator flashes 
 | TV Preset | ✅ |
 | Numbered Memory Presets | ❌ |
 | Under Bed Lights | ✅ |
-| Presence Detection | ✅ (polling binary sensor, disabled by default) |
+| Sleep Number Setting | ✅ |
+| Presence Detection | ✅ (left/right polling sensors, disabled by default) |
+| Cooling / Frosty | ✅ |
+| Heating / Heidi | ✅ |
+| Footwarming | ✅ |
 
 ## Current Integration Scope
 
@@ -49,8 +53,11 @@ This keeps the implementation compatible with the current entity model while sti
 ## Protocol Details
 
 **Service UUID:** `09d23fae-90e6-44c2-95b6-0b3d0f1abf25`  
-**Characteristic UUID:** `421e00f3-ae76-4c49-ab6e-39e4df4a5333`  
-**Format:** UTF-8 bamkey commands and notification responses  
+**BamKey UUID:** `421e00f3-ae76-4c49-ab6e-39e4df4a5333`  
+**Auth UUID:** `8d4675a5-b5fa-42b2-b587-0ee71c46b709`  
+**Transfer Info UUID:** `e8d06e2a-c987-48f8-93a8-4d18d56b4337`  
+**Bulk Transfer Notify UUID:** `0ec9a5a3-8ac3-4582-92f3-1666421f323d`  
+**Format:** `fUzIoN` framed bamkey blobs with CRC validation  
 **Pairing Required:** Yes
 
 ## Detection
@@ -65,21 +72,20 @@ Typical device names look like:
 
 ## Command Format
 
-Commands are plain UTF-8 strings written to the bamkey characteristic:
+The logical command payloads are bamkey strings:
 
 ```text
 <BAMKEY> <arg1> <arg2> ...
 ```
 
-Responses arrive as notifications on the same characteristic:
+The integration wraps those payloads in the SleepIQ app's `fUzIoN` framing, writes them to the BamKey characteristic without response, and accepts either of these response flows:
 
 ```text
-PASS:ACK
-PASS:<payload>
-FAIL:0
-FAIL:1
-FAIL:2
+1. Full framed response arrives as a notification
+2. A notify hint/ack arrives, then the integration reads the BamKey characteristic to fetch the framed response
 ```
+
+It also primes the Auth and Transfer Info characteristics once per connection before occupancy reads, and listens on the bulk-transfer notify characteristic because some beds use it during the readback flow.
 
 ## Implemented Commands
 
@@ -124,11 +130,42 @@ The integration exposes:
 
 | Action | Command |
 |--------|---------|
-| Read occupancy | `LBPG <side>` |
+| Read occupancy | `BAMG [{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]` |
 
-The `Bed Presence` binary sensor tracks the configured side (`left` or `right`). It is disabled by default because it requires active polling over BLE.
+The integration exposes `Left Bed Presence` and `Right Bed Presence` binary sensors. Both are disabled by default because they require active polling over BLE.
+
+### Sleep Number Setting
+
+| Action | Command |
+|--------|---------|
+| Read Sleep Number setting | `PSNG <side>` |
+| Set Sleep Number setting | `PSNS <side> <5-100>` |
+
+The integration exposes a `Sleep Number Setting` number entity for the configured side.
+
+### Climate / Thermal Controls
+
+| Action | Command |
+|--------|---------|
+| Check footwarming presence | `FWPG <side>` |
+| Read footwarming state | `FWTG <side>` |
+| Set footwarming level/timer | `FWTS <side> <off\|low\|medium\|high> <minutes>` |
+| Check cooling presence | `CLPG <side>` |
+| Read cooling mode | `CLMG <side>` |
+| Set cooling mode/timer | `CLMS <side> <mode> <minutes>` |
+| Check heating presence | `THPG <side>` |
+| Read heating mode | `THMG <side>` |
+| Set heating mode/timer | `THMS <side> <mode> <minutes>` |
+
+The integration exposes:
+
+- a `Cooling` climate entity with `low`, `medium`, `high`, and `boost` presets
+- a `Heating` climate entity with `low`, `medium`, and `high` presets
+- a `Footwarming` climate entity with `low`, `medium`, and `high` presets
+- `Cooling Timer`, `Heating Timer`, and `Footwarming Timer` selects with `30 min` through `10 hr`
 
 ## Notes
 
 1. Position values are already native percentages, so the integration exposes 0-100 direct-position controls instead of degree-based sliders.
-2. Command acknowledgements and query responses depend on BLE notifications, so the integration keeps the notification channel subscribed even when angle sensing is disabled.
+2. Command acknowledgements and query responses depend on the notification/readback path, so the integration keeps the BamKey notification channel subscribed even when angle sensing is disabled.
+3. Occupancy polling sends a grouped `BAMG` request for both sides in one call, then publishes separate left/right binary sensors.

@@ -9,7 +9,7 @@ This guide covers common issues and their solutions when using the Adjustable Be
 - [Position Feedback Issues](#position-feedback-issues)
 - [Physical Remote Conflicts](#physical-remote-conflicts)
 - [Protocol/Variant Issues](#protocolvariant-issues)
-- [Pairing Required (Okimat/Leggett Okin)](#pairing-required-okimatleggett-okin)
+- [Pairing Required Beds](#pairing-required-beds)
 - [Classic Bluetooth Beds (Not Supported)](#classic-bluetooth-beds-not-supported)
 - [Quick Reference: Service UUIDs](#quick-reference-service-uuids)
 - [Debugging Tools](#debugging-tools)
@@ -220,7 +220,7 @@ See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default va
 
 ---
 
-## Pairing Required (Okimat/Leggett Okin)
+## Pairing Required Beds
 
 Some beds require Bluetooth pairing before they can be controlled.
 
@@ -243,12 +243,14 @@ Some beds require Bluetooth pairing before they can be controlled.
    - Go to Bluetooth settings
    - Find the bed and click "Pair"
 
+Sleep Number Climate 360 / FlexFit bases typically enter pairing mode by holding the side pairing button until the blue light blinks.
+
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work
 - Bed specifically requires PIN entry or pairing confirmation
 - "Pairing required" error message
 
-**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds (Okimat, Leggett Okin).
+**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds such as Okimat, Leggett Okin, and Sleep Number Climate 360 / FlexFit.
 
 ---
 
@@ -286,6 +288,7 @@ Use these to identify your bed type in a BLE scanner:
 | `01000001-0000-1000-8000-00805f9b34fb` | Malouf NEW_OKIN |
 | `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Reverie |
 | `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
+| `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |
 | `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, OKIN 64-bit, Sleepy's BOX24 |
 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Richmat Nordic, Keeson KSBT, Mattress Firm 900 |
 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | Richmat WiLinke |

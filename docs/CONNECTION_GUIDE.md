@@ -23,6 +23,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 >
 > - **Okimat/Okin** refers to Okimat-branded beds that use the Okin protocol (requires pairing).
 > - **Leggett & Platt** appears in multiple rows because different models use different protocols/generations (Gen2, Okin variant, MlRM/WiLinke).
+> - **Sleep Number** here means Climate 360 / FlexFit BLE bases that advertise as `Smart bed *`.
 >
 > To determine which row applies to your bed, check the label on your bed frame or controller, look at your remote's branding, or consult your manufacturer's manual.
 
@@ -30,6 +31,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
 | Leggett & Platt Okin variant | ✅ Yes |
+| Sleep Number Climate 360 / FlexFit | ✅ Yes |
 | Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
 | Nectar | ❌ No |
@@ -39,8 +41,10 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 **How to pair (if required):**
 1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
 2. On your Home Assistant host or phone, open Bluetooth settings
-3. Pair with the bed (may appear as "OKIN", "Okimat", or similar)
+3. Pair with the bed (may appear as `OKIN`, `Okimat`, `Smart bed 123456`, or similar)
 4. Then add the integration in Home Assistant
+
+For Sleep Number Climate 360 / FlexFit, hold the side pairing button until the blue light blinks.
 
 **Note:** If you're using an ESPHome Bluetooth Proxy, you may need to pair on the device running Home Assistant, not on your phone.
 
