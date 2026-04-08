@@ -654,17 +654,19 @@ class SleepNumberMcrController(BedController):
     async def _async_write_frame(
         self, frame: bytes, *, cancel_event: asyncio.Event | None = None
     ) -> None:
-        """Write an MCR frame using write-with-response.
+        """Write an MCR frame using fire-and-forget GATT writes.
 
-        MCR is a request/response transport. Write-without-response would let
-        the caller proceed past commands the bed never confirmed, so we never
-        fall back to it — write failures must surface to the caller.
+        The BAM/MCR protocol already provides an application-level response
+        over the notify characteristic, and some ESPHome proxy paths drop the
+        BLE connection while waiting for a lower-level GATT write response.
+        Rely on the protocol frame reply for acknowledgement instead of the
+        transport-level write response.
         """
         await self._write_gatt_with_retry(
             SLEEP_NUMBER_MCR_RX_CHAR_UUID,
             frame,
             cancel_event=cancel_event,
-            response=True,
+            response=False,
         )
 
     def _handle_mcr_notification(self, _sender: object, data: bytearray) -> None:

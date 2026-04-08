@@ -52,48 +52,98 @@ class AdjustableBedClimateEntityDescription(ClimateEntityDescription):
     turn_off_method_name: str
     set_preset_method_name: str
     base_preset_modes: tuple[str, ...]
+    side: str | None = None
+    supports_heating_state_key: str | None = None
+    backend_state_key: str | None = None
 
 
-CLIMATE_DESCRIPTIONS: tuple[AdjustableBedClimateEntityDescription, ...] = (
-    # Unified Sleep Number thermal climate entity: present if either Frosty
-    # (Cooling Module) or Heidi (Core Temperature Module) is present.
-    # Heat is only exposed when the active backend supports it (Heidi only).
-    AdjustableBedClimateEntityDescription(
-        key="sleep_number_thermal_climate",
-        translation_key="sleep_number_thermal_climate",
-        icon="mdi:thermometer",
-        required_capability="supports_thermal_climate",
-        hvac_state_key="thermal_hvac_mode",
-        preset_state_key="thermal_preset",
-        timer_state_key="thermal_timer_option",
-        remaining_time_key="thermal_remaining_time_minutes",
-        raw_mode_state_key="thermal_mode",
+SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription(
+    key="sleep_number_thermal_climate",
+    translation_key="sleep_number_thermal_climate",
+    icon="mdi:thermometer",
+    required_capability="supports_thermal_climate",
+    hvac_state_key="thermal_hvac_mode",
+    preset_state_key="thermal_preset",
+    timer_state_key="thermal_timer_option",
+    remaining_time_key="thermal_remaining_time_minutes",
+    raw_mode_state_key="thermal_mode",
+    supports_heat=True,
+    supports_cool=True,
+    turn_on_method_name="turn_thermal_on",
+    turn_off_method_name="turn_thermal_off",
+    set_preset_method_name="set_thermal_preset",
+    base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
+    supports_heating_state_key="thermal_supports_heating",
+    backend_state_key="thermal_backend",
+)
+
+FOOTWARMING_CLIMATE_DESCRIPTION = AdjustableBedClimateEntityDescription(
+    key="footwarming_climate",
+    translation_key="footwarming_climate",
+    icon="mdi:foot-print",
+    required_capability="supports_footwarming_climate",
+    hvac_state_key="footwarming_hvac_mode",
+    preset_state_key="footwarming_preset",
+    timer_state_key="footwarming_timer_option",
+    remaining_time_key="footwarming_remaining_time_minutes",
+    total_remaining_time_key="footwarming_total_remaining_time_minutes",
+    raw_mode_state_key="footwarming_level",
+    supports_heat=True,
+    supports_cool=False,
+    turn_on_method_name="turn_footwarming_on",
+    turn_off_method_name="turn_footwarming_off",
+    set_preset_method_name="set_footwarming_preset",
+    base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
+)
+
+
+def _build_side_thermal_climate_description(side: str) -> AdjustableBedClimateEntityDescription:
+    """Build the side-specific Sleep Number thermal climate description."""
+    return AdjustableBedClimateEntityDescription(
+        key=f"sleep_number_thermal_climate_{side}",
+        translation_key=f"sleep_number_thermal_climate_{side}",
+        icon=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.icon,
+        required_capability=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability,
+        hvac_state_key=f"thermal_hvac_mode_{side}",
+        preset_state_key=f"thermal_preset_{side}",
+        timer_state_key=f"thermal_timer_option_{side}",
+        remaining_time_key=f"thermal_remaining_time_minutes_{side}",
+        raw_mode_state_key=f"thermal_mode_{side}",
         supports_heat=True,
         supports_cool=True,
-        turn_on_method_name="turn_thermal_on",
-        turn_off_method_name="turn_thermal_off",
-        set_preset_method_name="set_thermal_preset",
+        turn_on_method_name="turn_thermal_on_for_side",
+        turn_off_method_name="turn_thermal_off_for_side",
+        set_preset_method_name="set_thermal_preset_for_side",
         base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
-    ),
-    AdjustableBedClimateEntityDescription(
-        key="footwarming_climate",
-        translation_key="footwarming_climate",
-        icon="mdi:foot-print",
-        required_capability="supports_footwarming_climate",
-        hvac_state_key="footwarming_hvac_mode",
-        preset_state_key="footwarming_preset",
-        timer_state_key="footwarming_timer_option",
-        remaining_time_key="footwarming_remaining_time_minutes",
-        total_remaining_time_key="footwarming_total_remaining_time_minutes",
-        raw_mode_state_key="footwarming_level",
+        side=side,
+        supports_heating_state_key=f"thermal_supports_heating_{side}",
+        backend_state_key=f"thermal_backend_{side}",
+    )
+
+
+def _build_side_footwarming_climate_description(
+    side: str,
+) -> AdjustableBedClimateEntityDescription:
+    """Build the side-specific footwarming climate description."""
+    return AdjustableBedClimateEntityDescription(
+        key=f"footwarming_climate_{side}",
+        translation_key=f"footwarming_climate_{side}",
+        icon=FOOTWARMING_CLIMATE_DESCRIPTION.icon,
+        required_capability=FOOTWARMING_CLIMATE_DESCRIPTION.required_capability,
+        hvac_state_key=f"footwarming_hvac_mode_{side}",
+        preset_state_key=f"footwarming_preset_{side}",
+        timer_state_key=f"footwarming_timer_option_{side}",
+        remaining_time_key=f"footwarming_remaining_time_minutes_{side}",
+        total_remaining_time_key=f"footwarming_total_remaining_time_minutes_{side}",
+        raw_mode_state_key=f"footwarming_level_{side}",
         supports_heat=True,
         supports_cool=False,
-        turn_on_method_name="turn_footwarming_on",
-        turn_off_method_name="turn_footwarming_off",
-        set_preset_method_name="set_footwarming_preset",
+        turn_on_method_name="turn_footwarming_on_for_side",
+        turn_off_method_name="turn_footwarming_off_for_side",
+        set_preset_method_name="set_footwarming_preset_for_side",
         base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
-    ),
-)
+        side=side,
+    )
 
 
 async def async_setup_entry(
@@ -107,11 +157,81 @@ async def async_setup_entry(
     if controller is None:
         return
 
-    entities = [
-        AdjustableBedClimate(coordinator, description)
-        for description in CLIMATE_DESCRIPTIONS
-        if getattr(controller, description.required_capability, False)
-    ]
+    entities: list[AdjustableBedClimate] = []
+
+    thermal_sides = tuple(getattr(controller, "thermal_climate_sides", ()))
+    if thermal_sides:
+        entities.append(
+            AdjustableBedClimate(
+                coordinator,
+                AdjustableBedClimateEntityDescription(
+                    key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.key,
+                    translation_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.translation_key,
+                    icon=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.icon,
+                    required_capability=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability,
+                    hvac_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.hvac_state_key,
+                    preset_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.preset_state_key,
+                    timer_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.timer_state_key,
+                    remaining_time_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.remaining_time_key,
+                    raw_mode_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.raw_mode_state_key,
+                    supports_heat=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_heat,
+                    supports_cool=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_cool,
+                    turn_on_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.turn_on_method_name,
+                    turn_off_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.turn_off_method_name,
+                    set_preset_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.set_preset_method_name,
+                    base_preset_modes=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.base_preset_modes,
+                    supports_heating_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_heating_state_key,
+                    backend_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.backend_state_key,
+                    entity_registry_enabled_default=False,
+                ),
+            )
+        )
+        for side in thermal_sides:
+            entities.append(
+                AdjustableBedClimate(
+                    coordinator,
+                    _build_side_thermal_climate_description(side),
+                )
+            )
+    elif getattr(controller, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability, False):
+        entities.append(AdjustableBedClimate(coordinator, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION))
+
+    footwarming_sides = tuple(getattr(controller, "footwarming_climate_sides", ()))
+    if footwarming_sides:
+        entities.append(
+            AdjustableBedClimate(
+                coordinator,
+                AdjustableBedClimateEntityDescription(
+                    key=FOOTWARMING_CLIMATE_DESCRIPTION.key,
+                    translation_key=FOOTWARMING_CLIMATE_DESCRIPTION.translation_key,
+                    icon=FOOTWARMING_CLIMATE_DESCRIPTION.icon,
+                    required_capability=FOOTWARMING_CLIMATE_DESCRIPTION.required_capability,
+                    hvac_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.hvac_state_key,
+                    preset_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.preset_state_key,
+                    timer_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.timer_state_key,
+                    remaining_time_key=FOOTWARMING_CLIMATE_DESCRIPTION.remaining_time_key,
+                    total_remaining_time_key=FOOTWARMING_CLIMATE_DESCRIPTION.total_remaining_time_key,
+                    raw_mode_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.raw_mode_state_key,
+                    supports_heat=FOOTWARMING_CLIMATE_DESCRIPTION.supports_heat,
+                    supports_cool=FOOTWARMING_CLIMATE_DESCRIPTION.supports_cool,
+                    turn_on_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.turn_on_method_name,
+                    turn_off_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.turn_off_method_name,
+                    set_preset_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.set_preset_method_name,
+                    base_preset_modes=FOOTWARMING_CLIMATE_DESCRIPTION.base_preset_modes,
+                    entity_registry_enabled_default=False,
+                ),
+            )
+        )
+        for side in footwarming_sides:
+            entities.append(
+                AdjustableBedClimate(
+                    coordinator,
+                    _build_side_footwarming_climate_description(side),
+                )
+            )
+    elif getattr(controller, FOOTWARMING_CLIMATE_DESCRIPTION.required_capability, False):
+        entities.append(AdjustableBedClimate(coordinator, FOOTWARMING_CLIMATE_DESCRIPTION))
+
     if entities:
         async_add_entities(entities)
 
@@ -163,9 +283,10 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             relevant_keys.add(self.entity_description.total_remaining_time_key)
         if self.entity_description.raw_mode_state_key is not None:
             relevant_keys.add(self.entity_description.raw_mode_state_key)
-        # The unified thermal entity's hvac_modes depend on
-        # `thermal_supports_heating`; refresh when that flips too.
-        relevant_keys.add("thermal_supports_heating")
+        if self.entity_description.supports_heating_state_key is not None:
+            relevant_keys.add(self.entity_description.supports_heating_state_key)
+        if self.entity_description.backend_state_key is not None:
+            relevant_keys.add(self.entity_description.backend_state_key)
         if relevant_keys & state.keys():
             self.async_write_ha_state()
 
@@ -194,8 +315,8 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         """
         presets = list(self.entity_description.base_preset_modes)
         if (
-            self.entity_description.key == "sleep_number_thermal_climate"
-            and getattr(self._coordinator.controller, "thermal_supports_boost", False)
+            self.entity_description.key.startswith("sleep_number_thermal_climate")
+            and self._backend_supports_heating()
             and self.hvac_mode != HVACMode.HEAT
         ):
             presets.append(_THERMAL_CLIMATE_BOOST_PRESET)
@@ -205,10 +326,11 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         """Return True when the backend supports HVAC HEAT."""
         if not self.entity_description.supports_heat:
             return False
-        if self.entity_description.key == "sleep_number_thermal_climate":
-            # Only Heidi (Core Temperature) heats; Frosty is cooling-only.
+        if self.entity_description.supports_heating_state_key is not None:
             return bool(
-                getattr(self._coordinator.controller, "thermal_supports_heating", False)
+                self._coordinator.controller_state.get(
+                    self.entity_description.supports_heating_state_key
+                )
             )
         return True
 
@@ -240,11 +362,15 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return climate-specific metadata."""
         attrs: dict[str, Any] = {}
-        side = self._coordinator.controller_state.get("sleep_number_side")
+        side = self.entity_description.side or self._coordinator.controller_state.get(
+            "sleep_number_side"
+        )
         if side is not None:
             attrs["side"] = side
-        if self.entity_description.key == "sleep_number_thermal_climate":
-            backend = self._coordinator.controller_state.get("thermal_backend")
+        if self.entity_description.backend_state_key is not None:
+            backend = self._coordinator.controller_state.get(
+                self.entity_description.backend_state_key
+            )
             if backend is not None:
                 attrs["backend"] = backend
         timer_option = self._coordinator.controller_state.get(self.entity_description.timer_state_key)
@@ -283,7 +409,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         if hvac_mode not in self.hvac_modes:
             raise ValueError(f"Unsupported HVAC mode for {self.entity_id}: {hvac_mode}")
 
-        if self.entity_description.key == "sleep_number_thermal_climate":
+        if self.entity_description.key.startswith("sleep_number_thermal_climate"):
             # Resume using the last active preset, but routed to the
             # requested hvac_mode so users can flip between heat and cool
             # without having to re-pick a preset. When the entity is
@@ -297,9 +423,15 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             if preset is None:
                 controller = self._coordinator.controller
                 target_hvac_value = hvac_mode.value
-                resume = getattr(controller, "get_thermal_resume_preset", None)
+                if self.entity_description.side is not None:
+                    resume = getattr(controller, "get_thermal_resume_preset_for_side", None)
+                else:
+                    resume = getattr(controller, "get_thermal_resume_preset", None)
                 if callable(resume):
-                    preset = resume(target_hvac_value)
+                    if self.entity_description.side is not None:
+                        preset = resume(self.entity_description.side, target_hvac_value)
+                    else:
+                        preset = resume(target_hvac_value)
                 else:
                     preset = "low"
             if (
@@ -316,7 +448,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         if preset_mode not in self.preset_modes:
             raise ValueError(f"Unsupported preset mode for {self.entity_id}: {preset_mode}")
 
-        if self.entity_description.key == "sleep_number_thermal_climate":
+        if self.entity_description.key.startswith("sleep_number_thermal_climate"):
             current_hvac = self.hvac_mode
             if current_hvac == HVACMode.OFF:
                 # Default to the backend's last active HVAC mode (Heidi) or
@@ -356,7 +488,14 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         hvac_value: str | None = hvac_mode.value if hvac_mode is not None else None
 
         async def _invoke(ctrl: BedController) -> None:
-            await ctrl.set_thermal_preset(preset_mode, hvac_mode=hvac_value)  # type: ignore[attr-defined]
+            if self.entity_description.side is not None:
+                await ctrl.set_thermal_preset_for_side(  # type: ignore[attr-defined]
+                    self.entity_description.side,
+                    preset_mode,
+                    hvac_mode=hvac_value,
+                )
+            else:
+                await ctrl.set_thermal_preset(preset_mode, hvac_mode=hvac_value)  # type: ignore[attr-defined]
 
         _LOGGER.info(
             "Climate command requested: set_thermal_preset(%s, hvac_mode=%s) on %s",
@@ -371,11 +510,21 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         _LOGGER.info(
             "Climate command requested: %s(%s) on %s",
             method_name,
-            ", ".join(args),
+            ", ".join(
+                (
+                    [self.entity_description.side]
+                    if self.entity_description.side is not None
+                    else []
+                )
+                + list(args)
+            ),
             self._coordinator.name,
         )
 
         async def _invoke(ctrl: BedController) -> None:
-            await getattr(ctrl, method_name)(*args)
+            if self.entity_description.side is not None:
+                await getattr(ctrl, method_name)(self.entity_description.side, *args)
+            else:
+                await getattr(ctrl, method_name)(*args)
 
         await self._coordinator.async_execute_controller_command(_invoke)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -173,3 +175,26 @@ class TestSleepNumberMcrController:
         assert len(controller._response_frames) == 1
         assert controller._response_frames[0].function_code == 20
         assert controller._response_frames[0].payload == b"\x01"
+
+    async def test_async_write_frame_uses_write_without_response(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """BAM/MCR should rely on the protocol reply, not GATT write responses."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:58",
+            name="64:DB:A0:07:DD:09",
+            entry_id="sleep_number_mcr_write_no_response",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._write_gatt_with_retry = AsyncMock()
+
+        await controller._async_write_frame(b"\x16\x16test")
+
+        controller._write_gatt_with_retry.assert_awaited_once_with(
+            SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+            b"\x16\x16test",
+            cancel_event=None,
+            response=False,
+        )

@@ -410,7 +410,21 @@ class TestSleepNumberEntities:
             "AA:BB:CC:DD:EE:41_sleep_number_setting",
         )
         assert sleep_number_entity_id is not None
-        assert hass.states.get(sleep_number_entity_id).state == "45.0"
+        assert hass.states.get(sleep_number_entity_id) is None
+        left_sleep_number_entity_id = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_setting_left",
+        )
+        right_sleep_number_entity_id = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_setting_right",
+        )
+        assert left_sleep_number_entity_id is not None
+        assert right_sleep_number_entity_id is not None
+        assert hass.states.get(left_sleep_number_entity_id).state == "45.0"
+        assert hass.states.get(right_sleep_number_entity_id).state == "65.0"
 
         left_presence_entity_id = registry.async_get_entity_id(
             "binary_sensor",
@@ -442,12 +456,42 @@ class TestSleepNumberEntities:
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_thermal_timer")
             is not None
         )
+        assert hass.states.get("select.sleep_number_feature_bed_climate_timer") is None
         assert (
             registry.async_get_entity_id(
                 "select", DOMAIN, "AA:BB:CC:DD:EE:41_footwarming_timer"
             )
             is not None
         )
+        assert hass.states.get("select.sleep_number_feature_bed_footwarming_timer") is None
+        thermal_timer_left_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_thermal_timer_left",
+        )
+        thermal_timer_right_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_thermal_timer_right",
+        )
+        footwarming_timer_left_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_timer_left",
+        )
+        footwarming_timer_right_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_timer_right",
+        )
+        assert thermal_timer_left_entity_id is not None
+        assert thermal_timer_right_entity_id is not None
+        assert footwarming_timer_left_entity_id is not None
+        assert footwarming_timer_right_entity_id is not None
+        assert hass.states.get(thermal_timer_left_entity_id).state == "2 hr"
+        assert hass.states.get(thermal_timer_right_entity_id).state == "2 hr"
+        assert hass.states.get(footwarming_timer_left_entity_id).state == "2 hr"
+        assert hass.states.get(footwarming_timer_right_entity_id).state == "2 hr"
 
         thermal_entity_id = registry.async_get_entity_id(
             "climate",
@@ -461,18 +505,50 @@ class TestSleepNumberEntities:
         )
         assert thermal_entity_id is not None
         assert footwarming_entity_id is not None
+        assert hass.states.get(thermal_entity_id) is None
+        assert hass.states.get(footwarming_entity_id) is None
+        thermal_left_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate_left",
+        )
+        thermal_right_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate_right",
+        )
+        footwarming_left_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_climate_left",
+        )
+        footwarming_right_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_climate_right",
+        )
+        assert thermal_left_entity_id is not None
+        assert thermal_right_entity_id is not None
+        assert footwarming_left_entity_id is not None
+        assert footwarming_right_entity_id is not None
         # The mock bed has Heidi present with heating_push_low active, so the
         # unified thermal entity should report heating.
-        thermal_state = hass.states.get(thermal_entity_id)
+        thermal_state = hass.states.get(thermal_left_entity_id)
         assert thermal_state.state == "heat"
         assert thermal_state.attributes["backend"] == "heidi"
+        assert thermal_state.attributes["side"] == "left"
         assert "cool" in thermal_state.attributes["hvac_modes"]
         assert "heat" in thermal_state.attributes["hvac_modes"]
         # `boost` is cooling-only and must not be advertised while the
         # entity is currently in HEAT mode, so the preset list is the base
         # three presets here.
         assert thermal_state.attributes["preset_modes"] == ["low", "medium", "high"]
-        assert hass.states.get(footwarming_entity_id).state == "heat"
+        thermal_right_state = hass.states.get(thermal_right_entity_id)
+        assert thermal_right_state.state == "off"
+        assert thermal_right_state.attributes["backend"] == "heidi"
+        assert thermal_right_state.attributes["side"] == "right"
+        assert hass.states.get(footwarming_left_entity_id).state == "heat"
+        assert hass.states.get(footwarming_right_entity_id).state == "off"
 
     async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(
         self,

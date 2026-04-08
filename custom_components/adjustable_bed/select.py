@@ -80,6 +80,42 @@ FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     setter_name="set_footwarming_timer",
 )
 
+THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
+    key="thermal_timer_left",
+    translation_key="thermal_timer_left",
+    icon="mdi:thermometer-lines",
+    state_key="thermal_timer_option_left",
+    setter_name="set_thermal_timer_for_side",
+    side="left",
+)
+
+THERMAL_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
+    key="thermal_timer_right",
+    translation_key="thermal_timer_right",
+    icon="mdi:thermometer-lines",
+    state_key="thermal_timer_option_right",
+    setter_name="set_thermal_timer_for_side",
+    side="right",
+)
+
+FOOTWARMING_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
+    key="footwarming_timer_left",
+    translation_key="footwarming_timer_left",
+    icon="mdi:shoe-print",
+    state_key="footwarming_timer_option_left",
+    setter_name="set_footwarming_timer_for_side",
+    side="left",
+)
+
+FOOTWARMING_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
+    key="footwarming_timer_right",
+    translation_key="footwarming_timer_right",
+    icon="mdi:shoe-print",
+    state_key="footwarming_timer_option_right",
+    setter_name="set_footwarming_timer_for_side",
+    side="right",
+)
+
 FOUNDATION_PRESET_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="foundation_preset_left",
     translation_key="foundation_preset_left",
@@ -128,29 +164,132 @@ async def async_setup_entry(
                 )
 
     if controller is not None:
-        for description in (
-            LIGHT_TIMER_DESCRIPTION,
-            THERMAL_TIMER_DESCRIPTION,
-            FOOTWARMING_TIMER_DESCRIPTION,
-        ):
-            if not getattr(controller, description.required_capability, False):
-                continue
-            timer_options = getattr(controller, description.options_attr, [])
-            if not timer_options:
-                continue
+        if getattr(controller, LIGHT_TIMER_DESCRIPTION.required_capability, False):
+            timer_options = getattr(controller, LIGHT_TIMER_DESCRIPTION.options_attr, [])
+            if timer_options:
+                _LOGGER.debug(
+                    "Setting up %s select for %s (options: %s)",
+                    LIGHT_TIMER_DESCRIPTION.key,
+                    coordinator.name,
+                    timer_options,
+                )
+                entities.append(
+                    AdjustableBedControllerStateSelect(
+                        coordinator,
+                        LIGHT_TIMER_DESCRIPTION,
+                        timer_options,
+                    )
+                )
+
+        thermal_timer_options = list(getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, []))
+        thermal_sides = tuple(getattr(controller, "thermal_climate_sides", ()))
+        if thermal_sides and thermal_timer_options:
             _LOGGER.debug(
-                "Setting up %s select for %s (options: %s)",
-                description.key,
+                "Setting up side-specific thermal timer selects for %s (sides: %s, options: %s)",
                 coordinator.name,
-                timer_options,
+                thermal_sides,
+                thermal_timer_options,
             )
             entities.append(
                 AdjustableBedControllerStateSelect(
                     coordinator,
-                    description,
-                    timer_options,
+                    AdjustableBedControllerStateSelectDescription(
+                        key=THERMAL_TIMER_DESCRIPTION.key,
+                        translation_key=THERMAL_TIMER_DESCRIPTION.translation_key,
+                        icon=THERMAL_TIMER_DESCRIPTION.icon,
+                        required_capability=THERMAL_TIMER_DESCRIPTION.required_capability,
+                        options_attr=THERMAL_TIMER_DESCRIPTION.options_attr,
+                        state_key=THERMAL_TIMER_DESCRIPTION.state_key,
+                        setter_name=THERMAL_TIMER_DESCRIPTION.setter_name,
+                        entity_registry_enabled_default=False,
+                    ),
+                    thermal_timer_options,
                 )
             )
+            for side_description in (
+                THERMAL_TIMER_LEFT_DESCRIPTION,
+                THERMAL_TIMER_RIGHT_DESCRIPTION,
+            ):
+                if side_description.side not in thermal_sides:
+                    continue
+                entities.append(
+                    AdjustableBedSideStateSelect(
+                        coordinator,
+                        side_description,
+                        thermal_timer_options,
+                    )
+                )
+        elif getattr(controller, THERMAL_TIMER_DESCRIPTION.required_capability, False):
+            if thermal_timer_options:
+                _LOGGER.debug(
+                    "Setting up %s select for %s (options: %s)",
+                    THERMAL_TIMER_DESCRIPTION.key,
+                    coordinator.name,
+                    thermal_timer_options,
+                )
+                entities.append(
+                    AdjustableBedControllerStateSelect(
+                        coordinator,
+                        THERMAL_TIMER_DESCRIPTION,
+                        thermal_timer_options,
+                    )
+                )
+
+        footwarming_timer_options = list(
+            getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.options_attr, [])
+        )
+        footwarming_sides = tuple(getattr(controller, "footwarming_climate_sides", ()))
+        if footwarming_sides and footwarming_timer_options:
+            _LOGGER.debug(
+                "Setting up side-specific footwarming timer selects for %s (sides: %s, options: %s)",
+                coordinator.name,
+                footwarming_sides,
+                footwarming_timer_options,
+            )
+            entities.append(
+                AdjustableBedControllerStateSelect(
+                    coordinator,
+                    AdjustableBedControllerStateSelectDescription(
+                        key=FOOTWARMING_TIMER_DESCRIPTION.key,
+                        translation_key=FOOTWARMING_TIMER_DESCRIPTION.translation_key,
+                        icon=FOOTWARMING_TIMER_DESCRIPTION.icon,
+                        required_capability=FOOTWARMING_TIMER_DESCRIPTION.required_capability,
+                        options_attr=FOOTWARMING_TIMER_DESCRIPTION.options_attr,
+                        state_key=FOOTWARMING_TIMER_DESCRIPTION.state_key,
+                        setter_name=FOOTWARMING_TIMER_DESCRIPTION.setter_name,
+                        entity_registry_enabled_default=False,
+                    ),
+                    footwarming_timer_options,
+                )
+            )
+            for side_description in (
+                FOOTWARMING_TIMER_LEFT_DESCRIPTION,
+                FOOTWARMING_TIMER_RIGHT_DESCRIPTION,
+            ):
+                if side_description.side not in footwarming_sides:
+                    continue
+                entities.append(
+                    AdjustableBedSideStateSelect(
+                        coordinator,
+                        side_description,
+                        footwarming_timer_options,
+                    )
+                )
+        elif getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.required_capability, False):
+            if footwarming_timer_options:
+                _LOGGER.debug(
+                    "Setting up %s select for %s (options: %s)",
+                    FOOTWARMING_TIMER_DESCRIPTION.key,
+                    coordinator.name,
+                    footwarming_timer_options,
+                )
+                entities.append(
+                    AdjustableBedControllerStateSelect(
+                        coordinator,
+                        FOOTWARMING_TIMER_DESCRIPTION,
+                        footwarming_timer_options,
+                    )
+                )
 
     foundation_preset_sides = tuple(getattr(controller, "foundation_preset_sides", ()))
     foundation_preset_options = list(getattr(controller, "foundation_preset_options", ()))

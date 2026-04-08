@@ -10,7 +10,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+from custom_components.adjustable_bed.beds.sleep_number import (
+    BamkeyNotSupportedError,
+    SleepNumberController,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -123,6 +126,8 @@ class TestSleepNumberController:
         assert coordinator.controller_state["light_level"] == 3
         assert coordinator.controller_state["light_timer_option"] == "15 min"
         assert coordinator.controller_state["sleep_number"] == 45
+        assert coordinator.controller_state["sleep_number_left"] == 45
+        assert coordinator.controller_state["sleep_number_right"] == 65
         # Both Frosty (cooling) and Heidi (core temperature) modules are
         # present in the mock, so Heidi wins as the thermal backend and
         # reports heat because the mock currently has heating_push_low active.
@@ -131,7 +136,10 @@ class TestSleepNumberController:
         assert coordinator.controller_state["thermal_backend"] == "heidi"
         assert coordinator.controller_state["thermal_hvac_mode"] == "heat"
         assert coordinator.controller_state["thermal_supports_heating"] is True
+        assert coordinator.controller_state["thermal_hvac_mode_right"] == "off"
+        assert coordinator.controller_state["thermal_supports_heating_right"] is True
         assert coordinator.controller_state["footwarming_hvac_mode"] == "heat"
+        assert coordinator.controller_state["footwarming_hvac_mode_right"] == "off"
 
     async def test_disables_position_polling_during_commands(
         self,
@@ -434,6 +442,64 @@ class TestSleepNumberController:
         )
         assert coordinator.controller._coordinator.controller_state["sleep_number"] == 45
 
+    async def test_set_sleep_number_setting_for_right_side_preserves_left_alias(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Side-specific Sleep Number writes should target the requested side only."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:44",
+            name="Smart bed 007514",
+            entry_id="sleep_number_setting_right_side",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_sleep_number_setting_for_side("right", 68)
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "PSNS",
+            "right",
+            "70",
+        )
+        assert coordinator.controller._coordinator.controller_state["sleep_number"] == 45
+        assert coordinator.controller._coordinator.controller_state["sleep_number_right"] == 70
+
+    async def test_query_config_primes_session_before_side_queries(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """query_config should prime the session before side-specific bamkey reads."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:45",
+            name="Smart bed 007515",
+            entry_id="sleep_number_query_config_prime",
+        )
+        controller = coordinator.controller
+        call_order: list[str] = []
+
+        async def _prime() -> None:
+            call_order.append("prime")
+
+        async def _read_sleep(side: str) -> None:
+            call_order.append(f"sleep:{side}")
+
+        async def _query_feature(**kwargs) -> None:
+            call_order.append(f"{kwargs['presence_bamkey']}:{kwargs['side']}")
+
+        async def _read_presence() -> None:
+            call_order.append("presence")
+
+        controller._ensure_bed_presence_channel_primed = AsyncMock(side_effect=_prime)
+        controller.read_sleep_number_setting_for_side = AsyncMock(side_effect=_read_sleep)
+        controller._query_optional_presence_feature_for_side = AsyncMock(side_effect=_query_feature)
+        controller.read_bed_presence = AsyncMock(side_effect=_read_presence)
+
+        await controller.query_config()
+
+        assert call_order[0] == "prime"
+        assert call_order[1:3] == ["sleep:left", "sleep:right"]
+        assert call_order[-1] == "presence"
+
     async def test_set_thermal_preset_uses_heidi_for_cooling_when_present(
         self,
         sleep_number_coordinator,
@@ -517,6 +583,35 @@ class TestSleepNumberController:
             == "heat"
         )
 
+    async def test_set_thermal_preset_for_right_side_uses_right_backend(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Side-specific thermal writes should target the requested side."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:46",
+            name="Smart bed 007516",
+            entry_id="sleep_number_thermal_right_side",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_thermal_preset_for_side("right", "medium", hvac_mode="cool")
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "THMS",
+            "right",
+            "cooling_pull_med",
+            "120",
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_hvac_mode_right"]
+            == "cool"
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_preset_right"]
+            == "medium"
+        )
+
     async def test_turn_thermal_off_sends_zero_timer(
         self,
         sleep_number_coordinator,
@@ -528,7 +623,7 @@ class TestSleepNumberController:
             entry_id="sleep_number_thermal_off",
         )
         # Pre-set a non-zero cached timer to prove we don't reuse it for off.
-        coordinator.controller._heidi_timer_minutes = 240
+        coordinator.controller._heidi_states["left"].timer_minutes = 240
         coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
 
         await coordinator.controller.turn_thermal_off()
@@ -551,8 +646,8 @@ class TestSleepNumberController:
             entry_id="sleep_number_frosty_only",
         )
         # Simulate a bed where only the Cooling Module is present.
-        coordinator.controller._heidi_present = False
-        coordinator.controller._frosty_present = True
+        coordinator.controller._heidi_states["left"].present = False
+        coordinator.controller._frosty_states["left"].present = True
         coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
 
         with pytest.raises(ValueError):
@@ -570,8 +665,8 @@ class TestSleepNumberController:
             name="Smart bed 00750E",
             entry_id="sleep_number_frosty_only_cool",
         )
-        coordinator.controller._heidi_present = False
-        coordinator.controller._frosty_present = True
+        coordinator.controller._heidi_states["left"].present = False
+        coordinator.controller._frosty_states["left"].present = True
         coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
 
         await coordinator.controller.set_thermal_preset("low")
@@ -593,7 +688,7 @@ class TestSleepNumberController:
             name="Smart bed 00750F",
             entry_id="sleep_number_footwarming_off",
         )
-        coordinator.controller._footwarming_timer_minutes = 180
+        coordinator.controller._footwarming_states["left"].timer_minutes = 180
         coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
 
         await coordinator.controller.turn_footwarming_off()
@@ -603,6 +698,35 @@ class TestSleepNumberController:
             "left",
             "off",
             "180",
+        )
+
+    async def test_set_footwarming_preset_for_right_side_updates_right_state(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Side-specific footwarming writes should target the requested side."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:47",
+            name="Smart bed 007517",
+            entry_id="sleep_number_footwarming_right_side",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_footwarming_preset_for_side("right", "high")
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "FWTS",
+            "right",
+            "high",
+            "120",
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["footwarming_hvac_mode_right"]
+            == "heat"
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["footwarming_preset_right"]
+            == "high"
         )
 
     async def test_footwarming_timer_options_cap_at_six_hours(
@@ -822,6 +946,13 @@ class TestSleepNumberController:
 
         with pytest.raises(ValueError):
             SleepNumberController._parse_bamkey_blob(bytes(blob))
+
+    def test_parse_bamkey_response_treats_fail_2_as_not_supported(self) -> None:
+        """FAIL:2 should be treated as an absent optional feature, not a disconnect-worthy error."""
+        controller = SleepNumberController(MagicMock())
+
+        with pytest.raises(BamkeyNotSupportedError):
+            controller._parse_bamkey_response("THPG", "FAIL:2", expected_args=1)
 
     async def test_read_underbed_light_settings_updates_cached_state(
         self,
