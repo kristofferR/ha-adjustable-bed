@@ -27,74 +27,67 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+_THERMAL_CLIMATE_PRESETS_BASE: tuple[str, ...] = ("low", "medium", "high")
+_THERMAL_CLIMATE_PRESETS_WITH_BOOST: tuple[str, ...] = ("low", "medium", "high", "boost")
+
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedClimateEntityDescription(ClimateEntityDescription):
     """Describes an Adjustable Bed climate entity."""
 
     required_capability: str
-    active_hvac_mode: HVACMode
     hvac_state_key: str
     preset_state_key: str
     timer_state_key: str
     remaining_time_key: str
     total_remaining_time_key: str | None = None
     raw_mode_state_key: str | None = None
+    supports_heat: bool
+    supports_cool: bool
     turn_on_method_name: str
     turn_off_method_name: str
     set_preset_method_name: str
-    preset_modes: tuple[str, ...]
+    base_preset_modes: tuple[str, ...]
 
 
 CLIMATE_DESCRIPTIONS: tuple[AdjustableBedClimateEntityDescription, ...] = (
+    # Unified Sleep Number thermal climate entity: present if either Frosty
+    # (Cooling Module) or Heidi (Core Temperature Module) is present.
+    # Heat is only exposed when the active backend supports it (Heidi only).
     AdjustableBedClimateEntityDescription(
-        key="cooling_climate",
-        translation_key="cooling_climate",
-        icon="mdi:snowflake-thermometer",
-        required_capability="supports_frosty_climate",
-        active_hvac_mode=HVACMode.COOL,
-        hvac_state_key="frosty_hvac_mode",
-        preset_state_key="frosty_preset",
-        timer_state_key="frosty_timer_option",
-        remaining_time_key="frosty_remaining_time_minutes",
-        raw_mode_state_key="frosty_mode",
-        turn_on_method_name="turn_frosty_on",
-        turn_off_method_name="turn_frosty_off",
-        set_preset_method_name="set_frosty_preset",
-        preset_modes=("low", "medium", "high", "boost"),
-    ),
-    AdjustableBedClimateEntityDescription(
-        key="heating_climate",
-        translation_key="heating_climate",
-        icon="mdi:heat-wave",
-        required_capability="supports_heidi_climate",
-        active_hvac_mode=HVACMode.HEAT,
-        hvac_state_key="heidi_hvac_mode",
-        preset_state_key="heidi_preset",
-        timer_state_key="heidi_timer_option",
-        remaining_time_key="heidi_remaining_time_minutes",
-        raw_mode_state_key="heidi_mode",
-        turn_on_method_name="turn_heidi_on",
-        turn_off_method_name="turn_heidi_off",
-        set_preset_method_name="set_heidi_preset",
-        preset_modes=("low", "medium", "high"),
+        key="sleep_number_thermal_climate",
+        translation_key="sleep_number_thermal_climate",
+        icon="mdi:thermometer",
+        required_capability="supports_thermal_climate",
+        hvac_state_key="thermal_hvac_mode",
+        preset_state_key="thermal_preset",
+        timer_state_key="thermal_timer_option",
+        remaining_time_key="thermal_remaining_time_minutes",
+        raw_mode_state_key="thermal_mode",
+        supports_heat=True,
+        supports_cool=True,
+        turn_on_method_name="turn_thermal_on",
+        turn_off_method_name="turn_thermal_off",
+        set_preset_method_name="set_thermal_preset",
+        base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
     ),
     AdjustableBedClimateEntityDescription(
         key="footwarming_climate",
         translation_key="footwarming_climate",
         icon="mdi:foot-print",
         required_capability="supports_footwarming_climate",
-        active_hvac_mode=HVACMode.HEAT,
         hvac_state_key="footwarming_hvac_mode",
         preset_state_key="footwarming_preset",
         timer_state_key="footwarming_timer_option",
         remaining_time_key="footwarming_remaining_time_minutes",
         total_remaining_time_key="footwarming_total_remaining_time_minutes",
         raw_mode_state_key="footwarming_level",
+        supports_heat=True,
+        supports_cool=False,
         turn_on_method_name="turn_footwarming_on",
         turn_off_method_name="turn_footwarming_off",
         set_preset_method_name="set_footwarming_preset",
-        preset_modes=("low", "medium", "high"),
+        base_preset_modes=_THERMAL_CLIMATE_PRESETS_BASE,
     ),
 )
 
@@ -133,8 +126,6 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
-        self._attr_hvac_modes = [HVACMode.OFF, description.active_hvac_mode]
-        self._attr_preset_modes = list(description.preset_modes)
         self._attr_supported_features = (
             ClimateEntityFeature.PRESET_MODE
             | ClimateEntityFeature.TURN_ON
@@ -158,15 +149,20 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
     @callback
     def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
         """Write state when the controller publishes climate changes."""
-        if any(
-            key in state
-            for key in (
-                self.entity_description.hvac_state_key,
-                self.entity_description.preset_state_key,
-                self.entity_description.timer_state_key,
-                self.entity_description.remaining_time_key,
-            )
-        ):
+        relevant_keys = {
+            self.entity_description.hvac_state_key,
+            self.entity_description.preset_state_key,
+            self.entity_description.timer_state_key,
+            self.entity_description.remaining_time_key,
+        }
+        if self.entity_description.total_remaining_time_key is not None:
+            relevant_keys.add(self.entity_description.total_remaining_time_key)
+        if self.entity_description.raw_mode_state_key is not None:
+            relevant_keys.add(self.entity_description.raw_mode_state_key)
+        # The unified thermal entity's hvac_modes depend on
+        # `thermal_supports_heating`; refresh when that flips too.
+        relevant_keys.add("thermal_supports_heating")
+        if relevant_keys & state.keys():
             self.async_write_ha_state()
 
     @property
@@ -175,11 +171,49 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         return UnitOfTemperature.CELSIUS
 
     @property
+    def hvac_modes(self) -> list[HVACMode]:
+        """Return the HVAC modes available for this entity's current backend."""
+        modes: list[HVACMode] = [HVACMode.OFF]
+        if self.entity_description.supports_cool and self._backend_supports_cooling():
+            modes.append(HVACMode.COOL)
+        if self.entity_description.supports_heat and self._backend_supports_heating():
+            modes.append(HVACMode.HEAT)
+        return modes
+
+    @property
+    def preset_modes(self) -> list[str]:
+        """Return available preset modes, expanding boost when the backend supports it."""
+        presets = list(self.entity_description.base_preset_modes)
+        if (
+            self.entity_description.key == "sleep_number_thermal_climate"
+            and getattr(self._coordinator.controller, "thermal_supports_boost", False)
+        ):
+            presets.append("boost")
+        return presets
+
+    def _backend_supports_heating(self) -> bool:
+        """Return True when the backend supports HVAC HEAT."""
+        if not self.entity_description.supports_heat:
+            return False
+        if self.entity_description.key == "sleep_number_thermal_climate":
+            # Only Heidi (Core Temperature) heats; Frosty is cooling-only.
+            return bool(
+                getattr(self._coordinator.controller, "thermal_supports_heating", False)
+            )
+        return True
+
+    def _backend_supports_cooling(self) -> bool:
+        """Return True when the backend supports HVAC COOL."""
+        return self.entity_description.supports_cool
+
+    @property
     def hvac_mode(self) -> HVACMode:
         """Return the current HVAC mode."""
         mode = self._coordinator.controller_state.get(self.entity_description.hvac_state_key)
-        if mode == self.entity_description.active_hvac_mode.value:
-            return self.entity_description.active_hvac_mode
+        if mode == HVACMode.COOL.value and self._backend_supports_cooling():
+            return HVACMode.COOL
+        if mode == HVACMode.HEAT.value and self._backend_supports_heating():
+            return HVACMode.HEAT
         return HVACMode.OFF
 
     @property
@@ -188,7 +222,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         preset = self._coordinator.controller_state.get(self.entity_description.preset_state_key)
         if self.hvac_mode == HVACMode.OFF:
             return None
-        if preset in (self._attr_preset_modes or []):
+        if preset in self.preset_modes:
             return str(preset)
         return None
 
@@ -199,6 +233,10 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         side = self._coordinator.controller_state.get("sleep_number_side")
         if side is not None:
             attrs["side"] = side
+        if self.entity_description.key == "sleep_number_thermal_climate":
+            backend = self._coordinator.controller_state.get("thermal_backend")
+            if backend is not None:
+                attrs["backend"] = backend
         timer_option = self._coordinator.controller_state.get(self.entity_description.timer_state_key)
         if timer_option is not None:
             attrs["timer"] = timer_option
@@ -232,18 +270,56 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         if hvac_mode == HVACMode.OFF:
             await self.async_turn_off()
             return
-        if hvac_mode != self.entity_description.active_hvac_mode:
+        if hvac_mode not in self.hvac_modes:
             raise ValueError(f"Unsupported HVAC mode for {self.entity_id}: {hvac_mode}")
+
+        if self.entity_description.key == "sleep_number_thermal_climate":
+            # Resume using the last active preset, but routed to the requested
+            # hvac_mode so users can flip between heat and cool without having
+            # to re-pick a preset.
+            preset = self.preset_mode or "low"
+            await self._async_call_thermal_preset(preset, hvac_mode)
+            return
         await self.async_turn_on()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set the preset mode."""
-        if preset_mode not in (self._attr_preset_modes or []):
+        if preset_mode not in self.preset_modes:
             raise ValueError(f"Unsupported preset mode for {self.entity_id}: {preset_mode}")
+
+        if self.entity_description.key == "sleep_number_thermal_climate":
+            current_hvac = self.hvac_mode
+            if current_hvac == HVACMode.OFF:
+                # Default to the backend's last active HVAC mode (Heidi) or
+                # COOL (Frosty). The controller's set_thermal_preset resolves
+                # this when hvac_mode is None.
+                target: HVACMode | None = None
+            else:
+                target = current_hvac
+            await self._async_call_thermal_preset(preset_mode, target)
+            return
+
         await self._async_call_controller_method(
             self.entity_description.set_preset_method_name,
             preset_mode,
         )
+
+    async def _async_call_thermal_preset(
+        self, preset_mode: str, hvac_mode: HVACMode | None
+    ) -> None:
+        """Call set_thermal_preset with an optional hvac_mode argument."""
+        hvac_value: str | None = hvac_mode.value if hvac_mode is not None else None
+
+        async def _invoke(ctrl: BedController) -> None:
+            await ctrl.set_thermal_preset(preset_mode, hvac_mode=hvac_value)  # type: ignore[attr-defined]
+
+        _LOGGER.info(
+            "Climate command requested: set_thermal_preset(%s, hvac_mode=%s) on %s",
+            preset_mode,
+            hvac_value,
+            self._coordinator.name,
+        )
+        await self._coordinator.async_execute_controller_command(_invoke)
 
     async def _async_call_controller_method(self, method_name: str, *args: str) -> None:
         """Execute a controller command method by name."""

@@ -60,24 +60,14 @@ LIGHT_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     setter_name="set_light_timer",
 )
 
-COOLING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
-    key="cooling_timer",
-    translation_key="cooling_timer",
-    icon="mdi:snowflake-clock",
-    required_capability="supports_frosty_climate",
-    options_attr="cooling_timer_options",
-    state_key="frosty_timer_option",
-    setter_name="set_frosty_timer",
-)
-
-HEATING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
-    key="heating_timer",
-    translation_key="heating_timer",
-    icon="mdi:fire-circle",
-    required_capability="supports_heidi_climate",
-    options_attr="heating_timer_options",
-    state_key="heidi_timer_option",
-    setter_name="set_heidi_timer",
+THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
+    key="thermal_timer",
+    translation_key="thermal_timer",
+    icon="mdi:thermometer-lines",
+    required_capability="supports_thermal_climate",
+    options_attr="thermal_timer_options",
+    state_key="thermal_timer_option",
+    setter_name="set_thermal_timer",
 )
 
 FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
@@ -140,8 +130,7 @@ async def async_setup_entry(
     if controller is not None:
         for description in (
             LIGHT_TIMER_DESCRIPTION,
-            COOLING_TIMER_DESCRIPTION,
-            HEATING_TIMER_DESCRIPTION,
+            THERMAL_TIMER_DESCRIPTION,
             FOOTWARMING_TIMER_DESCRIPTION,
         ):
             if not getattr(controller, description.required_capability, False):

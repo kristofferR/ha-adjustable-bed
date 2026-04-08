@@ -48,7 +48,11 @@ _SLEEP_NUMBER_SLEEP_SETTING_MAX = 100
 _SLEEP_NUMBER_SLEEP_SETTING_STEP = 5
 _SLEEP_NUMBER_LIGHT_TIMER_OPTIONS = (0, 15, 30, 45, 60, 120, 180)
 _SLEEP_NUMBER_DEFAULT_LIGHT_TIMER_MINUTES = 15
+# Thermal timer options match the SleepIQ app's FuzionCoolingCapability and
+# FuzionCoreTemperatureCapability: 30 min through 10 hours.
 _SLEEP_NUMBER_THERMAL_TIMER_OPTIONS = (30, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600)
+# Footwarming caps at 6 hours per the SleepIQ app's FuzionFootwarmingCapability.
+_SLEEP_NUMBER_FOOTWARMING_TIMER_OPTIONS = (30, 60, 120, 180, 240, 300, 360)
 _SLEEP_NUMBER_DEFAULT_THERMAL_TIMER_MINUTES = 120
 _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES = (
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -65,25 +69,49 @@ _SLEEP_NUMBER_LIGHT_VALUE_TO_LEVEL = {
 }
 _SLEEP_NUMBER_FOOTWARMING_LEVELS = ("low", "medium", "high")
 _SLEEP_NUMBER_DEFAULT_FOOTWARMING_LEVEL = "low"
-_SLEEP_NUMBER_DEFAULT_FROSTY_MODE = "cooling_pull_low"
-_SLEEP_NUMBER_DEFAULT_HEIDI_MODE = "heating_push_low"
-_SLEEP_NUMBER_FROSTY_MODE_TO_PRESET = {
-    "cooling_pull_low": "low",
-    "cooling_pull_med": "medium",
-    "cooling_pull_high": "high",
-    "cooling_push_high": "boost",
+
+# Backends for the unified thermal climate entity.
+_THERMAL_BACKEND_HEIDI = "heidi"  # Core Temperature Module (THMS) — heat + cool
+_THERMAL_BACKEND_FROSTY = "frosty"  # Cooling Module (CLMS) — cool only
+
+# Frosty (Cooling Module) supports cooling only, 3 presets + off.
+# Authoritative source: com.selectcomfort.bedcontrolframework.cache.thermal.cooling.a$b
+_FROSTY_COOLING_PRESET_TO_MODE = {
+    "low": "cooling_pull_low",
+    "medium": "cooling_pull_med",
+    "high": "cooling_pull_high",
 }
-_SLEEP_NUMBER_FROSTY_PRESET_TO_MODE = {
-    preset: mode for mode, preset in _SLEEP_NUMBER_FROSTY_MODE_TO_PRESET.items()
+_FROSTY_MODE_TO_COOLING_PRESET = {
+    mode: preset for preset, mode in _FROSTY_COOLING_PRESET_TO_MODE.items()
 }
-_SLEEP_NUMBER_HEIDI_MODE_TO_PRESET = {
-    "heating_push_low": "low",
-    "heating_push_med": "medium",
-    "heating_push_high": "high",
+
+# Heidi (Core Temperature Module) supports cooling AND heating, including a
+# SPECIAL_HIGH_COOLING "boost" mode.
+# Authoritative source: com.selectcomfort.bedcontrolframework.cache.thermal.core.a$b
+_HEIDI_COOLING_PRESET_TO_MODE = {
+    "low": "cooling_pull_low",
+    "medium": "cooling_pull_med",
+    "high": "cooling_pull_high",
+    "boost": "cooling_push_high",
 }
-_SLEEP_NUMBER_HEIDI_PRESET_TO_MODE = {
-    preset: mode for mode, preset in _SLEEP_NUMBER_HEIDI_MODE_TO_PRESET.items()
+_HEIDI_MODE_TO_COOLING_PRESET = {
+    mode: preset for preset, mode in _HEIDI_COOLING_PRESET_TO_MODE.items()
 }
+_HEIDI_HEATING_PRESET_TO_MODE = {
+    "low": "heating_push_low",
+    "medium": "heating_push_med",
+    "high": "heating_push_high",
+}
+_HEIDI_MODE_TO_HEATING_PRESET = {
+    mode: preset for preset, mode in _HEIDI_HEATING_PRESET_TO_MODE.items()
+}
+_HEIDI_COOLING_MODES = frozenset(_HEIDI_COOLING_PRESET_TO_MODE.values())
+_HEIDI_HEATING_MODES = frozenset(_HEIDI_HEATING_PRESET_TO_MODE.values())
+
+# HVAC modes used by the unified thermal climate entity.
+_THERMAL_HVAC_OFF = "off"
+_THERMAL_HVAC_COOL = "cool"
+_THERMAL_HVAC_HEAT = "heat"
 
 
 class SleepNumberCommands:
@@ -99,13 +127,18 @@ class SleepNumberCommands:
     GET_UNDERBED_LIGHT_SETTINGS = "UBLG"
     SET_UNDERBED_LIGHT_SETTINGS = "UBLS"
     GET_SLEEP_NUMBER_SETTING = "PSNG"
-    SET_SLEEP_NUMBER_SETTING = "PSNS"
+    # PSNS is "Start Sleep Number Adjustment" in the SleepIQ app: it takes a
+    # target firmness and the bed pumps air asynchronously. We use it as a
+    # fire-and-forget setter; PSNI would interrupt, PSNU polls progress.
+    START_SLEEP_NUMBER_ADJUSTMENT = "PSNS"
     GET_FOOTWARMING_PRESENCE = "FWPG"
     GET_FOOTWARMING_SETTINGS = "FWTG"
     SET_FOOTWARMING_SETTINGS = "FWTS"
+    # Frosty = Cooling Module (cooling only).
     GET_FROSTY_PRESENCE = "CLPG"
     GET_FROSTY_MODE = "CLMG"
     SET_FROSTY_MODE = "CLMS"
+    # Heidi = Core Temperature Module (heat + cool).
     GET_HEIDI_PRESENCE = "THPG"
     GET_HEIDI_MODE = "THMG"
     SET_HEIDI_MODE = "THMS"
@@ -154,12 +187,15 @@ class SleepNumberController(BedController):
         self._frosty_mode = "off"
         self._frosty_timer_minutes = _SLEEP_NUMBER_DEFAULT_THERMAL_TIMER_MINUTES
         self._frosty_remaining_time_minutes = 0
-        self._frosty_last_active_mode = _SLEEP_NUMBER_DEFAULT_FROSTY_MODE
+        # Last active cooling preset name for Frosty resume-on.
+        self._frosty_last_active_preset = "low"
         self._heidi_present = False
         self._heidi_mode = "off"
         self._heidi_timer_minutes = _SLEEP_NUMBER_DEFAULT_THERMAL_TIMER_MINUTES
         self._heidi_remaining_time_minutes = 0
-        self._heidi_last_active_mode = _SLEEP_NUMBER_DEFAULT_HEIDI_MODE
+        # Last active (hvac_mode, preset) for Heidi resume-on.
+        self._heidi_last_active_hvac = _THERMAL_HVAC_HEAT
+        self._heidi_last_active_preset = "low"
 
     @staticmethod
     def _normalize_side(side: str | None) -> str:
@@ -264,39 +300,39 @@ class SleepNumberController(BedController):
         return self._footwarming_present
 
     @property
-    def supports_frosty_climate(self) -> bool:
-        """Return True when Sleep Number cooling is present on the bed."""
-        return self._frosty_present
+    def supports_thermal_climate(self) -> bool:
+        """Return True when either Frosty or Heidi is present on the bed."""
+        return self._frosty_present or self._heidi_present
 
     @property
-    def supports_heidi_climate(self) -> bool:
-        """Return True when Sleep Number heating is present on the bed."""
+    def thermal_supports_heating(self) -> bool:
+        """Return True when the active thermal backend can heat.
+
+        Only Heidi (Core Temperature Module) supports heating; Frosty is
+        cooling-only.
+        """
+        return self._heidi_present
+
+    @property
+    def thermal_supports_boost(self) -> bool:
+        """Return True when the active backend exposes the SPECIAL_HIGH_COOLING boost mode."""
+        # Only Heidi has SPECIAL_HIGH_COOLING in its mode enum.
         return self._heidi_present
 
     @property
     def footwarming_timer_options(self) -> list[str]:
-        """Return available footwarming timer options."""
+        """Return available footwarming timer options (30m – 6h)."""
         if not self.supports_footwarming_climate:
             return []
         return [
             self._format_thermal_timer_option(minutes)
-            for minutes in _SLEEP_NUMBER_THERMAL_TIMER_OPTIONS
+            for minutes in _SLEEP_NUMBER_FOOTWARMING_TIMER_OPTIONS
         ]
 
     @property
-    def cooling_timer_options(self) -> list[str]:
-        """Return available Sleep Number cooling timer options."""
-        if not self.supports_frosty_climate:
-            return []
-        return [
-            self._format_thermal_timer_option(minutes)
-            for minutes in _SLEEP_NUMBER_THERMAL_TIMER_OPTIONS
-        ]
-
-    @property
-    def heating_timer_options(self) -> list[str]:
-        """Return available Sleep Number heating timer options."""
-        if not self.supports_heidi_climate:
+    def thermal_timer_options(self) -> list[str]:
+        """Return available cooling/heating timer options (30m – 10h)."""
+        if not self.supports_thermal_climate:
             return []
         return [
             self._format_thermal_timer_option(minutes)
@@ -380,28 +416,72 @@ class SleepNumberController(BedController):
         }
 
     def get_frosty_state(self) -> dict[str, Any]:
-        """Return the last known Sleep Number cooling state."""
+        """Return the last known Frosty (cooling module) state."""
         return {
             "side": self._side,
             "present": self._frosty_present,
-            "hvac_mode": "cool" if self._frosty_mode != "off" else "off",
-            "preset_mode": _SLEEP_NUMBER_FROSTY_MODE_TO_PRESET.get(self._frosty_mode),
+            "hvac_mode": _THERMAL_HVAC_COOL if self._frosty_mode != "off" else _THERMAL_HVAC_OFF,
+            "preset_mode": _FROSTY_MODE_TO_COOLING_PRESET.get(self._frosty_mode),
             "timer_option": self._format_thermal_timer_option(self._frosty_timer_minutes),
             "remaining_time_minutes": self._frosty_remaining_time_minutes,
             "mode": self._frosty_mode,
         }
 
     def get_heidi_state(self) -> dict[str, Any]:
-        """Return the last known Sleep Number heating state."""
+        """Return the last known Heidi (core temperature module) state."""
+        hvac_mode, preset = self._heidi_hvac_and_preset(self._heidi_mode)
         return {
             "side": self._side,
             "present": self._heidi_present,
-            "hvac_mode": "heat" if self._heidi_mode != "off" else "off",
-            "preset_mode": _SLEEP_NUMBER_HEIDI_MODE_TO_PRESET.get(self._heidi_mode),
+            "hvac_mode": hvac_mode,
+            "preset_mode": preset,
             "timer_option": self._format_thermal_timer_option(self._heidi_timer_minutes),
             "remaining_time_minutes": self._heidi_remaining_time_minutes,
             "mode": self._heidi_mode,
         }
+
+    def get_thermal_state(self) -> dict[str, Any]:
+        """Return the last known unified thermal climate state (heidi-preferred)."""
+        backend = self._thermal_backend
+        if backend == _THERMAL_BACKEND_HEIDI:
+            state = self.get_heidi_state()
+        elif backend == _THERMAL_BACKEND_FROSTY:
+            state = self.get_frosty_state()
+        else:
+            return {
+                "side": self._side,
+                "backend": None,
+                "present": False,
+                "hvac_mode": _THERMAL_HVAC_OFF,
+                "preset_mode": None,
+                "supports_heating": False,
+                "timer_option": self._format_thermal_timer_option(
+                    _SLEEP_NUMBER_DEFAULT_THERMAL_TIMER_MINUTES
+                ),
+                "remaining_time_minutes": 0,
+                "mode": "off",
+            }
+        state["backend"] = backend
+        state["supports_heating"] = backend == _THERMAL_BACKEND_HEIDI
+        return state
+
+    @property
+    def _thermal_backend(self) -> str | None:
+        """Return which thermal module backs the unified climate entity."""
+        if self._heidi_present:
+            return _THERMAL_BACKEND_HEIDI
+        if self._frosty_present:
+            return _THERMAL_BACKEND_FROSTY
+        return None
+
+    @staticmethod
+    def _heidi_hvac_and_preset(raw_mode: str) -> tuple[str, str | None]:
+        """Map a raw Heidi ThermalMode value to (hvac_mode, preset_name)."""
+        if raw_mode in _HEIDI_HEATING_MODES:
+            return _THERMAL_HVAC_HEAT, _HEIDI_MODE_TO_HEATING_PRESET.get(raw_mode)
+        if raw_mode in _HEIDI_COOLING_MODES:
+            return _THERMAL_HVAC_COOL, _HEIDI_MODE_TO_COOLING_PRESET.get(raw_mode)
+        return _THERMAL_HVAC_OFF, None
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Subscribe to bamkey notifications used for responses."""
@@ -607,10 +687,17 @@ class SleepNumberController(BedController):
         return value
 
     async def set_sleep_number_setting(self, value: int) -> None:
-        """Set the configured side's Sleep Number firmness."""
+        """Start a Sleep Number firmness adjustment on the configured side.
+
+        Wire-level this is ``PSNS <side> <target>`` which the SleepIQ app calls
+        "Start Sleep Number Adjustment" — the bed then pumps air asynchronously
+        toward the target. We optimistically publish the target immediately; a
+        future iteration could poll ``PSNU`` for progress and expose ``PSNI``
+        for cancel.
+        """
         normalized = self._normalize_sleep_number_setting(value)
         await self._send_bamkey_command(
-            SleepNumberCommands.SET_SLEEP_NUMBER_SETTING,
+            SleepNumberCommands.START_SLEEP_NUMBER_ADJUSTMENT,
             self._side,
             str(normalized),
         )
@@ -630,7 +717,11 @@ class SleepNumberController(BedController):
         return self.get_footwarming_state()
 
     async def set_footwarming_preset(self, preset: str) -> None:
-        """Set the footwarming level for the configured side."""
+        """Set the footwarming level for the configured side.
+
+        For "off", the SleepIQ app's FuzionFootwarmingCapability preserves the
+        current remaining timer rather than sending 0, so we match that here.
+        """
         level = self._normalize_footwarming_preset(preset)
         timer_minutes = self._footwarming_timer_minutes
         await self._send_bamkey_command(
@@ -653,7 +744,7 @@ class SleepNumberController(BedController):
 
     async def set_footwarming_timer(self, timer_option: str) -> None:
         """Update the footwarming timer."""
-        timer_minutes = self._parse_thermal_timer_option(timer_option)
+        timer_minutes = self._parse_footwarming_timer_option(timer_option)
         self._footwarming_timer_minutes = timer_minutes
         if self._footwarming_level == "off":
             self._publish_footwarming_state()
@@ -661,7 +752,7 @@ class SleepNumberController(BedController):
         await self.set_footwarming_preset(self._footwarming_level)
 
     async def read_frosty_state(self) -> dict[str, Any]:
-        """Read and publish current cooling settings."""
+        """Read and publish current Frosty (cooling module) settings."""
         response = await self._send_bamkey_command(
             SleepNumberCommands.GET_FROSTY_MODE,
             self._side,
@@ -672,38 +763,26 @@ class SleepNumberController(BedController):
         self._store_frosty_state(mode, remaining)
         return self.get_frosty_state()
 
-    async def set_frosty_preset(self, preset: str) -> None:
-        """Set the cooling preset for the configured side."""
-        mode = self._normalize_frosty_preset(preset)
-        timer_minutes = self._frosty_timer_minutes
+    async def _send_frosty_mode(self, raw_mode: str, *, timer_minutes: int) -> None:
+        """Send the CLMS command with a validated ThermalMode value."""
+        normalized = self._normalize_frosty_mode(raw_mode)
         await self._send_bamkey_command(
             SleepNumberCommands.SET_FROSTY_MODE,
             self._side,
-            mode,
+            normalized,
             str(timer_minutes),
         )
-        remaining = timer_minutes if mode != "off" else 0
-        self._store_frosty_state(mode, remaining, selected_timer_minutes=timer_minutes)
-
-    async def turn_frosty_on(self) -> None:
-        """Turn Sleep Number cooling on using the last active preset."""
-        await self.set_frosty_preset(self._frosty_last_active_mode)
-
-    async def turn_frosty_off(self) -> None:
-        """Turn Sleep Number cooling off while preserving the timer."""
-        await self.set_frosty_preset("off")
-
-    async def set_frosty_timer(self, timer_option: str) -> None:
-        """Update the cooling timer."""
-        timer_minutes = self._parse_thermal_timer_option(timer_option)
-        self._frosty_timer_minutes = timer_minutes
-        if self._frosty_mode == "off":
-            self._publish_frosty_state()
-            return
-        await self.set_frosty_preset(self._frosty_mode)
+        # The SleepIQ app sends timer=0 with OFF, so remaining is 0 when we
+        # observe OFF below.
+        remaining = timer_minutes if normalized != "off" else 0
+        self._store_frosty_state(
+            normalized,
+            remaining,
+            selected_timer_minutes=timer_minutes if normalized != "off" else None,
+        )
 
     async def read_heidi_state(self) -> dict[str, Any]:
-        """Read and publish current heating settings."""
+        """Read and publish current Heidi (core temperature module) settings."""
         response = await self._send_bamkey_command(
             SleepNumberCommands.GET_HEIDI_MODE,
             self._side,
@@ -714,35 +793,136 @@ class SleepNumberController(BedController):
         self._store_heidi_state(mode, remaining)
         return self.get_heidi_state()
 
-    async def set_heidi_preset(self, preset: str) -> None:
-        """Set the heating preset for the configured side."""
-        mode = self._normalize_heidi_preset(preset)
-        timer_minutes = self._heidi_timer_minutes
+    async def _send_heidi_mode(self, raw_mode: str, *, timer_minutes: int) -> None:
+        """Send the THMS command with a validated ThermalMode value."""
+        normalized = self._normalize_heidi_mode(raw_mode)
         await self._send_bamkey_command(
             SleepNumberCommands.SET_HEIDI_MODE,
             self._side,
-            mode,
+            normalized,
             str(timer_minutes),
         )
-        remaining = timer_minutes if mode != "off" else 0
-        self._store_heidi_state(mode, remaining, selected_timer_minutes=timer_minutes)
+        remaining = timer_minutes if normalized != "off" else 0
+        self._store_heidi_state(
+            normalized,
+            remaining,
+            selected_timer_minutes=timer_minutes if normalized != "off" else None,
+        )
 
-    async def turn_heidi_on(self) -> None:
-        """Turn Sleep Number heating on using the last active preset."""
-        await self.set_heidi_preset(self._heidi_last_active_mode)
+    async def read_thermal_state(self) -> dict[str, Any]:
+        """Read state from the active thermal backend (heidi preferred)."""
+        backend = self._thermal_backend
+        if backend == _THERMAL_BACKEND_HEIDI:
+            await self.read_heidi_state()
+        elif backend == _THERMAL_BACKEND_FROSTY:
+            await self.read_frosty_state()
+        return self.get_thermal_state()
 
-    async def turn_heidi_off(self) -> None:
-        """Turn Sleep Number heating off while preserving the timer."""
-        await self.set_heidi_preset("off")
+    async def set_thermal_preset(self, preset: str, hvac_mode: str | None = None) -> None:
+        """Set the unified thermal climate preset for the active backend.
 
-    async def set_heidi_timer(self, timer_option: str) -> None:
-        """Update the heating timer."""
-        timer_minutes = self._parse_thermal_timer_option(timer_option)
-        self._heidi_timer_minutes = timer_minutes
-        if self._heidi_mode == "off":
-            self._publish_heidi_state()
+        The preset must be one of low/medium/high (or boost for Heidi cooling).
+        ``hvac_mode`` selects heat vs cool on Heidi beds; it is ignored on
+        Frosty beds (which can only cool). Pass preset "off" to turn off.
+        """
+        backend = self._thermal_backend
+        if backend is None:
+            raise ValueError("No thermal module present on this Sleep Number bed")
+
+        normalized_preset = preset.strip().lower()
+        if normalized_preset == "off":
+            # Per the SleepIQ app's FuzionCoolingCapability/
+            # FuzionCoreTemperatureCapability, the cooling and core-temperature
+            # modules are turned off with timer=0.
+            if backend == _THERMAL_BACKEND_HEIDI:
+                await self._send_heidi_mode("off", timer_minutes=0)
+            else:
+                await self._send_frosty_mode("off", timer_minutes=0)
             return
-        await self.set_heidi_preset(self._heidi_mode)
+
+        if backend == _THERMAL_BACKEND_HEIDI:
+            target_hvac = (hvac_mode or self._heidi_last_active_hvac).strip().lower()
+            if target_hvac == _THERMAL_HVAC_HEAT:
+                if normalized_preset not in _HEIDI_HEATING_PRESET_TO_MODE:
+                    raise ValueError(
+                        f"Unsupported Sleep Number heating preset: {preset}"
+                    )
+                raw_mode = _HEIDI_HEATING_PRESET_TO_MODE[normalized_preset]
+            elif target_hvac == _THERMAL_HVAC_COOL:
+                if normalized_preset not in _HEIDI_COOLING_PRESET_TO_MODE:
+                    raise ValueError(
+                        f"Unsupported Sleep Number cooling preset: {preset}"
+                    )
+                raw_mode = _HEIDI_COOLING_PRESET_TO_MODE[normalized_preset]
+            else:
+                raise ValueError(
+                    f"Unsupported Sleep Number thermal hvac mode: {hvac_mode}"
+                )
+            self._heidi_last_active_hvac = target_hvac
+            self._heidi_last_active_preset = normalized_preset
+            await self._send_heidi_mode(raw_mode, timer_minutes=self._heidi_timer_minutes)
+            return
+
+        # Frosty (cooling-only)
+        if hvac_mode is not None and hvac_mode.strip().lower() == _THERMAL_HVAC_HEAT:
+            raise ValueError(
+                "Frosty (cooling module) cannot heat; only Heidi supports heating"
+            )
+        if normalized_preset not in _FROSTY_COOLING_PRESET_TO_MODE:
+            raise ValueError(
+                f"Unsupported Sleep Number frosty preset: {preset}"
+            )
+        self._frosty_last_active_preset = normalized_preset
+        await self._send_frosty_mode(
+            _FROSTY_COOLING_PRESET_TO_MODE[normalized_preset],
+            timer_minutes=self._frosty_timer_minutes,
+        )
+
+    async def turn_thermal_on(self) -> None:
+        """Turn the unified thermal climate on using the last active preset."""
+        backend = self._thermal_backend
+        if backend is None:
+            raise ValueError("No thermal module present on this Sleep Number bed")
+        if backend == _THERMAL_BACKEND_HEIDI:
+            await self.set_thermal_preset(
+                self._heidi_last_active_preset,
+                hvac_mode=self._heidi_last_active_hvac,
+            )
+            return
+        await self.set_thermal_preset(self._frosty_last_active_preset)
+
+    async def turn_thermal_off(self) -> None:
+        """Turn the unified thermal climate off (sends timer=0)."""
+        backend = self._thermal_backend
+        if backend is None:
+            return
+        await self.set_thermal_preset("off")
+
+    async def set_thermal_timer(self, timer_option: str) -> None:
+        """Update the cooling/heating timer on the active backend.
+
+        If the backend is currently running, the new timer is re-applied via
+        SET to restart the countdown, matching the SleepIQ app's behaviour.
+        """
+        backend = self._thermal_backend
+        if backend is None:
+            return
+        timer_minutes = self._parse_thermal_timer_option(timer_option)
+        if backend == _THERMAL_BACKEND_HEIDI:
+            self._heidi_timer_minutes = timer_minutes
+            if self._heidi_mode == "off":
+                self._publish_heidi_state()
+                self._publish_thermal_state()
+                return
+            await self._send_heidi_mode(self._heidi_mode, timer_minutes=timer_minutes)
+            return
+        # frosty
+        self._frosty_timer_minutes = timer_minutes
+        if self._frosty_mode == "off":
+            self._publish_frosty_state()
+            self._publish_thermal_state()
+            return
+        await self._send_frosty_mode(self._frosty_mode, timer_minutes=timer_minutes)
 
     async def preset_flat(self) -> None:
         await self._send_preset(SleepNumberPresets.FLAT)
@@ -972,9 +1152,10 @@ class SleepNumberController(BedController):
         )
 
     def _store_frosty_present(self, present: bool) -> None:
-        """Persist and publish Sleep Number cooling presence."""
+        """Persist and publish Frosty (cooling module) presence."""
         self._frosty_present = present
         self.forward_controller_state_update("frosty_present", present)
+        self._publish_thermal_state()
 
     def _store_frosty_state(
         self,
@@ -983,7 +1164,7 @@ class SleepNumberController(BedController):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish Sleep Number cooling state."""
+        """Persist and publish Frosty (cooling module) state."""
         self._frosty_mode = mode
         self._frosty_remaining_time_minutes = remaining_minutes
         if selected_timer_minutes is not None:
@@ -991,16 +1172,22 @@ class SleepNumberController(BedController):
         elif remaining_minutes > 0:
             self._frosty_timer_minutes = remaining_minutes
         if mode != "off":
-            self._frosty_last_active_mode = mode
+            preset = _FROSTY_MODE_TO_COOLING_PRESET.get(mode)
+            if preset is not None:
+                self._frosty_last_active_preset = preset
         self._publish_frosty_state()
+        self._publish_thermal_state()
 
     def _publish_frosty_state(self) -> None:
-        """Publish the cached Sleep Number cooling state."""
+        """Publish the cached Frosty state under the legacy keys."""
+        preset = _FROSTY_MODE_TO_COOLING_PRESET.get(self._frosty_mode)
         self.forward_controller_state_updates(
             {
                 "frosty_present": self._frosty_present,
-                "frosty_hvac_mode": "cool" if self._frosty_mode != "off" else "off",
-                "frosty_preset": _SLEEP_NUMBER_FROSTY_MODE_TO_PRESET.get(self._frosty_mode),
+                "frosty_hvac_mode": (
+                    _THERMAL_HVAC_COOL if self._frosty_mode != "off" else _THERMAL_HVAC_OFF
+                ),
+                "frosty_preset": preset,
                 "frosty_mode": self._frosty_mode,
                 "frosty_remaining_time_minutes": self._frosty_remaining_time_minutes,
                 "frosty_timer_option": self._format_thermal_timer_option(
@@ -1010,9 +1197,10 @@ class SleepNumberController(BedController):
         )
 
     def _store_heidi_present(self, present: bool) -> None:
-        """Persist and publish Sleep Number heating presence."""
+        """Persist and publish Heidi (core temperature module) presence."""
         self._heidi_present = present
         self.forward_controller_state_update("heidi_present", present)
+        self._publish_thermal_state()
 
     def _store_heidi_state(
         self,
@@ -1021,7 +1209,7 @@ class SleepNumberController(BedController):
         *,
         selected_timer_minutes: int | None = None,
     ) -> None:
-        """Persist and publish Sleep Number heating state."""
+        """Persist and publish Heidi (core temperature module) state."""
         self._heidi_mode = mode
         self._heidi_remaining_time_minutes = remaining_minutes
         if selected_timer_minutes is not None:
@@ -1029,21 +1217,75 @@ class SleepNumberController(BedController):
         elif remaining_minutes > 0:
             self._heidi_timer_minutes = remaining_minutes
         if mode != "off":
-            self._heidi_last_active_mode = mode
+            hvac_mode, preset = self._heidi_hvac_and_preset(mode)
+            if preset is not None:
+                self._heidi_last_active_hvac = hvac_mode
+                self._heidi_last_active_preset = preset
         self._publish_heidi_state()
+        self._publish_thermal_state()
 
     def _publish_heidi_state(self) -> None:
-        """Publish the cached Sleep Number heating state."""
+        """Publish the cached Heidi state under the legacy keys."""
+        hvac_mode, preset = self._heidi_hvac_and_preset(self._heidi_mode)
         self.forward_controller_state_updates(
             {
                 "heidi_present": self._heidi_present,
-                "heidi_hvac_mode": "heat" if self._heidi_mode != "off" else "off",
-                "heidi_preset": _SLEEP_NUMBER_HEIDI_MODE_TO_PRESET.get(self._heidi_mode),
+                "heidi_hvac_mode": hvac_mode,
+                "heidi_preset": preset,
                 "heidi_mode": self._heidi_mode,
                 "heidi_remaining_time_minutes": self._heidi_remaining_time_minutes,
                 "heidi_timer_option": self._format_thermal_timer_option(
                     self._heidi_timer_minutes
                 ),
+            }
+        )
+
+    def _publish_thermal_state(self) -> None:
+        """Publish unified thermal climate state from the active backend."""
+        backend = self._thermal_backend
+        if backend is None:
+            self.forward_controller_state_updates(
+                {
+                    "thermal_backend": None,
+                    "thermal_present": False,
+                    "thermal_hvac_mode": _THERMAL_HVAC_OFF,
+                    "thermal_preset": None,
+                    "thermal_mode": "off",
+                    "thermal_remaining_time_minutes": 0,
+                    "thermal_timer_option": self._format_thermal_timer_option(
+                        _SLEEP_NUMBER_DEFAULT_THERMAL_TIMER_MINUTES
+                    ),
+                    "thermal_supports_heating": False,
+                }
+            )
+            return
+
+        if backend == _THERMAL_BACKEND_HEIDI:
+            raw_mode = self._heidi_mode
+            timer_minutes = self._heidi_timer_minutes
+            remaining = self._heidi_remaining_time_minutes
+            hvac_mode, preset = self._heidi_hvac_and_preset(raw_mode)
+            supports_heating = True
+        else:  # frosty
+            raw_mode = self._frosty_mode
+            timer_minutes = self._frosty_timer_minutes
+            remaining = self._frosty_remaining_time_minutes
+            hvac_mode = (
+                _THERMAL_HVAC_COOL if raw_mode != "off" else _THERMAL_HVAC_OFF
+            )
+            preset = _FROSTY_MODE_TO_COOLING_PRESET.get(raw_mode)
+            supports_heating = False
+
+        self.forward_controller_state_updates(
+            {
+                "thermal_backend": backend,
+                "thermal_present": True,
+                "thermal_hvac_mode": hvac_mode,
+                "thermal_preset": preset,
+                "thermal_mode": raw_mode,
+                "thermal_remaining_time_minutes": remaining,
+                "thermal_timer_option": self._format_thermal_timer_option(timer_minutes),
+                "thermal_supports_heating": supports_heating,
             }
         )
 
@@ -1463,39 +1705,31 @@ class SleepNumberController(BedController):
 
     @staticmethod
     def _normalize_frosty_mode(value: str) -> str:
-        """Normalize a raw Sleep Number cooling mode."""
+        """Normalize a raw Frosty (cooling module) mode string.
+
+        The Cooling Module only supports 4 modes: off, cooling_pull_low,
+        cooling_pull_med, cooling_pull_high.
+        """
         normalized = value.strip().lower()
-        if normalized == "off" or normalized in _SLEEP_NUMBER_FROSTY_MODE_TO_PRESET:
+        if normalized == "off" or normalized in _FROSTY_COOLING_PRESET_TO_MODE.values():
             return normalized
         raise ValueError(f"Unsupported Sleep Number frosty mode: {value}")
 
     @staticmethod
-    def _normalize_frosty_preset(value: str) -> str:
-        """Normalize a cooling preset into the raw bamkey thermal mode."""
-        normalized = value.strip().lower()
-        if normalized == "off":
-            return normalized
-        if normalized in _SLEEP_NUMBER_FROSTY_PRESET_TO_MODE:
-            return _SLEEP_NUMBER_FROSTY_PRESET_TO_MODE[normalized]
-        return SleepNumberController._normalize_frosty_mode(normalized)
-
-    @staticmethod
     def _normalize_heidi_mode(value: str) -> str:
-        """Normalize a raw Sleep Number heating mode."""
+        """Normalize a raw Heidi (core temperature module) mode string.
+
+        Heidi supports off, cooling_pull_* (low/med/high), cooling_push_high,
+        and heating_push_* (low/med/high).
+        """
         normalized = value.strip().lower()
-        if normalized == "off" or normalized in _SLEEP_NUMBER_HEIDI_MODE_TO_PRESET:
+        if (
+            normalized == "off"
+            or normalized in _HEIDI_COOLING_MODES
+            or normalized in _HEIDI_HEATING_MODES
+        ):
             return normalized
         raise ValueError(f"Unsupported Sleep Number heidi mode: {value}")
-
-    @staticmethod
-    def _normalize_heidi_preset(value: str) -> str:
-        """Normalize a heating preset into the raw bamkey thermal mode."""
-        normalized = value.strip().lower()
-        if normalized == "off":
-            return normalized
-        if normalized in _SLEEP_NUMBER_HEIDI_PRESET_TO_MODE:
-            return _SLEEP_NUMBER_HEIDI_PRESET_TO_MODE[normalized]
-        return SleepNumberController._normalize_heidi_mode(normalized)
 
     @staticmethod
     def _format_light_timer_option(minutes: int) -> str:
@@ -1542,14 +1776,28 @@ class SleepNumberController(BedController):
 
     @staticmethod
     def _parse_thermal_timer_option(timer_option: str) -> int:
-        """Parse a Home Assistant thermal timer option into minutes."""
+        """Parse a Home Assistant cooling/heating timer option into minutes."""
+        return SleepNumberController._parse_timer_option_from(
+            timer_option, _SLEEP_NUMBER_THERMAL_TIMER_OPTIONS
+        )
+
+    @staticmethod
+    def _parse_footwarming_timer_option(timer_option: str) -> int:
+        """Parse a Home Assistant footwarming timer option into minutes."""
+        return SleepNumberController._parse_timer_option_from(
+            timer_option, _SLEEP_NUMBER_FOOTWARMING_TIMER_OPTIONS
+        )
+
+    @staticmethod
+    def _parse_timer_option_from(timer_option: str, options: tuple[int, ...]) -> int:
+        """Parse a timer display string against a specific set of allowed values."""
         normalized = timer_option.strip().lower()
         if normalized == "off":
             return 0
         option_map = {
             SleepNumberController._format_thermal_timer_option(minutes).lower(): minutes
-            for minutes in _SLEEP_NUMBER_THERMAL_TIMER_OPTIONS
+            for minutes in options
         }
         if normalized in option_map:
             return option_map[normalized]
-        raise ValueError(f"Unsupported Sleep Number thermal timer option: {timer_option}")
+        raise ValueError(f"Unsupported Sleep Number timer option: {timer_option}")

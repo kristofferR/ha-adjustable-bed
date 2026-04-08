@@ -170,24 +170,44 @@ The integration exposes a `Sleep Number Setting` number entity for the configure
 
 ### Climate / Thermal Controls
 
+The SleepIQ app internally names the two thermal hardware modules **Frosty**
+(the "Cooling Module", cooling-only) and **Heidi** (the "Core Temperature
+Module", which supports both heating *and* cooling). Only one is typically
+present on a given bed; Heidi is the more modern superset.
+
 | Action | Command |
 |--------|---------|
 | Check footwarming presence | `FWPG <side>` |
 | Read footwarming state | `FWTG <side>` |
 | Set footwarming level/timer | `FWTS <side> <off\|low\|medium\|high> <minutes>` |
-| Check cooling presence | `CLPG <side>` |
-| Read cooling mode | `CLMG <side>` |
-| Set cooling mode/timer | `CLMS <side> <mode> <minutes>` |
-| Check heating presence | `THPG <side>` |
-| Read heating mode | `THMG <side>` |
-| Set heating mode/timer | `THMS <side> <mode> <minutes>` |
+| Check cooling-module (Frosty) presence | `CLPG <side>` |
+| Read cooling-module mode | `CLMG <side>` |
+| Set cooling-module mode/timer | `CLMS <side> <mode> <minutes>` |
+| Check core-temperature-module (Heidi) presence | `THPG <side>` |
+| Read core-temperature-module mode | `THMG <side>` |
+| Set core-temperature-module mode/timer | `THMS <side> <mode> <minutes>` |
 
-The integration exposes:
+Mode values come from the SleepIQ app's `ThermalMode` enum:
 
-- a `Cooling` climate entity with `low`, `medium`, `high`, and `boost` presets
-- a `Heating` climate entity with `low`, `medium`, and `high` presets
-- a `Footwarming` climate entity with `low`, `medium`, and `high` presets
-- `Cooling Timer`, `Heating Timer`, and `Footwarming Timer` selects with `30 min` through `10 hr`
+- `off`
+- `cooling_pull_low`, `cooling_pull_med`, `cooling_pull_high` — Frosty + Heidi
+- `cooling_push_high` — Heidi only (exposed as the `boost` preset)
+- `heating_push_low`, `heating_push_med`, `heating_push_high` — Heidi only
+
+Turning Frosty or Heidi off sends `timer=0` to match the SleepIQ app's
+behaviour. Footwarming keeps the current remaining timer when turned off, also
+matching the app.
+
+The integration exposes a single unified `Climate` climate entity that
+routes to whichever module the bed has, plus a separate `Footwarming` climate
+entity:
+
+- `Climate`
+  - HVAC modes: `off`, `cool`, and (Heidi only) `heat`
+  - Preset modes: `low`, `medium`, `high`, and (Heidi only) `boost`
+- `Footwarming` climate entity with `low`, `medium`, and `high` presets
+- `Climate Timer` select (`30 min` through `10 hr`) and `Footwarming Timer`
+  select (`30 min` through `6 hr`)
 
 ## Notes
 

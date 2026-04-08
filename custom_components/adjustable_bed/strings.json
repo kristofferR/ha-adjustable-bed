@@ -579,11 +579,8 @@
       "light_timer": {
         "name": "Light Timer"
       },
-      "cooling_timer": {
-        "name": "Cooling Timer"
-      },
-      "heating_timer": {
-        "name": "Heating Timer"
+      "thermal_timer": {
+        "name": "Climate Timer"
       },
       "footwarming_timer": {
         "name": "Footwarming Timer"
@@ -596,11 +593,8 @@
       }
     },
     "climate": {
-      "cooling_climate": {
-        "name": "Cooling"
-      },
-      "heating_climate": {
-        "name": "Heating"
+      "sleep_number_thermal_climate": {
+        "name": "Climate"
       },
       "footwarming_climate": {
         "name": "Footwarming"

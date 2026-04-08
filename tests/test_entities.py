@@ -428,11 +428,7 @@ class TestSleepNumberEntities:
         assert hass.states.get(right_presence_entity_id) is None
 
         assert (
-            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_cooling_timer")
-            is not None
-        )
-        assert (
-            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_heating_timer")
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_thermal_timer")
             is not None
         )
         assert (
@@ -442,26 +438,26 @@ class TestSleepNumberEntities:
             is not None
         )
 
-        cooling_entity_id = registry.async_get_entity_id(
+        thermal_entity_id = registry.async_get_entity_id(
             "climate",
             DOMAIN,
-            "AA:BB:CC:DD:EE:41_cooling_climate",
-        )
-        heating_entity_id = registry.async_get_entity_id(
-            "climate",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_heating_climate",
+            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate",
         )
         footwarming_entity_id = registry.async_get_entity_id(
             "climate",
             DOMAIN,
             "AA:BB:CC:DD:EE:41_footwarming_climate",
         )
-        assert cooling_entity_id is not None
-        assert heating_entity_id is not None
+        assert thermal_entity_id is not None
         assert footwarming_entity_id is not None
-        assert hass.states.get(cooling_entity_id).state == "cool"
-        assert hass.states.get(heating_entity_id).state == "heat"
+        # The mock bed has Heidi present with heating_push_low active, so the
+        # unified thermal entity should report heating.
+        thermal_state = hass.states.get(thermal_entity_id)
+        assert thermal_state.state == "heat"
+        assert thermal_state.attributes["backend"] == "heidi"
+        assert "cool" in thermal_state.attributes["hvac_modes"]
+        assert "heat" in thermal_state.attributes["hvac_modes"]
+        assert "boost" in thermal_state.attributes["preset_modes"]
         assert hass.states.get(footwarming_entity_id).state == "heat"
 
     async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(

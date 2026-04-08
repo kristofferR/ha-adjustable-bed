@@ -123,8 +123,14 @@ class TestSleepNumberController:
         assert coordinator.controller_state["light_level"] == 3
         assert coordinator.controller_state["light_timer_option"] == "15 min"
         assert coordinator.controller_state["sleep_number"] == 45
+        # Both Frosty (cooling) and Heidi (core temperature) modules are
+        # present in the mock, so Heidi wins as the thermal backend and
+        # reports heat because the mock currently has heating_push_low active.
         assert coordinator.controller_state["frosty_hvac_mode"] == "cool"
         assert coordinator.controller_state["heidi_hvac_mode"] == "heat"
+        assert coordinator.controller_state["thermal_backend"] == "heidi"
+        assert coordinator.controller_state["thermal_hvac_mode"] == "heat"
+        assert coordinator.controller_state["thermal_supports_heating"] is True
         assert coordinator.controller_state["footwarming_hvac_mode"] == "heat"
 
     async def test_disables_position_polling_during_commands(
@@ -428,28 +434,208 @@ class TestSleepNumberController:
         )
         assert coordinator.controller._coordinator.controller_state["sleep_number"] == 45
 
-    async def test_set_frosty_preset_updates_cooling_state(
+    async def test_set_thermal_preset_uses_heidi_for_cooling_when_present(
         self,
         sleep_number_coordinator,
     ) -> None:
-        """Cooling preset writes should map Home Assistant presets to bamkey thermal modes."""
+        """On a Heidi-capable bed, thermal cooling presets should go through THMS."""
         coordinator = await sleep_number_coordinator(
             address="AA:BB:CC:DD:EE:39",
             name="Smart bed 0074FF",
-            entry_id="sleep_number_frosty",
+            entry_id="sleep_number_thermal_heidi_cool",
         )
         coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
 
-        await coordinator.controller.set_frosty_preset("boost")
+        await coordinator.controller.set_thermal_preset("high", hvac_mode="cool")
 
         coordinator.controller._send_bamkey_command.assert_awaited_once_with(
-            "CLMS",
+            "THMS",
+            "left",
+            "cooling_pull_high",
+            "120",
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_backend"]
+            == "heidi"
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_preset"]
+            == "high"
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_hvac_mode"]
+            == "cool"
+        )
+
+    async def test_set_thermal_preset_boost_uses_special_high_cooling(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Heidi's boost preset should map to SPECIAL_HIGH_COOLING via THMS."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3A",
+            name="Smart bed 00750A",
+            entry_id="sleep_number_thermal_heidi_boost",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_thermal_preset("boost", hvac_mode="cool")
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "THMS",
             "left",
             "cooling_push_high",
             "120",
         )
-        assert coordinator.controller._coordinator.controller_state["frosty_preset"] == "boost"
-        assert coordinator.controller._coordinator.controller_state["frosty_hvac_mode"] == "cool"
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_preset"]
+            == "boost"
+        )
+
+    async def test_set_thermal_preset_heating_uses_heidi(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Heidi should accept heating presets via THMS."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3B",
+            name="Smart bed 00750B",
+            entry_id="sleep_number_thermal_heidi_heat",
+        )
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_thermal_preset("medium", hvac_mode="heat")
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "THMS",
+            "left",
+            "heating_push_med",
+            "120",
+        )
+        assert (
+            coordinator.controller._coordinator.controller_state["thermal_hvac_mode"]
+            == "heat"
+        )
+
+    async def test_turn_thermal_off_sends_zero_timer(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Turning the thermal module off must send timer=0 to match the SleepIQ app."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3C",
+            name="Smart bed 00750C",
+            entry_id="sleep_number_thermal_off",
+        )
+        # Pre-set a non-zero cached timer to prove we don't reuse it for off.
+        coordinator.controller._heidi_timer_minutes = 240
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.turn_thermal_off()
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "THMS",
+            "left",
+            "off",
+            "0",
+        )
+
+    async def test_frosty_only_bed_rejects_heating_preset(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """On a Frosty-only bed, heating presets should raise ValueError."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3D",
+            name="Smart bed 00750D",
+            entry_id="sleep_number_frosty_only",
+        )
+        # Simulate a bed where only the Cooling Module is present.
+        coordinator.controller._heidi_present = False
+        coordinator.controller._frosty_present = True
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        with pytest.raises(ValueError):
+            await coordinator.controller.set_thermal_preset("low", hvac_mode="heat")
+
+        coordinator.controller._send_bamkey_command.assert_not_awaited()
+
+    async def test_frosty_only_bed_cooling_routes_to_clms(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """On a Frosty-only bed, cooling presets should go through CLMS."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3E",
+            name="Smart bed 00750E",
+            entry_id="sleep_number_frosty_only_cool",
+        )
+        coordinator.controller._heidi_present = False
+        coordinator.controller._frosty_present = True
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.set_thermal_preset("low")
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "CLMS",
+            "left",
+            "cooling_pull_low",
+            "120",
+        )
+
+    async def test_footwarming_off_preserves_timer(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Footwarming off must KEEP the cached timer, matching the SleepIQ app."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3F",
+            name="Smart bed 00750F",
+            entry_id="sleep_number_footwarming_off",
+        )
+        coordinator.controller._footwarming_timer_minutes = 180
+        coordinator.controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await coordinator.controller.turn_footwarming_off()
+
+        coordinator.controller._send_bamkey_command.assert_awaited_once_with(
+            "FWTS",
+            "left",
+            "off",
+            "180",
+        )
+
+    async def test_footwarming_timer_options_cap_at_six_hours(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Footwarming timer options must stop at 6h per FuzionFootwarmingCapability."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:40",
+            name="Smart bed 007510",
+            entry_id="sleep_number_footwarming_timer_options",
+        )
+        options = coordinator.controller.footwarming_timer_options
+        assert "30 min" in options
+        assert "6 hr" in options
+        # 7h / 8h / 9h / 10h belong to the thermal (cooling/heidi) range only.
+        assert "7 hr" not in options
+        assert "10 hr" not in options
+
+    async def test_thermal_timer_options_span_ten_hours(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """Thermal (cooling/heating) timer options must go up to 10h."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:42",
+            name="Smart bed 007512",
+            entry_id="sleep_number_thermal_timer_options",
+        )
+        options = coordinator.controller.thermal_timer_options
+        assert "30 min" in options
+        assert "4 hr" in options
+        assert "10 hr" in options
 
     async def test_preset_zero_g_uses_fuzion_preset_name(
         self,
