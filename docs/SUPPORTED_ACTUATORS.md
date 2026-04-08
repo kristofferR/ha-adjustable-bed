@@ -99,8 +99,6 @@ If you have one of these beds, consider running [smartbed-mqtt](https://github.c
 These beds have their own dedicated integrations:
 - **Eight Sleep** — Use the [Eight Sleep](https://github.com/lukas-clarke/eight_sleep) integration
 
-Sleep Number BLE bases are supported by this integration. See [Sleep Number](beds/sleep_number.md) for the current feature set, supported protocol families, and pairing notes.
-
 ---
 
 ## Identifying Your Bed Type

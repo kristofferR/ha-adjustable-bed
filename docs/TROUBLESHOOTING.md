@@ -243,7 +243,7 @@ Some beds require Bluetooth pairing before they can be controlled.
    - Go to Bluetooth settings
    - Find the bed and click "Pair"
 
-Sleep Number Climate 360 / FlexFit Fuzion bases typically enter pairing mode by holding the side pairing button until the blue light blinks. Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds usually do not need OS-level pairing for basic BLE control.
+Sleep Number Climate 360 / FlexFit Fuzion bases enter pairing mode by holding the side pairing button until the blue light blinks. Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds do not need OS-level pairing.
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work

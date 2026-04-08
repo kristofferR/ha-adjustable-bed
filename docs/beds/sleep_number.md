@@ -1,8 +1,8 @@
 # Sleep Number
 
-**Status:** Needs testing
+**Status:** Supported
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 
 ## Known Models
 
@@ -42,8 +42,7 @@ For Fuzion bases, enter pairing mode by holding the side pairing button until th
 | Under Bed Lights | ✅ |
 | Sleep Number Setting | ✅ |
 | Presence Detection | ✅ (left/right polling sensors, disabled by default) |
-| Cooling / Frosty | ✅ |
-| Heating / Heidi | ✅ |
+| Climate (cool/heat) | ✅ — unified entity, heating only on Heidi-equipped beds |
 | Footwarming | ✅ |
 
 ### BAM / MCR (older i8 / 360 FlexFit 2)
@@ -157,7 +156,7 @@ The integration exposes:
 |--------|---------|
 | Read occupancy | `BAMG [{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]` |
 
-The integration exposes `Left Bed Presence` and `Right Bed Presence` binary sensors. Both are disabled by default because they require active polling over BLE.
+The integration exposes `Left Bed Presence` and `Right Bed Presence` binary sensors, plus a legacy `Bed Presence` alias mirroring the configured side for backwards compatibility. All three are disabled by default because they require active polling over BLE.
 
 ### Sleep Number Setting
 
