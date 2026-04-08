@@ -120,6 +120,17 @@ _THERMAL_HVAC_COOL = "cool"
 _THERMAL_HVAC_HEAT = "heat"
 
 
+class BamkeyNotSupportedError(ValueError):
+    """Raised when the bed firmware reports a bamkey as unknown (``FAIL:0``).
+
+    This is the only failure mode that means "feature absent" — other
+    ``ValueError`` subclasses (malformed payload, generic protocol errors,
+    CRC failures, etc.) are transient protocol errors that should NOT be
+    interpreted as a permanent absence and should bubble up so that the
+    connect cycle can retry on the next attempt.
+    """
+
+
 class SleepNumberCommands:
     """Fuzion bamkey command names used by Adjustable Bed support."""
 
@@ -1172,16 +1183,18 @@ class SleepNumberController(BedController):
     ) -> None:
         """Query a presence-gated optional Sleep Number feature.
 
-        Only protocol-level rejections (``ValueError``: e.g. unknown bamkey or
-        unparseable payload) are interpreted as "feature absent". Transport
-        failures (``BleakError`` / ``ConnectionError`` / ``TimeoutError``) are
-        re-raised so the connect cycle can retry — otherwise a single flaky
-        BLE read on first connect would suppress the entity for the entire
-        session.
+        Only ``BamkeyNotSupportedError`` (the bed firmware replied
+        ``FAIL:0 unknown bamkey``) is interpreted as "feature absent". All
+        other ``ValueError`` subclasses represent malformed payloads or
+        generic protocol errors that may be transient, and transport
+        failures (``BleakError`` / ``ConnectionError`` / ``TimeoutError``)
+        are treated as retryable — both propagate so the connect cycle
+        can retry on the next attempt instead of suppressing the entity
+        for the entire session.
         """
         try:
             present = await self._read_feature_presence(presence_bamkey)
-        except ValueError:
+        except BamkeyNotSupportedError:
             _LOGGER.debug(
                 "Sleep Number optional feature %s reported as unsupported by the bed",
                 presence_bamkey,
@@ -1196,9 +1209,9 @@ class SleepNumberController(BedController):
 
         try:
             await read_state()
-        except ValueError:
+        except BamkeyNotSupportedError:
             _LOGGER.debug(
-                "Sleep Number optional feature %s state query returned an unexpected payload",
+                "Sleep Number optional feature %s state read is unsupported by the bed",
                 presence_bamkey,
                 exc_info=True,
             )
@@ -1626,7 +1639,9 @@ class SleepNumberController(BedController):
         elif response.startswith("PASS:"):
             payload = response.removeprefix("PASS:").strip()
         elif response.startswith("FAIL:0"):
-            raise ValueError(f"{bamkey} failed: unknown bamkey")
+            # FAIL:0 = unknown bamkey. The bed firmware does not implement
+            # this command, so the caller can treat this as "feature absent".
+            raise BamkeyNotSupportedError(f"{bamkey} failed: unknown bamkey")
         elif response.startswith("FAIL:1"):
             raise TimeoutError(f"{bamkey} failed: device timeout")
         elif response.startswith("FAIL:2"):

@@ -62,6 +62,12 @@ _SIDE_NAME_TO_VALUE: Final[dict[str, int]] = {
     "right": _MCR_SIDE_RIGHT,
 }
 
+# Seconds to cache a bed-presence result from _async_read_chamber_types.
+# The legacy + per-side binary sensors each poll on their own update cycle
+# but ``_async_read_chamber_types`` already refreshes both sides at once,
+# so rapid follow-up polls within this window return the cached state.
+_BED_PRESENCE_POLL_TTL_SECONDS: Final = 5.0
+
 
 @dataclass(slots=True)
 class _McrFrame:
@@ -122,6 +128,12 @@ class SleepNumberMcrController(BedController):
         self._under_bed_lights_on: bool | None = None
         self._bed_presence: dict[str, str | None] = {"left": None, "right": None}
         self._occupancy_supported = False
+        # Lock + TTL for dedup across the legacy + per-side bed-presence
+        # binary sensors: each polls on its own update cycle and
+        # _async_read_chamber_types already refreshes both sides in one
+        # BAM/MCR query.
+        self._bed_presence_lock = asyncio.Lock()
+        self._bed_presence_last_poll_monotonic: float = 0.0
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -331,13 +343,46 @@ class SleepNumberMcrController(BedController):
         await self._async_set_underbed_light(False)
 
     async def read_bed_presence(self) -> bool | None:
-        """Return the left-side occupancy when chamber occupancy is available."""
+        """Return the left-side occupancy when chamber occupancy is available.
+
+        Always issues a fresh BAM/MCR chamber-type read. Entity polling
+        should prefer ``read_bed_presence_cached`` below, which wraps this
+        with a TTL cache so the legacy + per-side binary sensors don't
+        double-poll.
+        """
         if not self._occupancy_supported:
             return None
 
         await self._async_initialize_session()
         await self._async_read_chamber_types()
+        self._bed_presence_last_poll_monotonic = asyncio.get_running_loop().time()
+        return self._left_presence_bool()
 
+    async def read_bed_presence_cached(self) -> bool | None:
+        """Read bed presence with a short TTL cache for entity polling.
+
+        Home Assistant polls the legacy ``bed_presence`` sensor alongside
+        the new per-side sensors on their own update cycles. One
+        ``_async_read_chamber_types`` call already refreshes both sides,
+        so rapid follow-up polls inside the TTL window return the cached
+        state rather than re-issuing the BAM/MCR query. This mirrors the
+        Fuzion controller's behaviour.
+        """
+        if not self._occupancy_supported:
+            return None
+
+        async with self._bed_presence_lock:
+            now = asyncio.get_running_loop().time()
+            if (
+                self._bed_presence["left"] is not None
+                and now - self._bed_presence_last_poll_monotonic
+                < _BED_PRESENCE_POLL_TTL_SECONDS
+            ):
+                return self._left_presence_bool()
+            return await self.read_bed_presence()
+
+    def _left_presence_bool(self) -> bool | None:
+        """Normalize the cached left-side presence state to a bool/None."""
         if self._bed_presence["left"] == "in":
             return True
         if self._bed_presence["left"] == "out":

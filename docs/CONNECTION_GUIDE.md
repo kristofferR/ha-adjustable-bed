@@ -41,7 +41,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | DewertOkin | ❌ No |
 | Most other beds | ❌ No |
 
-*This table lists the beds where pairing behaviour is known. For the authoritative list, see `BEDS_REQUIRING_PAIRING` and `BED_TYPE_VARIANTS_REQUIRING_PAIRING` in `custom_components/adjustable_bed/const.py`.*
+*Note: the two Sleep Number entries are separate bed types, not variants of the same one — Sleep Number Fuzion always requires pairing, Sleep Number BAM/MCR never does. Leggett & Platt only requires pairing on its Okin variant.*
 
 **How to pair (if required):**
 1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
