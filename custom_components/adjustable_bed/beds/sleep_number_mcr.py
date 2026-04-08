@@ -544,8 +544,14 @@ class SleepNumberMcrController(BedController):
             self._occupancy_supported = True
             self._bed_presence["right"] = "in" if frame.payload[4] else "out"
             self._bed_presence["left"] = "in" if frame.payload[6] else "out"
+            # Also publish the generic ``bed_presence`` key so the legacy
+            # compatibility sensor (kept for non-breaking upgrades) reflects
+            # fresh data. MCR has no "configured side" concept — we mirror
+            # the left side to match ``read_bed_presence()`` /
+            # ``_left_presence_bool()``.
             self.forward_controller_state_updates(
                 {
+                    "bed_presence": self._bed_presence["left"],
                     "bed_presence_left": self._bed_presence["left"],
                     "bed_presence_right": self._bed_presence["right"],
                 }
