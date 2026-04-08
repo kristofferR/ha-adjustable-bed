@@ -186,13 +186,13 @@ async def async_setup_entry(
                 ),
             )
         )
-        for side in thermal_sides:
-            entities.append(
-                AdjustableBedClimate(
-                    coordinator,
-                    _build_side_thermal_climate_description(side),
-                )
+        entities.extend(
+            AdjustableBedClimate(
+                coordinator,
+                _build_side_thermal_climate_description(side),
             )
+            for side in thermal_sides
+        )
     elif getattr(controller, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability, False):
         entities.append(AdjustableBedClimate(coordinator, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION))
 
@@ -222,13 +222,13 @@ async def async_setup_entry(
                 ),
             )
         )
-        for side in footwarming_sides:
-            entities.append(
-                AdjustableBedClimate(
-                    coordinator,
-                    _build_side_footwarming_climate_description(side),
-                )
+        entities.extend(
+            AdjustableBedClimate(
+                coordinator,
+                _build_side_footwarming_climate_description(side),
             )
+            for side in footwarming_sides
+        )
     elif getattr(controller, FOOTWARMING_CLIMATE_DESCRIPTION.required_capability, False):
         entities.append(AdjustableBedClimate(coordinator, FOOTWARMING_CLIMATE_DESCRIPTION))
 

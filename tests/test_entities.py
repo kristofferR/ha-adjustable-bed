@@ -452,18 +452,20 @@ class TestSleepNumberEntities:
         assert legacy_presence_entity_id is not None
         assert hass.states.get(legacy_presence_entity_id) is None
 
-        assert (
-            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_thermal_timer")
-            is not None
+        legacy_thermal_timer_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_thermal_timer",
         )
-        assert hass.states.get("select.sleep_number_feature_bed_climate_timer") is None
-        assert (
-            registry.async_get_entity_id(
-                "select", DOMAIN, "AA:BB:CC:DD:EE:41_footwarming_timer"
-            )
-            is not None
+        assert legacy_thermal_timer_entity_id is not None
+        assert hass.states.get(legacy_thermal_timer_entity_id) is None
+        legacy_footwarming_timer_entity_id = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_footwarming_timer",
         )
-        assert hass.states.get("select.sleep_number_feature_bed_footwarming_timer") is None
+        assert legacy_footwarming_timer_entity_id is not None
+        assert hass.states.get(legacy_footwarming_timer_entity_id) is None
         thermal_timer_left_entity_id = registry.async_get_entity_id(
             "select",
             DOMAIN,

@@ -483,8 +483,13 @@ class TestSleepNumberController:
         async def _read_sleep(side: str) -> None:
             call_order.append(f"sleep:{side}")
 
-        async def _query_feature(**kwargs) -> None:
-            call_order.append(f"{kwargs['presence_bamkey']}:{kwargs['side']}")
+        async def _query_feature(
+            *,
+            side: str,
+            presence_bamkey: str,
+            **_ignored: object,
+        ) -> None:
+            call_order.append(f"{presence_bamkey}:{side}")
 
         async def _read_presence() -> None:
             call_order.append("presence")
