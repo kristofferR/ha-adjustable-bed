@@ -23,7 +23,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 >
 > - **Okimat/Okin** refers to Okimat-branded beds that use the Okin protocol (requires pairing).
 > - **Leggett & Platt** appears in multiple rows because different models use different protocols/generations (Gen2, Okin variant, MlRM/WiLinke).
-> - **Sleep Number** includes both newer Climate 360 / FlexFit Fuzion bases that advertise as `Smart bed *` and older BAM/MCR bases such as some i8 / 360 FlexFit 2 beds.
+> - **Sleep Number** includes both newer Climate 360 / FlexFit Fuzion bases and older BAM/MCR bases such as some i8 / 360 FlexFit 2 beds. Fuzion bases typically appear as `Smart bed *` in OS Bluetooth menus, but the integration itself identifies them by their GATT service UUID — the device name is only a human hint to help you pick the right row in this table during pairing.
 >
 > To determine which row applies to your bed, check the label on your bed frame or controller, look at your remote's branding, or consult your manufacturer's manual.
 
@@ -33,8 +33,8 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Leggett & Platt Okin variant | ✅ Yes |
 | Logicdata SimplicityFrame | ✅ Yes |
 | Vibradorm | ✅ Yes |
-| Sleep Number Climate 360 / FlexFit (Fuzion, `Smart bed *`) | ✅ Yes |
-| Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No (usually) |
+| Sleep Number Climate 360 / FlexFit (Fuzion) | ✅ Yes |
+| Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No |
 | Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
 | Nectar | ❌ No |
@@ -50,7 +50,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 4. Then add the integration in Home Assistant
 
 For Sleep Number Climate 360 / FlexFit Fuzion bases, hold the side pairing button until the blue light blinks.
-Older Sleep Number BAM/MCR bases typically connect without OS-level pairing.
+Older Sleep Number BAM/MCR bases connect without OS-level pairing.
 
 **Note:** If you're using an ESPHome Bluetooth Proxy, you may need to pair on the device running Home Assistant, not on your phone.
 

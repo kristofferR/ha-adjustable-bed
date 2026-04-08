@@ -284,12 +284,24 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             raise ValueError(f"Unsupported HVAC mode for {self.entity_id}: {hvac_mode}")
 
         if self.entity_description.key == "sleep_number_thermal_climate":
-            # Resume using the last active preset, but routed to the requested
-            # hvac_mode so users can flip between heat and cool without having
-            # to re-pick a preset. ``boost`` is cooling-only and would be an
-            # invalid mode for heating, so downgrade to the high preset when
-            # switching from cool/boost to heat.
-            preset = self.preset_mode or "low"
+            # Resume using the last active preset, but routed to the
+            # requested hvac_mode so users can flip between heat and cool
+            # without having to re-pick a preset. When the entity is
+            # currently OFF, ``preset_mode`` intentionally returns None, so
+            # we read the controller's per-direction resume cache to
+            # preserve whatever preset the user last ran for *that* hvac
+            # mode instead of discarding it and defaulting to ``low``.
+            # ``boost`` is cooling-only and must never be forwarded into
+            # heat, so downgrade to the high preset in that case.
+            preset = self.preset_mode
+            if preset is None:
+                controller = self._coordinator.controller
+                target_hvac_value = hvac_mode.value
+                resume = getattr(controller, "get_thermal_resume_preset", None)
+                if callable(resume):
+                    preset = resume(target_hvac_value)
+                else:
+                    preset = "low"
             if (
                 hvac_mode == HVACMode.HEAT
                 and preset == _THERMAL_CLIMATE_BOOST_PRESET

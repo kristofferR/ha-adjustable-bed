@@ -257,9 +257,24 @@ class SleepNumberMcrController(BedController):
         self._response_event.clear()
 
     async def query_config(self) -> None:
-        """Read the current BAM/MCR state after connect."""
+        """Read the current BAM/MCR state after connect.
+
+        Hydration steps are independent: a transient malformed reply to
+        the pump-status read must not abort the rest of init, otherwise
+        the under-bed light and chamber queries never run and the
+        corresponding entities stay silently disabled for the session.
+        Transport failures still propagate (those are retried at the
+        coordinator level).
+        """
         await self._async_initialize_session()
-        await self._async_read_pump_status()
+        try:
+            await self._async_read_pump_status()
+        except ValueError:
+            _LOGGER.debug(
+                "Sleep Number MCR pump-status read returned an unexpected"
+                " payload during query_config; firmness state left unknown",
+                exc_info=True,
+            )
         await self._async_read_underbed_light_state()
         await self._async_read_chamber_types()
 
@@ -526,6 +541,11 @@ class SleepNumberMcrController(BedController):
         unrelated parsed frames (late replies from prior commands, stray
         broadcasts) so the waiter only wakes once a frame that actually
         matches this request is reassembled and parsed.
+
+        The response wait races ``_response_event`` against the caller's
+        ``cancel_event`` and the coordinator's cancel signal so that a
+        cancellation or disconnect exits the wait promptly instead of
+        holding the serialized BLE path until ``timeout`` expires.
         """
         frame = self._build_frame(
             command_type=command_type,
@@ -545,13 +565,36 @@ class SleepNumberMcrController(BedController):
         try:
             await self._async_write_frame(frame, cancel_event=cancel_event)
 
+            coordinator_cancel = self._coordinator.cancel_command
+            response_task = asyncio.create_task(self._response_event.wait())
+            cancel_tasks: list[asyncio.Task[bool]] = [
+                asyncio.create_task(coordinator_cancel.wait())
+            ]
+            if cancel_event is not None and cancel_event is not coordinator_cancel:
+                cancel_tasks.append(asyncio.create_task(cancel_event.wait()))
+
             try:
-                async with asyncio.timeout(timeout):
-                    await self._response_event.wait()
-            except TimeoutError as err:
+                done, _pending = await asyncio.wait(
+                    {response_task, *cancel_tasks},
+                    timeout=timeout,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                for task in (response_task, *cancel_tasks):
+                    if not task.done():
+                        task.cancel()
+                for task in (response_task, *cancel_tasks):
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
+
+            if not done:
                 raise TimeoutError(
                     f"Timed out waiting for Sleep Number MCR response func={function_code}"
-                ) from err
+                )
+            if response_task not in done:
+                raise asyncio.CancelledError(
+                    f"Sleep Number MCR response wait cancelled func={function_code}"
+                )
 
             return list(self._response_frames)
         finally:

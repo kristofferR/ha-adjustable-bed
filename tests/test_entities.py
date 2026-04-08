@@ -426,6 +426,17 @@ class TestSleepNumberEntities:
         )
         assert right_presence_entity_id is not None
         assert hass.states.get(right_presence_entity_id) is None
+        # The legacy single-side ``bed_presence`` entity must still be
+        # registered so users upgrading from the pre-split release keep
+        # their dashboards/automations working. Like the per-side
+        # sensors, it is disabled by default.
+        legacy_presence_entity_id = registry.async_get_entity_id(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_bed_presence",
+        )
+        assert legacy_presence_entity_id is not None
+        assert hass.states.get(legacy_presence_entity_id) is None
 
         assert (
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_thermal_timer")
