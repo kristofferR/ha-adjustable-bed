@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.climate import (
@@ -164,24 +164,8 @@ async def async_setup_entry(
         entities.append(
             AdjustableBedClimate(
                 coordinator,
-                AdjustableBedClimateEntityDescription(
-                    key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.key,
-                    translation_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.translation_key,
-                    icon=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.icon,
-                    required_capability=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability,
-                    hvac_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.hvac_state_key,
-                    preset_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.preset_state_key,
-                    timer_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.timer_state_key,
-                    remaining_time_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.remaining_time_key,
-                    raw_mode_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.raw_mode_state_key,
-                    supports_heat=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_heat,
-                    supports_cool=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_cool,
-                    turn_on_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.turn_on_method_name,
-                    turn_off_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.turn_off_method_name,
-                    set_preset_method_name=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.set_preset_method_name,
-                    base_preset_modes=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.base_preset_modes,
-                    supports_heating_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.supports_heating_state_key,
-                    backend_state_key=SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.backend_state_key,
+                replace(
+                    SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
                     entity_registry_enabled_default=False,
                 ),
             )
@@ -201,23 +185,8 @@ async def async_setup_entry(
         entities.append(
             AdjustableBedClimate(
                 coordinator,
-                AdjustableBedClimateEntityDescription(
-                    key=FOOTWARMING_CLIMATE_DESCRIPTION.key,
-                    translation_key=FOOTWARMING_CLIMATE_DESCRIPTION.translation_key,
-                    icon=FOOTWARMING_CLIMATE_DESCRIPTION.icon,
-                    required_capability=FOOTWARMING_CLIMATE_DESCRIPTION.required_capability,
-                    hvac_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.hvac_state_key,
-                    preset_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.preset_state_key,
-                    timer_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.timer_state_key,
-                    remaining_time_key=FOOTWARMING_CLIMATE_DESCRIPTION.remaining_time_key,
-                    total_remaining_time_key=FOOTWARMING_CLIMATE_DESCRIPTION.total_remaining_time_key,
-                    raw_mode_state_key=FOOTWARMING_CLIMATE_DESCRIPTION.raw_mode_state_key,
-                    supports_heat=FOOTWARMING_CLIMATE_DESCRIPTION.supports_heat,
-                    supports_cool=FOOTWARMING_CLIMATE_DESCRIPTION.supports_cool,
-                    turn_on_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.turn_on_method_name,
-                    turn_off_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.turn_off_method_name,
-                    set_preset_method_name=FOOTWARMING_CLIMATE_DESCRIPTION.set_preset_method_name,
-                    base_preset_modes=FOOTWARMING_CLIMATE_DESCRIPTION.base_preset_modes,
+                replace(
+                    FOOTWARMING_CLIMATE_DESCRIPTION,
                     entity_registry_enabled_default=False,
                 ),
             )
@@ -238,6 +207,23 @@ async def async_setup_entry(
 
 class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
     """Climate entity backed by controller-state updates."""
+
+    def _get_thermal_resume_preset(self, hvac_mode: HVACMode) -> str:
+        """Return the cached resume preset for the requested HVAC mode."""
+        key_prefix = (
+            "thermal_resume_preset_heat"
+            if hvac_mode == HVACMode.HEAT
+            else "thermal_resume_preset_cool"
+        )
+        key = (
+            f"{key_prefix}_{self.entity_description.side}"
+            if self.entity_description.side is not None
+            else key_prefix
+        )
+        preset = self._coordinator.controller_state.get(key)
+        if isinstance(preset, str) and preset:
+            return preset
+        return "low"
 
     entity_description: AdjustableBedClimateEntityDescription
 
@@ -421,19 +407,7 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
             # heat, so downgrade to the high preset in that case.
             preset = self.preset_mode
             if preset is None:
-                controller = self._coordinator.controller
-                target_hvac_value = hvac_mode.value
-                if self.entity_description.side is not None:
-                    resume = getattr(controller, "get_thermal_resume_preset_for_side", None)
-                else:
-                    resume = getattr(controller, "get_thermal_resume_preset", None)
-                if callable(resume):
-                    if self.entity_description.side is not None:
-                        preset = resume(self.entity_description.side, target_hvac_value)
-                    else:
-                        preset = resume(target_hvac_value)
-                else:
-                    preset = "low"
+                preset = self._get_thermal_resume_preset(hvac_mode)
             if (
                 hvac_mode == HVACMode.HEAT
                 and preset == _THERMAL_CLIMATE_BOOST_PRESET

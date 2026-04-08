@@ -232,9 +232,10 @@ class SleepNumberController(BedController):
         self._bed_presence_channel_primed = False
         self._bed_presence_lock = asyncio.Lock()
         self._bed_presence_last_poll_monotonic: float = 0.0
-        self._sleep_number_settings: dict[str, int | None] = {
-            side: None for side in _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES
-        }
+        self._sleep_number_settings: dict[str, int | None] = dict.fromkeys(
+            _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES,
+            None,
+        )
         self._sleep_number_setting: int | None = None
         self._footwarming_states: dict[str, _FootwarmingSideState] = {
             side: _FootwarmingSideState() for side in _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES
@@ -1828,11 +1829,25 @@ class SleepNumberController(BedController):
         """Publish unified thermal climate state for one side."""
         normalized_side = self._require_side(side)
         state = self.get_thermal_state_for_side(normalized_side)
+        resume_preset_cool = self.get_thermal_resume_preset_for_side(
+            normalized_side,
+            _THERMAL_HVAC_COOL,
+        )
+        resume_preset_heat = (
+            self.get_thermal_resume_preset_for_side(
+                normalized_side,
+                _THERMAL_HVAC_HEAT,
+            )
+            if state["supports_heating"]
+            else None
+        )
         updates: dict[str, Any] = {
             f"thermal_backend_{normalized_side}": state["backend"],
             f"thermal_present_{normalized_side}": state["present"],
             f"thermal_hvac_mode_{normalized_side}": state["hvac_mode"],
             f"thermal_preset_{normalized_side}": state["preset_mode"],
+            f"thermal_resume_preset_cool_{normalized_side}": resume_preset_cool,
+            f"thermal_resume_preset_heat_{normalized_side}": resume_preset_heat,
             f"thermal_mode_{normalized_side}": state["mode"],
             f"thermal_remaining_time_minutes_{normalized_side}": state[
                 "remaining_time_minutes"
@@ -1847,6 +1862,8 @@ class SleepNumberController(BedController):
                     "thermal_present": state["present"],
                     "thermal_hvac_mode": state["hvac_mode"],
                     "thermal_preset": state["preset_mode"],
+                    "thermal_resume_preset_cool": resume_preset_cool,
+                    "thermal_resume_preset_heat": resume_preset_heat,
                     "thermal_mode": state["mode"],
                     "thermal_remaining_time_minutes": state["remaining_time_minutes"],
                     "thermal_timer_option": state["timer_option"],

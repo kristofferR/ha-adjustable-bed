@@ -136,8 +136,12 @@ class TestSleepNumberController:
         assert coordinator.controller_state["thermal_backend"] == "heidi"
         assert coordinator.controller_state["thermal_hvac_mode"] == "heat"
         assert coordinator.controller_state["thermal_supports_heating"] is True
+        assert coordinator.controller_state["thermal_resume_preset_cool"] == "low"
+        assert coordinator.controller_state["thermal_resume_preset_heat"] == "low"
         assert coordinator.controller_state["thermal_hvac_mode_right"] == "off"
         assert coordinator.controller_state["thermal_supports_heating_right"] is True
+        assert coordinator.controller_state["thermal_resume_preset_cool_right"] == "low"
+        assert coordinator.controller_state["thermal_resume_preset_heat_right"] == "low"
         assert coordinator.controller_state["footwarming_hvac_mode"] == "heat"
         assert coordinator.controller_state["footwarming_hvac_mode_right"] == "off"
 

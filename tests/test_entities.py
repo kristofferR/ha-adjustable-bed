@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, call
 
+from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -551,6 +552,62 @@ class TestSleepNumberEntities:
         assert thermal_right_state.attributes["side"] == "right"
         assert hass.states.get(footwarming_left_entity_id).state == "heat"
         assert hass.states.get(footwarming_right_entity_id).state == "off"
+
+    async def test_sleep_number_thermal_climate_resume_uses_cached_side_preset(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """Turning a split thermal climate on should reuse the cached side resume preset."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number Feature Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:41",
+                CONF_NAME: "Sleep Number Feature Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_PROTOCOL_VARIANT: SLEEP_NUMBER_VARIANT_LEFT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:41",
+            entry_id="sleep_number_feature_hvac_resume_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        thermal_right_entity_id = registry.async_get_entity_id(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate_right",
+        )
+        assert thermal_right_entity_id is not None
+        assert hass.states.get(thermal_right_entity_id).state == "off"
+
+        await hass.services.async_call(
+            "climate",
+            "set_hvac_mode",
+            {
+                "entity_id": thermal_right_entity_id,
+                "hvac_mode": HVACMode.COOL,
+            },
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+        thermal_right_state = hass.states.get(thermal_right_entity_id)
+        assert thermal_right_state is not None
+        assert thermal_right_state.state == "cool"
+        assert thermal_right_state.attributes["preset_mode"] == "low"
 
     async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(
         self,
