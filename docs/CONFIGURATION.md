@@ -185,6 +185,8 @@ Some beds support multiple protocol variants. Auto-detection usually works, but 
 
 ### Sleep Number Variants
 
+These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting.
+
 | Variant | Description | Use For |
 |---------|-------------|---------|
 | **Auto** | Auto-detect (recommended, defaults to the left side) | Most Sleep Number bases |

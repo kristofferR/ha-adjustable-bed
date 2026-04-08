@@ -243,14 +243,14 @@ Some beds require Bluetooth pairing before they can be controlled.
    - Go to Bluetooth settings
    - Find the bed and click "Pair"
 
-Sleep Number Climate 360 / FlexFit bases typically enter pairing mode by holding the side pairing button until the blue light blinks.
+Sleep Number Climate 360 / FlexFit Fuzion bases typically enter pairing mode by holding the side pairing button until the blue light blinks. Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds usually do not need OS-level pairing for basic BLE control.
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work
 - Bed specifically requires PIN entry or pairing confirmation
 - "Pairing required" error message
 
-**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds such as Okimat, Leggett Okin, and Sleep Number Climate 360 / FlexFit.
+**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds such as Okimat, Leggett Okin, and newer Sleep Number Climate 360 / FlexFit Fuzion bases.
 
 ---
 
@@ -289,6 +289,7 @@ Use these to identify your bed type in a BLE scanner:
 | `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Reverie |
 | `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
 | `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |
+| `ffffd1fd-388d-938b-344a-939d1f6efee0` | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) |
 | `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, OKIN 64-bit, Sleepy's BOX24 |
 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Richmat Nordic, Keeson KSBT, Mattress Firm 900 |
 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | Richmat WiLinke |

@@ -52,6 +52,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -738,6 +739,11 @@ async def create_controller(
             _LOGGER.debug("Unknown Sleep Number side variant %s, defaulting to auto", side)
             side = VARIANT_AUTO
         return SleepNumberController(coordinator, side=side)
+
+    if bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+        from .beds.sleep_number_mcr import SleepNumberMcrController
+
+        return SleepNumberMcrController(coordinator)
 
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController

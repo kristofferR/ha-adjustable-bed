@@ -43,6 +43,8 @@ from custom_components.adjustable_bed.const import (  # noqa: E402
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RONDURE_SERVICE_UUID,
+    SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+    SLEEP_NUMBER_MCR_TX_CHAR_UUID,
     SOLACE_SERVICE_UUID,
     SVANE_HEAD_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
@@ -86,10 +88,13 @@ def mock_bleak_client() -> MagicMock:
     """Mock BleakClient."""
     from bleak import BleakClient
 
+    mcr_sync = b"\x16\x16"
     sleep_number_preamble = b"fUzIoN"
     client = MagicMock(spec=BleakClient)
     notify_callbacks: dict[str, object] = {}
     readable_values: dict[str, bytes] = {}
+    mcr_mac_parts = TEST_ADDRESS.split(":")
+    mcr_bed_address = (int(mcr_mac_parts[-2], 16) << 8) | int(mcr_mac_parts[-1], 16)
     sleep_number_state: dict[str, object] = {
         "underbed_light_level": "high",
         "underbed_light_timer": 15,
@@ -122,6 +127,13 @@ def mock_bleak_client() -> MagicMock:
             "heidi_remaining": 0,
         },
     }
+    sleep_number_mcr_state = {
+        "left_sleep_number": 35,
+        "right_sleep_number": 65,
+        "underbed_light_on": True,
+        # 0.4.x BAM firmware on the tested i8 returns only 4 bytes here.
+        "chamber_payload": b"\x01\x00\x00\x00",
+    }
 
     def _build_sleep_number_blob(payload: str) -> bytes:
         encoded = payload.encode("utf-8")
@@ -129,6 +141,109 @@ def mock_bleak_client() -> MagicMock:
         header = sleep_number_preamble + struct.pack("<I", total_length)
         checksum = binascii.crc32(header + encoded) & 0xFFFFFFFF
         return header + encoded + struct.pack("<I", checksum)
+
+    def _mcr_crc(data: bytes) -> int:
+        s, r = 0, 0
+        for value in data:
+            s += value
+            r += s
+        return r & 0xFFFF
+
+    def _build_mcr_frame(
+        *,
+        command_type: int,
+        target: int,
+        sub_address: int,
+        status: int,
+        echo: int,
+        function_code: int,
+        side: int,
+        payload: bytes = b"",
+    ) -> bytes:
+        header = bytes(
+            [
+                command_type,
+                (target >> 8) & 0xFF,
+                target & 0xFF,
+                (sub_address >> 8) & 0xFF,
+                sub_address & 0xFF,
+                status,
+                (echo >> 8) & 0xFF,
+                echo & 0xFF,
+                function_code,
+                ((side & 0x0F) << 4) | (len(payload) & 0x0F),
+            ]
+        )
+        body = header + payload
+        return mcr_sync + body + struct.pack(">H", _mcr_crc(body))
+
+    def _parse_mcr_frame(data: bytes) -> dict[str, int | bytes] | None:
+        if len(data) < 14 or not data.startswith(mcr_sync):
+            return None
+
+        body = data[2:-2]
+        payload_length = body[9] & 0x0F
+        if len(data) != 14 + payload_length:
+            return None
+        if struct.unpack(">H", data[-2:])[0] != _mcr_crc(body):
+            return None
+
+        return {
+            "command_type": body[0],
+            "target": (body[1] << 8) | body[2],
+            "sub_address": (body[3] << 8) | body[4],
+            "status": body[5],
+            "echo": (body[6] << 8) | body[7],
+            "function_code": body[8] & 0x7F,
+            "side": (body[9] >> 4) & 0x0F,
+            "payload": body[10 : 10 + payload_length],
+        }
+
+    def _build_mcr_response(request: dict[str, int | bytes]) -> bytes | None:
+        function_code = int(request["function_code"])
+        side = int(request["side"])
+        payload = bytes(request["payload"])
+
+        response_payload = b""
+        if function_code in {0, 2, 21}:
+            pass
+        elif function_code == 17:
+            if len(payload) >= 2:
+                value = payload[1]
+                if side == 0:
+                    sleep_number_mcr_state["left_sleep_number"] = value
+                elif side == 1:
+                    sleep_number_mcr_state["right_sleep_number"] = value
+        elif function_code == 18:
+            response_payload = bytes(
+                [
+                    1,
+                    int(sleep_number_mcr_state["left_sleep_number"]),
+                    int(sleep_number_mcr_state["right_sleep_number"]),
+                    0,
+                    0,
+                ]
+            )
+        elif function_code == 19:
+            if payload:
+                sleep_number_mcr_state["underbed_light_on"] = bool(payload[0])
+        elif function_code == 20:
+            response_payload = bytes([1 if sleep_number_mcr_state["underbed_light_on"] else 0])
+        elif function_code == 97:
+            response_payload = bytes(sleep_number_mcr_state["chamber_payload"])
+        else:
+            return None
+
+        return _build_mcr_frame(
+            command_type=1,
+            target=mcr_bed_address,
+            sub_address=int(request["sub_address"]),
+            status=int(request["status"]),
+            echo=mcr_bed_address,
+            function_code=function_code | 0x80,
+            side=side,
+            payload=response_payload,
+        )
 
     def _decode_sleep_number_payload(data: bytes) -> str | None:
         if data.startswith(sleep_number_preamble):
@@ -160,6 +275,21 @@ def mock_bleak_client() -> MagicMock:
 
     async def _write_gatt_char(char_uuid: str, data: bytes, response: bool = False) -> None:
         del response
+        if str(char_uuid) == SLEEP_NUMBER_MCR_RX_CHAR_UUID:
+            request = _parse_mcr_frame(data)
+            callback = notify_callbacks.get(SLEEP_NUMBER_MCR_TX_CHAR_UUID)
+            if request is None or callback is None:
+                return
+            response_frame = _build_mcr_response(request)
+            if response_frame is None:
+                return
+            if len(response_frame) > 20:
+                callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame[:20]))
+                callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame[20:]))
+                return
+            callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame))
+            return
+
         decoded_payload = _decode_sleep_number_payload(data)
         callback = notify_callbacks.get(char_uuid)
         if decoded_payload is None:

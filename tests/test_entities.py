@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -365,6 +366,7 @@ class TestSleepNumberEntities:
         enable_custom_integrations,
     ):
         """Sleep Number should expose light, split presence, sleep-number, and climate entities."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleep Number Feature Bed",
@@ -461,6 +463,86 @@ class TestSleepNumberEntities:
         assert hass.states.get(cooling_entity_id).state == "cool"
         assert hass.states.get(heating_entity_id).state == "heat"
         assert hass.states.get(footwarming_entity_id).state == "heat"
+
+    async def test_sleep_number_mcr_entities_include_split_firmness_and_presets(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Older Sleep Number BAM/MCR beds should expose side-specific firmness and preset entities."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:57",
+                CONF_NAME: "64:DB:A0:07:DD:08",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:57",
+            entry_id="sleep_number_mcr_feature_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+
+        under_bed_lights = registry.async_get_entity_id(
+            "switch",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_under_bed_lights",
+        )
+        left_sleep_number = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_sleep_number_setting_left",
+        )
+        right_sleep_number = registry.async_get_entity_id(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_sleep_number_setting_right",
+        )
+        left_preset = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_foundation_preset_left",
+        )
+        right_preset = registry.async_get_entity_id(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:57_foundation_preset_right",
+        )
+
+        assert under_bed_lights is not None
+        assert left_sleep_number is not None
+        assert right_sleep_number is not None
+        assert left_preset is not None
+        assert right_preset is not None
+        assert hass.states.get(left_sleep_number).state == "35.0"
+        assert hass.states.get(right_sleep_number).state == "65.0"
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:57_sleep_number_setting")
+            is None
+        )
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:57_back") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:57_legs") is None
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:57_bed_presence_left",
+            )
+            is None
+        )
 
 
 class TestButtonEntities:

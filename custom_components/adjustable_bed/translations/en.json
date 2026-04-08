@@ -564,6 +564,12 @@
       },
       "sleep_number_setting": {
         "name": "Sleep Number Setting"
+      },
+      "sleep_number_setting_left": {
+        "name": "Sleep Number Setting Left"
+      },
+      "sleep_number_setting_right": {
+        "name": "Sleep Number Setting Right"
       }
     },
     "select": {
@@ -581,6 +587,12 @@
       },
       "footwarming_timer": {
         "name": "Footwarming Timer"
+      },
+      "foundation_preset_left": {
+        "name": "Foundation Preset Left"
+      },
+      "foundation_preset_right": {
+        "name": "Foundation Preset Right"
       }
     },
     "climate": {

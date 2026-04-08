@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -67,6 +68,7 @@ from custom_components.adjustable_bed.const import (
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
     SOLACE_SERVICE_UUID,
     SUTA_SERVICE_UUID,
@@ -143,6 +145,24 @@ class TestDetectBedTypeByServiceUUID:
     def test_sleep_number_has_human_display_name(self):
         """Sleep Number should appear with a readable label in selectors."""
         assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER] == "Sleep Number Climate 360 / FlexFit"
+
+    def test_detect_sleep_number_mcr_by_uuid(self):
+        """Older Sleep Number BAM/MCR beds should detect from their UART service UUID."""
+        service_info = _make_service_info(
+            name="64:DB:A0:07:DD:02",
+            service_uuids=[SLEEP_NUMBER_MCR_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+        assert result.confidence == 1.0
+        assert "uuid:sleep_number_mcr" in result.signals
+
+    def test_sleep_number_mcr_has_human_display_name(self):
+        """Older Sleep Number BAM/MCR beds should appear with a readable label."""
+        assert (
+            BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEP_NUMBER_MCR]
+            == "Sleep Number 360 / i8 FlexFit (BAM/MCR)"
+        )
 
     def test_detect_kaidi_by_manufacturer_data_only(self):
         """Test Kaidi detection by manufacturer data alone (no UUID/name needed)."""
