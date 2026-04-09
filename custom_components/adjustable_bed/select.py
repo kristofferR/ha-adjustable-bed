@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -190,22 +191,7 @@ async def async_setup_entry(
                 thermal_sides,
                 thermal_timer_options,
             )
-            entities.append(
-                AdjustableBedControllerStateSelect(
-                    coordinator,
-                    AdjustableBedControllerStateSelectDescription(
-                        key=THERMAL_TIMER_DESCRIPTION.key,
-                        translation_key=THERMAL_TIMER_DESCRIPTION.translation_key,
-                        icon=THERMAL_TIMER_DESCRIPTION.icon,
-                        required_capability=THERMAL_TIMER_DESCRIPTION.required_capability,
-                        options_attr=THERMAL_TIMER_DESCRIPTION.options_attr,
-                        state_key=THERMAL_TIMER_DESCRIPTION.state_key,
-                        setter_name=THERMAL_TIMER_DESCRIPTION.setter_name,
-                        entity_registry_enabled_default=False,
-                    ),
-                    thermal_timer_options,
-                )
-            )
+            _async_remove_stale_split_select_entity(hass, coordinator, THERMAL_TIMER_DESCRIPTION.key)
             for side_description in (
                 THERMAL_TIMER_LEFT_DESCRIPTION,
                 THERMAL_TIMER_RIGHT_DESCRIPTION,
@@ -246,21 +232,10 @@ async def async_setup_entry(
                 footwarming_sides,
                 footwarming_timer_options,
             )
-            entities.append(
-                AdjustableBedControllerStateSelect(
-                    coordinator,
-                    AdjustableBedControllerStateSelectDescription(
-                        key=FOOTWARMING_TIMER_DESCRIPTION.key,
-                        translation_key=FOOTWARMING_TIMER_DESCRIPTION.translation_key,
-                        icon=FOOTWARMING_TIMER_DESCRIPTION.icon,
-                        required_capability=FOOTWARMING_TIMER_DESCRIPTION.required_capability,
-                        options_attr=FOOTWARMING_TIMER_DESCRIPTION.options_attr,
-                        state_key=FOOTWARMING_TIMER_DESCRIPTION.state_key,
-                        setter_name=FOOTWARMING_TIMER_DESCRIPTION.setter_name,
-                        entity_registry_enabled_default=False,
-                    ),
-                    footwarming_timer_options,
-                )
+            _async_remove_stale_split_select_entity(
+                hass,
+                coordinator,
+                FOOTWARMING_TIMER_DESCRIPTION.key,
             )
             for side_description in (
                 FOOTWARMING_TIMER_LEFT_DESCRIPTION,
@@ -316,6 +291,22 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _async_remove_stale_split_select_entity(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    key: str,
+) -> None:
+    """Remove a legacy non-sided select when side-specific entities exist."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "select",
+        DOMAIN,
+        f"{coordinator.address}_{key}",
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):

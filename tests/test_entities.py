@@ -405,13 +405,14 @@ class TestSleepNumberEntities:
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:41_light_timer")
             is not None
         )
-        sleep_number_entity_id = registry.async_get_entity_id(
-            "number",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_sleep_number_setting",
+        assert (
+            registry.async_get_entity_id(
+                "number",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_sleep_number_setting",
+            )
+            is None
         )
-        assert sleep_number_entity_id is not None
-        assert hass.states.get(sleep_number_entity_id) is None
         left_sleep_number_entity_id = registry.async_get_entity_id(
             "number",
             DOMAIN,
@@ -441,32 +442,30 @@ class TestSleepNumberEntities:
         )
         assert right_presence_entity_id is not None
         assert hass.states.get(right_presence_entity_id) is None
-        # The legacy single-side ``bed_presence`` entity must still be
-        # registered so users upgrading from the pre-split release keep
-        # their dashboards/automations working. Like the per-side
-        # sensors, it is disabled by default.
-        legacy_presence_entity_id = registry.async_get_entity_id(
-            "binary_sensor",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_bed_presence",
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_bed_presence",
+            )
+            is None
         )
-        assert legacy_presence_entity_id is not None
-        assert hass.states.get(legacy_presence_entity_id) is None
-
-        legacy_thermal_timer_entity_id = registry.async_get_entity_id(
-            "select",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_thermal_timer",
+        assert (
+            registry.async_get_entity_id(
+                "select",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_thermal_timer",
+            )
+            is None
         )
-        assert legacy_thermal_timer_entity_id is not None
-        assert hass.states.get(legacy_thermal_timer_entity_id) is None
-        legacy_footwarming_timer_entity_id = registry.async_get_entity_id(
-            "select",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_footwarming_timer",
+        assert (
+            registry.async_get_entity_id(
+                "select",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_footwarming_timer",
+            )
+            is None
         )
-        assert legacy_footwarming_timer_entity_id is not None
-        assert hass.states.get(legacy_footwarming_timer_entity_id) is None
         thermal_timer_left_entity_id = registry.async_get_entity_id(
             "select",
             DOMAIN,
@@ -496,20 +495,22 @@ class TestSleepNumberEntities:
         assert hass.states.get(footwarming_timer_left_entity_id).state == "2 hr"
         assert hass.states.get(footwarming_timer_right_entity_id).state == "2 hr"
 
-        thermal_entity_id = registry.async_get_entity_id(
-            "climate",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate",
+        assert (
+            registry.async_get_entity_id(
+                "climate",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_sleep_number_thermal_climate",
+            )
+            is None
         )
-        footwarming_entity_id = registry.async_get_entity_id(
-            "climate",
-            DOMAIN,
-            "AA:BB:CC:DD:EE:41_footwarming_climate",
+        assert (
+            registry.async_get_entity_id(
+                "climate",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:41_footwarming_climate",
+            )
+            is None
         )
-        assert thermal_entity_id is not None
-        assert footwarming_entity_id is not None
-        assert hass.states.get(thermal_entity_id) is None
-        assert hass.states.get(footwarming_entity_id) is None
         thermal_left_entity_id = registry.async_get_entity_id(
             "climate",
             DOMAIN,
@@ -552,6 +553,112 @@ class TestSleepNumberEntities:
         assert thermal_right_state.attributes["side"] == "right"
         assert hass.states.get(footwarming_left_entity_id).state == "heat"
         assert hass.states.get(footwarming_right_entity_id).state == "off"
+
+    async def test_sleep_number_setup_removes_legacy_single_side_entities(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """Sleep Number split entities should remove old generic registry entries."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number Feature Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:42",
+                CONF_NAME: "Sleep Number Feature Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_PROTOCOL_VARIANT: SLEEP_NUMBER_VARIANT_LEFT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:42",
+            entry_id="sleep_number_cleanup_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "binary_sensor",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_bed_presence",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_bed_presence",
+        )
+        registry.async_get_or_create(
+            "number",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_sleep_number_setting",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_sleep_number_setting",
+        )
+        registry.async_get_or_create(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_thermal_timer",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_thermal_timer",
+        )
+        registry.async_get_or_create(
+            "select",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_footwarming_timer",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_footwarming_timer",
+        )
+        registry.async_get_or_create(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_sleep_number_thermal_climate",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_sleep_number_thermal_climate",
+        )
+        registry.async_get_or_create(
+            "climate",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:42_footwarming_climate",
+            config_entry=entry,
+            suggested_object_id="sleep_number_feature_bed_footwarming_climate",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert (
+            registry.async_get_entity_id("binary_sensor", DOMAIN, "AA:BB:CC:DD:EE:42_bed_presence")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "number", DOMAIN, "AA:BB:CC:DD:EE:42_sleep_number_setting"
+            )
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:42_thermal_timer")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:42_footwarming_timer")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "climate",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:42_sleep_number_thermal_climate",
+            )
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("climate", DOMAIN, "AA:BB:CC:DD:EE:42_footwarming_climate")
+            is None
+        )
 
     async def test_sleep_number_thermal_climate_resume_uses_cached_side_preset(
         self,
