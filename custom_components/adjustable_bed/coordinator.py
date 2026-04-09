@@ -1029,8 +1029,17 @@ class AdjustableBedCoordinator:
                             self._preferred_adapter,
                         )
 
-                # Small delay to let connection stabilize before operations
-                await asyncio.sleep(self._post_connect_delay)
+                # Small delay to let connection stabilize before operations.
+                # Sleep Number MCR/Fuzion and Jensen beds disconnect quickly
+                # if there is idle time after connect, so skip the delay for
+                # bed types that need the notification channel established
+                # immediately.
+                if self._bed_type not in {
+                    BED_TYPE_SLEEP_NUMBER_MCR,
+                    BED_TYPE_SLEEP_NUMBER,
+                    BED_TYPE_JENSEN,
+                }:
+                    await asyncio.sleep(self._post_connect_delay)
 
                 # The bed may disconnect during the stabilisation delay
                 # (the _on_disconnect callback clears self._client).
