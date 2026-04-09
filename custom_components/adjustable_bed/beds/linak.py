@@ -100,6 +100,7 @@ class LinakController(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._notify_handles: dict[str, int] = {}
+        self._woken: bool = False
         _LOGGER.debug(
             "LinakController initialized (motor_count: %d)",
             coordinator.motor_count,
@@ -167,6 +168,34 @@ class LinakController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
+        # Wake the motor controller on first command after reconnection.
+        # Linak controllers enter a low-power state after BLE disconnect.
+        # The first GATT write after reconnection is silently ignored even
+        # though it succeeds at the BLE level.  Sending STOP (0xFF, 0x00)
+        # as a no-op preamble wakes the controller so the real command
+        # is processed.  STOP is safe when nothing is moving.
+        if not self._woken:
+            self._woken = True
+            effective_cancel = cancel_event or self._coordinator.cancel_command
+            if effective_cancel is None or not effective_cancel.is_set():
+                _LOGGER.debug(
+                    "Sending wake preamble (STOP) to Linak bed at %s",
+                    self._coordinator.address,
+                )
+                try:
+                    await self._write_gatt_with_retry(
+                        self.control_characteristic_uuid,
+                        LinakCommands.MOVE_STOP,
+                        cancel_event=cancel_event,
+                    )
+                    await asyncio.sleep(0.5)
+                except (BleakError, ConnectionError):
+                    _LOGGER.debug(
+                        "Wake preamble failed for %s, proceeding with command",
+                        self._coordinator.address,
+                        exc_info=True,
+                    )
+
         _LOGGER.debug(
             "Writing command to Linak bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
