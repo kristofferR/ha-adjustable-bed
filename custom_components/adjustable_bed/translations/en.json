@@ -582,8 +582,20 @@
       "thermal_timer": {
         "name": "Climate Timer"
       },
+      "thermal_timer_left": {
+        "name": "Climate Timer Left"
+      },
+      "thermal_timer_right": {
+        "name": "Climate Timer Right"
+      },
       "footwarming_timer": {
         "name": "Footwarming Timer"
+      },
+      "footwarming_timer_left": {
+        "name": "Footwarming Timer Left"
+      },
+      "footwarming_timer_right": {
+        "name": "Footwarming Timer Right"
       },
       "foundation_preset_left": {
         "name": "Foundation Preset Left"
@@ -596,8 +608,20 @@
       "sleep_number_thermal_climate": {
         "name": "Climate"
       },
+      "sleep_number_thermal_climate_left": {
+        "name": "Climate Left"
+      },
+      "sleep_number_thermal_climate_right": {
+        "name": "Climate Right"
+      },
       "footwarming_climate": {
         "name": "Footwarming"
+      },
+      "footwarming_climate_left": {
+        "name": "Footwarming Left"
+      },
+      "footwarming_climate_right": {
+        "name": "Footwarming Right"
       }
     }
   },

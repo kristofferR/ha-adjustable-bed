@@ -490,6 +490,22 @@ async def async_setup_entry(
             coordinator.name,
             sleep_number_sides,
         )
+        if controller is not None and getattr(controller, "supports_sleep_number_setting", False):
+            entities.append(
+                AdjustableBedSleepNumberSettingNumber(
+                    coordinator,
+                    NumberEntityDescription(
+                        key=SLEEP_NUMBER_SETTING_DESCRIPTION.key,
+                        translation_key=SLEEP_NUMBER_SETTING_DESCRIPTION.translation_key,
+                        icon=SLEEP_NUMBER_SETTING_DESCRIPTION.icon,
+                        native_min_value=getattr(controller, "sleep_number_setting_min", 5),
+                        native_max_value=getattr(controller, "sleep_number_setting_max", 100),
+                        native_step=getattr(controller, "sleep_number_setting_step", 5),
+                        mode=SLEEP_NUMBER_SETTING_DESCRIPTION.mode,
+                        entity_registry_enabled_default=False,
+                    ),
+                )
+            )
         for side_description in (
             SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
             SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
