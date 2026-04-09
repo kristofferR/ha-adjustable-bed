@@ -909,11 +909,14 @@ class AdjustableBedCoordinator:
                     _get_fresh_device_for_connection
                 )
 
-                # Determine if this bed type needs pairing and if pairing is supported
+                # Determine if this bed type needs pairing and if pairing is supported.
+                # Only pair when we haven't tried yet (_pairing_supported is None).
+                # After a successful bond the pairing state persists at the BLE
+                # level so re-requesting pair=True on subsequent connections
+                # triggers auth failures on some ESP-IDF stacks (reason 82) and
+                # leaves the ESPHome proxy connection stuck in ESTABLISHED state.
                 bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
-                # Only attempt pairing if bed requires it AND we haven't already
-                # determined that pairing is unsupported by this adapter
-                use_pairing = bed_requires_pairing and self._pairing_supported is not False
+                use_pairing = bed_requires_pairing and self._pairing_supported is None
                 if use_pairing:
                     _LOGGER.info(
                         "Pairing enabled for %s (bed type: %s, variant: %s) - "
@@ -976,6 +979,25 @@ class AdjustableBedCoordinator:
                             )
                         else:
                             raise
+                    except (BleakError, TimeoutError, OSError) as pair_err:
+                        # If pairing was requested and the connection failed,
+                        # the BLE bond may already exist from a previous
+                        # session.  Re-pairing on top of an existing bond
+                        # causes auth failures on some ESP-IDF stacks and
+                        # leaves the ESPHome proxy connection stuck.  Mark
+                        # pairing as complete and let the outer retry loop
+                        # reconnect without pair=True.
+                        if use_pairing:
+                            _LOGGER.warning(
+                                "Connection with pairing failed for %s: %s. "
+                                "Bond may already exist — next attempt will "
+                                "connect without re-pairing.",
+                                self._name,
+                                pair_err,
+                            )
+                            self._pairing_supported = True
+                            raise
+                        raise
                 finally:
                     self._connecting = False
                     # Don't notify here - the connect success/failure paths will notify
