@@ -238,6 +238,70 @@ class TestSupportBundle:
         assert report["bluetooth"]["advertisements_by_source"] == [{"source": "proxy_1"}]
         assert report["connection_attempt_details"][0]["result"] == "connected"
 
+    async def test_generate_support_bundle_configured_device_without_coordinator_keeps_target(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        enable_custom_integrations,
+    ):
+        """Configured-device bundles should still identify the entry when setup is retrying."""
+        del enable_custom_integrations
+        diagnostic_report = DiagnosticReport(
+            metadata={"version": "2.0"},
+            device={
+                "address": mock_config_entry.data["address"],
+                "selected_source": "proxy_1",
+                "actual_source": "proxy_1",
+                "scanner_count": 1,
+                "visible_sources": ["proxy_1"],
+                "non_connectable_fallback_used": False,
+            },
+            advertisement={"address": mock_config_entry.data["address"], "selected_for_connection": True},
+            advertisements_by_source=[{"source": "proxy_1"}],
+            detection={"bed_type": "linak", "supported_match": True},
+            gatt_services=[{"uuid": LINAK_CONTROL_SERVICE_UUID}],
+            gatt_summary={"available": True, "service_count": 1},
+            device_information={"manufacturer_name": "Linak"},
+            notifications=[],
+            notification_summary={"total_notifications": 0, "by_characteristic": {}},
+            adapter_details={},
+            connection_history={},
+            connection_attempt_details=[{"attempt": 1, "result": "connected"}],
+            command_trace=[],
+            errors=[],
+        )
+
+        with (
+            patch.object(
+                BLEDiagnosticRunner,
+                "run_diagnostics",
+                new=AsyncMock(return_value=diagnostic_report),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+                return_value=[MagicMock(source="proxy_1", name="Proxy 1", scanning=True)],
+            ),
+        ):
+            report = await generate_support_bundle(
+                hass,
+                address=mock_config_entry.data["address"],
+                capture_duration=0,
+                include_logs=False,
+                coordinator=None,
+                entry=mock_config_entry,
+                device_id="retry-device-id",
+            )
+
+        assert report["target"]["mode"] == "configured_device"
+        assert report["target"]["address"] == mock_config_entry.data["address"]
+        assert report["target"]["device_id"] == "retry-device-id"
+        assert report["target"]["entry_id"] == mock_config_entry.entry_id
+        assert report["target"]["title"] == mock_config_entry.title
+        assert report["integration"]["entry_id"] == mock_config_entry.entry_id
+        assert report["integration"]["address"] == mock_config_entry.data["address"]
+        assert report["controller"]["initialized"] is False
+        assert report["command_trace"] == []
+
     async def test_coordinator_records_command_trace(
         self,
         hass: HomeAssistant,

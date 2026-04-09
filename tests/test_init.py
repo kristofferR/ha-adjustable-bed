@@ -468,8 +468,10 @@ class TestServices:
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
+        tmp_path: Path,
     ):
         """Test generate_support_bundle service delegates to the bundle generator."""
+        del enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -487,7 +489,7 @@ class TestServices:
             ) as mock_generate_support_bundle,
             patch(
                 "custom_components.adjustable_bed.support_bundle.save_support_bundle",
-                return_value=Path("/tmp/support_bundle.json"),
+                return_value=tmp_path / "support_bundle.json",
             ) as mock_save_support_bundle,
         ):
             await hass.services.async_call(
@@ -532,8 +534,10 @@ class TestServices:
         mock_config_entry,
         mock_bluetooth_adapters,
         enable_custom_integrations,
+        tmp_path: Path,
     ):
         """Support bundles should still target devices whose entry is in SETUP_RETRY."""
+        del mock_bluetooth_adapters, enable_custom_integrations
         from homeassistant.helpers import device_registry as dr
 
         with patch(
@@ -557,7 +561,7 @@ class TestServices:
             ) as mock_generate_support_bundle,
             patch(
                 "custom_components.adjustable_bed.support_bundle.save_support_bundle",
-                return_value=Path("/tmp/support_bundle_retry.json"),
+                return_value=tmp_path / "support_bundle_retry.json",
             ) as mock_save_support_bundle,
         ):
             await hass.services.async_call(

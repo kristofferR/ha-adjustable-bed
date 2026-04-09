@@ -6,6 +6,9 @@
         "description": "Select a discovered bed or choose how to add your bed.",
         "data": {
           "address": "Device"
+        },
+        "data_description": {
+          "configured_retrying_suffix": "[already configured, setup retry]"
         }
       },
       "select_actuator": {

@@ -1112,6 +1112,7 @@ class TestUserFlow:
         enable_custom_integrations,
     ):
         """Retrying entries should surface recovery instructions instead of disappearing."""
+        del mock_bluetooth_adapters, enable_custom_integrations
         existing_entry = MockConfigEntry(
             domain=DOMAIN,
             title="Retrying Bed",
@@ -1146,9 +1147,17 @@ class TestUserFlow:
                 DOMAIN,
                 context={"source": SOURCE_USER},
             )
+            retrying_option = (
+                f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
+            )
+            assert result["type"] == FlowResultType.FORM
+            selector_options = next(iter(result["data_schema"].schema.values())).container
+            assert retrying_option in selector_options
+            assert selector_options[retrying_option].startswith("Retrying Bed")
+
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                user_input={CONF_ADDRESS: f"configured_retry::{mock_bluetooth_service_info.address.upper()}"},
+                user_input={CONF_ADDRESS: retrying_option},
             )
 
         assert result["type"] == FlowResultType.ABORT

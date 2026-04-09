@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAILABLE
@@ -792,6 +792,80 @@ class TestSleepNumberEntities:
                 "binary_sensor",
                 DOMAIN,
                 "AA:BB:CC:DD:EE:57_bed_presence_left",
+            )
+            is None
+        )
+
+    async def test_sleep_number_mcr_entities_include_split_presence_when_supported(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """MCR occupancy sensors should be created when query_config discovers chamber bytes."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Occupancy Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:59",
+                CONF_NAME: "64:DB:A0:07:DD:0A",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:59",
+            entry_id="sleep_number_mcr_presence_entry",
+        )
+        entry.add_to_hass(hass)
+
+        async def _mock_read_chamber_types(self) -> None:
+            self._occupancy_supported = True
+            self._bed_presence["left"] = "in"
+            self._bed_presence["right"] = "out"
+            self.forward_controller_state_updates(
+                {
+                    "bed_presence": "in",
+                    "bed_presence_left": "in",
+                    "bed_presence_right": "out",
+                }
+            )
+
+        with patch(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "SleepNumberMcrController._async_read_chamber_types",
+            new=_mock_read_chamber_types,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:59_bed_presence_left",
+            )
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:59_bed_presence_right",
+            )
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id(
+                "binary_sensor",
+                DOMAIN,
+                "AA:BB:CC:DD:EE:59_bed_presence",
             )
             is None
         )
