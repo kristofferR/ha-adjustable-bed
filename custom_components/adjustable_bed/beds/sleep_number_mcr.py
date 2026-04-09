@@ -654,20 +654,35 @@ class SleepNumberMcrController(BedController):
     async def _async_write_frame(
         self, frame: bytes, *, cancel_event: asyncio.Event | None = None
     ) -> None:
-        """Write an MCR frame using fire-and-forget GATT writes.
+        """Write an MCR frame to the bed.
 
-        The BAM/MCR protocol already provides an application-level response
-        over the notify characteristic, and some ESPHome proxy paths drop the
-        BLE connection while waiting for a lower-level GATT write response.
-        Rely on the protocol frame reply for acknowledgement instead of the
-        transport-level write response.
+        ESPHome BLE proxies silently drop write-without-response packets for
+        this characteristic, so we use write-with-response.  The characteristic
+        only advertises write-without-response in its GATT properties, but
+        ESPHome's ESP-IDF BLE stack requires the response handshake to
+        reliably forward the data to the physical device.
+
+        If write-with-response fails (e.g. direct local Bluetooth adapter
+        enforcing the GATT property), fall back to write-without-response.
         """
-        await self._write_gatt_with_retry(
-            SLEEP_NUMBER_MCR_RX_CHAR_UUID,
-            frame,
-            cancel_event=cancel_event,
-            response=False,
-        )
+        try:
+            await self._write_gatt_with_retry(
+                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+                frame,
+                cancel_event=cancel_event,
+                response=True,
+            )
+        except Exception:
+            _LOGGER.debug(
+                "Write-with-response failed for MCR frame, "
+                "falling back to write-without-response"
+            )
+            await self._write_gatt_with_retry(
+                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+                frame,
+                cancel_event=cancel_event,
+                response=False,
+            )
 
     def _handle_mcr_notification(self, _sender: object, data: bytearray) -> None:
         """Handle an MCR notification frame."""

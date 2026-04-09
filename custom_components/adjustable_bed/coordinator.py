@@ -1032,6 +1032,16 @@ class AdjustableBedCoordinator:
                 # Small delay to let connection stabilize before operations
                 await asyncio.sleep(self._post_connect_delay)
 
+                # The bed may disconnect during the stabilisation delay
+                # (the _on_disconnect callback clears self._client).
+                if self._client is None or not self._client.is_connected:
+                    _LOGGER.warning(
+                        "Connection to %s dropped during post-connect stabilisation",
+                        self._address,
+                    )
+                    self._connection_attempt_details.append(attempt_details)
+                    continue
+
                 # Log connection details
                 _LOGGER.debug(
                     "BleakClient connected: is_connected=%s, mtu_size=%s",
@@ -1073,12 +1083,26 @@ class AdjustableBedCoordinator:
                             sorted(discovered_uuids),
                         )
 
-                # Read BLE Device Information Service for manufacturer/model
-                ble_manufacturer, ble_model = await read_ble_device_info(
-                    self._client, self._address
-                )
-                self._ble_manufacturer = ble_manufacturer
-                self._ble_model = ble_model
+                # Some beds (Sleep Number MCR/Fuzion, Jensen) disconnect if
+                # there is too much delay between the BLE connection and the
+                # protocol handshake.  For those bed types we defer the
+                # Device Information Service reads until after the
+                # notification channel and handshake are established.
+                _defer_device_info = self._bed_type in {
+                    BED_TYPE_SLEEP_NUMBER_MCR,
+                    BED_TYPE_SLEEP_NUMBER,
+                    BED_TYPE_JENSEN,
+                }
+
+                ble_manufacturer: str | None = None
+                ble_model: str | None = None
+
+                if not _defer_device_info:
+                    ble_manufacturer, ble_model = await read_ble_device_info(
+                        self._client, self._address
+                    )
+                    self._ble_manufacturer = ble_manufacturer
+                    self._ble_model = ble_model
 
                 # Post-connection protocol verification for DewertOkin Star devices.
                 # The adjustbed app (com.okin.bedding.adjustbed) reads BLE characteristic
@@ -1200,6 +1224,15 @@ class AdjustableBedCoordinator:
                 }:
                     if hasattr(self._controller, "query_config"):
                         await self._controller.query_config()
+
+                # Read deferred BLE Device Information now that the
+                # notification channel and protocol handshake are done.
+                if _defer_device_info and self._client is not None and self._client.is_connected:
+                    ble_manufacturer, ble_model = await read_ble_device_info(
+                        self._client, self._address
+                    )
+                    self._ble_manufacturer = ble_manufacturer
+                    self._ble_model = ble_model
 
                 if self._should_refresh_readable_light_state(force=True):
                     await self._async_refresh_readable_light_state()
