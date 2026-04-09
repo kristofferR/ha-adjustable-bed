@@ -247,7 +247,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _get_retrying_option_suffix(self) -> str:
         """Return the localized selector hint for retrying configured beds."""
         return await self._get_config_translation(
-            "step.user.data_description.configured_retrying_suffix",
+            "abort.configured_retrying_suffix",
             "[already configured, setup retry]",
         )
 
@@ -963,7 +963,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(self._all_ble_devices),
         )
 
-        if not self._all_ble_devices:
+        if not self._all_ble_devices and not self._retrying_devices:
             _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
             return await self.async_step_manual_entry()
 
