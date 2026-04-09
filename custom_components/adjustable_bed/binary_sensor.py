@@ -17,6 +17,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -67,15 +68,12 @@ async def async_setup_entry(
         if description.key == "bed_presence":
             if controller is None or not getattr(controller, "supports_bed_presence", False):
                 continue
-            # Always create the legacy single-side sensor as a compatibility
-            # alias. The controller already publishes its `bed_presence`
-            # state for the configured side, so existing dashboards and
-            # automations referencing `..._bed_presence` keep working after
-            # upgrading to the split-sensor build. The sensor is still
-            # disabled by default, matching the previous release.
-            entities.append(AdjustableBedPresenceSensor(coordinator, description))
 
             bed_presence_sides = tuple(getattr(controller, "bed_presence_sides", ()))
+            if bed_presence_sides:
+                _async_remove_stale_presence_entity(hass, coordinator)
+            else:
+                entities.append(AdjustableBedPresenceSensor(coordinator, description))
             for side in bed_presence_sides:
                 entities.append(
                     AdjustableBedPresenceSensor(
@@ -94,6 +92,21 @@ async def async_setup_entry(
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
     async_add_entities(entities)
+
+
+def _async_remove_stale_presence_entity(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove the legacy single-side presence entity when split sensors exist."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "binary_sensor",
+        DOMAIN,
+        f"{coordinator.address}_bed_presence",
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.climate import (
@@ -16,6 +16,7 @@ from homeassistant.components.climate import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -161,14 +162,10 @@ async def async_setup_entry(
 
     thermal_sides = tuple(getattr(controller, "thermal_climate_sides", ()))
     if thermal_sides:
-        entities.append(
-            AdjustableBedClimate(
-                coordinator,
-                replace(
-                    SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
-                    entity_registry_enabled_default=False,
-                ),
-            )
+        _async_remove_stale_split_climate_entity(
+            hass,
+            coordinator,
+            SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.key,
         )
         entities.extend(
             AdjustableBedClimate(
@@ -182,14 +179,10 @@ async def async_setup_entry(
 
     footwarming_sides = tuple(getattr(controller, "footwarming_climate_sides", ()))
     if footwarming_sides:
-        entities.append(
-            AdjustableBedClimate(
-                coordinator,
-                replace(
-                    FOOTWARMING_CLIMATE_DESCRIPTION,
-                    entity_registry_enabled_default=False,
-                ),
-            )
+        _async_remove_stale_split_climate_entity(
+            hass,
+            coordinator,
+            FOOTWARMING_CLIMATE_DESCRIPTION.key,
         )
         entities.extend(
             AdjustableBedClimate(
@@ -203,6 +196,22 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _async_remove_stale_split_climate_entity(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    key: str,
+) -> None:
+    """Remove a legacy non-sided climate entity when split entities exist."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "climate",
+        DOMAIN,
+        f"{coordinator.address}_{key}",
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):

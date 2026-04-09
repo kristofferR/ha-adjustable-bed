@@ -224,6 +224,8 @@
     },
     "abort": {
       "already_configured": "Device is already configured",
+      "configured_retrying_suffix": "[already configured, setup retry]",
+      "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle."
     },

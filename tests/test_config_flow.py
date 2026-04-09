@@ -6,11 +6,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
-from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
+from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER, ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
@@ -1102,6 +1103,67 @@ class TestUserFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
+
+    async def test_user_flow_retrying_device_aborts_with_support_bundle_instructions(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """Retrying entries should surface recovery instructions instead of disappearing."""
+        del mock_bluetooth_adapters, enable_custom_integrations
+        existing_entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Retrying Bed",
+            data={
+                CONF_ADDRESS: mock_bluetooth_service_info.address.upper(),
+                CONF_NAME: "Retrying Bed",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=mock_bluetooth_service_info.address.upper(),
+            entry_id="retrying_entry_id",
+        )
+        existing_entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(existing_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert existing_entry.state == ConfigEntryState.SETUP_RETRY
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            retrying_option = (
+                f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
+            )
+            assert result["type"] == FlowResultType.FORM
+            selector_options = next(iter(result["data_schema"].schema.values())).container
+            assert retrying_option in selector_options
+            assert selector_options[retrying_option].startswith("Retrying Bed")
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: retrying_option},
+            )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "configured_retrying"
+        assert result["description_placeholders"]["address"] == mock_bluetooth_service_info.address.upper()
+        assert result["description_placeholders"]["name"] == "Retrying Bed"
 
 
 class TestOptionsFlow:

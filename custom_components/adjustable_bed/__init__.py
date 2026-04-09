@@ -200,6 +200,28 @@ def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None
     )
 
 
+def _async_ensure_device_registry_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Ensure the bed has a device-registry entry even before first connect.
+
+    This keeps device-targeted diagnostics, especially support bundles,
+    available when the initial connection fails and Home Assistant leaves the
+    config entry in SETUP_RETRY.
+    """
+    device_registry = dr.async_get(hass)
+    device_info = coordinator.device_info
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers=device_info["identifiers"],
+        name=device_info.get("name"),
+        manufacturer=device_info.get("manufacturer"),
+        model=device_info.get("model"),
+    )
+
+
 async def _async_finish_entry_setup(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -263,6 +285,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     coordinator = AdjustableBedCoordinator(hass, entry)
+    _async_ensure_device_registry_entry(hass, entry, coordinator)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     # Helper to create pairing issue — only when there's actual evidence of a pairing
@@ -421,6 +444,29 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         for entry_id in device.config_entries:
             if entry_id in hass.data.get(DOMAIN, {}):
                 return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
+        return None
+
+    def _get_support_bundle_target_from_device(
+        hass: HomeAssistant, device_id: str
+    ) -> tuple[str, AdjustableBedCoordinator | None, ConfigEntry] | None:
+        """Resolve support-bundle target details from a device registry ID."""
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get(device_id)
+        if not device:
+            return None
+
+        for entry_id in device.config_entries:
+            entry = hass.config_entries.async_get_entry(entry_id)
+            if entry is None or entry.domain != DOMAIN:
+                continue
+
+            address = entry.data.get(CONF_ADDRESS)
+            if not isinstance(address, str):
+                continue
+
+            coordinator = cast(AdjustableBedCoordinator | None, hass.data.get(DOMAIN, {}).get(entry_id))
+            return address, coordinator, entry
+
         return None
 
     async def _get_controller_for_service(
@@ -989,16 +1035,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
         elif device_ids:
             selected_device_id = device_ids[0]
-            coordinator = await _get_coordinator_from_device(hass, selected_device_id)
-            if coordinator:
-                address = coordinator.address
-                for entry_id, coord in hass.data.get(DOMAIN, {}).items():
-                    if coord is coordinator:
-                        entry = hass.config_entries.async_get_entry(entry_id)
-                        break
+            target = _get_support_bundle_target_from_device(hass, selected_device_id)
+            if target is not None:
+                address, coordinator, entry = target
+                device_name = coordinator.name if coordinator is not None else entry.title
                 _LOGGER.info(
                     "Generating support bundle for configured device %s at %s",
-                    coordinator.name,
+                    device_name,
                     address,
                 )
             else:

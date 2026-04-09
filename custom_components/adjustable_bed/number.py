@@ -14,6 +14,7 @@ from homeassistant.components.number import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -490,22 +491,7 @@ async def async_setup_entry(
             coordinator.name,
             sleep_number_sides,
         )
-        if controller is not None and getattr(controller, "supports_sleep_number_setting", False):
-            entities.append(
-                AdjustableBedSleepNumberSettingNumber(
-                    coordinator,
-                    NumberEntityDescription(
-                        key=SLEEP_NUMBER_SETTING_DESCRIPTION.key,
-                        translation_key=SLEEP_NUMBER_SETTING_DESCRIPTION.translation_key,
-                        icon=SLEEP_NUMBER_SETTING_DESCRIPTION.icon,
-                        native_min_value=getattr(controller, "sleep_number_setting_min", 5),
-                        native_max_value=getattr(controller, "sleep_number_setting_max", 100),
-                        native_step=getattr(controller, "sleep_number_setting_step", 5),
-                        mode=SLEEP_NUMBER_SETTING_DESCRIPTION.mode,
-                        entity_registry_enabled_default=False,
-                    ),
-                )
-            )
+        _async_remove_stale_sleep_number_entity(hass, coordinator)
         for side_description in (
             SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
             SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
@@ -548,6 +534,21 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _async_remove_stale_sleep_number_entity(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove the legacy single-side Sleep Number entity when side controls exist."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "number",
+        DOMAIN,
+        f"{coordinator.address}_{SLEEP_NUMBER_SETTING_DESCRIPTION.key}",
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
 
 
 class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):

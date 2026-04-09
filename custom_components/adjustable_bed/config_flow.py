@@ -11,6 +11,7 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.config_entries import (
     ConfigEntry,
+    ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
@@ -115,6 +116,8 @@ from .validators import (
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIGURED_RETRY_PREFIX = "configured_retry::"
+
 CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
     CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
     CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
@@ -145,21 +148,26 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._disambiguation_types: list[str] | None = None
         self._disambiguated_bed_type: str | None = None
         self._show_full_bed_type_list: bool = False
+        self._retrying_devices: dict[str, tuple[ConfigEntry, BluetoothServiceInfoBleak | None]] = {}
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
-    async def _get_pairing_instructions(self, bed_type: str | None) -> str:
-        """Return pairing instructions tailored to the selected bed type."""
+    async def _get_config_translation(self, key: str, default: str) -> str:
+        """Return a config-flow translation with a safe English fallback."""
         translations = await async_get_translations(
             self.hass, self.hass.config.language, "config", {DOMAIN}
         )
+        return translations.get(f"component.{DOMAIN}.config.{key}", default)
+
+    async def _get_pairing_instructions(self, bed_type: str | None) -> str:
+        """Return pairing instructions tailored to the selected bed type."""
         if bed_type == BED_TYPE_SLEEP_NUMBER:
-            return translations.get(
-                f"component.{DOMAIN}.config.step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
+            return await self._get_config_translation(
+                "step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
                 "2. Click 'Pair Now'",
             )
-        return translations.get(
-            f"component.{DOMAIN}.config.step.bluetooth_pairing.data_description.pairing_instructions_generic",
+        return await self._get_config_translation(
+            "step.bluetooth_pairing.data_description.pairing_instructions_generic",
             "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n"
             "2. Click 'Pair Now'",
         )
@@ -206,6 +214,53 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 "connectable": connectable_text,
             },
         )
+
+    def _configured_entries_by_address(self) -> dict[str, ConfigEntry]:
+        """Return configured entries keyed by normalized Bluetooth address."""
+        configured: dict[str, ConfigEntry] = {}
+        for entry in self.hass.config_entries.async_entries(DOMAIN):
+            candidate = entry.unique_id or entry.data.get(CONF_ADDRESS)
+            if isinstance(candidate, str):
+                configured[candidate.upper()] = entry
+        return configured
+
+    def _async_abort_retrying_entry(self, address: str) -> ConfigFlowResult:
+        """Explain how to recover when the bed is already stuck retrying setup."""
+        entry, info = self._retrying_devices[address]
+        display_name = entry.title or (info.name if info is not None else None) or "Unknown"
+        return self.async_abort(
+            reason="configured_retrying",
+            description_placeholders={
+                "name": display_name,
+                "address": address,
+            },
+        )
+
+    def _retrying_display_name(
+        self,
+        entry: ConfigEntry,
+        info: BluetoothServiceInfoBleak | None,
+    ) -> str:
+        """Return the most helpful name for a retrying config entry."""
+        return entry.title or (info.name if info is not None else None) or "Unknown"
+
+    async def _get_retrying_option_suffix(self) -> str:
+        """Return the localized selector hint for retrying configured beds."""
+        return await self._get_config_translation(
+            "abort.configured_retrying_suffix",
+            "[already configured, setup retry]",
+        )
+
+    def _format_retrying_option_label(
+        self,
+        address: str,
+        entry: ConfigEntry,
+        info: BluetoothServiceInfoBleak | None,
+        *,
+        suffix: str,
+    ) -> str:
+        """Format the selector label for a retrying configured bed."""
+        return f"{self._retrying_display_name(entry, info)} ({address}) {suffix}"
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -316,11 +371,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             options.append(SelectOptionDict(value=bed_type, label=display_name))
 
         # Add "Show all bed types" fallback option with translated label
-        translations = await async_get_translations(
-            self.hass, self.hass.config.language, "config", {DOMAIN}
-        )
-        show_all_label = translations.get(
-            f"component.{DOMAIN}.config.step.bluetooth_disambiguate.data.show_all_option",
+        show_all_label = await self._get_config_translation(
+            "step.bluetooth_disambiguate.data.show_all_option",
             "Show all bed types...",
         )
         options.append(SelectOptionDict(value="show_all", label=show_all_label))
@@ -630,6 +682,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
+            if address.startswith(CONFIGURED_RETRY_PREFIX):
+                return self._async_abort_retrying_entry(
+                    address.removeprefix(CONFIGURED_RETRY_PREFIX)
+                )
             if address == "manual":
                 _LOGGER.debug("User selected manual entry (full list)")
                 # Reset two-tier selection state - show all BLE devices with full bed type dropdown
@@ -680,12 +736,23 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
         # Convert to upper-case for case-insensitive comparison
-        # (configured IDs are upper-case, but discovered addresses may be lower-case)
-        current_addresses = {addr.upper() for addr in self._async_current_ids() if addr is not None}
+        configured_entries = self._configured_entries_by_address()
+        self._retrying_devices.clear()
         for discovery_info in all_discovered:
-            if discovery_info.address.upper() in current_addresses:
+            normalized_address = discovery_info.address.upper()
+            configured_entry = configured_entries.get(normalized_address)
+            if configured_entry is not None:
+                if configured_entry.state == ConfigEntryState.SETUP_RETRY:
+                    self._retrying_devices[normalized_address] = (configured_entry, discovery_info)
+                else:
+                    _LOGGER.debug(
+                        "Skipping already configured device: %s",
+                        discovery_info.address,
+                    )
+                continue
+            if normalized_address in self._retrying_devices:
                 _LOGGER.debug(
-                    "Skipping already configured device: %s",
+                    "Skipping duplicate retrying device snapshot: %s",
                     discovery_info.address,
                 )
                 continue
@@ -710,6 +777,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._discovered_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
+        sorted_retrying_devices = sorted(
+            self._retrying_devices.items(),
+            key=lambda item: (
+                is_mac_like_name(self._retrying_display_name(item[1][0], item[1][1])),
+                self._retrying_display_name(item[1][0], item[1][1]).lower(),
+            ),
+        )
+
+        retrying_suffix = await self._get_retrying_option_suffix()
 
         # Build device list - discovered beds first when available, then manual options
         devices: dict[str, str] = {}
@@ -717,8 +793,30 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             devices.update(
                 {address: f"{info.name or 'Unknown'} ({address})" for address, info in sorted_beds}
             )
+            devices.update(
+                {
+                    f"{CONFIGURED_RETRY_PREFIX}{address}": self._format_retrying_option_label(
+                        address,
+                        entry,
+                        info,
+                        suffix=retrying_suffix,
+                    )
+                    for address, (entry, info) in sorted_retrying_devices
+                }
+            )
             devices["select_by_brand"] = "Select by actuator brand"
         else:
+            devices.update(
+                {
+                    f"{CONFIGURED_RETRY_PREFIX}{address}": self._format_retrying_option_label(
+                        address,
+                        entry,
+                        info,
+                        suffix=retrying_suffix,
+                    )
+                    for address, (entry, info) in sorted_retrying_devices
+                }
+            )
             devices["select_by_brand"] = "Select by actuator brand (recommended)"
         devices["manual"] = "Show all BLE devices"
         devices["diagnostic"] = "Browse unsupported BLE devices"
@@ -819,6 +917,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
+            if address.startswith(CONFIGURED_RETRY_PREFIX):
+                return self._async_abort_retrying_entry(
+                    address.removeprefix(CONFIGURED_RETRY_PREFIX)
+                )
             if address == "manual_entry":
                 _LOGGER.debug("User selected manual address entry")
                 return await self.async_step_manual_entry()
@@ -843,20 +945,25 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             len(all_discovered),
         )
 
-        # Filter out already configured devices
-        current_addresses = {addr.upper() for addr in self._async_current_ids() if addr is not None}
-
+        configured_entries = self._configured_entries_by_address()
         self._all_ble_devices = {}
+        self._retrying_devices.clear()
         for discovery_info in all_discovered:
-            if discovery_info.address.upper() not in current_addresses:
-                self._all_ble_devices[discovery_info.address] = discovery_info
+            normalized_address = discovery_info.address.upper()
+            configured_entry = configured_entries.get(normalized_address)
+            if configured_entry is not None:
+                if configured_entry.state == ConfigEntryState.SETUP_RETRY:
+                    self._retrying_devices[normalized_address] = (configured_entry, discovery_info)
+                continue
+
+            self._all_ble_devices[discovery_info.address] = discovery_info
 
         _LOGGER.info(
             "Manual selection: found %d unconfigured BLE devices",
             len(self._all_ble_devices),
         )
 
-        if not self._all_ble_devices:
+        if not self._all_ble_devices and not self._retrying_devices:
             _LOGGER.info("No BLE devices found in either scanner view, showing manual entry form")
             return await self.async_step_manual_entry()
 
@@ -865,12 +972,27 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._all_ble_devices.items(),
             key=lambda x: (is_mac_like_name(x[1].name), (x[1].name or "").lower()),
         )
+        sorted_retrying_devices = sorted(
+            self._retrying_devices.items(),
+            key=lambda item: (
+                is_mac_like_name(self._retrying_display_name(item[1][0], item[1][1])),
+                self._retrying_display_name(item[1][0], item[1][1]).lower(),
+            ),
+        )
+        retrying_suffix = await self._get_retrying_option_suffix()
         devices = {}
         for address, info in sorted_devices:
             label = f"{info.name or 'Unknown'} ({address})"
             if getattr(info, "connectable", True) is False:
                 label += " [scanner says non-connectable]"
             devices[address] = label
+        for address, (entry, info) in sorted_retrying_devices:
+            devices[f"{CONFIGURED_RETRY_PREFIX}{address}"] = self._format_retrying_option_label(
+                address,
+                entry,
+                info,
+                suffix=retrying_suffix,
+            )
         devices["manual_entry"] = "Enter address manually"
 
         return self.async_show_form(
@@ -1106,6 +1228,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "invalid_number"
 
                 if not errors:
+                    retrying_entry = self._configured_entries_by_address().get(address)
+                    if retrying_entry is not None and retrying_entry.state == ConfigEntryState.SETUP_RETRY:
+                        self._retrying_devices[address] = (retrying_entry, None)
+                        return self._async_abort_retrying_entry(address)
+
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
 
