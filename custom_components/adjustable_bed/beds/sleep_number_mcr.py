@@ -14,6 +14,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
+from bleak.exc import BleakError
+
 from ..const import (
     SLEEP_NUMBER_MCR_RX_CHAR_UUID,
     SLEEP_NUMBER_MCR_TX_CHAR_UUID,
@@ -672,10 +674,11 @@ class SleepNumberMcrController(BedController):
                 cancel_event=cancel_event,
                 response=True,
             )
-        except Exception:
+        except (BleakError, TimeoutError, OSError) as exc:
             _LOGGER.debug(
-                "Write-with-response failed for MCR frame, "
-                "falling back to write-without-response"
+                "Write-with-response failed for MCR frame (%s), "
+                "falling back to write-without-response",
+                exc,
             )
             await self._write_gatt_with_retry(
                 SLEEP_NUMBER_MCR_RX_CHAR_UUID,
