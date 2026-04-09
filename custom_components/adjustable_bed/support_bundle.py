@@ -78,7 +78,7 @@ async def generate_support_bundle(
             "integration_domain": DOMAIN,
         },
         "target": {
-            "mode": "configured_device" if coordinator is not None and entry is not None else "target_address",
+            "mode": "configured_device" if entry is not None else "target_address",
             "address": address,
             "device_id": device_id,
             "entry_id": entry.entry_id if entry is not None else None,
