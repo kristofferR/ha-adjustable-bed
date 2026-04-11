@@ -9,6 +9,8 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
+from time import monotonic
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
@@ -30,6 +32,20 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+LINAK_CONTROL_READY_TIMEOUT_S = 6.0
+LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
+
+
+@dataclass(frozen=True, slots=True)
+class LinakPositionSpec:
+    """Describe a Linak position characteristic and the logical axis it backs."""
+
+    axis_name: str
+    source_name: str
+    uuid: str
+    max_position: int
+    max_angle: float
 
 
 class LinakCommands:
@@ -100,7 +116,11 @@ class LinakController(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._notify_handles: dict[str, int] = {}
-        self._woken: bool = False
+        self._active_position_notifications: set[str] = set()
+        self._deferred_position_notifications: set[str] = set()
+        self._resolved_two_motor_secondary_spec: LinakPositionSpec | None = None
+        self._session_ready = False
+        self._session_started_monotonic = monotonic()
         _LOGGER.debug(
             "LinakController initialized (motor_count: %d)",
             coordinator.motor_count,
@@ -160,6 +180,301 @@ class LinakController(BedController):
         """Return the UUID of the control characteristic."""
         return LINAK_CONTROL_CHAR_UUID
 
+    @staticmethod
+    def _is_authentication_window_error(err: BleakError) -> bool:
+        """Return True when Linak rejects writes during early session setup."""
+        message = str(err).lower()
+        return "insufficient authentication" in message or "error=5" in message
+
+    def _make_position_handler(
+        self, spec: LinakPositionSpec
+    ) -> Callable[[Any, bytearray], None]:
+        """Build a notification callback for a Linak position characteristic."""
+
+        def handler(_: Any, data: bytearray) -> None:
+            _LOGGER.debug(
+                "Notification received for %s: raw_data=%s (%d bytes)",
+                spec.source_name,
+                data.hex(),
+                len(data),
+            )
+            self.forward_raw_notification(spec.uuid, bytes(data))
+            self._handle_position_data(
+                spec.axis_name,
+                data,
+                spec.max_position,
+                spec.max_angle,
+                source_name=spec.source_name,
+            )
+
+        return handler
+
+    def _back_position_spec(self) -> LinakPositionSpec:
+        """Return the Linak back/rest position characteristic."""
+        return LinakPositionSpec(
+            axis_name="back",
+            source_name="back",
+            uuid=LINAK_POSITION_BACK_UUID,
+            max_position=LINAK_BACK_MAX_POSITION,
+            max_angle=self._coordinator.back_max_angle,
+        )
+
+    def _legs_position_spec(self) -> LinakPositionSpec:
+        """Return the default Linak legs/rest position characteristic."""
+        return LinakPositionSpec(
+            axis_name="legs",
+            source_name="legs",
+            uuid=LINAK_POSITION_LEG_UUID,
+            max_position=LINAK_LEG_MAX_POSITION,
+            max_angle=self._coordinator.legs_max_angle,
+        )
+
+    def _head_position_spec(self) -> LinakPositionSpec:
+        """Return the Linak head/rest position characteristic."""
+        return LinakPositionSpec(
+            axis_name="head",
+            source_name="head",
+            uuid=LINAK_POSITION_HEAD_UUID,
+            max_position=LINAK_HEAD_MAX_POSITION,
+            max_angle=self._coordinator.head_max_angle,
+        )
+
+    def _feet_position_spec(self) -> LinakPositionSpec:
+        """Return the Linak foot/rest position characteristic."""
+        return LinakPositionSpec(
+            axis_name="feet",
+            source_name="feet",
+            uuid=LINAK_POSITION_FEET_UUID,
+            max_position=LINAK_FEET_MAX_POSITION,
+            max_angle=self._coordinator.feet_max_angle,
+        )
+
+    def _two_motor_secondary_spec(self) -> LinakPositionSpec:
+        """Return the currently resolved second actuator for a 2-motor bed."""
+        return self._resolved_two_motor_secondary_spec or self._legs_position_spec()
+
+    def _two_motor_secondary_candidates(self) -> list[LinakPositionSpec]:
+        """Return candidate Linak reference outputs for the second 2-motor actuator."""
+        return [
+            self._legs_position_spec(),
+            LinakPositionSpec(
+                axis_name="legs",
+                source_name="feet",
+                uuid=LINAK_POSITION_FEET_UUID,
+                max_position=LINAK_FEET_MAX_POSITION,
+                max_angle=self._coordinator.legs_max_angle,
+            ),
+            LinakPositionSpec(
+                axis_name="legs",
+                source_name="head",
+                uuid=LINAK_POSITION_HEAD_UUID,
+                max_position=LINAK_HEAD_MAX_POSITION,
+                max_angle=self._coordinator.legs_max_angle,
+            ),
+        ]
+
+    def _build_position_characteristics(self, motor_count: int) -> list[LinakPositionSpec]:
+        """Return the readable/notifiable position characteristics for this bed."""
+        position_specs = [self._back_position_spec()]
+
+        if motor_count <= 2:
+            position_specs.append(self._two_motor_secondary_spec())
+            return position_specs
+
+        position_specs.append(self._legs_position_spec())
+
+        if motor_count > 2:
+            position_specs.append(self._head_position_spec())
+
+        if motor_count > 3:
+            position_specs.append(self._feet_position_spec())
+
+        return position_specs
+
+    async def _set_two_motor_secondary_spec(self, spec: LinakPositionSpec) -> None:
+        """Persist the resolved second actuator for a 2-motor Linak bed."""
+        current_spec = self._two_motor_secondary_spec()
+        if current_spec.uuid == spec.uuid:
+            return
+
+        _LOGGER.info(
+            "Resolved Linak secondary actuator for %s to %s (%s)",
+            self._coordinator.address,
+            spec.source_name,
+            spec.uuid,
+        )
+        self._resolved_two_motor_secondary_spec = spec
+
+        if self.client is None or not self.client.is_connected:
+            return
+
+        if current_spec.uuid in self._active_position_notifications:
+            with contextlib.suppress(BleakError):
+                await self.client.stop_notify(current_spec.uuid)
+            self._active_position_notifications.discard(current_spec.uuid)
+            self._deferred_position_notifications.discard(current_spec.uuid)
+
+        await self._ensure_position_notifications_started()
+
+    async def _start_missing_position_notifications(
+        self,
+    ) -> tuple[list[str], list[str], list[str]]:
+        """Start any Linak position notifications that are not already active."""
+        successful: list[str] = []
+        deferred: list[str] = []
+        failed: list[str] = []
+
+        if self.client is None or not self.client.is_connected:
+            return successful, deferred, failed
+
+        for spec in self._build_position_characteristics(self._coordinator.motor_count):
+            if spec.uuid in self._active_position_notifications:
+                continue
+
+            _LOGGER.debug(
+                "Attempting to start notifications for %s (UUID: %s)...",
+                spec.source_name,
+                spec.uuid,
+            )
+
+            try:
+                async with self._ble_lock:
+                    await self.client.start_notify(
+                        spec.uuid,
+                        self._make_position_handler(spec),
+                    )
+            except BleakError as err:
+                if self._is_authentication_window_error(err):
+                    self._deferred_position_notifications.add(spec.uuid)
+                    deferred.append(spec.source_name)
+                    _LOGGER.debug(
+                        "Deferring Linak %s notifications until control is ready: %s",
+                        spec.source_name,
+                        err,
+                    )
+                    continue
+
+                _LOGGER.debug(
+                    "Could not start notifications for %s position (UUID: %s): %s (type: %s)",
+                    spec.source_name,
+                    spec.uuid,
+                    err,
+                    type(err).__name__,
+                )
+                failed.append(spec.source_name)
+                continue
+
+            self._active_position_notifications.add(spec.uuid)
+            self._deferred_position_notifications.discard(spec.uuid)
+            successful.append(spec.source_name)
+            _LOGGER.debug(
+                "Successfully started notifications for %s position (UUID: %s, max_pos: %d, max_angle: %.1f°)",
+                spec.source_name,
+                spec.uuid,
+                spec.max_position,
+                spec.max_angle,
+            )
+
+        return successful, deferred, failed
+
+    async def _ensure_position_notifications_started(self) -> None:
+        """Start Linak position notifications, retrying deferred auth-window attempts."""
+        if self._notify_callback is None:
+            return
+
+        successful, deferred, failed = await self._start_missing_position_notifications()
+
+        if successful:
+            _LOGGER.info(
+                "Position notifications active for: %s",
+                ", ".join(successful),
+            )
+
+        if deferred:
+            _LOGGER.debug(
+                "Linak position notifications deferred until control is ready: %s",
+                ", ".join(deferred),
+            )
+
+        if failed:
+            _LOGGER.warning(
+                "Position notifications unavailable for: %s (bed may not support position feedback for these motors)",
+                ", ".join(failed),
+            )
+
+    async def _await_control_ready(
+        self, cancel_event: asyncio.Event | None = None
+    ) -> None:
+        """Wait until Linak accepts control writes after a fresh BLE connect."""
+        if self._session_ready:
+            return
+
+        effective_cancel = cancel_event or self._coordinator.cancel_command
+        deadline = self._session_started_monotonic + LINAK_CONTROL_READY_TIMEOUT_S
+        attempt = 0
+
+        while True:
+            if effective_cancel is not None and effective_cancel.is_set():
+                _LOGGER.debug(
+                    "Cancelled Linak readiness wait for %s",
+                    self._coordinator.address,
+                )
+                return
+
+            attempt += 1
+            session_age = monotonic() - self._session_started_monotonic
+            _LOGGER.debug(
+                "Probing Linak control readiness for %s (attempt %d, session age %.2fs)",
+                self._coordinator.address,
+                attempt,
+                session_age,
+            )
+
+            if self._deferred_position_notifications:
+                await self._ensure_position_notifications_started()
+
+            try:
+                await self._write_gatt_with_retry(
+                    self.control_characteristic_uuid,
+                    LinakCommands.MOVE_STOP,
+                    repeat_count=1,
+                    repeat_delay_ms=0,
+                    cancel_event=cancel_event,
+                )
+            except BleakError as err:
+                if not self._is_authentication_window_error(err):
+                    raise
+
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    _LOGGER.error(
+                        "Linak control stayed unavailable for %s after %.2fs",
+                        self._coordinator.address,
+                        session_age,
+                    )
+                    raise
+
+                delay = min(LINAK_CONTROL_READY_RETRY_DELAY_S, remaining)
+                _LOGGER.debug(
+                    "Linak control not ready for %s yet: %s; retrying in %.2fs",
+                    self._coordinator.address,
+                    err,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+                continue
+
+            self._session_ready = True
+            if self._deferred_position_notifications:
+                await self._ensure_position_notifications_started()
+            _LOGGER.debug(
+                "Linak control ready for %s after %.2fs (%d probe attempts)",
+                self._coordinator.address,
+                monotonic() - self._session_started_monotonic,
+                attempt,
+            )
+            return
+
     async def write_command(
         self,
         command: bytes,
@@ -168,36 +483,7 @@ class LinakController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
-        # Wake the motor controller on first command after reconnection.
-        # Linak controllers enter a low-power state after BLE disconnect.
-        # The first GATT write(s) after reconnection succeed at the BLE
-        # level but are silently ignored by the bed hardware.  Send a
-        # short burst of STOP commands (0xFF) to wake the controller
-        # before the real command.  STOP is safe when nothing is moving.
-        if not self._woken:
-            self._woken = True
-            effective_cancel = cancel_event or self._coordinator.cancel_command
-            if effective_cancel is None or not effective_cancel.is_set():
-                _LOGGER.debug(
-                    "Sending wake preamble to Linak bed at %s",
-                    self._coordinator.address,
-                )
-                try:
-                    await self._write_gatt_with_retry(
-                        self.control_characteristic_uuid,
-                        LinakCommands.MOVE_STOP,
-                        repeat_count=3,
-                        repeat_delay_ms=200,
-                        cancel_event=cancel_event,
-                    )
-                    await asyncio.sleep(1.0)
-                except (BleakError, ConnectionError):
-                    _LOGGER.debug(
-                        "Wake preamble failed for %s, proceeding with command",
-                        self._coordinator.address,
-                        exc_info=True,
-                    )
-
+        await self._await_control_ready(cancel_event)
         _LOGGER.debug(
             "Writing command to Linak bed: %s (repeat: %d, delay: %dms)",
             command.hex(),
@@ -239,174 +525,88 @@ class LinakController(BedController):
             getattr(self.client, "mtu_size", "N/A"),
         )
 
-        # Set up notification handlers for position characteristics
-        # Use configurable angle limits from coordinator
-        back_max_angle = self._coordinator.back_max_angle
-        legs_max_angle = self._coordinator.legs_max_angle
-        head_max_angle = self._coordinator.head_max_angle
-        feet_max_angle = self._coordinator.feet_max_angle
-
-        position_chars = [
-            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
-            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
-        ]
-
-        if motor_count > 2:
-            position_chars.append(
-                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
-            )
-            _LOGGER.debug("Adding head position notifications (3+ motors)")
-
-        if motor_count > 3:
-            position_chars.append(
-                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
-            )
-            _LOGGER.debug("Adding feet position notifications (4 motors)")
+        position_chars = self._build_position_characteristics(motor_count)
 
         _LOGGER.debug(
             "Will attempt to subscribe to %d position characteristics: %s",
             len(position_chars),
-            [name for name, _, _, _ in position_chars],
+            [spec.source_name for spec in position_chars],
         )
-
-        successful = []
-        failed = []
-
-        for name, uuid, max_pos, max_angle in position_chars:
-            _LOGGER.debug(
-                "Attempting to start notifications for %s (UUID: %s)...",
-                name,
-                uuid,
-            )
-            try:
-
-                def make_handler(
-                    n: str, mp: int, ma: float, char_uuid: str
-                ) -> Callable[[Any, bytearray], None]:
-                    def handler(_: Any, data: bytearray) -> None:
-                        _LOGGER.debug(
-                            "Notification received for %s: raw_data=%s (%d bytes)",
-                            n,
-                            data.hex(),
-                            len(data),
-                        )
-                        self.forward_raw_notification(char_uuid, bytes(data))
-                        self._handle_position_data(n, data, mp, ma)
-
-                    return handler
-
-                await self.client.start_notify(uuid, make_handler(name, max_pos, max_angle, uuid))
-                _LOGGER.debug(
-                    "Successfully started notifications for %s position (UUID: %s, max_pos: %d, max_angle: %.1f°)",
-                    name,
-                    uuid,
-                    max_pos,
-                    max_angle,
-                )
-                successful.append(name)
-            except BleakError as err:
-                _LOGGER.debug(
-                    "Could not start notifications for %s position (UUID: %s): %s (type: %s)",
-                    name,
-                    uuid,
-                    err,
-                    type(err).__name__,
-                )
-                failed.append(name)
-
-        if successful:
-            _LOGGER.info(
-                "Position notifications active for: %s (%d/%d)",
-                ", ".join(successful),
-                len(successful),
-                len(position_chars),
-            )
-        if failed:
-            _LOGGER.warning(
-                "Position notifications unavailable for: %s (bed may not support position feedback for these motors)",
-                ", ".join(failed),
-            )
-
-    def _build_position_characteristics(
-        self, motor_count: int
-    ) -> list[tuple[str, str, int, float]]:
-        """Return the readable/notifiable position characteristics for this bed."""
-        back_max_angle = self._coordinator.back_max_angle
-        legs_max_angle = self._coordinator.legs_max_angle
-        head_max_angle = self._coordinator.head_max_angle
-        feet_max_angle = self._coordinator.feet_max_angle
-
-        position_chars = [
-            ("back", LINAK_POSITION_BACK_UUID, LINAK_BACK_MAX_POSITION, back_max_angle),
-            ("legs", LINAK_POSITION_LEG_UUID, LINAK_LEG_MAX_POSITION, legs_max_angle),
-        ]
-
-        if motor_count > 2:
-            position_chars.append(
-                ("head", LINAK_POSITION_HEAD_UUID, LINAK_HEAD_MAX_POSITION, head_max_angle)
-            )
-
-        if motor_count > 3:
-            position_chars.append(
-                ("feet", LINAK_POSITION_FEET_UUID, LINAK_FEET_MAX_POSITION, feet_max_angle)
-            )
-
-        return position_chars
+        await self._ensure_position_notifications_started()
 
     async def _read_position_characteristic(
         self,
-        name: str,
-        uuid: str,
-        max_pos: int,
-        max_angle: float,
+        spec: LinakPositionSpec,
         timeout_seconds: float = 0.75,
-    ) -> None:
+    ) -> float | None:
         """Read a single Linak position characteristic without blocking others."""
         if self.client is None or not self.client.is_connected:
-            return
+            return None
 
         try:
             async with asyncio.timeout(timeout_seconds):
                 async with self._ble_lock:
-                    data = await self.client.read_gatt_char(uuid)
+                    data = await self.client.read_gatt_char(spec.uuid)
         except TimeoutError:
-            _LOGGER.debug("Timed out reading position for %s (UUID: %s)", name, uuid)
-            return
+            _LOGGER.debug(
+                "Timed out reading position for %s (UUID: %s)",
+                spec.source_name,
+                spec.uuid,
+            )
+            return None
         except BleakError as err:
-            _LOGGER.debug("Could not read position for %s (UUID: %s): %s", name, uuid, err)
-            return
+            _LOGGER.debug(
+                "Could not read position for %s (UUID: %s): %s",
+                spec.source_name,
+                spec.uuid,
+                err,
+            )
+            return None
 
-        if data:
-            _LOGGER.debug("Read position for %s: %s", name, data.hex())
-            self._handle_position_data(name, bytearray(data), max_pos, max_angle)
+        if not data:
+            return None
 
-    def _handle_position_data(
-        self, name: str, data: bytearray, max_position: int, max_angle: float
-    ) -> None:
-        """Handle position notification data."""
+        _LOGGER.debug("Read position for %s: %s", spec.source_name, data.hex())
+        angle = self._decode_position_data(
+            spec.source_name,
+            bytearray(data),
+            spec.max_position,
+            spec.max_angle,
+        )
+        if angle is None:
+            return None
+
+        if self._notify_callback:
+            self._notify_callback(spec.axis_name, angle)
+        return angle
+
+    def _decode_position_data(
+        self,
+        source_name: str,
+        data: bytearray,
+        max_position: int,
+        max_angle: float,
+    ) -> float | None:
+        """Decode raw Linak position bytes into an angle."""
         if len(data) < 2:
             _LOGGER.warning(
                 "Received invalid position data for %s: expected 2+ bytes, got %d",
-                name,
+                source_name,
                 len(data),
             )
-            return
+            return None
 
-        # Little-endian 2-byte value
         raw_position = data[0] | (data[1] << 8)
 
-        # Ignore clearly invalid values (e.g., uninitialized sensor data)
-        # Values more than 10% above max are likely garbage/initialization values
         if raw_position > max_position * 1.1:
             _LOGGER.debug(
                 "Ignoring invalid position data for %s: raw=%d exceeds max=%d by >10%%",
-                name,
+                source_name,
                 raw_position,
                 max_position,
             )
-            return
+            return None
 
-        # Convert to angle (clamp to max if slightly over)
         if raw_position >= max_position:
             angle = max_angle
         else:
@@ -414,12 +614,32 @@ class LinakController(BedController):
 
         _LOGGER.debug(
             "Position update [%s]: raw=%d (max=%d), angle=%.1f° (max=%.1f°)",
-            name,
+            source_name,
             raw_position,
             max_position,
             angle,
             max_angle,
         )
+        return angle
+
+    def _handle_position_data(
+        self,
+        name: str,
+        data: bytearray,
+        max_position: int,
+        max_angle: float,
+        *,
+        source_name: str | None = None,
+    ) -> None:
+        """Handle position notification data."""
+        angle = self._decode_position_data(
+            source_name or name,
+            data,
+            max_position,
+            max_angle,
+        )
+        if angle is None:
+            return
 
         if self._notify_callback:
             self._notify_callback(name, angle)
@@ -429,6 +649,8 @@ class LinakController(BedController):
         if self.client is None or not self.client.is_connected:
             return
 
+        self._active_position_notifications.clear()
+        self._deferred_position_notifications.clear()
         uuids = [
             LINAK_POSITION_BACK_UUID,
             LINAK_POSITION_LEG_UUID,
@@ -450,21 +672,38 @@ class LinakController(BedController):
             _LOGGER.warning("Cannot read positions: not connected")
             return
 
-        for name, uuid, max_pos, max_angle in self._build_position_characteristics(motor_count):
-            await self._read_position_characteristic(name, uuid, max_pos, max_angle)
+        if motor_count <= 2:
+            await self._read_position_characteristic(self._back_position_spec())
+            await self._read_two_motor_secondary_position()
+            return
+
+        for spec in self._build_position_characteristics(motor_count):
+            await self._read_position_characteristic(spec)
+
+    async def _read_two_motor_secondary_position(self) -> None:
+        """Read and resolve the second actuator for a 2-motor Linak bed."""
+        current_spec = self._two_motor_secondary_spec()
+        candidates = [current_spec] + [
+            candidate
+            for candidate in self._two_motor_secondary_candidates()
+            if candidate.uuid != current_spec.uuid
+        ]
+
+        for spec in candidates:
+            angle = await self._read_position_characteristic(spec)
+            if angle is None:
+                continue
+
+            if spec.uuid != current_spec.uuid:
+                await self._set_two_motor_secondary_spec(spec)
+            return
 
     async def read_non_notifying_positions(self) -> None:
         """Read positions for manual refresh flows that need a back-motor read."""
         if self.client is None or not self.client.is_connected:
             return
 
-        await self._read_position_characteristic(
-            "back",
-            LINAK_POSITION_BACK_UUID,
-            LINAK_BACK_MAX_POSITION,
-            self._coordinator.back_max_angle,
-            timeout_seconds=0.4,
-        )
+        await self._read_position_characteristic(self._back_position_spec(), timeout_seconds=0.4)
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving.
@@ -550,8 +789,7 @@ class LinakController(BedController):
             6: LinakCommands.PRESET_MEMORY_6,
         }
         if command := commands.get(memory_num):
-            # Keep sending command while bed moves to preset position
-            await self.write_command(command, repeat_count=100, repeat_delay_ms=300)
+            await self.write_command(command)
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""

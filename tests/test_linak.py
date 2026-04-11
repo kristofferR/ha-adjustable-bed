@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -12,9 +12,27 @@ from custom_components.adjustable_bed.beds.linak import LinakCommands
 from custom_components.adjustable_bed.const import (
     LINAK_CONTROL_CHAR_UUID,
     LINAK_POSITION_BACK_UUID,
+    LINAK_POSITION_FEET_UUID,
     LINAK_POSITION_LEG_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+
+def _written_commands(mock_bleak_client: MagicMock) -> list[bytes]:
+    """Return the payload bytes written to the Linak control characteristic."""
+    return [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+
+
+def _assert_repeated_command(
+    mock_bleak_client: MagicMock, command: bytes, repeat_count: int
+) -> None:
+    """Assert the control characteristic only receives the expected command bytes."""
+    assert _written_commands(mock_bleak_client) == [command] * repeat_count
+
+
+def _mark_session_ready(coordinator: AdjustableBedCoordinator) -> None:
+    """Skip the cold-connect readiness probe for command behavior tests."""
+    coordinator.controller._session_ready = True
 
 
 class TestLinakController:
@@ -42,6 +60,7 @@ class TestLinakController:
         """Test writing a command to the bed."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         command = LinakCommands.MOVE_STOP
         await coordinator.controller.write_command(command)
@@ -60,11 +79,12 @@ class TestLinakController:
         """Test writing a command with repeat count."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         command = LinakCommands.MOVE_HEAD_UP
         await coordinator.controller.write_command(command, repeat_count=3, repeat_delay_ms=50)
 
-        assert mock_bleak_client.write_gatt_char.call_count == 3
+        _assert_repeated_command(mock_bleak_client, command, repeat_count=3)
 
     async def test_write_command_not_connected(
         self,
@@ -76,6 +96,7 @@ class TestLinakController:
         """Test writing command when not connected raises error."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         # Simulate disconnection
         mock_bleak_client.is_connected = False
@@ -93,11 +114,121 @@ class TestLinakController:
         """Test writing command handles BleakError."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         mock_bleak_client.write_gatt_char.side_effect = BleakError("Write failed")
 
         with pytest.raises(BleakError):
             await coordinator.controller.write_command(LinakCommands.MOVE_STOP)
+
+    async def test_write_command_waits_out_cold_connect_auth_window(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Linak should retry a safe STOP until the fresh session accepts writes."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=CB:3D:68:A7:7B:D0 handle=14 error=5 description=Insufficient authentication"
+        )
+        mock_bleak_client.write_gatt_char.side_effect = [
+            auth_error,
+            auth_error,
+            None,
+            None,
+            None,
+            None,
+        ]
+
+        with patch(
+            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            new=AsyncMock(),
+        ) as mock_sleep:
+            await coordinator.controller.write_command(
+                LinakCommands.MOVE_HEAD_UP,
+                repeat_count=3,
+                repeat_delay_ms=50,
+            )
+
+        assert _written_commands(mock_bleak_client) == [
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_HEAD_UP,
+            LinakCommands.MOVE_HEAD_UP,
+            LinakCommands.MOVE_HEAD_UP,
+        ]
+        assert mock_sleep.await_count >= 2
+
+    async def test_write_command_reuses_ready_session_without_extra_probe(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """After the first accepted write, later commands should skip the readiness probe."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.write_command(LinakCommands.MOVE_HEAD_UP)
+        await coordinator.controller.write_command(LinakCommands.MOVE_HEAD_DOWN)
+
+        assert _written_commands(mock_bleak_client) == [
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_HEAD_UP,
+            LinakCommands.MOVE_HEAD_DOWN,
+        ]
+
+    async def test_write_command_retries_deferred_position_notifications_after_readiness(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Deferred cold-connect position notifications should recover on first command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        controller._active_position_notifications.clear()
+        controller._deferred_position_notifications.clear()
+        mock_bleak_client.start_notify.reset_mock()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=CB:3D:68:A7:7B:D0 handle=14 error=5 description=Insufficient authentication"
+        )
+        mock_bleak_client.start_notify.side_effect = [
+            auth_error,
+            auth_error,
+            None,
+            None,
+        ]
+
+        await controller.start_notify(MagicMock())
+        assert controller._deferred_position_notifications == {
+            LINAK_POSITION_BACK_UUID,
+            LINAK_POSITION_LEG_UUID,
+        }
+
+        await controller.write_command(LinakCommands.MOVE_HEAD_UP)
+
+        assert controller._active_position_notifications == {
+            LINAK_POSITION_BACK_UUID,
+            LINAK_POSITION_LEG_UUID,
+        }
+        assert not controller._deferred_position_notifications
+        assert mock_bleak_client.start_notify.call_count == 4
+        assert _written_commands(mock_bleak_client) == [
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_HEAD_UP,
+        ]
 
 
 class TestLinakMovement:
@@ -125,18 +256,11 @@ class TestLinakMovement:
         """Test move head up sends repeated commands (Linak auto-stops when commands stop)."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.move_head_up()
 
-        # Linak beds auto-stop when commands stop arriving, so no explicit STOP is sent
-        # Should have sent multiple HEAD_UP commands
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # All calls should be HEAD_UP (no stop command for Linak)
-        for call in calls:
-            command = call[0][1]
-            assert command == LinakCommands.MOVE_HEAD_UP
+        _assert_repeated_command(mock_bleak_client, LinakCommands.MOVE_HEAD_UP, 15)
 
     async def test_move_legs_down(
         self,
@@ -148,17 +272,11 @@ class TestLinakMovement:
         """Test move legs down sends repeated commands (Linak auto-stops when commands stop)."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.move_legs_down()
 
-        # Linak beds auto-stop when commands stop arriving, so no explicit STOP is sent
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # All calls should be LEGS_DOWN (no stop command for Linak)
-        for call in calls:
-            command = call[0][1]
-            assert command == LinakCommands.MOVE_LEGS_DOWN
+        _assert_repeated_command(mock_bleak_client, LinakCommands.MOVE_LEGS_DOWN, 15)
 
     async def test_stop_all(
         self,
@@ -170,6 +288,7 @@ class TestLinakMovement:
         """Test stop all sends stop command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.stop_all()
 
@@ -202,12 +321,11 @@ class TestLinakPresets:
         """Test preset memory commands."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.preset_memory(memory_num)
 
-        # First call should be the preset command (with repeats)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_command
+        _assert_repeated_command(mock_bleak_client, expected_command, 1)
 
     @pytest.mark.parametrize(
         "memory_num,expected_command",
@@ -230,6 +348,7 @@ class TestLinakPresets:
         """Test program memory commands."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.program_memory(memory_num)
 
@@ -251,6 +370,7 @@ class TestLinakLights:
         """Test lights on command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.lights_on()
 
@@ -268,6 +388,7 @@ class TestLinakLights:
         """Test lights off command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.lights_off()
 
@@ -285,6 +406,7 @@ class TestLinakLights:
         """Test lights toggle command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.lights_toggle()
 
@@ -306,6 +428,7 @@ class TestLinakMassage:
         """Test massage off command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.massage_off()
 
@@ -323,6 +446,7 @@ class TestLinakMassage:
         """Test massage toggle command."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        _mark_session_ready(coordinator)
 
         await coordinator.controller.massage_toggle()
 
@@ -361,6 +485,38 @@ class TestLinakPositionData:
         await controller.read_positions()
 
         callback.assert_called_once_with("legs", 22.5)
+
+    async def test_read_positions_resolves_two_motor_secondary_axis_from_feet_channel(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A 2-motor Linak bed should fall back to the reporting second actuator."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        async def read_side_effect(uuid: str) -> bytes:
+            if uuid == LINAK_POSITION_BACK_UUID:
+                return bytes([0x9A, 0x01])  # 410 / 820 = 34.0°
+            if uuid == LINAK_POSITION_LEG_UUID:
+                return bytes([0xFF, 0xFF])  # invalid
+            if uuid == LINAK_POSITION_FEET_UUID:
+                return bytes([0x12, 0x01])  # 274 / 548 = 22.5°
+            return b""
+
+        mock_bleak_client.read_gatt_char.side_effect = read_side_effect
+
+        await controller.read_positions()
+
+        assert callback.call_args_list == [call("back", 34.0), call("legs", 22.5)]
+        assert controller._resolved_two_motor_secondary_spec is not None
+        assert controller._resolved_two_motor_secondary_spec.source_name == "feet"
 
     async def test_handle_position_data(
         self,
