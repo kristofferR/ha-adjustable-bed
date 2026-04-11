@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     CONF_RICHMAT_REMOTE,
     DOMAIN,
@@ -252,6 +253,390 @@ class TestCoordinatorConnection:
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+
+    async def test_initial_position_read_prepares_controller_before_hydration(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Startup hydration should run controller-specific preparation first."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+
+        controller = MagicMock()
+        controller.prepare_for_position_read = AsyncMock()
+        coordinator._controller = controller
+
+        async def _read_positions() -> None:
+            coordinator._position_data["back"] = 0.0
+            coordinator._position_data["legs"] = 0.0
+
+        with patch.object(
+            coordinator,
+            "_async_read_positions",
+            new=AsyncMock(side_effect=_read_positions),
+        ) as mock_read_positions:
+            await coordinator.async_read_initial_positions()
+
+        controller.prepare_for_position_read.assert_awaited_once_with()
+        mock_read_positions.assert_awaited_once_with()
+
+    async def test_initial_position_read_retries_missing_axes(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Startup hydration should retry until required axes are populated."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+
+        controller = MagicMock()
+        controller.prepare_for_position_read = AsyncMock()
+        coordinator._controller = controller
+
+        read_count = 0
+
+        async def _read_positions() -> None:
+            nonlocal read_count
+            read_count += 1
+            coordinator._position_data["legs"] = 9.6
+            if read_count >= 2:
+                coordinator._position_data["back"] = 0.0
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ) as mock_read_positions,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ) as mock_sleep,
+        ):
+            await coordinator.async_read_initial_positions()
+
+        assert mock_read_positions.await_count == 2
+        assert controller.prepare_for_position_read.await_count == 2
+        mock_sleep.assert_awaited_once()
+
+    async def test_passive_position_reconciliation_reads_positions_when_idle(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Passive reconciliation should run a serialized position read."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._passive_position_reconciliation_interval_s = 120.0
+
+        controller = MagicMock()
+        controller.prepare_for_position_read = AsyncMock()
+        controller.read_positions = AsyncMock()
+        coordinator._controller = controller
+
+        async def _execute_query(query_fn, cancel_running=False, skip_disconnect=False):
+            del cancel_running, skip_disconnect
+            return await query_fn(controller)
+
+        with patch.object(
+            coordinator,
+            "async_execute_controller_query",
+            new=AsyncMock(side_effect=_execute_query),
+        ) as mock_query:
+            await coordinator.async_reconcile_positions()
+
+        mock_query.assert_awaited_once()
+        controller.prepare_for_position_read.assert_awaited_once_with()
+        controller.read_positions.assert_awaited_once_with(coordinator.motor_count)
+
+    async def test_passive_position_reconciliation_skips_when_busy(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Passive reconciliation should not compete with an active command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._passive_position_reconciliation_interval_s = 120.0
+        await coordinator._command_lock.acquire()
+
+        try:
+            with patch.object(
+                coordinator,
+                "async_execute_controller_query",
+                new=AsyncMock(),
+            ) as mock_query:
+                await coordinator.async_reconcile_positions()
+        finally:
+            coordinator._command_lock.release()
+
+        mock_query.assert_not_awaited()
+
+    async def test_passive_position_reconciliation_interval_respects_idle_timeout(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Passive reconciliation should not fire often enough to pin the BLE session open."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._idle_disconnect_seconds = 180
+
+        assert coordinator._resolve_passive_position_reconciliation_interval(120.0) == 195.0
+
+    async def test_passive_position_reconciliation_can_be_disabled_by_config(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Explicit config should disable passive reconciliation even for Linak."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=mock_config_entry.title,
+            data={
+                **mock_config_entry.data,
+                CONF_PASSIVE_POSITION_RECONCILIATION: False,
+            },
+            unique_id=mock_config_entry.unique_id,
+            entry_id="linak_reconciliation_disabled",
+        )
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._disable_angle_sensing = False
+
+        assert coordinator._resolve_passive_position_reconciliation_interval(120.0) is None
+
+    async def test_async_shutdown_cancels_passive_position_reconciliation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Coordinator shutdown should cancel passive reconciliation and disconnect cleanly."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        task = MagicMock()
+        coordinator._passive_position_reconciliation_task = task
+
+        with patch.object(coordinator, "async_disconnect", new=AsyncMock()) as mock_disconnect:
+            await coordinator.async_shutdown()
+
+        task.cancel.assert_called_once_with()
+        assert coordinator._passive_position_reconciliation_task is None
+        mock_disconnect.assert_awaited_once_with()
+
+
+class TestCoordinatorPositionSeek:
+    """Test coordinator position seeking behavior."""
+
+    async def test_seek_stops_on_first_target_crossing_for_single_direction_controllers(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Pulse-driven controllers should use custom seek steps and stop on crossing."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data["legs"] = 0.0
+
+        controller = MagicMock()
+        controller.supports_direct_position_control = False
+        controller.reverses_position_seek_on_overshoot = False
+        controller.uses_custom_position_seek_steps = True
+        controller.seek_position_step = AsyncMock()
+        controller.auto_stops_on_idle = True
+        coordinator._controller = controller
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+
+        async def _read_positions() -> None:
+            coordinator._position_data["legs"] = 27.0
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            await coordinator.async_seek_position(
+                "legs",
+                20.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        controller.seek_position_step.assert_awaited_once_with("legs", True)
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
+
+    async def test_seek_reverses_on_overshoot_for_default_controllers(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Controllers that allow overshoot correction should still reverse."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data["legs"] = 0.0
+
+        controller = MagicMock()
+        controller.supports_direct_position_control = False
+        controller.reverses_position_seek_on_overshoot = True
+        controller.uses_custom_position_seek_steps = False
+        controller.auto_stops_on_idle = True
+        coordinator._controller = controller
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+        readings = iter([27.0, 20.0])
+
+        async def _read_positions() -> None:
+            coordinator._position_data["legs"] = next(readings, 20.0)
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            await coordinator.async_seek_position(
+                "legs",
+                20.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        move_up.assert_awaited_once_with(controller)
+        move_down.assert_awaited_once_with(controller)
+        move_stop.assert_not_awaited()
+
+    async def test_seek_uses_controller_specific_tolerance(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Controllers can tighten the completion band without changing global seek behavior."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data["legs"] = 0.0
+
+        controller = MagicMock()
+        controller.supports_direct_position_control = False
+        controller.reverses_position_seek_on_overshoot = False
+        controller.uses_custom_position_seek_steps = True
+        controller.position_seek_tolerance = 0.5
+        controller.seek_position_step = AsyncMock()
+        controller.auto_stops_on_idle = True
+        coordinator._controller = controller
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+        readings = iter([7.0, 10.0])
+        read_positions = AsyncMock(
+            side_effect=lambda: coordinator._position_data.__setitem__(
+                "legs", next(readings, 10.0)
+            )
+        )
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=read_positions,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            await coordinator.async_seek_position(
+                "legs",
+                10.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        assert read_positions.await_count == 2
+        controller.seek_position_step.assert_awaited_once_with("legs", True)
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
+
+    async def test_seek_uses_controller_specific_stall_count(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Controllers can reissue seek steps sooner than the generic stall loop."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data["legs"] = 0.0
+
+        controller = MagicMock()
+        controller.supports_direct_position_control = False
+        controller.reverses_position_seek_on_overshoot = False
+        controller.uses_custom_position_seek_steps = True
+        controller.position_seek_tolerance = 0.5
+        controller.position_seek_stall_count = 1
+        controller.seek_position_step = AsyncMock()
+        controller.auto_stops_on_idle = True
+        coordinator._controller = controller
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+        readings = iter([7.0, 7.0, 10.0])
+
+        async def _read_positions() -> None:
+            coordinator._position_data["legs"] = next(readings, 10.0)
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            await coordinator.async_seek_position(
+                "legs",
+                10.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        assert controller.seek_position_step.await_count == 2
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
 
     async def test_connect_uses_persisted_bond_marker_to_skip_pairing(
         self,

@@ -21,6 +21,12 @@ from bleak.exc import BleakError
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
+from ..const import (
+    POSITION_CHECK_INTERVAL,
+    POSITION_STALL_COUNT,
+    POSITION_STALL_THRESHOLD,
+    POSITION_TOLERANCE,
+)
 from ..diagnostic_payloads import format_payload
 
 _LOGGER = logging.getLogger(__name__)
@@ -139,6 +145,66 @@ class BedController(ABC):
         brief reverse movements on some bed types.
         """
         return False
+
+    @property
+    def reverses_position_seek_on_overshoot(self) -> bool:
+        """Return True if position seeking should reverse after overshooting.
+
+        The coordinator's generic seek loop assumes movement commands can be
+        trimmed or corrected mid-flight. Pulse-driven controllers like Linak
+        complete a whole movement burst before fresh feedback is available, so
+        reversing on overshoot causes hunting. Those controllers should
+        override this to return False and let the seek stop on the first target
+        crossing instead.
+        """
+        return True
+
+    @property
+    def uses_custom_position_seek_steps(self) -> bool:
+        """Return True if seeking should use controller-specific move steps.
+
+        Most controllers can reuse their normal move-up/move-down helpers during
+        incremental seeking. Pulse-driven controllers may need shorter seek
+        steps than their manual-control button presses to avoid overshoot.
+        """
+        return False
+
+    @property
+    def position_seek_tolerance(self) -> float:
+        """Return the acceptable error band for feedback-driven seeking.
+
+        The generic coordinator tolerance is intentionally broad because some
+        beds report coarse or noisy position feedback. Controllers with cleaner
+        feedback and smaller target steps can override this to finish closer to
+        the requested position.
+        """
+        return POSITION_TOLERANCE
+
+    @property
+    def position_seek_stall_count(self) -> int:
+        """Return how many stagnant reads are required before reissuing motion."""
+        return POSITION_STALL_COUNT
+
+    @property
+    def position_seek_check_interval(self) -> float:
+        """Return the interval between feedback polls during position seeking."""
+        return POSITION_CHECK_INTERVAL
+
+    @property
+    def position_seek_stall_threshold(self) -> float:
+        """Return the minimum delta that still counts as active movement."""
+        return POSITION_STALL_THRESHOLD
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Return the idle interval for passive position reconciliation reads.
+
+        Return None to disable background reconciliation. Controllers that do
+        not receive reliable updates from external remotes can override this to
+        request low-frequency readbacks while idle so Home Assistant eventually
+        catches up with out-of-band movement.
+        """
+        return None
 
     def log_discovered_services(self, level: int = logging.DEBUG) -> None:
         """Log all discovered GATT services and characteristics.
@@ -422,6 +488,30 @@ class BedController(ABC):
         Default implementation does nothing. Override in subclasses where
         some motors support notifications and others don't.
         """
+
+    async def seek_position_step(self, position_key: str, moving_up: bool) -> None:
+        """Execute one incremental move step during feedback-based seeking.
+
+        Controllers with `uses_custom_position_seek_steps` should override this
+        to emit shorter or otherwise specialized seek pulses. The default
+        implementation falls back to the normal movement helpers.
+        """
+        if position_key == "back":
+            await (self.move_back_up() if moving_up else self.move_back_down())
+            return
+        if position_key == "legs":
+            await (self.move_legs_up() if moving_up else self.move_legs_down())
+            return
+        if position_key == "head":
+            await (self.move_head_up() if moving_up else self.move_head_down())
+            return
+        if position_key == "feet":
+            await (self.move_feet_up() if moving_up else self.move_feet_down())
+            return
+        raise ValueError(f"Unsupported position key for seek step: {position_key}")
+
+    async def prepare_for_position_read(self) -> None:
+        """Do any controller-specific setup before passive position reads."""
 
     # Direct position control (optional)
     # Beds that can command motors to specific positions should override these

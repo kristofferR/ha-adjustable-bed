@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_CONTROL_CHAR_UUID,
     LINAK_POSITION_BACK_UUID,
     LINAK_POSITION_FEET_UUID,
+    LINAK_POSITION_HEAD_UUID,
     LINAK_POSITION_LEG_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -184,6 +185,81 @@ class TestLinakController:
             LinakCommands.MOVE_HEAD_DOWN,
         ]
 
+    async def test_seek_position_step_uses_short_remote_like_pulse(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Linak seeking should use short pulses instead of the long manual move burst."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+
+        await coordinator.controller.seek_position_step("legs", True)
+
+        _assert_repeated_command(mock_bleak_client, LinakCommands.MOVE_LEGS_UP, repeat_count=1)
+
+    async def test_linak_uses_tighter_seek_tolerance(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Linak set-position seeks should finish much closer than the global default."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.position_seek_tolerance == pytest.approx(0.75)
+
+    async def test_linak_reissues_seek_after_first_stalled_read(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Linak should chain short pulses without the generic multi-read pause."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.position_seek_stall_count == 1
+        assert coordinator.controller.position_seek_check_interval == pytest.approx(0.2)
+        assert coordinator.controller.position_seek_stall_threshold == pytest.approx(0.2)
+
+    async def test_prepare_for_position_read_waits_for_ready_session(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Linak position reads should wait for the cold-session auth window."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        with patch.object(
+            coordinator.controller,
+            "_await_control_ready",
+            new=AsyncMock(),
+        ) as mock_ready:
+            await coordinator.controller.prepare_for_position_read()
+
+        mock_ready.assert_awaited_once_with()
+
+    async def test_passive_position_reconciliation_interval_is_enabled(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Linak should request low-frequency reconciliation for external remote moves."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.passive_position_reconciliation_interval == pytest.approx(
+            120.0
+        )
+
     async def test_write_command_retries_deferred_position_notifications_after_readiness(
         self,
         hass: HomeAssistant,
@@ -209,6 +285,8 @@ class TestLinakController:
             auth_error,
             None,
             None,
+            None,
+            None,
         ]
 
         await controller.start_notify(MagicMock())
@@ -221,13 +299,39 @@ class TestLinakController:
 
         assert controller._active_position_notifications == {
             LINAK_POSITION_BACK_UUID,
+            LINAK_POSITION_FEET_UUID,
+            LINAK_POSITION_HEAD_UUID,
             LINAK_POSITION_LEG_UUID,
         }
         assert not controller._deferred_position_notifications
-        assert mock_bleak_client.start_notify.call_count == 4
+        assert mock_bleak_client.start_notify.call_count == 6
         assert _written_commands(mock_bleak_client) == [
             LinakCommands.MOVE_STOP,
             LinakCommands.MOVE_HEAD_UP,
+        ]
+
+    async def test_start_notify_subscribes_all_two_motor_secondary_candidates(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Fresh 2-motor sessions should listen on all plausible second-axis channels."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        mock_bleak_client.start_notify.reset_mock()
+
+        await controller.start_notify(MagicMock())
+
+        subscribed_uuids = [call.args[0] for call in mock_bleak_client.start_notify.call_args_list]
+        assert subscribed_uuids == [
+            LINAK_POSITION_BACK_UUID,
+            LINAK_POSITION_LEG_UUID,
+            LINAK_POSITION_FEET_UUID,
+            LINAK_POSITION_HEAD_UUID,
         ]
 
 
@@ -517,6 +621,70 @@ class TestLinakPositionData:
         assert callback.call_args_list == [call("back", 34.0), call("legs", 22.5)]
         assert controller._resolved_two_motor_secondary_spec is not None
         assert controller._resolved_two_motor_secondary_spec.source_name == "feet"
+
+    async def test_read_positions_retries_cold_session_until_data_arrives(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Cold Linak reads should retry briefly when the session has not settled yet."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        controller._deferred_position_notifications = {LINAK_POSITION_BACK_UUID}
+
+        with (
+            patch.object(
+                controller,
+                "_read_positions_once",
+                new=AsyncMock(side_effect=[{"back"}, {"back", "legs"}]),
+            ) as mock_read_positions_once,
+            patch.object(
+                controller,
+                "_ensure_position_notifications_started",
+                new=AsyncMock(),
+            ) as mock_ensure_notifications,
+            patch(
+                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                new=AsyncMock(),
+            ) as mock_sleep,
+        ):
+            await controller.read_positions()
+
+        assert mock_read_positions_once.await_count == 2
+        mock_sleep.assert_awaited_once()
+        mock_ensure_notifications.assert_awaited_once()
+
+    async def test_read_positions_skips_cold_retry_once_session_is_ready(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Ready Linak sessions should not spend time on cold-start read retries."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        controller._session_ready = True
+
+        with (
+            patch.object(
+                controller,
+                "_read_positions_once",
+                new=AsyncMock(return_value={"back"}),
+            ) as mock_read_positions_once,
+            patch(
+                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                new=AsyncMock(),
+            ) as mock_sleep,
+        ):
+            await controller.read_positions()
+
+        mock_read_positions_once.assert_awaited_once()
+        mock_sleep.assert_not_awaited()
 
     async def test_handle_position_data(
         self,

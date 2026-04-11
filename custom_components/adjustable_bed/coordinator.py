@@ -92,6 +92,7 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_PIN,
+    CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -124,6 +125,7 @@ from .const import (
     get_richmat_motor_count,
     requires_pairing,
     resolve_richmat_remote_code,
+    passive_position_reconciliation_default_enabled,
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
@@ -137,6 +139,10 @@ _LOGGER = logging.getLogger(__name__)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
 _READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 _READABLE_LIGHT_STATE_MAX_RETRIES = 3
+_INITIAL_POSITION_READ_TIMEOUT = 10.0
+_INITIAL_POSITION_READ_RETRY_DELAY = 3.0
+_INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
+_PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
 
 MAX_COMMAND_TRACE_ENTRIES = 100
 MAX_CONNECTION_ATTEMPT_DETAILS = 25
@@ -176,6 +182,12 @@ class AdjustableBedCoordinator:
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
         self._disable_angle_sensing: bool = entry.data.get(
             CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
+        )
+        self._passive_position_reconciliation_enabled: bool = bool(
+            entry.data.get(
+                CONF_PASSIVE_POSITION_RECONCILIATION,
+                passive_position_reconciliation_default_enabled(self._bed_type),
+            )
         )
         self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
@@ -249,6 +261,8 @@ class AdjustableBedCoordinator:
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
         self._controller_state_refresh_completed = False
+        self._passive_position_reconciliation_interval_s: float | None = None
+        self._passive_position_reconciliation_task: asyncio.Task[None] | None = None
 
         # Connection state callbacks
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
@@ -1304,6 +1318,8 @@ class AdjustableBedCoordinator:
                     # Reset Limoss normalization state on each connection.
                     cast(Any, self._controller).reset_max_raw_estimate()
 
+                self._refresh_passive_position_reconciliation_schedule()
+
                 # Start position notifications (no-op if angle sensing disabled)
                 await self.async_start_notify()
 
@@ -1581,28 +1597,175 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Skipping initial position read (angle sensing disabled)")
             return
 
+        expected_axes = self._expected_initial_position_axes()
+        if not expected_axes:
+            _LOGGER.debug("Skipping initial position read (no expected axes)")
+            return
+
         _LOGGER.debug("Reading initial positions for %s", self._address)
         try:
-            async with asyncio.timeout(5.0):
-                # Use command lock to prevent concurrent GATT operations
-                async with self._command_lock:
-                    if self._client is not None and self._client.is_connected:
+            for attempt in range(1, _INITIAL_POSITION_READ_MAX_ATTEMPTS + 1):
+                async with asyncio.timeout(_INITIAL_POSITION_READ_TIMEOUT):
+                    # Use command lock to prevent concurrent GATT operations
+                    async with self._command_lock:
+                        if self._client is None or not self._client.is_connected:
+                            return
+                        await self._controller.prepare_for_position_read()
                         await self._async_read_positions()
-                        # Only log success if position_data has values
-                        if self._position_data:
-                            _LOGGER.info(
-                                "Initial positions read for %s: %s",
-                                self._address,
-                                {k: f"{v}°" for k, v in self._position_data.items()},
-                            )
-                        else:
-                            _LOGGER.debug("Initial position read completed but no data received")
+
+                received_axes = expected_axes & self._position_data.keys()
+                if received_axes >= expected_axes:
+                    _LOGGER.info(
+                        "Initial positions read for %s: %s",
+                        self._address,
+                        {k: f"{v}°" for k, v in self._position_data.items()},
+                    )
+                    return
+
+                if attempt >= _INITIAL_POSITION_READ_MAX_ATTEMPTS:
+                    break
+
+                _LOGGER.debug(
+                    "Initial position read for %s missing axes %s after attempt %d/%d; retrying in %.1fs",
+                    self._address,
+                    sorted(expected_axes - received_axes),
+                    attempt,
+                    _INITIAL_POSITION_READ_MAX_ATTEMPTS,
+                    _INITIAL_POSITION_READ_RETRY_DELAY,
+                )
+                await asyncio.sleep(_INITIAL_POSITION_READ_RETRY_DELAY)
+
+            if self._position_data:
+                _LOGGER.info(
+                    "Initial position read for %s remained partial: %s",
+                    self._address,
+                    {k: f"{v}°" for k, v in self._position_data.items()},
+                )
+            else:
+                _LOGGER.debug("Initial position read completed but no data received")
         except TimeoutError:
             _LOGGER.debug("Initial position read timed out - sensors will update on first command")
         except Exception as err:
             _LOGGER.debug(
                 "Initial position read failed: %s - sensors will update on first command", err
             )
+
+    def _expected_initial_position_axes(self) -> set[str]:
+        """Return the logical position axes that startup hydration should populate."""
+        if self._motor_count <= 0:
+            return set()
+
+        expected_axes = {"back", "legs"}
+        if self._motor_count > 2:
+            expected_axes.add("head")
+        if self._motor_count > 3:
+            expected_axes.add("feet")
+        return expected_axes
+
+    def _resolve_passive_position_reconciliation_interval(
+        self, requested_interval_s: float | None
+    ) -> float | None:
+        """Return the safe passive reconciliation interval for this entry."""
+        if self._disable_angle_sensing:
+            return None
+        if not self._passive_position_reconciliation_enabled:
+            return None
+        if requested_interval_s is None or requested_interval_s <= 0:
+            return None
+
+        minimum_interval_s = float(self._idle_disconnect_seconds) + (
+            _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN
+        )
+        return max(float(requested_interval_s), minimum_interval_s)
+
+    def _refresh_passive_position_reconciliation_schedule(self) -> None:
+        """Start or stop passive position reconciliation based on controller support."""
+        requested_interval_s: float | None = None
+        if self._controller is not None:
+            requested_interval_s = self._controller.passive_position_reconciliation_interval
+
+        interval_s = self._resolve_passive_position_reconciliation_interval(requested_interval_s)
+        current_task = self._passive_position_reconciliation_task
+        if (
+            interval_s == self._passive_position_reconciliation_interval_s
+            and current_task is not None
+            and not current_task.done()
+        ):
+            return
+
+        self._cancel_passive_position_reconciliation_task()
+        self._passive_position_reconciliation_interval_s = interval_s
+        if interval_s is None:
+            return
+
+        _LOGGER.debug(
+            "Starting passive position reconciliation for %s every %.0fs",
+            self._address,
+            interval_s,
+        )
+        self._passive_position_reconciliation_task = self.hass.async_create_task(
+            self._async_passive_position_reconciliation_loop()
+        )
+
+    def _cancel_passive_position_reconciliation_task(self) -> None:
+        """Cancel the passive position reconciliation loop."""
+        task = self._passive_position_reconciliation_task
+        if task is not None:
+            task.cancel()
+            self._passive_position_reconciliation_task = None
+
+    async def _async_passive_position_reconciliation_loop(self) -> None:
+        """Periodically reconcile positions so external remote moves do not stay stale."""
+        try:
+            while True:
+                interval_s = self._passive_position_reconciliation_interval_s
+                if interval_s is None:
+                    return
+
+                await asyncio.sleep(interval_s)
+                await self.async_reconcile_positions()
+        except asyncio.CancelledError:
+            return
+
+    async def async_reconcile_positions(self) -> None:
+        """Perform a low-frequency passive position refresh when the coordinator is idle."""
+        if self._disable_angle_sensing or self._passive_position_reconciliation_interval_s is None:
+            return
+
+        if self._connecting or self._command_lock.locked():
+            _LOGGER.debug(
+                "Skipping passive position reconciliation for %s because the coordinator is busy",
+                self._address,
+            )
+            return
+
+        try:
+            _LOGGER.debug("Running passive position reconciliation for %s", self._address)
+            await self.async_execute_controller_query(
+                self._async_execute_position_reconciliation_query,
+                cancel_running=False,
+            )
+            _LOGGER.debug("Passive position reconciliation completed for %s", self._address)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            _LOGGER.debug(
+                "Passive position reconciliation failed for %s: %s",
+                self._address,
+                err,
+            )
+
+    async def _async_execute_position_reconciliation_query(
+        self, controller: BedController
+    ) -> None:
+        """Run a serialized passive position reconciliation read."""
+        await controller.prepare_for_position_read()
+        await controller.read_positions(self._motor_count)
+
+    async def async_shutdown(self) -> None:
+        """Stop background tasks and disconnect the coordinator."""
+        self._cancel_passive_position_reconciliation_task()
+        await self.async_disconnect()
 
     async def async_disconnect(self, reason: str = "intentional") -> None:
         """Disconnect from the bed.
@@ -2597,10 +2760,35 @@ class AdjustableBedCoordinator:
                             f"Cannot seek {position_key}: no position data available"
                         )
 
+                position_tolerance = getattr(
+                    self._controller, "position_seek_tolerance", POSITION_TOLERANCE
+                )
+                if not isinstance(position_tolerance, (int, float)):
+                    position_tolerance = POSITION_TOLERANCE
+                position_check_interval = getattr(
+                    self._controller,
+                    "position_seek_check_interval",
+                    POSITION_CHECK_INTERVAL,
+                )
+                if not isinstance(position_check_interval, (int, float)):
+                    position_check_interval = POSITION_CHECK_INTERVAL
+                position_stall_count = getattr(
+                    self._controller, "position_seek_stall_count", POSITION_STALL_COUNT
+                )
+                if not isinstance(position_stall_count, int):
+                    position_stall_count = POSITION_STALL_COUNT
+                position_stall_threshold = getattr(
+                    self._controller,
+                    "position_seek_stall_threshold",
+                    POSITION_STALL_THRESHOLD,
+                )
+                if not isinstance(position_stall_threshold, (int, float)):
+                    position_stall_threshold = POSITION_STALL_THRESHOLD
+
                 # Check if already at target (within tolerance)
                 if (
                     current_angle is not None
-                    and abs(current_angle - target_angle) <= POSITION_TOLERANCE
+                    and abs(current_angle - target_angle) <= position_tolerance
                 ):
                     _LOGGER.debug(
                         "Position %s already at target: %.1f (target: %.1f)",
@@ -2641,13 +2829,22 @@ class AdjustableBedCoordinator:
 
                 # Determine initial direction
                 moving_up = target_angle > current_angle
+                reverse_on_overshoot = self._controller.reverses_position_seek_on_overshoot
+                use_custom_seek_steps = self._controller.uses_custom_position_seek_steps
 
-                # Start movement in try-finally to guarantee stop is sent
-                try:
-                    if moving_up:
+                async def issue_seek_step(direction_up: bool) -> None:
+                    """Execute one seek movement step using controller-specific tuning."""
+                    if use_custom_seek_steps:
+                        await self._controller.seek_position_step(position_key, direction_up)
+                        return
+                    if direction_up:
                         await move_up_fn(self._controller)
                     else:
                         await move_down_fn(self._controller)
+
+                # Start movement in try-finally to guarantee stop is sent
+                try:
+                    await issue_seek_step(moving_up)
 
                     # Tracking variables
                     start_time = time.monotonic()
@@ -2671,7 +2868,7 @@ class AdjustableBedCoordinator:
                             break
 
                         # Wait and poll position
-                        await asyncio.sleep(POSITION_CHECK_INTERVAL)
+                        await asyncio.sleep(position_check_interval)
 
                         # Read current position
                         await self._async_read_positions()
@@ -2693,9 +2890,24 @@ class AdjustableBedCoordinator:
                         )
 
                         # Check if at target
-                        if abs(current_angle - target_angle) <= POSITION_TOLERANCE:
+                        if abs(current_angle - target_angle) <= position_tolerance:
                             _LOGGER.info(
                                 "Position %s reached target: %.1f (target: %.1f)",
+                                position_key,
+                                current_angle,
+                                target_angle,
+                            )
+                            break
+
+                        # Pulse-driven controllers can only evaluate the result of a
+                        # whole move burst, so once they cross the target they should
+                        # stop rather than hunt by reversing direction.
+                        if not reverse_on_overshoot and (
+                            (moving_up and current_angle >= target_angle)
+                            or (not moving_up and current_angle <= target_angle)
+                        ):
+                            _LOGGER.info(
+                                "Position %s crossed target in single-direction seek: %.1f (target: %.1f)",
                                 position_key,
                                 current_angle,
                                 target_angle,
@@ -2710,7 +2922,7 @@ class AdjustableBedCoordinator:
                         # changed, a real user-initiated stop arrived and we must
                         # honour it instead of reversing.
                         # Use larger overshoot tolerance to prevent oscillation
-                        if (
+                        if reverse_on_overshoot and (
                             moving_up
                             and current_angle > target_angle + POSITION_OVERSHOOT_TOLERANCE
                         ):
@@ -2729,9 +2941,9 @@ class AdjustableBedCoordinator:
                                 )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
-                            await move_down_fn(self._controller)
+                            await issue_seek_step(False)
                             moving_up = False
-                        elif (
+                        elif reverse_on_overshoot and (
                             not moving_up
                             and current_angle < target_angle - POSITION_OVERSHOOT_TOLERANCE
                         ):
@@ -2750,14 +2962,14 @@ class AdjustableBedCoordinator:
                                 )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
-                            await move_up_fn(self._controller)
+                            await issue_seek_step(True)
                             moving_up = True
 
                         # Stall detection - re-issue movement if motor stopped prematurely
                         movement = abs(current_angle - last_angle)
-                        if movement < POSITION_STALL_THRESHOLD:
+                        if movement < position_stall_threshold:
                             stall_count += 1
-                            if stall_count >= POSITION_STALL_COUNT:
+                            if stall_count >= position_stall_count:
                                 # Motor appears stalled - re-issue movement command
                                 # This handles pulse-based protocols where motors auto-stop
                                 _LOGGER.debug(
@@ -2765,10 +2977,7 @@ class AdjustableBedCoordinator:
                                     position_key,
                                     current_angle,
                                 )
-                                if moving_up:
-                                    await move_up_fn(self._controller)
-                                else:
-                                    await move_down_fn(self._controller)
+                                await issue_seek_step(moving_up)
                                 stall_count = 0  # Reset stall count after re-issue
                         else:
                             stall_count = 0

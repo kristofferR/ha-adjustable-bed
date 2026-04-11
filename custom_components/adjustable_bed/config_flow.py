@@ -59,6 +59,7 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_PIN,
+    CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -88,6 +89,8 @@ from .const import (
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
     get_richmat_features,
+    passive_position_reconciliation_default_enabled,
+    supports_passive_position_reconciliation,
     get_richmat_motor_count,
     requires_pairing,
 )
@@ -1965,6 +1968,17 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 }
             ),
         }
+
+        if supports_passive_position_reconciliation(bed_type):
+            schema_dict[
+                vol.Optional(
+                    CONF_PASSIVE_POSITION_RECONCILIATION,
+                    default=current_data.get(
+                        CONF_PASSIVE_POSITION_RECONCILIATION,
+                        passive_position_reconciliation_default_enabled(bed_type),
+                    ),
+                )
+            ] = bool
 
         # Add variant selection if the bed type has variants
         variants = get_variants_for_bed_type(bed_type)

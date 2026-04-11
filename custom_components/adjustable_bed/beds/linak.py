@@ -35,6 +35,15 @@ _LOGGER = logging.getLogger(__name__)
 
 LINAK_CONTROL_READY_TIMEOUT_S = 6.0
 LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
+LINAK_INITIAL_POSITION_RETRY_ATTEMPTS = 3
+LINAK_INITIAL_POSITION_RETRY_DELAY_S = 0.75
+LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S = 120.0
+LINAK_POSITION_SEEK_PULSE_COUNT = 1
+LINAK_POSITION_SEEK_PULSE_DELAY_MS = 100
+LINAK_POSITION_SEEK_TOLERANCE = 0.75
+LINAK_POSITION_SEEK_STALL_COUNT = 1
+LINAK_POSITION_SEEK_CHECK_INTERVAL_S = 0.2
+LINAK_POSITION_SEEK_STALL_THRESHOLD = 0.2
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,6 +170,41 @@ class LinakController(BedController):
         return True
 
     @property
+    def reverses_position_seek_on_overshoot(self) -> bool:
+        """Return False - Linak seek steps are full pulses, so reversal hunts."""
+        return False
+
+    @property
+    def uses_custom_position_seek_steps(self) -> bool:
+        """Return True - Linak seek steps should use short remote-like pulses."""
+        return True
+
+    @property
+    def position_seek_tolerance(self) -> float:
+        """Return a tighter tolerance for Linak angle seeking."""
+        return LINAK_POSITION_SEEK_TOLERANCE
+
+    @property
+    def position_seek_stall_count(self) -> int:
+        """Return a faster reissue threshold so Linak pulses chain smoothly."""
+        return LINAK_POSITION_SEEK_STALL_COUNT
+
+    @property
+    def position_seek_check_interval(self) -> float:
+        """Return a faster feedback cadence for Linak pulse chaining."""
+        return LINAK_POSITION_SEEK_CHECK_INTERVAL_S
+
+    @property
+    def position_seek_stall_threshold(self) -> float:
+        """Return a smaller movement threshold for Linak angle feedback."""
+        return LINAK_POSITION_SEEK_STALL_THRESHOLD
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Return a low-frequency idle read interval for out-of-band movement."""
+        return LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
+
+    @property
     def allow_position_polling_during_commands(self) -> bool:
         """Return False - position reads can interrupt Linak's pulse stream."""
         return False
@@ -192,6 +236,15 @@ class LinakController(BedController):
         """Build a notification callback for a Linak position characteristic."""
 
         def handler(_: Any, data: bytearray) -> None:
+            angle = self._decode_position_data(
+                spec.source_name,
+                data,
+                spec.max_position,
+                spec.max_angle,
+            )
+            if angle is None:
+                return
+
             _LOGGER.debug(
                 "Notification received for %s: raw_data=%s (%d bytes)",
                 spec.source_name,
@@ -199,13 +252,9 @@ class LinakController(BedController):
                 len(data),
             )
             self.forward_raw_notification(spec.uuid, bytes(data))
-            self._handle_position_data(
-                spec.axis_name,
-                data,
-                spec.max_position,
-                spec.max_angle,
-                source_name=spec.source_name,
-            )
+            self._maybe_resolve_two_motor_secondary_notification(spec)
+            if self._notify_callback:
+                self._notify_callback(spec.axis_name, angle)
 
         return handler
 
@@ -291,6 +340,27 @@ class LinakController(BedController):
 
         return position_specs
 
+    def _build_notification_characteristics(self, motor_count: int) -> list[LinakPositionSpec]:
+        """Return Linak position characteristics to subscribe for live updates."""
+        if motor_count > 2:
+            return self._build_position_characteristics(motor_count)
+
+        specs_by_uuid = {self._back_position_spec().uuid: self._back_position_spec()}
+        for spec in self._two_motor_secondary_candidates():
+            specs_by_uuid[spec.uuid] = spec
+        return list(specs_by_uuid.values())
+
+    def _maybe_resolve_two_motor_secondary_notification(self, spec: LinakPositionSpec) -> None:
+        """Lock onto the reporting second actuator for 2-motor Linak beds."""
+        if self._coordinator.motor_count > 2:
+            return
+        if spec.axis_name != "legs":
+            return
+        if spec.uuid == self._two_motor_secondary_spec().uuid:
+            return
+
+        self._coordinator.hass.async_create_task(self._set_two_motor_secondary_spec(spec))
+
     async def _set_two_motor_secondary_spec(self, spec: LinakPositionSpec) -> None:
         """Persist the resolved second actuator for a 2-motor Linak bed."""
         current_spec = self._two_motor_secondary_spec()
@@ -308,11 +378,14 @@ class LinakController(BedController):
         if self.client is None or not self.client.is_connected:
             return
 
-        if current_spec.uuid in self._active_position_notifications:
-            with contextlib.suppress(BleakError):
-                await self.client.stop_notify(current_spec.uuid)
-            self._active_position_notifications.discard(current_spec.uuid)
-            self._deferred_position_notifications.discard(current_spec.uuid)
+        for candidate in self._two_motor_secondary_candidates():
+            if candidate.uuid == spec.uuid:
+                continue
+            if candidate.uuid in self._active_position_notifications:
+                with contextlib.suppress(BleakError):
+                    await self.client.stop_notify(candidate.uuid)
+            self._active_position_notifications.discard(candidate.uuid)
+            self._deferred_position_notifications.discard(candidate.uuid)
 
         await self._ensure_position_notifications_started()
 
@@ -327,7 +400,7 @@ class LinakController(BedController):
         if self.client is None or not self.client.is_connected:
             return successful, deferred, failed
 
-        for spec in self._build_position_characteristics(self._coordinator.motor_count):
+        for spec in self._build_notification_characteristics(self._coordinator.motor_count):
             if spec.uuid in self._active_position_notifications:
                 continue
 
@@ -672,15 +745,79 @@ class LinakController(BedController):
             _LOGGER.warning("Cannot read positions: not connected")
             return
 
-        if motor_count <= 2:
-            await self._read_position_characteristic(self._back_position_spec())
-            await self._read_two_motor_secondary_position()
+        expected_axes = self._expected_position_axes(motor_count)
+        received_axes = await self._read_positions_once(motor_count)
+        if self._session_ready or received_axes >= expected_axes:
             return
 
-        for spec in self._build_position_characteristics(motor_count):
-            await self._read_position_characteristic(spec)
+        for attempt in range(2, LINAK_INITIAL_POSITION_RETRY_ATTEMPTS + 1):
+            if self.client is None or not self.client.is_connected:
+                return
 
-    async def _read_two_motor_secondary_position(self) -> None:
+            _LOGGER.debug(
+                "Linak cold-session position read returned no data for %s; retrying in %.2fs (attempt %d/%d)",
+                self._coordinator.address,
+                LINAK_INITIAL_POSITION_RETRY_DELAY_S,
+                attempt,
+                LINAK_INITIAL_POSITION_RETRY_ATTEMPTS,
+            )
+            await asyncio.sleep(LINAK_INITIAL_POSITION_RETRY_DELAY_S)
+
+            if self._deferred_position_notifications:
+                await self._ensure_position_notifications_started()
+
+            missing_axes = expected_axes - received_axes
+            received_axes.update(
+                await self._read_positions_once(motor_count, axes=missing_axes)
+            )
+            if received_axes >= expected_axes:
+                return
+
+    def _expected_position_axes(self, motor_count: int) -> set[str]:
+        """Return the logical axes expected from a Linak position read."""
+        expected_axes = {"back"}
+        if motor_count <= 2:
+            expected_axes.add("legs")
+            return expected_axes
+
+        expected_axes.add("legs")
+        if motor_count > 2:
+            expected_axes.add("head")
+        if motor_count > 3:
+            expected_axes.add("feet")
+        return expected_axes
+
+    async def _read_positions_once(
+        self,
+        motor_count: int,
+        *,
+        axes: set[str] | None = None,
+    ) -> set[str]:
+        """Read Linak positions once and return the axes that produced data."""
+        if motor_count <= 2:
+            received_axes: set[str] = set()
+            back_angle = None
+            secondary_angle = None
+            if axes is None or "back" in axes:
+                back_angle = await self._read_position_characteristic(self._back_position_spec())
+            if axes is None or "legs" in axes:
+                secondary_angle = await self._read_two_motor_secondary_position()
+            if back_angle is not None:
+                received_axes.add("back")
+            if secondary_angle is not None:
+                received_axes.add("legs")
+            return received_axes
+
+        received_axes: set[str] = set()
+        for spec in self._build_position_characteristics(motor_count):
+            if axes is not None and spec.axis_name not in axes:
+                continue
+            angle = await self._read_position_characteristic(spec)
+            if angle is not None:
+                received_axes.add(spec.axis_name)
+        return received_axes
+
+    async def _read_two_motor_secondary_position(self) -> float | None:
         """Read and resolve the second actuator for a 2-motor Linak bed."""
         current_spec = self._two_motor_secondary_spec()
         candidates = [current_spec] + [
@@ -696,7 +833,9 @@ class LinakController(BedController):
 
             if spec.uuid != current_spec.uuid:
                 await self._set_two_motor_secondary_spec(spec)
-            return
+            return angle
+
+        return None
 
     async def read_non_notifying_positions(self) -> None:
         """Read positions for manual refresh flows that need a back-motor read."""
@@ -704,6 +843,10 @@ class LinakController(BedController):
             return
 
         await self._read_position_characteristic(self._back_position_spec(), timeout_seconds=0.4)
+
+    async def prepare_for_position_read(self) -> None:
+        """Wait for Linak's post-connect auth window before passive reads."""
+        await self._await_control_ready()
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving.
@@ -719,6 +862,29 @@ class LinakController(BedController):
         See: https://github.com/kristofferR/ha-adjustable-bed/issues/45
         """
         await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
+
+    async def seek_position_step(self, position_key: str, moving_up: bool) -> None:
+        """Execute a short Linak seek pulse that matches remote tap behavior."""
+        command_map = {
+            ("back", True): LinakCommands.MOVE_BACK_UP,
+            ("back", False): LinakCommands.MOVE_BACK_DOWN,
+            ("legs", True): LinakCommands.MOVE_LEGS_UP,
+            ("legs", False): LinakCommands.MOVE_LEGS_DOWN,
+            ("head", True): LinakCommands.MOVE_HEAD_UP,
+            ("head", False): LinakCommands.MOVE_HEAD_DOWN,
+            ("feet", True): LinakCommands.MOVE_FEET_UP,
+            ("feet", False): LinakCommands.MOVE_FEET_DOWN,
+        }
+        command = command_map.get((position_key, moving_up))
+        if command is None:
+            await super().seek_position_step(position_key, moving_up)
+            return
+
+        await self.write_command(
+            command,
+            repeat_count=LINAK_POSITION_SEEK_PULSE_COUNT,
+            repeat_delay_ms=LINAK_POSITION_SEEK_PULSE_DELAY_MS,
+        )
 
     async def move_head_up(self) -> None:
         """Move head up."""

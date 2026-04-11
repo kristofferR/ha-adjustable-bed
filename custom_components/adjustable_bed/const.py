@@ -59,6 +59,7 @@ CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
+CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"
@@ -108,6 +109,18 @@ BED_TYPE_LINAK: Final = "linak"
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
+
+BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset({BED_TYPE_LINAK})
+
+
+def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
+    """Return True if the bed type supports passive position reconciliation."""
+    return bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION
+
+
+def passive_position_reconciliation_default_enabled(bed_type: str | None) -> bool:
+    """Return whether passive position reconciliation should default to enabled."""
+    return supports_passive_position_reconciliation(bed_type)
 BED_TYPE_REVERIE: Final = "reverie"
 BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
 BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid

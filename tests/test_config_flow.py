@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
@@ -1352,6 +1353,7 @@ class TestOptionsFlow:
                 CONF_MOTOR_COUNT: 4,
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PASSIVE_POSITION_RECONCILIATION: False,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
         )
@@ -1362,3 +1364,4 @@ class TestOptionsFlow:
         assert mock_config_entry.data[CONF_MOTOR_COUNT] == 4
         assert mock_config_entry.data[CONF_HAS_MASSAGE] is True
         assert mock_config_entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert mock_config_entry.data[CONF_PASSIVE_POSITION_RECONCILIATION] is False

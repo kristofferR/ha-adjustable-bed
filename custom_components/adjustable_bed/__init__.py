@@ -1148,7 +1148,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         coordinator: AdjustableBedCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         _LOGGER.debug("Disconnecting from bed...")
-        await coordinator.async_disconnect()
+        await coordinator.async_shutdown()
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
