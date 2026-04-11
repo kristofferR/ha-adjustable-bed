@@ -561,6 +561,45 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_HAS_MASSAGE] is True
         assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
 
+    async def test_bluetooth_discovery_duplicate_octo_names_warn_about_split_setup(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Bluetooth discovery should warn when another Octo side is visible."""
+        del enable_custom_integrations
+
+        other_side = MagicMock()
+        other_side.name = "RC2"
+        other_side.address = "EE:00:11:22:33:99"
+        other_side.rssi = -58
+        other_side.manufacturer_data = {}
+        other_side.service_data = {}
+        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
+        other_side.source = "local"
+        other_side.device = MagicMock()
+        other_side.advertisement = MagicMock()
+        other_side.connectable = True
+        other_side.time = 0
+        other_side.tx_power = None
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_octo_rc2, other_side],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_BLUETOOTH},
+                data=mock_bluetooth_service_info_octo_rc2,
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        note = result["description_placeholders"]["detection_note"]
+        assert "Split Octo beds often expose one BLE address per side" in note
+        assert "Back + Legs Up" in note
+
     async def test_bluetooth_discovery_not_supported(
         self,
         hass: HomeAssistant,
@@ -596,6 +635,48 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "already_configured"
+
+    async def test_user_flow_duplicate_octo_names_warn_about_split_setup(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Duplicate Octo names should surface split-bed guidance in setup."""
+        del enable_custom_integrations
+
+        other_side = MagicMock()
+        other_side.name = "RC2"
+        other_side.address = "EE:00:11:22:33:99"
+        other_side.rssi = -58
+        other_side.manufacturer_data = {}
+        other_side.service_data = {}
+        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
+        other_side.source = "local"
+        other_side.device = MagicMock()
+        other_side.advertisement = MagicMock()
+        other_side.connectable = True
+        other_side.time = 0
+        other_side.tx_power = None
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_octo_rc2, other_side],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: mock_bluetooth_service_info_octo_rc2.address},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        note = result["description_placeholders"]["detection_note"]
+        assert "Split Octo beds often expose one BLE address per side" in note
+        assert "Back + Legs Up" in note
 
     async def test_bluetooth_discovery_ambiguous_shows_disambiguation(
         self,
@@ -788,6 +869,53 @@ class TestManualFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
+
+    async def test_manual_config_duplicate_octo_names_warn_about_split_setup(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Manual Octo setup should surface split-bed guidance for duplicate names."""
+        del enable_custom_integrations
+
+        other_side = MagicMock()
+        other_side.name = "RC2"
+        other_side.address = "EE:00:11:22:33:99"
+        other_side.rssi = -58
+        other_side.manufacturer_data = {}
+        other_side.service_data = {}
+        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
+        other_side.source = "local"
+        other_side.device = MagicMock()
+        other_side.advertisement = MagicMock()
+        other_side.connectable = True
+        other_side.time = 0
+        other_side.tx_power = None
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_octo_rc2, other_side],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: mock_bluetooth_service_info_octo_rc2.address},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_config"
+        assert (
+            "Split Octo beds often expose one BLE address per side"
+            in result["description_placeholders"]["setup_note"]
+        )
 
     async def test_manual_entry_creates_entry(
         self, hass: HomeAssistant, enable_custom_integrations

@@ -45,6 +45,22 @@ The PIN is typically found in your Octo physical remote's settings menu, or in t
 | Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
 
+## Split Beds
+
+Some Octo split beds expose one BLE controller per side, often under the same
+advertised name such as `RC2` or `OCTOBrick`.
+
+If one configured Octo entry only moves one side of the bed:
+
+1. Add the other Octo BLE address as a second Adjustable Bed device.
+2. Rename the two entries during setup so they are clearly left/right.
+3. Use the `Synchro Mode` switch if your hardware supports linked movement.
+
+The official Octo app handles this by storing separate left/right device
+addresses and switching between them. Also note that the `Back + Legs Up`
+preset only moves both motors on the currently connected controller; it does
+not mean both bed sides.
+
 ## Protocol Variants
 
 Octo beds have at least two protocol variants. The integration auto-detects the variant based on the service UUID.

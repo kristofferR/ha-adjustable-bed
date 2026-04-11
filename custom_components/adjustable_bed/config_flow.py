@@ -172,6 +172,61 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             "2. Click 'Pair Now'",
         )
 
+    def _get_octo_split_setup_note(
+        self,
+        *,
+        address: str,
+        name: str | None,
+        bed_type: str | None,
+    ) -> str | None:
+        """Return setup guidance for split Octo beds with one controller per side."""
+        if bed_type != BED_TYPE_OCTO or not name:
+            return None
+
+        normalized_name = name.strip().lower()
+        if not normalized_name:
+            return None
+
+        normalized_address = address.upper()
+        candidates: list[BluetoothServiceInfoBleak] = []
+        seen_addresses: set[str] = set()
+        for device_map in (self._discovered_devices, self._all_ble_devices):
+            for candidate in device_map.values():
+                candidate_address = candidate.address.upper()
+                if candidate_address in seen_addresses:
+                    continue
+                seen_addresses.add(candidate_address)
+                candidates.append(candidate)
+
+        if not candidates:
+            candidates = get_discovered_service_info(
+                self.hass,
+                include_non_connectable=True,
+            )
+
+        matching_addresses: set[str] = set()
+        for candidate in candidates:
+            if candidate.address.upper() == normalized_address:
+                continue
+            if (candidate.name or "").strip().lower() != normalized_name:
+                continue
+            if detect_bed_type(candidate) != BED_TYPE_OCTO:
+                continue
+            matching_addresses.add(candidate.address.upper())
+
+        if not matching_addresses:
+            return None
+
+        device_count = len(matching_addresses)
+        device_word = "device" if device_count == 1 else "devices"
+        verb = "is" if device_count == 1 else "are"
+        return (
+            f"{device_count} other Octo {device_word} named {name} {verb} visible. "
+            "Split Octo beds often expose one BLE address per side, so add the other address "
+            "as a second Adjustable Bed device if this one only moves one side. "
+            "'Back + Legs Up' only affects the currently connected controller."
+        )
+
     def _maybe_add_kaidi_metadata(
         self,
         entry_data: dict[str, Any],
@@ -669,6 +724,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # For high-confidence detections, show a reassuring message
             description_placeholders["detection_note"] = "Detected automatically."
 
+        octo_split_note = self._get_octo_split_setup_note(
+            address=self._discovery_info.address,
+            name=self._discovery_info.name,
+            bed_type=bed_type,
+        )
+        if octo_split_note is not None:
+            description_placeholders["detection_note"] = (
+                f"{description_placeholders['detection_note']}\n{octo_split_note}"
+            )
+
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=vol.Schema(schema_dict),
@@ -1107,6 +1172,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Check if bed type was pre-selected from two-tier actuator selection
         preselected_bed_type = self._selected_bed_type
         preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
+        detected_bed_type = detect_bed_type(self._discovery_info)
 
         # Build base schema with bed type selector (alphabetically sorted)
         if preselected_bed_type:
@@ -1155,6 +1221,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             default_pulse_count = DEFAULT_MOTOR_PULSE_COUNT
             default_pulse_delay = DEFAULT_MOTOR_PULSE_DELAY_MS
 
+        octo_split_note = self._get_octo_split_setup_note(
+            address=address,
+            name=None if device_name == "Unknown" else device_name,
+            bed_type=preselected_bed_type or detected_bed_type,
+        )
+
         # Add remaining fields
         schema_dict.update(
             {
@@ -1187,6 +1259,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "name": device_name,
                 "address": address,
+                "setup_note": f"\n{octo_split_note}" if octo_split_note else "",
             },
         )
 
