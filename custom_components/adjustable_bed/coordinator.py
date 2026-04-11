@@ -79,6 +79,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -264,6 +265,9 @@ class AdjustableBedCoordinator:
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
+        self._ble_bond_established: bool = bool(
+            entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
+        )
 
         # Connection history tracking for diagnostics (issue #168)
         self._connection_attempt_count: int = 0
@@ -448,6 +452,56 @@ class AdjustableBedCoordinator:
         None = not yet determined, True = supported, False = not supported.
         """
         return self._pairing_supported
+
+    def _device_reports_existing_bond(self, device: BLEDevice | None = None) -> bool:
+        """Return True when HA/BlueZ reports this bed as already paired or bonded."""
+        candidates: list[BLEDevice] = []
+        if device is not None:
+            candidates.append(device)
+
+        try:
+            current_device = bluetooth.async_ble_device_from_address(
+                self.hass,
+                self._address,
+                connectable=True,
+            )
+        except Exception as err:
+            _LOGGER.debug(
+                "Could not inspect HA Bluetooth bond state for %s: %s",
+                self._address,
+                err,
+            )
+            current_device = None
+        if current_device is not None and current_device not in candidates:
+            candidates.append(current_device)
+
+        for candidate in candidates:
+            details = getattr(candidate, "details", None)
+            if not isinstance(details, dict):
+                continue
+            props = details.get("props")
+            if not isinstance(props, dict):
+                continue
+            if props.get("Paired") or props.get("Bonded"):
+                return True
+        return False
+
+    def _mark_ble_bond_established(self) -> None:
+        """Record that future connections should skip `pair=True`."""
+        if self._ble_bond_established:
+            return
+
+        self._ble_bond_established = True
+        if self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+            return
+
+        self.hass.config_entries.async_update_entry(
+            self.entry,
+            data={
+                **self.entry.data,
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+        )
 
     @property
     def cancel_command(self) -> asyncio.Event:
@@ -910,13 +964,27 @@ class AdjustableBedCoordinator:
                 )
 
                 # Determine if this bed type needs pairing and if pairing is supported.
-                # Only pair when we haven't tried yet (_pairing_supported is None).
-                # After a successful bond the pairing state persists at the BLE
-                # level so re-requesting pair=True on subsequent connections
-                # triggers auth failures on some ESP-IDF stacks (reason 82) and
-                # leaves the ESPHome proxy connection stuck in ESTABLISHED state.
+                # Once the bed is bonded, future connections must skip pair=True:
+                # some ESP-IDF/ESPHome stacks respond with auth error 82 and can
+                # leave the proxy stuck in ESTABLISHED state when asked to re-pair
+                # an already-bonded device.
                 bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
-                use_pairing = bed_requires_pairing and self._pairing_supported is None
+                if (
+                    bed_requires_pairing
+                    and not self._ble_bond_established
+                    and self._device_reports_existing_bond(device)
+                ):
+                    _LOGGER.info(
+                        "Existing BLE bond detected for %s; skipping pair=True",
+                        self._address,
+                    )
+                    self._mark_ble_bond_established()
+
+                use_pairing = (
+                    bed_requires_pairing
+                    and not self._ble_bond_established
+                    and self._pairing_supported is not False
+                )
                 if use_pairing:
                     _LOGGER.info(
                         "Pairing enabled for %s (bed type: %s, variant: %s) - "
@@ -953,6 +1021,7 @@ class AdjustableBedCoordinator:
                         # If we get here with pairing enabled, mark it as supported
                         if use_pairing:
                             self._pairing_supported = True
+                            self._mark_ble_bond_established()
                     except (NotImplementedError, TypeError) as pair_err:
                         # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
                         # TypeError: older bleak-retry-connector doesn't have pair kwarg
@@ -996,6 +1065,7 @@ class AdjustableBedCoordinator:
                                 pair_err,
                             )
                             self._pairing_supported = True
+                            self._mark_ble_bond_established()
                             raise
                         raise
                 finally:

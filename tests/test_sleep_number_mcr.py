@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -176,15 +177,15 @@ class TestSleepNumberMcrController:
         assert controller._response_frames[0].function_code == 20
         assert controller._response_frames[0].payload == b"\x01"
 
-    async def test_async_write_frame_uses_write_without_response(
+    async def test_async_write_frame_prefers_write_with_response(
         self,
         sleep_number_mcr_coordinator,
     ) -> None:
-        """BAM/MCR should rely on the protocol reply, not GATT write responses."""
+        """BAM/MCR should try write-with-response first for ESPHome proxies."""
         coordinator = await sleep_number_mcr_coordinator(
             address="AA:BB:CC:DD:EE:58",
             name="64:DB:A0:07:DD:09",
-            entry_id="sleep_number_mcr_write_no_response",
+            entry_id="sleep_number_mcr_write_with_response",
         )
         controller = coordinator.controller
         assert isinstance(controller, SleepNumberMcrController)
@@ -196,5 +197,38 @@ class TestSleepNumberMcrController:
             SLEEP_NUMBER_MCR_RX_CHAR_UUID,
             b"\x16\x16test",
             cancel_event=None,
-            response=False,
+            response=True,
         )
+
+    async def test_async_write_frame_falls_back_to_write_without_response(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """BAM/MCR should fall back when write-with-response is rejected."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5A",
+            name="64:DB:A0:07:DD:0B",
+            entry_id="sleep_number_mcr_write_fallback",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._write_gatt_with_retry = AsyncMock(
+            side_effect=[BleakError("write-with-response rejected"), None]
+        )
+
+        await controller._async_write_frame(b"\x16\x16test")
+
+        assert controller._write_gatt_with_retry.await_args_list == [
+            call(
+                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+                b"\x16\x16test",
+                cancel_event=None,
+                response=True,
+            ),
+            call(
+                SLEEP_NUMBER_MCR_RX_CHAR_UUID,
+                b"\x16\x16test",
+                cancel_event=None,
+                response=False,
+            ),
+        ]

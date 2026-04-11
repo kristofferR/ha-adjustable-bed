@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -111,6 +112,33 @@ class TestPairingInstructions:
 
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions
+
+
+class TestPairingPersistence:
+    """Test that successful pairing is persisted on the created entry."""
+
+    async def test_bluetooth_pairing_marks_bond_as_established(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Pair Now should persist that the bed is already bonded."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._manual_data = {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+            CONF_NAME: "Paired Sleep Number",
+            CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+        flow.context = {"source": SOURCE_USER}
+
+        with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=True)):
+            result = await flow.async_step_bluetooth_pairing({"action": "pair_now"})
+
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
 
 
 class TestDetectBedType:

@@ -286,7 +286,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     # Helper to create pairing issue — only when there's actual evidence of a pairing
     # problem. Generic connection failures (timeout, device not found) should NOT
@@ -366,6 +365,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
         )
 
+    # Register the reload listener only after the first successful connect.
+    # Setup-time connection logic may persist inferred bond state onto the entry,
+    # and we do not want that one-time migration to trigger an immediate reload.
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
     return await _async_finish_entry_setup(
         hass,

@@ -47,6 +47,7 @@ from .const import (
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
@@ -128,6 +129,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Adjustable Bed."""
 
     VERSION = 3
+
+    @staticmethod
+    def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
+        """Persist that the bed already has a BLE bond."""
+        return {
+            **entry_data,
+            CONF_BLE_BOND_ESTABLISHED: True,
+        }
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
@@ -1584,7 +1593,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if paired:
                         return self.async_create_entry(
                             title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                            data=self._manual_data,
+                            data=self._mark_ble_bond_established(self._manual_data),
                         )
                     else:
                         errors["base"] = "pairing_failed"
@@ -1650,7 +1659,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     if paired:
                         return self.async_create_entry(
                             title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                            data=self._manual_data,
+                            data=self._mark_ble_bond_established(self._manual_data),
                         )
                     else:
                         errors["base"] = "pairing_failed"
