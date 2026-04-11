@@ -196,6 +196,23 @@ class BedController(ABC):
         return POSITION_STALL_THRESHOLD
 
     @property
+    def chains_position_seek_steps_while_moving(self) -> bool:
+        """Return True to reissue seek bursts before movement fully stalls.
+
+        The default seek loop waits for a stagnant feedback read before it
+        sends another movement burst. Controllers whose motors auto-stop
+        shortly after writes cease can override this to chain the next burst
+        while feedback still shows active movement, reducing visible stop/start
+        behavior during long seeks.
+        """
+        return False
+
+    @property
+    def position_seek_chain_min_remaining_distance(self) -> float:
+        """Return the minimum remaining error that still allows burst chaining."""
+        return POSITION_TOLERANCE
+
+    @property
     def passive_position_reconciliation_interval(self) -> float | None:
         """Return the idle interval for passive position reconciliation reads.
 
@@ -489,13 +506,19 @@ class BedController(ABC):
         some motors support notifications and others don't.
         """
 
-    async def seek_position_step(self, position_key: str, moving_up: bool) -> None:
+    async def seek_position_step(
+        self,
+        position_key: str,
+        moving_up: bool,
+        remaining_distance: float | None = None,
+    ) -> None:
         """Execute one incremental move step during feedback-based seeking.
 
         Controllers with `uses_custom_position_seek_steps` should override this
         to emit shorter or otherwise specialized seek pulses. The default
         implementation falls back to the normal movement helpers.
         """
+        del remaining_distance  # Default implementations do not use distance-based tuning.
         if position_key == "back":
             await (self.move_back_up() if moving_up else self.move_back_down())
             return

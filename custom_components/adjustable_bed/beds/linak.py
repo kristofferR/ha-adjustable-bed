@@ -38,12 +38,19 @@ LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
 LINAK_INITIAL_POSITION_RETRY_ATTEMPTS = 3
 LINAK_INITIAL_POSITION_RETRY_DELAY_S = 0.75
 LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S = 120.0
-LINAK_POSITION_SEEK_PULSE_COUNT = 1
 LINAK_POSITION_SEEK_PULSE_DELAY_MS = 100
 LINAK_POSITION_SEEK_TOLERANCE = 0.75
 LINAK_POSITION_SEEK_STALL_COUNT = 1
 LINAK_POSITION_SEEK_CHECK_INTERVAL_S = 0.2
 LINAK_POSITION_SEEK_STALL_THRESHOLD = 0.2
+LINAK_COARSE_SEEK_DISTANCE_DEGREES = 20.0
+LINAK_MEDIUM_SEEK_DISTANCE_DEGREES = 10.0
+LINAK_FINE_SEEK_DISTANCE_DEGREES = 4.0
+LINAK_CHAINED_SEEK_MIN_REMAINING_DEGREES = LINAK_FINE_SEEK_DISTANCE_DEGREES
+LINAK_COARSE_SEEK_PULSE_COUNT = 6
+LINAK_MEDIUM_SEEK_PULSE_COUNT = 4
+LINAK_FINE_SEEK_PULSE_COUNT = 2
+LINAK_MICRO_SEEK_PULSE_COUNT = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +205,16 @@ class LinakController(BedController):
     def position_seek_stall_threshold(self) -> float:
         """Return a smaller movement threshold for Linak angle feedback."""
         return LINAK_POSITION_SEEK_STALL_THRESHOLD
+
+    @property
+    def chains_position_seek_steps_while_moving(self) -> bool:
+        """Keep feeding Linak seek bursts while the motor is still advancing."""
+        return True
+
+    @property
+    def position_seek_chain_min_remaining_distance(self) -> float:
+        """Switch to stop-and-check micro pulses once Linak is close to target."""
+        return LINAK_CHAINED_SEEK_MIN_REMAINING_DEGREES
 
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
@@ -863,8 +880,25 @@ class LinakController(BedController):
         """
         await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
 
-    async def seek_position_step(self, position_key: str, moving_up: bool) -> None:
-        """Execute a short Linak seek pulse that matches remote tap behavior."""
+    def _seek_step_repeat_count(self, remaining_distance: float | None) -> int:
+        """Return an adaptive Linak seek pulse size for the remaining error."""
+        if remaining_distance is None:
+            return LINAK_FINE_SEEK_PULSE_COUNT
+        if remaining_distance >= LINAK_COARSE_SEEK_DISTANCE_DEGREES:
+            return LINAK_COARSE_SEEK_PULSE_COUNT
+        if remaining_distance >= LINAK_MEDIUM_SEEK_DISTANCE_DEGREES:
+            return LINAK_MEDIUM_SEEK_PULSE_COUNT
+        if remaining_distance >= LINAK_FINE_SEEK_DISTANCE_DEGREES:
+            return LINAK_FINE_SEEK_PULSE_COUNT
+        return LINAK_MICRO_SEEK_PULSE_COUNT
+
+    async def seek_position_step(
+        self,
+        position_key: str,
+        moving_up: bool,
+        remaining_distance: float | None = None,
+    ) -> None:
+        """Execute an adaptive Linak seek pulse based on remaining distance."""
         command_map = {
             ("back", True): LinakCommands.MOVE_BACK_UP,
             ("back", False): LinakCommands.MOVE_BACK_DOWN,
@@ -877,12 +911,17 @@ class LinakController(BedController):
         }
         command = command_map.get((position_key, moving_up))
         if command is None:
-            await super().seek_position_step(position_key, moving_up)
+            await super().seek_position_step(
+                position_key,
+                moving_up,
+                remaining_distance,
+            )
             return
 
+        repeat_count = self._seek_step_repeat_count(remaining_distance)
         await self.write_command(
             command,
-            repeat_count=LINAK_POSITION_SEEK_PULSE_COUNT,
+            repeat_count=repeat_count,
             repeat_delay_ms=LINAK_POSITION_SEEK_PULSE_DELAY_MS,
         )
 

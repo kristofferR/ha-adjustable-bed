@@ -2784,6 +2784,23 @@ class AdjustableBedCoordinator:
                 )
                 if not isinstance(position_stall_threshold, (int, float)):
                     position_stall_threshold = POSITION_STALL_THRESHOLD
+                chain_seek_steps = getattr(
+                    self._controller,
+                    "chains_position_seek_steps_while_moving",
+                    False,
+                )
+                if not isinstance(chain_seek_steps, bool):
+                    chain_seek_steps = False
+                position_seek_chain_min_remaining_distance = getattr(
+                    self._controller,
+                    "position_seek_chain_min_remaining_distance",
+                    position_tolerance,
+                )
+                if not isinstance(
+                    position_seek_chain_min_remaining_distance,
+                    (int, float),
+                ):
+                    position_seek_chain_min_remaining_distance = position_tolerance
 
                 # Check if already at target (within tolerance)
                 if (
@@ -2832,10 +2849,14 @@ class AdjustableBedCoordinator:
                 reverse_on_overshoot = self._controller.reverses_position_seek_on_overshoot
                 use_custom_seek_steps = self._controller.uses_custom_position_seek_steps
 
-                async def issue_seek_step(direction_up: bool) -> None:
+                async def issue_seek_step(direction_up: bool, remaining_distance: float) -> None:
                     """Execute one seek movement step using controller-specific tuning."""
                     if use_custom_seek_steps:
-                        await self._controller.seek_position_step(position_key, direction_up)
+                        await self._controller.seek_position_step(
+                            position_key,
+                            direction_up,
+                            remaining_distance,
+                        )
                         return
                     if direction_up:
                         await move_up_fn(self._controller)
@@ -2844,7 +2865,10 @@ class AdjustableBedCoordinator:
 
                 # Start movement in try-finally to guarantee stop is sent
                 try:
-                    await issue_seek_step(moving_up)
+                    await issue_seek_step(
+                        moving_up,
+                        abs(target_angle - cast(float, current_angle)),
+                    )
 
                     # Tracking variables
                     start_time = time.monotonic()
@@ -2941,7 +2965,7 @@ class AdjustableBedCoordinator:
                                 )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
-                            await issue_seek_step(False)
+                            await issue_seek_step(False, abs(target_angle - current_angle))
                             moving_up = False
                         elif reverse_on_overshoot and (
                             not moving_up
@@ -2962,11 +2986,32 @@ class AdjustableBedCoordinator:
                                 )
                                 break
                             self._cancel_command.clear()  # Ensure reversal isn't cancelled
-                            await issue_seek_step(True)
+                            await issue_seek_step(True, abs(target_angle - current_angle))
                             moving_up = True
 
-                        # Stall detection - re-issue movement if motor stopped prematurely
+                        remaining_distance = abs(target_angle - current_angle)
                         movement = abs(current_angle - last_angle)
+                        if (
+                            chain_seek_steps
+                            and movement >= position_stall_threshold
+                            and remaining_distance
+                            >= position_seek_chain_min_remaining_distance
+                        ):
+                            _LOGGER.debug(
+                                "Position %s still moving at %.1f with %.1f remaining, chaining seek step",
+                                position_key,
+                                current_angle,
+                                remaining_distance,
+                            )
+                            await issue_seek_step(
+                                moving_up,
+                                remaining_distance,
+                            )
+                            stall_count = 0
+                            last_angle = current_angle
+                            continue
+
+                        # Stall detection - re-issue movement if motor stopped prematurely
                         if movement < position_stall_threshold:
                             stall_count += 1
                             if stall_count >= position_stall_count:
@@ -2977,7 +3022,10 @@ class AdjustableBedCoordinator:
                                     position_key,
                                     current_angle,
                                 )
-                                await issue_seek_step(moving_up)
+                                await issue_seek_step(
+                                    moving_up,
+                                    abs(target_angle - current_angle),
+                                )
                                 stall_count = 0  # Reset stall count after re-issue
                         else:
                             stall_count = 0

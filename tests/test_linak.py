@@ -185,19 +185,35 @@ class TestLinakController:
             LinakCommands.MOVE_HEAD_DOWN,
         ]
 
-    async def test_seek_position_step_uses_short_remote_like_pulse(
+    async def test_seek_position_step_uses_adaptive_far_pulse(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Linak seeking should use short pulses instead of the long manual move burst."""
+        """Linak seeking should use larger pulses when still far from target."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
 
-        await coordinator.controller.seek_position_step("legs", True)
+        await coordinator.controller.seek_position_step("legs", True, remaining_distance=25.0)
+
+        _assert_repeated_command(mock_bleak_client, LinakCommands.MOVE_LEGS_UP, repeat_count=6)
+
+    async def test_seek_position_step_uses_micro_pulse_near_target(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Linak seeking should still use tiny pulses near the target for accuracy."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+
+        await coordinator.controller.seek_position_step("legs", True, remaining_distance=2.0)
 
         _assert_repeated_command(mock_bleak_client, LinakCommands.MOVE_LEGS_UP, repeat_count=1)
 

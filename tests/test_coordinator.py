@@ -476,7 +476,7 @@ class TestCoordinatorPositionSeek:
                 lambda c: move_stop(c),
             )
 
-        controller.seek_position_step.assert_awaited_once_with("legs", True)
+        controller.seek_position_step.assert_awaited_once_with("legs", True, 20.0)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -580,7 +580,7 @@ class TestCoordinatorPositionSeek:
             )
 
         assert read_positions.await_count == 2
-        controller.seek_position_step.assert_awaited_once_with("legs", True)
+        controller.seek_position_step.assert_awaited_once_with("legs", True, 10.0)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
@@ -634,6 +634,66 @@ class TestCoordinatorPositionSeek:
             )
 
         assert controller.seek_position_step.await_count == 2
+        controller.seek_position_step.assert_any_await("legs", True, 10.0)
+        controller.seek_position_step.assert_any_await("legs", True, 3.0)
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
+
+    async def test_seek_chains_custom_steps_while_controller_is_still_moving(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Controllers can chain seek bursts before a full stall to smooth long moves."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data["legs"] = 0.0
+
+        controller = MagicMock()
+        controller.supports_direct_position_control = False
+        controller.reverses_position_seek_on_overshoot = False
+        controller.uses_custom_position_seek_steps = True
+        controller.position_seek_tolerance = 0.5
+        controller.position_seek_stall_count = 3
+        controller.position_seek_stall_threshold = 0.2
+        controller.chains_position_seek_steps_while_moving = True
+        controller.position_seek_chain_min_remaining_distance = 5.0
+        controller.seek_position_step = AsyncMock()
+        controller.auto_stops_on_idle = True
+        coordinator._controller = controller
+
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+        readings = iter([10.0, 20.0])
+
+        async def _read_positions() -> None:
+            coordinator._position_data["legs"] = next(readings, 20.0)
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            await coordinator.async_seek_position(
+                "legs",
+                20.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        assert controller.seek_position_step.await_count == 2
+        controller.seek_position_step.assert_any_await("legs", True, 20.0)
+        controller.seek_position_step.assert_any_await("legs", True, 10.0)
         move_up.assert_not_awaited()
         move_down.assert_not_awaited()
         move_stop.assert_not_awaited()
