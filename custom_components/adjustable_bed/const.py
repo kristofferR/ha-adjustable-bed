@@ -60,6 +60,7 @@ CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
+DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S: Final = 120.0
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"
@@ -1534,7 +1535,6 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_REVERIE_NIGHTSTAND,
         BED_TYPE_SBI,
         BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_SVANE,
         BED_TYPE_VIBRADORM,
     }
@@ -1569,7 +1569,6 @@ BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset(
         BED_TYPE_REVERIE_NIGHTSTAND,
         BED_TYPE_SBI,
         BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEPYS_BOX25,
         BED_TYPE_SVANE,
         BED_TYPE_VIBRADORM,
     }
@@ -1584,11 +1583,14 @@ def bed_type_supports_position_feedback(
     bed_type: str | None,
     protocol_variant: str | None = None,
 ) -> bool:
-    """Return True when the configured bed type exposes a reliable feedback path."""
+    """Return True when the configured bed type can expose a reliable feedback path."""
     if bed_type in BEDS_WITH_POSITION_FEEDBACK:
         return True
-    if protocol_variant and protocol_variant != VARIANT_AUTO:
-        return protocol_variant in BED_TYPE_VARIANTS_WITH_POSITION_FEEDBACK.get(bed_type or "", set())
+    supported_variants = BED_TYPE_VARIANTS_WITH_POSITION_FEEDBACK.get(bed_type or "", set())
+    if protocol_variant in (None, VARIANT_AUTO):
+        return bool(supported_variants)
+    if protocol_variant:
+        return protocol_variant in supported_variants
     return False
 
 

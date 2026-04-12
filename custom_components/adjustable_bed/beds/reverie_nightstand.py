@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 from bleak.exc import BleakError
 
 from ..const import (
+    DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S,
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
     REVERIE_NIGHTSTAND_HEAD_POSITION_UUID,
@@ -30,7 +31,7 @@ from ..const import (
     REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID,
     REVERIE_NIGHTSTAND_PRESETS_UUID,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -138,7 +139,44 @@ class ReverieNightstandController(BedController):
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
         """Allow conservative idle refresh for Reverie Nightstand reads."""
-        return 120.0
+        return DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Expose the Nightstand motor surface without duplicate head/feet aliases."""
+        return (
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=lambda ctrl: ctrl.move_back_up(),
+                close_fn=lambda ctrl: ctrl.move_back_down(),
+                stop_fn=lambda ctrl: ctrl.move_back_stop(),
+                position_key="back",
+                max_angle=60,
+            ),
+            MotorControlSpec(
+                key="legs",
+                translation_key="legs",
+                open_fn=lambda ctrl: ctrl.move_legs_up(),
+                close_fn=lambda ctrl: ctrl.move_legs_down(),
+                stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+                position_key="legs",
+                max_angle=45,
+            ),
+            MotorControlSpec(
+                key="lumbar",
+                translation_key="lumbar",
+                open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                max_angle=30,
+            ),
+        )
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove legacy alias entities replaced by the canonical back/legs surface."""
+        return frozenset({"head", "feet"})
 
     async def _write_to_char(
         self,

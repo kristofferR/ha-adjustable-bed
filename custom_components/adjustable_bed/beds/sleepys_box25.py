@@ -209,8 +209,8 @@ class SleepysBox25Controller(BedController):
 
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
-        """Allow conservative idle refresh for BOX25 position reads."""
-        return 120.0
+        """BOX25 positions are notification-driven; on-demand idle reads are not implemented."""
+        return None
 
     @property
     def supports_direct_position_control(self) -> bool:

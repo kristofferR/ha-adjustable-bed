@@ -402,19 +402,24 @@ class LinakController(BedController):
             spec.source_name,
             spec.uuid,
         )
-        self._resolved_two_motor_secondary_spec = spec
-
         if self.client is None or not self.client.is_connected:
+            self._resolved_two_motor_secondary_spec = spec
             return
 
-        for candidate in self._two_motor_secondary_candidates():
-            if candidate.uuid == spec.uuid:
-                continue
-            if candidate.uuid in self._active_position_notifications:
-                with contextlib.suppress(BleakError):
-                    await self.client.stop_notify(candidate.uuid)
-            self._active_position_notifications.discard(candidate.uuid)
-            self._deferred_position_notifications.discard(candidate.uuid)
+        async with self._ble_lock:
+            self._resolved_two_motor_secondary_spec = spec
+
+            if self.client is None or not self.client.is_connected:
+                return
+
+            for candidate in self._two_motor_secondary_candidates():
+                if candidate.uuid == spec.uuid:
+                    continue
+                if candidate.uuid in self._active_position_notifications:
+                    with contextlib.suppress(BleakError):
+                        await self.client.stop_notify(candidate.uuid)
+                self._active_position_notifications.discard(candidate.uuid)
+                self._deferred_position_notifications.discard(candidate.uuid)
 
         await self._ensure_position_notifications_started()
 

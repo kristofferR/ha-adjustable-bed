@@ -246,13 +246,16 @@ class TestCoordinatorConnection:
                 new_callable=AsyncMock,
                 return_value=MagicMock(),
             ),
+            patch.object(hass.config_entries, "async_update_entry") as mock_update_entry,
         ):
             coordinator = AdjustableBedCoordinator(hass, entry)
             result = await coordinator.async_connect()
 
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
-        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        mock_update_entry.assert_called_once()
+        assert mock_update_entry.call_args.kwargs["data"][CONF_BLE_BOND_ESTABLISHED] is True
+        assert CONF_BLE_BOND_ESTABLISHED not in entry.data
 
     async def test_initial_position_read_prepares_controller_before_hydration(
         self,
@@ -1526,9 +1529,17 @@ class TestCoordinatorWriteCommand:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
+        call_order: list[str] = []
+
+        async def _record_ready() -> None:
+            call_order.append("ready")
+
+        async def _record_write(*_args, **_kwargs) -> None:
+            call_order.append("write")
+
         controller = MagicMock()
-        controller.write_command = AsyncMock()
-        controller.async_ensure_command_session_ready = AsyncMock()
+        controller.write_command = AsyncMock(side_effect=_record_write)
+        controller.async_ensure_command_session_ready = AsyncMock(side_effect=_record_ready)
         coordinator._controller = controller
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
@@ -1537,6 +1548,7 @@ class TestCoordinatorWriteCommand:
 
         controller.async_ensure_command_session_ready.assert_awaited_once_with()
         controller.write_command.assert_awaited_once()
+        assert call_order == ["ready", "write"]
 
     async def test_write_command_not_connected(
         self,
@@ -1645,8 +1657,18 @@ class TestCoordinatorNotifications:
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
 
-        coordinator.controller.start_notify = AsyncMock()
-        coordinator.controller.async_prime_position_feedback = AsyncMock()
+        call_order: list[str] = []
+
+        async def _record_start_notify(*_args) -> None:
+            call_order.append("start_notify")
+
+        async def _record_prime_feedback() -> None:
+            call_order.append("prime_feedback")
+
+        coordinator.controller.start_notify = AsyncMock(side_effect=_record_start_notify)
+        coordinator.controller.async_prime_position_feedback = AsyncMock(
+            side_effect=_record_prime_feedback
+        )
 
         await coordinator.async_start_notify()
 
@@ -1654,6 +1676,7 @@ class TestCoordinatorNotifications:
         callback_arg = coordinator.controller.start_notify.await_args.args[0]
         assert getattr(callback_arg, "__self__", None) is coordinator
         coordinator.controller.async_prime_position_feedback.assert_awaited_once_with()
+        assert call_order == ["start_notify", "prime_feedback"]
 
 
 class TestMotorPulseConfiguration:

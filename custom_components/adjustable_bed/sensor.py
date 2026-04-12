@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -22,9 +23,7 @@ from .const import (
     BEDS_WITH_PERCENTAGE_POSITIONS,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
-    CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
-    DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
 )
@@ -88,6 +87,10 @@ SENSOR_DESCRIPTIONS: tuple[AdjustableBedSensorEntityDescription, ...] = (
     ),
 )
 
+STANDARD_ANGLE_SENSOR_DESCRIPTIONS_BY_MOTOR_KEY = {
+    description.position_key: description for description in SENSOR_DESCRIPTIONS
+}
+
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedMassageSensorEntityDescription(SensorEntityDescription):
@@ -130,12 +133,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up Adjustable Bed sensor entities."""
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-    motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     bed_type = entry.data.get(CONF_BED_TYPE)
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
     controller = coordinator.controller
 
     entities: list[SensorEntity] = []
+    active_angle_sensor_keys: set[str] = set()
 
     # Set up angle sensors (only for non-percentage beds with angle sensing enabled)
     if not coordinator.disable_angle_sensing:
@@ -145,9 +148,9 @@ async def async_setup_entry(
         # Skip angle sensors for beds that report percentage instead of angles
         # (Keeson/Ergomotion/Serta report 0-100% position, not degrees)
         if supports_position_feedback and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
-            for description in SENSOR_DESCRIPTIONS:
-                if motor_count >= description.min_motors:
-                    entities.append(AdjustableBedAngleSensor(coordinator, description))
+            for description in _build_standard_angle_sensor_descriptions(controller):
+                entities.append(AdjustableBedAngleSensor(coordinator, description))
+                active_angle_sensor_keys.add(description.key)
         else:
             _LOGGER.debug(
                 "Skipping angle sensors for %s - no reliable angle feedback path is available",
@@ -174,8 +177,60 @@ async def async_setup_entry(
             for massage_desc in MASSAGE_SENSOR_DESCRIPTIONS:
                 entities.append(AdjustableBedMassageSensor(coordinator, massage_desc))
 
+    _async_remove_stale_angle_sensor_entities(
+        hass,
+        coordinator,
+        active_angle_sensor_keys,
+    )
+
     if entities:
         async_add_entities(entities)
+
+
+def _build_standard_angle_sensor_descriptions(
+    controller,
+) -> list[AdjustableBedSensorEntityDescription]:
+    """Build angle sensor descriptions from the controller's actual motor surface."""
+    descriptions: list[AdjustableBedSensorEntityDescription] = []
+
+    for spec in controller.motor_control_specs:
+        template = STANDARD_ANGLE_SENSOR_DESCRIPTIONS_BY_MOTOR_KEY.get(spec.key)
+        if template is None:
+            continue
+
+        descriptions.append(
+            AdjustableBedSensorEntityDescription(
+                key=template.key,
+                translation_key=template.translation_key,
+                icon=template.icon,
+                native_unit_of_measurement=template.native_unit_of_measurement,
+                state_class=template.state_class,
+                entity_category=template.entity_category,
+                position_key=spec.position_key or template.position_key,
+                min_motors=template.min_motors,
+            )
+        )
+
+    return descriptions
+
+
+def _async_remove_stale_angle_sensor_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    active_keys: set[str],
+) -> None:
+    """Remove standard angle sensor entities that are no longer exposed."""
+    registry = er.async_get(hass)
+
+    for description in SENSOR_DESCRIPTIONS:
+        if description.key in active_keys:
+            continue
+
+        unique_id = f"{coordinator.address}_{description.key}"
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+        if entity_id is not None:
+            registry.async_remove(entity_id)
+            _LOGGER.info("Removed stale sensor entity %s for %s", entity_id, coordinator.name)
 
 
 class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):

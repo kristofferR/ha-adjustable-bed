@@ -61,6 +61,24 @@ from custom_components.adjustable_bed.kaidi_protocol import (
 )
 
 
+def _build_octo_other_side(service_info: MagicMock) -> MagicMock:
+    """Build a second visible Octo side for split-bed discovery tests."""
+    other_side = MagicMock()
+    other_side.name = "RC2"
+    other_side.address = "EE:00:11:22:33:99"
+    other_side.rssi = -58
+    other_side.manufacturer_data = {}
+    other_side.service_data = {}
+    other_side.service_uuids = list(service_info.service_uuids)
+    other_side.source = "local"
+    other_side.device = MagicMock()
+    other_side.advertisement = MagicMock()
+    other_side.connectable = True
+    other_side.time = 0
+    other_side.tx_power = None
+    return other_side
+
+
 class TestPairingInstructions:
     """Test bed-specific pairing guidance."""
 
@@ -137,6 +155,38 @@ class TestPairingPersistence:
 
         with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=True)):
             result = await flow.async_step_bluetooth_pairing({"action": "pair_now"})
+
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
+
+    @pytest.mark.parametrize(
+        ("step_name", "source"),
+        [
+            ("async_step_bluetooth_pairing", SOURCE_BLUETOOTH),
+            ("async_step_manual_pairing", SOURCE_USER),
+        ],
+    )
+    async def test_skip_pairing_marks_bond_as_established(
+        self,
+        hass: HomeAssistant,
+        step_name: str,
+        source: str,
+    ) -> None:
+        """Skip pairing should persist the user's already-paired choice."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._manual_data = {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
+            CONF_NAME: "Already Paired Sleep Number",
+            CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+        flow.context = {"source": source}
+
+        result = await getattr(flow, step_name)({"action": "skip_pairing"})
 
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
@@ -599,19 +649,7 @@ class TestBluetoothDiscoveryFlow:
         """Bluetooth discovery should warn when another Octo side is visible."""
         del enable_custom_integrations
 
-        other_side = MagicMock()
-        other_side.name = "RC2"
-        other_side.address = "EE:00:11:22:33:99"
-        other_side.rssi = -58
-        other_side.manufacturer_data = {}
-        other_side.service_data = {}
-        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
-        other_side.source = "local"
-        other_side.device = MagicMock()
-        other_side.advertisement = MagicMock()
-        other_side.connectable = True
-        other_side.time = 0
-        other_side.tx_power = None
+        other_side = _build_octo_other_side(mock_bluetooth_service_info_octo_rc2)
 
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -674,19 +712,7 @@ class TestBluetoothDiscoveryFlow:
         """Duplicate Octo names should surface split-bed guidance in setup."""
         del enable_custom_integrations
 
-        other_side = MagicMock()
-        other_side.name = "RC2"
-        other_side.address = "EE:00:11:22:33:99"
-        other_side.rssi = -58
-        other_side.manufacturer_data = {}
-        other_side.service_data = {}
-        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
-        other_side.source = "local"
-        other_side.device = MagicMock()
-        other_side.advertisement = MagicMock()
-        other_side.connectable = True
-        other_side.time = 0
-        other_side.tx_power = None
+        other_side = _build_octo_other_side(mock_bluetooth_service_info_octo_rc2)
 
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
@@ -908,19 +934,7 @@ class TestManualFlow:
         """Manual Octo setup should surface split-bed guidance for duplicate names."""
         del enable_custom_integrations
 
-        other_side = MagicMock()
-        other_side.name = "RC2"
-        other_side.address = "EE:00:11:22:33:99"
-        other_side.rssi = -58
-        other_side.manufacturer_data = {}
-        other_side.service_data = {}
-        other_side.service_uuids = list(mock_bluetooth_service_info_octo_rc2.service_uuids)
-        other_side.source = "local"
-        other_side.device = MagicMock()
-        other_side.advertisement = MagicMock()
-        other_side.connectable = True
-        other_side.time = 0
-        other_side.tx_power = None
+        other_side = _build_octo_other_side(mock_bluetooth_service_info_octo_rc2)
 
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",

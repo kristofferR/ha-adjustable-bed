@@ -23,7 +23,11 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ..const import LIMOSS_CHAR_UUID, LIMOSS_SERVICE_UUID
+from ..const import (
+    DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S,
+    LIMOSS_CHAR_UUID,
+    LIMOSS_SERVICE_UUID,
+)
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -140,7 +144,7 @@ class LimossController(BedController):
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
         """Allow conservative idle refresh for Limoss position reads."""
-        return 120.0
+        return DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
 
     @property
     def memory_slot_count(self) -> int:

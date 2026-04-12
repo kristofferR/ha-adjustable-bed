@@ -27,6 +27,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S,
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_FOOT_MAX_RAW,
@@ -34,7 +35,7 @@ from ..const import (
     OKIN_HEAD_MAX_RAW,
     OKIN_POSITION_NOTIFY_CHAR_UUID,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 from .okin_protocol import build_cst_command
 
 if TYPE_CHECKING:
@@ -145,7 +146,52 @@ class OkinCstController(BedController):
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
         """Allow conservative idle refresh for Okin CST position reads."""
-        return 120.0
+        return DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Expose the CST motor surface without synthetic head/feet aliases."""
+        return (
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=lambda ctrl: ctrl.move_back_up(),
+                close_fn=lambda ctrl: ctrl.move_back_down(),
+                stop_fn=lambda ctrl: ctrl.move_back_stop(),
+                position_key="back",
+                max_angle=68,
+            ),
+            MotorControlSpec(
+                key="legs",
+                translation_key="legs",
+                open_fn=lambda ctrl: ctrl.move_legs_up(),
+                close_fn=lambda ctrl: ctrl.move_legs_down(),
+                stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+                position_key="legs",
+                max_angle=45,
+            ),
+            MotorControlSpec(
+                key="tilt",
+                translation_key="tilt",
+                open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                max_angle=45,
+            ),
+            MotorControlSpec(
+                key="lumbar",
+                translation_key="lumbar",
+                open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                max_angle=30,
+            ),
+        )
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove legacy alias entities replaced by the canonical back/legs surface."""
+        return frozenset({"head", "feet"})
 
     async def write_command(
         self,

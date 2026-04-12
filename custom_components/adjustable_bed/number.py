@@ -127,6 +127,10 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
     ),
 )
 
+STANDARD_POSITION_NUMBER_DESCRIPTIONS_BY_MOTOR_KEY = {
+    description.position_key: description for description in NUMBER_DESCRIPTIONS
+}
+
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedMassageNumberEntityDescription(NumberEntityDescription):
@@ -238,6 +242,7 @@ async def async_setup_entry(
     controller = coordinator.controller
 
     entities: list[NumberEntity] = []
+    active_position_number_keys: set[str] = set()
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
@@ -284,6 +289,7 @@ async def async_setup_entry(
                     min_motors=2,
                 )
                 entities.append(AdjustableBedPositionNumber(coordinator, keeson_head_desc))
+                active_position_number_keys.add(keeson_head_desc.key)
 
                 # Create feet position (maps to "legs" position data)
                 # Keeson/Ergomotion report percentage positions (0-100), not angles
@@ -305,6 +311,7 @@ async def async_setup_entry(
                     min_motors=2,
                 )
                 entities.append(AdjustableBedPositionNumber(coordinator, keeson_feet_desc))
+                active_position_number_keys.add(keeson_feet_desc.key)
             elif bed_type == BED_TYPE_SLEEPYS_BOX25:
                 _LOGGER.debug(
                     "Setting up BOX25 position numbers for %s",
@@ -333,6 +340,7 @@ async def async_setup_entry(
                         min_motors=2,
                     )
                     entities.append(AdjustableBedPositionNumber(coordinator, box25_desc))
+                    active_position_number_keys.add(box25_desc.key)
             elif bed_type == BED_TYPE_KAIDI and controller is not None:
                 _LOGGER.debug(
                     "Setting up Kaidi direct-position numbers for %s",
@@ -376,6 +384,7 @@ async def async_setup_entry(
                             ),
                         )
                     )
+                    active_position_number_keys.add(key)
             elif bed_type == BED_TYPE_SLEEP_NUMBER:
                 _LOGGER.debug(
                     "Setting up Sleep Number direct-position numbers for %s",
@@ -404,37 +413,26 @@ async def async_setup_entry(
                             ),
                         )
                     )
+                    active_position_number_keys.add(description.key)
             else:
-                # Standard bed motor layout (Back/Legs/Head/Feet)
-                # Use configurable angle limits for beds that support angle-based positions
-                for description in NUMBER_DESCRIPTIONS:
-                    if motor_count >= description.min_motors:
-                        # Get dynamic max angle from coordinator (preserves decimal precision)
-                        max_angle = coordinator.get_max_angle(description.position_key)
-                        # Create a new description with the dynamic max angle
-                        dynamic_desc = AdjustableBedNumberEntityDescription(
-                            key=description.key,
-                            translation_key=description.translation_key,
-                            icon=description.icon,
-                            native_min_value=description.native_min_value,
-                            native_max_value=max_angle,
-                            native_step=description.native_step,
-                            native_unit_of_measurement=description.native_unit_of_measurement,
-                            mode=description.mode,
-                            position_key=description.position_key,
-                            move_up_fn=description.move_up_fn,
-                            move_down_fn=description.move_down_fn,
-                            move_stop_fn=description.move_stop_fn,
-                            max_angle=max_angle,
-                            min_motors=description.min_motors,
-                        )
-                        entities.append(AdjustableBedPositionNumber(coordinator, dynamic_desc))
+                for dynamic_desc in _build_standard_position_number_descriptions(
+                    coordinator,
+                    controller,
+                ):
+                    entities.append(AdjustableBedPositionNumber(coordinator, dynamic_desc))
+                    active_position_number_keys.add(dynamic_desc.key)
         else:
             _LOGGER.debug(
                 "Bed type %s (variant=%s) does not support position feedback, skipping position number entities",
                 bed_type,
                 entry.data.get(CONF_PROTOCOL_VARIANT),
             )
+
+    _async_remove_stale_position_number_entities(
+        hass,
+        coordinator,
+        active_position_number_keys,
+    )
 
     # Set up massage intensity number entities (only for beds with massage and direct intensity control)
     if has_massage and controller is not None:
@@ -533,6 +531,61 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _build_standard_position_number_descriptions(
+    coordinator: AdjustableBedCoordinator,
+    controller: BedController,
+) -> list[AdjustableBedNumberEntityDescription]:
+    """Build standard position number entities from the controller's actual motor surface."""
+    descriptions: list[AdjustableBedNumberEntityDescription] = []
+
+    for spec in controller.motor_control_specs:
+        template = STANDARD_POSITION_NUMBER_DESCRIPTIONS_BY_MOTOR_KEY.get(spec.key)
+        if template is None:
+            continue
+
+        position_key = spec.position_key or template.position_key
+        max_angle = coordinator.get_max_angle(position_key)
+        descriptions.append(
+            AdjustableBedNumberEntityDescription(
+                key=template.key,
+                translation_key=template.translation_key,
+                icon=template.icon,
+                native_min_value=template.native_min_value,
+                native_max_value=max_angle,
+                native_step=template.native_step,
+                native_unit_of_measurement=template.native_unit_of_measurement,
+                mode=template.mode,
+                position_key=position_key,
+                move_up_fn=spec.open_fn,
+                move_down_fn=spec.close_fn,
+                move_stop_fn=spec.stop_fn,
+                max_angle=max_angle,
+                min_motors=template.min_motors,
+            )
+        )
+
+    return descriptions
+
+
+def _async_remove_stale_position_number_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    active_keys: set[str],
+) -> None:
+    """Remove standard position number entities that are no longer exposed."""
+    registry = er.async_get(hass)
+
+    for description in NUMBER_DESCRIPTIONS:
+        if description.key in active_keys:
+            continue
+
+        unique_id = f"{coordinator.address}_{description.key}"
+        entity_id = registry.async_get_entity_id("number", DOMAIN, unique_id)
+        if entity_id is not None:
+            registry.async_remove(entity_id)
+            _LOGGER.info("Removed stale number entity %s for %s", entity_id, coordinator.name)
 
 
 def _async_remove_stale_sleep_number_entity(

@@ -1616,7 +1616,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # User wants to try without pairing (maybe already paired manually)
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                    data=self._mark_ble_bond_established(self._manual_data),
                 )
 
         return self.async_show_form(
@@ -1682,7 +1682,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # User wants to try without pairing (maybe already paired manually)
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                    data=self._mark_ble_bond_established(self._manual_data),
                 )
 
         return self.async_show_form(

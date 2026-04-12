@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, call, patch
 
+import pytest
 from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -17,7 +18,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_RICHMAT,
+    BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
@@ -32,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
 )
 
@@ -353,6 +358,114 @@ class TestNumberEntities:
         )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_legs_position")
+            is None
+        )
+
+    @pytest.mark.parametrize(
+        ("bed_type", "protocol_variant", "extra_cover_keys"),
+        [
+            (BED_TYPE_OKIN_CST, None, ("tilt", "lumbar")),
+            (BED_TYPE_REVERIE_NIGHTSTAND, None, ("lumbar",)),
+            (BED_TYPE_SBI, SBI_VARIANT_BOTH, ("tilt", "lumbar")),
+        ],
+    )
+    async def test_feedback_entity_surfaces_follow_controller_motor_layout(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        bed_type: str,
+        protocol_variant: str | None,
+        extra_cover_keys: tuple[str, ...],
+    ):
+        """Feedback entities should follow controller motor specs instead of raw motor_count."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry_data = {
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:28",
+            CONF_NAME: f"{bed_type} Feedback Bed",
+            CONF_BED_TYPE: bed_type,
+            CONF_MOTOR_COUNT: 4,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: False,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+        if protocol_variant is not None:
+            entry_data[CONF_PROTOCOL_VARIANT] = protocol_variant
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"{bed_type} Feedback Bed",
+            data=entry_data,
+            unique_id=f"{bed_type}_feedback_surface_entry",
+            entry_id=f"{bed_type}_feedback_surface_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        for platform, suffix in (
+            ("cover", "head"),
+            ("cover", "feet"),
+            ("number", "head_position"),
+            ("number", "feet_position"),
+            ("sensor", "head_angle"),
+            ("sensor", "feet_angle"),
+        ):
+            registry.async_get_or_create(
+                platform,
+                DOMAIN,
+                f"AA:BB:CC:DD:EE:28_{suffix}",
+                config_entry=entry,
+                suggested_object_id=f"legacy_{bed_type}_{suffix}",
+            )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        for key in ("back", "legs"):
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:28_{key}")
+                is not None
+            )
+        for key in extra_cover_keys:
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:28_{key}")
+                is not None
+            )
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:28_head") is None
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:28_feet") is None
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_back_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_legs_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_head_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_feet_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:28_back_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:28_legs_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:28_head_angle")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:28_feet_angle")
             is None
         )
 

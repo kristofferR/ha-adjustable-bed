@@ -233,6 +233,11 @@ async def _async_finish_entry_setup(
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Register the reload listener only after setup-time migrations have completed.
+    # This avoids immediately reloading the entry when initial setup persists
+    # inferred metadata such as bond state onto the config entry.
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
     if schedule_initial_position_read:
         coordinator.schedule_initial_position_read()
 
@@ -363,10 +368,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
         )
 
-    # Register the reload listener only after the first successful connect.
-    # Setup-time connection logic may persist inferred bond state onto the entry,
-    # and we do not want that one-time migration to trigger an immediate reload.
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _LOGGER.info("Successfully connected to bed at %s", entry.data.get(CONF_ADDRESS))
     return await _async_finish_entry_setup(
         hass,

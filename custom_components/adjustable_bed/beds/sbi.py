@@ -28,12 +28,13 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
 )
-from .base import BedController
+from .base import BedController, MotorControlSpec
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -210,7 +211,52 @@ class SBIController(BedController):
     @property
     def passive_position_reconciliation_interval(self) -> float | None:
         """Allow conservative idle refresh for SBI pulse-based position reads."""
-        return 120.0
+        return DEFAULT_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        """Expose the actual SBI motor surface without duplicate head/feet aliases."""
+        return (
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=lambda ctrl: ctrl.move_back_up(),
+                close_fn=lambda ctrl: ctrl.move_back_down(),
+                stop_fn=lambda ctrl: ctrl.move_back_stop(),
+                position_key="back",
+                max_angle=60,
+            ),
+            MotorControlSpec(
+                key="legs",
+                translation_key="legs",
+                open_fn=lambda ctrl: ctrl.move_legs_up(),
+                close_fn=lambda ctrl: ctrl.move_legs_down(),
+                stop_fn=lambda ctrl: ctrl.move_legs_stop(),
+                position_key="legs",
+                max_angle=32,
+            ),
+            MotorControlSpec(
+                key="tilt",
+                translation_key="tilt",
+                open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                max_angle=45,
+            ),
+            MotorControlSpec(
+                key="lumbar",
+                translation_key="lumbar",
+                open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                max_angle=30,
+            ),
+        )
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove legacy alias entities replaced by the canonical back/legs surface."""
+        return frozenset({"head", "feet"})
 
     @property
     def head_angle(self) -> int:

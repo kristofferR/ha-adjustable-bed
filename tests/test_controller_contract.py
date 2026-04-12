@@ -314,12 +314,13 @@ def test_config_feedback_helpers_cover_variant_specific_and_default_behavior() -
     """Config-time capability helpers should reflect the audited controller cohort."""
     assert bed_type_supports_position_feedback(BED_TYPE_LINAK) is True
     assert bed_type_supports_position_feedback(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION) is True
-    assert bed_type_supports_position_feedback(BED_TYPE_KEESON, VARIANT_AUTO) is False
+    assert bed_type_supports_position_feedback(BED_TYPE_KEESON, VARIANT_AUTO) is True
 
     assert supports_passive_position_reconciliation(BED_TYPE_LINAK) is True
     assert passive_position_reconciliation_default_enabled(BED_TYPE_LINAK) is True
     assert supports_passive_position_reconciliation(BED_TYPE_JENSEN) is True
     assert passive_position_reconciliation_default_enabled(BED_TYPE_JENSEN) is False
+    assert supports_passive_position_reconciliation(BED_TYPE_SLEEPYS_BOX25) is False
 
 
 async def test_factory_keeps_keeson_json_variant_when_fallback_uuids_are_also_present() -> None:
