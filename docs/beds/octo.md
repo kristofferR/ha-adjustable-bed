@@ -40,7 +40,7 @@ The PIN is typically found in your Octo physical remote's settings menu, or in t
 | Motor Control | ✅ (2-4 motors, auto-detected via CAP_MOTORCOUNT) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
-| Both Up Preset | ✅ (Standard variant: moves head + legs together) |
+| Back + Legs Up Preset | ✅ (Standard variant: moves back + legs together) |
 | Under-bed Lights | ✅ (Standard variant only; RGBW color picker on beds with CAP_LIGHT_RGBWI) |
 | Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
@@ -165,7 +165,7 @@ To configure PIN, enter your 4-digit PIN during setup or in the integration opti
 | Head Down | `68 30 31 30 30 30 30 30 30 31 30 39 31 3B 16` |
 | Feet Up | `68 30 31 30 30 30 30 30 30 31 30 34 31 36 16` |
 | Feet Down | `68 30 31 30 30 30 30 30 30 31 30 37 31 39 16` |
-| Both Up | `68 30 31 30 30 30 30 30 30 31 32 37 31 3B 16` |
+| Back + Legs Up | `68 30 31 30 30 30 30 30 30 31 32 37 31 3B 16` |
 | Both Down | `68 30 31 30 30 30 30 30 30 31 32 38 31 3C 16` |
 
 **Note:** Star2 variant does not support lights or PIN authentication.

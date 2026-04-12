@@ -48,8 +48,11 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
+    DetectionResult,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    KEESON_VARIANT_ERGOMOTION,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
@@ -639,6 +642,45 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_MOTOR_COUNT] == 4
         assert result["data"][CONF_HAS_MASSAGE] is True
         assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_bluetooth_discovery_persists_detected_protocol_variant(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ergomotion: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Untouched confirm forms should persist the detected protocol variant."""
+        detection_result = DetectionResult(
+            bed_type=BED_TYPE_KEESON,
+            confidence=0.8,
+            signals=["uuid:extended_nordic_uart"],
+        )
+        detection_result.protocol_variant = KEESON_VARIANT_ERGOMOTION
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.detect_bed_type_detailed",
+            return_value=detection_result,
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_BLUETOOTH},
+                data=mock_bluetooth_service_info_ergomotion,
+            )
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_NAME: "Ergomotion Bed",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: False,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_KEESON
+        assert result["data"][CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
 
     async def test_bluetooth_discovery_duplicate_octo_names_warn_about_split_setup(
         self,

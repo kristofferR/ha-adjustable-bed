@@ -82,7 +82,7 @@
       },
       "manual_config": {
         "title": "Configure Bed - {name}",
-        "description": "Configure the bed at {address}.{setup_note}",
+        "description": "Configure the bed at {address}. {setup_note}",
         "data": {
           "bed_type": "Bed type",
           "protocol_variant": "Protocol variant",

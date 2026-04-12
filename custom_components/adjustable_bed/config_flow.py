@@ -469,9 +469,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(self._discovery_info)
         detected_bed_type = detection_result.bed_type
-        protocol_variant = (
+        detected_protocol_variant = (
             getattr(detection_result, "protocol_variant", None) or DEFAULT_PROTOCOL_VARIANT
         )
+        protocol_variant = detected_protocol_variant
 
         # Use disambiguated type if user selected one, otherwise use detected type
         bed_type = self._disambiguated_bed_type or detected_bed_type
@@ -488,7 +489,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             ):
                 errors[CONF_OCTO_PIN] = "invalid_pin"
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
-            protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+            protocol_variant = user_input.get(
+                CONF_PROTOCOL_VARIANT, detected_protocol_variant
+            )
 
             # Validate protocol variant is valid for selected bed type
             if selected_bed_type and not is_valid_variant_for_bed_type(
@@ -669,9 +672,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Always show variant selection - user may change bed type to one with variants
         # If user changes bed type, they can select the appropriate variant
         # Validation on submission ensures only valid variants are accepted
-        schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(
-            ALL_PROTOCOL_VARIANTS
-        )
+        schema_dict[
+            vol.Optional(CONF_PROTOCOL_VARIANT, default=protocol_variant)
+        ] = vol.In(ALL_PROTOCOL_VARIANTS)
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
