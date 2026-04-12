@@ -208,6 +208,11 @@ class SBIController(BedController):
         return True
 
     @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for SBI pulse-based position reads."""
+        return 120.0
+
+    @property
     def head_angle(self) -> int:
         """Get current head angle in degrees (0-60)."""
         return self._head_angle

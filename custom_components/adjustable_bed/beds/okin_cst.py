@@ -137,6 +137,16 @@ class OkinCstController(BedController):
     def supports_stop_all(self) -> bool:
         return True
 
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Okin CST exposes position readback packets."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Okin CST position reads."""
+        return 120.0
+
     async def write_command(
         self,
         command: bytes,

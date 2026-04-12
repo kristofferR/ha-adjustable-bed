@@ -422,6 +422,11 @@ class KeesonController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return True only for the Ergomotion feedback-capable variant."""
+        return self._variant == KEESON_VARIANT_ERGOMOTION
+
+    @property
     def memory_slot_count(self) -> int:
         """Return memory slot count based on variant.
 

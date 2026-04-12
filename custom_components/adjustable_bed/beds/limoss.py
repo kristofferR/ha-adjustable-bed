@@ -133,6 +133,16 @@ class LimossController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Limoss exposes position feedback through notifications."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Limoss position reads."""
+        return 120.0
+
+    @property
     def memory_slot_count(self) -> int:
         """Return reported memory slot count (fallback: 0)."""
         return self._memory_slot_count if self._memory_slot_count > 0 else 0

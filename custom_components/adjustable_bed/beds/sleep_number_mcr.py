@@ -163,6 +163,11 @@ class SleepNumberMcrController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return False - BAM/MCR support is presets plus state, not motor positions."""
+        return False
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """The BAM/MCR bed has separate under-bed light on/off writes."""
         return True

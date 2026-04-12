@@ -996,6 +996,14 @@ class TestButtonEntities:
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:40_head_position")
             is None
         )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:40_back_angle")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:40_legs_angle")
+            is None
+        )
 
         assert (
             registry.async_get_entity_id("select", DOMAIN, "AA:BB:CC:DD:EE:40_massage_timer")

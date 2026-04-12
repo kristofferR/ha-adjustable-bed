@@ -313,7 +313,7 @@ class TestJensenPinUnlockCommand:
 class TestJensenNotificationStartup:
     """Test Jensen notification startup behavior."""
 
-    async def test_start_notify_none_sends_pin_then_read_position(
+    async def test_prime_position_feedback_sends_pin_then_read_position(
         self,
         hass: HomeAssistant,
         mock_jensen_config_entry,
@@ -325,7 +325,7 @@ class TestJensenNotificationStartup:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await coordinator.controller.start_notify(None)
+        await coordinator.controller.async_prime_position_feedback()
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) >= 2
@@ -337,7 +337,7 @@ class TestJensenNotificationStartup:
         assert calls[1].args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
         assert calls[1].kwargs == {"response": True}
 
-    async def test_start_notify_none_keeps_position_updates_ignored(
+    async def test_prime_position_feedback_keeps_position_updates_ignored(
         self,
         hass: HomeAssistant,
         mock_jensen_config_entry,
@@ -349,7 +349,7 @@ class TestJensenNotificationStartup:
         await coordinator.async_connect()
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await coordinator.controller.start_notify(None)
+        await coordinator.controller.async_prime_position_feedback()
         coordinator.controller._handle_notification(
             MagicMock(),
             bytearray([0x10, 0x00, 0x00, 0x64, 0x00, 0x32]),

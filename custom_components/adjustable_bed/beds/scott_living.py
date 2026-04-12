@@ -124,6 +124,11 @@ class ScottLivingController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return False - Scott Living does not expose a usable position read path."""
+        return False
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         return False  # Toggle only
 

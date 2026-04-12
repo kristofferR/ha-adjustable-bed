@@ -130,6 +130,16 @@ class ReverieNightstandController(BedController):
         """Return True - Reverie Nightstand has lumbar motor control."""
         return True
 
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Reverie Nightstand reports live actuator positions."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Reverie Nightstand reads."""
+        return 120.0
+
     async def _write_to_char(
         self,
         char_uuid: str,

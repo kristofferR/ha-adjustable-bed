@@ -533,8 +533,15 @@ class BedController(ABC):
             return
         raise ValueError(f"Unsupported position key for seek step: {position_key}")
 
+    async def async_ensure_command_session_ready(self) -> None:
+        """Perform any controller-specific post-connect readiness handshake."""
+
+    async def async_prime_position_feedback(self) -> None:
+        """Prime notification-driven position feedback after notify startup."""
+
     async def prepare_for_position_read(self) -> None:
         """Do any controller-specific setup before passive position reads."""
+        await self.async_ensure_command_session_ready()
 
     # Direct position control (optional)
     # Beds that can command motors to specific positions should override these

@@ -110,17 +110,6 @@ BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
-BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset({BED_TYPE_LINAK})
-
-
-def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
-    """Return True if the bed type supports passive position reconciliation."""
-    return bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION
-
-
-def passive_position_reconciliation_default_enabled(bed_type: str | None) -> bool:
-    """Return whether passive position reconciliation should default to enabled."""
-    return supports_passive_position_reconciliation(bed_type)
 BED_TYPE_REVERIE: Final = "reverie"
 BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
 BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
@@ -1519,29 +1508,35 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
+        BED_TYPE_OKIN_CST,
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_LIMOSS,
+        BED_TYPE_SBI,
+        BED_TYPE_SVANE,
+        BED_TYPE_VIBRADORM,
     }
 )
 
-# Bed types that support position feedback (for Number entities with position seeking)
-# Includes all angle sensing beds plus beds that report percentage positions
-# Note: BED_TYPE_KEESON is NOT included here because only the ergomotion variant supports
-# position feedback - this is handled specially in number.py with variant checking
+# Bed types that support position feedback without needing a protocol variant.
+# Beds with variant-dependent feedback support (for example Keeson/Ergomotion)
+# are handled by bed_type_supports_position_feedback().
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
-        BED_TYPE_LINAK,
-        BED_TYPE_OKIMAT,
-        BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
+        BED_TYPE_LINAK,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_REVERIE,
+        BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_SBI,
         BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEP_NUMBER_MCR,
-        BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SVANE,
+        BED_TYPE_VIBRADORM,
     }
 )
 
@@ -1557,6 +1552,63 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_SLEEPYS_BOX25,
     }
 )
+
+BED_TYPE_VARIANTS_WITH_POSITION_FEEDBACK: Final[dict[str, set[str]]] = {
+    BED_TYPE_KEESON: {KEESON_VARIANT_ERGOMOTION},
+}
+
+BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset(
+    {
+        BED_TYPE_JENSEN,
+        BED_TYPE_LIMOSS,
+        BED_TYPE_LINAK,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_REVERIE,
+        BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_SBI,
+        BED_TYPE_SLEEP_NUMBER,
+        BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SVANE,
+        BED_TYPE_VIBRADORM,
+    }
+)
+
+BEDS_WITH_PASSIVE_POSITION_RECONCILIATION_ENABLED_BY_DEFAULT: Final = frozenset(
+    {BED_TYPE_LINAK}
+)
+
+
+def bed_type_supports_position_feedback(
+    bed_type: str | None,
+    protocol_variant: str | None = None,
+) -> bool:
+    """Return True when the configured bed type exposes a reliable feedback path."""
+    if bed_type in BEDS_WITH_POSITION_FEEDBACK:
+        return True
+    if protocol_variant and protocol_variant != VARIANT_AUTO:
+        return protocol_variant in BED_TYPE_VARIANTS_WITH_POSITION_FEEDBACK.get(bed_type or "", set())
+    return False
+
+
+def supports_passive_position_reconciliation(
+    bed_type: str | None,
+    protocol_variant: str | None = None,
+) -> bool:
+    """Return True if the configured bed can safely offer idle position refresh."""
+    del protocol_variant
+    return bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION
+
+
+def passive_position_reconciliation_default_enabled(
+    bed_type: str | None,
+    protocol_variant: str | None = None,
+) -> bool:
+    """Return whether passive position reconciliation should default to enabled."""
+    if bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION_ENABLED_BY_DEFAULT:
+        return True
+    return False
 
 # Position seeking constants
 POSITION_TOLERANCE: Final = 3.0  # Angle tolerance in degrees for target reached

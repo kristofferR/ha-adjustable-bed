@@ -563,6 +563,11 @@ class KaidiController(BedController):
         )
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return False - Kaidi notifications manage session state, not motor angles."""
+        return False
+
+    @property
     def supports_massage(self) -> bool:
         return (
             self._coordinator.has_massage
@@ -860,6 +865,14 @@ class KaidiController(BedController):
                 self._own_vaddr,
                 self._target_vaddr,
             )
+
+    async def async_ensure_command_session_ready(self) -> None:
+        """Finish Kaidi's join handshake before control writes."""
+        await self._ensure_session_ready()
+
+    async def async_prime_position_feedback(self) -> None:
+        """Keep Kaidi's session notifications active even without angle callbacks."""
+        await self._ensure_notify_started()
 
     # ------------------------------------------------------------------
     # Command helpers

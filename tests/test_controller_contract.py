@@ -6,17 +6,32 @@ import asyncio
 import inspect
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_JENSEN,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LIMOSS,
+    BED_TYPE_LINAK,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_RICHMAT,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_SBI,
+    BED_TYPE_SCOTT_LIVING,
+    BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SVANE,
+    BED_TYPE_VIBRADORM,
     KEESON_JSON_SERVICE_UUID,
+    KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
@@ -27,6 +42,9 @@ from custom_components.adjustable_bed.const import (
     SBI_VARIANT_BOTH,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
+    bed_type_supports_position_feedback,
+    passive_position_reconciliation_default_enabled,
+    supports_passive_position_reconciliation,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 
@@ -199,6 +217,17 @@ def test_base_declares_shared_capability_flags() -> None:
         assert hasattr(BedController, flag), f"Missing shared capability on base: {flag}"
 
 
+@pytest.mark.asyncio
+async def test_base_prepare_for_position_read_delegates_to_session_ready_hook() -> None:
+    """The shared read-preparation hook should flow through the new session hook."""
+    controller = _ContractController(_FactoryCoordinator())
+    controller.async_ensure_command_session_ready = AsyncMock()
+
+    await controller.prepare_for_position_read()
+
+    controller.async_ensure_command_session_ready.assert_awaited_once_with()
+
+
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
 async def test_factory_resolves_every_supported_bed_type(bed_type: str) -> None:
     """Every supported bed type should resolve through create_controller."""
@@ -250,6 +279,47 @@ async def test_factory_auto_detects_keeson_json_variant_for_a00a_service() -> No
 
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_JSON
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "expected"),
+    [
+        (BED_TYPE_LINAK, True),
+        (BED_TYPE_OKIMAT, True),
+        (BED_TYPE_REVERIE, True),
+        (BED_TYPE_REVERIE_NIGHTSTAND, True),
+        (BED_TYPE_JENSEN, True),
+        (BED_TYPE_LIMOSS, True),
+        (BED_TYPE_OKIN_CST, True),
+        (BED_TYPE_SBI, True),
+        (BED_TYPE_SLEEP_NUMBER, True),
+        (BED_TYPE_SLEEPYS_BOX25, True),
+        (BED_TYPE_SVANE, True),
+        (BED_TYPE_VIBRADORM, True),
+        (BED_TYPE_SLEEP_NUMBER_MCR, False),
+        (BED_TYPE_SCOTT_LIVING, False),
+    ],
+)
+async def test_factory_feedback_capability_classification(
+    bed_type: str,
+    expected: bool,
+) -> None:
+    """Audited controllers should explicitly classify their feedback capability."""
+    controller = await _create_controller_for_bed_type(bed_type)
+
+    assert controller.supports_position_feedback is expected
+
+
+def test_config_feedback_helpers_cover_variant_specific_and_default_behavior() -> None:
+    """Config-time capability helpers should reflect the audited controller cohort."""
+    assert bed_type_supports_position_feedback(BED_TYPE_LINAK) is True
+    assert bed_type_supports_position_feedback(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION) is True
+    assert bed_type_supports_position_feedback(BED_TYPE_KEESON, VARIANT_AUTO) is False
+
+    assert supports_passive_position_reconciliation(BED_TYPE_LINAK) is True
+    assert passive_position_reconciliation_default_enabled(BED_TYPE_LINAK) is True
+    assert supports_passive_position_reconciliation(BED_TYPE_JENSEN) is True
+    assert passive_position_reconciliation_default_enabled(BED_TYPE_JENSEN) is False
 
 
 async def test_factory_keeps_keeson_json_variant_when_fallback_uuids_are_also_present() -> None:

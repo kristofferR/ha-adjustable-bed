@@ -447,6 +447,137 @@ class TestLinakPresets:
 
         _assert_repeated_command(mock_bleak_client, expected_command, 1)
 
+    async def test_preset_memory_waits_for_active_recent_preset_handoff(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A replacement preset should wait for active motion to settle first."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+        coordinator.controller._last_preset_command_monotonic = 100.0
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.monotonic",
+                side_effect=[101.0, 101.2],
+            ),
+            patch.object(
+                coordinator.controller,
+                "_await_active_preset_handoff",
+                new=AsyncMock(),
+            ) as handoff_mock,
+            patch.object(
+                coordinator.controller,
+                "_retry_handoff_preset_if_no_feedback",
+                new=AsyncMock(),
+            ) as retry_mock,
+        ):
+            handoff_mock.return_value = True
+            await coordinator.controller.preset_memory(1)
+
+        _assert_repeated_command(mock_bleak_client, LinakCommands.PRESET_MEMORY_1, 1)
+        handoff_mock.assert_awaited_once_with(1, pytest.approx(1.0))
+        retry_mock.assert_awaited_once()
+        assert (
+            coordinator.controller._last_preset_command_monotonic
+            == pytest.approx(101.2)
+        )
+
+    async def test_preset_memory_skips_handoff_wait_after_window(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Idle presets should still send only the preset command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+        coordinator.controller._last_preset_command_monotonic = 100.0
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.monotonic",
+                side_effect=[116.0, 116.1],
+            ),
+            patch.object(
+                coordinator.controller,
+                "_await_active_preset_handoff",
+                new=AsyncMock(),
+            ) as handoff_mock,
+            patch.object(
+                coordinator.controller,
+                "_retry_handoff_preset_if_no_feedback",
+                new=AsyncMock(),
+            ) as retry_mock,
+        ):
+            await coordinator.controller.preset_memory(1)
+
+        _assert_repeated_command(mock_bleak_client, LinakCommands.PRESET_MEMORY_1, 1)
+        handoff_mock.assert_not_awaited()
+        retry_mock.assert_not_awaited()
+
+    async def test_active_preset_handoff_waits_until_position_settles(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A recent active preset should wait until position updates go quiet."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.monotonic",
+                side_effect=[200.0, 200.25, 200.5, 200.75],
+            ),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                new=AsyncMock(),
+            ) as sleep_mock,
+            patch.object(
+                coordinator,
+                "position_changed_recently",
+                side_effect=[True, True, False],
+            ) as recent_mock,
+        ):
+            await coordinator.controller._await_active_preset_handoff(1, 1.0)
+
+        assert recent_mock.call_count == 3
+        assert sleep_mock.await_count == 2
+
+    async def test_handoff_retry_resends_preset_without_new_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A queued preset handoff should retry once if the first resend is ignored."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        _mark_session_ready(coordinator)
+
+        coordinator._position_update_sequence = 10
+        with patch(
+            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            new=AsyncMock(),
+        ):
+            await coordinator.controller._retry_handoff_preset_if_no_feedback(
+                1,
+                LinakCommands.PRESET_MEMORY_1,
+                10,
+            )
+
+        _assert_repeated_command(mock_bleak_client, LinakCommands.PRESET_MEMORY_1, 1)
+
     @pytest.mark.parametrize(
         "memory_num,expected_command",
         [
@@ -638,6 +769,46 @@ class TestLinakPositionData:
         assert controller._resolved_two_motor_secondary_spec is not None
         assert controller._resolved_two_motor_secondary_spec.source_name == "feet"
 
+    async def test_read_positions_keeps_default_primary_axis_on_invalid_back_sample(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A transient invalid back sample should not rebind the primary 2-motor axis."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        callback = MagicMock()
+        controller._notify_callback = callback
+
+        back_reads = 0
+
+        async def read_side_effect(uuid: str) -> bytes:
+            nonlocal back_reads
+            if uuid == LINAK_POSITION_BACK_UUID:
+                back_reads += 1
+                if back_reads == 1:
+                    return bytes([0xFF, 0xFF])  # transient invalid
+                return bytes([0x9A, 0x01])  # 410 / 820 = 34.0°
+            if uuid == LINAK_POSITION_LEG_UUID:
+                return bytes([0x12, 0x01])  # 274 / 548 = 22.5°
+            return b""
+
+        mock_bleak_client.read_gatt_char.side_effect = read_side_effect
+
+        await controller.read_positions()
+        await controller.read_positions()
+
+        assert callback.call_args_list[0] == call("legs", 22.5)
+        assert call("back", 34.0) in callback.call_args_list
+        assert LINAK_POSITION_HEAD_UUID not in [
+            call_args.args[0]
+            for call_args in mock_bleak_client.read_gatt_char.await_args_list
+        ]
+
     async def test_read_positions_retries_cold_session_until_data_arrives(
         self,
         hass: HomeAssistant,
@@ -673,13 +844,13 @@ class TestLinakPositionData:
         mock_sleep.assert_awaited_once()
         mock_ensure_notifications.assert_awaited_once()
 
-    async def test_read_positions_skips_cold_retry_once_session_is_ready(
+    async def test_read_positions_retries_missing_axes_once_when_session_is_ready(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
     ):
-        """Ready Linak sessions should not spend time on cold-start read retries."""
+        """Ready Linak sessions should retry once if a logical axis is missing."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
@@ -690,7 +861,36 @@ class TestLinakPositionData:
             patch.object(
                 controller,
                 "_read_positions_once",
-                new=AsyncMock(return_value={"back"}),
+                new=AsyncMock(side_effect=[{"back"}, {"back", "legs"}]),
+            ) as mock_read_positions_once,
+            patch(
+                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                new=AsyncMock(),
+            ) as mock_sleep,
+        ):
+            await controller.read_positions()
+
+        assert mock_read_positions_once.await_count == 2
+        mock_sleep.assert_awaited_once()
+
+    async def test_read_positions_skips_retry_when_ready_session_has_all_axes(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Ready Linak sessions should not retry when all expected axes are already present."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = coordinator.controller
+        controller._session_ready = True
+
+        with (
+            patch.object(
+                controller,
+                "_read_positions_once",
+                new=AsyncMock(return_value={"back", "legs"}),
             ) as mock_read_positions_once,
             patch(
                 "custom_components.adjustable_bed.beds.linak.asyncio.sleep",

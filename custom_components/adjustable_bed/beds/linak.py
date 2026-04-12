@@ -38,6 +38,12 @@ LINAK_CONTROL_READY_RETRY_DELAY_S = 0.75
 LINAK_INITIAL_POSITION_RETRY_ATTEMPTS = 3
 LINAK_INITIAL_POSITION_RETRY_DELAY_S = 0.75
 LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S = 120.0
+LINAK_PRESET_HANDOFF_WINDOW_S = 15.0
+LINAK_PRESET_HANDOFF_MAX_WAIT_S = 12.0
+LINAK_PRESET_HANDOFF_QUIET_PERIOD_S = 1.0
+LINAK_PRESET_HANDOFF_POLL_S = 0.25
+LINAK_PRESET_HANDOFF_POST_SETTLE_DELAY_S = 2.0
+LINAK_PRESET_HANDOFF_RETRY_DELAY_S = 2.0
 LINAK_POSITION_SEEK_PULSE_DELAY_MS = 100
 LINAK_POSITION_SEEK_TOLERANCE = 0.75
 LINAK_POSITION_SEEK_STALL_COUNT = 1
@@ -135,6 +141,7 @@ class LinakController(BedController):
         self._active_position_notifications: set[str] = set()
         self._deferred_position_notifications: set[str] = set()
         self._resolved_two_motor_secondary_spec: LinakPositionSpec | None = None
+        self._last_preset_command_monotonic: float | None = None
         self._session_ready = False
         self._session_started_monotonic = monotonic()
         _LOGGER.debug(
@@ -220,6 +227,11 @@ class LinakController(BedController):
     def passive_position_reconciliation_interval(self) -> float | None:
         """Return a low-frequency idle read interval for out-of-band movement."""
         return LINAK_PASSIVE_POSITION_RECONCILIATION_INTERVAL_S
+
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Linak exposes reliable angle feedback."""
+        return True
 
     @property
     def allow_position_polling_during_commands(self) -> bool:
@@ -764,19 +776,24 @@ class LinakController(BedController):
 
         expected_axes = self._expected_position_axes(motor_count)
         received_axes = await self._read_positions_once(motor_count)
-        if self._session_ready or received_axes >= expected_axes:
+        if received_axes >= expected_axes:
             return
 
-        for attempt in range(2, LINAK_INITIAL_POSITION_RETRY_ATTEMPTS + 1):
+        max_attempts = LINAK_INITIAL_POSITION_RETRY_ATTEMPTS
+        if self._session_ready and not self._deferred_position_notifications:
+            max_attempts = 2
+
+        for attempt in range(2, max_attempts + 1):
             if self.client is None or not self.client.is_connected:
                 return
 
             _LOGGER.debug(
-                "Linak cold-session position read returned no data for %s; retrying in %.2fs (attempt %d/%d)",
+                "Linak position read for %s is missing axes %s; retrying in %.2fs (attempt %d/%d)",
                 self._coordinator.address,
+                sorted(expected_axes - received_axes),
                 LINAK_INITIAL_POSITION_RETRY_DELAY_S,
                 attempt,
-                LINAK_INITIAL_POSITION_RETRY_ATTEMPTS,
+                max_attempts,
             )
             await asyncio.sleep(LINAK_INITIAL_POSITION_RETRY_DELAY_S)
 
@@ -837,10 +854,11 @@ class LinakController(BedController):
     async def _read_two_motor_secondary_position(self) -> float | None:
         """Read and resolve the second actuator for a 2-motor Linak bed."""
         current_spec = self._two_motor_secondary_spec()
+        primary_uuid = self._back_position_spec().uuid
         candidates = [current_spec] + [
             candidate
             for candidate in self._two_motor_secondary_candidates()
-            if candidate.uuid != current_spec.uuid
+            if candidate.uuid not in {current_spec.uuid, primary_uuid}
         ]
 
         for spec in candidates:
@@ -861,9 +879,17 @@ class LinakController(BedController):
 
         await self._read_position_characteristic(self._back_position_spec(), timeout_seconds=0.4)
 
+    async def async_ensure_command_session_ready(self) -> None:
+        """Wait for Linak's post-connect auth window before control writes."""
+        await self._await_control_ready()
+
+    async def async_prime_position_feedback(self) -> None:
+        """Retry any deferred Linak position subscriptions once feedback is requested."""
+        await self._ensure_position_notifications_started()
+
     async def prepare_for_position_read(self) -> None:
         """Wait for Linak's post-connect auth window before passive reads."""
-        await self._await_control_ready()
+        await self.async_ensure_command_session_ready()
 
     # Motor control methods
     # Linak protocol requires continuous command sending to keep motors moving.
@@ -994,7 +1020,80 @@ class LinakController(BedController):
             6: LinakCommands.PRESET_MEMORY_6,
         }
         if command := commands.get(memory_num):
+            now = monotonic()
+            last_preset = self._last_preset_command_monotonic
+            waited_for_handoff = False
+            if last_preset is not None:
+                preset_age = now - last_preset
+                if preset_age <= LINAK_PRESET_HANDOFF_WINDOW_S:
+                    waited_for_handoff = await self._await_active_preset_handoff(
+                        memory_num,
+                        preset_age,
+                    )
+            position_sequence_before_send = self._coordinator.position_update_sequence
             await self.write_command(command)
+            self._last_preset_command_monotonic = monotonic()
+            if waited_for_handoff:
+                await self._retry_handoff_preset_if_no_feedback(
+                    memory_num,
+                    command,
+                    position_sequence_before_send,
+                )
+
+    async def _await_active_preset_handoff(self, memory_num: int, preset_age: float) -> bool:
+        """Wait for a still-active preset motion to settle before replacing it."""
+        if not self._coordinator.position_changed_recently(
+            LINAK_PRESET_HANDOFF_QUIET_PERIOD_S
+        ):
+            return False
+
+        _LOGGER.debug(
+            "Linak preset %d requested %.2fs after previous preset; waiting for active preset motion to settle",
+            memory_num,
+            preset_age,
+        )
+        deadline = monotonic() + LINAK_PRESET_HANDOFF_MAX_WAIT_S
+        waited_for_motion = False
+        while self._coordinator.position_changed_recently(
+            LINAK_PRESET_HANDOFF_QUIET_PERIOD_S
+        ):
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                _LOGGER.debug(
+                    "Linak preset handoff wait hit %.2fs limit; sending replacement preset anyway",
+                    LINAK_PRESET_HANDOFF_MAX_WAIT_S,
+                )
+                return waited_for_motion
+            waited_for_motion = True
+            await asyncio.sleep(min(LINAK_PRESET_HANDOFF_POLL_S, remaining))
+
+        if waited_for_motion:
+            _LOGGER.debug(
+                "Linak preset motion settled; waiting %.2fs before sending replacement preset",
+                LINAK_PRESET_HANDOFF_POST_SETTLE_DELAY_S,
+            )
+            await asyncio.sleep(LINAK_PRESET_HANDOFF_POST_SETTLE_DELAY_S)
+        return waited_for_motion
+
+    async def _retry_handoff_preset_if_no_feedback(
+        self,
+        memory_num: int,
+        command: bytes,
+        position_sequence_before_send: int,
+    ) -> None:
+        """Retry a queued preset once if the first replacement write is ignored."""
+        await asyncio.sleep(LINAK_PRESET_HANDOFF_RETRY_DELAY_S)
+        if self.client is None or not self.client.is_connected:
+            return
+        if self._coordinator.position_update_sequence > position_sequence_before_send:
+            return
+
+        _LOGGER.debug(
+            "Linak preset %d handoff produced no fresh position feedback; retrying replacement preset",
+            memory_num,
+        )
+        await self.write_command(command)
+        self._last_preset_command_monotonic = monotonic()
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""

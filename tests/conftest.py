@@ -34,6 +34,10 @@ from custom_components.adjustable_bed.const import (  # noqa: E402
     KEESON_BASE_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
+    LINAK_POSITION_BACK_UUID,
+    LINAK_POSITION_FEET_UUID,
+    LINAK_POSITION_HEAD_UUID,
+    LINAK_POSITION_LEG_UUID,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
@@ -270,6 +274,16 @@ def mock_bleak_client() -> MagicMock:
     client.services.__len__ = lambda self: 0
     # Return None for service lookups to avoid false positives in variant detection
     client.services.get_service = MagicMock(return_value=None)
+
+    # Seed Linak position characteristics so startup hydration succeeds when
+    # angle sensing is enabled in entity/config-flow tests.
+    for linak_position_uuid in (
+        LINAK_POSITION_BACK_UUID,
+        LINAK_POSITION_LEG_UUID,
+        LINAK_POSITION_HEAD_UUID,
+        LINAK_POSITION_FEET_UUID,
+    ):
+        readable_values[linak_position_uuid] = b"\x00\x00"
 
     async def _start_notify(char_uuid: str, callback) -> None:
         notify_callbacks[char_uuid] = callback

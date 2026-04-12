@@ -29,7 +29,6 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
-    BEDS_WITH_POSITION_FEEDBACK,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -46,7 +45,6 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
-    KEESON_VARIANT_ERGOMOTION,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     requires_pairing,
@@ -236,7 +234,7 @@ async def _async_finish_entry_setup(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if schedule_initial_position_read:
-        hass.async_create_task(coordinator.async_read_initial_positions())
+        coordinator.schedule_initial_position_read()
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
@@ -684,18 +682,14 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             bed_type = entry.data.get(CONF_BED_TYPE)
             motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-            protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
             supports_direct_position_control = bool(
                 getattr(controller, "supports_direct_position_control", False)
             )
-
-            # Validate bed supports position feedback
-            # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
-            has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                bed_type == BED_TYPE_KEESON
-                and protocol_variant == KEESON_VARIANT_ERGOMOTION
+            supports_position_feedback = bool(
+                getattr(controller, "supports_position_feedback", False)
             )
-            if not has_position_feedback and not supports_direct_position_control:
+
+            if not supports_position_feedback and not supports_direct_position_control:
                 raise ServiceValidationError(
                     f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
                     translation_domain=DOMAIN,

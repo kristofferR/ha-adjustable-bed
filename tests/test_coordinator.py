@@ -270,8 +270,8 @@ class TestCoordinatorConnection:
         coordinator._controller = controller
 
         async def _read_positions() -> None:
-            coordinator._position_data["back"] = 0.0
-            coordinator._position_data["legs"] = 0.0
+            coordinator._handle_position_update("back", 0.0)
+            coordinator._handle_position_update("legs", 0.0)
 
         with patch.object(
             coordinator,
@@ -303,9 +303,9 @@ class TestCoordinatorConnection:
         async def _read_positions() -> None:
             nonlocal read_count
             read_count += 1
-            coordinator._position_data["legs"] = 9.6
+            coordinator._handle_position_update("legs", 9.6)
             if read_count >= 2:
-                coordinator._position_data["back"] = 0.0
+                coordinator._handle_position_update("back", 0.0)
 
         with (
             patch.object(
@@ -323,6 +323,50 @@ class TestCoordinatorConnection:
         assert mock_read_positions.await_count == 2
         assert controller.prepare_for_position_read.await_count == 2
         mock_sleep.assert_awaited_once()
+
+    async def test_initial_position_read_retries_when_only_stale_axes_exist(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Startup hydration should not treat stale cached axes as freshly refreshed."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_data.update({"back": 60.0, "legs": 18.0})
+
+        controller = MagicMock()
+        controller.prepare_for_position_read = AsyncMock()
+        coordinator._controller = controller
+
+        read_count = 0
+
+        async def _read_positions() -> None:
+            nonlocal read_count
+            read_count += 1
+            coordinator._handle_position_update("legs", 0.0)
+            if read_count >= 2:
+                coordinator._handle_position_update("back", 0.0)
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ) as mock_read_positions,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ) as mock_sleep,
+        ):
+            await coordinator.async_read_initial_positions()
+
+        assert mock_read_positions.await_count == 2
+        assert controller.prepare_for_position_read.await_count == 2
+        mock_sleep.assert_awaited_once()
+        assert coordinator.position_data["back"] == 0.0
+        assert coordinator.position_data["legs"] == 0.0
 
     async def test_passive_position_reconciliation_reads_positions_when_idle(
         self,
@@ -353,6 +397,45 @@ class TestCoordinatorConnection:
         mock_query.assert_awaited_once()
         controller.prepare_for_position_read.assert_awaited_once_with()
         controller.read_positions.assert_awaited_once_with(coordinator.motor_count)
+
+    async def test_passive_position_reconciliation_runs_even_when_disconnected(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Passive reconciliation should still go through the query path after idle disconnect."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._passive_position_reconciliation_interval_s = 120.0
+        coordinator._controller = None
+        coordinator._client = None
+
+        with patch.object(
+            coordinator,
+            "async_execute_controller_query",
+            new=AsyncMock(),
+        ) as mock_query:
+            await coordinator.async_reconcile_positions()
+
+        mock_query.assert_awaited_once()
+
+    async def test_connect_schedules_initial_position_hydration(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Successful connects should schedule a fresh position hydration pass."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+
+        with patch.object(
+            coordinator,
+            "schedule_initial_position_read",
+        ) as mock_schedule_initial_position_read:
+            result = await coordinator.async_connect()
+
+        assert result is True
+        mock_schedule_initial_position_read.assert_called_once_with()
 
     async def test_passive_position_reconciliation_skips_when_busy(
         self,
@@ -409,6 +492,42 @@ class TestCoordinatorConnection:
         coordinator._disable_angle_sensing = False
 
         assert coordinator._resolve_passive_position_reconciliation_interval(120.0) is None
+
+    async def test_passive_position_reconciliation_uses_background_task(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Passive reconciliation should not use a tracked task that blocks setup drains."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+
+        controller = MagicMock()
+        controller.supports_position_feedback = True
+        controller.passive_position_reconciliation_interval = 120.0
+        coordinator._controller = controller
+
+        background_task = MagicMock()
+        created_coroutines: list[object] = []
+
+        def _capture_background_task(coro, name, eager_start=True):
+            del name, eager_start
+            created_coroutines.append(coro)
+            return background_task
+
+        with patch.object(
+            hass,
+            "async_create_background_task",
+            side_effect=_capture_background_task,
+        ) as mock_create_background_task:
+            coordinator._refresh_passive_position_reconciliation_schedule()
+
+        mock_create_background_task.assert_called_once()
+        for coro in created_coroutines:
+            close = getattr(coro, "close", None)
+            if callable(close):
+                close()
+        assert coordinator._passive_position_reconciliation_task is background_task
 
     async def test_async_shutdown_cancels_passive_position_reconciliation(
         self,
@@ -1397,6 +1516,28 @@ class TestCoordinatorWriteCommand:
         # The controller should have written the command
         mock_bleak_client.write_gatt_char.assert_called()
 
+    async def test_write_command_invokes_command_session_ready_hook(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """Command writes should pass through the controller readiness hook first."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+
+        controller = MagicMock()
+        controller.write_command = AsyncMock()
+        controller.async_ensure_command_session_ready = AsyncMock()
+        coordinator._controller = controller
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+
+        await coordinator.async_write_command(bytes([0x01, 0x00]))
+
+        controller.async_ensure_command_session_ready.assert_awaited_once_with()
+        controller.write_command.assert_awaited_once()
+
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,
@@ -1484,6 +1625,35 @@ class TestCoordinatorNotifications:
             await coordinator.async_start_notify()
 
         coordinator.controller.start_notify.assert_awaited_once_with(None)
+
+    async def test_start_notify_primes_feedback_after_subscription(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        mock_coordinator_connected,
+    ) -> None:
+        """Notification startup should invoke the controller feedback-priming hook."""
+        mock_config_entry_data["disable_angle_sensing"] = False
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data=mock_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="test_entry_id_prime_feedback",
+        )
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+
+        coordinator.controller.start_notify = AsyncMock()
+        coordinator.controller.async_prime_position_feedback = AsyncMock()
+
+        await coordinator.async_start_notify()
+
+        coordinator.controller.start_notify.assert_awaited_once()
+        callback_arg = coordinator.controller.start_notify.await_args.args[0]
+        assert getattr(callback_arg, "__self__", None) is coordinator
+        coordinator.controller.async_prime_position_feedback.assert_awaited_once_with()
 
 
 class TestMotorPulseConfiguration:

@@ -208,6 +208,11 @@ class SleepysBox25Controller(BedController):
         return True
 
     @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for BOX25 position reads."""
+        return 120.0
+
+    @property
     def supports_direct_position_control(self) -> bool:
         return True
 

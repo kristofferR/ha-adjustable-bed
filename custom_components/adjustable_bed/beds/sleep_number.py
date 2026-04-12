@@ -287,6 +287,11 @@ class SleepNumberController(BedController):
         return True
 
     @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Sleep Number readbacks."""
+        return 120.0
+
+    @property
     def supports_direct_position_control(self) -> bool:
         """Sleep Number supports 0-100 target positions per actuator."""
         return True
@@ -1876,6 +1881,10 @@ class SleepNumberController(BedController):
         """Ensure the bamkey response channel is subscribed."""
         if not self._notify_started:
             await self.start_notify(self._notify_callback)
+
+    async def async_ensure_command_session_ready(self) -> None:
+        """Ensure Sleep Number's response channel is ready before commands and reads."""
+        await self._ensure_notifications_started()
 
     async def _ensure_bed_presence_channel_primed(self) -> None:
         """Prime the BLE side channels Sleep Number needs before LBPG polls."""

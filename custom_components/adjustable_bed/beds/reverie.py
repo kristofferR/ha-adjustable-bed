@@ -154,6 +154,16 @@ class ReverieController(BedController):
         """Return True - Reverie beds support direct position commands."""
         return True
 
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Reverie reports head and foot positions."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Reverie position reads."""
+        return 120.0
+
     # Massage intensity control - Reverie supports direct level setting (0-10)
     @property
     def supports_massage_intensity_control(self) -> bool:

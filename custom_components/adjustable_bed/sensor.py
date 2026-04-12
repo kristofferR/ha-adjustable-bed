@@ -139,14 +139,20 @@ async def async_setup_entry(
 
     # Set up angle sensors (only for non-percentage beds with angle sensing enabled)
     if not coordinator.disable_angle_sensing:
+        supports_position_feedback = bool(
+            controller is not None and getattr(controller, "supports_position_feedback", False)
+        )
         # Skip angle sensors for beds that report percentage instead of angles
         # (Keeson/Ergomotion/Serta report 0-100% position, not degrees)
-        if bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if supports_position_feedback and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
             for description in SENSOR_DESCRIPTIONS:
                 if motor_count >= description.min_motors:
                     entities.append(AdjustableBedAngleSensor(coordinator, description))
         else:
-            _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
+            _LOGGER.debug(
+                "Skipping angle sensors for %s - no reliable angle feedback path is available",
+                bed_type,
+            )
     else:
         _LOGGER.debug("Angle sensing disabled, skipping angle sensor creation")
 

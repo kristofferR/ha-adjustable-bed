@@ -247,6 +247,16 @@ class OkinUuidController(BedController):
         """Return False - only supports toggle, not discrete on/off."""
         return False
 
+    @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Okin UUID/Okimat beds expose readable angle feedback."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Okin UUID position reads."""
+        return 120.0
+
     def _build_command(self, command_value: int) -> bytes:
         """Build command bytes using build_okin_command: [0x04, 0x02, <4-byte>]."""
         return build_okin_command(command_value)

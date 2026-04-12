@@ -144,6 +144,16 @@ class SvaneController(BedController):
         return True
 
     @property
+    def supports_position_feedback(self) -> bool:
+        """Return True - Svane exposes actuator position reads and notifications."""
+        return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Svane position reads."""
+        return 120.0
+
+    @property
     def light_level_max(self) -> int:
         """Return 100 - Svane brightness range is 0-100."""
         return 100

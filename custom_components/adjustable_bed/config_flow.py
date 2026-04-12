@@ -44,7 +44,6 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BEDS_WITH_PERCENTAGE_POSITIONS,
-    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -81,7 +80,6 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
-    KEESON_VARIANT_ERGOMOTION,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -89,6 +87,7 @@ from .const import (
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
     get_richmat_features,
+    bed_type_supports_position_feedback,
     passive_position_reconciliation_default_enabled,
     supports_passive_position_reconciliation,
     get_richmat_motor_count,
@@ -470,6 +469,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(self._discovery_info)
         detected_bed_type = detection_result.bed_type
+        protocol_variant = (
+            getattr(detection_result, "protocol_variant", None) or DEFAULT_PROTOCOL_VARIANT
+        )
 
         # Use disambiguated type if user selected one, otherwise use detected type
         bed_type = self._disambiguated_bed_type or detected_bed_type
@@ -604,7 +606,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         adapters = get_available_adapters(self.hass)
 
         # Default angle sensing to enabled for beds that support position feedback
-        default_disable_angle = bed_type not in BEDS_WITH_POSITION_FEEDBACK
+        default_disable_angle = not bed_type_supports_position_feedback(
+            bed_type,
+            protocol_variant,
+        )
 
         # Get bed-type-specific motor pulse defaults
         pulse_defaults = (
@@ -1217,10 +1222,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Determine smart defaults based on preselected bed type and variant
         if preselected_bed_type:
-            # Keeson with Ergomotion variant supports position feedback
-            has_position_feedback = preselected_bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                preselected_bed_type == BED_TYPE_KEESON
-                and preselected_protocol_variant == KEESON_VARIANT_ERGOMOTION
+            has_position_feedback = bed_type_supports_position_feedback(
+                preselected_bed_type,
+                preselected_protocol_variant,
             )
             default_disable_angle = not has_position_feedback
             # Use bed-specific motor pulse defaults if available
@@ -1412,10 +1416,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Determine smart defaults based on preselected bed type and variant
         if preselected_bed_type:
-            # Keeson with Ergomotion variant supports position feedback
-            has_position_feedback = preselected_bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                preselected_bed_type == BED_TYPE_KEESON
-                and preselected_protocol_variant == KEESON_VARIANT_ERGOMOTION
+            has_position_feedback = bed_type_supports_position_feedback(
+                preselected_bed_type,
+                preselected_protocol_variant,
             )
             default_disable_angle = not has_position_feedback
             # Use bed-specific motor pulse defaults if available
@@ -1969,13 +1972,18 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ),
         }
 
-        if supports_passive_position_reconciliation(bed_type):
+        protocol_variant = current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+
+        if supports_passive_position_reconciliation(bed_type, protocol_variant):
             schema_dict[
                 vol.Optional(
                     CONF_PASSIVE_POSITION_RECONCILIATION,
                     default=current_data.get(
                         CONF_PASSIVE_POSITION_RECONCILIATION,
-                        passive_position_reconciliation_default_enabled(bed_type),
+                        passive_position_reconciliation_default_enabled(
+                            bed_type,
+                            protocol_variant,
+                        ),
                     ),
                 )
             ] = bool
@@ -2023,7 +2031,10 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         if (
             bed_type
             and bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS
-            and bed_type in BEDS_WITH_POSITION_FEEDBACK
+            and bed_type_supports_position_feedback(
+                bed_type,
+                current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
+            )
         ):
             schema_dict[
                 vol.Optional(

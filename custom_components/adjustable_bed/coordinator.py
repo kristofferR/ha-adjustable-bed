@@ -186,7 +186,10 @@ class AdjustableBedCoordinator:
         self._passive_position_reconciliation_enabled: bool = bool(
             entry.data.get(
                 CONF_PASSIVE_POSITION_RECONCILIATION,
-                passive_position_reconciliation_default_enabled(self._bed_type),
+                passive_position_reconciliation_default_enabled(
+                    self._bed_type,
+                    self._protocol_variant,
+                ),
             )
         )
         self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
@@ -254,6 +257,9 @@ class AdjustableBedCoordinator:
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
+        self._position_update_sequence: int = 0
+        self._position_update_versions: dict[str, int] = {}
+        self._last_position_change_monotonic: float | None = None
         self._position_callbacks: set[Callable[[dict[str, float]], None]] = set()
         self._controller_state: dict[str, Any] = {}
         self._controller_state_callbacks: set[Callable[[dict[str, Any]], None]] = set()
@@ -261,6 +267,7 @@ class AdjustableBedCoordinator:
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
         self._controller_state_refresh_completed = False
+        self._initial_position_read_task: asyncio.Task[None] | None = None
         self._passive_position_reconciliation_interval_s: float | None = None
         self._passive_position_reconciliation_task: asyncio.Task[None] | None = None
 
@@ -418,6 +425,11 @@ class AdjustableBedCoordinator:
     def position_data(self) -> dict[str, float]:
         """Return current position data."""
         return self._position_data
+
+    @property
+    def position_update_sequence(self) -> int:
+        """Return a monotonic sequence for position updates."""
+        return self._position_update_sequence
 
     @property
     def controller_state(self) -> dict[str, Any]:
@@ -1362,6 +1374,7 @@ class AdjustableBedCoordinator:
                 self._connection_source = actual_adapter
                 self._connection_rssi = adapter_result.rssi
                 self._notify_connection_state_change(True)
+                self.schedule_initial_position_read()
                 self._connection_attempt_details.append(attempt_details)
 
                 return True
@@ -1604,7 +1617,10 @@ class AdjustableBedCoordinator:
 
         _LOGGER.debug("Reading initial positions for %s", self._address)
         try:
+            hydrated_axes: set[str] = set()
             for attempt in range(1, _INITIAL_POSITION_READ_MAX_ATTEMPTS + 1):
+                previous_axes = set(self._position_data)
+                previous_versions = dict(self._position_update_versions)
                 async with asyncio.timeout(_INITIAL_POSITION_READ_TIMEOUT):
                     # Use command lock to prevent concurrent GATT operations
                     async with self._command_lock:
@@ -1613,8 +1629,14 @@ class AdjustableBedCoordinator:
                         await self._controller.prepare_for_position_read()
                         await self._async_read_positions()
 
-                received_axes = expected_axes & self._position_data.keys()
-                if received_axes >= expected_axes:
+                hydrated_axes.update(
+                    self._collect_fresh_position_axes(
+                        expected_axes,
+                        previous_axes=previous_axes,
+                        previous_versions=previous_versions,
+                    )
+                )
+                if hydrated_axes >= expected_axes:
                     _LOGGER.info(
                         "Initial positions read for %s: %s",
                         self._address,
@@ -1628,7 +1650,7 @@ class AdjustableBedCoordinator:
                 _LOGGER.debug(
                     "Initial position read for %s missing axes %s after attempt %d/%d; retrying in %.1fs",
                     self._address,
-                    sorted(expected_axes - received_axes),
+                    sorted(expected_axes - hydrated_axes),
                     attempt,
                     _INITIAL_POSITION_READ_MAX_ATTEMPTS,
                     _INITIAL_POSITION_READ_RETRY_DELAY,
@@ -1650,9 +1672,57 @@ class AdjustableBedCoordinator:
                 "Initial position read failed: %s - sensors will update on first command", err
             )
 
+    def _collect_fresh_position_axes(
+        self,
+        expected_axes: set[str],
+        *,
+        previous_axes: set[str],
+        previous_versions: dict[str, int],
+    ) -> set[str]:
+        """Return axes that were refreshed during the latest hydration attempt."""
+        refreshed_axes: set[str] = set()
+        for axis in expected_axes:
+            if axis not in self._position_data:
+                continue
+            previous_version = previous_versions.get(axis, 0)
+            if self._position_update_versions.get(axis, 0) > previous_version:
+                refreshed_axes.add(axis)
+                continue
+            if axis not in previous_axes:
+                refreshed_axes.add(axis)
+        return refreshed_axes
+
+    def schedule_initial_position_read(self) -> None:
+        """Schedule a background position hydration pass for the current connection."""
+        if self._disable_angle_sensing or self._controller is None:
+            return
+        if not bool(getattr(self._controller, "supports_position_feedback", False)):
+            return
+        if not self._expected_initial_position_axes():
+            return
+
+        task = self._initial_position_read_task
+        if task is not None and not task.done():
+            return
+
+        task = self.hass.async_create_background_task(
+            self.async_read_initial_positions(),
+            f"adjustable_bed initial position hydration {self._address}",
+        )
+        self._initial_position_read_task = task
+        task.add_done_callback(self._clear_initial_position_read_task)
+
+    def _clear_initial_position_read_task(self, task: asyncio.Task[None]) -> None:
+        """Clear the tracked initial hydration task when it finishes."""
+        if self._initial_position_read_task is task:
+            self._initial_position_read_task = None
+
     def _expected_initial_position_axes(self) -> set[str]:
         """Return the logical position axes that startup hydration should populate."""
-        if self._motor_count <= 0:
+        if self._motor_count <= 0 or self._controller is None:
+            return set()
+
+        if not bool(getattr(self._controller, "supports_position_feedback", False)):
             return set()
 
         expected_axes = {"back", "legs"}
@@ -1681,7 +1751,9 @@ class AdjustableBedCoordinator:
     def _refresh_passive_position_reconciliation_schedule(self) -> None:
         """Start or stop passive position reconciliation based on controller support."""
         requested_interval_s: float | None = None
-        if self._controller is not None:
+        if self._controller is not None and bool(
+            getattr(self._controller, "supports_position_feedback", False)
+        ):
             requested_interval_s = self._controller.passive_position_reconciliation_interval
 
         interval_s = self._resolve_passive_position_reconciliation_interval(requested_interval_s)
@@ -1703,8 +1775,9 @@ class AdjustableBedCoordinator:
             self._address,
             interval_s,
         )
-        self._passive_position_reconciliation_task = self.hass.async_create_task(
-            self._async_passive_position_reconciliation_loop()
+        self._passive_position_reconciliation_task = self.hass.async_create_background_task(
+            self._async_passive_position_reconciliation_loop(),
+            f"adjustable_bed passive position reconciliation {self._address}",
         )
 
     def _cancel_passive_position_reconciliation_task(self) -> None:
@@ -1764,6 +1837,10 @@ class AdjustableBedCoordinator:
 
     async def async_shutdown(self) -> None:
         """Stop background tasks and disconnect the coordinator."""
+        task = self._initial_position_read_task
+        if task is not None:
+            task.cancel()
+            self._initial_position_read_task = None
         self._cancel_passive_position_reconciliation_task()
         await self.async_disconnect()
 
@@ -1778,6 +1855,11 @@ class AdjustableBedCoordinator:
         async with self._lock:
             self._cancel_disconnect_timer()
             self._cancel_controller_state_refresh_retry()
+            if self._initial_position_read_task is not None:
+                self._initial_position_read_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._initial_position_read_task
+                self._initial_position_read_task = None
             if self._controller_state_refresh_task is not None:
                 self._controller_state_refresh_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
@@ -1887,6 +1969,20 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Refreshing Jensen PIN unlock before command on %s", self._address)
             await cast(Any, self._controller).send_pin()
 
+    async def _async_invoke_controller_hook(
+        self,
+        controller: BedController,
+        hook_name: str,
+    ) -> None:
+        """Invoke an optional controller lifecycle hook."""
+        hook = getattr(controller, hook_name, None)
+        if hook is None:
+            return
+
+        result = hook()
+        if inspect.isawaitable(result):
+            await result
+
     async def async_write_command(
         self,
         command: bytes,
@@ -1936,6 +2032,10 @@ class AdjustableBedCoordinator:
                     _LOGGER.error("Cannot write command: no controller available")
                     raise RuntimeError("No controller available")
 
+                await self._async_invoke_controller_hook(
+                    self._controller,
+                    "async_ensure_command_session_ready",
+                )
                 await self._async_refresh_controller_auth()
 
                 # Start position polling during movement if angle sensing enabled
@@ -2044,6 +2144,10 @@ class AdjustableBedCoordinator:
             _LOGGER.error("Cannot execute %s: no controller available", operation_name)
             raise RuntimeError("No controller available")
 
+        await self._async_invoke_controller_hook(
+            controller,
+            "async_ensure_command_session_ready",
+        )
         await self._async_refresh_controller_auth()
         return controller
 
@@ -2277,6 +2381,10 @@ class AdjustableBedCoordinator:
                     self._bed_type,
                 )
                 await self._controller.start_notify(self._handle_position_update)
+            await self._async_invoke_controller_hook(
+                self._controller,
+                "async_prime_position_feedback",
+            )
             return
 
         if self._disable_angle_sensing:
@@ -2288,6 +2396,10 @@ class AdjustableBedCoordinator:
 
         _LOGGER.info("Starting position notifications for %s", self._address)
         await self._controller.start_notify(self._handle_position_update)
+        await self._async_invoke_controller_hook(
+            self._controller,
+            "async_prime_position_feedback",
+        )
 
     async def async_start_notify_for_diagnostics(self) -> None:
         """Start notifications for diagnostic capture, bypassing angle sensing setting.
@@ -2381,7 +2493,12 @@ class AdjustableBedCoordinator:
     def _handle_position_update(self, position: str, angle: float) -> None:
         """Handle a position update from the bed."""
         _LOGGER.debug("Position update: %s = %.1f°", position, angle)
+        previous_angle = self._position_data.get(position)
+        self._position_update_sequence += 1
         self._position_data[position] = angle
+        self._position_update_versions[position] = self._position_update_sequence
+        if previous_angle is None or abs(previous_angle - angle) >= 0.1:
+            self._last_position_change_monotonic = time.monotonic()
         # Track notification timing for diagnostics (issue #168)
         self._last_notify_received = datetime.now(UTC)
         # Copy to safely iterate while callbacks might unregister themselves
@@ -2409,6 +2526,18 @@ class AdjustableBedCoordinator:
             self._position_callbacks.discard(callback_fn)  # Safe removal, no error if missing
 
         return unregister
+
+    def seconds_since_last_position_change(self) -> float | None:
+        """Return seconds since the last meaningful position change."""
+        last_change = self._last_position_change_monotonic
+        if last_change is None:
+            return None
+        return max(0.0, time.monotonic() - last_change)
+
+    def position_changed_recently(self, within_s: float) -> bool:
+        """Return True when any motor position changed within the given window."""
+        elapsed = self.seconds_since_last_position_change()
+        return elapsed is not None and elapsed <= within_s
 
     def register_controller_state_callback(
         self, callback_fn: Callable[[dict[str, Any]], None]

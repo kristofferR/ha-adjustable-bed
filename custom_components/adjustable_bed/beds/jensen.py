@@ -150,6 +150,7 @@ class JensenController(BedController):
         self._massage_head_intensity: int = 0
         self._massage_foot_intensity: int = 0
         self._write_with_response: bool = True
+        self._notify_started: bool = False
 
         # PIN for authentication - use provided PIN or default
         self._pin: str = pin if pin else self.DEFAULT_PIN
@@ -268,6 +269,11 @@ class JensenController(BedController):
     def supports_position_feedback(self) -> bool:
         """Return True - Jensen beds report position via notifications."""
         return True
+
+    @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle refresh for Jensen position reads."""
+        return 120.0
 
     @property
     def massage_intensity_zones(self) -> list[str]:
@@ -461,6 +467,9 @@ class JensenController(BedController):
         """
         self._notify_callback = callback
 
+        if self._notify_started:
+            return
+
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning("Cannot start Jensen notifications: not connected")
             return
@@ -494,16 +503,7 @@ class JensenController(BedController):
             # Always enable notifications - the app does this before any commands
             await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
             _LOGGER.info("Started position notifications for Jensen bed")
-
-            # Send PIN unlock command IMMEDIATELY after notifications are enabled
-            # The app ALWAYS does this before any other commands (config, position, etc.)
-            _LOGGER.debug("Sending Jensen PIN unlock command")
-            await self.send_pin()
-
-            # Jensen beds can ignore the first flat preset after reconnect unless they
-            # see a 0x10 command first. Always send one READ_POSITION warm-up even when
-            # angle sensing is disabled; with callback=None we still avoid state updates.
-            await self.read_positions()
+            self._notify_started = True
 
         except BleakError as err:
             _LOGGER.warning("Failed to start Jensen notifications: %s", err)
@@ -520,6 +520,23 @@ class JensenController(BedController):
             _LOGGER.debug("Stopped Jensen position notifications")
         except BleakError:
             pass
+        finally:
+            self._notify_started = False
+
+    async def async_ensure_command_session_ready(self) -> None:
+        """Ensure Jensen's notification channel is active before control traffic."""
+        if not self._notify_started:
+            await self.start_notify(self._notify_callback)
+
+    async def async_prime_position_feedback(self) -> None:
+        """Run Jensen's post-notify unlock and warm-up position query."""
+        _LOGGER.debug("Sending Jensen PIN unlock command")
+        await self.send_pin()
+
+        # Jensen beds can ignore the first flat preset after reconnect unless they
+        # see a 0x10 command first. Always send one READ_POSITION warm-up even when
+        # angle sensing is disabled; with callback=None we still avoid state updates.
+        await self.read_positions()
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
         """Read current position via READ_POSITION command.

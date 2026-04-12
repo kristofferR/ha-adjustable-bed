@@ -486,6 +486,13 @@ class VibradormController(BedController):
         return not self._uses_app_strict_command_path
 
     @property
+    def passive_position_reconciliation_interval(self) -> float | None:
+        """Allow conservative idle feedback refresh on supported VMAT variants."""
+        if not self.supports_position_feedback:
+            return None
+        return 120.0
+
+    @property
     def allow_position_polling_during_commands(self) -> bool:
         """Return False - CBI polling during movement interrupts hold-to-run motion."""
         return False
@@ -853,11 +860,16 @@ class VibradormController(BedController):
             _LOGGER.warning("Failed to start Vibradorm notifications: %s", err)
             self.log_discovered_services(level=logging.INFO)
 
-        if notify_started:
-            _LOGGER.debug(
-                "Sending CmdGetStatusMotMon to trigger initial position update"
-            )
-            await self._request_position_update()
+    async def async_ensure_command_session_ready(self) -> None:
+        """Refresh Vibradorm runtime characteristics before command traffic."""
+        self._refresh_characteristics(force=True)
+
+    async def async_prime_position_feedback(self) -> None:
+        """Request an explicit VMAT status packet after notifications start."""
+        if not self.supports_position_feedback:
+            return
+        _LOGGER.debug("Sending CmdGetStatusMotMon to trigger initial position update")
+        await self._request_position_update()
 
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""

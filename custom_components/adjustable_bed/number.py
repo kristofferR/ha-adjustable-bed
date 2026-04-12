@@ -23,7 +23,6 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
-    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -242,17 +241,17 @@ async def async_setup_entry(
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
-        # Check if bed supports position feedback
-        # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
         protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-            bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
+        has_position_feedback = bool(
+            controller is not None and getattr(controller, "supports_position_feedback", False)
+        )
+        supports_direct_position_control = bool(
+            controller is not None
+            and getattr(controller, "supports_direct_position_control", False)
         )
 
         if has_position_feedback or (
-            bed_type == BED_TYPE_KAIDI
-            and controller is not None
-            and getattr(controller, "supports_direct_position_control", False)
+            bed_type == BED_TYPE_KAIDI and supports_direct_position_control
         ):
             descriptions_by_key = {d.key: d for d in NUMBER_DESCRIPTIONS}
 
