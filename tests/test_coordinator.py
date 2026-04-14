@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OKIMAT,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -1375,6 +1376,161 @@ class TestCoordinatorDisconnectTimer:
 
         assert coordinator._reconnect_timer is None
         assert coordinator._intentional_disconnect is False
+
+    async def test_sleep_number_mcr_skips_disconnect_timer_on_connect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Sleep Number MCR should keep a persistent connection without an idle timer."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:51",
+                CONF_NAME: "64:DB:A0:07:DD:02",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:51",
+            entry_id="sleep_number_mcr_disconnect_timer_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+
+        assert coordinator._disconnect_timer is None
+
+
+class TestSleepNumberMcrCoordinatorLifecycle:
+    """Test Sleep Number MCR coordinator lifecycle behavior."""
+
+    async def test_sleep_number_mcr_ignores_disconnect_after_command(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Sleep Number MCR should stay connected even when disconnect_after_command is set."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:52",
+                CONF_NAME: "64:DB:A0:07:DD:03",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_DISCONNECT_AFTER_COMMAND: True,
+            },
+            unique_id="AA:BB:CC:DD:EE:52",
+            entry_id="sleep_number_mcr_disconnect_after_command_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        coordinator.async_disconnect = AsyncMock()
+
+        async def _noop_command(controller):
+            del controller
+
+        await coordinator.async_execute_controller_command(_noop_command)
+
+        coordinator.async_disconnect.assert_not_awaited()
+        assert coordinator._disconnect_timer is None
+
+    async def test_sleep_number_mcr_unexpected_disconnect_skips_auto_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Sleep Number MCR should not schedule timer-based auto-reconnect."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:53",
+                CONF_NAME: "64:DB:A0:07:DD:04",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:53",
+            entry_id="sleep_number_mcr_auto_reconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = False
+
+        coordinator._on_disconnect(mock_bleak_client)
+
+        assert coordinator._reconnect_timer is None
+        assert coordinator.client is None
+        assert coordinator.controller is None
+
+    async def test_sleep_number_mcr_keeps_connecting_guard_through_startup_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A disconnect during MCR startup should not clear state mid-handshake."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:54",
+                CONF_NAME: "64:DB:A0:07:DD:05",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:54",
+            entry_id="sleep_number_mcr_startup_disconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+
+        async def _disconnect_during_query(controller) -> None:
+            del controller
+            assert coordinator.is_connecting is True
+            assert coordinator.client is mock_bleak_client
+            assert coordinator.controller is not None
+            coordinator._on_disconnect(mock_bleak_client)
+            assert coordinator.controller is not None
+            raise TimeoutError("startup disconnect")
+
+        with patch(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "SleepNumberMcrController.query_config",
+            new=_disconnect_during_query,
+        ):
+            connected = await coordinator.async_connect()
+
+        assert connected is False
+        assert coordinator.is_connecting is False
+        assert coordinator._reconnect_timer is None
+        assert coordinator.client is None
+        assert coordinator.controller is None
 
 
 class TestCoordinatorWriteCommand:

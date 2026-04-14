@@ -41,7 +41,6 @@ _MCR_FUNC_SET: Final = 17
 _MCR_FUNC_READ: Final = 18
 _MCR_FUNC_PRESET: Final = 21
 _MCR_FUNC_FOUNDATION_LIGHT_READ: Final = 20
-_MCR_FUNC_CHAMBER_TYPES: Final = 97
 _MCR_FUNC_FOUNDATION_OUTLET: Final = 19
 
 _MCR_SIDE_LEFT: Final = 0
@@ -63,12 +62,6 @@ _SIDE_NAME_TO_VALUE: Final[dict[str, int]] = {
     "left": _MCR_SIDE_LEFT,
     "right": _MCR_SIDE_RIGHT,
 }
-
-# Seconds to cache a bed-presence result from _async_read_chamber_types.
-# The legacy + per-side binary sensors each poll on their own update cycle
-# but ``_async_read_chamber_types`` already refreshes both sides at once,
-# so rapid follow-up polls within this window return the cached state.
-_BED_PRESENCE_POLL_TTL_SECONDS: Final = 5.0
 
 
 @dataclass(slots=True)
@@ -128,14 +121,6 @@ class SleepNumberMcrController(BedController):
         self._sleep_numbers: dict[str, int | None] = {"left": None, "right": None}
         self._foundation_presets: dict[str, str | None] = {"left": None, "right": None}
         self._under_bed_lights_on: bool | None = None
-        self._bed_presence: dict[str, str | None] = {"left": None, "right": None}
-        self._occupancy_supported = False
-        # Lock + TTL for dedup across the legacy + per-side bed-presence
-        # binary sensors: each polls on its own update cycle and
-        # _async_read_chamber_types already refreshes both sides in one
-        # BAM/MCR query.
-        self._bed_presence_lock = asyncio.Lock()
-        self._bed_presence_last_poll_monotonic: float = 0.0
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -174,8 +159,8 @@ class SleepNumberMcrController(BedController):
 
     @property
     def supports_bed_presence(self) -> bool:
-        """Expose bed presence only when the firmware returns occupancy bytes."""
-        return self._occupancy_supported
+        """BAM/MCR occupancy probing is intentionally disabled."""
+        return False
 
     @property
     def supports_sleep_number_setting(self) -> bool:
@@ -214,9 +199,7 @@ class SleepNumberMcrController(BedController):
 
     @property
     def bed_presence_sides(self) -> tuple[str, ...]:
-        """Return supported occupancy sides when the BAM firmware reports them."""
-        if self._occupancy_supported:
-            return ("left", "right")
+        """BAM/MCR occupancy sensors are not exposed."""
         return ()
 
     @property
@@ -275,8 +258,8 @@ class SleepNumberMcrController(BedController):
 
         Hydration steps are independent: a transient malformed reply to
         the pump-status read must not abort the rest of init, otherwise
-        the under-bed light and chamber queries never run and the
-        corresponding entities stay silently disabled for the session.
+        the under-bed light query never runs and the corresponding
+        entity stays silently disabled for the session.
         Transport failures still propagate (those are retried at the
         coordinator level).
         """
@@ -290,7 +273,6 @@ class SleepNumberMcrController(BedController):
                 exc_info=True,
             )
         await self._async_read_underbed_light_state()
-        await self._async_read_chamber_types()
 
     async def set_sleep_number_setting_for_side(self, side: str, value: int) -> None:
         """Set firmness for one side."""
@@ -304,6 +286,7 @@ class SleepNumberMcrController(BedController):
             function_code=_MCR_FUNC_FORCE_IDLE,
             side=0,
             timeout=3.0,
+            require_response=False,
         )
         await self._async_send_frame(
             command_type=_MCR_CMD_PUMP,
@@ -312,6 +295,7 @@ class SleepNumberMcrController(BedController):
             side=side_value,
             payload=bytes([0x00, normalized]),
             timeout=5.0,
+            require_response=False,
         )
 
         self._sleep_numbers[side] = normalized
@@ -331,6 +315,7 @@ class SleepNumberMcrController(BedController):
             side=self._side_value(side),
             payload=bytes([preset_value, 0x00]),
             timeout=5.0,
+            require_response=False,
         )
 
         self._foundation_presets[side] = preset
@@ -345,50 +330,11 @@ class SleepNumberMcrController(BedController):
         await self._async_set_underbed_light(False)
 
     async def read_bed_presence(self) -> bool | None:
-        """Return the left-side occupancy when chamber occupancy is available.
-
-        Always issues a fresh BAM/MCR chamber-type read. Entity polling
-        should prefer ``read_bed_presence_cached`` below, which wraps this
-        with a TTL cache so the legacy + per-side binary sensors don't
-        double-poll.
-        """
-        if not self._occupancy_supported:
-            return None
-
-        await self._async_initialize_session()
-        await self._async_read_chamber_types()
-        self._bed_presence_last_poll_monotonic = asyncio.get_running_loop().time()
-        return self._left_presence_bool()
+        """BAM/MCR occupancy sensors are not exposed in this integration."""
+        return None
 
     async def read_bed_presence_cached(self) -> bool | None:
-        """Read bed presence with a short TTL cache for entity polling.
-
-        Home Assistant polls the legacy ``bed_presence`` sensor alongside
-        the new per-side sensors on their own update cycles. One
-        ``_async_read_chamber_types`` call already refreshes both sides,
-        so rapid follow-up polls inside the TTL window return the cached
-        state rather than re-issuing the BAM/MCR query. This mirrors the
-        Fuzion controller's behaviour.
-        """
-        if not self._occupancy_supported:
-            return None
-
-        async with self._bed_presence_lock:
-            now = asyncio.get_running_loop().time()
-            if (
-                self._bed_presence["left"] is not None
-                and now - self._bed_presence_last_poll_monotonic
-                < _BED_PRESENCE_POLL_TTL_SECONDS
-            ):
-                return self._left_presence_bool()
-            return await self.read_bed_presence()
-
-    def _left_presence_bool(self) -> bool | None:
-        """Normalize the cached left-side presence state to a bool/None."""
-        if self._bed_presence["left"] == "in":
-            return True
-        if self._bed_presence["left"] == "out":
-            return False
+        """BAM/MCR occupancy sensors are not exposed in this integration."""
         return None
 
     async def move_head_up(self) -> None:
@@ -483,6 +429,7 @@ class SleepNumberMcrController(BedController):
             function_code=_MCR_FUNC_READ,
             side=_MCR_SIDE_ALL,
             timeout=5.0,
+            require_response=False,
         )
 
         for frame in frames:
@@ -508,6 +455,7 @@ class SleepNumberMcrController(BedController):
             function_code=_MCR_FUNC_FOUNDATION_LIGHT_READ,
             side=_MCR_OUTLET_UNDERBED_LIGHT,
             timeout=5.0,
+            require_response=False,
         )
 
         for frame in frames:
@@ -523,43 +471,6 @@ class SleepNumberMcrController(BedController):
 
         _LOGGER.debug("Sleep Number MCR under-bed light query returned no state")
 
-    async def _async_read_chamber_types(self) -> None:
-        """Read chamber/occupancy state when the BAM firmware exposes it."""
-        frames = await self._async_send_frame(
-            command_type=_MCR_CMD_PUMP,
-            status=_MCR_STATUS_PUMP,
-            function_code=_MCR_FUNC_CHAMBER_TYPES,
-            side=_MCR_SIDE_BOTH_CHAMBERS,
-            payload=b"\x00\x00",
-            timeout=5.0,
-        )
-
-        for frame in frames:
-            if frame.function_code != _MCR_FUNC_CHAMBER_TYPES:
-                continue
-            if len(frame.payload) < 8:
-                _LOGGER.debug(
-                    "Sleep Number MCR chamber query returned %d bytes; occupancy not available",
-                    len(frame.payload),
-                )
-                return
-            self._occupancy_supported = True
-            self._bed_presence["right"] = "in" if frame.payload[4] else "out"
-            self._bed_presence["left"] = "in" if frame.payload[6] else "out"
-            # Also publish the generic ``bed_presence`` key so the legacy
-            # compatibility sensor (kept for non-breaking upgrades) reflects
-            # fresh data. MCR has no "configured side" concept — we mirror
-            # the left side to match ``read_bed_presence()`` /
-            # ``_left_presence_bool()``.
-            self.forward_controller_state_updates(
-                {
-                    "bed_presence": self._bed_presence["left"],
-                    "bed_presence_left": self._bed_presence["left"],
-                    "bed_presence_right": self._bed_presence["right"],
-                }
-            )
-            return
-
     async def _async_set_underbed_light(self, is_on: bool) -> None:
         """Write the under-bed light outlet state."""
         await self._async_initialize_session()
@@ -570,6 +481,7 @@ class SleepNumberMcrController(BedController):
             side=_MCR_OUTLET_UNDERBED_LIGHT,
             payload=bytes([1 if is_on else 0, 0, 0]),
             timeout=5.0,
+            require_response=False,
         )
 
         self._under_bed_lights_on = is_on
@@ -586,6 +498,7 @@ class SleepNumberMcrController(BedController):
         sub_address: int | None = None,
         timeout: float = 5.0,
         cancel_event: asyncio.Event | None = None,
+        require_response: bool = True,
     ) -> list[_McrFrame]:
         """Write an MCR frame and wait for the matching notification response.
 
@@ -641,6 +554,14 @@ class SleepNumberMcrController(BedController):
                         await task
 
             if not done:
+                if not require_response:
+                    _LOGGER.debug(
+                        "Sleep Number MCR frame timed out without a matching response "
+                        "(func=%s side=%s); continuing without retry",
+                        function_code,
+                        side,
+                    )
+                    return list(self._response_frames)
                 raise TimeoutError(
                     f"Timed out waiting for Sleep Number MCR response func={function_code}"
                 )

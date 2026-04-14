@@ -796,17 +796,17 @@ class TestSleepNumberEntities:
             is None
         )
 
-    async def test_sleep_number_mcr_entities_include_split_presence_when_supported(
+    async def test_sleep_number_mcr_entities_do_not_include_presence_sensors(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """MCR occupancy sensors should be created when query_config discovers chamber bytes."""
+        """BAM/MCR should not create presence sensors during normal setup."""
         del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
-            title="Sleep Number MCR Occupancy Bed",
+            title="Sleep Number MCR Presence Bed",
             data={
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:59",
                 CONF_NAME: "64:DB:A0:07:DD:0A",
@@ -821,25 +821,8 @@ class TestSleepNumberEntities:
         )
         entry.add_to_hass(hass)
 
-        async def _mock_read_chamber_types(self) -> None:
-            self._occupancy_supported = True
-            self._bed_presence["left"] = "in"
-            self._bed_presence["right"] = "out"
-            self.forward_controller_state_updates(
-                {
-                    "bed_presence": "in",
-                    "bed_presence_left": "in",
-                    "bed_presence_right": "out",
-                }
-            )
-
-        with patch(
-            "custom_components.adjustable_bed.beds.sleep_number_mcr."
-            "SleepNumberMcrController._async_read_chamber_types",
-            new=_mock_read_chamber_types,
-        ):
-            await hass.config_entries.async_setup(entry.entry_id)
-            await hass.async_block_till_done()
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
 
         from homeassistant.helpers import entity_registry as er
 
@@ -851,7 +834,7 @@ class TestSleepNumberEntities:
                 DOMAIN,
                 "AA:BB:CC:DD:EE:59_bed_presence_left",
             )
-            is not None
+            is None
         )
         assert (
             registry.async_get_entity_id(
@@ -859,7 +842,7 @@ class TestSleepNumberEntities:
                 DOMAIN,
                 "AA:BB:CC:DD:EE:59_bed_presence_right",
             )
-            is not None
+            is None
         )
         assert (
             registry.async_get_entity_id(
