@@ -749,7 +749,7 @@ class TestSleepNumberEntities:
         registry = er.async_get(hass)
 
         under_bed_lights = registry.async_get_entity_id(
-            "switch",
+            "light",
             DOMAIN,
             "AA:BB:CC:DD:EE:57_under_bed_lights",
         )
@@ -775,6 +775,10 @@ class TestSleepNumberEntities:
         )
 
         assert under_bed_lights is not None
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:57_under_bed_lights")
+            is None
+        )
         assert left_sleep_number is not None
         assert right_sleep_number is not None
         assert left_preset is not None
@@ -795,6 +799,111 @@ class TestSleepNumberEntities:
             )
             is None
         )
+
+    async def test_sleep_number_mcr_setup_removes_stale_under_bed_light_switch(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BAM/MCR should expose an under-bed light entity instead of the legacy switch."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Light Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:58",
+                CONF_NAME: "64:DB:A0:07:DD:09",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:58",
+            entry_id="sleep_number_mcr_light_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:58_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="sleep_number_mcr_bed_under_bed_lights",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert (
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:58_under_bed_lights")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:58_under_bed_lights")
+            is None
+        )
+
+    async def test_sleep_number_mcr_under_bed_light_turn_on_and_off(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """BAM/MCR under-bed light should behave like a normal on/off light entity."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Light Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:5A",
+                CONF_NAME: "64:DB:A0:07:DD:0B",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:5A",
+            entry_id="sleep_number_mcr_light_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:5A_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+        assert hass.states.get(entity_id).state == STATE_ON
+        assert mock_bleak_client.write_gatt_char.call_count >= 1
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+        assert hass.states.get(entity_id).state != STATE_ON
+        assert mock_bleak_client.write_gatt_char.call_count >= 1
 
     async def test_sleep_number_mcr_entities_do_not_include_presence_sensors(
         self,
