@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, call
 
 import pytest
@@ -211,7 +212,7 @@ class TestSleepNumberMcrController:
         self,
         sleep_number_mcr_coordinator,
     ) -> None:
-        """Normal BAM/MCR reads and writes should not raise on a missing notification."""
+        """Optional BAM/MCR responses should not hold the BLE path for the full timeout."""
         coordinator = await sleep_number_mcr_coordinator(
             address="AA:BB:CC:DD:EE:5D",
             name="64:DB:A0:07:DD:0E",
@@ -221,16 +222,19 @@ class TestSleepNumberMcrController:
         assert isinstance(controller, SleepNumberMcrController)
         controller._async_write_frame = AsyncMock()
 
+        start = asyncio.get_running_loop().time()
         result = await controller._async_send_frame(
             command_type=0x02,
             status=0x02,
             function_code=0x12,
             side=0x0F,
-            timeout=0.01,
+            timeout=5.0,
             require_response=False,
         )
+        elapsed = asyncio.get_running_loop().time() - start
 
         assert result == []
+        assert elapsed < 1.0
         assert controller._outstanding_request_key is None
 
     async def test_async_send_frame_timeout_still_raises_for_required_response(

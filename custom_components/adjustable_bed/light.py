@@ -258,7 +258,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
     entity_description: LightEntityDescription
 
     _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_supported_color_modes = frozenset({ColorMode.ONOFF})
 
     def __init__(
         self,
@@ -294,7 +294,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
         self._attr_is_on = bool(state["under_bed_lights_on"])
         self.async_write_ha_state()
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: object) -> None:
         """Turn the under-bed light on."""
         del kwargs
         await self._coordinator.async_execute_controller_command(
@@ -304,7 +304,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
         self._attr_is_on = True
         self.async_write_ha_state()
 
-    async def async_turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **kwargs: object) -> None:
         """Turn the under-bed light off."""
         del kwargs
         await self._coordinator.async_execute_controller_command(

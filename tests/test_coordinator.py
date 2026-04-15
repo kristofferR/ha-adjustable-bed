@@ -1439,7 +1439,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         await coordinator.async_connect()
         coordinator.async_disconnect = AsyncMock()
 
-        async def _noop_command(controller):
+        async def _noop_command(controller) -> None:
             del controller
 
         await coordinator.async_execute_controller_command(_noop_command)
@@ -1517,7 +1517,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
             assert coordinator.controller is not None
             coordinator._on_disconnect(mock_bleak_client)
             assert coordinator.controller is not None
-            raise TimeoutError("startup disconnect")
+            raise TimeoutError
 
         with patch(
             "custom_components.adjustable_bed.beds.sleep_number_mcr."
@@ -1531,6 +1531,54 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         assert coordinator._reconnect_timer is None
         assert coordinator.client is None
         assert coordinator.controller is None
+
+    async def test_sleep_number_mcr_startup_disconnect_not_marked_connected(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A silent disconnect during MCR startup should fail the attempt."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:55",
+                CONF_NAME: "64:DB:A0:07:DD:06",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:55",
+            entry_id="sleep_number_mcr_startup_disconnect_guard_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._max_retries = 1
+
+        async def _disconnect_during_query_without_exception(controller) -> None:
+            del controller
+            assert coordinator.client is mock_bleak_client
+            mock_bleak_client.is_connected = False
+            coordinator._on_disconnect(mock_bleak_client)
+
+        with patch(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr."
+            "SleepNumberMcrController.query_config",
+            new=_disconnect_during_query_without_exception,
+        ):
+            connected = await coordinator.async_connect()
+
+        assert connected is False
+        assert coordinator.is_connecting is False
+        assert coordinator.is_connected is False
+        assert coordinator.client is None
+        assert coordinator.controller is None
+        assert coordinator._last_connected is None
 
 
 class TestCoordinatorWriteCommand:

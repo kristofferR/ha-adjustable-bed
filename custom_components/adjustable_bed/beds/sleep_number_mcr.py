@@ -48,6 +48,7 @@ _MCR_SIDE_RIGHT: Final = 1
 _MCR_SIDE_BOTH_CHAMBERS: Final = 2
 _MCR_SIDE_ALL: Final = 0x0F
 _MCR_OUTLET_UNDERBED_LIGHT: Final = 3
+_OPTIONAL_RESPONSE_GRACE_SECONDS: Final = 0.2
 
 _SLEEP_NUMBER_MCR_PRESETS: Final[dict[str, int]] = {
     "Favorite": 1,
@@ -512,6 +513,11 @@ class SleepNumberMcrController(BedController):
         ``cancel_event`` and the coordinator's cancel signal so that a
         cancellation or disconnect exits the wait promptly instead of
         holding the serialized BLE path until ``timeout`` expires.
+
+        Optional responses only wait a short grace window. This keeps
+        BAM/MCR write-only operations from holding the coordinator's
+        serialized BLE path for the full 3-5 second timeout when the
+        firmware simply never echoes an acknowledgement.
         """
         frame = self._build_frame(
             command_type=command_type,
@@ -539,10 +545,16 @@ class SleepNumberMcrController(BedController):
             if cancel_event is not None and cancel_event is not coordinator_cancel:
                 cancel_tasks.append(asyncio.create_task(cancel_event.wait()))
 
+            response_timeout = (
+                timeout
+                if require_response
+                else min(timeout, _OPTIONAL_RESPONSE_GRACE_SECONDS)
+            )
+
             try:
                 done, _pending = await asyncio.wait(
                     {response_task, *cancel_tasks},
-                    timeout=timeout,
+                    timeout=response_timeout,
                     return_when=asyncio.FIRST_COMPLETED,
                 )
             finally:
@@ -557,7 +569,9 @@ class SleepNumberMcrController(BedController):
                 if not require_response:
                     _LOGGER.debug(
                         "Sleep Number MCR frame timed out without a matching response "
-                        "(func=%s side=%s); continuing without retry",
+                        "during the optional %.3fs grace window (func=%s side=%s); "
+                        "continuing without retry",
+                        response_timeout,
                         function_code,
                         side,
                     )

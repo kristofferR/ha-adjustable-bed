@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 from homeassistant.components.climate import HVACMode
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_ON, STATE_UNAVAILABLE
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -902,7 +902,7 @@ class TestSleepNumberEntities:
             {"entity_id": entity_id},
             blocking=True,
         )
-        assert hass.states.get(entity_id).state != STATE_ON
+        assert hass.states.get(entity_id).state == STATE_OFF
         assert mock_bleak_client.write_gatt_char.call_count >= 1
 
     async def test_sleep_number_mcr_entities_do_not_include_presence_sensors(

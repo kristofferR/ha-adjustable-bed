@@ -24,6 +24,7 @@ try:
 except ImportError:
     # Older bleak-retry-connector versions may not expose this helper.
     close_stale_connections_by_address = None
+
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -123,9 +124,9 @@ from .const import (
     RICHMAT_REMOTE_AUTO,
     get_richmat_features,
     get_richmat_motor_count,
+    passive_position_reconciliation_default_enabled,
     requires_pairing,
     resolve_richmat_remote_code,
-    passive_position_reconciliation_default_enabled,
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
@@ -1358,16 +1359,16 @@ class AdjustableBedCoordinator:
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
 
                 # Beds with connect-time feature discovery/state hydration.
-                if self._bed_type in {
-                    BED_TYPE_JENSEN,
-                    BED_TYPE_SLEEP_NUMBER,
-                    BED_TYPE_SLEEP_NUMBER_MCR,
-                }:
-                    if (
-                        self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
-                        and hasattr(self._controller, "query_config")
-                    ):
-                        await self._controller.query_config()
+                if (
+                    self._bed_type in {
+                        BED_TYPE_JENSEN,
+                        BED_TYPE_SLEEP_NUMBER,
+                        BED_TYPE_SLEEP_NUMBER_MCR,
+                    }
+                    and self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
+                    and hasattr(self._controller, "query_config")
+                ):
+                    await self._controller.query_config()
 
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
@@ -1383,6 +1384,27 @@ class AdjustableBedCoordinator:
                     and self._should_refresh_readable_light_state(force=True)
                 ):
                     await self._async_refresh_readable_light_state()
+
+                if self._client is None or not self._client.is_connected:
+                    _LOGGER.warning(
+                        "Connection to %s dropped during controller startup",
+                        self._address,
+                    )
+                    self._connecting = False
+                    self._last_connection_error = "Connection dropped during controller startup"
+                    self._last_connection_error_type = ConnectionError.__name__
+                    attempt_details["total_elapsed_seconds"] = round(
+                        time.monotonic() - attempt_start, 3
+                    )
+                    attempt_details["result"] = "failed"
+                    attempt_details["error"] = self._last_connection_error
+                    attempt_details["error_type"] = self._last_connection_error_type
+                    attempt_details["error_category"] = "CONNECTION DROPPED"
+                    self._client = None
+                    self._controller = None
+                    self._notify_connection_state_change(False)
+                    self._connection_attempt_details.append(attempt_details)
+                    continue
 
                 if reset_timer:
                     self._reset_disconnect_timer()
@@ -1460,7 +1482,7 @@ class AdjustableBedCoordinator:
                     self._controller = None
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures
                 # Track connection error for diagnostics (issue #168)
                 self._connecting = False
                 self._last_connection_error = str(err)
