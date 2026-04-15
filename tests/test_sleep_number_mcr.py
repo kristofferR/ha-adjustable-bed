@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, call
 
 import pytest
@@ -78,19 +79,34 @@ class TestSleepNumberMcrController:
         assert coordinator.controller.requires_notification_channel is True
         assert coordinator.controller.supports_motor_control is False
 
-    async def test_query_config_hydrates_state(self, sleep_number_mcr_coordinator) -> None:
+    async def test_query_config_hydrates_state(
+        self,
+        sleep_number_mcr_coordinator,
+        mock_bleak_client,
+    ) -> None:
         """Connect-time hydration should read firmness and under-bed light state."""
         coordinator = await sleep_number_mcr_coordinator(
             address="AA:BB:CC:DD:EE:52",
             name="64:DB:A0:07:DD:03",
             entry_id="sleep_number_mcr_query_config",
         )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+
+        request_function_codes: list[int] = []
+        for write_call in mock_bleak_client.write_gatt_char.await_args_list:
+            if str(write_call.args[0]) != SLEEP_NUMBER_MCR_RX_CHAR_UUID:
+                continue
+            frame = controller._parse_frame(write_call.args[1])
+            if frame is not None:
+                request_function_codes.append(frame.function_code)
 
         assert coordinator.controller_state["sleep_number_left"] == 35
         assert coordinator.controller_state["sleep_number_right"] == 65
         assert coordinator.controller_state["under_bed_lights_on"] is True
         assert coordinator.controller.supports_bed_presence is False
         assert coordinator.controller.bed_presence_sides == ()
+        assert 97 not in request_function_codes
 
     async def test_set_sleep_number_setting_for_side_rounds_and_updates_state(
         self,
@@ -106,6 +122,30 @@ class TestSleepNumberMcrController:
         await coordinator.controller.set_sleep_number_setting_for_side("right", 63)
 
         assert coordinator.controller_state["sleep_number_right"] == 65
+
+    async def test_set_sleep_number_setting_tolerates_missing_write_responses(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Missing write responses should not force a reconnect for normal MCR writes."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5B",
+            name="64:DB:A0:07:DD:0C",
+            entry_id="sleep_number_mcr_sleep_number_no_response",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = True
+        controller._async_send_frame = AsyncMock(return_value=[])
+
+        await controller.set_sleep_number_setting_for_side("left", 42)
+
+        assert coordinator.controller_state["sleep_number_left"] == 40
+        assert controller._async_send_frame.await_count == 2
+        assert all(
+            awaited.kwargs["require_response"] is False
+            for awaited in controller._async_send_frame.await_args_list
+        )
 
     async def test_set_foundation_preset_for_side_updates_state(
         self,
@@ -137,6 +177,159 @@ class TestSleepNumberMcrController:
 
         assert await coordinator.controller.read_bed_presence() is None
         assert coordinator.controller.supports_bed_presence is False
+
+    async def test_query_config_tolerates_missing_underbed_light_response(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Connect-time hydration should not fail when the light read returns no response."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5C",
+            name="64:DB:A0:07:DD:0D",
+            entry_id="sleep_number_mcr_query_config_no_light_response",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = True
+        controller._under_bed_lights_on = None
+
+        pump_frame = controller._parse_frame(
+            controller._build_frame(
+                command_type=1,
+                status=0x02,
+                function_code=0x80 | 18,
+                side=0x0F,
+                payload=bytes([1, 40, 60, 0, 0]),
+                sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:5C"),
+            )
+        )
+        assert pump_frame is not None
+        controller._async_send_frame = AsyncMock(side_effect=[[pump_frame], []])
+
+        await controller.query_config()
+
+        assert coordinator.controller_state["sleep_number_left"] == 40
+        assert coordinator.controller_state["sleep_number_right"] == 60
+        assert controller._under_bed_lights_on is None
+        assert controller._async_send_frame.await_args_list[1].kwargs["require_response"] is False
+
+    async def test_async_send_frame_timeout_is_nonfatal_when_response_not_required(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Optional BAM/MCR responses should not hold the BLE path for the full timeout."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5D",
+            name="64:DB:A0:07:DD:0E",
+            entry_id="sleep_number_mcr_optional_response_timeout",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._async_write_frame = AsyncMock()
+
+        start = asyncio.get_running_loop().time()
+        result = await controller._async_send_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=0x12,
+            side=0x0F,
+            timeout=5.0,
+            require_response=False,
+        )
+        elapsed = asyncio.get_running_loop().time() - start
+
+        assert result == []
+        assert elapsed < 1.0
+        assert controller._outstanding_request_key is None
+
+    async def test_async_send_frame_timeout_still_raises_for_required_response(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """The init handshake should still fail fast when its response never arrives."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5E",
+            name="64:DB:A0:07:DD:0F",
+            entry_id="sleep_number_mcr_required_response_timeout",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._async_write_frame = AsyncMock()
+
+        with pytest.raises(TimeoutError):
+            await controller._async_send_frame(
+                command_type=0x02,
+                status=0x02,
+                function_code=0x00,
+                side=0x00,
+                timeout=0.01,
+                require_response=True,
+            )
+
+        assert controller._outstanding_request_key is None
+
+    async def test_async_send_frame_ignores_late_optional_response_for_next_same_key_request(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """A late optional reply must not satisfy the next request that reuses the same key."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5F",
+            name="64:DB:A0:07:DD:10",
+            entry_id="sleep_number_mcr_late_optional_response",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._async_write_frame = AsyncMock()
+
+        request_kwargs = {
+            "command_type": 0x02,
+            "status": 0x02,
+            "function_code": 0x12,
+            "side": 0x0F,
+        }
+
+        first_result = await controller._async_send_frame(
+            **request_kwargs,
+            timeout=0.02,
+            require_response=False,
+        )
+        assert first_result == []
+
+        stale_response = controller._build_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=0x80 | 0x12,
+            side=0x0F,
+            payload=b"\x01",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:5F"),
+        )
+        real_response = controller._build_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=0x80 | 0x12,
+            side=0x0F,
+            payload=b"\x02",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:5F"),
+        )
+
+        async def _deliver_notification(delay: float, frame: bytes) -> None:
+            await asyncio.sleep(delay)
+            controller._handle_mcr_notification(None, bytearray(frame))
+
+        stale_task = asyncio.create_task(_deliver_notification(0.005, stale_response))
+        real_task = asyncio.create_task(_deliver_notification(0.03, real_response))
+
+        try:
+            second_result = await controller._async_send_frame(
+                **request_kwargs,
+                timeout=0.1,
+            )
+        finally:
+            await stale_task
+            await real_task
+
+        assert [frame.payload for frame in second_result] == [b"\x02"]
 
     async def test_notification_handler_reassembles_split_mcr_frames(
         self,
