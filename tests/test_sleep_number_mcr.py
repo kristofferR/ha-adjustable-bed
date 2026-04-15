@@ -142,6 +142,10 @@ class TestSleepNumberMcrController:
 
         assert coordinator.controller_state["sleep_number_left"] == 40
         assert controller._async_send_frame.await_count == 2
+        assert all(
+            awaited.kwargs["require_response"] is False
+            for awaited in controller._async_send_frame.await_args_list
+        )
 
     async def test_set_foundation_preset_for_side_updates_state(
         self,
@@ -207,6 +211,7 @@ class TestSleepNumberMcrController:
         assert coordinator.controller_state["sleep_number_left"] == 40
         assert coordinator.controller_state["sleep_number_right"] == 60
         assert controller._under_bed_lights_on is None
+        assert controller._async_send_frame.await_args_list[1].kwargs["require_response"] is False
 
     async def test_async_send_frame_timeout_is_nonfatal_when_response_not_required(
         self,
@@ -262,6 +267,69 @@ class TestSleepNumberMcrController:
             )
 
         assert controller._outstanding_request_key is None
+
+    async def test_async_send_frame_ignores_late_optional_response_for_next_same_key_request(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """A late optional reply must not satisfy the next request that reuses the same key."""
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:5F",
+            name="64:DB:A0:07:DD:10",
+            entry_id="sleep_number_mcr_late_optional_response",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._async_write_frame = AsyncMock()
+
+        request_kwargs = {
+            "command_type": 0x02,
+            "status": 0x02,
+            "function_code": 0x12,
+            "side": 0x0F,
+        }
+
+        first_result = await controller._async_send_frame(
+            **request_kwargs,
+            timeout=0.02,
+            require_response=False,
+        )
+        assert first_result == []
+
+        stale_response = controller._build_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=0x80 | 0x12,
+            side=0x0F,
+            payload=b"\x01",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:5F"),
+        )
+        real_response = controller._build_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=0x80 | 0x12,
+            side=0x0F,
+            payload=b"\x02",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:5F"),
+        )
+
+        async def _deliver_notification(delay: float, frame: bytes) -> None:
+            await asyncio.sleep(delay)
+            controller._handle_mcr_notification(None, bytearray(frame))
+
+        stale_task = asyncio.create_task(_deliver_notification(0.005, stale_response))
+        real_task = asyncio.create_task(_deliver_notification(0.03, real_response))
+
+        try:
+            second_result = await controller._async_send_frame(
+                **request_kwargs,
+                timeout=0.1,
+            )
+        finally:
+            await stale_task
+            await real_task
+
+        assert [frame.payload for frame in second_result] == [b"\x02"]
 
     async def test_notification_handler_reassembles_split_mcr_frames(
         self,

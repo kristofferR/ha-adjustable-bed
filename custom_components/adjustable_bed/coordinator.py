@@ -1360,12 +1360,7 @@ class AdjustableBedCoordinator:
 
                 # Beds with connect-time feature discovery/state hydration.
                 if (
-                    self._bed_type in {
-                        BED_TYPE_JENSEN,
-                        BED_TYPE_SLEEP_NUMBER,
-                        BED_TYPE_SLEEP_NUMBER_MCR,
-                    }
-                    and self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
+                    self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER}
                     and hasattr(self._controller, "query_config")
                 ):
                     await self._controller.query_config()

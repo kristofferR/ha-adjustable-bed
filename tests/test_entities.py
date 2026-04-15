@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
@@ -904,6 +904,60 @@ class TestSleepNumberEntities:
         )
         assert hass.states.get(entity_id).state == STATE_OFF
         assert mock_bleak_client.write_gatt_char.call_count >= 1
+
+    async def test_sleep_number_mcr_under_bed_light_restores_last_state(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BAM/MCR light entities should restore their last known on/off state."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Light Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:5B",
+                CONF_NAME: "64:DB:A0:07:DD:0C",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:5B",
+            entry_id="sleep_number_mcr_light_restore_entry",
+        )
+        entry.add_to_hass(hass)
+
+        def _register_without_initial_state(_coordinator, callback_fn):
+            _coordinator._controller_state_callbacks.add(callback_fn)
+
+            def unregister() -> None:
+                _coordinator._controller_state_callbacks.discard(callback_fn)
+
+            return unregister
+
+        with patch(
+            "custom_components.adjustable_bed.light."
+            "AdjustableBedOnOffLight.async_get_last_state",
+            new=AsyncMock(return_value=MagicMock(state=STATE_OFF)),
+        ), patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.register_controller_state_callback",
+            new=_register_without_initial_state,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:5B_under_bed_lights"
+        )
+        assert entity_id is not None
+        assert hass.states.get(entity_id).state == STATE_OFF
 
     async def test_sleep_number_mcr_entities_do_not_include_presence_sensors(
         self,

@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import logging
 import struct
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
@@ -119,6 +120,11 @@ class SleepNumberMcrController(BedController):
         # ``(function_code, side)`` tuple matching the request that was
         # sent. ``None`` means no request is in flight.
         self._outstanding_request_key: tuple[int, int] | None = None
+        # When an optional response times out, a delayed notification for the
+        # same request key must not satisfy the next command. Keep the key
+        # quarantined for a full timeout window after the miss so late replies
+        # are drained before the key can be reused.
+        self._quarantined_response_keys: dict[tuple[int, int], float] = {}
         self._sleep_numbers: dict[str, int | None] = {"left": None, "right": None}
         self._foundation_presets: dict[str, str | None] = {"left": None, "right": None}
         self._under_bed_lights_on: bool | None = None
@@ -253,6 +259,7 @@ class SleepNumberMcrController(BedController):
         self._response_buffer.clear()
         self._response_frames.clear()
         self._response_event.clear()
+        self._quarantined_response_keys.clear()
 
     async def query_config(self) -> None:
         """Read the current BAM/MCR state after connect.
@@ -504,10 +511,10 @@ class SleepNumberMcrController(BedController):
         """Write an MCR frame and wait for the matching notification response.
 
         Replies are correlated to the outstanding request via
-        ``(function_code, side)``. The notification handler ignores any
-        unrelated parsed frames (late replies from prior commands, stray
-        broadcasts) so the waiter only wakes once a frame that actually
-        matches this request is reassembled and parsed.
+        ``(function_code, side)``. When an optional response times out,
+        the same request key is quarantined for a full timeout window so
+        a delayed reply cannot satisfy the next command that reuses that
+        key.
 
         The response wait races ``_response_event`` against the caller's
         ``cancel_event`` and the coordinator's cancel signal so that a
@@ -527,9 +534,13 @@ class SleepNumberMcrController(BedController):
             payload=payload,
             sub_address=self._bed_address if sub_address is None else sub_address,
         )
+        request_key = self._request_key(function_code, side)
+        await self._async_wait_for_response_quarantine(
+            request_key, function_code=function_code, side=side, cancel_event=cancel_event
+        )
         # Set correlation BEFORE clearing state, so any in-flight notification
         # parsing on the event loop sees the new key.
-        self._outstanding_request_key = (function_code & 0x7F, side & 0x0F)
+        self._outstanding_request_key = request_key
         self._response_buffer.clear()
         self._response_frames.clear()
         self._response_event.clear()
@@ -567,6 +578,10 @@ class SleepNumberMcrController(BedController):
 
             if not done:
                 if not require_response:
+                    self._quarantine_response_key(
+                        request_key,
+                        deadline=time.monotonic() + timeout,
+                    )
                     _LOGGER.debug(
                         "Sleep Number MCR frame timed out without a matching response "
                         "during the optional %.3fs grace window (func=%s side=%s); "
@@ -630,6 +645,15 @@ class SleepNumberMcrController(BedController):
         parsed_frame = False
         for frame in self._extract_response_frames():
             parsed_frame = True
+            if (quarantined_key := self._matching_quarantined_request_key(frame)) is not None:
+                _LOGGER.debug(
+                    "Ignoring late Sleep Number MCR notification for quarantined request "
+                    "(func=%s side=%s quarantined=%s)",
+                    frame.function_code,
+                    frame.side,
+                    quarantined_key,
+                )
+                continue
             if not self._frame_matches_outstanding_request(frame):
                 _LOGGER.debug(
                     "Ignoring Sleep Number MCR notification that does not match"
@@ -651,9 +675,17 @@ class SleepNumberMcrController(BedController):
         """Return True when ``frame`` is the response to the in-flight request."""
         if self._outstanding_request_key is None:
             return False
+        return self._frame_matches_request_key(frame, self._outstanding_request_key)
+
+    def _frame_matches_request_key(
+        self,
+        frame: _McrFrame,
+        request_key: tuple[int, int],
+    ) -> bool:
+        """Return True when ``frame`` matches ``request_key``."""
         if not frame.is_response:
             return False
-        expected_func, expected_side = self._outstanding_request_key
+        expected_func, expected_side = request_key
         if frame.function_code != expected_func:
             return False
         # The MCR firmware sometimes echoes a different side nibble for
@@ -664,6 +696,95 @@ class SleepNumberMcrController(BedController):
         if expected_side in {_MCR_SIDE_ALL, _MCR_SIDE_BOTH_CHAMBERS}:
             return True
         return frame.side == expected_side
+
+    @staticmethod
+    def _request_key(function_code: int, side: int) -> tuple[int, int]:
+        """Normalize the request correlation tuple."""
+        return (function_code & 0x7F, side & 0x0F)
+
+    def _prune_response_quarantine(self) -> None:
+        """Drop expired quarantined request keys."""
+        now = time.monotonic()
+        expired_keys = [
+            request_key
+            for request_key, deadline in self._quarantined_response_keys.items()
+            if deadline <= now
+        ]
+        for request_key in expired_keys:
+            self._quarantined_response_keys.pop(request_key, None)
+
+    def _quarantine_response_key(self, request_key: tuple[int, int], *, deadline: float) -> None:
+        """Ignore late replies for ``request_key`` until ``deadline``."""
+        current_deadline = self._quarantined_response_keys.get(request_key)
+        if current_deadline is None or deadline > current_deadline:
+            self._quarantined_response_keys[request_key] = deadline
+
+    def _matching_quarantined_request_key(
+        self, frame: _McrFrame
+    ) -> tuple[int, int] | None:
+        """Return the quarantined request key that ``frame`` matches, if any."""
+        self._prune_response_quarantine()
+        for request_key in self._quarantined_response_keys:
+            if self._frame_matches_request_key(frame, request_key):
+                return request_key
+        return None
+
+    async def _async_wait_for_response_quarantine(
+        self,
+        request_key: tuple[int, int],
+        *,
+        function_code: int,
+        side: int,
+        cancel_event: asyncio.Event | None,
+    ) -> None:
+        """Wait until a timed-out optional request key is safe to reuse."""
+        while True:
+            self._prune_response_quarantine()
+            deadline = self._quarantined_response_keys.get(request_key)
+            if deadline is None:
+                return
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                self._quarantined_response_keys.pop(request_key, None)
+                return
+
+            _LOGGER.debug(
+                "Waiting %.3fs before reusing Sleep Number MCR request key "
+                "(func=%s side=%s) after an optional timeout",
+                remaining,
+                function_code,
+                side,
+            )
+
+            coordinator_cancel = self._coordinator.cancel_command
+            wait_task = asyncio.create_task(asyncio.sleep(remaining))
+            cancel_tasks: list[asyncio.Task[bool]] = [
+                asyncio.create_task(coordinator_cancel.wait())
+            ]
+            if cancel_event is not None and cancel_event is not coordinator_cancel:
+                cancel_tasks.append(asyncio.create_task(cancel_event.wait()))
+
+            try:
+                done, _pending = await asyncio.wait(
+                    {wait_task, *cancel_tasks},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                for task in (wait_task, *cancel_tasks):
+                    if not task.done():
+                        task.cancel()
+                for task in (wait_task, *cancel_tasks):
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
+
+            if wait_task in done:
+                self._quarantined_response_keys.pop(request_key, None)
+                return
+
+            raise asyncio.CancelledError(
+                f"Sleep Number MCR request reuse cancelled func={function_code}"
+            )
 
     def _extract_response_frames(self) -> list[_McrFrame]:
         """Parse as many complete MCR frames as possible from the notification buffer."""

@@ -252,7 +252,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self.async_write_ha_state()
 
 
-class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
+class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
     """On/off under-bed light for BAM/MCR-style beds."""
 
     entity_description: LightEntityDescription
@@ -275,6 +275,8 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller-state updates for the light."""
         await super().async_added_to_hass()
+        if (last_state := await self.async_get_last_state()) is not None:
+            self._attr_is_on = last_state.state == STATE_ON
         self._unregister_callback = self._coordinator.register_controller_state_callback(
             self._handle_controller_state_update
         )
