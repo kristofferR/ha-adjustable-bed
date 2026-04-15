@@ -55,7 +55,7 @@ For Fuzion bases, enter pairing mode by holding the side pairing button until th
 | Side-specific Firmness | ✅ |
 | Side-specific Foundation Presets | ✅ |
 | Under Bed Lights | ✅ |
-| Presence Detection | ⚠️ Only if the firmware exposes chamber occupancy bytes |
+| Presence Detection | ❌ |
 | Cooling / Heating / Footwarming | ❌ |
 
 ## Current Integration Scope
@@ -68,7 +68,7 @@ The Fuzion controller currently controls one side of the base per config entry.
 
 This keeps the implementation compatible with the current entity model while still exposing split-base control.
 
-Older BAM/MCR bases use a different controller path. They expose both firmness sides from one config entry and create separate left/right firmness numbers plus left/right foundation preset selects.
+Older BAM/MCR bases use a different controller path. They expose both firmness sides from one config entry, create separate left/right firmness numbers plus left/right foundation preset selects, and intentionally keep the BLE connection open once established.
 
 ## Protocol Details
 
@@ -237,10 +237,11 @@ Implemented BAM/MCR operations:
 - set left/right firmness
 - trigger left/right foundation presets (`Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`)
 - read and write under-bed light state
-- chamber-type query for optional occupancy support
 
 Current BAM/MCR limitations:
 
 - no live head/foot cover entities yet
 - no climate entities
-- tested 0.4.x BAM firmware returns only a short chamber payload, so occupancy sensors are not created unless the firmware exposes real occupancy bytes
+- no occupancy sensors or chamber polling in normal operation
+
+The BAM/MCR controller intentionally keeps a persistent BLE connection once startup succeeds. Idle disconnects, disconnect-after-command, and timer-based auto-reconnect are disabled for this path because older BAM/MCR firmware is sensitive to reconnect churn between the notify subscribe, init handshake, and follow-up reads.
