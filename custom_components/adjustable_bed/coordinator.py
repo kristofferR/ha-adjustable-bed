@@ -121,6 +121,7 @@ from .const import (
     POSITION_STALL_COUNT,
     POSITION_STALL_THRESHOLD,
     POSITION_TOLERANCE,
+    REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
     get_richmat_features,
     get_richmat_motor_count,
@@ -389,6 +390,8 @@ class AdjustableBedCoordinator:
             Maximum angle in degrees for the specified motor.
         """
         if position_key in ("back", "head"):
+            if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
+                return REVERIE_BACK_MAX_ANGLE
             return self.back_max_angle
         if position_key in ("legs", "feet"):
             return self.legs_max_angle

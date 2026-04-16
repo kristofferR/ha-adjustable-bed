@@ -583,13 +583,15 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                     await self._coordinator.async_disconnect()
                     _LOGGER.info("Disconnected from bed - physical remote should now work")
                 elif self.entity_description.key == "connect":
-                    await self._coordinator.async_ensure_connected()
+                    if not await self._coordinator.async_ensure_connected():
+                        raise RuntimeError(f"Failed to connect to {self._coordinator.name}")
                     _LOGGER.info("Connected to bed")
             except Exception:
                 _LOGGER.exception(
                     "Failed to execute coordinator action %s",
                     self.entity_description.key,
                 )
+                raise
             return
 
         # Stop button gets special handling - cancels current command immediately
@@ -598,6 +600,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 await self._coordinator.async_stop_command()
             except Exception:
                 _LOGGER.exception("Failed to execute stop command")
+                raise
             return
 
         try:
@@ -617,3 +620,4 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 "Failed to execute button action %s",
                 self.entity_description.key,
             )
+            raise

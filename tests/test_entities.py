@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from collections.abc import Awaitable, Callable
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
+
+import pytest
 
 from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
@@ -304,6 +307,66 @@ class TestCoverEntities:
         )
 
         mock_bleak_client.write_gatt_char.assert_called()
+
+    async def test_cover_open_propagates_command_errors(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Cover open should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        cover_entities = [
+            state.entity_id
+            for state in hass.states.async_all()
+            if state.entity_id.startswith("cover.")
+        ]
+        entity_id = cover_entities[0]
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+
+        with pytest.raises(RuntimeError, match="boom"):
+            await hass.services.async_call(
+                "cover",
+                "open_cover",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+    async def test_cover_stop_propagates_command_errors(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Cover stop should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        cover_entities = [
+            state.entity_id
+            for state in hass.states.async_all()
+            if state.entity_id.startswith("cover.")
+        ]
+        entity_id = cover_entities[0]
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+
+        with pytest.raises(RuntimeError, match="boom"):
+            await hass.services.async_call(
+                "cover",
+                "stop_cover",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
 
 
 class TestNumberEntities:
@@ -1177,6 +1240,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Test pressing a preset button sends command."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1199,6 +1263,67 @@ class TestButtonEntities:
 
         mock_bleak_client.write_gatt_char.assert_called()
 
+    async def test_preset_button_press_propagates_command_errors(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Preset button presses should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        button_entities = [
+            state.entity_id
+            for state in hass.states.async_all()
+            if state.entity_id.startswith("button.") and "memory_1" in state.entity_id
+        ]
+        entity_id = button_entities[0]
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+
+        with pytest.raises(RuntimeError, match="boom"):
+            await hass.services.async_call(
+                "button",
+                "press",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+    async def test_connect_button_press_raises_when_reconnect_fails(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Connect button should not report success when reconnect fails."""
+        del mock_coordinator_connected, enable_custom_integrations
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        button_entities = [
+            state.entity_id
+            for state in hass.states.async_all()
+            if state.entity_id.startswith("button.") and state.entity_id.endswith("_connect")
+        ]
+        assert len(button_entities) == 1
+        entity_id = button_entities[0]
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        coordinator.async_ensure_connected = AsyncMock(return_value=False)
+
+        with pytest.raises(RuntimeError, match="Failed to connect"):
+            await hass.services.async_call(
+                "button",
+                "press",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
 
 class TestSwitchEntities:
     """Test switch entities."""
@@ -1220,6 +1345,80 @@ class TestSwitchEntities:
 
         # Should have under-bed lights switch
         assert len(switch_states) == 1
+
+    async def test_failed_switch_turn_off_keeps_auto_off_timer(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A failed turn-off should not drop the hardware auto-off fallback timer."""
+        del mock_coordinator_connected, enable_custom_integrations
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        switch_entities = [
+            state.entity_id
+            for state in hass.states.async_all()
+            if state.entity_id.startswith("switch.")
+        ]
+        assert len(switch_entities) == 1
+        entity_id = switch_entities[0]
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        with patch.object(
+            type(coordinator.controller),
+            "light_auto_off_seconds",
+            new_callable=PropertyMock,
+            return_value=0.01,
+        ):
+            scheduled_auto_off: Callable[[], None] | None = None
+            auto_off_handle = MagicMock()
+            original_call_later = hass.loop.call_later
+
+            def capture_auto_off(
+                delay: float,
+                callback: Callable[..., None],
+                *args: object,
+            ) -> object:
+                nonlocal scheduled_auto_off
+                if getattr(callback, "__name__", "") == "auto_off_callback":
+                    def invoke_auto_off() -> None:
+                        callback(*args)
+
+                    scheduled_auto_off = invoke_auto_off
+                    return auto_off_handle
+                return original_call_later(delay, callback, *args)
+
+            with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
+                await hass.services.async_call(
+                    "switch",
+                    "turn_on",
+                    {"entity_id": entity_id},
+                    blocking=True,
+                )
+                assert hass.states.get(entity_id).state == STATE_ON
+
+                coordinator.async_execute_controller_command = AsyncMock(
+                    side_effect=RuntimeError("boom")
+                )
+
+                with pytest.raises(RuntimeError, match="boom"):
+                    await hass.services.async_call(
+                        "switch",
+                        "turn_off",
+                        {"entity_id": entity_id},
+                        blocking=True,
+                    )
+
+                assert hass.states.get(entity_id).state == STATE_ON
+
+            assert scheduled_auto_off is not None
+            scheduled_auto_off()
+            await hass.async_block_till_done()
+
+        assert hass.states.get(entity_id).state == STATE_OFF
 
 
 class TestLightEntities:
@@ -1707,6 +1906,7 @@ class TestLightEntities:
         enable_custom_integrations,
     ):
         """Leggett Gen2 light turn_on with rgb_color should send lights_on + RGBSET."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Leggett Gen2 Bed",
@@ -1772,6 +1972,7 @@ class TestLightEntities:
         enable_custom_integrations,
     ):
         """Leggett Gen2 light turn_off should send RGBENABLE 0:0."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Leggett Gen2 Bed",
@@ -1824,6 +2025,77 @@ class TestLightEntities:
                 response=True,
             )
         ]
+
+    async def test_leggett_gen2_light_turn_off_reconnects_after_idle_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Turn-off should still execute when the coordinator has already idle-disconnected."""
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Leggett Gen2 Reconnect Light",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:13",
+                CONF_NAME: "Leggett Gen2 Reconnect Light",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:13",
+            entry_id="leggett_gen2_light_idle_disconnect_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entity_id = registry.async_get_entity_id(
+            "light", DOMAIN, "AA:BB:CC:DD:EE:13_under_bed_lights"
+        )
+        assert entity_id is not None
+
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        fake_controller = MagicMock()
+        fake_controller.supports_discrete_light_control = True
+        fake_controller.supports_light_toggle_control = False
+        fake_controller.lights_off = AsyncMock()
+
+        async def _fake_execute(
+            command_fn: Callable[[object], Awaitable[None]],
+            **_kwargs: object,
+        ) -> None:
+            await command_fn(fake_controller)
+
+        coordinator._controller = None
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=_fake_execute)
+
+        await hass.services.async_call(
+            "light",
+            "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+        coordinator.async_execute_controller_command.assert_awaited_once()
+        fake_controller.lights_off.assert_awaited_once()
+        state = hass.states.get(entity_id)
+        assert state is not None
+        assert state.state == STATE_OFF
 
     async def test_switch_turn_on_off(
         self,

@@ -789,7 +789,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_up_fn": lambda ctrl: ctrl.move_back_up(),
                         "move_down_fn": lambda ctrl: ctrl.move_back_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": 68.0,  # Degrees
+                        "max_value": coordinator.get_max_angle("back"),  # Degrees
                         "min_motors": 2,
                     },
                     "legs": {
@@ -797,7 +797,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
                         "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": 45.0,  # Degrees
+                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
                         "min_motors": 2,
                     },
                     "head": {
@@ -805,7 +805,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_up_fn": lambda ctrl: ctrl.move_head_up(),
                         "move_down_fn": lambda ctrl: ctrl.move_head_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": 68.0,  # Degrees
+                        "max_value": coordinator.get_max_angle("head"),  # Degrees
                         "min_motors": 3,
                     },
                     "feet": {
@@ -813,7 +813,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
                         "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": 45.0,  # Degrees
+                        "max_value": coordinator.get_max_angle("feet"),  # Degrees
                         "min_motors": 4,
                     },
                 }
@@ -1037,6 +1037,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 address,
             )
         elif device_ids:
+            if len(device_ids) > 1:
+                raise ServiceValidationError(
+                    "Support bundle generation only supports one configured device at a time. "
+                    "Select a single device or use target_address for an unconfigured bed.",
+                    translation_domain=DOMAIN,
+                    translation_key="multiple_device_targets_not_supported",
+                )
             selected_device_id = device_ids[0]
             target = _get_support_bundle_target_from_device(hass, selected_device_id)
             if target is not None:

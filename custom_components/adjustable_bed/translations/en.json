@@ -744,6 +744,9 @@
     },
     "invalid_position_range": {
       "message": "Position {position} is out of range for motor \"{motor}\". Valid range: 0-{max_value}{unit}."
+    },
+    "multiple_device_targets_not_supported": {
+      "message": "Support bundle generation only supports one configured device at a time. Select a single device or use target_address for an unconfigured bed."
     }
   },
   "issues": {
