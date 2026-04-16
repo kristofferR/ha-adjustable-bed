@@ -589,6 +589,7 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Support bundle generation should fail fast instead of silently ignoring extra devices."""
+        del mock_coordinator_connected, enable_custom_integrations
         import pytest
         from homeassistant.exceptions import ServiceValidationError
 

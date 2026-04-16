@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
@@ -316,6 +316,7 @@ class TestCoverEntities:
         enable_custom_integrations,
     ):
         """Cover open should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -345,6 +346,7 @@ class TestCoverEntities:
         enable_custom_integrations,
     ):
         """Cover stop should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1092,6 +1094,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Test pressing a preset button sends command."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1122,6 +1125,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Preset button presses should surface transport failures to HA callers."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1151,6 +1155,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Connect button should not report success when reconnect fails."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1203,6 +1208,7 @@ class TestSwitchEntities:
         enable_custom_integrations,
     ):
         """A failed turn-off should not drop the hardware auto-off fallback timer."""
+        del mock_coordinator_connected, enable_custom_integrations
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1232,7 +1238,10 @@ class TestSwitchEntities:
             ) -> object:
                 nonlocal scheduled_auto_off
                 if getattr(callback, "__name__", "") == "auto_off_callback":
-                    scheduled_auto_off = lambda: callback(*args)
+                    def invoke_auto_off() -> None:
+                        callback(*args)
+
+                    scheduled_auto_off = invoke_auto_off
                     return auto_off_handle
                 return original_call_later(delay, callback, *args)
 
@@ -1751,6 +1760,7 @@ class TestLightEntities:
         enable_custom_integrations,
     ):
         """Leggett Gen2 light turn_on with rgb_color should send lights_on + RGBSET."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Leggett Gen2 Bed",
@@ -1816,6 +1826,7 @@ class TestLightEntities:
         enable_custom_integrations,
     ):
         """Leggett Gen2 light turn_off should send RGBENABLE 0:0."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Leggett Gen2 Bed",
@@ -1876,6 +1887,7 @@ class TestLightEntities:
         enable_custom_integrations,
     ):
         """Turn-off should still execute when the coordinator has already idle-disconnected."""
+        del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Leggett Gen2 Reconnect Light",
@@ -1917,7 +1929,10 @@ class TestLightEntities:
         fake_controller.supports_light_toggle_control = False
         fake_controller.lights_off = AsyncMock()
 
-        async def _fake_execute(command_fn, **_kwargs):
+        async def _fake_execute(
+            command_fn: Callable[[object], Awaitable[None]],
+            **_kwargs: object,
+        ) -> None:
             await command_fn(fake_controller)
 
         coordinator._controller = None
