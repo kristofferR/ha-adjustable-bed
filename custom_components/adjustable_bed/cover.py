@@ -23,6 +23,7 @@ from .const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     DOMAIN,
+    REVERIE_BACK_MAX_ANGLE,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
@@ -31,10 +32,6 @@ if TYPE_CHECKING:
     from .beds.base import BedController, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
-
-# Bed-type-specific max angles for back/head motors
-# Reverie beds report position 0-100 which maps to 0-60 degrees (not 68)
-REVERIE_BACK_MAX_ANGLE = 60
 
 
 @dataclass(frozen=True, kw_only=True)

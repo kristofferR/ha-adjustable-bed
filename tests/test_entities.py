@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+from collections.abc import Callable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
@@ -1221,27 +1221,46 @@ class TestSwitchEntities:
             new_callable=PropertyMock,
             return_value=0.01,
         ):
-            await hass.services.async_call(
-                "switch",
-                "turn_on",
-                {"entity_id": entity_id},
-                blocking=True,
-            )
-            assert hass.states.get(entity_id).state == STATE_ON
+            scheduled_auto_off: Callable[[], None] | None = None
+            auto_off_handle = MagicMock()
+            original_call_later = hass.loop.call_later
 
-            coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+            def capture_auto_off(
+                delay: float,
+                callback: Callable[..., None],
+                *args: object,
+            ) -> object:
+                nonlocal scheduled_auto_off
+                if getattr(callback, "__name__", "") == "auto_off_callback":
+                    scheduled_auto_off = lambda: callback(*args)
+                    return auto_off_handle
+                return original_call_later(delay, callback, *args)
 
-            with pytest.raises(RuntimeError, match="boom"):
+            with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
                 await hass.services.async_call(
                     "switch",
-                    "turn_off",
+                    "turn_on",
                     {"entity_id": entity_id},
                     blocking=True,
                 )
+                assert hass.states.get(entity_id).state == STATE_ON
 
-            assert hass.states.get(entity_id).state == STATE_ON
+                coordinator.async_execute_controller_command = AsyncMock(
+                    side_effect=RuntimeError("boom")
+                )
 
-            await asyncio.sleep(0.05)
+                with pytest.raises(RuntimeError, match="boom"):
+                    await hass.services.async_call(
+                        "switch",
+                        "turn_off",
+                        {"entity_id": entity_id},
+                        blocking=True,
+                    )
+
+                assert hass.states.get(entity_id).state == STATE_ON
+
+            assert scheduled_auto_off is not None
+            scheduled_auto_off()
             await hass.async_block_till_done()
 
         assert hass.states.get(entity_id).state == STATE_OFF

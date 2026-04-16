@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
@@ -601,13 +602,18 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="only supports one configured device"):
+        with pytest.raises(
+            ServiceValidationError, match="only supports one configured device"
+        ) as err:
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_GENERATE_SUPPORT_BUNDLE,
                 {"device_id": [device_id, "other-device-id"]},
                 blocking=True,
             )
+
+        assert err.value.translation_domain == DOMAIN
+        assert err.value.translation_key == "multiple_device_targets_not_supported"
 
     async def test_goto_preset_service(
         self,
@@ -1073,6 +1079,36 @@ class TestServices:
         coordinator.async_seek_position.assert_awaited_once()
         assert coordinator.async_seek_position.await_args.kwargs["position_key"] == "back"
         assert coordinator.async_seek_position.await_args.kwargs["target_angle"] == 75
+
+    async def test_reverie_get_max_angle_uses_protocol_specific_back_limit(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Reverie back/head validation should match the 60-degree protocol limit."""
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Reverie Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:34",
+                CONF_NAME: "Reverie Service Bed",
+                CONF_BED_TYPE: BED_TYPE_REVERIE,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BACK_MAX_ANGLE: 80.0,
+            },
+            unique_id="AA:BB:CC:DD:EE:34",
+            entry_id="reverie_service_entry",
+        )
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        assert coordinator.get_max_angle("back") == 60.0
+        assert coordinator.get_max_angle("head") == 60.0
+        assert coordinator.get_max_angle("legs") == 45.0
 
     async def test_set_position_service_rejects_targets_above_configured_back_max_angle(
         self,

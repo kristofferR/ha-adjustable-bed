@@ -1041,6 +1041,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 raise ServiceValidationError(
                     "Support bundle generation only supports one configured device at a time. "
                     "Select a single device or use target_address for an unconfigured bed.",
+                    translation_domain=DOMAIN,
+                    translation_key="multiple_device_targets_not_supported",
                 )
             selected_device_id = device_ids[0]
             target = _get_support_bundle_target_from_device(hass, selected_device_id)

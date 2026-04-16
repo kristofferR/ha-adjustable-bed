@@ -78,6 +78,7 @@ CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
 DEFAULT_LEGS_MAX_ANGLE: Final = 45.0
+REVERIE_BACK_MAX_ANGLE: Final = 60.0
 
 # Position mode values
 POSITION_MODE_SPEED: Final = "speed"
