@@ -30,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
+    CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -579,6 +580,35 @@ class TestServices:
         assert kwargs["coordinator"] is None
         mock_save_support_bundle.assert_called_once()
 
+    async def test_generate_support_bundle_service_rejects_multiple_device_targets(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Support bundle generation should fail fast instead of silently ignoring extra devices."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(ServiceValidationError, match="only supports one configured device"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_GENERATE_SUPPORT_BUNDLE,
+                {"device_id": [device_id, "other-device-id"]},
+                blocking=True,
+            )
+
     async def test_goto_preset_service(
         self,
         hass: HomeAssistant,
@@ -979,6 +1009,132 @@ class TestServices:
         )
 
         assert coordinator.async_seek_position.await_count == 2
+
+    async def test_set_position_service_uses_configured_back_max_angle(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Standard set_position validation should honor configured back/head calibration."""
+        from homeassistant.helpers import device_registry as dr
+
+        from custom_components.adjustable_bed import _async_register_services
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Calibrated Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:32",
+                CONF_NAME: "Calibrated Service Bed",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BACK_MAX_ANGLE: 80.0,
+            },
+            unique_id="AA:BB:CC:DD:EE:32",
+            entry_id="calibrated_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, entry.unique_id)},
+            name=entry.title,
+        )
+
+        coordinator = MagicMock()
+        coordinator.controller = MagicMock()
+        coordinator.name = entry.title
+        coordinator.disable_angle_sensing = False
+        coordinator.get_max_angle.side_effect = lambda motor: {
+            "back": 80.0,
+            "head": 80.0,
+            "legs": 45.0,
+            "feet": 45.0,
+        }[motor]
+        coordinator.async_seek_position = AsyncMock()
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+        await _async_register_services(hass)
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device.id],
+                "motor": "back",
+                "position": 75,
+            },
+            blocking=True,
+        )
+
+        coordinator.async_seek_position.assert_awaited_once()
+        assert coordinator.async_seek_position.await_args.kwargs["position_key"] == "back"
+        assert coordinator.async_seek_position.await_args.kwargs["target_angle"] == 75
+
+    async def test_set_position_service_rejects_targets_above_configured_back_max_angle(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Standard set_position validation should reject targets above configured calibration."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+        from homeassistant.helpers import device_registry as dr
+
+        from custom_components.adjustable_bed import _async_register_services
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Tight Calibration Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:33",
+                CONF_NAME: "Tight Calibration Service Bed",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BACK_MAX_ANGLE: 50.0,
+            },
+            unique_id="AA:BB:CC:DD:EE:33",
+            entry_id="tight_calibration_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, entry.unique_id)},
+            name=entry.title,
+        )
+
+        coordinator = MagicMock()
+        coordinator.controller = MagicMock()
+        coordinator.name = entry.title
+        coordinator.disable_angle_sensing = False
+        coordinator.get_max_angle.side_effect = lambda motor: {
+            "back": 50.0,
+            "head": 50.0,
+            "legs": 45.0,
+            "feet": 45.0,
+        }[motor]
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+        await _async_register_services(hass)
+
+        with pytest.raises(ServiceValidationError, match=r"Valid range: 0-50.0°"):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {
+                    "device_id": [device.id],
+                    "motor": "back",
+                    "position": 60,
+                },
+                blocking=True,
+            )
 
     async def test_set_position_service_rejects_kaidi_head_and_feet(
         self,

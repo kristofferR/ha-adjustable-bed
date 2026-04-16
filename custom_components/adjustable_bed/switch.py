@@ -252,9 +252,6 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self._coordinator.name,
         )
 
-        # Cancel any pending auto-off timer since we're manually turning off
-        self._cancel_auto_off_timer()
-
         try:
             _LOGGER.debug("Sending turn off command for %s", self.entity_description.key)
             await self._coordinator.async_execute_controller_command(
@@ -264,6 +261,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             # Only update assumed state if controller supports discrete on/off
             # Toggle-only controllers can't reliably track state
             if self._supports_discrete_control():
+                # Cancel any pending auto-off timer only after the command succeeds.
+                # If transport fails, keep the timer so HA can still reflect the
+                # hardware-enforced auto-off when it happens.
+                self._cancel_auto_off_timer()
                 self._attr_is_on = False
                 self.async_write_ha_state()
             else:

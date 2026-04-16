@@ -127,6 +127,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         default_rgb = (
             getattr(controller, "default_light_rgb_color", None) if controller is not None else None
         )
+        self._supports_discrete_light_control = bool(
+            getattr(controller, "supports_discrete_light_control", False)
+            if controller is not None
+            else False
+        )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
         self._attr_is_on = False
         if self._attr_color_mode == ColorMode.RGBW:
@@ -199,11 +204,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn the light off using the controller's light-off semantics."""
         del kwargs
 
-        controller = self._coordinator.controller
-        if controller is None:
-            return
-
-        if not self._attr_is_on and not getattr(controller, "supports_discrete_light_control", False):
+        if not self._attr_is_on and not self._supports_discrete_light_control:
             _LOGGER.debug(
                 "Skipping toggle-based light off for %s because HA already believes it is off",
                 self._coordinator.name,
