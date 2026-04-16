@@ -24,6 +24,7 @@ try:
 except ImportError:
     # Older bleak-retry-connector versions may not expose this helper.
     close_stale_connections_by_address = None
+
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -124,9 +125,9 @@ from .const import (
     RICHMAT_REMOTE_AUTO,
     get_richmat_features,
     get_richmat_motor_count,
-    passive_position_reconciliation_default_enabled,
     requires_pairing,
     resolve_richmat_remote_code,
+    passive_position_reconciliation_default_enabled,
 )
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
@@ -717,6 +718,18 @@ class AdjustableBedCoordinator:
         async with self._lock:
             return await self._async_connect_locked()
 
+    def _uses_persistent_connection(self) -> bool:
+        """Return True when this controller should stay connected indefinitely."""
+        return self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+
+    def _disconnect_after_operation_enabled(self) -> bool:
+        """Return True when commands should disconnect immediately after completion."""
+        return self._disconnect_after_command and not self._uses_persistent_connection()
+
+    def _auto_reconnect_enabled(self) -> bool:
+        """Return True when unexpected disconnects should schedule a reconnect timer."""
+        return not self._uses_persistent_connection()
+
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Connect to the bed (must hold lock)."""
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
@@ -1002,6 +1015,7 @@ class AdjustableBedCoordinator:
                     and not self._ble_bond_established
                     and self._pairing_supported is not False
                 )
+                keep_connecting_through_startup = self._uses_persistent_connection()
                 if use_pairing:
                     _LOGGER.info(
                         "Pairing enabled for %s (bed type: %s, variant: %s) - "
@@ -1086,7 +1100,8 @@ class AdjustableBedCoordinator:
                             raise
                         raise
                 finally:
-                    self._connecting = False
+                    if not keep_connecting_through_startup:
+                        self._connecting = False
                     # Don't notify here - the connect success/failure paths will notify
 
                 # Determine which adapter was actually used for connection
@@ -1157,6 +1172,7 @@ class AdjustableBedCoordinator:
                         "Connection to %s dropped during post-connect stabilisation",
                         self._address,
                     )
+                    self._connecting = False
                     self._connection_attempt_details.append(attempt_details)
                     continue
 
@@ -1302,6 +1318,13 @@ class AdjustableBedCoordinator:
                 self._controller_state_refresh_completed = False
                 _LOGGER.debug("Controller created successfully")
 
+                if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
+                    # Older BAM/MCR firmware is sensitive to idle time between
+                    # the BLE connect, notify subscribe, and init/query frames.
+                    await self.async_start_notify()
+                    if hasattr(self._controller, "query_config"):
+                        await self._controller.query_config()
+
                 if (
                     self._bed_type == BED_TYPE_VIBRADORM
                     and not self._disable_angle_sensing
@@ -1323,8 +1346,10 @@ class AdjustableBedCoordinator:
 
                 self._refresh_passive_position_reconciliation_schedule()
 
-                # Start position notifications (no-op if angle sensing disabled)
-                await self.async_start_notify()
+                # Start position notifications (no-op if angle sensing disabled).
+                # Sleep Number MCR performs its notify+init startup earlier.
+                if self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR:
+                    await self.async_start_notify()
 
                 # For Octo beds: discover features and handle PIN if needed
                 if self._bed_type == BED_TYPE_OCTO:
@@ -1337,13 +1362,16 @@ class AdjustableBedCoordinator:
                         await self._controller.start_keepalive()  # type: ignore[attr-defined]
 
                 # Beds with connect-time feature discovery/state hydration.
-                if self._bed_type in {
-                    BED_TYPE_JENSEN,
-                    BED_TYPE_SLEEP_NUMBER,
-                    BED_TYPE_SLEEP_NUMBER_MCR,
-                }:
-                    if hasattr(self._controller, "query_config"):
-                        await self._controller.query_config()
+                if (
+                    self._bed_type in {
+                        BED_TYPE_JENSEN,
+                        BED_TYPE_SLEEP_NUMBER,
+                        BED_TYPE_SLEEP_NUMBER_MCR,
+                    }
+                    and self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
+                    and hasattr(self._controller, "query_config")
+                ):
+                    await self._controller.query_config()
 
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
@@ -1354,13 +1382,38 @@ class AdjustableBedCoordinator:
                     self._ble_manufacturer = ble_manufacturer
                     self._ble_model = ble_model
 
-                if self._should_refresh_readable_light_state(force=True):
+                if (
+                    self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
+                    and self._should_refresh_readable_light_state(force=True)
+                ):
                     await self._async_refresh_readable_light_state()
+
+                if self._client is None or not self._client.is_connected:
+                    _LOGGER.warning(
+                        "Connection to %s dropped during controller startup",
+                        self._address,
+                    )
+                    self._connecting = False
+                    self._last_connection_error = "Connection dropped during controller startup"
+                    self._last_connection_error_type = ConnectionError.__name__
+                    attempt_details["total_elapsed_seconds"] = round(
+                        time.monotonic() - attempt_start, 3
+                    )
+                    attempt_details["result"] = "failed"
+                    attempt_details["error"] = self._last_connection_error
+                    attempt_details["error_type"] = self._last_connection_error_type
+                    attempt_details["error_category"] = "CONNECTION DROPPED"
+                    self._client = None
+                    self._controller = None
+                    self._notify_connection_state_change(False)
+                    self._connection_attempt_details.append(attempt_details)
+                    continue
 
                 if reset_timer:
                     self._reset_disconnect_timer()
 
                 # Store connection metadata for binary sensor
+                self._connecting = False
                 self._last_connected = datetime.now(UTC)
                 self._connection_source = actual_adapter
                 self._connection_rssi = adapter_result.rssi
@@ -1399,6 +1452,7 @@ class AdjustableBedCoordinator:
                         )
 
                 # Track connection error for diagnostics (issue #168)
+                self._connecting = False
                 self._last_connection_error = str(err)
                 self._last_connection_error_type = type(err).__name__
 
@@ -1428,10 +1482,12 @@ class AdjustableBedCoordinator:
                             type(disconnect_err).__name__,
                         )
                     self._client = None
+                    self._controller = None
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures
                 # Track connection error for diagnostics (issue #168)
+                self._connecting = False
                 self._last_connection_error = str(err)
                 self._last_connection_error_type = type(err).__name__
                 attempt_details["total_elapsed_seconds"] = round(
@@ -1468,6 +1524,7 @@ class AdjustableBedCoordinator:
                             type(disconnect_err).__name__,
                         )
                     self._client = None
+                    self._controller = None
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
 
@@ -1548,6 +1605,16 @@ class AdjustableBedCoordinator:
         self._cancel_disconnect_timer()
         self._notify_connection_state_change(False)
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
+
+        if not self._auto_reconnect_enabled():
+            _LOGGER.debug(
+                "Skipping auto-reconnect timer for persistent connection bed type %s",
+                self._bed_type,
+            )
+            if self._reconnect_timer is not None:
+                self._reconnect_timer.cancel()
+                self._reconnect_timer = None
+            return
 
         # Schedule automatic reconnection attempt
         # Cancel any existing reconnect timer first to prevent multiple concurrent reconnects
@@ -1825,6 +1892,14 @@ class AdjustableBedCoordinator:
 
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""
+        if self._uses_persistent_connection():
+            self._cancel_disconnect_timer()
+            _LOGGER.debug(
+                "Skipping idle disconnect timer for persistent connection on %s",
+                self._address,
+            )
+            return
+
         self._cancel_disconnect_timer()
         _LOGGER.debug(
             "Setting idle disconnect timer for %s (%d seconds)",
@@ -2024,7 +2099,7 @@ class AdjustableBedCoordinator:
             finally:
                 if self._client is not None and self._client.is_connected:
                     # Disconnect immediately if configured to do so
-                    if self._disconnect_after_command:
+                    if self._disconnect_after_operation_enabled():
                         _LOGGER.debug(
                             "Disconnecting after stop command (disconnect_after_command=True) for %s",
                             self._address,
@@ -2062,7 +2137,11 @@ class AdjustableBedCoordinator:
             return
 
         command_preempted = self._cancel_counter > entry_cancel_count
-        if self._disconnect_after_command and not skip_disconnect and not command_preempted:
+        if (
+            self._disconnect_after_operation_enabled()
+            and not skip_disconnect
+            and not command_preempted
+        ):
             _LOGGER.debug(
                 "Disconnecting after %s (disconnect_after_command=True) for %s",
                 operation_name,
@@ -2207,7 +2286,7 @@ class AdjustableBedCoordinator:
                 if (
                     self._client is not None
                     and self._client.is_connected
-                    and not self._disconnect_after_command
+                    and not self._disconnect_after_operation_enabled()
                 ):
                     self._reset_disconnect_timer()
                 raise
@@ -3050,7 +3129,7 @@ class AdjustableBedCoordinator:
 
             finally:
                 if self._client is not None and self._client.is_connected:
-                    if self._disconnect_after_command:
+                    if self._disconnect_after_operation_enabled():
                         _LOGGER.debug(
                             "Disconnecting after seek (disconnect_after_command=True) for %s",
                             self._address,

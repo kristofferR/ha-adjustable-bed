@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -76,7 +76,13 @@ async def async_setup_entry(
         if (
             description.key == "under_bed_lights"
             and controller is not None
-            and getattr(controller, "supports_light_color_control", False)
+            and (
+                getattr(controller, "supports_light_color_control", False)
+                or (
+                    coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+                    and getattr(controller, "supports_discrete_light_control", False)
+                )
+            )
         ):
             entity_id = registry.async_get_entity_id(
                 "switch",

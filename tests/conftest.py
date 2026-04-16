@@ -633,6 +633,14 @@ def mock_bluetooth_adapters() -> Generator[None]:
             "custom_components.adjustable_bed.coordinator.bluetooth.async_register_connection_params",
             create=True,  # Allow patching even if attribute doesn't exist
         ),
+        patch(
+            "homeassistant.components.bluetooth.async_setup",
+            new=AsyncMock(return_value=True),
+        ),
+        patch(
+            "homeassistant.components.bluetooth_adapters.async_setup",
+            new=AsyncMock(return_value=True),
+        ),
     ]
 
     for p in patches:

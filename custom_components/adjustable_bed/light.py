@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.light import (
@@ -14,12 +15,12 @@ from homeassistant.components.light import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DOMAIN
+from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
 
@@ -75,11 +76,24 @@ async def async_setup_entry(
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     controller = coordinator.controller
 
-    if controller is None or not getattr(controller, "supports_light_color_control", False):
+    if controller is None:
         _async_remove_stale_light_entity(hass, coordinator)
         return
 
-    async_add_entities([AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)])
+    if getattr(controller, "supports_light_color_control", False):
+        _async_remove_stale_switch_entity(hass, coordinator)
+        async_add_entities([AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)])
+        return
+
+    if (
+        coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+        and getattr(controller, "supports_discrete_light_control", False)
+    ):
+        _async_remove_stale_switch_entity(hass, coordinator)
+        async_add_entities([AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)])
+        return
+
+    _async_remove_stale_light_entity(hass, coordinator)
 
 
 def _async_remove_stale_light_entity(
@@ -89,6 +103,20 @@ def _async_remove_stale_light_entity(
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
         "light",
+        DOMAIN,
+        f"{coordinator.address}_{LIGHT_DESCRIPTION.key}",
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
+
+
+def _async_remove_stale_switch_entity(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Remove the legacy switch when a light entity owns under-bed lights."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "switch",
         DOMAIN,
         f"{coordinator.address}_{LIGHT_DESCRIPTION.key}",
     )
@@ -221,5 +249,68 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             raise NotImplementedError("Light off control not supported on this bed")
 
         await self._coordinator.async_execute_controller_command(_turn_off, cancel_running=False)
+        self._attr_is_on = False
+        self.async_write_ha_state()
+
+
+class AdjustableBedOnOffLight(AdjustableBedEntity, LightEntity):
+    """On/off under-bed light for BAM/MCR-style beds."""
+
+    entity_description: LightEntityDescription
+
+    _attr_color_mode = ColorMode.ONOFF
+    _attr_supported_color_modes = frozenset({ColorMode.ONOFF})
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: LightEntityDescription,
+    ) -> None:
+        """Initialize the on/off light."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._attr_is_on: bool | None = None
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to controller-state updates for the light."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up controller-state callback registration."""
+        if self._unregister_callback is not None:
+            self._unregister_callback()
+            self._unregister_callback = None
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Update state from controller light telemetry when available."""
+        if "under_bed_lights_on" not in state:
+            return
+        self._attr_is_on = bool(state["under_bed_lights_on"])
+        self.async_write_ha_state()
+
+    async def async_turn_on(self, **kwargs: object) -> None:
+        """Turn the under-bed light on."""
+        del kwargs
+        await self._coordinator.async_execute_controller_command(
+            lambda ctrl: ctrl.lights_on(),
+            cancel_running=False,
+        )
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: object) -> None:
+        """Turn the under-bed light off."""
+        del kwargs
+        await self._coordinator.async_execute_controller_command(
+            lambda ctrl: ctrl.lights_off(),
+            cancel_running=False,
+        )
         self._attr_is_on = False
         self.async_write_ha_state()

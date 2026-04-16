@@ -788,8 +788,13 @@ class TestServices:
         )
         entry.add_to_hass(hass)
 
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
 
         from homeassistant.helpers import device_registry as dr
 
@@ -870,8 +875,13 @@ class TestServices:
         )
         entry.add_to_hass(hass)
 
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
 
         from homeassistant.helpers import device_registry as dr
 
@@ -933,8 +943,11 @@ class TestServices:
         )
         entry.add_to_hass(hass)
 
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+        with patch(
+            "custom_components.adjustable_bed.AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
 
         from homeassistant.helpers import device_registry as dr
 
@@ -981,8 +994,11 @@ class TestServices:
         )
         entry.add_to_hass(hass)
 
-        await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
+        with patch(
+            "custom_components.adjustable_bed.AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
 
         from homeassistant.helpers import device_registry as dr
 
