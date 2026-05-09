@@ -1768,8 +1768,9 @@ class AdjustableBedCoordinator:
             self._address,
             interval_s,
         )
-        self._passive_position_reconciliation_task = self.hass.async_create_task(
-            self._async_passive_position_reconciliation_loop()
+        self._passive_position_reconciliation_task = self.hass.async_create_background_task(
+            self._async_passive_position_reconciliation_loop(),
+            name=f"adjustable_bed.passive_position_reconciliation[{self._address}]",
         )
 
     def _cancel_passive_position_reconciliation_task(self) -> None:
