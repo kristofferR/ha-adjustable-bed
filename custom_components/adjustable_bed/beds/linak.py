@@ -530,6 +530,7 @@ class LinakController(BedController):
                     repeat_count=1,
                     repeat_delay_ms=0,
                     cancel_event=cancel_event,
+                    log_errors=False,
                 )
             except BleakError as err:
                 if not self._is_authentication_window_error(err):

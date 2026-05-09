@@ -278,6 +278,7 @@ class BedController(ABC):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
         response: bool = True,
+        log_errors: bool = True,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -297,6 +298,9 @@ class BedController(ABC):
             response: Whether to wait for a write response from the device.
                      True = write-with-response (more reliable, slower) [default]
                      False = write-without-response (faster, less reliable)
+            log_errors: Whether to log BleakError failures at ERROR level.
+                     Set to False for callers that recover from expected errors
+                     (e.g. Linak's post-connect auth-window probes).
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -362,11 +366,19 @@ class BedController(ABC):
                 async with self._ble_lock:
                     await client.write_gatt_char(char_uuid, command, response=response)
             except BleakError:
-                _LOGGER.exception(
-                    "Failed to write command %s to %s",
-                    command.hex(),
-                    char_uuid,
-                )
+                if log_errors:
+                    _LOGGER.exception(
+                        "Failed to write command %s to %s",
+                        command.hex(),
+                        char_uuid,
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Suppressed write failure for %s to %s",
+                        command.hex(),
+                        char_uuid,
+                        exc_info=True,
+                    )
                 raise
 
             if i < repeat_count - 1:
