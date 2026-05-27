@@ -32,6 +32,7 @@
 **Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b` (OKIN Primary Service)
 **Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
 **Format:** 7-byte commands: `5A 01 03 10 30 [XX] A5`
+**Write Mode:** write without response
 
 **Note:** Nectar beds share the Okin service UUID with Okimat but use a **7-byte command format** (vs Okimat's 6-byte format). This means commands are not interchangeable - if your bed is detected as the wrong type, change it in integration settings.
 
@@ -73,7 +74,11 @@
 
 ## Detection
 
-Detected by device name containing: `nectar` (case-insensitive) AND Okin service UUID present
+Detected by device name containing: `nectar` (case-insensitive) AND Okin service UUID present.
+
+Some Nectar bases advertise only as `OKIN-XXXXXX`. Those names are ambiguous
+with classic Okimat controllers, so setup prompts for the Okin-family protocol.
+Choose `Nectar` for the 7-byte protocol.
 
 Or manually configured with bed type: `nectar`
 
@@ -88,6 +93,6 @@ Nectar is part of the [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-prot
 ## Notes
 
 - Nectar beds share the Okin service UUID with Okimat beds but use a different command protocol
-- Detection requires both the "nectar" device name AND the Okin service UUID to avoid false positives
+- Generic `OKIN-XXXXXX` names require user confirmation because several Okin protocols share the same advertised UUID
 - Massage control is global (no separate head/foot control)
 - Lights have separate on/off commands (no toggle)

@@ -55,7 +55,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Okimat](beds/okimat.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
 | [Okin 64-bit](beds/sleepys.md#box24-protocol-7-byte-packets) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
-| [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name contains "nectar" |
+| [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` without response | ❌ No | Name contains "nectar" or generic `OKIN-*` disambiguation |
 | [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
 | [Mattress Firm 900](beds/mattressfirm.md) | 7-byte (32-bit cmd) | Nordic UART | ❌ No | Name starts with "iflex" |
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
@@ -75,7 +75,8 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 1. Name contains "nectar" → Nectar
 2. Name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt Okin
 3. Name contains "okimat", "okin rf", or "okin ble" → Okimat
-4. Fallback → Okimat (with warning logged)
+4. Name starts with `OKIN-` → prompt for Okin-family protocol (confirmed Nectar bases can advertise this way)
+5. Fallback → Okimat (with warning logged)
 
 ---
 

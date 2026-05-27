@@ -202,6 +202,13 @@ class TestOkinNordicController:
 
         mock_client.reset_mock()
 
+        # Test massage toggle (variants with modes use the shared 0x5A toggle).
+        await controller.massage_toggle()
+        assert mock_client.write_gatt_char.called
+        assert mock_client.write_gatt_char.call_args_list[0][0][1] == _cmd(0x5A)
+
+        mock_client.reset_mock()
+
         # Test massage intensity up (Nordic: byte 4 = 0x40, byte 5 = 0x60)
         await controller.massage_intensity_up()
         assert mock_client.write_gatt_char.called

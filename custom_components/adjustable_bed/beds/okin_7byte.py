@@ -60,20 +60,23 @@ class Okin7ByteConfig:
     massage_up_byte: int = 0
     massage_down_byte: int = 0
     extra_massage_modes: tuple[int, ...] = ()
-    massage_stop_byte: int = 0
+    massage_off_byte: int = 0x5A
     lights_off_repeat: int = 1
     supports_tv: bool = False
+    write_with_response: bool = True
+    init_write_with_response: bool = True
 
 
 # Standard Okin 7-byte variant (Nectar beds)
 OKIN_7BYTE_CONFIG = Okin7ByteConfig(
     char_uuid=NECTAR_WRITE_CHAR_UUID,
-    lumbar_up_byte=0x06,
-    lounge_byte=0x12,
+    lumbar_up_byte=0x04,
+    lounge_byte=0x11,
     tv_byte=0x11,
     memory_1_byte=0x1A,
     memory_2_byte=0x1B,
     supports_tv=True,
+    write_with_response=False,
 )
 
 # Nordic UART variant (Mattress Firm 900 / iFlex)
@@ -92,7 +95,7 @@ OKIN_NORDIC_CONFIG = Okin7ByteConfig(
     massage_up_byte=0x60,  # Note: byte 4 is 0x40 for these, see _cmd_massage_intensity
     massage_down_byte=0x63,
     extra_massage_modes=(0x52, 0x53, 0x54),  # MASSAGE_1, MASSAGE_2, MASSAGE_3
-    massage_stop_byte=0x6F,
+    massage_off_byte=0x6F,
     lights_off_repeat=3,
     supports_tv=True,
 )
@@ -198,7 +201,9 @@ class Okin7ByteController(BedController):
                 for init_cmd in self._config.init_commands:
                     async with self._ble_lock:
                         await self.client.write_gatt_char(
-                            self._config.char_uuid, init_cmd, response=True
+                            self._config.char_uuid,
+                            init_cmd,
+                            response=self._config.init_write_with_response,
                         )
                     await asyncio.sleep(0.1)
                 self._initialized = True
@@ -212,6 +217,7 @@ class Okin7ByteController(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=self._config.write_with_response,
         )
 
     async def _send_stop(self) -> None:
@@ -336,8 +342,11 @@ class Okin7ByteController(BedController):
 
     # Massage controls
     async def massage_toggle(self) -> None:
-        """Toggle massage on/off."""
-        await self.write_command(_cmd(0x5A))
+        """Toggle or start massage based on protocol variant."""
+        if self._config.extra_massage_modes:
+            await self.write_command(_cmd(0x5A))
+        else:
+            await self.massage_on()
 
     async def massage_on(self) -> None:
         """Turn massage on."""
@@ -349,7 +358,7 @@ class Okin7ByteController(BedController):
 
     async def massage_off(self) -> None:
         """Turn massage off."""
-        await self.write_command(_cmd(0x6F))
+        await self.write_command(_cmd(self._config.massage_off_byte))
 
     async def massage_mode_step(self) -> None:
         """Step through massage modes (wave pattern)."""

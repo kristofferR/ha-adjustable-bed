@@ -115,6 +115,7 @@ from .const import (
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
     OKIN_FFE_NAME_PATTERNS,
+    OKIN_GENERIC_NAME_PATTERNS,
     OKIN_ORE_SERVICE_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
@@ -964,11 +965,34 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_OKIMAT, confidence=0.9, signals=signals)
 
+        # Generic OKIN-XXXXXX names are not enough to pick a protocol. They can
+        # be classic Okimat 6-byte devices or Nectar-style 7-byte bases.
+        if any(device_name.startswith(pattern) for pattern in OKIN_GENERIC_NAME_PATTERNS):
+            signals.append("name:okin_generic")
+            _LOGGER.warning(
+                "Generic OKIN device name '%s' at %s uses shared Okin UUID. "
+                "Prompting for protocol because this can be Okimat, Nectar, or another Okin variant.",
+                service_info.name,
+                service_info.address,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_OKIMAT,
+                confidence=0.6,
+                signals=signals,
+                ambiguous_types=[
+                    BED_TYPE_NECTAR,
+                    BED_TYPE_LEGGETT_OKIN,
+                    BED_TYPE_OKIN_64BIT,
+                    BED_TYPE_OKIN_CST,
+                ],
+                requires_characteristic_check=True,
+            )
+
         # Fallback: default to Okimat with warning about ambiguity
         # This UUID is shared by Okimat, Leggett Okin, OKIN 64-bit, and OKIN CST
         _LOGGER.warning(
             "Okin UUID detected but device name '%s' at %s doesn't match known patterns. "
-            "Defaulting to Okimat. Change to Leggett & Platt, OKIN 64-bit, or OKIN CST in settings if needed.",
+            "Defaulting to Okimat. Change to Nectar, Leggett & Platt, OKIN 64-bit, or OKIN CST in settings if needed.",
             service_info.name,
             service_info.address,
         )
@@ -976,7 +1000,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             bed_type=BED_TYPE_OKIMAT,
             confidence=0.5,
             signals=signals,
-            ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
+            ambiguous_types=[
+                BED_TYPE_NECTAR,
+                BED_TYPE_LEGGETT_OKIN,
+                BED_TYPE_OKIN_64BIT,
+                BED_TYPE_OKIN_CST,
+            ],
             requires_characteristic_check=True,
         )
 

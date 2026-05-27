@@ -1261,6 +1261,32 @@ class TestUserFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "manual"
 
+    async def test_user_flow_select_ambiguous_okin_device_shows_disambiguation(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Selecting an ambiguous discovered device should use the focused chooser."""
+        del enable_custom_integrations
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[mock_bluetooth_service_info_ambiguous_okin],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: mock_bluetooth_service_info_ambiguous_okin.address},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+
     async def test_user_flow_retrying_device_aborts_with_support_bundle_instructions(
         self,
         hass: HomeAssistant,

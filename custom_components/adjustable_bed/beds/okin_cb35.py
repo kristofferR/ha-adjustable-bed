@@ -67,9 +67,11 @@ OKIN_CB35_CONFIG = Okin7ByteConfig(
     massage_up_byte=0x60,
     massage_down_byte=0x61,
     extra_massage_modes=(0x52, 0x53, 0x54),
-    massage_stop_byte=0x6F,
+    massage_off_byte=0x6F,
     lights_off_repeat=3,
     supports_tv=True,
+    write_with_response=False,
+    init_write_with_response=False,
 )
 
 
@@ -114,7 +116,9 @@ class OkinCB35Controller(Okin7ByteController):
                 for init_cmd in self._config.init_commands:
                     async with self._ble_lock:
                         await self.client.write_gatt_char(
-                            self._config.char_uuid, init_cmd, response=False
+                            self._config.char_uuid,
+                            init_cmd,
+                            response=self._config.init_write_with_response,
                         )
                     await asyncio.sleep(0.1)
                 self._initialized = True
@@ -127,8 +131,8 @@ class OkinCB35Controller(Okin7ByteController):
             command,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
+            cancel_event=effective_cancel,
+            response=self._config.write_with_response,
         )
 
     # ─── Extra capability properties ──────────────────────────────────
