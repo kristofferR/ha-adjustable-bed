@@ -166,6 +166,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
         """Prepare the focused bed-type chooser for an ambiguous detection."""
+        self._disambiguation_types = None
+        self._disambiguated_bed_type = None
+        self._show_full_bed_type_list = False
+
         bed_type = detection_result.bed_type
         if (
             bed_type is None
@@ -176,7 +180,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         seen: set[str] = set()
         disambiguation_types: list[str] = []
-        for candidate in [bed_type] + list(detection_result.ambiguous_types):
+        for candidate in (bed_type, *detection_result.ambiguous_types):
             if candidate not in seen:
                 seen.add(candidate)
                 disambiguation_types.append(candidate)

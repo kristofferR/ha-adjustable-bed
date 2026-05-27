@@ -342,8 +342,11 @@ class Okin7ByteController(BedController):
 
     # Massage controls
     async def massage_toggle(self) -> None:
-        """Start massage using the closest command exposed by this protocol."""
-        await self.massage_on()
+        """Toggle or start massage based on protocol variant."""
+        if self._config.extra_massage_modes:
+            await self.write_command(_cmd(0x5A))
+        else:
+            await self.massage_on()
 
     async def massage_on(self) -> None:
         """Turn massage on."""

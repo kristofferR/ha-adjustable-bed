@@ -1268,6 +1268,8 @@ class TestUserFlow:
         enable_custom_integrations,
     ):
         """Selecting an ambiguous discovered device should use the focused chooser."""
+        del enable_custom_integrations
+
         with patch(
             "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
             return_value=[mock_bluetooth_service_info_ambiguous_okin],

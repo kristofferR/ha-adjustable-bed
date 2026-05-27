@@ -116,7 +116,9 @@ class OkinCB35Controller(Okin7ByteController):
                 for init_cmd in self._config.init_commands:
                     async with self._ble_lock:
                         await self.client.write_gatt_char(
-                            self._config.char_uuid, init_cmd, response=False
+                            self._config.char_uuid,
+                            init_cmd,
+                            response=self._config.init_write_with_response,
                         )
                     await asyncio.sleep(0.1)
                 self._initialized = True
@@ -130,7 +132,7 @@ class OkinCB35Controller(Okin7ByteController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
-            response=False,
+            response=self._config.write_with_response,
         )
 
     # ─── Extra capability properties ──────────────────────────────────

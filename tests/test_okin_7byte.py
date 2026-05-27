@@ -268,6 +268,8 @@ class TestOkin7ByteMovement:
         mock_coordinator_connected,
     ):
         """Nectar commands should use write-without-response."""
+        del mock_coordinator_connected
+
         coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -361,6 +363,8 @@ class TestOkin7ByteMassage:
         mock_coordinator_connected,
     ):
         """The exposed massage toggle button should send the verified on command."""
+        del mock_coordinator_connected
+
         coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -378,6 +382,8 @@ class TestOkin7ByteMassage:
         mock_coordinator_connected,
     ):
         """Nectar massage off is 0x5A; 0x6F was captured as no-op."""
+        del mock_coordinator_connected
+
         coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
