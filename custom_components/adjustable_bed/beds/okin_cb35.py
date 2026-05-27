@@ -131,7 +131,7 @@ class OkinCB35Controller(Okin7ByteController):
             command,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
+            cancel_event=effective_cancel,
             response=self._config.write_with_response,
         )
 
