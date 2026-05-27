@@ -67,9 +67,11 @@ OKIN_CB35_CONFIG = Okin7ByteConfig(
     massage_up_byte=0x60,
     massage_down_byte=0x61,
     extra_massage_modes=(0x52, 0x53, 0x54),
-    massage_stop_byte=0x6F,
+    massage_off_byte=0x6F,
     lights_off_repeat=3,
     supports_tv=True,
+    write_with_response=False,
+    init_write_with_response=False,
 )
 
 

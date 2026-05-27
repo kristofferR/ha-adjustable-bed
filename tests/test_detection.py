@@ -660,6 +660,19 @@ class TestOkinUUIDDisambiguation:
         )
         assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
 
+    def test_okin_uuid_with_generic_okin_prefix_is_ambiguous(self):
+        """Generic OKIN-* names should not be hard-forced to Okimat."""
+        service_info = _make_service_info(
+            name="OKIN-441954",
+            service_uuids=[OKIMAT_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_OKIMAT
+        assert result.confidence == 0.6
+        assert result.requires_characteristic_check is True
+        assert "name:okin_generic" in result.signals
+        assert BED_TYPE_NECTAR in result.ambiguous_types
+
     def test_okin_uuid_defaults_to_okimat(self):
         """Test OKIN UUID defaults to Okimat with low confidence for unknown name."""
         service_info = _make_service_info(
@@ -670,6 +683,7 @@ class TestOkinUUIDDisambiguation:
         assert result.bed_type == BED_TYPE_OKIMAT
         assert result.confidence == 0.5
         assert result.requires_characteristic_check is True
+        assert BED_TYPE_NECTAR in result.ambiguous_types
 
 
 class TestFFE5UUIDDisambiguation:

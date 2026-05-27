@@ -9,7 +9,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okin_7byte import (
     OKIN_7BYTE_CONFIG,
-    Okin7ByteController,
     _cmd,
 )
 from custom_components.adjustable_bed.const import (
@@ -23,7 +22,6 @@ from custom_components.adjustable_bed.const import (
     NECTAR_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -107,12 +105,16 @@ class TestOkin7ByteCommands:
         assert _cmd(0x74)[5] == 0x74  # LIGHT_OFF
 
     def test_config_lumbar_up_byte(self):
-        """7-byte config should use 0x06 for lumbar up."""
-        assert OKIN_7BYTE_CONFIG.lumbar_up_byte == 0x06
+        """7-byte config should use the verified Nectar lumbar-up byte."""
+        assert OKIN_7BYTE_CONFIG.lumbar_up_byte == 0x04
 
     def test_config_lounge_byte(self):
-        """7-byte config should use 0x12 for lounge."""
-        assert OKIN_7BYTE_CONFIG.lounge_byte == 0x12
+        """7-byte config should use the verified Nectar TV/lounge byte."""
+        assert OKIN_7BYTE_CONFIG.lounge_byte == 0x11
+
+    def test_config_uses_write_without_response(self):
+        """Nectar traffic uses ATT write command / no response."""
+        assert OKIN_7BYTE_CONFIG.write_with_response is False
 
 
 # -----------------------------------------------------------------------------
@@ -257,7 +259,23 @@ class TestOkin7ByteMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert first_call_data == _cmd(0x06)
+        assert first_call_data == _cmd(0x04)
+
+    async def test_move_head_up_writes_without_response(
+        self,
+        hass: HomeAssistant,
+        mock_okin_7byte_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Nectar commands should use write-without-response."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.move_head_up()
+
+        first_call = mock_client.write_gatt_char.call_args_list[0]
+        assert first_call.kwargs["response"] is False
 
     async def test_stop_all_sends_stop_command(
         self,
@@ -331,6 +349,44 @@ class TestOkin7BytePresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert first_call_data == _cmd(0x13)
+
+
+class TestOkin7ByteMassage:
+    """Test Okin 7-byte massage commands."""
+
+    async def test_massage_toggle_starts_massage(
+        self,
+        hass: HomeAssistant,
+        mock_okin_7byte_config_entry,
+        mock_coordinator_connected,
+    ):
+        """The exposed massage toggle button should send the verified on command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.massage_toggle()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert call_data == _cmd(0x58)
+
+    async def test_massage_off_sends_verified_off_command(
+        self,
+        hass: HomeAssistant,
+        mock_okin_7byte_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Nectar massage off is 0x5A; 0x6F was captured as no-op."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_7byte_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+
+        await coordinator.controller.massage_off()
+
+        calls = mock_client.write_gatt_char.call_args_list
+        call_data = calls[0][0][1]
+        assert call_data == _cmd(0x5A)
 
 
 class TestOkin7ByteLights:

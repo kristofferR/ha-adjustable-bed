@@ -88,11 +88,12 @@ from .const import (
     RICHMAT_REMOTES,
     SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
+    DetectionResult,
     get_richmat_features,
-    passive_position_reconciliation_default_enabled,
-    supports_passive_position_reconciliation,
     get_richmat_motor_count,
+    passive_position_reconciliation_default_enabled,
     requires_pairing,
+    supports_passive_position_reconciliation,
 )
 from .detection import (
     BED_TYPE_DISPLAY_NAMES,
@@ -162,6 +163,25 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._show_full_bed_type_list: bool = False
         self._retrying_devices: dict[str, tuple[ConfigEntry, BluetoothServiceInfoBleak | None]] = {}
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
+
+    def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
+        """Prepare the focused bed-type chooser for an ambiguous detection."""
+        bed_type = detection_result.bed_type
+        if (
+            bed_type is None
+            or detection_result.confidence >= 0.7
+            or not detection_result.ambiguous_types
+        ):
+            return False
+
+        seen: set[str] = set()
+        disambiguation_types: list[str] = []
+        for candidate in [bed_type] + list(detection_result.ambiguous_types):
+            if candidate not in seen:
+                seen.add(candidate)
+                disambiguation_types.append(candidate)
+        self._disambiguation_types = disambiguation_types
+        return True
 
     async def _get_config_translation(self, key: str, default: str) -> str:
         """Return a config-flow translation with a safe English fallback."""
@@ -386,15 +406,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self.context["title_placeholders"] = {"name": discovery_info.name or discovery_info.address}
 
         # Check if disambiguation is needed (low confidence with alternatives)
-        if detection_result.confidence < 0.7 and detection_result.ambiguous_types:
-            # Build list of all candidate types (detected + alternatives), deduplicated
-            seen: set[str] = set()
-            disambiguation_types: list[str] = []
-            for t in [bed_type] + list(detection_result.ambiguous_types):
-                if t not in seen:
-                    seen.add(t)
-                    disambiguation_types.append(t)
-            self._disambiguation_types = disambiguation_types
+        if self._prepare_disambiguation(detection_result):
             _LOGGER.debug(
                 "Ambiguous detection for %s - showing disambiguation UI with options: %s",
                 discovery_info.address,
@@ -474,6 +486,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Use disambiguated type if user selected one, otherwise use detected type
         bed_type = self._disambiguated_bed_type or detected_bed_type
         errors: dict[str, str] = {}
+
+        if (
+            user_input is None
+            and self._disambiguated_bed_type is None
+            and not self._show_full_bed_type_list
+            and self._prepare_disambiguation(detection_result)
+        ):
+            _LOGGER.debug(
+                "Ambiguous detection for %s - showing disambiguation UI with options: %s",
+                self._discovery_info.address,
+                self._disambiguation_types,
+            )
+            return await self.async_step_bluetooth_disambiguate()
 
         if user_input is not None:
             # Get user-selected bed type (may differ from auto-detected)
