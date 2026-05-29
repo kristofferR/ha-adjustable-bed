@@ -984,6 +984,24 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_LEGGETT_OKIN, confidence=0.9, signals=signals)
 
+        # Receiver names are still ambiguous even after the shared OKIN service
+        # appears, because Okimat, CST, 64-bit, and Leggett Okin can share it.
+        if any(pattern in device_name for pattern in OKIMAT_NAME_ONLY_PATTERNS):
+            signals.append("name:okin_receiver")
+            _LOGGER.warning(
+                "OKIN receiver name '%s' at %s uses shared Okin UUID. "
+                "Prompting for protocol because this can be Okimat, CST, or another Okin variant.",
+                service_info.name,
+                service_info.address,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_OKIN_UUID,
+                confidence=0.6,
+                signals=signals,
+                ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
+                requires_characteristic_check=True,
+            )
+
         # Check for Okimat-specific name patterns
         if any(pattern in device_name for pattern in OKIMAT_NAME_PATTERNS):
             signals.append("name:okimat")

@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
@@ -55,6 +56,7 @@ from custom_components.adjustable_bed.const import (
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.kaidi_protocol import (
@@ -116,10 +118,11 @@ class TestPairingInstructions:
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions
 
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST])
     async def test_okin_pairing_instructions_use_receiver_button(
-        self, hass: HomeAssistant
+        self, hass: HomeAssistant, bed_type: str
     ) -> None:
-        """Okin UUID beds should show receiver/control-box pairing guidance."""
+        """Okin UUID/CST beds should show receiver/control-box pairing guidance."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
 
@@ -137,7 +140,7 @@ class TestPairingInstructions:
                 }
             ),
         ):
-            instructions = await flow._get_pairing_instructions(BED_TYPE_OKIN_UUID)
+            instructions = await flow._get_pairing_instructions(bed_type)
 
         assert "OKIN receiver/control box" in instructions
         assert "receiver pairing button" in instructions
@@ -841,6 +844,44 @@ class TestBluetoothDiscoveryFlow:
         # Should create entry with the disambiguated type
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
+
+    async def test_bluetooth_disambiguate_okin_cst_requires_pairing(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Selecting Okin CST from an ambiguous receiver should continue to pairing."""
+        del enable_custom_integrations
+
+        assert requires_pairing(BED_TYPE_OKIN_CST)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": BED_TYPE_OKIN_CST},
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "My CST Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_pairing"
 
 
 class TestManualFlow:

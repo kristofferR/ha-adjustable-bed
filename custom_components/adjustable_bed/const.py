@@ -598,9 +598,10 @@ MALOUF_LEGACY_OKIN_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34
 # Detection priority: name patterns first, then UUID fallback to Okimat
 LEGGETT_OKIN_NAME_PATTERNS: Final = ("leggett", "l&p")
 LEGGETT_RICHMAT_NAME_PATTERNS: Final = ("mlrm",)  # MlRM prefix beds
-# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN-Receiver" /
-# "OKIN - Receiver", "OKIN luis", or "Smartbed" (Malouf/Lucid/CVB beds
-# using OKIN protocol).
+# Okimat devices: "Okimat", "OKIN RF", "OKIN BLE", "OKIN luis", or
+# "Smartbed" (Malouf/Lucid/CVB beds using OKIN protocol).
+# "OKIN-Receiver" / "OKIN - Receiver" stays in OKIMAT_NAME_ONLY_PATTERNS
+# because the shared OKIN service UUID does not disambiguate the protocol.
 # Generic "OKIN-XXXXXX" names are ambiguous: confirmed Nectar 7-byte bases can
 # advertise this way too, so detection handles that prefix as low-confidence.
 OKIMAT_NAME_PATTERNS: Final = (
@@ -608,9 +609,6 @@ OKIMAT_NAME_PATTERNS: Final = (
     "okin rf",
     "okin ble",
     "okin luis",
-    "okin-receiver",
-    "okin - receiver",
-    "okin receiver",
     "smartbed",
 )
 # Name-only matches must stay narrower than OKIMAT_NAME_PATTERNS because some
@@ -1497,6 +1495,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 # These beds use encrypted connections and must be paired at the OS level
 BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,

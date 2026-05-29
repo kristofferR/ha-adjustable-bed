@@ -74,9 +74,10 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 **Detection priority** (for beds with Okin service UUID):
 1. Name contains "nectar" → Nectar
 2. Name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt Okin
-3. Name contains "okimat", "okin rf", "okin ble", "okin-receiver", or "okin - receiver" → Okimat/Okin UUID
+3. Name contains "okimat", "okin rf", or "okin ble" → Okimat
 4. Name starts with `OKIN-` → prompt for Okin-family protocol (confirmed Nectar bases can advertise this way)
-5. Fallback → Okimat (with warning logged)
+5. Name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
+6. Fallback → Okimat (with warning logged)
 
 ---
 
@@ -114,7 +115,8 @@ These beds have their own dedicated integrations:
    - `DPG*` or `Desk*` → Linak
    - `Mouselet*` → Kaidi
    - `Nectar*` → Nectar
-   - `Okimat*`, `Okin RF*`, `Okin BLE*`, `OKIN-Receiver`, `OKIN - Receiver` → Okimat/Okin UUID
+   - `Okimat*`, `Okin RF*`, `Okin BLE*` → Okimat/Okin UUID
+   - `OKIN-Receiver`, `OKIN - Receiver` → prompted Okin-family protocol selection
    - `Leggett*`, `L&P*`, `Adjustable Base*` → Leggett & Platt
    - `Ergomotion*` or `Ergo*` → Keeson/Ergomotion
    - `KSBT03*` or `KSBT04*` → Keeson KSBT (includes some Ergomotion Sync beds such as Rio 6.0)

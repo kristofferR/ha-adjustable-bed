@@ -44,6 +44,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
@@ -208,6 +209,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         if bed_type in {
             BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_UUID,
             BED_TYPE_LEGGETT_OKIN,
             BED_TYPE_LEGGETT_PLATT,

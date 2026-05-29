@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -695,6 +696,22 @@ class TestOkinUUIDDisambiguation:
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
+
+    @pytest.mark.parametrize("name", ["OKIN-Receiver", "OKIN - Receiver"])
+    def test_okin_uuid_with_receiver_name_is_ambiguous(self, name: str):
+        """Receiver names should not become high-confidence Okimat after pairing."""
+        service_info = _make_service_info(
+            name=name,
+            service_uuids=[OKIMAT_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_UUID
+        assert result.confidence == 0.6
+        assert result.requires_characteristic_check is True
+        assert "uuid:okin" in result.signals
+        assert "name:okin_receiver" in result.signals
+        assert BED_TYPE_OKIN_CST in result.ambiguous_types
 
     def test_okin_uuid_with_generic_okin_prefix_is_ambiguous(self):
         """Generic OKIN-* names should not be hard-forced to Okimat."""
