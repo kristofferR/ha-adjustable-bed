@@ -23,7 +23,11 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    OKIMAT_VARIANT_80608,
     OKIMAT_VARIANT_82417,
+    OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_89138,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
@@ -190,6 +194,46 @@ class TestOkinUuidController:
 
         # Controller should use 82417 as default
         assert coordinator.controller._variant == OKIMAT_VARIANT_82417
+
+    def test_rf_liteline_89138_uses_apk_profile(self):
+        """Test FurniMove remote 89138 uses the RF-LITELINE/07 profile."""
+        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_89138]
+        reference = OKIN_UUID_REMOTES[OKIMAT_VARIANT_88875]
+
+        assert remote.name == "RF-LITELINE/07"
+        assert remote.flat == reference.flat == 0x100000AA
+        assert remote.back_up == reference.back_up == 0x1
+        assert remote.back_down == reference.back_down == 0x2
+        assert remote.legs_up == reference.legs_up == 0x4
+        assert remote.legs_down == reference.legs_down == 0x8
+
+    @pytest.mark.parametrize(
+        ("variant", "reference"),
+        [
+            ("76688", OKIMAT_VARIANT_80608),
+            ("78375", OKIMAT_VARIANT_80608),
+            ("80599", OKIMAT_VARIANT_80608),
+            ("82620", OKIMAT_VARIANT_82417),
+            ("83489", OKIMAT_VARIANT_82417),
+            ("92461", OKIMAT_VARIANT_82417),
+            ("85058", OKIMAT_VARIANT_82418),
+            ("93306", OKIMAT_VARIANT_82418),
+            ("91246", OKIMAT_VARIANT_94238),
+            ("92591", OKIMAT_VARIANT_94238),
+        ],
+    )
+    def test_apk_csv_aliases_use_known_command_profiles(self, variant, reference):
+        """Test FurniMove CSV aliases map to the matching supported command profile."""
+        remote = OKIN_UUID_REMOTES[variant]
+        reference_remote = OKIN_UUID_REMOTES[reference]
+
+        assert remote.flat == reference_remote.flat
+        assert remote.back_up == reference_remote.back_up
+        assert remote.back_down == reference_remote.back_down
+        assert remote.legs_up == reference_remote.legs_up
+        assert remote.legs_down == reference_remote.legs_down
+        assert remote.memory_1 == reference_remote.memory_1
+        assert remote.memory_2 == reference_remote.memory_2
 
     async def test_write_command(
         self,

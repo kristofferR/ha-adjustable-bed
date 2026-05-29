@@ -79,17 +79,16 @@ Okimat is the fallback for beds using the Okin service UUID. Detection priority:
 
 Different Okimat remotes have varying capabilities. The remote code is typically printed on the remote or controller.
 
-| Remote Code | Model | Motors | Memory Slots |
-|-------------|-------|--------|--------------|
-| 80608 | RFS ELLIPSE | Back, Legs | None |
-| 82417 | RF TOPLINE | Back, Legs | None |
-| 82418 | RF TOPLINE | Back, Legs | 2 |
-| 88875 | RF LITELINE | Back, Legs | None |
-| 91244 | RF-FLASHLINE | Back, Legs | None |
-| 92471 | RF TOPLINE | Back, Legs | 2 |
+| Remote Code(s) | Model | Motors | Memory Slots |
+|----------------|-------|--------|--------------|
+| 76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616 | RFS-ELLIPSE/06 | Back, Legs | None |
+| 82417, 82620, 82757, 82760, 82764, 82767, 82770, 83358, 83462, 83489, 84931, 84963, 92461, 93305 | RF-TOPLINE basic | Back, Legs | None |
+| 82418, 85058, 92471, 93306 | RF-TOPLINE/11 | Back, Legs | 2 |
+| 88875, 88877, 89137, 89138, 89139, 92535 | RF-LITELINE/07 | Back, Legs | None |
+| 91244 | RF-FLASHLINE/07 | Back, Legs | None |
+| 91246, 92591, 94238 | RF-FLASHLINE/09 | Back, Legs | 2 |
 | 93329 | RF TOPLINE | Head, Back, Legs | 4 |
 | 93332 | RF TOPLINE | Head, Back, Legs, Feet | 2 |
-| 94238 | RF FLASHLINE | Back, Legs | 2 |
 
 ## Commands (32-bit Values)
 
@@ -104,11 +103,11 @@ Different Okimat remotes have varying capabilities. The remote code is typically
 | Head Down | `0x00000020` | 93329, 93332 | Lower head (tilt) |
 | Feet Up | `0x00000040` | 93332 | Raise feet |
 | Feet Down | `0x00000020` | 93332 | Lower feet |
-| Memory 1 | `0x00001000` | 82418, 93329, 93332, 94238 | Go to memory 1 |
-| Memory 2 | `0x00002000` | 82418, 93329, 93332, 94238 | Go to memory 2 |
+| Memory 1 | `0x00001000` | 82418, 85058, 91246, 92471, 92591, 93306, 93329, 93332, 94238 | Go to memory 1 |
+| Memory 2 | `0x00002000` | 82418, 85058, 91246, 92471, 92591, 93306, 93329, 93332, 94238 | Go to memory 2 |
 | Memory 3 | `0x00004000` | 93329 | Go to memory 3 |
 | Memory 4 | `0x00008000` | 93329 | Go to memory 4 |
-| Memory Save | `0x00010000` | 82418, 93329, 93332, 94238 | Save current position |
+| Memory Save | `0x00010000` | 82418, 85058, 91246, 92471, 92591, 93306, 93329, 93332, 94238 | Save current position |
 | Toggle Lights | `0x00020000` | All | Toggle under-bed lights |
 
 **Note:** On remote 93332, Head Down and Feet Down share the same command value (`0x00000020`). This is intentional per the [smartbed-mqtt reference implementation](https://github.com/richardhopton/smartbed-mqtt) - the remote hardware maps this single command to different motor functions.
@@ -119,10 +118,10 @@ Different remotes use different values for the Flat preset:
 
 | Flat Value | Remotes |
 |------------|---------|
-| `0x000000aa` | 82417, 82418, 93332 |
+| `0x000000aa` | 82417, 82418, 82620, 82757, 82760, 82764, 82767, 82770, 83358, 83462, 83489, 84931, 84963, 85058, 92461, 92471, 93305, 93306, 93332 |
 | `0x0000002a` | 93329 |
-| `0x10000000` | 94238 |
-| `0x100000aa` | 80608, 88875, 91244 |
+| `0x10000000` | 91246, 92591, 94238 |
+| `0x100000aa` | 76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616, 88875, 88877, 89137, 89138, 89139, 91244, 92535 |
 
 ## Position Feedback
 

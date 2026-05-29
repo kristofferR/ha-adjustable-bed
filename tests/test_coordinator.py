@@ -1620,6 +1620,61 @@ class TestCoordinatorWriteCommand:
             with pytest.raises(ConnectionError):
                 await coordinator.async_write_command(bytes([0x01, 0x00]))
 
+    async def test_execute_controller_command_auth_failure_clears_bond_marker(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Command-time GATT auth failures should force a fresh pairing attempt next time."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_auth_failure_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+
+        async def _auth_failure_command(_controller):
+            raise BleakError(
+                "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+                "handle=19 error=5 description=Insufficient authentication"
+            )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as mock_create_issue,
+            patch.object(
+                coordinator,
+                "async_disconnect",
+                new_callable=AsyncMock,
+            ) as mock_disconnect,
+            pytest.raises(BleakError),
+        ):
+            await coordinator.async_execute_controller_command(
+                _auth_failure_command,
+                cancel_running=False,
+            )
+
+        assert coordinator._ble_bond_established is False
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        mock_create_issue.assert_awaited_once_with(hass, TEST_ADDRESS, TEST_NAME)
+        mock_disconnect.assert_awaited_once_with(reason="authentication_failed")
+
 
 class TestCoordinatorNotifications:
     """Test coordinator notification handling."""

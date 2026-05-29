@@ -207,15 +207,14 @@ Okimat beds use different remote codes that determine available features and com
 | Variant | Remote Model | Motors |
 |---------|--------------|--------|
 | **Auto** | Auto-detect (tries 82417 first) | Varies |
-| **80608** | RFS ELLIPSE | Back, Legs |
-| **82417** | RF TOPLINE | Back, Legs |
-| **82418** | RF TOPLINE | Back, Legs, 2 Memory |
-| **88875** | RF LITELINE | Back, Legs |
-| **91244** | RF-FLASHLINE | Back, Legs |
+| **76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616** | RFS-ELLIPSE/06 | Back, Legs |
+| **82417, 82620, 82757, 82760, 82764, 82767, 82770, 83358, 83462, 83489, 84931, 84963, 92461, 93305** | RF-TOPLINE basic | Back, Legs |
+| **82418, 85058, 92471, 93306** | RF-TOPLINE/11 | Back, Legs, 2 Memory |
+| **88875, 88877, 89137, 89138, 89139, 92535** | RF-LITELINE/07 | Back, Legs |
+| **91244** | RF-FLASHLINE/07 | Back, Legs |
+| **91246, 92591, 94238** | RF-FLASHLINE/09 | Back, Legs, 2 Memory |
 | **93329** | RF TOPLINE | Head, Back, Legs, 4 Memory |
 | **93332** | RF TOPLINE | Head, Back, Legs, Feet, 2 Memory |
-| **94238** | RF FLASHLINE | Back, Legs, 2 Memory |
-| **92471** | RF TOPLINE | Back, Legs, 2 Memory |
 
 ---
 

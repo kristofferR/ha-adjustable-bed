@@ -15,15 +15,15 @@ Leggett & Platt Okin variant and Nectar beds. Detection uses device name pattern
 distinguish between these bed types. See okin_protocol.py for shared protocol details.
 
 Supported remote codes (configured via variant):
-- 80608: RFS ELLIPSE (Back, Legs)
-- 82417: RF TOPLINE (Back, Legs)
-- 82418: RF TOPLINE (Back, Legs, 2 Memory)
-- 88875: RF LITELINE (Back, Legs)
-- 91244: RF-FLASHLINE (Back, Legs)
-- 92471: RF TOPLINE (Back, Legs)
+- RFS-ELLIPSE/06: 76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616
+- RF-TOPLINE basic: 82417, 82620, 82757, 82760, 82764, 82767, 82770, 83358,
+  83462, 83489, 84931, 84963, 92461, 93305
+- RF-TOPLINE/11: 82418, 85058, 92471, 93306
+- RF-LITELINE/07: 88875, 88877, 89137, 89138, 89139, 92535
+- RF-FLASHLINE/07: 91244
+- RF-FLASHLINE/09: 91246, 92591, 94238
 - 93329: RF TOPLINE (Head, Back, Legs, 4 Memory)
 - 93332: RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)
-- 94238: RF FLASHLINE (Back, Legs, 2 Memory)
 
 Reference: https://github.com/richardhopton/smartbed-mqtt
 """
@@ -40,12 +40,41 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    OKIMAT_VARIANT_76688,
+    OKIMAT_VARIANT_78375,
+    OKIMAT_VARIANT_78378,
+    OKIMAT_VARIANT_78386,
+    OKIMAT_VARIANT_80599,
+    OKIMAT_VARIANT_80602,
     OKIMAT_VARIANT_80608,
+    OKIMAT_VARIANT_80616,
     OKIMAT_VARIANT_82417,
     OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_82620,
+    OKIMAT_VARIANT_82757,
+    OKIMAT_VARIANT_82760,
+    OKIMAT_VARIANT_82764,
+    OKIMAT_VARIANT_82767,
+    OKIMAT_VARIANT_82770,
+    OKIMAT_VARIANT_83358,
+    OKIMAT_VARIANT_83462,
+    OKIMAT_VARIANT_83489,
+    OKIMAT_VARIANT_84931,
+    OKIMAT_VARIANT_84963,
+    OKIMAT_VARIANT_85058,
     OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_88877,
+    OKIMAT_VARIANT_89137,
+    OKIMAT_VARIANT_89138,
+    OKIMAT_VARIANT_89139,
     OKIMAT_VARIANT_91244,
+    OKIMAT_VARIANT_91246,
+    OKIMAT_VARIANT_92461,
     OKIMAT_VARIANT_92471,
+    OKIMAT_VARIANT_92535,
+    OKIMAT_VARIANT_92591,
+    OKIMAT_VARIANT_93305,
+    OKIMAT_VARIANT_93306,
     OKIMAT_VARIANT_93329,
     OKIMAT_VARIANT_93332,
     OKIMAT_VARIANT_94238,
@@ -104,38 +133,112 @@ class OkinUuidRemoteConfig:
     toggle_lights: int | OkinUuidComplexCommand = 0x20000  # UBL (under-bed lights)
 
 
+def _rfs_ellipse_06_config() -> OkinUuidRemoteConfig:
+    """Return the RFS-ELLIPSE/06 two-motor command profile."""
+    return OkinUuidRemoteConfig(
+        name="RFS-ELLIPSE/06",
+        flat=0x100000AA,
+    )
+
+
+def _rf_topline_basic_config() -> OkinUuidRemoteConfig:
+    """Return the RF-TOPLINE two-motor no-memory command profile."""
+    return OkinUuidRemoteConfig(
+        name="RF-TOPLINE basic",
+        flat=0x000000AA,
+    )
+
+
+def _rf_topline_11_config() -> OkinUuidRemoteConfig:
+    """Return the RF-TOPLINE/11 two-motor memory command profile."""
+    return OkinUuidRemoteConfig(
+        name="RF-TOPLINE/11",
+        flat=0x000000AA,
+        memory_1=0x1000,
+        memory_2=0x2000,
+        memory_save=0x10000,
+    )
+
+
+def _rf_liteline_07_config() -> OkinUuidRemoteConfig:
+    """Return the RF-LITELINE/07 two-motor command profile."""
+    return OkinUuidRemoteConfig(
+        name="RF-LITELINE/07",
+        flat=0x100000AA,
+    )
+
+
+def _rf_flashline_09_config() -> OkinUuidRemoteConfig:
+    """Return the RF-FLASHLINE/09 two-motor memory command profile."""
+    return OkinUuidRemoteConfig(
+        name="RF-FLASHLINE/09",
+        flat=0x10000000,
+        memory_1=0x1000,
+        memory_2=0x2000,
+        memory_save=OkinUuidComplexCommand(data=0x10000, count=25, wait_time=200),
+        toggle_lights=OkinUuidComplexCommand(data=0x20000, count=50, wait_time=100),
+    )
+
+
+_RFS_ELLIPSE_06_VARIANTS = (
+    OKIMAT_VARIANT_76688,
+    OKIMAT_VARIANT_78375,
+    OKIMAT_VARIANT_78378,
+    OKIMAT_VARIANT_78386,
+    OKIMAT_VARIANT_80599,
+    OKIMAT_VARIANT_80602,
+    OKIMAT_VARIANT_80608,
+    OKIMAT_VARIANT_80616,
+)
+_RF_TOPLINE_BASIC_VARIANTS = (
+    OKIMAT_VARIANT_82417,
+    OKIMAT_VARIANT_82620,
+    OKIMAT_VARIANT_82757,
+    OKIMAT_VARIANT_82760,
+    OKIMAT_VARIANT_82764,
+    OKIMAT_VARIANT_82767,
+    OKIMAT_VARIANT_82770,
+    OKIMAT_VARIANT_83358,
+    OKIMAT_VARIANT_83462,
+    OKIMAT_VARIANT_83489,
+    OKIMAT_VARIANT_84931,
+    OKIMAT_VARIANT_84963,
+    OKIMAT_VARIANT_92461,
+    OKIMAT_VARIANT_93305,
+)
+_RF_TOPLINE_11_VARIANTS = (
+    OKIMAT_VARIANT_82418,
+    OKIMAT_VARIANT_85058,
+    OKIMAT_VARIANT_92471,
+    OKIMAT_VARIANT_93306,
+)
+_RF_LITELINE_07_VARIANTS = (
+    OKIMAT_VARIANT_88875,
+    OKIMAT_VARIANT_88877,
+    OKIMAT_VARIANT_89137,
+    OKIMAT_VARIANT_89138,
+    OKIMAT_VARIANT_89139,
+    OKIMAT_VARIANT_92535,
+)
+_RF_FLASHLINE_09_VARIANTS = (
+    OKIMAT_VARIANT_91246,
+    OKIMAT_VARIANT_92591,
+    OKIMAT_VARIANT_94238,
+)
+
+
 # Remote configurations based on smartbed-mqtt supportedRemotes.ts
+# Additional aliases come from the FurniMove 2.0.1 handsetlist.csv capability matrix.
 OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
-    OKIMAT_VARIANT_80608: OkinUuidRemoteConfig(
-        name="RFS ELLIPSE",
-        flat=0x100000AA,
-    ),
-    OKIMAT_VARIANT_82417: OkinUuidRemoteConfig(
-        name="RF TOPLINE",
-        flat=0x000000AA,
-    ),
-    OKIMAT_VARIANT_82418: OkinUuidRemoteConfig(
-        name="RF TOPLINE",
-        flat=0x000000AA,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=0x10000,
-    ),
-    OKIMAT_VARIANT_88875: OkinUuidRemoteConfig(
-        name="RF LITELINE",
-        flat=0x100000AA,
-    ),
+    **{variant: _rfs_ellipse_06_config() for variant in _RFS_ELLIPSE_06_VARIANTS},
+    **{variant: _rf_topline_basic_config() for variant in _RF_TOPLINE_BASIC_VARIANTS},
+    **{variant: _rf_topline_11_config() for variant in _RF_TOPLINE_11_VARIANTS},
+    **{variant: _rf_liteline_07_config() for variant in _RF_LITELINE_07_VARIANTS},
     OKIMAT_VARIANT_91244: OkinUuidRemoteConfig(
-        name="RF-FLASHLINE",
+        name="RF-FLASHLINE/07",
         flat=0x100000AA,
     ),
-    OKIMAT_VARIANT_92471: OkinUuidRemoteConfig(
-        name="RF TOPLINE",
-        flat=0x000000AA,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=0x10000,
-    ),
+    **{variant: _rf_flashline_09_config() for variant in _RF_FLASHLINE_09_VARIANTS},
     OKIMAT_VARIANT_93329: OkinUuidRemoteConfig(
         name="RF TOPLINE",
         flat=0x0000002A,
@@ -158,14 +261,6 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
         memory_2=0x2000,
         memory_save=0x10000,
     ),
-    OKIMAT_VARIANT_94238: OkinUuidRemoteConfig(
-        name="RF FLASHLINE",
-        flat=0x10000000,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=OkinUuidComplexCommand(data=0x10000, count=25, wait_time=200),
-        toggle_lights=OkinUuidComplexCommand(data=0x20000, count=50, wait_time=100),
-    ),
 }
 
 # Default remote for auto-detect (most common/basic)
@@ -179,8 +274,9 @@ class OkinUuidController(BedController):
     The pairing must be done through the coordinator during connection.
 
     Different remote codes have different capabilities:
-    - Basic remotes (80608, 82417, 88875, 91244): Back and Legs motors only
-    - Memory remotes (82418, 94238): Back, Legs + 2 memory presets
+    - Basic remotes: Back and Legs motors only
+    - Memory remotes (82418, 85058, 91246, 92471, 92591, 93306, 94238):
+      Back, Legs + 2 memory presets
     - Advanced remotes (93329): Head, Back, Legs + 4 memory presets
     - Full remotes (93332): Head, Back, Legs, Feet + 2 memory presets
     """
