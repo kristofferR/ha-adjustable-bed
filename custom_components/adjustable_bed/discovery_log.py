@@ -15,6 +15,7 @@ See: https://github.com/kristofferR/ha-adjustable-bed/discussions/342
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, TypedDict
 
@@ -57,6 +58,9 @@ class DiscoveryLog:
         """Initialise the backing store (loaded lazily on first use)."""
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._entries: list[DiscoveryLogEntry] | None = None
+        # Serialises concurrent async_record() calls so an interleaved
+        # load/mutate/save cannot drop an append.
+        self._write_lock = asyncio.Lock()
 
     async def _async_ensure_loaded(self) -> list[DiscoveryLogEntry]:
         """Load entries from disk on first access, then keep them in memory."""
@@ -82,28 +86,29 @@ class DiscoveryLog:
         Records are deduped by MAC so that a single device re-advertising cannot
         flood the log and the most recent detection always wins.
         """
-        entries = await self._async_ensure_loaded()
         normalized = address.upper()
-        entries = [entry for entry in entries if entry.get("address") != normalized]
-        entries.append(
-            DiscoveryLogEntry(
-                detected_at=dt_util.utcnow().isoformat(),
-                address=normalized,
-                name=name,
-                service_uuids=list(service_uuids),
-                manufacturer_data={
-                    f"0x{company_id:04X}": bytes(value).hex()
-                    for company_id, value in (manufacturer_data or {}).items()
-                },
-                bed_type=bed_type,
-                confidence=round(confidence, 3),
-                signals=list(signals),
+        async with self._write_lock:
+            entries = await self._async_ensure_loaded()
+            entries = [entry for entry in entries if entry.get("address") != normalized]
+            entries.append(
+                DiscoveryLogEntry(
+                    detected_at=dt_util.utcnow().isoformat(),
+                    address=normalized,
+                    name=name,
+                    service_uuids=list(service_uuids),
+                    manufacturer_data={
+                        f"0x{company_id:04X}": bytes(value).hex()
+                        for company_id, value in (manufacturer_data or {}).items()
+                    },
+                    bed_type=bed_type,
+                    confidence=round(confidence, 3),
+                    signals=list(signals),
+                )
             )
-        )
-        if len(entries) > MAX_ENTRIES:
-            entries = entries[-MAX_ENTRIES:]
-        self._entries = entries
-        await self._store.async_save({"entries": entries})
+            if len(entries) > MAX_ENTRIES:
+                entries = entries[-MAX_ENTRIES:]
+            self._entries = entries
+            await self._store.async_save({"entries": entries})
         _LOGGER.debug(
             "Recorded auto-detection of %s as %s (confidence %.2f); log holds %d device(s)",
             normalized,

@@ -2121,12 +2121,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ] = TextSelector(TextSelectorConfig())
 
         if user_input is not None:
-            # The discovery toggle is global, not per-entry: persist it to the
-            # shared store and drop it so it is never written into entry data.
+            # The discovery toggle is global, not per-entry: pull it out of
+            # user_input now so it is never written into entry data, but only
+            # persist it on the success path below - otherwise a later
+            # validation failure would partially apply the rejected form.
+            discovery_disabled_input: bool | None = None
             if CONF_DISABLE_DISCOVERY in user_input:
-                await async_set_discovery_disabled(
-                    self.hass, bool(user_input.pop(CONF_DISABLE_DISCOVERY))
-                )
+                discovery_disabled_input = bool(user_input.pop(CONF_DISABLE_DISCOVERY))
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):
@@ -2193,6 +2194,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
+            # All validations passed - now it is safe to commit global state.
+            if discovery_disabled_input is not None:
+                await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(

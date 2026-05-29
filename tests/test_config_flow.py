@@ -47,6 +47,7 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
@@ -1462,3 +1463,36 @@ class TestOptionsFlow:
         # Stored globally, not as per-entry data.
         assert await async_is_discovery_disabled(hass) is True
         assert CONF_DISABLE_DISCOVERY not in mock_config_entry.data
+
+    async def test_options_flow_toggle_not_applied_on_validation_error(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A rejected form must not partially apply the global discovery toggle."""
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        assert await async_is_discovery_disabled(hass) is False
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+            result = await hass.config_entries.options.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_DISABLE_DISCOVERY: True,
+                    CONF_MOTOR_PULSE_COUNT: "not-a-number",
+                },
+            )
+
+        # Form is rejected for the invalid number...
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]
+        # ...and the discovery toggle was NOT persisted.
+        assert await async_is_discovery_disabled(hass) is False
