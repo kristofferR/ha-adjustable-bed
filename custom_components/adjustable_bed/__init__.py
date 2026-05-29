@@ -81,6 +81,7 @@ TIMED_MOVE_MOTOR_OPTIONS = (
     "tilt",
     "lumbar",
     "bed_height",
+    "stair",
 )
 
 # Default capture duration for diagnostics (seconds)

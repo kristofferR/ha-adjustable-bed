@@ -486,6 +486,9 @@
       "bed_height": {
         "name": "Bed Height"
       },
+      "stair": {
+        "name": "Stair"
+      },
       "keeson_back": {
         "name": "Back"
       },
@@ -709,7 +712,7 @@
         },
         "motor": {
           "name": "Motor",
-          "description": "The motor to move (back, legs, head, or feet)."
+          "description": "The motor to move (back, legs, head, feet, or stair)."
         },
         "direction": {
           "name": "Direction",

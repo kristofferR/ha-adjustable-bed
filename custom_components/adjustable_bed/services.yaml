@@ -120,6 +120,8 @@ timed_move:
               value: lumbar
             - label: Bed Height
               value: bed_height
+            - label: Stair
+              value: stair
     direction:
       name: Direction
       description: Direction to move the motor.

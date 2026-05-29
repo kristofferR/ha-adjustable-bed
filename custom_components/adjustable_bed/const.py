@@ -104,6 +104,7 @@ BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
+BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
@@ -175,6 +176,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_WILINKE,
@@ -469,6 +471,11 @@ REVERIE_NIGHTSTAND_PRESETS_UUID: Final = "db8010d0-f324-29c3-38d1-85c0c2e86885"
 OKIMAT_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_WRITE_CHAR_UUID: Final = "62741525-52f9-8864-b1ab-3b3a8d65950b"
 OKIMAT_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
+
+# OKIN Smart Remote CSS service observed on RF ECO BT / MEGAMAT single-actuator devices
+OKIN_SMART_REMOTE_CSS_SERVICE_UUID: Final = "90311623-25fa-3346-12ef-3cfb7a2556ac"
+OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID: Final = "90311625-25fa-3346-12ef-3cfb7a2556ac"
+OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID: Final = "90311725-25fa-3346-12ef-3cfb7a2556ac"
 
 # OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
 # Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
@@ -1587,6 +1594,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
 BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,

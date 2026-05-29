@@ -32,7 +32,7 @@ from .const import (
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
-from .detection import detect_bed_type_detailed
+from .detection import detect_bed_type_detailed, detect_bed_type_from_gatt_services
 from .diagnostic_payloads import (
     format_mapping_payloads,
     format_payload,
@@ -246,7 +246,10 @@ class BLEDiagnosticRunner:
 
         end_time = datetime.now(UTC)
         best_snapshot = self._best_snapshot()
-        detection = self._build_detection_section(best_snapshot[0] if best_snapshot else None)
+        detection = self._build_detection_section(
+            best_snapshot[0] if best_snapshot else None,
+            services_info,
+        )
 
         adapter_details: dict[str, Any] = self.coordinator.adapter_details if self.coordinator else {}
         connection_history: dict[str, Any] = (
@@ -681,8 +684,25 @@ class BLEDiagnosticRunner:
             "readable_characteristics": sorted(readable_chars),
         }
 
-    def _build_detection_section(self, service_info: Any | None) -> dict[str, Any]:
+    def _build_detection_section(
+        self,
+        service_info: Any | None,
+        gatt_services: list[ServiceInfo] | None = None,
+    ) -> dict[str, Any]:
         """Build a detection reasoning section."""
+        gatt_detection = detect_bed_type_from_gatt_services(gatt_services)
+        if gatt_detection.bed_type is not None:
+            return {
+                "bed_type": gatt_detection.bed_type,
+                "confidence": gatt_detection.confidence,
+                "signals": list(gatt_detection.signals),
+                "ambiguous_types": list(gatt_detection.ambiguous_types or []),
+                "requires_characteristic_check": gatt_detection.requires_characteristic_check,
+                "detected_remote": gatt_detection.detected_remote,
+                "supported_match": gatt_detection.bed_type in SUPPORTED_BED_TYPES,
+                "manufacturer_id": gatt_detection.manufacturer_id,
+            }
+
         if service_info is None:
             return {
                 "bed_type": None,
@@ -963,4 +983,3 @@ class BLEDiagnosticRunner:
         if isinstance(value, (list, tuple, set)):
             return [self._serialize_value(item) for item in value]
         return str(value)
-

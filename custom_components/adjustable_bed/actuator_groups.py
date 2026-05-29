@@ -30,6 +30,7 @@ from .const import (
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -40,8 +41,8 @@ from .const import (
     BED_TYPE_SOLACE,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_SERTA,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_SERTA,
 )
 
 
@@ -235,6 +236,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "64-bit protocol",
                 "description": "OKIN actuators using 10-byte 64-bit commands",
                 "hint": "Try other variants first, use this if they don't work",
+            },
+            {
+                "type": BED_TYPE_OKIN_RF_ECO_BT,
+                "label": "Smart Remote / RF ECO BT single actuator",
+                "description": "Elda BTH, MEGAMAT MBZ, RF ECO BT staircase actuator",
+                "hint": "Device may advertise as OKIN-* with 62741525/90311625 GATT characteristics",
             },
         ],
     },

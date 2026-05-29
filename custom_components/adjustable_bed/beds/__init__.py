@@ -9,6 +9,7 @@ Protocol-based controllers:
 - Okin7ByteController: 7-byte via Okin service UUID
 - OkinNordicController: 7-byte via Nordic UART (Mattress Firm 900)
 - OkinCB35Controller: CB35 7-byte via Nordic UART (Sealy Posturematic)
+- OkinRfEcoBtController: OKIN Smart Remote single-actuator profile
 - LeggettGen2Controller: Leggett & Platt Gen2 ASCII protocol
 - LeggettOkinController: Leggett & Platt Okin binary protocol
 - LeggettWilinkeController: Leggett & Platt WiLinke 5-byte protocol
@@ -24,10 +25,10 @@ Brand-specific controllers:
 from .base import BedController
 from .coolbase import CoolBaseController
 from .jensen import JensenController
-from .kaidi import KaidiController
 
 # Brand-specific controllers (unchanged)
 from .jiecang import JiecangController
+from .kaidi import KaidiController
 from .keeson import KeesonController
 from .leggett_gen2 import LeggettGen2Controller
 from .leggett_okin import LeggettOkinController
@@ -46,6 +47,7 @@ from .okin_cst import OkinCstController
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
 from .okin_ore import OkinOreController
+from .okin_rf_eco_bt import OkinRfEcoBtController
 from .okin_uuid import OkinUuidController
 from .remacro import RemacroController
 from .reverie import ReverieController
@@ -53,10 +55,10 @@ from .reverie_nightstand import ReverieNightstandController
 from .richmat import RichmatController
 from .rondure import RondureController
 from .sbi import SBIController
-from .sleepys_box25 import SleepysBox25Controller
 from .scott_living import ScottLivingController
 from .sleep_number import SleepNumberController
 from .sleep_number_mcr import SleepNumberMcrController
+from .sleepys_box25 import SleepysBox25Controller
 from .solace import SolaceController
 from .suta import SutaController
 from .svane import SvaneController
@@ -72,6 +74,7 @@ __all__ = [
     "OkinCstController",
     "OkinHandleController",
     "OkinOreController",
+    "OkinRfEcoBtController",
     "OkinUuidController",
     "Okin7ByteController",
     "OkinNordicController",

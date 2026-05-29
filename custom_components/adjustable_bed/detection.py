@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.helpers.selector import SelectOptionDict
@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -116,9 +117,12 @@ from .const import (
     OKIMAT_NAME_PATTERNS,
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
     OKIN_FFE_NAME_PATTERNS,
     OKIN_GENERIC_NAME_PATTERNS,
     OKIN_ORE_SERVICE_UUID,
+    OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+    OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
@@ -349,6 +353,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
     BED_TYPE_OKIN_CST: "Okin CST (Rize MF900, 14-byte dual-field)",
+    BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2",
     BED_TYPE_LEGGETT_OKIN: "Leggett & Platt Okin (requires pairing)",
@@ -400,6 +405,63 @@ def get_bed_type_options() -> list[SelectOptionDict]:
             BED_TYPE_DISPLAY_NAMES.items(), key=lambda x: x[1].lower()
         )
     ]
+
+
+def _uuid_from_gatt_object(item: Any) -> str | None:
+    """Return a normalized UUID from a Bleak object, dataclass, or dict."""
+    uuid = item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None)
+    return str(uuid).lower() if uuid is not None else None
+
+
+def _characteristics_from_gatt_service(service: Any) -> list[Any]:
+    """Return characteristic-like objects from a Bleak service, dataclass, or dict."""
+    characteristics = (
+        service.get("characteristics")
+        if isinstance(service, dict)
+        else getattr(service, "characteristics", None)
+    )
+    return list(characteristics or [])
+
+
+def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
+    """Detect a bed/profile from connected GATT services.
+
+    This is intentionally limited to signatures that are not safe to infer from
+    advertisements alone. Generic OKIN names remain ambiguous until a connected
+    service/characteristic signature is available.
+    """
+    service_uuids: set[str] = set()
+    characteristic_uuids: set[str] = set()
+
+    for service in gatt_services or []:
+        if service_uuid := _uuid_from_gatt_object(service):
+            service_uuids.add(service_uuid)
+        for char in _characteristics_from_gatt_service(service):
+            if char_uuid := _uuid_from_gatt_object(char):
+                characteristic_uuids.add(char_uuid)
+
+    has_okin_uuid_write = (
+        OKIMAT_SERVICE_UUID.lower() in service_uuids
+        and OKIMAT_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+    has_smart_remote_css = (
+        OKIN_SMART_REMOTE_CSS_SERVICE_UUID.lower() in service_uuids
+        and OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+
+    if has_okin_uuid_write and has_smart_remote_css:
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIN_RF_ECO_BT,
+            confidence=0.9,
+            signals=[
+                "gatt_service:okin_uuid",
+                "gatt_char:okin_write",
+                "gatt_service:okin_smart_remote_css",
+                "gatt_char:okin_smart_remote_css_write",
+            ],
+        )
+
+    return DetectionResult(bed_type=None, confidence=0.0, signals=[])
 
 
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
@@ -905,7 +967,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             bed_type=BED_TYPE_OKIN_UUID,
             confidence=0.6,
             signals=signals,
-            ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
+            ambiguous_types=[
+                BED_TYPE_LEGGETT_OKIN,
+                BED_TYPE_OKIN_64BIT,
+                BED_TYPE_OKIN_CST,
+                BED_TYPE_OKIN_RF_ECO_BT,
+            ],
             requires_characteristic_check=True,
         )
 
@@ -998,7 +1065,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 bed_type=BED_TYPE_OKIN_UUID,
                 confidence=0.6,
                 signals=signals,
-                ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
+                ambiguous_types=[
+                    BED_TYPE_LEGGETT_OKIN,
+                    BED_TYPE_OKIN_64BIT,
+                    BED_TYPE_OKIN_CST,
+                    BED_TYPE_OKIN_RF_ECO_BT,
+                ],
                 requires_characteristic_check=True,
             )
 
@@ -1031,6 +1103,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     BED_TYPE_LEGGETT_OKIN,
                     BED_TYPE_OKIN_64BIT,
                     BED_TYPE_OKIN_CST,
+                    BED_TYPE_OKIN_RF_ECO_BT,
                 ],
                 requires_characteristic_check=True,
             )
@@ -1052,6 +1125,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 BED_TYPE_LEGGETT_OKIN,
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CST,
+                BED_TYPE_OKIN_RF_ECO_BT,
             ],
             requires_characteristic_check=True,
         )
@@ -1507,6 +1581,11 @@ async def detect_bed_type_by_characteristics(
         or None if the initial detection should be kept.
     """
     try:
+        gatt_detection = detect_bed_type_from_gatt_services(client.services)
+        if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+            _LOGGER.info("Refined detection: OKIN Smart Remote CSS signature found")
+            return BED_TYPE_OKIN_RF_ECO_BT
+
         # Build a set of all characteristic UUIDs for easy lookup
         all_chars: set[str] = set()
         for service in client.services:

@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
@@ -125,11 +126,14 @@ class TestPairingInstructions:
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions
 
-    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST])
+    @pytest.mark.parametrize(
+        "bed_type",
+        [BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT],
+    )
     async def test_okin_pairing_instructions_use_receiver_button(
         self, hass: HomeAssistant, bed_type: str
     ) -> None:
-        """Okin UUID/CST beds should show receiver/control-box pairing guidance."""
+        """Okin UUID/CST/RF ECO BT beds should show receiver pairing guidance."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
 
@@ -151,6 +155,10 @@ class TestPairingInstructions:
 
         assert "OKIN receiver/control box" in instructions
         assert "receiver pairing button" in instructions
+
+    async def test_okin_rf_eco_bt_requires_pairing(self) -> None:
+        """RF ECO BT should request BLE pairing before authenticated OKIN writes."""
+        assert requires_pairing(BED_TYPE_OKIN_RF_ECO_BT)
 
 
 class TestPairingPersistence:
