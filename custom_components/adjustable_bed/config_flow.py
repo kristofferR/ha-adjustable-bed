@@ -428,15 +428,22 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # false positive are lost once the discovery card is dismissed (HA only
         # persists the bare MAC for devices the user explicitly ignores).
         device_info = capture_device_info(discovery_info)
-        await async_get_discovery_log(self.hass).async_record(
-            address=device_info.address,
-            name=device_info.name,
-            service_uuids=device_info.service_uuids,
-            manufacturer_data=device_info.manufacturer_data,
-            bed_type=bed_type,
-            confidence=detection_result.confidence,
-            signals=detection_result.signals,
-        )
+        try:
+            await async_get_discovery_log(self.hass).async_record(
+                address=device_info.address,
+                name=device_info.name,
+                service_uuids=device_info.service_uuids,
+                manufacturer_data=device_info.manufacturer_data,
+                bed_type=bed_type,
+                confidence=detection_result.confidence,
+                signals=detection_result.signals,
+            )
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning(
+                "Failed to record auto-detection for %s: %s",
+                device_info.address,
+                err,
+            )
 
         self._discovery_info = discovery_info
         self.context["title_placeholders"] = {"name": discovery_info.name or discovery_info.address}

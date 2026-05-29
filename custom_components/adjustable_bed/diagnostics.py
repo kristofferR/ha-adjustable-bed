@@ -6,6 +6,7 @@ import sys
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
@@ -34,6 +35,26 @@ from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import redact_data
+
+
+def _normalize_ble_address(value: Any) -> str | None:
+    """Return a comparable BLE address string, if the value looks usable."""
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().upper().replace("-", ":")
+    return normalized or None
+
+
+def _config_entry_addresses(entry: ConfigEntry) -> set[str]:
+    """Return BLE addresses that are owned by this config entry."""
+    return {
+        address
+        for address in (
+            _normalize_ble_address(entry.data.get(CONF_ADDRESS)),
+            _normalize_ble_address(entry.unique_id),
+        )
+        if address is not None
+    }
 
 
 async def async_get_config_entry_diagnostics(
@@ -126,16 +147,18 @@ async def async_get_config_entry_diagnostics(
         if hasattr(service_info, "source"):
             advertisement_info["source"] = service_info.source
 
-    # Recent auto-detections across all devices (global, not entry-specific).
-    # Useful for diagnosing/reporting misidentified discoveries. "device_name"
-    # is used so the redactor keeps the name (the key debugging signal); the
-    # "address" key is still partially redacted to its OUI.
-    discovery_log = await async_get_discovery_log(hass).async_all()
+    # Include only auto-detections tied to this config entry. The backing log is
+    # global, so exposing it wholesale would leak unrelated nearby BLE devices.
+    entry_addresses = _config_entry_addresses(entry)
+    discovery_log = [
+        record
+        for record in await async_get_discovery_log(hass).async_all()
+        if _normalize_ble_address(record.get("address")) in entry_addresses
+    ]
     auto_discovery_log = [
         {
             "detected_at": record["detected_at"],
             "address": record["address"],
-            "device_name": record["name"],
             "service_uuids": record["service_uuids"],
             "manufacturer_data": record["manufacturer_data"],
             "bed_type": record["bed_type"],

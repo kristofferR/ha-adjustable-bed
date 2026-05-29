@@ -12,6 +12,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
+)
+from homeassistant.helpers.issue_registry import (
     async_get as async_get_issue_registry,
 )
 
@@ -123,7 +125,7 @@ Please provide the following information about your bed:
             uuid_str = "  None"
 
         signal_str = "\n".join(f"  - `{signal}`" for signal in signals) if signals else "  None"
-        confidence_pct = int(confidence * 100)
+        confidence_pct = round(confidence * 100)
 
         return f"""## Misidentified device
 
