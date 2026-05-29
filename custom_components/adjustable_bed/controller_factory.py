@@ -808,8 +808,15 @@ async def create_controller(
     if bed_type == BED_TYPE_COOLBASE:
         from .beds.coolbase import CoolBaseController
 
-        _LOGGER.debug("Using Cool Base controller")
-        return CoolBaseController(coordinator)
+        normalized_name = (device_name or "").lower()
+        dewert_okin_profile = normalized_name.startswith(("okin-ble", "btcb")) or (
+            (ble_manufacturer or "").strip().lower() == "dewertokin"
+        )
+        _LOGGER.debug(
+            "Using Cool Base controller (dewert_okin_profile=%s)",
+            dewert_okin_profile,
+        )
+        return CoolBaseController(coordinator, dewert_okin_profile=dewert_okin_profile)
 
     if bed_type == BED_TYPE_SCOTT_LIVING:
         from .beds.scott_living import ScottLivingController

@@ -8,6 +8,7 @@ Uses the same FFE0/FFE5 service UUIDs as Keeson BaseI5 with 8-byte command packe
 Unique features:
 - Left/Right fan control with 3 speed levels (0-3)
 - Sync fan mode for both sides
+- DewertOKIN OKIN-BLE compatibility profile with a second memory slot
 """
 
 from __future__ import annotations
@@ -47,6 +48,7 @@ class CoolBaseCommands:
     PRESET_TV = 0x00004000  # cmd1=0x40
     PRESET_ANTI_SNORE = 0x00008000  # cmd1=0x80
     PRESET_MEMORY_1 = 0x00010000  # cmd2=0x01
+    PRESET_MEMORY_2 = 0x00040000  # cmd2=0x04 on DewertOKIN OKIN-BLE devices
 
     # Light (cmd2 byte)
     TOGGLE_LIGHT = 0x00020000  # cmd2=0x02
@@ -65,13 +67,21 @@ class CoolBaseCommands:
 class CoolBaseController(BedController):
     """Controller for Cool Base beds (Keeson BaseI5 with fan control)."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        dewert_okin_profile: bool = False,
+    ) -> None:
         """Initialize the Cool Base controller.
 
         Args:
             coordinator: The AdjustableBedCoordinator instance
+            dewert_okin_profile: True for OKIN-BLE/DewertOKIN devices using the
+                Cool Base packet format without Cool Base fan controls.
         """
         super().__init__(coordinator)
+        self._dewert_okin_profile = dewert_okin_profile
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
 
@@ -114,7 +124,7 @@ class CoolBaseController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        return 1  # Only Memory 1 confirmed in the app
+        return 2 if self._dewert_okin_profile else 1
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -135,7 +145,7 @@ class CoolBaseController(BedController):
     @property
     def supports_fan_control(self) -> bool:
         """Return True - Cool Base has fan control."""
-        return True
+        return not self._dewert_okin_profile
 
     @property
     def fan_level_max(self) -> int:
@@ -357,10 +367,18 @@ class CoolBaseController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
-        if memory_num == 1:
-            await self.write_command(self._build_command_from_value(CoolBaseCommands.PRESET_MEMORY_1))
+        commands = {1: CoolBaseCommands.PRESET_MEMORY_1}
+        if self._dewert_okin_profile:
+            commands[2] = CoolBaseCommands.PRESET_MEMORY_2
+
+        if command := commands.get(memory_num):
+            await self.write_command(self._build_command_from_value(command))
         else:
-            _LOGGER.warning("Cool Base only supports Memory 1, requested: %d", memory_num)
+            _LOGGER.warning(
+                "Cool Base memory slot %d not supported (valid: %s)",
+                memory_num,
+                sorted(commands),
+            )
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""

@@ -7,6 +7,8 @@
 ## Known Models
 
 - Cool Base adjustable bed bases (Keeson BaseI5 with cooling fan)
+- DewertOKIN `OKIN-BLE` / `BTCB` controllers that use the same 8-byte packet
+  format without fan controls
 
 ## Apps
 
@@ -20,7 +22,7 @@
 |---------|-----------|
 | Motor Control | ✅ (2 motors: head, foot) |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (1 slot) |
+| Memory Presets | ✅ (1 slot on BaseI5, 2 slots on DewertOKIN OKIN-BLE) |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore, Lounge) |
 | Massage | ✅ |
 | Light Control | ✅ (toggle) |
@@ -35,7 +37,11 @@
 
 ## Detection
 
-Devices are auto-detected by device name starting with `base-i5` (case-insensitive).
+Cool Base bed-type detection uses the `base-i5` device-name prefix. For configured
+Cool Base entries, the DewertOKIN profile is selected when the connected BLE name
+matches `okin-ble*` / `btcb*` or the BLE manufacturer value is `DewertOKIN`.
+`OKIN-BLE` / `DewertOKIN` devices may need manual Cool Base selection only when
+they advertise overlapping OKIN UUIDs.
 
 Note: Cool Base shares the same service UUID (FFE5) as Keeson and other beds, but is distinguished by the device name pattern.
 
@@ -73,6 +79,7 @@ Where:
 | TV | 0x00004000 | cmd1=0x40 |
 | Anti-Snore | 0x00008000 | cmd1=0x80 |
 | Memory 1 | 0x00010000 | cmd2=0x01 |
+| Memory 2 | 0x00040000 | cmd2=0x04, DewertOKIN OKIN-BLE profile only |
 
 ### Light & Massage
 
@@ -117,3 +124,7 @@ Where:
 3. Fan levels are reported in notifications, allowing the integration to track current state.
 
 4. The sync fan command controls both left and right fans together.
+
+5. On DewertOKIN `OKIN-BLE` / `BTCB` devices, `0x00040000` is Memory 2 instead
+   of sync fan. The integration exposes Memory 2 and suppresses fan controls for
+   that profile to avoid showing both meanings for the same packet.

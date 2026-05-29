@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -83,6 +82,7 @@ class TestCoolBaseCommands:
         assert CoolBaseCommands.PRESET_TV == 0x00004000
         assert CoolBaseCommands.PRESET_ANTI_SNORE == 0x00008000
         assert CoolBaseCommands.PRESET_MEMORY_1 == 0x00010000
+        assert CoolBaseCommands.PRESET_MEMORY_2 == 0x00040000
 
     def test_light_command(self):
         """Light toggle command should be correct value."""
@@ -249,6 +249,45 @@ class TestCoolBaseController:
         await coordinator.async_connect()
 
         assert coordinator.controller.fan_level_max == 3
+
+    async def test_default_memory_slot_count_is_one(
+        self,
+        hass: HomeAssistant,
+        mock_coolbase_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Base-I5 Cool Base should expose only the app-confirmed memory slot."""
+        coordinator = AdjustableBedCoordinator(hass, mock_coolbase_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.memory_slot_count == 1
+
+    def test_dewert_okin_profile_exposes_memory_two_without_fan_control(self):
+        """DewertOKIN OKIN-BLE profile reuses sync-wind command as Memory 2."""
+        controller = CoolBaseController(MagicMock(), dewert_okin_profile=True)
+
+        assert controller.memory_slot_count == 2
+        assert controller.supports_fan_control is False
+
+    async def test_default_profile_rejects_memory_two(self):
+        """Base-I5 profile should not send the sync-wind command as Memory 2."""
+        controller = CoolBaseController(MagicMock())
+        controller.write_command = AsyncMock()
+
+        await controller.preset_memory(2)
+
+        controller.write_command.assert_not_awaited()
+
+    async def test_dewert_okin_profile_memory_two_sends_correct_packet(self):
+        """DewertOKIN profile should send cmd2=0x04 for Memory 2."""
+        controller = CoolBaseController(MagicMock(), dewert_okin_profile=True)
+        controller.write_command = AsyncMock()
+
+        await controller.preset_memory(2)
+
+        controller.write_command.assert_awaited_once_with(
+            controller._build_command_from_value(CoolBaseCommands.PRESET_MEMORY_2)
+        )
 
 
 # -----------------------------------------------------------------------------
