@@ -7,6 +7,7 @@ import contextlib
 import inspect
 import logging
 import random
+import re
 import time
 import traceback
 from collections import deque
@@ -132,6 +133,7 @@ from .const import (
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name
 from .diagnostic_payloads import new_connection_attempt_details
+from .unsupported import create_pairing_required_issue
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -145,9 +147,24 @@ _INITIAL_POSITION_READ_TIMEOUT = 10.0
 _INITIAL_POSITION_READ_RETRY_DELAY = 3.0
 _INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
 _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
+_BLE_AUTHENTICATION_ERROR_MARKERS: tuple[str, ...] = (
+    "insufficient authentication",
+    "insufficient authorization",
+    "gatt error 5",
+)
+_BLE_AUTHENTICATION_ERROR_CODE_RE = re.compile(r"\berror=5\b")
 
 MAX_COMMAND_TRACE_ENTRIES = 100
 MAX_CONNECTION_ATTEMPT_DETAILS = 25
+
+
+def _is_ble_authentication_error(err: BaseException) -> bool:
+    """Return True if a Bleak error indicates an unauthenticated GATT link."""
+    message = str(err).lower()
+    return (
+        any(marker in message for marker in _BLE_AUTHENTICATION_ERROR_MARKERS)
+        or _BLE_AUTHENTICATION_ERROR_CODE_RE.search(message) is not None
+    )
 
 
 class NotConnectedError(Exception):
@@ -520,6 +537,50 @@ class AdjustableBedCoordinator:
                 CONF_BLE_BOND_ESTABLISHED: True,
             },
         )
+
+    def _clear_ble_bond_established(self) -> None:
+        """Clear the persisted bond marker after an authentication failure."""
+        if not self._ble_bond_established and not self.entry.data.get(
+            CONF_BLE_BOND_ESTABLISHED
+        ):
+            return
+
+        self._ble_bond_established = False
+        if not self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+            return
+
+        self.hass.config_entries.async_update_entry(
+            self.entry,
+            data={
+                **self.entry.data,
+                CONF_BLE_BOND_ESTABLISHED: False,
+            },
+        )
+
+    async def _async_handle_ble_authentication_error(self, err: BleakError) -> None:
+        """Handle a command failure caused by an unauthenticated BLE connection."""
+        if not requires_pairing(self._bed_type, self._protocol_variant):
+            return
+
+        _LOGGER.warning(
+            "BLE command on %s failed because the GATT link is not authenticated: %s. "
+            "Clearing the cached bond marker so the next connection can request pairing.",
+            self._address,
+            err,
+        )
+        self._clear_ble_bond_established()
+
+        try:
+            await create_pairing_required_issue(self.hass, self._address, self._name)
+        except Exception:
+            _LOGGER.debug(
+                "Failed to create pairing required repair issue for %s",
+                self._address,
+                exc_info=True,
+            )
+
+        if self._client is not None and self._client.is_connected:
+            await self.async_disconnect(reason="authentication_failed")
 
     @property
     def cancel_command(self) -> asyncio.Event:
@@ -2278,6 +2339,10 @@ class AdjustableBedCoordinator:
                         self.hass.async_create_task(self._async_read_positions_background())
 
                 return result
+            except BleakError as err:
+                if _is_ble_authentication_error(err):
+                    await self._async_handle_ble_authentication_error(err)
+                raise
             except (ConnectionError, RuntimeError):
                 if (
                     self._client is not None
