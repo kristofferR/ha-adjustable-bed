@@ -60,11 +60,17 @@
 
 ## Detection
 
-Okimat is the fallback for beds using the Okin service UUID. Detection priority:
+Okimat is the fallback for beds using the Okin service UUID. Some receiver modules only
+advertise a local name such as `OKIN-Receiver` or `OKIN - Receiver` until paired; those are
+shown as a pairing-required Okin-family protocol selection because the receiver name and
+shared Okin service UUID do not identify the packet format by themselves.
+
+Detection priority:
 1. Device name contains "nectar" → Nectar
 2. Device name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt
-3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat
-4. Fallback → Okimat (with warning)
+3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat/Okin UUID
+4. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
+5. Fallback → Okimat (with warning)
 
 **If your bed is misidentified:** Change the bed type in integration settings.
 

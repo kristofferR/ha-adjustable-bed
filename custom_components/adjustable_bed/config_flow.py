@@ -40,7 +40,12 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BEDS_WITH_PERCENTAGE_POSITIONS,
@@ -207,6 +212,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
+                "2. Click 'Pair Now'",
+            )
+        if bed_type in {
+            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_OKIN_UUID,
+            BED_TYPE_LEGGETT_OKIN,
+            BED_TYPE_LEGGETT_PLATT,
+        }:
+            return await self._get_config_translation(
+                "step.bluetooth_pairing.data_description.pairing_instructions_okin",
+                "1. Put the OKIN receiver/control box in pairing mode (press or hold the receiver pairing button until the LED blinks)\n"
                 "2. Click 'Pair Now'",
             )
         return await self._get_config_translation(

@@ -46,7 +46,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 **How to pair (if required):**
 1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
 2. On your Home Assistant host or phone, open Bluetooth settings
-3. Pair with the bed (may appear as `OKIN`, `Okimat`, `Smart bed 123456`, or similar)
+3. Pair with the bed (may appear as `OKIN`, `OKIN-Receiver`, `OKIN - Receiver`, `Okimat`, `Smart bed 123456`, or similar)
 4. Then add the integration in Home Assistant
 
 For Sleep Number Climate 360 / FlexFit Fuzion bases, hold the side pairing button until the blue light blinks.

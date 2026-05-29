@@ -29,7 +29,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -47,6 +49,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM,
     BEDTECH_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
+    DEVICE_INFO_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
     KAIDI_MESH_SERVICE_UUID,
@@ -395,6 +398,40 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="HHC5678ABCD")
         assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
 
+    @pytest.mark.parametrize(
+        ("name", "service_uuids"),
+        [
+            ("OKIN-Receiver", []),
+            ("OKIN - Receiver", []),
+            ("OKIN - Receiver", [DEVICE_INFO_SERVICE_UUID]),
+        ],
+    )
+    def test_detect_okin_receiver_before_pairing(
+        self, name: str, service_uuids: list[str]
+    ):
+        """OKIN receiver modules can require pairing before bed service UUIDs are visible."""
+        service_info = _make_service_info(name=name, service_uuids=service_uuids)
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_UUID
+        assert result.confidence == 0.6
+        assert "name:okin_receiver" in result.signals
+        assert result.requires_characteristic_check is True
+
+    def test_okin_receiver_with_okin_manufacturer_data_uses_cb24_fallback(self):
+        """OKIN manufacturer ID should win over the receiver-name shortcut."""
+        service_info = _make_service_info(
+            name="OKIN - Receiver",
+            service_uuids=[],
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"\x01\x02\x03"},
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.confidence == 0.7
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
+        assert f"manufacturer_id:{MANUFACTURER_ID_OKIN}" in result.signals
+
     def test_detect_star_name_only_is_ambiguous(self):
         """Star* without Nordic UART should remain a low-confidence ambiguous match."""
         service_info = _make_service_info(name="Star352201011800")
@@ -659,6 +696,22 @@ class TestOkinUUIDDisambiguation:
             service_uuids=[OKIMAT_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_OKIMAT
+
+    @pytest.mark.parametrize("name", ["OKIN-Receiver", "OKIN - Receiver"])
+    def test_okin_uuid_with_receiver_name_is_ambiguous(self, name: str):
+        """Receiver names should not become high-confidence Okimat after pairing."""
+        service_info = _make_service_info(
+            name=name,
+            service_uuids=[OKIMAT_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_UUID
+        assert result.confidence == 0.6
+        assert result.requires_characteristic_check is True
+        assert "uuid:okin" in result.signals
+        assert "name:okin_receiver" in result.signals
+        assert BED_TYPE_OKIN_CST in result.ambiguous_types
 
     def test_okin_uuid_with_generic_okin_prefix_is_ambiguous(self):
         """Generic OKIN-* names should not be hard-forced to Okimat."""
