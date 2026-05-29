@@ -362,6 +362,52 @@ class TestSleepNumberMcrController:
 
         assert controller._initialized is False
 
+    async def test_read_response_correlates_by_function_code_only(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Read responses correlate by function code, ignoring response bit and side.
+
+        Mirrors the reference implementation, which parses replies by
+        ``hdr[8] & 0x7F`` without checking the response bit or side nibble. The
+        same firmware quirk that broke the init handshake (#322) — no response
+        bit, mismatched side — must not stop normal read replies from matching.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:63",
+            name="64:DB:A0:07:DD:14",
+            entry_id="sleep_number_mcr_lenient_read",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = True
+
+        # func=18 reply with NO response bit (0x80 unset) and side=1, even though
+        # the read below is issued with side=_MCR_SIDE_ALL (0x0F).
+        echo = controller._build_frame(
+            command_type=1,
+            status=0x02,
+            function_code=18,
+            side=1,
+            payload=bytes([1, 35, 65, 0, 0]),
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:63"),
+        )
+
+        def _deliver(_frame: bytes, *, cancel_event=None) -> None:
+            controller._handle_mcr_notification(None, bytearray(echo))
+
+        controller._async_write_frame = AsyncMock(side_effect=_deliver)
+
+        frames = await controller._async_send_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=18,
+            side=0x0F,
+            timeout=1.0,
+        )
+
+        assert [frame.payload for frame in frames] == [bytes([1, 35, 65, 0, 0])]
+
     async def test_async_send_frame_ignores_late_optional_response_for_next_same_key_request(
         self,
         sleep_number_mcr_coordinator,

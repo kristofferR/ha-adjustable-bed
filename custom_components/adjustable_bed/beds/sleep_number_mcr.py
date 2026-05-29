@@ -46,7 +46,6 @@ _MCR_FUNC_FOUNDATION_OUTLET: Final = 19
 
 _MCR_SIDE_LEFT: Final = 0
 _MCR_SIDE_RIGHT: Final = 1
-_MCR_SIDE_BOTH_CHAMBERS: Final = 2
 _MCR_SIDE_ALL: Final = 0x0F
 _MCR_OUTLET_UNDERBED_LIGHT: Final = 3
 _OPTIONAL_RESPONSE_GRACE_SECONDS: Final = 0.2
@@ -728,20 +727,20 @@ class SleepNumberMcrController(BedController):
         frame: _McrFrame,
         request_key: tuple[int, int],
     ) -> bool:
-        """Return True when ``frame`` matches ``request_key``."""
-        if not frame.is_response:
-            return False
-        expected_func, expected_side = request_key
-        if frame.function_code != expected_func:
-            return False
-        # The MCR firmware sometimes echoes a different side nibble for
-        # bed-wide queries (e.g. ``_MCR_SIDE_ALL`` reads). Treat the request
-        # as matching whenever the side either matches exactly or the
-        # request was sent against ``_MCR_SIDE_ALL`` /
-        # ``_MCR_SIDE_BOTH_CHAMBERS``.
-        if expected_side in {_MCR_SIDE_ALL, _MCR_SIDE_BOTH_CHAMBERS}:
-            return True
-        return frame.side == expected_side
+        """Return True when ``frame`` is the response to ``request_key``.
+
+        Correlates by **function code only**, mirroring the reference
+        implementation that works against this hardware (it parses responses by
+        ``hdr[8] & 0x7F`` and never checks the response bit or side nibble). The
+        bed is purely request/response with a single outstanding request at a
+        time, so the function code is enough to confirm a reply. Some BAM/MCR
+        firmware replies without the response bit set (``byte 8 & 0x80``) and
+        echoes a different side nibble than the request was sent with;
+        requiring either would discard otherwise-valid responses — the same
+        root cause that broke the init handshake (issue #322).
+        """
+        expected_func, _expected_side = request_key
+        return frame.function_code == expected_func
 
     @staticmethod
     def _request_key(function_code: int, side: int) -> tuple[int, int]:
