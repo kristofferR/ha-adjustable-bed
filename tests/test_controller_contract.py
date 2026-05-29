@@ -11,6 +11,7 @@ import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_COOLBASE,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
@@ -354,6 +355,43 @@ async def test_factory_auto_detects_cb1322_dewertokin_manufacturer() -> None:
     assert isinstance(controller, BedController)
     assert getattr(controller, "_variant", None) == KEESON_VARIANT_OKIN
     assert getattr(controller, "_cb1322_presets", None) is True
+
+
+async def test_factory_enables_coolbase_dewert_okin_profile() -> None:
+    """OKIN-BLE/DewertOKIN devices using Cool Base expose Memory 2, not fan sync."""
+    coordinator = _FactoryCoordinator()
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_COOLBASE,
+        protocol_variant=VARIANT_AUTO,
+        client=None,
+        device_name="OKIN-BLE00016084",
+        ble_manufacturer="DewertOKIN",
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_dewert_okin_profile", None) is True
+    assert controller.memory_slot_count == 2
+    assert controller.supports_fan_control is False
+
+
+async def test_factory_enables_coolbase_dewert_okin_profile_for_btcb_name() -> None:
+    """BTCB-named Cool Base entries should select the DewertOKIN profile by name."""
+    coordinator = _FactoryCoordinator()
+
+    controller = await create_controller(
+        coordinator=coordinator,
+        bed_type=BED_TYPE_COOLBASE,
+        protocol_variant=VARIANT_AUTO,
+        client=None,
+        device_name="BTCB.03",
+        ble_manufacturer=None,
+    )
+
+    assert isinstance(controller, BedController)
+    assert getattr(controller, "_dewert_okin_profile", None) is True
+    assert controller.memory_slot_count == 2
 
 
 async def test_betterliving_preset_commands() -> None:
