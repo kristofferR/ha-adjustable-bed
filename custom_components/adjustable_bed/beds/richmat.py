@@ -42,7 +42,8 @@ _LOGGER = logging.getLogger(__name__)
 RICHMAT_LIGHT_PROTOCOL_LEGACY_RGB = "legacy_rgb"
 RICHMAT_LIGHT_PROTOCOL_RGB_STRIP = "rgb_strip"
 
-RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"bt6500", "qrrm"})
+RICHMAT_TOGGLE_LIGHT_REMOTE_CODES = frozenset({"bt6500"})
+RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES = frozenset({"qrrm"})
 RICHMAT_RGB_STRIP_LIGHT_NAME_HINTS = ("casper",)
 RICHMAT_LIGHT_TIMER_ALWAYS_ON = "Always On"
 
@@ -267,6 +268,9 @@ class RichmatController(BedController):
 
         if remote_code in RICHMAT_RGB_STRIP_LIGHT_REMOTE_CODES:
             return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP
+
+        if remote_code in RICHMAT_TOGGLE_LIGHT_REMOTE_CODES:
+            return None
 
         if remote_code == "i7rm" and "sleep function" in haystack:
             return RICHMAT_LIGHT_PROTOCOL_RGB_STRIP

@@ -6,7 +6,6 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
-
 from homeassistant.components.climate import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -1485,6 +1484,67 @@ class TestLightEntities:
         assert (
             registry.async_get_entity_id("select", DOMAIN, "57:4C:62:C3:39:05_light_timer")
             is not None
+        )
+
+    async def test_richmat_bt6500_keeps_toggle_button_instead_of_rgb_light(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BT6500 should expose the plain toggle button, not RGB light entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="BedTech BT6500",
+            data={
+                CONF_ADDRESS: "57:4C:62:B0:EF:3D",
+                CONF_NAME: "BedTech BT6500",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "auto",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:B0:EF:3D",
+            entry_id="richmat_bt6500_toggle_light_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "light",
+            DOMAIN,
+            "57:4C:62:B0:EF:3D_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="bedtech_bt6500_under_bed_lights",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller._remote_code == "bt6500"
+        assert coordinator.controller.light_protocol_family is None
+
+        assert (
+            registry.async_get_entity_id("light", DOMAIN, "57:4C:62:B0:EF:3D_under_bed_lights")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "57:4C:62:B0:EF:3D_under_bed_lights")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:62:B0:EF:3D_toggle_light")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:62:B0:EF:3D_light_timer")
+            is None
         )
 
     async def test_richmat_qrrm_light_turn_on_and_off(
