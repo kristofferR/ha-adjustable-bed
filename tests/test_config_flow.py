@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
@@ -34,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -109,10 +111,36 @@ class TestPairingInstructions:
                 }
             ),
         ):
-            instructions = await flow._get_pairing_instructions(BED_TYPE_OKIMAT)
+            instructions = await flow._get_pairing_instructions(BED_TYPE_VIBRADORM)
 
         assert "lamp button" in instructions
         assert "unplug for 30+ seconds" in instructions
+
+    async def test_okin_pairing_instructions_use_receiver_button(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Okin UUID beds should show receiver/control-box pairing guidance."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.async_get_translations",
+            new=AsyncMock(
+                return_value={
+                    (
+                        "component.adjustable_bed.config.step.bluetooth_pairing."
+                        "data_description.pairing_instructions_okin"
+                    ): (
+                        "1. Put the OKIN receiver/control box in pairing mode (press or hold the receiver pairing button until the LED blinks)\n"
+                        "2. Click 'Pair Now'"
+                    )
+                }
+            ),
+        ):
+            instructions = await flow._get_pairing_instructions(BED_TYPE_OKIN_UUID)
+
+        assert "OKIN receiver/control box" in instructions
+        assert "receiver pairing button" in instructions
 
 
 class TestPairingPersistence:
