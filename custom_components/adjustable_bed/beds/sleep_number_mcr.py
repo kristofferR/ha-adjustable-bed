@@ -50,6 +50,7 @@ _MCR_SIDE_BOTH_CHAMBERS: Final = 2
 _MCR_SIDE_ALL: Final = 0x0F
 _MCR_OUTLET_UNDERBED_LIGHT: Final = 3
 _OPTIONAL_RESPONSE_GRACE_SECONDS: Final = 0.2
+_INIT_HANDSHAKE_TIMEOUT_SECONDS: Final = 10.0
 
 _SLEEP_NUMBER_MCR_PRESETS: Final[dict[str, int]] = {
     "Favorite": 1,
@@ -120,6 +121,13 @@ class SleepNumberMcrController(BedController):
         # ``(function_code, side)`` tuple matching the request that was
         # sent. ``None`` means no request is in flight.
         self._outstanding_request_key: tuple[int, int] | None = None
+        # During the connection-priming init handshake, accept ANY notification
+        # from the bed as confirmation, bypassing the strict per-frame
+        # correlation below. Older BAM/MCR firmware echoes the init frame
+        # without the response bit set (byte 8 & 0x80) or with a different side
+        # nibble, which the strict matcher would otherwise discard — leaving the
+        # handshake to time out and the connection stuck in a reconnect loop.
+        self._accept_any_response = False
         # When an optional response times out, a delayed notification for the
         # same request key must not satisfy the next command. Keep the key
         # quarantined for a full timeout window after the miss so late replies
@@ -412,21 +420,47 @@ class SleepNumberMcrController(BedController):
         )
 
     async def _async_initialize_session(self) -> None:
-        """Run the required MCR init handshake once per connection."""
+        """Run the required MCR init handshake once per connection.
+
+        The handshake primes the bed for subsequent commands. Following the
+        behaviour of the reference implementation that works against this
+        hardware, ANY notification from the bed confirms the handshake — the
+        echo contents are not inspected. Older BAM/MCR firmware replies to the
+        init frame without the response bit set, or echoes a different side
+        nibble, so the strict ``(function_code, side, is_response)`` correlation
+        used for normal commands would reject the echo. That manifested as
+        "Timed out waiting for Sleep Number MCR response func=0" followed by a
+        permanent reconnect loop (issue #322).
+
+        If the firmware sends no echo at all but the BLE link stays up, proceed
+        anyway: the write itself primes the bed and the follow-up commands are
+        fire-and-forget. Only a dropped link should fail the connection so the
+        coordinator can cleanly reconnect.
+        """
         if self._initialized:
             return
 
-        frames = await self._async_send_frame(
-            command_type=_MCR_CMD_PUMP,
-            status=_MCR_STATUS_PUMP,
-            function_code=_MCR_FUNC_INIT,
-            side=0,
-            payload=b"\x00" * 8,
-            sub_address=0x0000,
-            timeout=10.0,
-        )
-        if not any(frame.function_code == _MCR_FUNC_INIT for frame in frames):
-            raise RuntimeError("Sleep Number MCR init handshake failed")
+        try:
+            await self._async_send_frame(
+                command_type=_MCR_CMD_PUMP,
+                status=_MCR_STATUS_PUMP,
+                function_code=_MCR_FUNC_INIT,
+                side=0,
+                payload=b"\x00" * 8,
+                sub_address=0x0000,
+                timeout=_INIT_HANDSHAKE_TIMEOUT_SECONDS,
+                accept_any_response=True,
+            )
+        except TimeoutError:
+            client = self.client
+            if client is None or not client.is_connected:
+                raise
+            _LOGGER.debug(
+                "Sleep Number MCR init handshake received no echo from %s; "
+                "proceeding (BLE link still up)",
+                self._coordinator.address,
+            )
+
         self._initialized = True
 
     async def _async_read_pump_status(self) -> None:
@@ -507,6 +541,7 @@ class SleepNumberMcrController(BedController):
         timeout: float = 5.0,
         cancel_event: asyncio.Event | None = None,
         require_response: bool = True,
+        accept_any_response: bool = False,
     ) -> list[_McrFrame]:
         """Write an MCR frame and wait for the matching notification response.
 
@@ -541,6 +576,7 @@ class SleepNumberMcrController(BedController):
         # Set correlation BEFORE clearing state, so any in-flight notification
         # parsing on the event loop sees the new key.
         self._outstanding_request_key = request_key
+        self._accept_any_response = accept_any_response
         self._response_buffer.clear()
         self._response_frames.clear()
         self._response_event.clear()
@@ -602,6 +638,7 @@ class SleepNumberMcrController(BedController):
             return list(self._response_frames)
         finally:
             self._outstanding_request_key = None
+            self._accept_any_response = False
 
     async def _async_write_frame(
         self, frame: bytes, *, cancel_event: asyncio.Event | None = None
@@ -642,6 +679,15 @@ class SleepNumberMcrController(BedController):
         raw = bytes(data)
         self.forward_raw_notification(SLEEP_NUMBER_MCR_TX_CHAR_UUID, raw)
         self._response_buffer.extend(raw)
+        if self._accept_any_response and self._outstanding_request_key is not None:
+            # Init handshake: mirror the reference implementation that works
+            # against this hardware. ANY notification confirms the bed is alive
+            # and primed, so wake the waiter immediately. This deliberately
+            # bypasses the strict (function_code, side, is_response) correlation
+            # below, which some firmware violates for the init echo (no response
+            # bit, or a different side nibble) — without this the frame is
+            # discarded before it reaches _response_frames and init times out.
+            self._response_event.set()
         parsed_frame = False
         for frame in self._extract_response_frames():
             parsed_frame = True

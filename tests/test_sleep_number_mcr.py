@@ -246,7 +246,7 @@ class TestSleepNumberMcrController:
         self,
         sleep_number_mcr_coordinator,
     ) -> None:
-        """The init handshake should still fail fast when its response never arrives."""
+        """A required-response frame should still raise TimeoutError when it never arrives."""
         coordinator = await sleep_number_mcr_coordinator(
             address="AA:BB:CC:DD:EE:5E",
             name="64:DB:A0:07:DD:0F",
@@ -267,6 +267,100 @@ class TestSleepNumberMcrController:
             )
 
         assert controller._outstanding_request_key is None
+
+    async def test_init_handshake_accepts_non_matching_echo(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Init must succeed on ANY notification, even one the strict matcher rejects.
+
+        Regression test for issue #322: older BAM/MCR firmware echoes the init
+        frame without the response bit set and/or with a different side nibble,
+        which the per-command correlation discards. The handshake must still be
+        recognised so the connection is not stuck in a reconnect loop.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:60",
+            name="64:DB:A0:07:DD:11",
+            entry_id="sleep_number_mcr_lenient_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+
+        # A frame the strict matcher would reject: function_code 18 (not init),
+        # no response bit (0x80 unset -> is_response False), side 1 (not 0).
+        non_matching_echo = controller._build_frame(
+            command_type=1,
+            status=0x02,
+            function_code=18,
+            side=1,
+            payload=b"",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:60"),
+        )
+
+        def _deliver_echo(_frame: bytes, *, cancel_event=None) -> None:
+            controller._handle_mcr_notification(None, bytearray(non_matching_echo))
+
+        controller._async_write_frame = AsyncMock(side_effect=_deliver_echo)
+
+        await controller._async_initialize_session()
+
+        assert controller._initialized is True
+        assert controller._accept_any_response is False
+        assert controller._outstanding_request_key is None
+
+    async def test_init_handshake_proceeds_optimistically_without_echo(
+        self,
+        sleep_number_mcr_coordinator,
+        monkeypatch,
+    ) -> None:
+        """No init echo but a live BLE link should not abort the connection."""
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr._INIT_HANDSHAKE_TIMEOUT_SECONDS",
+            0.02,
+        )
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:61",
+            name="64:DB:A0:07:DD:12",
+            entry_id="sleep_number_mcr_optimistic_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        controller._async_write_frame = AsyncMock()  # never delivers a notification
+
+        await controller._async_initialize_session()
+
+        assert controller._initialized is True
+        assert controller._accept_any_response is False
+
+    async def test_init_handshake_raises_when_link_dropped(
+        self,
+        sleep_number_mcr_coordinator,
+        monkeypatch,
+        mock_bleak_client,
+    ) -> None:
+        """A dropped link during init must fail so the coordinator reconnects."""
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr._INIT_HANDSHAKE_TIMEOUT_SECONDS",
+            0.02,
+        )
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:62",
+            name="64:DB:A0:07:DD:13",
+            entry_id="sleep_number_mcr_dropped_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        controller._async_write_frame = AsyncMock()
+        mock_bleak_client.is_connected = False
+
+        with pytest.raises(TimeoutError):
+            await controller._async_initialize_session()
+
+        assert controller._initialized is False
 
     async def test_async_send_frame_ignores_late_optional_response_for_next_same_key_request(
         self,
