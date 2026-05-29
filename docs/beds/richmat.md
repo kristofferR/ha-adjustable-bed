@@ -205,9 +205,9 @@ Sets massage to a specific level instead of cycling.
 
 #### Lights
 
-Most Richmat beds have a simple white under-bed light controlled via toggle. Some models (Casper, certain QRRM/BT6500/I7RM remotes) have RGB light strips with full color control. RGB is available on WiLinke-variant beds when a specific remote code is configured (not "Auto").
+Most Richmat beds have a simple white under-bed light controlled via toggle. Some models (Casper, certain QRRM/I7RM remotes) have RGB light strips with full color control. BT6500 uses the plain white toggle light command. RGB is available on WiLinke-variant beds when a specific remote code is configured (not "Auto").
 
-**RGB Strip protocol** (Casper, QRRM, BT6500, I7RM with Casper/SleepFunction): Framed packet format with explicit on/off, color, and timer commands. Timer range: 1-30 minutes or "Always On".
+**RGB Strip protocol** (Casper, QRRM, I7RM with Casper/SleepFunction): Framed packet format with explicit on/off, color, and timer commands. Timer range: 1-30 minutes or "Always On".
 
 **Legacy RGB protocol** (other WiLinke remotes with the lights feature flag): Segment-based packet format. Timer range: 1-5 minutes or "Always On".
 

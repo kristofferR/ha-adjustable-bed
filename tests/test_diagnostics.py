@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
+from custom_components.adjustable_bed.discovery_log import async_get_discovery_log
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
     MAC_ADDRESS_KEYS,
@@ -258,6 +259,54 @@ class TestDiagnosticsOutput:
 
         assert len(result["supported_bed_types"]) > 0
         assert "linak" in result["supported_bed_types"]
+
+    async def test_diagnostics_filters_auto_discovery_log_to_entry(
+        self,
+        hass: HomeAssistant,
+        mock_diagnostics_config_entry,
+        mock_coordinator_connected,  # noqa: ARG002
+        enable_custom_integrations,  # noqa: ARG002
+    ):
+        """Diagnostics should not expose auto-detections from unrelated devices."""
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        discovery_log = async_get_discovery_log(hass)
+        await discovery_log.async_record(
+            address="AA:BB:CC:DD:EE:FF",
+            name="Current Bed",
+            service_uuids=["0000feed-0000-1000-8000-00805f9b34fb"],
+            manufacturer_data={0x1234: b"\x01\x02"},
+            bed_type=BED_TYPE_LINAK,
+            confidence=0.956,
+            signals=["entry match"],
+        )
+        await discovery_log.async_record(
+            address="11:22:33:44:55:66",
+            name="Neighbor Device",
+            service_uuids=["0000beef-0000-1000-8000-00805f9b34fb"],
+            manufacturer_data={0x5678: b"\x03\x04"},
+            bed_type=BED_TYPE_KAIDI,
+            confidence=0.9,
+            signals=["unrelated"],
+        )
+
+        coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN][mock_diagnostics_config_entry.entry_id] = coordinator
+
+        result = await async_get_config_entry_diagnostics(hass, mock_diagnostics_config_entry)
+
+        auto_discovery_log = result["auto_discovery_log"]
+        assert len(auto_discovery_log) == 1
+        record = auto_discovery_log[0]
+        assert record["address"] == "AA:BB:CC:**:**:**"
+        assert record["service_uuids"] == ["0000feed-0000-1000-8000-00805f9b34fb"]
+        assert record["manufacturer_data"] == {"0x1234": "0102"}
+        assert record["bed_type"] == BED_TYPE_LINAK
+        assert record["confidence"] == 0.956
+        assert record["signals"] == ["entry match"]
+        assert "device_name" not in record
+        assert "name" not in record
 
     async def test_diagnostics_include_kaidi_metadata_and_parsed_advertisement(
         self,

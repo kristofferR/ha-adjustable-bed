@@ -552,6 +552,20 @@ class TestRichmatFeatureDetection:
         expected_options = ["Always On", *[f"{minute} min" for minute in range(1, 31)]]
         assert controller.light_timer_options == expected_options
 
+    def test_bt6500_wilinke_uses_plain_light_toggle(self):
+        """BT6500 has a white toggle light, not RGB light packets."""
+        coordinator = MagicMock()
+        controller = RichmatController(coordinator, is_wilinke=True, remote_code="bt6500")
+
+        assert controller.light_protocol_family is None
+        assert controller.supports_lights is True
+        assert controller.supports_light_color_control is False
+        assert controller.supports_light_timer is False
+        assert controller.supports_discrete_light_control is False
+        assert controller.supports_explicit_light_on_control is False
+        assert controller.default_light_rgb_color is None
+        assert controller.light_timer_options == []
+
     def test_i7rm_sleep_function_prefers_rgb_strip_protocol(self):
         """Sleep Function 2.0 aliases should stay on the newer RGB-strip family."""
         coordinator = MagicMock()
@@ -945,6 +959,44 @@ class TestRichmatLights:
         expected_cmd = coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE)
         mock_bleak_client.write_gatt_char.assert_called_with(
             RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
+        )
+
+    @pytest.mark.parametrize("method_name", ["lights_on", "lights_off"])
+    async def test_bt6500_lights_on_off_send_toggle_command(
+        self,
+        hass: HomeAssistant,
+        mock_richmat_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        method_name: str,
+    ):
+        """BT6500 light on/off should delegate to the WiLinke 0x3C toggle command."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="BedTech BT6500",
+            data={
+                **mock_richmat_config_entry_data,
+                CONF_PROTOCOL_VARIANT: "wilinke",
+                CONF_RICHMAT_REMOTE: "auto",
+            },
+            unique_id="57:4C:62:B0:EF:3D",
+            entry_id=f"richmat_bt6500_{method_name}_light_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        assert coordinator.controller._remote_code == "bt6500"
+        assert coordinator.controller.light_protocol_family is None
+
+        await getattr(coordinator.controller, method_name)()
+
+        mock_bleak_client.write_gatt_char.assert_called_once_with(
+            coordinator.controller.control_characteristic_uuid,
+            bytes.fromhex("6e01003cab"),
+            response=True,
         )
 
 

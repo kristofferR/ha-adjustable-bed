@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -673,7 +674,7 @@ class TestBluetoothDiscoveryFlow:
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
-        enable_custom_integrations,
+        enable_custom_integrations,  # noqa: ARG002
     ):
         """The confirm step exposes a pre-filled 'report misidentified device' link."""
         result = await hass.config_entries.flow.async_init(
@@ -685,6 +686,38 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.FORM
         report_note = result["description_placeholders"]["report_note"]
         assert "issues/new?template=misidentified-bed.yml" in report_note
+
+    async def test_bluetooth_discovery_log_failure_does_not_abort(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        caplog: pytest.LogCaptureFixture,
+        enable_custom_integrations,  # noqa: ARG002
+    ):
+        """Discovery confirmation should still load if discovery-log storage fails."""
+        mock_log = MagicMock()
+        mock_log.async_record = AsyncMock(side_effect=RuntimeError("store unavailable"))
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.async_get_discovery_log",
+                return_value=mock_log,
+            ),
+            caplog.at_level(
+                logging.WARNING,
+                logger="custom_components.adjustable_bed.config_flow",
+            ),
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_BLUETOOTH},
+                data=mock_bluetooth_service_info,
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert "Failed to record auto-detection" in caplog.text
+        mock_log.async_record.assert_awaited_once()
 
     async def test_bluetooth_discovery_already_configured(
         self,
