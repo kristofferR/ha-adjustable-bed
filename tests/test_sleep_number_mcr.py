@@ -246,7 +246,7 @@ class TestSleepNumberMcrController:
         self,
         sleep_number_mcr_coordinator,
     ) -> None:
-        """The init handshake should still fail fast when its response never arrives."""
+        """A required-response frame should still raise TimeoutError when it never arrives."""
         coordinator = await sleep_number_mcr_coordinator(
             address="AA:BB:CC:DD:EE:5E",
             name="64:DB:A0:07:DD:0F",
@@ -267,6 +267,176 @@ class TestSleepNumberMcrController:
             )
 
         assert controller._outstanding_request_key is None
+
+    async def test_init_handshake_accepts_non_matching_echo(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Init must succeed on ANY notification, even one the strict matcher rejects.
+
+        Regression test for issue #322: older BAM/MCR firmware echoes the init
+        frame without the response bit set and/or with a different side nibble,
+        which the per-command correlation discards. The handshake must still be
+        recognised so the connection is not stuck in a reconnect loop.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:60",
+            name="64:DB:A0:07:DD:11",
+            entry_id="sleep_number_mcr_lenient_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+
+        # A frame the strict matcher would reject: function_code 18 (not init),
+        # no response bit (0x80 unset -> is_response False), side 1 (not 0).
+        non_matching_echo = controller._build_frame(
+            command_type=1,
+            status=0x02,
+            function_code=18,
+            side=1,
+            payload=b"",
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:60"),
+        )
+
+        def _deliver_echo(_frame: bytes, *, cancel_event=None) -> None:
+            controller._handle_mcr_notification(None, bytearray(non_matching_echo))
+
+        controller._async_write_frame = AsyncMock(side_effect=_deliver_echo)
+
+        await controller._async_initialize_session()
+
+        assert controller._initialized is True
+        assert controller._accept_any_response is False
+        assert controller._outstanding_request_key is None
+
+    async def test_init_handshake_proceeds_optimistically_without_echo(
+        self,
+        sleep_number_mcr_coordinator,
+        monkeypatch,
+    ) -> None:
+        """No init echo but a live BLE link should not abort the connection."""
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr._INIT_HANDSHAKE_TIMEOUT_SECONDS",
+            0.02,
+        )
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:61",
+            name="64:DB:A0:07:DD:12",
+            entry_id="sleep_number_mcr_optimistic_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        controller._async_write_frame = AsyncMock()  # never delivers a notification
+
+        await controller._async_initialize_session()
+
+        assert controller._initialized is True
+        assert controller._accept_any_response is False
+
+    async def test_init_handshake_raises_when_link_dropped(
+        self,
+        sleep_number_mcr_coordinator,
+        monkeypatch,
+        mock_bleak_client,
+    ) -> None:
+        """A dropped link during init must fail so the coordinator reconnects."""
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.sleep_number_mcr._INIT_HANDSHAKE_TIMEOUT_SECONDS",
+            0.02,
+        )
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:62",
+            name="64:DB:A0:07:DD:13",
+            entry_id="sleep_number_mcr_dropped_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        controller._async_write_frame = AsyncMock()
+        mock_bleak_client.is_connected = False
+
+        with pytest.raises(TimeoutError):
+            await controller._async_initialize_session()
+
+        assert controller._initialized is False
+
+    async def test_init_handshake_propagates_write_timeout(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """A failed init *write* must not be treated as success, even if connected.
+
+        Distinguishes a transport write timeout (init frame never reached the
+        bed) from a missing echo (write succeeded, no reply). The former must
+        propagate so the coordinator reconnects instead of priming the
+        controller against an uninitialised bed.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:64",
+            name="64:DB:A0:07:DD:15",
+            entry_id="sleep_number_mcr_write_timeout_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        # The write itself times out at the transport layer while the BLE link
+        # still reports connected.
+        controller._async_write_frame = AsyncMock(
+            side_effect=TimeoutError("write timed out")
+        )
+
+        with pytest.raises(TimeoutError):
+            await controller._async_initialize_session()
+
+        assert controller._initialized is False
+
+    async def test_read_response_correlates_by_function_code_only(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """Read responses correlate by function code, ignoring response bit and side.
+
+        Mirrors the reference implementation, which parses replies by
+        ``hdr[8] & 0x7F`` without checking the response bit or side nibble. The
+        same firmware quirk that broke the init handshake (#322) — no response
+        bit, mismatched side — must not stop normal read replies from matching.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:63",
+            name="64:DB:A0:07:DD:14",
+            entry_id="sleep_number_mcr_lenient_read",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = True
+
+        # func=18 reply with NO response bit (0x80 unset) and side=1, even though
+        # the read below is issued with side=_MCR_SIDE_ALL (0x0F).
+        echo = controller._build_frame(
+            command_type=1,
+            status=0x02,
+            function_code=18,
+            side=1,
+            payload=bytes([1, 35, 65, 0, 0]),
+            sub_address=_mcr_address_from_mac("AA:BB:CC:DD:EE:63"),
+        )
+
+        def _deliver(_frame: bytes, *, cancel_event=None) -> None:
+            controller._handle_mcr_notification(None, bytearray(echo))
+
+        controller._async_write_frame = AsyncMock(side_effect=_deliver)
+
+        frames = await controller._async_send_frame(
+            command_type=0x02,
+            status=0x02,
+            function_code=18,
+            side=0x0F,
+            timeout=1.0,
+        )
+
+        assert [frame.payload for frame in frames] == [bytes([1, 35, 65, 0, 0])]
 
     async def test_async_send_frame_ignores_late_optional_response_for_next_same_key_request(
         self,
