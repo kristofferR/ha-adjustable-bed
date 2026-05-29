@@ -13,4 +13,13 @@ def test_manifest_discovers_okin_receiver_name_only_advertisements() -> None:
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    assert {"local_name": "OKIN*Receiver*"} in manifest["bluetooth"]
+    assert {
+        "OKIN*Receiver*",
+        "OKIN*receiver*",
+        "Okin*Receiver*",
+        "Okin*receiver*",
+        "okin*Receiver*",
+        "okin*receiver*",
+    }.issubset(
+        {entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry}
+    )

@@ -413,9 +413,23 @@ class TestDetectBedTypeByNamePattern:
         result = detect_bed_type_detailed(service_info)
 
         assert result.bed_type == BED_TYPE_OKIN_UUID
-        assert result.confidence == 0.7
+        assert result.confidence == 0.6
         assert "name:okin_receiver" in result.signals
         assert result.requires_characteristic_check is True
+
+    def test_okin_receiver_with_okin_manufacturer_data_uses_cb24_fallback(self):
+        """OKIN manufacturer ID should win over the receiver-name shortcut."""
+        service_info = _make_service_info(
+            name="OKIN - Receiver",
+            service_uuids=[],
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"\x01\x02\x03"},
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.confidence == 0.7
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
+        assert f"manufacturer_id:{MANUFACTURER_ID_OKIN}" in result.signals
 
     def test_detect_star_name_only_is_ambiguous(self):
         """Star* without Nordic UART should remain a low-confidence ambiguous match."""

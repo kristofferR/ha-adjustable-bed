@@ -888,6 +888,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     if (
         any(pattern in device_name for pattern in OKIMAT_NAME_ONLY_PATTERNS)
         and set(service_uuids).issubset({DEVICE_INFO_SERVICE_UUID.lower()})
+        and (
+            not service_info.manufacturer_data
+            or MANUFACTURER_ID_OKIN not in service_info.manufacturer_data
+        )
     ):
         if service_uuids:
             signals.append("uuid:device_info")
@@ -899,7 +903,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(
             bed_type=BED_TYPE_OKIN_UUID,
-            confidence=0.7,
+            confidence=0.6,
             signals=signals,
             ambiguous_types=[BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_64BIT, BED_TYPE_OKIN_CST],
             requires_characteristic_check=True,
