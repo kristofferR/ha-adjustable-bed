@@ -362,6 +362,36 @@ class TestSleepNumberMcrController:
 
         assert controller._initialized is False
 
+    async def test_init_handshake_propagates_write_timeout(
+        self,
+        sleep_number_mcr_coordinator,
+    ) -> None:
+        """A failed init *write* must not be treated as success, even if connected.
+
+        Distinguishes a transport write timeout (init frame never reached the
+        bed) from a missing echo (write succeeded, no reply). The former must
+        propagate so the coordinator reconnects instead of priming the
+        controller against an uninitialised bed.
+        """
+        coordinator = await sleep_number_mcr_coordinator(
+            address="AA:BB:CC:DD:EE:64",
+            name="64:DB:A0:07:DD:15",
+            entry_id="sleep_number_mcr_write_timeout_init",
+        )
+        controller = coordinator.controller
+        assert isinstance(controller, SleepNumberMcrController)
+        controller._initialized = False
+        # The write itself times out at the transport layer while the BLE link
+        # still reports connected.
+        controller._async_write_frame = AsyncMock(
+            side_effect=TimeoutError("write timed out")
+        )
+
+        with pytest.raises(TimeoutError):
+            await controller._async_initialize_session()
+
+        assert controller._initialized is False
+
     async def test_read_response_correlates_by_function_code_only(
         self,
         sleep_number_mcr_coordinator,

@@ -66,6 +66,17 @@ _SIDE_NAME_TO_VALUE: Final[dict[str, int]] = {
 }
 
 
+class _ResponseTimeout(TimeoutError):
+    """Raised when a required MCR *response* does not arrive in time.
+
+    Distinct from a write/transport ``TimeoutError`` (raised by
+    ``_async_write_frame``/``write_gatt_char``) so the init handshake can treat
+    a missing *echo* as non-fatal while still forcing a reconnect when the init
+    *write* itself fails. Subclasses ``TimeoutError`` so existing callers that
+    catch ``TimeoutError`` keep working.
+    """
+
+
 @dataclass(slots=True)
 class _McrFrame:
     """Parsed MCR frame."""
@@ -433,8 +444,10 @@ class SleepNumberMcrController(BedController):
 
         If the firmware sends no echo at all but the BLE link stays up, proceed
         anyway: the write itself primes the bed and the follow-up commands are
-        fire-and-forget. Only a dropped link should fail the connection so the
-        coordinator can cleanly reconnect.
+        fire-and-forget. Only a missing *echo* is tolerated — a failed init
+        *write* (transport ``TimeoutError``/``BleakError``/``OSError`` from
+        ``_async_write_frame``) propagates so the coordinator reconnects rather
+        than priming the controller against a bed that never received the init.
         """
         if self._initialized:
             return
@@ -450,7 +463,10 @@ class SleepNumberMcrController(BedController):
                 timeout=_INIT_HANDSHAKE_TIMEOUT_SECONDS,
                 accept_any_response=True,
             )
-        except TimeoutError:
+        except _ResponseTimeout:
+            # The write reached the transport but the bed sent no echo. Some
+            # BAM/MCR firmware does not echo the init frame; the write itself
+            # primes the bed, so proceed as long as the link is still up.
             client = self.client
             if client is None or not client.is_connected:
                 raise
@@ -626,7 +642,7 @@ class SleepNumberMcrController(BedController):
                         side,
                     )
                     return list(self._response_frames)
-                raise TimeoutError(
+                raise _ResponseTimeout(
                     f"Timed out waiting for Sleep Number MCR response func={function_code}"
                 )
             if response_task not in done:
