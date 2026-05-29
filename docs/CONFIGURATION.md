@@ -63,6 +63,7 @@ To adjust settings after setup:
 | **Position Mode** | Speed / Accuracy | Speed | How position updates after commands |
 | **Disconnect After Command** | On/Off | Off | Disconnect immediately after each command |
 | **Idle Disconnect Seconds** | 10-300 | 40 | Auto-disconnect timeout when idle |
+| **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
 
 ### Setting Details
 
@@ -84,6 +85,12 @@ To adjust settings after setup:
 - How long to wait before automatically disconnecting when idle
 - Lower values free the connection faster for physical remotes
 - Higher values reduce reconnection overhead for frequent Home Assistant use
+
+**Stop Discovering New Bluetooth Devices** (Default: Off)
+- Turn on once all your beds are added to stop Home Assistant suggesting new Bluetooth devices as adjustable beds
+- This is a global setting that applies to the whole integration, not just the bed whose options you are editing — so you only need to set it on one bed
+- You can still add a bed at any time with **Settings → Devices & Services → Add Integration → Adjustable Bed**; only the automatic discovery notifications are suppressed
+- To turn discovery back on, uncheck this option in any bed's settings
 
 ---
 

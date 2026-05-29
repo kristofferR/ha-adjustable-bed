@@ -30,6 +30,8 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .diagnostics_utils import get_gatt_summary
+from .discovery_log import async_get_discovery_log
+from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .redaction import redact_data
 
@@ -124,6 +126,25 @@ async def async_get_config_entry_diagnostics(
         if hasattr(service_info, "source"):
             advertisement_info["source"] = service_info.source
 
+    # Recent auto-detections across all devices (global, not entry-specific).
+    # Useful for diagnosing/reporting misidentified discoveries. "device_name"
+    # is used so the redactor keeps the name (the key debugging signal); the
+    # "address" key is still partially redacted to its OUI.
+    discovery_log = await async_get_discovery_log(hass).async_all()
+    auto_discovery_log = [
+        {
+            "detected_at": record["detected_at"],
+            "address": record["address"],
+            "device_name": record["name"],
+            "service_uuids": record["service_uuids"],
+            "manufacturer_data": record["manufacturer_data"],
+            "bed_type": record["bed_type"],
+            "confidence": record["confidence"],
+            "signals": record["signals"],
+        }
+        for record in discovery_log
+    ]
+
     # Build the diagnostic data
     data = {
         "system": {
@@ -165,6 +186,8 @@ async def async_get_config_entry_diagnostics(
         "controller": controller_info,
         "position_data": position_data,
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
+        "auto_discovery_disabled": await async_is_discovery_disabled(hass),
+        "auto_discovery_log": auto_discovery_log,
     }
 
     # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)

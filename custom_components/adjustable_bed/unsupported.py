@@ -103,6 +103,60 @@ Please provide the following information about your bed:
 
 """
 
+    def to_misidentified_details(
+        self,
+        detected_bed_type: str | None,
+        confidence: float,
+        signals: list[str],
+    ) -> str:
+        """Format GitHub issue details for a device wrongly auto-detected as a bed."""
+        if self.manufacturer_data:
+            mfr_str = "\n".join(
+                f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()
+            )
+        else:
+            mfr_str = "  None"
+
+        if self.service_uuids:
+            uuid_str = "\n".join(f"  - `{uuid}`" for uuid in self.service_uuids)
+        else:
+            uuid_str = "  None"
+
+        signal_str = "\n".join(f"  - `{signal}`" for signal in signals) if signals else "  None"
+        confidence_pct = int(confidence * 100)
+
+        return f"""## Misidentified device
+
+The integration auto-detected this device as **`{detected_bed_type or "a bed"}`** \
+(confidence {confidence_pct}%), but the detection is wrong: it may not be a bed at \
+all, or it is a different brand/model.
+
+| Property | Value |
+|----------|-------|
+| Detected as | `{detected_bed_type or "unknown"}` |
+| Confidence | {confidence_pct}% |
+| Address | `{self.address}` |
+| Name | `{self.name or "Unknown"}` |
+| RSSI | {self.rssi or "N/A"} |
+
+### Detection signals
+{signal_str}
+
+### Advertised service UUIDs
+{uuid_str}
+
+### Manufacturer data
+{mfr_str}
+
+## What is this device actually?
+
+<!-- Tell us what this device really is, e.g.:
+- "It's a Bluetooth scale / speaker / fitness tracker, not a bed"
+- "It IS a bed, but the wrong type was detected - it's actually a <brand/model>"
+-->
+
+"""
+
 
 def capture_device_info(
     discovery_info: BluetoothServiceInfoBleak,
@@ -142,6 +196,25 @@ def _generate_github_url(device_info: UnsupportedDeviceInfo, reason: str) -> str
 
     # URL encode the parameters
     params = f"?template=new-bed-support.yml&title={quote(title)}&body={quote(body)}"
+    return f"{GITHUB_NEW_ISSUE_URL}{params}"
+
+
+def build_misidentified_issue_url(
+    device_info: UnsupportedDeviceInfo,
+    detected_bed_type: str | None,
+    confidence: float,
+    signals: list[str],
+) -> str:
+    """Generate a pre-filled GitHub issue URL for a misidentified (false-positive) device.
+
+    Targets the ``misidentified-bed.yml`` issue form, prefilling its ``details``
+    textarea (field id) with the captured detection data.
+    """
+    title = f"[Misidentified] {device_info.name or device_info.address}"
+    details = device_info.to_misidentified_details(detected_bed_type, confidence, signals)
+    params = (
+        f"?template=misidentified-bed.yml&title={quote(title)}&details={quote(details)}"
+    )
     return f"{GITHUB_NEW_ISSUE_URL}{params}"
 
 

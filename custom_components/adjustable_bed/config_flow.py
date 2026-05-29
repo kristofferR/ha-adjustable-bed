@@ -50,6 +50,7 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISABLE_DISCOVERY,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -104,8 +105,14 @@ from .detection import (
     get_bed_type_options,
     is_mac_like_name,
 )
+from .discovery_log import async_get_discovery_log
+from .discovery_settings import (
+    async_is_discovery_disabled,
+    async_set_discovery_disabled,
+)
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .unsupported import (
+    build_misidentified_issue_url,
     capture_device_info,
     create_unsupported_device_issue,
     log_unsupported_device,
@@ -357,6 +364,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self, discovery_info: BluetoothServiceInfoBleak
     ) -> ConfigFlowResult:
         """Handle the bluetooth discovery step."""
+        # Respect the user's global opt-out: suppress automatic discovery cards
+        # entirely (no flow, no Repairs issue, no discovery-log entry). Manual
+        # "Add Integration" is unaffected and still lists nearby devices.
+        if await async_is_discovery_disabled(self.hass):
+            _LOGGER.debug(
+                "Ignoring discovered device %s - automatic discovery is disabled",
+                discovery_info.address,
+            )
+            return self.async_abort(reason="discovery_disabled")
+
         _LOGGER.info(
             "Bluetooth discovery triggered for device: %s (name: %s, RSSI: %s)",
             discovery_info.address,
@@ -404,6 +421,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             discovery_info.address,
             discovery_info.name,
             detection_result.confidence,
+        )
+
+        # Persist a compact record of this auto-detection so misidentified devices
+        # can be diagnosed and reported later. Without this the signals behind a
+        # false positive are lost once the discovery card is dismissed (HA only
+        # persists the bare MAC for devices the user explicitly ignores).
+        device_info = capture_device_info(discovery_info)
+        await async_get_discovery_log(self.hass).async_record(
+            address=device_info.address,
+            name=device_info.name,
+            service_uuids=device_info.service_uuids,
+            manufacturer_data=device_info.manufacturer_data,
+            bed_type=bed_type,
+            confidence=detection_result.confidence,
+            signals=detection_result.signals,
         )
 
         self._discovery_info = discovery_info
@@ -774,6 +806,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders["detection_note"] = (
                 f"{description_placeholders['detection_note']}\n{octo_split_note}"
             )
+
+        # Offer a one-click "this isn't my bed" report so false-positive
+        # detections can be fixed. Built from the live (un-redacted) discovery
+        # data because the user explicitly chooses whether to open the link.
+        report_device_info = capture_device_info(self._discovery_info)
+        report_url = build_misidentified_issue_url(
+            report_device_info,
+            detected_bed_type,
+            detection_result.confidence,
+            detection_result.signals,
+        )
+        description_placeholders["report_note"] = (
+            f"Wrong device, or not a bed? [Report a misidentified device]({report_url})"
+        )
 
         return self.async_show_form(
             step_id="bluetooth_confirm",
@@ -1943,6 +1989,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         if current_adapter not in adapters:
             current_adapter = ADAPTER_AUTO
 
+        # Global discovery toggle (shared across all beds, not stored per-entry)
+        discovery_disabled = await async_is_discovery_disabled(self.hass)
+
         # Build schema
         schema_dict = {
             vol.Optional(
@@ -1996,6 +2045,10 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     POSITION_MODE_ACCURACY: "Accuracy",
                 }
             ),
+            vol.Optional(
+                CONF_DISABLE_DISCOVERY,
+                default=discovery_disabled,
+            ): bool,
         }
 
         if supports_passive_position_reconciliation(bed_type):
@@ -2068,6 +2121,12 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             ] = TextSelector(TextSelectorConfig())
 
         if user_input is not None:
+            # The discovery toggle is global, not per-entry: persist it to the
+            # shared store and drop it so it is never written into entry data.
+            if CONF_DISABLE_DISCOVERY in user_input:
+                await async_set_discovery_disabled(
+                    self.hass, bool(user_input.pop(CONF_DISABLE_DISCOVERY))
+                )
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

@@ -60,6 +60,10 @@ CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_POSITION_MODE: Final = "position_mode"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
+# Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
+# Stored separately via discovery_settings, surfaced as a checkbox in the options
+# flow. Manual "Add Integration" is unaffected.
+CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_OCTO_PIN: Final = "octo_pin"
 CONF_RICHMAT_REMOTE: Final = "richmat_remote"
 CONF_JENSEN_PIN: Final = "jensen_pin"

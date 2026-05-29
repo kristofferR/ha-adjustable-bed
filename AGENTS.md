@@ -218,6 +218,7 @@ custom_components/adjustable_bed/
 | `motor_pulse_delay_ms` | Delay between repeats | 100 |
 | `disconnect_after_command` | Disconnect immediately after commands | false |
 | `idle_disconnect_seconds` | Idle timeout before disconnect | 40 |
+| `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
 | `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |
 | `jensen_pin` | PIN for Jensen beds | "" |
