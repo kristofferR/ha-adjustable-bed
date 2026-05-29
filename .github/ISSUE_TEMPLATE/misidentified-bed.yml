@@ -1,0 +1,38 @@
+name: Misidentified Device
+description: Report a Bluetooth device that was wrongly auto-detected as a bed (or detected as the wrong bed type)
+title: "[Misidentified] "
+labels: ["bug", "detection"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when the integration **auto-discovered a device as an adjustable bed but got it wrong** - either it isn't a bed at all, or it's the wrong bed type.
+
+        If you reached this page from the "Report a misidentified device" link in Home Assistant, the **Detection details** field below is already filled in for you. Please leave it as-is - it contains the BLE signals we need to stop this happening for everyone.
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Detection details
+      description: Auto-filled from the discovery. Please leave this as-is.
+      placeholder: |
+        If this is empty, you can fill it from Settings -> Devices & Services -> Adjustable Bed -> Download diagnostics (see the "auto_discovery_log" section).
+    validations:
+      required: true
+
+  - type: input
+    id: actual_device
+    attributes:
+      label: What is this device actually?
+      description: Tell us what it really is so we can fix detection.
+      placeholder: "e.g., Wyze smart scale (not a bed), or: it IS a bed but a Foo not a Bar"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional information
+      description: Anything else that helps (other apps that control it, where you bought it, etc.)
+    validations:
+      required: false

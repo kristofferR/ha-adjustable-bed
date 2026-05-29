@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISABLE_DISCOVERY,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
@@ -46,6 +47,7 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
@@ -55,6 +57,10 @@ from custom_components.adjustable_bed.const import (
     TIMOTION_AHF_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.detection import detect_bed_type
+from custom_components.adjustable_bed.discovery_settings import (
+    async_is_discovery_disabled,
+    async_set_discovery_disabled,
+)
 from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
@@ -644,6 +650,41 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "not_supported"
+
+    async def test_bluetooth_discovery_disabled_aborts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Discovery is suppressed entirely when the user has disabled it."""
+        await async_set_discovery_disabled(hass, True)
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "discovery_disabled"
+
+    async def test_bluetooth_discovery_confirm_offers_misidentified_report(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """The confirm step exposes a pre-filled 'report misidentified device' link."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        report_note = result["description_placeholders"]["report_note"]
+        assert "issues/new?template=misidentified-bed.yml" in report_note
 
     async def test_bluetooth_discovery_already_configured(
         self,
@@ -1391,3 +1432,67 @@ class TestOptionsFlow:
         assert mock_config_entry.data[CONF_HAS_MASSAGE] is True
         assert mock_config_entry.data[CONF_DISABLE_ANGLE_SENSING] is False
         assert mock_config_entry.data[CONF_PASSIVE_POSITION_RECONCILIATION] is False
+
+    async def test_options_flow_toggles_discovery(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """The discovery toggle persists globally and never lands in entry data."""
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        assert await async_is_discovery_disabled(hass) is False
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+            result = await hass.config_entries.options.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_DISABLE_DISCOVERY: True,
+                },
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        # Stored globally, not as per-entry data.
+        assert await async_is_discovery_disabled(hass) is True
+        assert CONF_DISABLE_DISCOVERY not in mock_config_entry.data
+
+    async def test_options_flow_toggle_not_applied_on_validation_error(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A rejected form must not partially apply the global discovery toggle."""
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        assert await async_is_discovery_disabled(hass) is False
+
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+            result = await hass.config_entries.options.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_DISABLE_DISCOVERY: True,
+                    CONF_MOTOR_PULSE_COUNT: "not-a-number",
+                },
+            )
+
+        # Form is rejected for the invalid number...
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]
+        # ...and the discovery toggle was NOT persisted.
+        assert await async_is_discovery_disabled(hass) is False

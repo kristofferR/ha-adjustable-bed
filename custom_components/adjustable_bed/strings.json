@@ -41,7 +41,7 @@
       },
       "bluetooth_confirm": {
         "title": "Confirm Adjustable Bed",
-        "description": "Do you want to set up {name}?\n{detection_note}",
+        "description": "Do you want to set up {name}?\n{detection_note}\n\n{report_note}",
         "data": {
           "bed_type": "Bed type",
           "name": "Name",
@@ -227,6 +227,7 @@
       "configured_retrying_suffix": "[already configured, setup retry]",
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
+      "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle."
     },
     "error": {
@@ -255,6 +256,7 @@
           "disable_angle_sensing": "Disable angle sensing",
           "passive_position_reconciliation": "Refresh positions while idle",
           "position_mode": "Position update mode",
+          "disable_discovery": "Stop discovering new Bluetooth devices",
           "preferred_adapter": "Bluetooth adapter",
           "connection_profile": "Connection profile",
           "protocol_variant": "Protocol variant",
@@ -273,6 +275,7 @@
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "passive_position_reconciliation": "Periodically reconnect and read positions while idle so Home Assistant catches up with moves made using the physical remote. This is enabled by default for Linak beds and may briefly use the BLE connection in the background.",
           "position_mode": "Speed: faster button response. Accuracy: extra position read after each command.",
+          "disable_discovery": "When enabled, Home Assistant stops automatically suggesting newly seen Bluetooth devices as adjustable beds. This applies to the whole integration, not just this bed. You can still add a new bed at any time with 'Add Integration'.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly.",
