@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -99,6 +100,44 @@ class TestCoverEntities:
 
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_head") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:01_feet") is None
+
+    async def test_okin_rf_eco_bt_exposes_only_stair_cover_and_stop(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """OKIN RF ECO BT should expose one stair cover and no bed-only entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Elda Stair",
+            data={
+                "address": "AA:BB:CC:DD:EE:44",
+                "name": "Elda Stair",
+                CONF_BED_TYPE: BED_TYPE_OKIN_RF_ECO_BT,
+                CONF_MOTOR_COUNT: 1,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:44",
+            entry_id="okin_rf_eco_bt_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:44_stair")
+        for key in ("back", "legs", "head", "feet"):
+            assert registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:44_{key}") is None
+
+        assert registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:44_stop")
+        for key in ("preset_flat", "preset_memory_1", "toggle_light", "massage_all_toggle"):
+            assert registry.async_get_entity_id("button", DOMAIN, f"AA:BB:CC:DD:EE:44_{key}") is None
 
     async def test_malouf_hilo_cover_setup_removes_stale_head_and_feet(
         self,

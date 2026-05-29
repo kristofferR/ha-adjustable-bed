@@ -100,6 +100,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Rize MF900 |
+| ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_ORE,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -225,6 +226,11 @@ async def create_controller(
         variant = protocol_variant or "auto"
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
+
+    if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+        from .beds.okin_rf_eco_bt import OkinRfEcoBtController
+
+        return OkinRfEcoBtController(coordinator)
 
     if bed_type == BED_TYPE_OKIN_7BYTE:
         from .beds.okin_7byte import Okin7ByteController

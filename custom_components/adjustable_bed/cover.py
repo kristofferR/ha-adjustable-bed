@@ -159,6 +159,16 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
         stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
         min_motors=2,  # Bed height is independent of motor count
     ),
+    AdjustableBedCoverEntityDescription(
+        key="stair",
+        translation_key="stair",
+        icon="mdi:stairs",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_back_up(),
+        close_fn=lambda ctrl: ctrl.move_back_down(),
+        stop_fn=lambda ctrl: ctrl.move_back_stop(),
+        min_motors=1,
+    ),
 )
 
 

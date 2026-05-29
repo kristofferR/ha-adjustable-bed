@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -31,6 +32,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_REVERIE,
@@ -66,6 +68,9 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
+    OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+    OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     REMACRO_SERVICE_UUID,
     REVERIE_NIGHTSTAND_SERVICE_UUID,
     REVERIE_SERVICE_UUID,
@@ -84,6 +89,7 @@ from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     detect_bed_type,
     detect_bed_type_detailed,
+    detect_bed_type_from_gatt_services,
     detect_richmat_remote_from_name,
 )
 
@@ -725,6 +731,41 @@ class TestOkinUUIDDisambiguation:
         assert result.requires_characteristic_check is True
         assert "name:okin_generic" in result.signals
         assert BED_TYPE_NECTAR in result.ambiguous_types
+        assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
+
+    def test_okin_generic_name_without_advertised_uuid_is_not_auto_detected(self):
+        """Generic OKIN-* advertisements without UUIDs should remain manual."""
+        service_info = _make_service_info(
+            name="OKIN-050226",
+            service_uuids=[],
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type is None
+        assert result.confidence == 0.0
+
+    def test_okin_rf_eco_bt_gatt_signature_is_detected(self):
+        """Connected GATT services should identify the OKIN RF ECO BT profile."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        result = detect_bed_type_from_gatt_services(gatt_services)
+
+        assert result.bed_type == BED_TYPE_OKIN_RF_ECO_BT
+        assert result.confidence == 0.9
+        assert "gatt_char:okin_smart_remote_css_write" in result.signals
 
     def test_okin_uuid_defaults_to_okimat(self):
         """Test OKIN UUID defaults to Okimat with low confidence for unknown name."""
@@ -737,6 +778,7 @@ class TestOkinUUIDDisambiguation:
         assert result.confidence == 0.5
         assert result.requires_characteristic_check is True
         assert BED_TYPE_NECTAR in result.ambiguous_types
+        assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
 
 class TestFFE5UUIDDisambiguation:
