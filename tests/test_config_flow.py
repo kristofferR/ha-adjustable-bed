@@ -14,6 +14,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
@@ -628,6 +629,14 @@ class TestBluetoothDiscoveryFlow:
             },
         )
 
+        # A connectable scanner is mocked, so the verify_connection step appears.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "My Bed"
         assert result["data"][CONF_ADDRESS] == mock_bluetooth_service_info.address
@@ -921,6 +930,14 @@ class TestBluetoothDiscoveryFlow:
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
+        )
+
+        # A connectable scanner is mocked, so the verify_connection step appears.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
         )
 
         # Should create entry with the disambiguated type
@@ -1606,3 +1623,150 @@ class TestOptionsFlow:
         assert result["errors"]
         # ...and the discovery toggle was NOT persisted.
         assert await async_is_discovery_disabled(hass) is False
+
+
+# ---------------------------------------------------------------------------
+# verify_connection step (issue #357)
+# ---------------------------------------------------------------------------
+
+
+def _fake_connected_client() -> MagicMock:
+    """Fake BleakClient with one service and a writable characteristic."""
+    char = MagicMock()
+    char.uuid = "0000ffe1-0000-1000-8000-00805f9b34fb"
+    char.properties = ["write", "notify"]
+    service = MagicMock()
+    service.uuid = "0000ffe0-0000-1000-8000-00805f9b34fb"
+    service.characteristics = [char]
+    client = MagicMock()
+    client.is_connected = True
+    client.services = [service]
+    client.disconnect = AsyncMock()
+    return client
+
+
+async def test_verify_connection_success_then_creates_entry(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A successful probe shows the checklist, then submit creates the entry."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    client = _fake_connected_client()
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="esphome_bedroom",
+        rssi=-60,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(return_value=client),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.discover_services",
+            AsyncMock(return_value=True),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.read_ble_device_info",
+            AsyncMock(return_value=("OKIN", None)),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["type"] == FlowResultType.FORM
+        assert verify["step_id"] == "verify_connection"
+        caps = verify["description_placeholders"]["capabilities"]
+        assert "Connected" in caps
+        assert "esphome_bedroom" in caps
+        assert "ESPHome proxy" in caps
+        # The probe must release the bed's single BLE connection.
+        client.disconnect.assert_awaited()
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_failure_still_creates_entry(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A failed probe shows the error note but the user can still finish setup."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="hci0",
+        rssi=-72,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(side_effect=Exception("device busy")),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["step_id"] == "verify_connection"
+        assert "Could not connect" in verify["description_placeholders"]["capabilities"]
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_skipped_without_scanner(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """With no connectable scanner the verify step is skipped, entry created directly."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    with patch.object(
+        AdjustableBedConfigFlow, "_verification_possible", return_value=False
+    ):
+        created = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
