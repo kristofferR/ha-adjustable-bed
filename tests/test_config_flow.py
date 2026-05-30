@@ -172,8 +172,8 @@ class TestPairingPersistence:
         flow.hass = hass
         flow._manual_data = {
             CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-            CONF_NAME: "Paired Sleep Number",
-            CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+            CONF_NAME: "Paired Okimat",
+            CONF_BED_TYPE: BED_TYPE_OKIMAT,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,

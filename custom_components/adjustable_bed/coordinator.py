@@ -1097,7 +1097,12 @@ class AdjustableBedCoordinator:
                     # GATT discovery. Some devices expose different services depending
                     # on pairing state, and stale cached services from a previous
                     # non-paired connection will cause characteristic lookups to fail.
-                    disable_cache = use_pairing
+                    #
+                    # Sleep Number Climate 360 does not pair (see BEDS_REQUIRING_PAIRING)
+                    # but the SleepIQ app refreshes the GATT cache on every connect, so
+                    # force fresh discovery to keep parity and ensure the app-layer
+                    # priming reads always see the live characteristic handles.
+                    disable_cache = use_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
                     try:
                         self._client = await establish_connection(
                             BleakClient,

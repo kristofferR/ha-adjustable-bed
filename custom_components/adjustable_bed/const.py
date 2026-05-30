@@ -1590,7 +1590,17 @@ ALL_PROTOCOL_VARIANTS: Final = [
 ]
 
 # Bed types that require BLE pairing before they can be controlled
-# These beds use encrypted connections and must be paired at the OS level
+# These beds use encrypted connections and must be paired at the OS level.
+#
+# NOTE: Sleep Number Climate 360 / FlexFit (Fuzion "bamkey") is deliberately
+# NOT listed here. The official SleepIQ app never creates an OS-level BLE bond
+# (there is no createBond/ensureBond call in the decompiled Fuzion BLE manager,
+# and the Auth characteristic is read-only). The bed "authenticates" purely at
+# the application layer by reading the Auth + TransferInfo characteristics after
+# every connect — handled by SleepNumberController._ensure_bed_presence_channel_primed().
+# Forcing OS-level pair=True made ESP-IDF/ESPHome Bluetooth proxies return
+# "auth fail reason=82" and leave the link wedged in the ESTABLISHED state, which
+# broke every subsequent reconnect until the proxy was factory reset (issue #318).
 BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_CST,
@@ -1599,7 +1609,6 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
-    BED_TYPE_SLEEP_NUMBER,
 }
 
 # Bed type + variant combinations that require BLE pairing

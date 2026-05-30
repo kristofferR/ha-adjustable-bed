@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
     VARIANT_AUTO,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -77,6 +78,38 @@ def sleep_number_coordinator(hass: HomeAssistant, mock_coordinator_connected):
         return coordinator
 
     return _create
+
+
+class TestSleepNumberPairing:
+    """Regression coverage for issue #318 — the bed must never OS-pair.
+
+    The Fuzion / Climate 360 base authenticates at the application layer by
+    reading the Auth + TransferInfo characteristics after each connect (exactly
+    like the SleepIQ app, which never creates a BLE bond). Forcing OS-level
+    ``pair=True`` made ESP-IDF / ESPHome Bluetooth proxies return
+    ``auth fail reason=82`` and wedge the link in the ``ESTABLISHED`` state,
+    breaking every subsequent reconnect until the proxy was factory reset.
+    """
+
+    def test_sleep_number_is_not_a_pairing_required_bed(self) -> None:
+        """Sleep Number must not be classified as requiring OS-level pairing."""
+        assert requires_pairing(BED_TYPE_SLEEP_NUMBER) is False
+
+    async def test_connect_never_requests_ble_pairing(
+        self, sleep_number_coordinator, mock_establish_connection
+    ) -> None:
+        """The connect path must pass pair=False and force fresh GATT discovery."""
+        await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:F0",
+            name="Smart bed 0074E7",
+            entry_id="sleep_number_no_pair",
+        )
+
+        kwargs = mock_establish_connection.await_args.kwargs
+        assert kwargs.get("pair") is False
+        # The SleepIQ app refreshes the GATT cache every connect; we mirror that
+        # so the priming reads always resolve live characteristic handles.
+        assert kwargs.get("use_services_cache") is False
 
 
 class TestSleepNumberController:
