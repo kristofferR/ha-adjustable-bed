@@ -18,12 +18,14 @@
 
 ## Pairing
 
-Pairing depends on the Sleep Number BLE protocol family:
+Neither Sleep Number protocol family needs an OS-level BLE bond:
 
-- **Fuzion / Climate 360 / FlexFit (`Smart bed *`)**: BLE pairing is required before Home Assistant can connect.
-- **BAM / MCR (`ffffd1fd-...`, older i8 / 360 FlexFit 2)**: basic BLE control usually works without OS-level pairing.
+- **Fuzion / Climate 360 / FlexFit (`Smart bed *`)**: does **not** require OS-level BLE pairing/bonding. The bed authenticates at the application layer — the integration reads the Auth (`8d4675a5-…`) and TransferInfo (`e8d06e2a-…`) characteristics after every connect, exactly like the SleepIQ app (which never creates a BLE bond). Just make sure no phone app holds the connection; the bed allows only one BLE client at a time.
+- **BAM / MCR (`ffffd1fd-…`, older i8 / 360 FlexFit 2)**: basic BLE control works without OS-level pairing.
 
-For Fuzion bases, enter pairing mode by holding the side pairing button until the indicator flashes blue, then pair from Home Assistant or your system Bluetooth settings.
+> **Do not OS-pair a Fuzion base.** Earlier releases forced `pair=True`, which made ESP32 / ESPHome Bluetooth proxies report `auth fail reason=82` and leave the connection wedged in the `ESTABLISHED` state, breaking every reconnect until the proxy was factory-reset (issue #318). If your bed isn't discoverable, hold the side button until the indicator flashes blue to make it connectable — but do **not** complete an OS-level pairing.
+>
+> If you previously got stuck in this state, reboot the ESPHome Bluetooth proxy once after updating: the integration no longer re-pairs, so the proxy will reconnect cleanly instead of re-wedging on boot.
 
 ## Features
 
@@ -80,7 +82,7 @@ Older BAM/MCR bases use a different controller path. They expose both firmness s
 **Transfer Info UUID:** `e8d06e2a-c987-48f8-93a8-4d18d56b4337`  
 **Bulk Transfer Notify UUID:** `0ec9a5a3-8ac3-4582-92f3-1666421f323d`  
 **Format:** `fUzIoN` framed bamkey blobs with CRC validation  
-**Pairing Required:** Yes
+**Pairing Required:** No (application-layer auth via Auth/TransferInfo reads — no OS-level BLE bond)
 
 ## Detection
 
