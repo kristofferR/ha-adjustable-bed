@@ -285,7 +285,7 @@ Use these to identify your bed type in a BLE scanner:
 | `0000ffe0-0000-1000-8000-00805f9b34fb` | Solace, MotoSleep, Octo (standard), Limoss/Stawett (name-based) |
 | `0000ffe5-0000-1000-8000-00805f9b34fb` | Keeson Base, Ergomotion, Malouf LEGACY_OKIN, OKIN FFE, Serta |
 | `0000fff0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback), Richmat WiLinke (variant) |
-| `01000001-0000-1000-8000-00805f9b34fb` | Malouf NEW_OKIN |
+| `01000001-0000-1000-8000-00805f9b34fb` | Malouf/Lucid family (usually NEW_OKIN; `OKIN-BLE` + `BTCB` uses LEGACY_OKIN/FFE5) |
 | `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Reverie |
 | `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
 | `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |

@@ -61,7 +61,9 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
+    MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
+    MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
@@ -91,6 +93,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     detect_bed_type_from_gatt_services,
     detect_richmat_remote_from_name,
+    refine_malouf_protocol_from_gatt,
 )
 
 
@@ -268,6 +271,22 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_MALOUF_NEW_OKIN
+
+    def test_detect_lucid_l600_btcb_as_malouf_legacy(self):
+        """Lucid L600 OKIN-BLE/BTCB beacons use the FFE5 Malouf protocol."""
+        service_info = _make_service_info(
+            name="OKIN-BLE00017786",
+            service_uuids=[MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID],
+            manufacturer_data={3: b"BTCB.03"},
+        )
+
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_MALOUF_LEGACY_OKIN
+        assert result.confidence == 0.9
+        assert "name:okin_ble" in result.signals
+        assert "manufacturer_payload:btcb" in result.signals
+        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN]
 
     def test_detect_leggett_gen2_by_uuid(self):
         """Test Leggett Gen2 detection by unique service UUID."""
@@ -766,6 +785,45 @@ class TestOkinUUIDDisambiguation:
         assert result.bed_type == BED_TYPE_OKIN_RF_ECO_BT
         assert result.confidence == 0.9
         assert "gatt_char:okin_smart_remote_css_write" in result.signals
+
+    def test_malouf_new_refines_to_legacy_when_gatt_has_ffe9_only(self):
+        """A saved Malouf Nordic entry should use FFE5 when connected GATT proves it."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=KEESON_BASE_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID)],
+            )
+        ]
+
+        assert (
+            refine_malouf_protocol_from_gatt(BED_TYPE_MALOUF_NEW_OKIN, gatt_services)
+            == BED_TYPE_MALOUF_LEGACY_OKIN
+        )
+
+    def test_malouf_legacy_refines_to_new_when_gatt_has_nordic_write_only(self):
+        """The Malouf family correction should work in both protocol directions."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=NORDIC_UART_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=MALOUF_NEW_OKIN_WRITE_CHAR_UUID)],
+            )
+        ]
+
+        assert (
+            refine_malouf_protocol_from_gatt(BED_TYPE_MALOUF_LEGACY_OKIN, gatt_services)
+            == BED_TYPE_MALOUF_NEW_OKIN
+        )
+
+    def test_malouf_gatt_refinement_leaves_non_malouf_types_unchanged(self):
+        """GATT refinement is scoped to Malouf/Lucid entries because FFE5 is shared."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=KEESON_BASE_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID)],
+            )
+        ]
+
+        assert refine_malouf_protocol_from_gatt(BED_TYPE_KEESON, gatt_services) == BED_TYPE_KEESON
 
     def test_okin_uuid_defaults_to_okimat(self):
         """Test OKIN UUID defaults to Okimat with low confidence for unknown name."""

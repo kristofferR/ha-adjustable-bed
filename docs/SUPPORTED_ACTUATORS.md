@@ -149,7 +149,7 @@ These beds have their own dedicated integrations:
    - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
-   - Service `01000001-...` → Malouf (New OKIN)
+   - Service `01000001-...` → Malouf/Lucid family (usually New OKIN; `OKIN-BLE` + `BTCB` uses Legacy OKIN)
    - Service `0000ffe5-...` → Malouf (Legacy OKIN) or Keeson OKIN variant
    - Service `0000fff0-...` + name `SUTA-*` → SUTA Smart Home
    - Service `6e400001-...` + name `AHF*` → TiMOTION AHF

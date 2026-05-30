@@ -131,7 +131,7 @@ from .const import (
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
-from .detection import detect_richmat_remote_from_name
+from .detection import detect_richmat_remote_from_name, refine_malouf_protocol_from_gatt
 from .diagnostic_payloads import new_connection_attempt_details
 from .unsupported import create_pairing_required_issue
 
@@ -336,6 +336,35 @@ class AdjustableBedCoordinator:
             self._preferred_adapter,
             self._connection_profile,
         )
+
+    def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> None:
+        """Apply a protocol correction discovered after BLE service discovery."""
+        previous_bed_type = self._bed_type
+        if corrected_bed_type == previous_bed_type:
+            return
+
+        _LOGGER.warning(
+            "Correcting bed protocol for %s from %s to %s based on connected GATT services",
+            self._address,
+            previous_bed_type,
+            corrected_bed_type,
+        )
+        previous_defaults = BED_MOTOR_PULSE_DEFAULTS.get(previous_bed_type)
+        corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(corrected_bed_type)
+        if (
+            previous_defaults is not None
+            and corrected_defaults is not None
+            and (self._motor_pulse_count, self._motor_pulse_delay_ms) == previous_defaults
+        ):
+            self._motor_pulse_count, self._motor_pulse_delay_ms = corrected_defaults
+            _LOGGER.info(
+                "Updated motor pulse defaults for corrected %s protocol: count=%s, delay=%sms",
+                corrected_bed_type,
+                self._motor_pulse_count,
+                self._motor_pulse_delay_ms,
+            )
+
+        self._bed_type = corrected_bed_type
 
     @property
     def address(self) -> str:
@@ -1303,6 +1332,12 @@ class AdjustableBedCoordinator:
                     )
                     self._ble_manufacturer = ble_manufacturer
                     self._ble_model = ble_model
+
+                corrected_bed_type = refine_malouf_protocol_from_gatt(
+                    self._bed_type,
+                    self._client.services,
+                )
+                self._apply_runtime_bed_type_correction(corrected_bed_type)
 
                 # Post-connection protocol verification for DewertOkin Star devices.
                 # The adjustbed app (com.okin.bedding.adjustbed) reads BLE characteristic
