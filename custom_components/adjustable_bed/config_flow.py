@@ -2065,10 +2065,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 if report.writable_count == 1
                 else "writable characteristics"
             )
+            # The integration controls beds by writing commands to a
+            # characteristic, so zero writable characteristics means this setup
+            # cannot send commands - flag it instead of giving a false pass
+            # (often a sign the probe reached the wrong device).
+            marker = "✅" if report.writable_count else "⚠️"
             lines.append(
-                f"✅ GATT services discovered ({report.service_count} {services_word}, "
+                f"{marker} GATT services discovered ({report.service_count} {services_word}, "
                 f"{report.writable_count} {writable_word})"
             )
+            if not report.writable_count:
+                lines.append(
+                    "⚠️ No writable characteristic found - this device may not be "
+                    "controllable, or the probe reached the wrong device."
+                )
         else:
             lines.append("⚠️ Connected, but no GATT services were discovered.")
 

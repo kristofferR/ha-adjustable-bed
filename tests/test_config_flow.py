@@ -1706,8 +1706,78 @@ async def test_verify_connection_success_then_creates_entry(
         assert "Connected" in caps
         assert "esphome_bedroom" in caps
         assert "ESPHome proxy" in caps
+        # GATT + device-info details surface in the checklist.
+        assert "writable characteristic" in caps
+        assert "OKIN" in caps
         # The probe must release the bed's single BLE connection.
         client.disconnect.assert_awaited()
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_warns_when_no_writable_characteristic(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """Connecting to a device with no writable characteristic must not show a pass."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    # Service present, but only read/notify - nothing the integration can write to.
+    char = MagicMock()
+    char.uuid = "0000ffe1-0000-1000-8000-00805f9b34fb"
+    char.properties = ["read", "notify"]
+    service = MagicMock()
+    service.uuid = "0000ffe0-0000-1000-8000-00805f9b34fb"
+    service.characteristics = [char]
+    client = MagicMock()
+    client.is_connected = True
+    client.services = [service]
+    client.disconnect = AsyncMock()
+
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="hci0",
+        rssi=-55,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(return_value=client),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.discover_services",
+            AsyncMock(return_value=True),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.read_ble_device_info",
+            AsyncMock(return_value=(None, None)),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["step_id"] == "verify_connection"
+        caps = verify["description_placeholders"]["capabilities"]
+        assert "No writable characteristic found" in caps
+        assert "⚠️" in caps
 
         created = await hass.config_entries.flow.async_configure(
             verify["flow_id"], user_input={}
