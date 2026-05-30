@@ -1502,9 +1502,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
                     entry_data = self._maybe_add_kaidi_metadata(entry_data)
-                    return self.async_create_entry(
-                        title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                        data=entry_data,
+                    return await self._finish_with_verify(
+                        entry_data,
+                        user_input.get(CONF_NAME, "Adjustable Bed"),
                     )
 
         _LOGGER.debug("Showing manual entry form")
@@ -1632,9 +1632,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
             )
 
         return self.async_show_form(
@@ -1689,9 +1689,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
             )
 
         return self.async_show_form(
@@ -1951,6 +1951,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         address: str,
         preferred_adapter: str | None,
         bed_type: str | None,
+        protocol_variant: str | None = None,
     ) -> CapabilityReport:
         """Connect once (read-only) and report what was detected.
 
@@ -1964,9 +1965,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         from bleak import BleakClient
         from bleak_retry_connector import establish_connection
 
-        report = CapabilityReport(
-            position_feedback=bool(bed_type) and bed_type in BEDS_WITH_POSITION_FEEDBACK
+        # Keeson exposes position feedback only on its Ergomotion variant, so
+        # mirror the same special-case the confirm step uses for angle sensing.
+        has_position_feedback = bool(bed_type) and (
+            bed_type in BEDS_WITH_POSITION_FEEDBACK
+            or (
+                bed_type == BED_TYPE_KEESON
+                and protocol_variant == KEESON_VARIANT_ERGOMOTION
+            )
         )
+        report = CapabilityReport(position_feedback=has_position_feedback)
 
         try:
             selection = await select_adapter(self.hass, address, preferred_adapter)
@@ -2104,6 +2112,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._pending_entry[CONF_ADDRESS],
             self._pending_entry.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
             self._pending_entry.get(CONF_BED_TYPE),
+            self._pending_entry.get(CONF_PROTOCOL_VARIANT),
         )
 
         return self.async_show_form(

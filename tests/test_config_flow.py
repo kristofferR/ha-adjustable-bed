@@ -1134,19 +1134,23 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        # Now in manual_entry step, fill the form
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        # Now in manual_entry step, fill the form. No connectable scanner here,
+        # so the read-only verify step is skipped and the entry is created directly.
+        with patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=False
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:66",
+                    CONF_BED_TYPE: BED_TYPE_LINAK,
+                    CONF_NAME: "Manual Bed",
+                    CONF_MOTOR_COUNT: 3,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "Manual Bed"
@@ -1171,14 +1175,19 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        with patch(
-            "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
-            return_value=KaidiAdvertisement(
-                adv_type=KAIDI_ADV_TYPE_BROADCAST,
-                room_id=0x12345678,
-                vaddr=0x01020304,
-                product_id=136,
-                sofa_acu_no=0x2004,
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
+                return_value=KaidiAdvertisement(
+                    adv_type=KAIDI_ADV_TYPE_BROADCAST,
+                    room_id=0x12345678,
+                    vaddr=0x01020304,
+                    product_id=136,
+                    sofa_acu_no=0x2004,
+                ),
+            ),
+            patch.object(
+                AdjustableBedConfigFlow, "_verification_possible", return_value=False
             ),
         ):
             result = await hass.config_entries.flow.async_configure(
@@ -1256,18 +1265,21 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        with patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=False
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
+                    CONF_BED_TYPE: BED_TYPE_LINAK,
+                    CONF_NAME: "Manual Bed",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_ADDRESS] == "AA:BB:CC:DD:EE:FF"  # Normalized
