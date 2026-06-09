@@ -636,6 +636,38 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_HAS_MASSAGE] is True
         assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
 
+    async def test_bluetooth_discovery_confirm_coerces_string_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Regression for #361: HA frontend submits the dropdown value as a string.
+
+        ``vol.In([2, 3, 4])`` rejected ``"3"`` with "value must be one of [2, 3, 4]",
+        blocking the config flow. The schema must coerce the string to an int.
+        """
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "My Bed",
+                # Frontend sends select-dropdown values as strings, not ints.
+                CONF_MOTOR_COUNT: "3",
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_MOTOR_COUNT] == 3
+
     async def test_bluetooth_discovery_duplicate_octo_names_warn_about_split_setup(
         self,
         hass: HomeAssistant,
