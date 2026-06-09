@@ -574,19 +574,21 @@ class BLEDiagnosticRunner:
 
     async def _reconnect(self) -> bool:
         """Re-establish a connection that dropped mid-diagnostics."""
-        if self._using_coordinator_connection:
-            # The coordinator owns its connection lifecycle; pick up its
-            # reconnected client if there is one, but never open a competing
-            # connection of our own.
-            if self.coordinator and self.coordinator.client and self.coordinator.is_connected:
-                self._client = self.coordinator.client
-                return True
-            message = "Coordinator connection lost during diagnostics"
-            if message not in self._errors:
-                self._errors.append(message)
-            return False
+        if (
+            self._using_coordinator_connection
+            and self.coordinator
+            and self.coordinator.client
+            and self.coordinator.is_connected
+        ):
+            # The coordinator already auto-reconnected on its own; adopt its client.
+            self._client = self.coordinator.client
+            return True
 
         if self._reconnect_count >= MAX_RECONNECT_ATTEMPTS:
+            _LOGGER.debug(
+                "Max reconnect attempts (%d) reached; not reconnecting",
+                MAX_RECONNECT_ATTEMPTS,
+            )
             return False
 
         self._reconnect_count += 1
@@ -597,12 +599,24 @@ class BLEDiagnosticRunner:
         _LOGGER.warning(message)
         self._errors.append(message)
 
-        if self._client is not None:
-            with contextlib.suppress(Exception):
-                await self._client.disconnect()
-            self._client = None
-
         try:
+            if self._using_coordinator_connection:
+                if self.coordinator is None:
+                    return False
+                # Reconnect through the coordinator so we never open a
+                # competing connection; leave its disconnect timer paused
+                # until the diagnostics run finishes.
+                if not await self.coordinator.async_ensure_connected(reset_timer=False):
+                    self._errors.append("Reconnect failed: coordinator could not reconnect")
+                    return False
+                self._client = self.coordinator.client
+                return self._client is not None and self._client.is_connected
+
+            if self._client is not None:
+                with contextlib.suppress(Exception):
+                    await self._client.disconnect()
+                self._client = None
+
             await self._connect()
         except asyncio.CancelledError:
             raise

@@ -485,6 +485,94 @@ class TestBleDiagnosticsRunner:
         assert any(error.startswith("Reconnect failed") for error in report.errors)
         assert any("Skipped notification capture" in error for error in report.errors)
 
+    async def test_run_diagnostics_reconnects_via_coordinator_when_shared_connection_drops(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Diagnostics reusing the coordinator connection should reconnect through it."""
+        connectable_info = _build_unknown_service_info(
+            source="proxy_1",
+            connectable=True,
+            rssi=-55,
+        )
+
+        service1 = _build_reconnect_test_service()
+        char_ok1, char_kill1, _char_after1 = service1.characteristics
+        client1 = _build_diagnostic_client(_FakeServices([service1]))
+
+        service2 = _build_reconnect_test_service()
+        char_after2 = service2.characteristics[2]
+        client2 = _build_diagnostic_client(_FakeServices([service2]))
+
+        coordinator = MagicMock()
+        coordinator.client = client1
+        coordinator.is_connected = True
+        coordinator.connection_source = "proxy_1"
+        coordinator.connection_rssi = -55
+        coordinator.disable_angle_sensing = False
+        coordinator.adapter_details = {}
+        coordinator.connection_history = {}
+        coordinator.connection_attempt_details = []
+        coordinator.command_trace = []
+
+        async def _read_gatt_char_1(target):
+            target_uuid = getattr(target, "uuid", target)
+            if target_uuid == char_ok1.uuid:
+                return b"\x01"
+            if target_uuid == char_kill1.uuid:
+                # The drop clears the coordinator's client; auto-reconnect has
+                # not fired yet when the next read comes around.
+                client1.is_connected = False
+                coordinator.client = None
+                coordinator.is_connected = False
+                raise BleakError("")
+            raise BleakError(f"unexpected read on client1: {target_uuid}")
+
+        async def _read_gatt_char_2(target):
+            target_uuid = getattr(target, "uuid", target)
+            if target_uuid == char_after2.uuid:
+                return b"\x02"
+            raise BleakError(f"unexpected read on client2: {target_uuid}")
+
+        client1.read_gatt_char = AsyncMock(side_effect=_read_gatt_char_1)
+        client2.read_gatt_char = AsyncMock(side_effect=_read_gatt_char_2)
+
+        async def _coordinator_reconnect(reset_timer=True):
+            coordinator.client = client2
+            coordinator.is_connected = True
+            return True
+
+        coordinator.async_ensure_connected = AsyncMock(side_effect=_coordinator_reconnect)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.get_service_info_snapshots_by_address",
+                return_value=[(connectable_info, True)],
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
+                return_value=1,
+            ),
+        ):
+            report = await BLEDiagnosticRunner(
+                hass,
+                "AA:BB:CC:DD:EE:FF",
+                capture_duration=0,
+                coordinator=coordinator,
+            ).run_diagnostics()
+
+        coordinator.async_ensure_connected.assert_awaited_once_with(reset_timer=False)
+        chars = report.gatt_services[0]["characteristics"]
+        assert chars[0]["read_result"]["hex"] == "01"
+        assert chars[1]["read_error"] == "BleakError"
+        assert chars[2]["read_result"]["hex"] == "02"
+        assert any("reconnecting" in error for error in report.errors)
+        coordinator.pause_disconnect_timer.assert_called_once()
+        coordinator.resume_disconnect_timer.assert_called_once()
+        coordinator.set_raw_notify_callback.assert_called_with(None)
+        client2.disconnect.assert_not_awaited()
+
 
 class TestSupportBundle:
     """Test support bundle orchestration."""
