@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
-from homeassistant.components.climate import HVACMode
+from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry

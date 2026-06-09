@@ -167,7 +167,7 @@ class SleepysBox15Controller(BedController):
         checksum = _calculate_box15_checksum(bytes(data))
         return bytes(data) + bytes([checksum])
 
-    async def _move_with_stop(self, motor_cmd: int) -> None:
+    async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_motor_command(motor_cmd)
         try:
@@ -388,7 +388,7 @@ class SleepysBox24Controller(BedController):
             response=False,  # Fire-and-forget for BOX24
         )
 
-    async def _move_with_stop(self, motor_cmd: int) -> None:
+    async def _move_with_stop(self, motor_cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(motor_cmd)
         try:

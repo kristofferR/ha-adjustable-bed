@@ -216,7 +216,7 @@ def _async_ensure_device_registry_entry(
     device_info = coordinator.device_info
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers=device_info["identifiers"],
+        identifiers=device_info.get("identifiers"),
         name=device_info.get("name"),
         manufacturer=device_info.get("manufacturer"),
         model=device_info.get("model"),
@@ -237,7 +237,11 @@ async def _async_finish_entry_setup(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if schedule_initial_position_read:
-        hass.async_create_task(coordinator.async_read_initial_positions())
+        entry.async_create_background_task(
+            hass,
+            coordinator.async_read_initial_positions(),
+            name=f"adjustable_bed_initial_position_read_{entry.entry_id}",
+        )
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
@@ -1045,7 +1049,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_domain=DOMAIN,
                     translation_key="multiple_device_targets_not_supported",
                 )
-            selected_device_id = device_ids[0]
+            # str() narrows the untyped service-call value for the str-typed parameter
+            selected_device_id = str(device_ids[0])
             target = _get_support_bundle_target_from_device(hass, selected_device_id)
             if target is not None:
                 address, coordinator, entry = target

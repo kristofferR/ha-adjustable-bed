@@ -270,6 +270,7 @@ class AdjustableBedCoordinator:
         self._cancel_command = asyncio.Event()  # Signal to cancel current command
         self._cancel_counter: int = 0  # Track cancellation requests to handle queued commands
         self._stop_keepalive_task: asyncio.Task[None] | None = None  # Track keepalive stop task
+        self._background_read_task: asyncio.Task[None] | None = None  # Deduped position read
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
@@ -1215,14 +1216,11 @@ class AdjustableBedCoordinator:
                 try:
                     # Try to get the actual connection source from the client
                     # (accessing private bleak internals for diagnostic purposes)
-                    if hasattr(self._client, "_backend") and hasattr(
-                        self._client._backend, "_device"
-                    ):
-                        backend_device = self._client._backend._device
-                        if hasattr(backend_device, "details") and isinstance(
-                            backend_device.details, dict
-                        ):
-                            actual_adapter = backend_device.details.get("source", "unknown")
+                    backend: Any = getattr(self._client, "_backend", None)
+                    backend_device: Any = getattr(backend, "_device", None)
+                    details = getattr(backend_device, "details", None)
+                    if isinstance(details, dict):
+                        actual_adapter = details.get("source", "unknown")
                 except Exception:
                     _LOGGER.debug("Could not determine actual connection adapter")
 
@@ -1435,7 +1433,7 @@ class AdjustableBedCoordinator:
                     # the BLE connect, notify subscribe, and init/query frames.
                     await self.async_start_notify()
                     if hasattr(self._controller, "query_config"):
-                        await self._controller.query_config()
+                        await cast(Any, self._controller).query_config()
 
                 if (
                     self._bed_type == BED_TYPE_VIBRADORM
@@ -1467,18 +1465,17 @@ class AdjustableBedCoordinator:
                 if self._bed_type == BED_TYPE_OCTO:
                     # Discover features to detect PIN requirement
                     if hasattr(self._controller, "discover_features"):
-                        await self._controller.discover_features()
+                        await cast(Any, self._controller).discover_features()
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, "send_pin"):
-                        await self._controller.send_pin()
-                        await self._controller.start_keepalive()  # type: ignore[attr-defined]
+                        await cast(Any, self._controller).send_pin()
+                        await cast(Any, self._controller).start_keepalive()
 
                 # Beds with connect-time feature discovery/state hydration.
-                if (
-                    self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER}
-                    and hasattr(self._controller, "query_config")
+                if self._bed_type in {BED_TYPE_JENSEN, BED_TYPE_SLEEP_NUMBER} and hasattr(
+                    self._controller, "query_config"
                 ):
-                    await self._controller.query_config()
+                    await cast(Any, self._controller).query_config()
 
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
@@ -1681,7 +1678,11 @@ class AdjustableBedCoordinator:
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
         if controller is not None and hasattr(controller, "stop_keepalive"):
-            self._stop_keepalive_task = asyncio.create_task(controller.stop_keepalive())
+            self._stop_keepalive_task = self.entry.async_create_background_task(
+                self.hass,
+                cast(Any, controller).stop_keepalive(),
+                name=f"adjustable_bed_stop_keepalive_{self._address}",
+            )
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
         if self._intentional_disconnect:
@@ -1729,7 +1730,19 @@ class AdjustableBedCoordinator:
             self._reconnect_timer.cancel()
         self._reconnect_timer = self.hass.loop.call_later(
             5.0,  # Wait 5 seconds before attempting reconnect
-            lambda: asyncio.create_task(self._async_auto_reconnect()),
+            self._schedule_auto_reconnect,
+        )
+
+    def _schedule_auto_reconnect(self) -> None:
+        """Launch the auto-reconnect task once the reconnect timer fires.
+
+        The task is tied to the config entry so it is tracked by HA and
+        cancelled automatically if the entry unloads before it finishes.
+        """
+        self.entry.async_create_background_task(
+            self.hass,
+            self._async_auto_reconnect(),
+            name=f"adjustable_bed_auto_reconnect_{self._address}",
         )
 
     async def _async_auto_reconnect(self) -> None:
@@ -1785,9 +1798,10 @@ class AdjustableBedCoordinator:
                 async with asyncio.timeout(_INITIAL_POSITION_READ_TIMEOUT):
                     # Use command lock to prevent concurrent GATT operations
                     async with self._command_lock:
-                        if self._client is None or not self._client.is_connected:
+                        controller = self._controller
+                        if controller is None or self._client is None or not self._client.is_connected:
                             return
-                        await self._controller.prepare_for_position_read()
+                        await controller.prepare_for_position_read()
                         await self._async_read_positions()
 
                 received_axes = expected_axes & self._position_data.keys()
@@ -2016,7 +2030,19 @@ class AdjustableBedCoordinator:
         )
         self._disconnect_timer = self.hass.loop.call_later(
             self._idle_disconnect_seconds,
-            lambda: asyncio.create_task(self._async_idle_disconnect()),
+            self._schedule_idle_disconnect,
+        )
+
+    def _schedule_idle_disconnect(self) -> None:
+        """Launch the idle-disconnect task once the idle timer fires.
+
+        The task is tied to the config entry so it is tracked by HA and
+        cancelled automatically if the entry unloads before it finishes.
+        """
+        self.entry.async_create_background_task(
+            self.hass,
+            self._async_idle_disconnect(),
+            name=f"adjustable_bed_idle_disconnect_{self._address}",
         )
 
     def _cancel_disconnect_timer(self) -> None:
@@ -2156,7 +2182,7 @@ class AdjustableBedCoordinator:
                         await self._async_read_positions()
                     else:
                         # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
-                        self.hass.async_create_task(self._async_read_positions_background())
+                        self._start_background_position_read()
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -2532,6 +2558,24 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Position read timed out")
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
+
+    def _start_background_position_read(self) -> None:
+        """Start a fire-and-forget position read tied to the config entry.
+
+        Skips scheduling when a previous background read is still running so
+        slow beds can't pile up queued reads behind the command lock.
+        """
+        task = self._background_read_task
+        if task is not None and not task.done():
+            _LOGGER.debug(
+                "Background position read already running for %s - skipping", self._address
+            )
+            return
+        self._background_read_task = self.entry.async_create_background_task(
+            self.hass,
+            self._async_read_positions_background(),
+            name=f"adjustable_bed_position_read_{self._address}",
+        )
 
     async def _async_read_positions_background(self) -> None:
         """Read positions in background with proper lock serialization.
@@ -3038,24 +3082,32 @@ class AdjustableBedCoordinator:
                     self._handle_position_update(position_key, target_angle)
                     return  # finally block handles disconnect timer
 
+                # Only direct-position controllers may reach this point without a
+                # current reading, and they returned above.
+                if current_angle is None:
+                    raise NotConnectedError(
+                        f"Cannot seek {position_key}: no position data available"
+                    )
+
                 # Determine initial direction
                 moving_up = target_angle > current_angle
-                reverse_on_overshoot = self._controller.reverses_position_seek_on_overshoot
-                use_custom_seek_steps = self._controller.uses_custom_position_seek_steps
+                controller = self._controller
+                reverse_on_overshoot = controller.reverses_position_seek_on_overshoot
+                use_custom_seek_steps = controller.uses_custom_position_seek_steps
 
                 async def issue_seek_step(direction_up: bool, remaining_distance: float) -> None:
                     """Execute one seek movement step using controller-specific tuning."""
                     if use_custom_seek_steps:
-                        await self._controller.seek_position_step(
+                        await controller.seek_position_step(
                             position_key,
                             direction_up,
                             remaining_distance,
                         )
                         return
                     if direction_up:
-                        await move_up_fn(self._controller)
+                        await move_up_fn(controller)
                     else:
-                        await move_down_fn(self._controller)
+                        await move_down_fn(controller)
 
                 # Start movement in try-finally to guarantee stop is sent
                 try:

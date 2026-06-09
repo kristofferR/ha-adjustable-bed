@@ -27,7 +27,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-
 # -----------------------------------------------------------------------------
 # Test Fixtures
 # -----------------------------------------------------------------------------

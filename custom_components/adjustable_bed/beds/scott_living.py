@@ -191,10 +191,11 @@ class ScottLivingController(BedController):
             return
 
         try:
-            await self.client.start_notify(
-                self._notify_char_uuid,
-                self._on_notification,
-            )
+            async with self._ble_lock:
+                await self.client.start_notify(
+                    self._notify_char_uuid,
+                    self._on_notification,
+                )
             _LOGGER.debug("Started notifications for Scott Living bed")
         except BleakError:
             _LOGGER.warning("Failed to start notifications")
@@ -210,7 +211,8 @@ class ScottLivingController(BedController):
             return
 
         try:
-            await self.client.stop_notify(self._notify_char_uuid)
+            async with self._ble_lock:
+                await self.client.stop_notify(self._notify_char_uuid)
             _LOGGER.debug("Stopped notifications")
         except BleakError:
             _LOGGER.debug("Failed to stop notifications")

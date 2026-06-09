@@ -492,7 +492,8 @@ class JensenController(BedController):
 
         try:
             # Always enable notifications - the app does this before any commands
-            await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
+            async with self._ble_lock:
+                await self.client.start_notify(JENSEN_CHAR_UUID, self._handle_notification)
             _LOGGER.info("Started position notifications for Jensen bed")
 
             # Send PIN unlock command IMMEDIATELY after notifications are enabled
@@ -516,7 +517,8 @@ class JensenController(BedController):
             return
 
         try:
-            await self.client.stop_notify(JENSEN_CHAR_UUID)
+            async with self._ble_lock:
+                await self.client.stop_notify(JENSEN_CHAR_UUID)
             _LOGGER.debug("Stopped Jensen position notifications")
         except BleakError:
             pass

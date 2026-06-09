@@ -871,7 +871,7 @@ class LinakController(BedController):
     # Using 15 repeats @ 100ms = ~1.5 seconds of movement per press.
     # Motors auto-stop when commands stop arriving - no explicit STOP needed.
 
-    async def _move_with_stop(self, move_command: bytes) -> None:
+    async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command.
 
         Linak beds auto-stop when commands stop arriving (typically within 200-500ms).
@@ -879,7 +879,7 @@ class LinakController(BedController):
         movement due to how the motor controller interprets the 0x00 command.
         See: https://github.com/kristofferR/ha-adjustable-bed/issues/45
         """
-        await self.write_command(move_command, repeat_count=15, repeat_delay_ms=100)
+        await self.write_command(command, repeat_count=15, repeat_delay_ms=100)
 
     def _seek_step_repeat_count(self, remaining_distance: float | None) -> int:
         """Return an adaptive Linak seek pulse size for the remaining error."""

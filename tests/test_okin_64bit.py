@@ -11,7 +11,6 @@ from custom_components.adjustable_bed.beds.okin_64bit import (
     OKIN_64BIT_VARIANT_CUSTOM,
     OKIN_64BIT_VARIANT_NORDIC,
     Okin64BitCommands,
-    Okin64BitController,
     build_okin_64bit_command,
 )
 from custom_components.adjustable_bed.const import (
@@ -26,7 +25,6 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -97,41 +95,41 @@ class TestOkin64BitCommands:
 
     def test_stop_command_is_all_zeros(self):
         """STOP command should be all zeros."""
-        assert Okin64BitCommands.STOP == bytes([0x00] * 8)
+        assert bytes([0x00] * 8) == Okin64BitCommands.STOP
 
     def test_motor_commands_use_single_bits(self):
         """Motor commands should use single-bit flags."""
         # HEAD_UP: bit 0 in byte 3
-        assert Okin64BitCommands.HEAD_UP == bytes([0, 0, 0, 0x01, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x01, 0, 0, 0, 0]) == Okin64BitCommands.HEAD_UP
         # HEAD_DOWN: bit 1 in byte 3
-        assert Okin64BitCommands.HEAD_DOWN == bytes([0, 0, 0, 0x02, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x02, 0, 0, 0, 0]) == Okin64BitCommands.HEAD_DOWN
         # FOOT_UP: bit 2 in byte 3
-        assert Okin64BitCommands.FOOT_UP == bytes([0, 0, 0, 0x04, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x04, 0, 0, 0, 0]) == Okin64BitCommands.FOOT_UP
         # FOOT_DOWN: bit 3 in byte 3
-        assert Okin64BitCommands.FOOT_DOWN == bytes([0, 0, 0, 0x08, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x08, 0, 0, 0, 0]) == Okin64BitCommands.FOOT_DOWN
         # LUMBAR_UP: bit 4 in byte 3
-        assert Okin64BitCommands.LUMBAR_UP == bytes([0, 0, 0, 0x10, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x10, 0, 0, 0, 0]) == Okin64BitCommands.LUMBAR_UP
         # LUMBAR_DOWN: bit 5 in byte 3
-        assert Okin64BitCommands.LUMBAR_DOWN == bytes([0, 0, 0, 0x20, 0, 0, 0, 0])
+        assert bytes([0, 0, 0, 0x20, 0, 0, 0, 0]) == Okin64BitCommands.LUMBAR_DOWN
 
     def test_preset_commands(self):
         """Preset commands should have correct values."""
-        assert Okin64BitCommands.FLAT == bytes([0x08, 0, 0, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.ZERO_G == bytes([0, 0, 0x10, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.LOUNGE == bytes([0, 0, 0x20, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.TV_PC == bytes([0, 0, 0x40, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.ANTI_SNORE == bytes([0, 0, 0x80, 0, 0, 0, 0, 0])
+        assert bytes([0x08, 0, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.FLAT
+        assert bytes([0, 0, 0x10, 0, 0, 0, 0, 0]) == Okin64BitCommands.ZERO_G
+        assert bytes([0, 0, 0x20, 0, 0, 0, 0, 0]) == Okin64BitCommands.LOUNGE
+        assert bytes([0, 0, 0x40, 0, 0, 0, 0, 0]) == Okin64BitCommands.TV_PC
+        assert bytes([0, 0, 0x80, 0, 0, 0, 0, 0]) == Okin64BitCommands.ANTI_SNORE
 
     def test_memory_commands(self):
         """Memory commands should have correct values."""
-        assert Okin64BitCommands.MEMORY_1 == bytes([0, 0x01, 0, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.MEMORY_2 == bytes([0, 0x04, 0, 0, 0, 0, 0, 0])
+        assert bytes([0, 0x01, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.MEMORY_1
+        assert bytes([0, 0x04, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.MEMORY_2
 
     def test_light_commands(self):
         """Light commands should have correct values."""
-        assert Okin64BitCommands.LIGHT_TOGGLE == bytes([0, 0x02, 0, 0, 0, 0, 0, 0])
-        assert Okin64BitCommands.LIGHT_ON == bytes([0, 0, 0, 0, 0, 0, 0, 0x40])
-        assert Okin64BitCommands.LIGHT_OFF == bytes([0, 0, 0, 0, 0, 0, 0, 0x80])
+        assert bytes([0, 0x02, 0, 0, 0, 0, 0, 0]) == Okin64BitCommands.LIGHT_TOGGLE
+        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x40]) == Okin64BitCommands.LIGHT_ON
+        assert bytes([0, 0, 0, 0, 0, 0, 0, 0x80]) == Okin64BitCommands.LIGHT_OFF
 
 
 # -----------------------------------------------------------------------------

@@ -26,7 +26,6 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
-
 # -----------------------------------------------------------------------------
 # Test Fixtures
 # -----------------------------------------------------------------------------
@@ -904,8 +903,6 @@ class TestRemacroLightEntity:
 
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-
-        coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
 
         registry = er.async_get(hass)
         entity_id = registry.async_get_entity_id(

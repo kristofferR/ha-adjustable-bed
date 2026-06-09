@@ -13,16 +13,14 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.sleepys import (
+    SleepysBox15Commands,
+    SleepysBox24Commands,
+    _calculate_box15_checksum,
+)
 from custom_components.adjustable_bed.beds.sleepys_box25 import (
     Box25Commands,
     SleepysBox25Controller,
-)
-from custom_components.adjustable_bed.beds.sleepys import (
-    SleepysBox15Commands,
-    SleepysBox15Controller,
-    SleepysBox24Commands,
-    SleepysBox24Controller,
-    _calculate_box15_checksum,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
@@ -39,7 +37,6 @@ from custom_components.adjustable_bed.const import (
     SLEEPYS_BOX24_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -147,7 +144,7 @@ class TestSleepysBox15Commands:
     def test_header_is_3_bytes(self):
         """Header should be exactly 3 bytes."""
         assert len(SleepysBox15Commands.HEADER) == 3
-        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x16])
+        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
 
     def test_motor_command_values(self):
         """Verify motor command values."""
@@ -173,7 +170,7 @@ class TestSleepysBox24Commands:
     def test_header_is_6_bytes(self):
         """Header should be exactly 6 bytes."""
         assert len(SleepysBox24Commands.HEADER) == 6
-        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20])
+        assert bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20]) == SleepysBox24Commands.HEADER
 
     def test_motor_command_values(self):
         """Verify motor command values."""
@@ -1157,8 +1154,8 @@ class TestSleepysProtocolDifferences:
 
     def test_different_headers(self):
         """BOX15 and BOX24 use different header bytes."""
-        assert SleepysBox15Commands.HEADER == bytes([0xE6, 0xFE, 0x16])
-        assert SleepysBox24Commands.HEADER == bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20])
+        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
+        assert bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20]) == SleepysBox24Commands.HEADER
 
     def test_different_foot_command_values(self):
         """BOX15 and BOX24 use different values for foot commands."""

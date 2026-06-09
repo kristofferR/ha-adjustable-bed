@@ -45,7 +45,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     # Key to look up in coordinator.position_data (defaults to key if not set)
     position_key: str | None = None
     # Maximum angle for percentage calculation (default 68 degrees)
-    max_angle: int = 68
+    max_angle: float = 68
 
 
 # Note: For Linak beds:
