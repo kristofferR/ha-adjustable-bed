@@ -289,7 +289,8 @@ class OkinCB35Controller(Okin7ByteController):
             return
 
         try:
-            await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
+            async with self._ble_lock:
+                await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
             _LOGGER.debug("Subscribed to CB35 notifications")
         except BleakError:
             _LOGGER.warning("Could not subscribe to CB35 notifications")
@@ -301,6 +302,7 @@ class OkinCB35Controller(Okin7ByteController):
         client = self.client
         if client is not None and client.is_connected:
             try:
-                await client.stop_notify(NORDIC_UART_READ_CHAR_UUID)
+                async with self._ble_lock:
+                    await client.stop_notify(NORDIC_UART_READ_CHAR_UUID)
             except BleakError:
                 pass

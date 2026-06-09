@@ -719,7 +719,8 @@ class KaidiController(BedController):
             raise ConnectionError("Not connected to Kaidi bed")
 
         self._refresh_write_mode()
-        await client.start_notify(KAIDI_NOTIFY_CHAR_UUID, self._handle_notification)
+        async with self._ble_lock:
+            await client.start_notify(KAIDI_NOTIFY_CHAR_UUID, self._handle_notification)
         self._notify_started = True
 
     async def _wait_for_event(self, event: asyncio.Event, timeout: float, name: str) -> None:
@@ -935,7 +936,8 @@ class KaidiController(BedController):
         self._notify_callback = None
         if not self._notify_started or self.client is None or not self.client.is_connected:
             return
-        await self.client.stop_notify(KAIDI_NOTIFY_CHAR_UUID)
+        async with self._ble_lock:
+            await self.client.stop_notify(KAIDI_NOTIFY_CHAR_UUID)
         self._notify_started = False
 
     # ------------------------------------------------------------------
