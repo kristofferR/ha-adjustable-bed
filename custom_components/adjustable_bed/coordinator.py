@@ -270,6 +270,7 @@ class AdjustableBedCoordinator:
         self._cancel_command = asyncio.Event()  # Signal to cancel current command
         self._cancel_counter: int = 0  # Track cancellation requests to handle queued commands
         self._stop_keepalive_task: asyncio.Task[None] | None = None  # Track keepalive stop task
+        self._background_read_task: asyncio.Task[None] | None = None  # Deduped position read
 
         # Position data from notifications
         self._position_data: dict[str, float] = {}
@@ -1677,8 +1678,10 @@ class AdjustableBedCoordinator:
         # Capture controller reference before clearing to avoid race condition
         controller = self._controller
         if controller is not None and hasattr(controller, "stop_keepalive"):
-            self._stop_keepalive_task = asyncio.create_task(
-                cast(Any, controller).stop_keepalive()
+            self._stop_keepalive_task = self.entry.async_create_background_task(
+                self.hass,
+                cast(Any, controller).stop_keepalive(),
+                name=f"adjustable_bed_stop_keepalive_{self._address}",
             )
 
         # If this was an intentional disconnect (manual or idle timeout), don't auto-reconnect
@@ -1727,7 +1730,19 @@ class AdjustableBedCoordinator:
             self._reconnect_timer.cancel()
         self._reconnect_timer = self.hass.loop.call_later(
             5.0,  # Wait 5 seconds before attempting reconnect
-            lambda: asyncio.create_task(self._async_auto_reconnect()),
+            self._schedule_auto_reconnect,
+        )
+
+    def _schedule_auto_reconnect(self) -> None:
+        """Launch the auto-reconnect task once the reconnect timer fires.
+
+        The task is tied to the config entry so it is tracked by HA and
+        cancelled automatically if the entry unloads before it finishes.
+        """
+        self.entry.async_create_background_task(
+            self.hass,
+            self._async_auto_reconnect(),
+            name=f"adjustable_bed_auto_reconnect_{self._address}",
         )
 
     async def _async_auto_reconnect(self) -> None:
@@ -2015,7 +2030,19 @@ class AdjustableBedCoordinator:
         )
         self._disconnect_timer = self.hass.loop.call_later(
             self._idle_disconnect_seconds,
-            lambda: asyncio.create_task(self._async_idle_disconnect()),
+            self._schedule_idle_disconnect,
+        )
+
+    def _schedule_idle_disconnect(self) -> None:
+        """Launch the idle-disconnect task once the idle timer fires.
+
+        The task is tied to the config entry so it is tracked by HA and
+        cancelled automatically if the entry unloads before it finishes.
+        """
+        self.entry.async_create_background_task(
+            self.hass,
+            self._async_idle_disconnect(),
+            name=f"adjustable_bed_idle_disconnect_{self._address}",
         )
 
     def _cancel_disconnect_timer(self) -> None:
@@ -2155,7 +2182,7 @@ class AdjustableBedCoordinator:
                         await self._async_read_positions()
                     else:
                         # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
-                        self.hass.async_create_task(self._async_read_positions_background())
+                        self._start_background_position_read()
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -2531,6 +2558,24 @@ class AdjustableBedCoordinator:
             _LOGGER.debug("Position read timed out")
         except Exception as err:
             _LOGGER.debug("Failed to read positions: %s", err)
+
+    def _start_background_position_read(self) -> None:
+        """Start a fire-and-forget position read tied to the config entry.
+
+        Skips scheduling when a previous background read is still running so
+        slow beds can't pile up queued reads behind the command lock.
+        """
+        task = self._background_read_task
+        if task is not None and not task.done():
+            _LOGGER.debug(
+                "Background position read already running for %s - skipping", self._address
+            )
+            return
+        self._background_read_task = self.entry.async_create_background_task(
+            self.hass,
+            self._async_read_positions_background(),
+            name=f"adjustable_bed_position_read_{self._address}",
+        )
 
     async def _async_read_positions_background(self) -> None:
         """Read positions in background with proper lock serialization.

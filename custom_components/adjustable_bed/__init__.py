@@ -237,7 +237,11 @@ async def _async_finish_entry_setup(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if schedule_initial_position_read:
-        hass.async_create_task(coordinator.async_read_initial_positions())
+        entry.async_create_background_task(
+            hass,
+            coordinator.async_read_initial_positions(),
+            name=f"adjustable_bed_initial_position_read_{entry.entry_id}",
+        )
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True

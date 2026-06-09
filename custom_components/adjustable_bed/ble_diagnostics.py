@@ -581,7 +581,9 @@ class BLEDiagnosticRunner:
 
     def _notification_handler_sync(self, uuid: str, sender: object, data: bytearray) -> None:
         """Synchronous notification handler that schedules async processing."""
-        self.hass.async_create_task(self._handle_notification(uuid, data))
+        task = self.hass.async_create_task(self._handle_notification(uuid, data))
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
     async def _unsubscribe_from_notifications(self, services: list[ServiceInfo]) -> None:
         """Unsubscribe from all notifiable characteristics."""
