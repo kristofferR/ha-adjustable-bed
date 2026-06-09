@@ -351,9 +351,20 @@ class AdjustableBedCoordinator:
         )
         previous_defaults = BED_MOTOR_PULSE_DEFAULTS.get(previous_bed_type)
         corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(corrected_bed_type)
+        # Only swap in the corrected protocol's defaults if the user never set
+        # their own pulse values. Comparing against ``previous_defaults`` alone is
+        # not enough: an explicit override can coincidentally equal the previous
+        # bed type's defaults (e.g. NEW_OKIN's (10, 100)), and we must not silently
+        # overwrite it. Pulse values are read from ``entry.data`` in __init__, so
+        # presence of these keys there is the authoritative override boundary.
+        has_custom_pulse_override = (
+            CONF_MOTOR_PULSE_COUNT in self.entry.data
+            or CONF_MOTOR_PULSE_DELAY_MS in self.entry.data
+        )
         if (
             previous_defaults is not None
             and corrected_defaults is not None
+            and not has_custom_pulse_override
             and (self._motor_pulse_count, self._motor_pulse_delay_ms) == previous_defaults
         ):
             self._motor_pulse_count, self._motor_pulse_delay_ms = corrected_defaults

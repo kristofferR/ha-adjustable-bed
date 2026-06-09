@@ -15,6 +15,8 @@ from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_KEESON,
     BED_TYPE_LINAK,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIMAT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -1859,6 +1861,69 @@ class TestMotorPulseConfiguration:
         # Custom values should override bed-type defaults
         assert coordinator.motor_pulse_count == 15
         assert coordinator.motor_pulse_delay_ms == 75
+
+
+class TestRuntimeBedTypeCorrection:
+    """Test runtime Malouf protocol correction after GATT discovery."""
+
+    def _make_coordinator(self, hass, mock_config_entry_data, extra):
+        mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_MALOUF_NEW_OKIN
+        mock_config_entry_data.update(extra)
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data=mock_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id="test_entry_runtime_correction",
+        )
+        return AdjustableBedCoordinator(hass, entry)
+
+    async def test_correction_updates_unconfigured_pulse_defaults(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Without a user override, correction swaps in the new protocol's defaults."""
+        coordinator = self._make_coordinator(hass, mock_config_entry_data, {})
+        # Starts at NEW_OKIN defaults.
+        assert (coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms) == (
+            BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_MALOUF_NEW_OKIN]
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_MALOUF_LEGACY_OKIN)
+
+        assert coordinator.bed_type == BED_TYPE_MALOUF_LEGACY_OKIN
+        assert (coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms) == (
+            BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_MALOUF_LEGACY_OKIN]
+        )
+
+    async def test_correction_preserves_explicit_pulse_override(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Regression: an explicit override equal to the old defaults must survive.
+
+        The user configured pulse values that happen to equal NEW_OKIN's defaults
+        (10, 100). A correction to LEGACY_OKIN must update the bed type but must not
+        silently rewrite the user's values to LEGACY_OKIN's (7, 150).
+        """
+        new_okin_defaults = BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_MALOUF_NEW_OKIN]
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {
+                CONF_MOTOR_PULSE_COUNT: new_okin_defaults[0],
+                CONF_MOTOR_PULSE_DELAY_MS: new_okin_defaults[1],
+            },
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_MALOUF_LEGACY_OKIN)
+
+        # Bed type is still corrected...
+        assert coordinator.bed_type == BED_TYPE_MALOUF_LEGACY_OKIN
+        # ...but the explicit override is preserved, not overwritten.
+        assert (coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms) == new_okin_defaults
 
 
 class TestMultiMotorConfiguration:
