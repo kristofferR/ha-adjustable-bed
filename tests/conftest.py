@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import binascii
+import contextlib
 import json
 import struct
-from collections.abc import Callable, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -53,6 +55,41 @@ from custom_components.adjustable_bed.const import (  # noqa: E402
 # Test constants
 TEST_ADDRESS = "AA:BB:CC:DD:EE:FF"
 TEST_NAME = "Test Bed"
+
+
+@pytest.fixture(autouse=True)
+async def _shutdown_coordinators(
+    monkeypatch: pytest.MonkeyPatch,
+    verify_cleanup: None,
+) -> AsyncGenerator[None]:
+    """Shut down every coordinator created during a test.
+
+    Cancels idle-disconnect/reconnect timers armed by connects so the
+    lingering-timer check in pytest-homeassistant-custom-component passes
+    without each test having to disconnect manually. Depending on
+    verify_cleanup orders this teardown before the lingering-timer check.
+    """
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    instances: list[AdjustableBedCoordinator] = []
+    original_init = AdjustableBedCoordinator.__init__
+
+    def _tracking_init(self: AdjustableBedCoordinator, *args: object, **kwargs: object) -> None:
+        original_init(self, *args, **kwargs)
+        instances.append(self)
+
+    monkeypatch.setattr(AdjustableBedCoordinator, "__init__", _tracking_init)
+    yield
+    for coordinator in instances:
+        with contextlib.suppress(Exception):
+            async with asyncio.timeout(5):
+                await coordinator.async_shutdown()
+        # Cancel timers directly too - tests may have stubbed async_disconnect,
+        # which normally performs this cleanup.
+        coordinator._cancel_disconnect_timer()
+        if coordinator._reconnect_timer is not None:
+            coordinator._reconnect_timer.cancel()
+            coordinator._reconnect_timer = None
 
 
 @pytest.fixture

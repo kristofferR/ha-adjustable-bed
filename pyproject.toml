@@ -13,6 +13,7 @@ dev = [
     "pytest-xdist>=3.5.0",
     "pyserial>=3.5",
     "serialx>=1.0.0",
+    "aioesphomeapi>=42.0.0",
     "aiousbwatcher>=1.1.1",
     "mypy>=1.19.1",
 ]
