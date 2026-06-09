@@ -1049,6 +1049,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_domain=DOMAIN,
                     translation_key="multiple_device_targets_not_supported",
                 )
+            # str() narrows the untyped service-call value for the str-typed parameter
             selected_device_id = str(device_ids[0])
             target = _get_support_bundle_target_from_device(hass, selected_device_id)
             if target is not None:

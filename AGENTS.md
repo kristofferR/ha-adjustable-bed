@@ -17,7 +17,7 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 
 Key modules (not an exhaustive listing — check the folder for the rest):
 
-```
+```text
 custom_components/adjustable_bed/
 ├── __init__.py           # Integration setup, platform loading, service registration
 ├── config_flow.py        # Device discovery and setup wizard
