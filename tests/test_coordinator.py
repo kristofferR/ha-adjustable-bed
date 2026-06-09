@@ -1866,7 +1866,12 @@ class TestMotorPulseConfiguration:
 class TestRuntimeBedTypeCorrection:
     """Test runtime Malouf protocol correction after GATT discovery."""
 
-    def _make_coordinator(self, hass, mock_config_entry_data, extra):
+    def _make_coordinator(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        extra: dict,
+    ) -> AdjustableBedCoordinator:
         mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_MALOUF_NEW_OKIN
         mock_config_entry_data.update(extra)
         entry = MockConfigEntry(
