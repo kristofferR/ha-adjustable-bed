@@ -105,8 +105,10 @@ from .const import (
     LINAK_POSITION_SERVICE_UUID,
     LOGICDATA_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
+    MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
     MALOUF_NAME_PATTERNS,
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
+    MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_LOGICDATA,
     MANUFACTURER_ID_OKIN,
@@ -241,6 +243,21 @@ def _check_manufacturer_data(
     # a fallback after UUID-based detection. See detect_bed_type_detailed().
 
     return None, 0.0, None
+
+
+def _manufacturer_data_contains_ascii(
+    manufacturer_data: dict[int, bytes] | None,
+    marker: str,
+) -> bool:
+    """Return True if any manufacturer payload contains an ASCII marker."""
+    if not manufacturer_data:
+        return False
+
+    marker_lower = marker.lower()
+    return any(
+        marker_lower in payload.decode("ascii", errors="ignore").lower()
+        for payload in manufacturer_data.values()
+    )
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
@@ -462,6 +479,28 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
         )
 
     return DetectionResult(bed_type=None, confidence=0.0, signals=[])
+
+
+def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
+    """Correct Malouf/Lucid family protocol once connected GATT services are known."""
+    if bed_type not in {BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN}:
+        return bed_type
+
+    characteristic_uuids: set[str] = set()
+    for service in gatt_services or []:
+        for char in _characteristics_from_gatt_service(service):
+            if char_uuid := _uuid_from_gatt_object(char):
+                characteristic_uuids.add(char_uuid)
+
+    has_new_okin_write = MALOUF_NEW_OKIN_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    has_legacy_okin_write = MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID.lower() in characteristic_uuids
+
+    if bed_type == BED_TYPE_MALOUF_NEW_OKIN and has_legacy_okin_write and not has_new_okin_write:
+        return BED_TYPE_MALOUF_LEGACY_OKIN
+    if bed_type == BED_TYPE_MALOUF_LEGACY_OKIN and has_new_okin_write and not has_legacy_okin_write:
+        return BED_TYPE_MALOUF_NEW_OKIN
+
+    return bed_type
 
 
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
@@ -898,8 +937,30 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for Malouf NEW_OKIN - unique advertised service UUID (most specific first)
+    # Check for Malouf/Lucid app family. Most devices advertising this UUID use
+    # NEW_OKIN over Nordic UART, but Lucid L600 / OKIN-BLE BTCB controllers have
+    # been observed advertising the same UUID while exposing the FFE5/FFE9 command
+    # path after connection.
     if MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID.lower() in service_uuids:
+        if device_name.startswith("okin-ble") and _manufacturer_data_contains_ascii(
+            service_info.manufacturer_data,
+            "btcb",
+        ):
+            signals.append("uuid:malouf_family")
+            signals.append("name:okin_ble")
+            signals.append("manufacturer_payload:btcb")
+            _LOGGER.info(
+                "Detected Malouf/Lucid FFE5 bed at %s (name: %s, BTCB payload)",
+                service_info.address,
+                service_info.name,
+            )
+            return DetectionResult(
+                bed_type=BED_TYPE_MALOUF_LEGACY_OKIN,
+                confidence=0.9,
+                signals=signals,
+                ambiguous_types=[BED_TYPE_MALOUF_NEW_OKIN],
+            )
+
         signals.append("uuid:malouf_new_okin")
         _LOGGER.info(
             "Detected Malouf NEW_OKIN bed at %s (name: %s)",

@@ -63,6 +63,11 @@ Malouf beds use two distinct protocols. The integration auto-detects which one y
 **Format:** 9 bytes `[0xE6, 0xFE, 0x16, cmd&0xFF, (cmd>>8)&0xFF, (cmd>>16)&0xFF, (cmd>>24)&0xFF, 0x00, checksum]`
 **Checksum:** `(~sum(bytes[0:8])) & 0xFF`
 
+Some Lucid L600 / DewertOKIN `OKIN-BLE` controllers advertise the Malouf/Lucid
+family UUID (`01000001-...`) but expose only the FFE5/FFE9 command service after
+connection. Their advertising manufacturer payload commonly contains `BTCB`.
+Those devices are treated as the LEGACY_OKIN/FFE5 protocol.
+
 ## Commands
 
 Both protocols use the same command values (32-bit integers):
