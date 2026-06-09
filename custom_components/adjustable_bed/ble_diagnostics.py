@@ -51,6 +51,9 @@ _LOGGER = logging.getLogger(__name__)
 CONNECTION_TIMEOUT = 30.0
 DEFAULT_CAPTURE_DURATION = 120  # 2 minutes
 MAX_CAPTURED_NOTIFICATIONS = 5000
+MAX_RECONNECT_ATTEMPTS = 2
+
+_SKIPPED_READ_ERROR = "Skipped: connection lost during service enumeration"
 
 # Timestamps above this value (approx. 2001-09-09) are treated as Unix epoch seconds
 _EPOCH_SECONDS_THRESHOLD = 1_000_000_000
@@ -198,6 +201,7 @@ class BLEDiagnosticRunner:
         self._selected_ble_device: BLEDevice | None = None
         self._using_non_connectable_fallback: bool = False
         self._background_tasks: set[asyncio.Task[None]] = set()
+        self._reconnect_count: int = 0
 
     async def run_diagnostics(self) -> DiagnosticReport:
         """Run full diagnostic capture on the device."""
@@ -223,6 +227,7 @@ class BLEDiagnosticRunner:
                 services_info = await self._enumerate_services()
                 device_information = await self._read_device_information()
 
+            if await self._ensure_connected():
                 try:
                     await self._subscribe_to_notifications(services_info)
 
@@ -234,6 +239,13 @@ class BLEDiagnosticRunner:
                     await asyncio.sleep(self.capture_duration)
                 finally:
                     await self._unsubscribe_from_notifications(services_info)
+            else:
+                message = (
+                    "Skipped notification capture: connection lost and "
+                    "could not be re-established"
+                )
+                _LOGGER.warning(message)
+                self._errors.append(message)
 
         except asyncio.CancelledError:
             raise
@@ -434,12 +446,15 @@ class BLEDiagnosticRunner:
 
     async def _enumerate_services(self) -> list[ServiceInfo]:
         """Enumerate all GATT services and characteristics."""
-        if not self._client or not self._client.services:
+        services_collection = self._safe_services()
+        if services_collection is None:
             return []
 
+        enumeration_client = self._client
         services: list[ServiceInfo] = []
+        reads_aborted = False
 
-        for service in self._client.services:
+        for service in services_collection:
             service_info = ServiceInfo(
                 uuid=service.uuid,
                 handle=getattr(service, "handle", None),
@@ -466,15 +481,13 @@ class BLEDiagnosticRunner:
                 )
 
                 if "read" in char.properties:
-                    try:
-                        value = await self._client.read_gatt_char(char)
-                        char_info.read_result = format_payload(value)
-                    except Exception as err:
-                        char_info.read_error = str(err)
-                        _LOGGER.debug(
-                            "Could not read characteristic %s: %s",
-                            char.uuid,
-                            err,
+                    if reads_aborted:
+                        char_info.read_error = _SKIPPED_READ_ERROR
+                    else:
+                        reads_aborted = not await self._read_characteristic(
+                            char,
+                            char_info,
+                            enumeration_client,
                         )
 
                 service_info.characteristics.append(char_info)
@@ -484,15 +497,148 @@ class BLEDiagnosticRunner:
         _LOGGER.info("Enumerated %d GATT services", len(services))
         return services
 
+    async def _read_characteristic(
+        self,
+        char: Any,
+        char_info: CharacteristicInfo,
+        enumeration_client: BleakClient | None,
+    ) -> bool:
+        """Read one characteristic value into char_info.
+
+        Returns False when the connection is lost and cannot be restored, so
+        the caller can skip the remaining reads.
+        """
+        if not await self._ensure_connected() or self._client is None:
+            char_info.read_error = _SKIPPED_READ_ERROR
+            return False
+
+        # After a reconnect the enumerated characteristic objects are stale;
+        # re-resolve against the new client's service collection.
+        target: Any = char
+        if self._client is not enumeration_client:
+            target = self._find_current_characteristic(char_info)
+            if target is None:
+                char_info.read_error = "Characteristic not found after reconnect"
+                return True
+
+        try:
+            value = await self._client.read_gatt_char(target)
+            char_info.read_result = format_payload(value)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            char_info.read_error = str(err) or type(err).__name__
+            _LOGGER.debug(
+                "Could not read characteristic %s: %s",
+                char_info.uuid,
+                err,
+            )
+        return True
+
+    def _find_current_characteristic(self, char_info: CharacteristicInfo) -> Any | None:
+        """Look up a characteristic in the current client's service collection."""
+        services_collection = self._safe_services()
+        if services_collection is None:
+            return None
+
+        if char_info.handle is not None:
+            characteristic = services_collection.get_characteristic(char_info.handle)
+            if characteristic is not None:
+                return characteristic
+
+        for service in services_collection:
+            for characteristic in service.characteristics:
+                if characteristic.uuid == char_info.uuid:
+                    return characteristic
+        return None
+
+    def _safe_services(self) -> Any | None:
+        """Return the client's GATT service collection, or None if unavailable.
+
+        Accessing BleakClient.services raises BleakError once a disconnect
+        clears the backend's discovered services.
+        """
+        if self._client is None:
+            return None
+        try:
+            services = self._client.services
+        except BleakError:
+            return None
+        return services or None
+
+    async def _ensure_connected(self) -> bool:
+        """Return True if the client is connected, reconnecting when possible."""
+        if self._client is not None and self._client.is_connected:
+            return True
+        return await self._reconnect()
+
+    async def _reconnect(self) -> bool:
+        """Re-establish a connection that dropped mid-diagnostics."""
+        if (
+            self._using_coordinator_connection
+            and self.coordinator
+            and self.coordinator.client
+            and self.coordinator.is_connected
+        ):
+            # The coordinator already auto-reconnected on its own; adopt its client.
+            self._client = self.coordinator.client
+            return True
+
+        if self._reconnect_count >= MAX_RECONNECT_ATTEMPTS:
+            _LOGGER.debug(
+                "Max reconnect attempts (%d) reached; not reconnecting",
+                MAX_RECONNECT_ATTEMPTS,
+            )
+            return False
+
+        self._reconnect_count += 1
+        message = (
+            f"Device disconnected during diagnostics; reconnecting "
+            f"(attempt {self._reconnect_count}/{MAX_RECONNECT_ATTEMPTS})"
+        )
+        _LOGGER.warning(message)
+        self._errors.append(message)
+
+        try:
+            if self._using_coordinator_connection:
+                if self.coordinator is None:
+                    return False
+                # Reconnect through the coordinator so we never open a
+                # competing connection; leave its disconnect timer paused
+                # until the diagnostics run finishes.
+                if not await self.coordinator.async_ensure_connected(reset_timer=False):
+                    self._errors.append("Reconnect failed: coordinator could not reconnect")
+                    return False
+                self._client = self.coordinator.client
+                return self._client is not None and self._client.is_connected
+
+            if self._client is not None:
+                with contextlib.suppress(Exception):
+                    await self._client.disconnect()
+                self._client = None
+
+            await self._connect()
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            self._errors.append(f"Reconnect failed: {str(err) or type(err).__name__}")
+            return False
+
+        return self._client is not None and self._client.is_connected
+
     async def _read_device_information(self) -> dict[str, str | None]:
         """Read standard Device Information Service if available."""
-        if not self._client or not self._client.services:
+        if not await self._ensure_connected():
+            return {}
+
+        services_collection = self._safe_services()
+        if not self._client or services_collection is None:
             return {}
 
         info: dict[str, str | None] = {}
 
         has_device_info = any(
-            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in self._client.services
+            service.uuid.lower() == DEVICE_INFO_SERVICE_UUID for service in services_collection
         )
         if not has_device_info:
             _LOGGER.debug("Device Information Service not found")
@@ -549,8 +695,13 @@ class BLEDiagnosticRunner:
                         )
             return
 
+        services_collection = self._safe_services()
         for service in services:
-            bleak_service = self._client.services.get_service(service.uuid)
+            bleak_service = (
+                services_collection.get_service(service.uuid)
+                if services_collection is not None
+                else None
+            )
             for char in service.characteristics:
                 if "notify" not in char.properties and "indicate" not in char.properties:
                     continue
@@ -602,8 +753,13 @@ class BLEDiagnosticRunner:
         if not self._client or not self._client.is_connected:
             return
 
+        services_collection = self._safe_services()
         for service in services:
-            bleak_service = self._client.services.get_service(service.uuid)
+            bleak_service = (
+                services_collection.get_service(service.uuid)
+                if services_collection is not None
+                else None
+            )
             for char in service.characteristics:
                 if "notify" not in char.properties and "indicate" not in char.properties:
                     continue
