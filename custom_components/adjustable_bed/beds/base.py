@@ -44,7 +44,7 @@ class MotorControlSpec:
     close_fn: MotorCommandCallable
     stop_fn: MotorCommandCallable
     position_key: str | None = None
-    max_angle: int = 68
+    max_angle: float = 68
 
 
 class BedController(ABC):
@@ -545,7 +545,7 @@ class BedController(ABC):
             return
         raise ValueError(f"Unsupported position key for seek step: {position_key}")
 
-    async def prepare_for_position_read(self) -> None:
+    async def prepare_for_position_read(self) -> None:  # noqa: B027 - optional hook, not abstract
         """Do any controller-specific setup before passive position reads."""
 
     # Direct position control (optional)
@@ -1295,6 +1295,54 @@ class BedController(ABC):
         raise NotImplementedError("Yoga preset not supported on this bed")
 
     # Feature methods (may not be available on all beds)
+
+    async def sound_toggle(self) -> None:
+        """Toggle the sound therapy feature.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support sound therapy
+        """
+        raise NotImplementedError("Sound therapy not supported on this bed")
+
+    async def light_and_sound_toggle(self) -> None:
+        """Toggle the combined light and sound therapy feature.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support therapy modes
+        """
+        raise NotImplementedError("Therapy modes not supported on this bed")
+
+    async def therapy_mode_one(self) -> None:
+        """Activate therapy mode 1.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support therapy modes
+        """
+        raise NotImplementedError("Therapy modes not supported on this bed")
+
+    async def therapy_mode_two(self) -> None:
+        """Activate therapy mode 2.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support therapy modes
+        """
+        raise NotImplementedError("Therapy modes not supported on this bed")
+
+    async def therapy_mode_three(self) -> None:
+        """Activate therapy mode 3.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support therapy modes
+        """
+        raise NotImplementedError("Therapy modes not supported on this bed")
+
+    async def set_synchro(self, enabled: bool) -> None:
+        """Enable or disable synchronized movement of both bed halves.
+
+        Raises:
+            NotImplementedError: If the bed doesn't support synchro mode
+        """
+        raise NotImplementedError("Synchro mode not supported on this bed")
 
     async def lights_on(self) -> None:
         """Turn on under-bed lights.

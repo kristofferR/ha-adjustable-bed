@@ -5,7 +5,7 @@ from __future__ import annotations
 import binascii
 import json
 import struct
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -91,7 +91,7 @@ def mock_bleak_client() -> MagicMock:
     mcr_sync = b"\x16\x16"
     sleep_number_preamble = b"fUzIoN"
     client = MagicMock(spec=BleakClient)
-    notify_callbacks: dict[str, object] = {}
+    notify_callbacks: dict[str, Callable[..., None]] = {}
     readable_values: dict[str, bytes] = {}
     sleep_number_state: dict[str, object] = {
         "underbed_light_level": "high",

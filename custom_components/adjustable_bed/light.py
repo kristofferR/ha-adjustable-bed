@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
-    ColorMode,
     LightEntity,
     LightEntityDescription,
 )
+from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, callback
@@ -43,7 +43,7 @@ def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
         return None
 
     try:
-        rgb = tuple(int(channel) for channel in value)
+        rgb = (int(value[0]), int(value[1]), int(value[2]))
     except (TypeError, ValueError):
         return None
 
@@ -58,7 +58,7 @@ def _normalize_rgbw_color(value: Any) -> tuple[int, int, int, int] | None:
         return None
 
     try:
-        rgbw = tuple(int(channel) for channel in value)
+        rgbw = (int(value[0]), int(value[1]), int(value[2]), int(value[3]))
     except (TypeError, ValueError):
         return None
 
@@ -258,7 +258,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
     entity_description: LightEntityDescription
 
     _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = frozenset({ColorMode.ONOFF})
+    _attr_supported_color_modes = {ColorMode.ONOFF}
 
     def __init__(
         self,

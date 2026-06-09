@@ -22,13 +22,13 @@ from .const import (
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_RESOLVED_VARIANT,
+    CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
-    CONF_KAIDI_ROOM_ID,
     DOMAIN,
     SUPPORTED_BED_TYPES,
 )
@@ -155,14 +155,18 @@ def _get_controller_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
         )
 
         # Add variant info for controllers that have it
-        if hasattr(controller, "_is_wilinke"):
-            info["richmat_is_wilinke"] = controller._is_wilinke
-        if hasattr(controller, "_variant"):
-            info["variant"] = controller._variant
-        if hasattr(controller, "_variant_source"):
-            info["variant_source"] = controller._variant_source
-        if hasattr(controller, "_char_uuid"):
-            info["char_uuid"] = controller._char_uuid
+        is_wilinke = getattr(controller, "_is_wilinke", None)
+        if is_wilinke is not None:
+            info["richmat_is_wilinke"] = is_wilinke
+        variant = getattr(controller, "_variant", None)
+        if variant is not None:
+            info["variant"] = variant
+        variant_source = getattr(controller, "_variant_source", None)
+        if variant_source is not None:
+            info["variant_source"] = variant_source
+        char_uuid = getattr(controller, "_char_uuid", None)
+        if char_uuid is not None:
+            info["char_uuid"] = char_uuid
 
     return info
 
@@ -235,9 +239,10 @@ def _get_recent_logs() -> list[dict[str, str]]:
         # This is a best-effort approach since HA doesn't expose logs directly
         root_logger = logging.getLogger()
         for handler in root_logger.handlers:
-            if hasattr(handler, "buffer"):
+            handler_buffer = getattr(handler, "buffer", None)
+            if handler_buffer is not None:
                 # MemoryHandler or similar
-                for record in list(handler.buffer)[-500:]:
+                for record in list(handler_buffer)[-500:]:
                     if (
                         DOMAIN in record.name
                         or "bluetooth" in record.name.lower()

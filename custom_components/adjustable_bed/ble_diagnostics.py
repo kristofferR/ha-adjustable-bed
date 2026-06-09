@@ -372,8 +372,9 @@ class BLEDiagnosticRunner:
                     time.monotonic() - connect_start, 3
                 )
                 attempt_details["service_discovery"]["attempted"] = True
-                if hasattr(self._client, "get_services"):
-                    await self._client.get_services()
+                get_services = getattr(self._client, "get_services", None)
+                if get_services is not None:
+                    await get_services()
                 attempt_details["service_discovery"]["success"] = True
                 attempt_details["service_discovery"]["service_count"] = (
                     len(list(self._client.services)) if self._client.services else 0
@@ -914,10 +915,11 @@ class BLEDiagnosticRunner:
 
     def _extract_client_source(self, client: BleakClient | None) -> str | None:
         """Return the connected client source when available."""
-        backend = getattr(client, "_backend", None)
-        backend_device = getattr(backend, "_device", None)
-        if hasattr(backend_device, "details") and isinstance(backend_device.details, dict):
-            source = backend_device.details.get("source")
+        backend: Any = getattr(client, "_backend", None)
+        backend_device: Any = getattr(backend, "_device", None)
+        details = getattr(backend_device, "details", None)
+        if isinstance(details, dict):
+            source = details.get("source")
             if isinstance(source, str):
                 return source
         return None

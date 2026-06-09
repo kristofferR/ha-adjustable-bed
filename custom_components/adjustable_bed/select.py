@@ -266,8 +266,12 @@ async def async_setup_entry(
                     )
                 )
 
-    foundation_preset_sides = tuple(getattr(controller, "foundation_preset_sides", ()))
-    foundation_preset_options = list(getattr(controller, "foundation_preset_options", ()))
+    foundation_preset_sides: tuple[str, ...] = tuple(
+        getattr(controller, "foundation_preset_sides", ())
+    )
+    foundation_preset_options: list[str] = list(
+        getattr(controller, "foundation_preset_options", ())
+    )
     if foundation_preset_sides and foundation_preset_options:
         _LOGGER.debug(
             "Setting up side-specific foundation preset selects for %s (sides: %s, options: %s)",

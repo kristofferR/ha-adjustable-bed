@@ -249,9 +249,12 @@ class SleepNumberMcrController(BedController):
 
     async def start_notify(
         self,
-        _notify_callback: Callable[[str, float], None] | None = None,
+        callback: Callable[[str, float], None] | None = None,
     ) -> None:
-        """Subscribe to the MCR response characteristic and run the init handshake."""
+        """Subscribe to the MCR response characteristic and run the init handshake.
+
+        The callback is unused; positions are pushed via the MCR frame parser.
+        """
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Not connected to bed")

@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
@@ -183,8 +183,11 @@ class VibradormController(BedController):
         return str(actual_uuid).lower() in cls._uuid_aliases(expected_uuid)
 
     @classmethod
-    def _get_characteristic_by_uuid(cls, service: object, char_uuid: str) -> object | None:
-        """Get characteristic from a service by UUID with broad compatibility."""
+    def _get_characteristic_by_uuid(cls, service: object, char_uuid: str) -> Any | None:
+        """Get characteristic from a service by UUID with broad compatibility.
+
+        Returns Any because characteristics are duck-typed across bleak versions.
+        """
         get_characteristic = getattr(service, "get_characteristic", None)
         if callable(get_characteristic):
             try:

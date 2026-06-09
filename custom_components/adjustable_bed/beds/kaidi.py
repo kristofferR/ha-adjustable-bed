@@ -1002,14 +1002,14 @@ class KaidiController(BedController):
 
     async def move_back_up(self) -> None:
         p = self._command_profile
-        if p.back_up is not None and self._product_family.has_back:
+        if p.back_up is not None and p.back_stop is not None and self._product_family.has_back:
             await self._move_with_stop_command(p.back_up, p.back_stop)
         else:
             await self.move_head_up()
 
     async def move_back_down(self) -> None:
         p = self._command_profile
-        if p.back_down is not None and self._product_family.has_back:
+        if p.back_down is not None and p.back_stop is not None and self._product_family.has_back:
             await self._move_with_stop_command(p.back_down, p.back_stop)
         else:
             await self.move_head_down()
@@ -1049,34 +1049,30 @@ class KaidiController(BedController):
         await self.move_legs_stop()
 
     async def move_lumbar_up(self) -> None:
-        if not self.has_lumbar_support:
+        waist_up = self._command_profile.waist_up
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_up is None or waist_stop is None:
             raise NotImplementedError(
                 f"Kaidi variant {self._variant} does not support waist control"
             )
-        await self._move_with_stop_command(
-            self._command_profile.waist_up,
-            self._command_profile.waist_stop,
-        )
+        await self._move_with_stop_command(waist_up, waist_stop)
 
     async def move_lumbar_down(self) -> None:
-        if not self.has_lumbar_support:
+        waist_down = self._command_profile.waist_down
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_down is None or waist_stop is None:
             raise NotImplementedError(
                 f"Kaidi variant {self._variant} does not support waist control"
             )
-        await self._move_with_stop_command(
-            self._command_profile.waist_down,
-            self._command_profile.waist_stop,
-        )
+        await self._move_with_stop_command(waist_down, waist_stop)
 
     async def move_lumbar_stop(self) -> None:
-        if not self.has_lumbar_support:
+        waist_stop = self._command_profile.waist_stop
+        if not self.has_lumbar_support or waist_stop is None:
             raise NotImplementedError(
                 f"Kaidi variant {self._variant} does not support waist control"
             )
-        await self._write_control_command(
-            self._command_profile.waist_stop,
-            cancel_event=asyncio.Event(),
-        )
+        await self._write_control_command(waist_stop, cancel_event=asyncio.Event())
 
     async def stop_all(self) -> None:
         if self._command_profile.stop_all is not None:
@@ -1090,8 +1086,9 @@ class KaidiController(BedController):
             self._command_profile.head_stop,
             self._command_profile.foot_stop,
         ]
-        if self.has_lumbar_support:
-            stop_commands.append(self._command_profile.waist_stop)
+        waist_stop = self._command_profile.waist_stop
+        if self.has_lumbar_support and waist_stop is not None:
+            stop_commands.append(waist_stop)
 
         for command_id in dict.fromkeys(stop_commands):
             await self._write_control_command(command_id, cancel_event=asyncio.Event())

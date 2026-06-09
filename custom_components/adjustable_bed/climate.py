@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityDescription,
-    ClimateEntityFeature,
-    HVACMode,
 )
+from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
@@ -160,7 +159,7 @@ async def async_setup_entry(
 
     entities: list[AdjustableBedClimate] = []
 
-    thermal_sides = tuple(getattr(controller, "thermal_climate_sides", ()))
+    thermal_sides: tuple[str, ...] = tuple(getattr(controller, "thermal_climate_sides", ()))
     if thermal_sides:
         _async_remove_stale_split_climate_entity(
             hass,
@@ -177,7 +176,7 @@ async def async_setup_entry(
     elif getattr(controller, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION.required_capability, False):
         entities.append(AdjustableBedClimate(coordinator, SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION))
 
-    footwarming_sides = tuple(getattr(controller, "footwarming_climate_sides", ()))
+    footwarming_sides: tuple[str, ...] = tuple(getattr(controller, "footwarming_climate_sides", ()))
     if footwarming_sides:
         _async_remove_stale_split_climate_entity(
             hass,

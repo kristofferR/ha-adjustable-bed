@@ -9,7 +9,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.bedtech import (
     BedTechCommands,
-    BedTechController,
     build_bedtech_command,
 )
 from custom_components.adjustable_bed.const import (
@@ -23,7 +22,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures

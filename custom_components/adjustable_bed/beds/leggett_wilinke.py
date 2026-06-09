@@ -259,7 +259,7 @@ class LeggettWilinkeController(BedController):
         pulse_delay = self._coordinator.motor_pulse_delay_ms
         await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
 
-    async def _move_with_stop(self, command_byte: int) -> None:
+    async def _move_with_stop(self, command_byte: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         try:
             await self._send_command(command_byte)

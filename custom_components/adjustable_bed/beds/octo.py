@@ -851,9 +851,9 @@ class OctoController(BedController):
                 MotorControlSpec(
                     key="head",
                     translation_key="head",
-                    open_fn=lambda ctrl: ctrl._move_motor3_up(),
-                    close_fn=lambda ctrl: ctrl._move_motor3_down(),
-                    stop_fn=lambda ctrl: ctrl._move_motor3_stop(),
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_stop(),
                 )
             )
 
@@ -862,9 +862,9 @@ class OctoController(BedController):
                 MotorControlSpec(
                     key="feet",
                     translation_key="feet",
-                    open_fn=lambda ctrl: ctrl._move_motor4_up(),
-                    close_fn=lambda ctrl: ctrl._move_motor4_down(),
-                    stop_fn=lambda ctrl: ctrl._move_motor4_stop(),
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_stop(),
                     max_angle=45,
                 )
             )
