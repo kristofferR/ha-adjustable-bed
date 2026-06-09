@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v7
       - name: Ruff check
         run: uvx ruff@0.15.16 check custom_components tests
 
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.14"
           enable-cache: true
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.14"
           enable-cache: true
