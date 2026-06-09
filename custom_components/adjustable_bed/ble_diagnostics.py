@@ -621,7 +621,7 @@ class BLEDiagnosticRunner:
         except asyncio.CancelledError:
             raise
         except Exception as err:
-            self._errors.append(f"Reconnect failed: {err}")
+            self._errors.append(f"Reconnect failed: {str(err) or type(err).__name__}")
             return False
 
         return self._client is not None and self._client.is_connected
