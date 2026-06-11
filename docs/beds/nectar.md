@@ -10,11 +10,18 @@
 - Nectar adjustable bases
 - Other beds using Okin controllers with 7-byte command format
 
+Some newer Nectar Motion bases advertise only as `OKIN-XXXXXX` and use the
+[Okin CST](okin-cst.md) 14-byte protocol instead of this 7-byte protocol.
+If diagnostics show the `62741523-...` OKIN service, `90311623-...` CSS service,
+and Nordic DFU service `00001530-...`, choose **Okin CST / Nectar Motion** in
+manual setup.
+
 ## Apps
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ⬜ | Nectar Adjustable | (no longer available) |
+| ✅ | Nectar Motion | `com.okin.bedding.nectarmotion` (uses Okin CST) |
 
 ## Features
 
@@ -77,8 +84,10 @@
 Detected by device name containing: `nectar` (case-insensitive) AND Okin service UUID present.
 
 Some Nectar bases advertise only as `OKIN-XXXXXX`. Those names are ambiguous
-with classic Okimat controllers, so setup prompts for the Okin-family protocol.
-Choose `Nectar` for the 7-byte protocol.
+with classic Okimat, 7-byte Nectar, and newer CST controllers, so setup prompts
+for the Okin-family protocol. Choose `Nectar` only for the 7-byte protocol.
+Choose `Okin CST / Nectar Motion` when diagnostics show the CSS service
+`90311623-...` plus Nordic DFU service `00001530-...`.
 
 Or manually configured with bed type: `nectar`
 
@@ -94,5 +103,6 @@ Nectar is part of the [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-prot
 
 - Nectar beds share the Okin service UUID with Okimat beds but use a different command protocol
 - Generic `OKIN-XXXXXX` names require user confirmation because several Okin protocols share the same advertised UUID
+- Newer Nectar Motion `OKIN-XXXXXX` bases may use [Okin CST](okin-cst.md) instead
 - Massage control is global (no separate head/foot control)
 - Lights have separate on/off commands (no toggle)

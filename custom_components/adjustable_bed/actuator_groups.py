@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -218,6 +219,12 @@ ACTUATOR_GROUPS: Final[dict[str, ActuatorGroup]] = {
                 "label": "Nectar beds",
                 "description": "Nectar Move and similar models",
                 "hint": "Device name contains 'Nectar'",
+            },
+            {
+                "type": BED_TYPE_OKIN_CST,
+                "label": "CST / Nectar Motion",
+                "description": "Rize MF900, newer Nectar Motion, and some OKIN-* bases",
+                "hint": "Try this for OKIN-* beds with 62741525 plus 90311625/00001530 GATT services",
             },
             {
                 "type": BED_TYPE_OKIN_NORDIC,

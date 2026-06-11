@@ -67,6 +67,7 @@ from custom_components.adjustable_bed.const import (
     MANUFACTURER_ID_DEWERTOKIN,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
+    NORDIC_DFU_SERVICE_UUID,
     NORDIC_UART_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
@@ -785,6 +786,34 @@ class TestOkinUUIDDisambiguation:
         assert result.bed_type == BED_TYPE_OKIN_RF_ECO_BT
         assert result.confidence == 0.9
         assert "gatt_char:okin_smart_remote_css_write" in result.signals
+
+    def test_okin_cst_dual_stack_gatt_signature_wins_over_rf_eco_bt(self):
+        """Newer OKIN full-bed controllers can expose CSS plus Nordic DFU."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        result = detect_bed_type_from_gatt_services(gatt_services)
+
+        assert result.bed_type == BED_TYPE_OKIN_CST
+        assert result.confidence == 0.8
+        assert "gatt_service:nordic_dfu" in result.signals
+        assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
 
     def test_malouf_new_refines_to_legacy_when_gatt_has_ffe9_only(self):
         """A saved Malouf Nordic entry should use FFE5 when connected GATT proves it."""

@@ -13,9 +13,11 @@ from custom_components.adjustable_bed.ble_diagnostics import (
     DiagnosticReport,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     DEVICE_INFO_CHARS,
     LINAK_CONTROL_SERVICE_UUID,
+    NORDIC_DFU_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
@@ -325,6 +327,108 @@ class TestBleDiagnosticsRunner:
         assert report.detection["bed_type"] == BED_TYPE_OKIN_RF_ECO_BT
         assert report.detection["supported_match"] is True
         assert "gatt_char:okin_smart_remote_css_write" in report.detection["signals"]
+
+    async def test_run_diagnostics_detects_okin_cst_dual_stack_signature(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Diagnostics should not classify full OKIN CST beds as RF ECO BT."""
+        service_info = MagicMock()
+        service_info.name = "OKIN-441954"
+        service_info.address = "AA:BB:CC:DD:EE:55"
+        service_info.rssi = -59
+        service_info.manufacturer_data = {}
+        service_info.service_data = {}
+        service_info.service_uuids = [OKIMAT_SERVICE_UUID]
+        service_info.source = "proxy_1"
+        service_info.device = MagicMock(
+            address="AA:BB:CC:DD:EE:55",
+            name="OKIN-441954",
+            details={"source": "proxy_1", "props": {"Paired": True}},
+        )
+        service_info.connectable = True
+        service_info.time = 1_700_000_000
+
+        okin_write = MagicMock(
+            uuid=OKIMAT_WRITE_CHAR_UUID,
+            handle=19,
+            properties=["read", "write"],
+            descriptors=[],
+        )
+        css_write = MagicMock(
+            uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
+            handle=42,
+            properties=["read", "write"],
+            descriptors=[],
+        )
+        services = _FakeServices(
+            [
+                MagicMock(
+                    uuid=OKIMAT_SERVICE_UUID,
+                    handle=12,
+                    characteristics=[okin_write],
+                ),
+                MagicMock(
+                    uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                    handle=33,
+                    characteristics=[css_write],
+                ),
+                MagicMock(
+                    uuid=NORDIC_DFU_SERVICE_UUID,
+                    handle=43,
+                    characteristics=[],
+                ),
+            ]
+        )
+
+        client = MagicMock()
+        client.is_connected = True
+        client.services = services
+        client._backend = MagicMock(
+            _device=MagicMock(details={"source": "proxy_1", "props": {"Paired": True}})
+        )
+        client.get_services = AsyncMock()
+        client.read_gatt_char = AsyncMock()
+        client.start_notify = AsyncMock()
+        client.stop_notify = AsyncMock()
+        client.disconnect = AsyncMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.get_service_info_snapshots_by_address",
+                return_value=[(service_info, True)],
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.select_adapter",
+                new=AsyncMock(
+                    return_value=AdapterSelectionResult(
+                        device=service_info.device,
+                        source="proxy_1",
+                        rssi=-59,
+                        connectable=True,
+                        available_sources=["proxy_1 (RSSI: -59)"],
+                    )
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.establish_connection",
+                new=AsyncMock(return_value=client),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
+                return_value=1,
+            ),
+        ):
+            report = await BLEDiagnosticRunner(
+                hass,
+                "AA:BB:CC:DD:EE:55",
+                capture_duration=0,
+            ).run_diagnostics()
+
+        assert report.detection["bed_type"] == BED_TYPE_OKIN_CST
+        assert report.detection["supported_match"] is True
+        assert "gatt_service:nordic_dfu" in report.detection["signals"]
 
     async def test_run_diagnostics_reconnects_after_mid_enumeration_disconnect(
         self,

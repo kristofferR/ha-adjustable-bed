@@ -62,11 +62,11 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Name patterns |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Name patterns; some Nectar Motion `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**
-- **6-byte vs 7-byte vs 8-byte vs 10-byte**: Different command structures - not interchangeable
+- **6-byte vs 7-byte vs 8-byte vs 10-byte vs 14-byte**: Different command structures - not interchangeable
 - **32-bit vs 64-bit commands**: Okin 64-bit uses 8-byte command values instead of 4-byte
 - **UUID vs Handle**: DewertOkin writes to a BLE handle instead of a characteristic UUID
 - **Nordic UART**: Many newer beds use the Nordic UART service
@@ -79,8 +79,9 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 3. Name contains "okimat", "okin rf", or "okin ble" → Okimat
 4. Name starts with `OKIN-` → prompt for Okin-family protocol (confirmed Nectar bases can advertise this way)
 5. Name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
-6. Connected GATT has `62741525-...` plus CSS `90311625-...` → OKIN Smart Remote / RF ECO BT
-7. Fallback → Okimat (with warning logged)
+6. Connected GATT has `62741525-...` plus CSS `90311625-...` and Nordic DFU `00001530-...` → Okin CST
+7. Connected GATT has `62741525-...` plus CSS `90311625-...` without Nordic DFU → OKIN Smart Remote / RF ECO BT
+8. Fallback → Okimat (with warning logged)
 
 ---
 
@@ -142,11 +143,12 @@ These beds have their own dedicated integrations:
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
    - `Star35*` → [Okin CB35](beds/okin-cb35.md) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
-   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
+   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
-   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
+   - Service `62741523-...` plus CSS service `90311623-...`, write characteristic `90311625-...`, and Nordic DFU service `00001530-...` → [Okin CST](beds/okin-cst.md)
+   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` without Nordic DFU → [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
    - Service `01000001-...` → Malouf/Lucid family (usually New OKIN; `OKIN-BLE` + `BTCB` uses Legacy OKIN)

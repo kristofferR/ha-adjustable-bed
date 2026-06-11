@@ -6,16 +6,20 @@
 ## Known Brands
 
 - Rize MF900
+- Nectar Motion / some `OKIN-*` Nectar bases
 
 ## Detection
 
 | Signal | Value |
 |--------|-------|
 | Service UUID | `62741523-52f9-8864-b1ab-3b3a8d65950b` (standard OKIN) |
-| Name patterns | Varies (shared UUID requires disambiguation) |
+| Name patterns | Varies (shared UUID requires disambiguation; some report as `OKIN-XXXXXX`) |
+| Connected GATT hint | CSS `90311623-...` plus Nordic DFU `00001530-...` |
 | BLE Pairing | Required |
 
 Manual selection may be needed since the service UUID is shared with other Okin protocols.
+Choose this profile for Nectar Motion style `OKIN-*` bases when diagnostics show
+both the CSS service and Nordic DFU service.
 
 ## Protocol
 
@@ -82,7 +86,9 @@ Command values are identical to Okimat/Okin UUID values. The difference is the p
 ## App
 
 - **Android:** `com.okin.bedding.rizemf900`
+- **Android:** `com.okin.bedding.nectarmotion`
 
 ## Source
 
-Protocol reverse-engineered from `CSTProtocol.java` in the Rize MF900 APK.
+Protocol reverse-engineered from `CSTProtocol.java` in the Rize MF900 and
+Nectar Motion APKs.
