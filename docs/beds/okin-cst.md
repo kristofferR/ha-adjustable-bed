@@ -5,6 +5,7 @@
 
 ## Known Brands
 
+- Mattress Firm 900-O / MFirm 900-O
 - Rize MF900
 - Nectar Motion / some `OKIN-*` Nectar bases
 
@@ -20,6 +21,8 @@
 Manual selection may be needed since the service UUID is shared with other Okin protocols.
 Choose this profile for Nectar Motion style `OKIN-*` bases when diagnostics show
 both the CSS service and Nordic DFU service.
+This also applies to Mattress Firm 900-O / MFirm 900-O bases advertising as
+`OKIN-XXXXXX` with the same connected GATT signature.
 
 ## Protocol
 
@@ -85,7 +88,7 @@ Command values are identical to Okimat/Okin UUID values. The difference is the p
 
 ## App
 
-- **Android:** `com.okin.bedding.rizemf900`
+- **Android:** Mattress Firm 900 - O / MFirm 900-O (`com.okin.bedding.rizemf900`)
 - **Android:** `com.okin.bedding.nectarmotion`
 
 ## Source

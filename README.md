@@ -83,7 +83,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Svane](docs/beds/svane.md) | Svane |
 | ✅ [DewertOkin](docs/beds/dewertokin.md) | Many older Rize models, Simmons, Nectar, Resident, Symphony |
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
-| ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | Mattress Firm, iFlex |
+| ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
 | ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
@@ -99,7 +99,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
-| ✅ [Okin CST](docs/beds/okin-cst.md) | Rize MF900 |
+| ✅ [Okin CST](docs/beds/okin-cst.md) | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!

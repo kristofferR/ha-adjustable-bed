@@ -18,7 +18,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Jensen](beds/jensen.md) | ✅ Supported | Go-to-position, variable massage (0-10), dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
-| [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
+| [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 | [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
@@ -36,7 +36,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Remacro](beds/remacro.md) | ✅ Supported | 4 motors, 8 presets, RGB lights, heat |
 | [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
 | [Okin CB35](beds/okin-cb35.md) | 🧪 Needs Testing | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
-| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
+| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion) |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 🧪 Needs Testing | Single stair actuator for Elda BTH / MEGAMAT |
 
 ---
@@ -62,7 +62,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Name patterns; some Nectar Motion `OKIN-*` bases |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, some `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**
@@ -129,6 +129,7 @@ These beds have their own dedicated integrations:
    - `Serta*` or `Motion Perfect*` → Serta
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
+   - `OKIN-*` with service `62741523-...` plus CSS service `90311623-...` and Nordic DFU `00001530-...` → [Okin CST](beds/okin-cst.md), including MFirm 900-O / Rize MF900-style bases
    - `Malouf*`, `Structures*` → Malouf
    - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - MAC-address-like name such as `64:DB:A0:07:DD:02` + service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)

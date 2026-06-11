@@ -290,7 +290,7 @@ Use these to identify your bed type in a BLE scanner:
 | `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
 | `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |
 | `ffffd1fd-388d-938b-344a-939d1f6efee0` | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) |
-| `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, OKIN 64-bit, Sleepy's BOX24 |
+| `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, Okin CST (MFirm 900-O / Rize MF900), OKIN 64-bit, Sleepy's BOX24 |
 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Richmat Nordic, Keeson KSBT, Mattress Firm 900 |
 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | Richmat WiLinke |
 | `99fa0001-338a-1024-8a49-009c0215f78a` | Linak |

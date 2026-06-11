@@ -54,6 +54,7 @@
 > | [Nectar](nectar.md) | 7-byte | Different command structure |
 > | [DewertOkin](dewertokin.md) | 6-byte | Handle-based writes (not UUID) |
 > | [Mattress Firm 900](mattressfirm.md) | 7-byte | Uses Nordic UART service |
+> | [Okin CST](okin-cst.md) | 14-byte | MFirm 900-O / Rize MF900-style OKIN service devices |
 > | **Okin 64-Bit** | 10-byte | 64-bit commands, `0x08 0x02` header |
 >
 > See [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for detection priority and troubleshooting.
@@ -69,8 +70,9 @@ Detection priority:
 1. Device name contains "nectar" → Nectar
 2. Device name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt
 3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat/Okin UUID
-4. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
-5. Fallback → Okimat (with warning)
+4. Connected GATT has OKIN UUID + CSS + Nordic DFU → Okin CST
+5. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
+6. Fallback → Okimat (with warning)
 
 **If your bed is misidentified:** Change the bed type in integration settings.
 
