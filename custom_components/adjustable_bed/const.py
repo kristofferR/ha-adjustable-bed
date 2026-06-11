@@ -477,6 +477,11 @@ OKIN_SMART_REMOTE_CSS_SERVICE_UUID: Final = "90311623-25fa-3346-12ef-3cfb7a2556a
 OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID: Final = "90311625-25fa-3346-12ef-3cfb7a2556ac"
 OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID: Final = "90311725-25fa-3346-12ef-3cfb7a2556ac"
 
+# Nordic DFU service observed on some newer OKIN dual-stack controllers. It is
+# not a control surface, but helps distinguish full bed controllers from the
+# RF ECO BT single-actuator profile when both expose OKIN Smart Remote CSS.
+NORDIC_DFU_SERVICE_UUID: Final = "00001530-1212-efde-1523-785feabcd123"
+
 # OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
 # Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
 OKIN_POSITION_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"

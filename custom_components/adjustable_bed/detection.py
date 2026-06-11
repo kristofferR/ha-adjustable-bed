@@ -113,6 +113,7 @@ from .const import (
     MANUFACTURER_ID_LOGICDATA,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
+    NORDIC_DFU_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_ONLY_PATTERNS,
@@ -465,17 +466,27 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
         OKIN_SMART_REMOTE_CSS_SERVICE_UUID.lower() in service_uuids
         and OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID.lower() in characteristic_uuids
     )
+    has_nordic_dfu = NORDIC_DFU_SERVICE_UUID.lower() in service_uuids
 
     if has_okin_uuid_write and has_smart_remote_css:
+        signals = [
+            "gatt_service:okin_uuid",
+            "gatt_char:okin_write",
+            "gatt_service:okin_smart_remote_css",
+            "gatt_char:okin_smart_remote_css_write",
+        ]
+        if has_nordic_dfu:
+            return DetectionResult(
+                bed_type=BED_TYPE_OKIN_CST,
+                confidence=0.8,
+                signals=[*signals, "gatt_service:nordic_dfu"],
+                ambiguous_types=[BED_TYPE_NECTAR, BED_TYPE_OKIN_RF_ECO_BT],
+            )
+
         return DetectionResult(
             bed_type=BED_TYPE_OKIN_RF_ECO_BT,
             confidence=0.9,
-            signals=[
-                "gatt_service:okin_uuid",
-                "gatt_char:okin_write",
-                "gatt_service:okin_smart_remote_css",
-                "gatt_char:okin_smart_remote_css_write",
-            ],
+            signals=signals,
         )
 
     return DetectionResult(bed_type=None, confidence=0.0, signals=[])
@@ -1646,6 +1657,11 @@ async def detect_bed_type_by_characteristics(
         if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
             _LOGGER.info("Refined detection: OKIN Smart Remote CSS signature found")
             return BED_TYPE_OKIN_RF_ECO_BT
+        if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
+            _LOGGER.info(
+                "Refined detection: OKIN CST dual-stack GATT signature found"
+            )
+            return BED_TYPE_OKIN_CST
 
         # Build a set of all characteristic UUIDs for easy lookup
         all_chars: set[str] = set()
