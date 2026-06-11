@@ -198,6 +198,11 @@
           "action": "Action"
         }
       },
+      "verify_connection": {
+        "title": "Verify Connection",
+        "description": "Checked the connection to **{name}** before finishing setup:\n\n{capabilities}\n\nSelect **Submit** to finish. You can finish even if something failed - the integration will keep trying to connect afterwards.",
+        "submit": "Finish setup"
+      },
       "diagnostic": {
         "title": "Browse Unsupported BLE Devices",
         "description": "Select any visible BLE device to inspect its MAC address and scanner details. Then run the `adjustable_bed.generate_support_bundle` action with that address.",
