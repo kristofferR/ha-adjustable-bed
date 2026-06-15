@@ -9,7 +9,7 @@ by reading an auth-gated characteristic before resolving the issue.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
@@ -25,6 +25,9 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     DEVICE_INFO_CHARS,
 )
+
+if TYPE_CHECKING:
+    from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +65,7 @@ class PairingRequiredRepairFlow(RepairsFlow):
             },
         )
 
-    def _find_device(self) -> object | None:
+    def _find_device(self) -> BLEDevice | None:
         """Find the BLE device, honoring the entry's preferred adapter.
 
         BLE bonds live on the adapter/proxy that performed pairing, so a repair
