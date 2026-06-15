@@ -24,6 +24,28 @@ both the CSS service and Nordic DFU service.
 This also applies to Mattress Firm 900-O / MFirm 900-O bases advertising as
 `OKIN-XXXXXX` with the same connected GATT signature.
 
+## Pairing
+
+These bases require an OS-level Bluetooth **bond** before commands are accepted.
+Pairing is "Just Works" — **no PIN** and **no dedicated Bluetooth pairing button**.
+The bond is negotiated automatically by the OS when a client accesses one of the
+firmware's encrypted characteristics; on a real device every read/notify and
+Device Information characteristic returns GATT `error=5` "Insufficient
+authentication" until the link is bonded, while the command write characteristic
+(`62741525-…`) is reachable unbonded.
+
+**To enter pairing mode, power-cycle the control box:** unplug it for ~30 seconds,
+then plug it back in. The status light blinks blue, then turns green after ~20 s —
+that window is when the base accepts a new bond. Some models instead use the
+under-bed lamp/light button (hold until it blinks blue). The physical "Pair"/"Learn"
+button found on some OKIN control boxes only syncs the **RF remote**, not Bluetooth.
+
+The integration requests `pair=True` automatically and verifies the bond after
+connecting; if the link connected but did not bond it clears its cached bond state,
+re-pairs on the next attempt, and surfaces a **"Bluetooth pairing required"** repair
+with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on ESPHome
+≥ 2024.3.0; a local adapter near the bed is the most reliable for the first bond.
+
 ## Protocol
 
 Uses a 14-byte command format with two separate 32-bit fields:

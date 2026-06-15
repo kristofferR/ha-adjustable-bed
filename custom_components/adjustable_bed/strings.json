@@ -187,7 +187,7 @@
         },
         "data_description": {
           "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",
-          "pairing_instructions_okin": "1. Put the OKIN receiver/control box in pairing mode (press or hold the receiver pairing button until the LED blinks)\n2. Click 'Pair Now'",
+          "pairing_instructions_okin": "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn button on the box only syncs the RF remote.\n2. While the light is active, click 'Pair Now'.",
           "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'"
         }
       },
@@ -761,7 +761,18 @@
     },
     "pairing_required": {
       "title": "Bluetooth pairing required for {name}",
-      "description": "The bed at `{address}` requires Bluetooth pairing before it can be controlled.\n\n**To fix this:**\n\n1. Put your bed in pairing mode (usually by holding a button on the motor or remote for 5+ seconds until an LED blinks)\n2. On your Home Assistant host (or Bluetooth proxy device), go to Bluetooth settings\n3. Find and pair with the bed\n4. Return here and reload the integration\n\n**Note:** The pairing must be done on the device running Home Assistant's Bluetooth stack, not your phone."
+      "description": "The bed at `{address}` connected but its Bluetooth link is not bonded, so it cannot be controlled yet.\n\n**Click 'Fix' above** to be guided through pairing, or do it manually:\n\n1. Put the base into pairing mode by **power-cycling the control box** (unplug it for ~30 seconds, then plug it back in). The status light blinks blue, then turns green after ~20 seconds. OKIN bases have **no separate Bluetooth pairing button** — any Pair/Learn button only syncs the RF remote.\n2. Pair from the device running Home Assistant's Bluetooth stack (your HA host or a Bluetooth proxy), **not your phone**.\n\n**Note:** ESPHome Bluetooth proxies support pairing only on ESPHome 2024.3.0 or newer; if pairing keeps failing, try a local Bluetooth adapter near the bed.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Pair your adjustable bed",
+            "description": "**{name}** ({address}) needs to finish Bluetooth pairing before it can be controlled.\n\n1. Put the base into pairing mode: **unplug the control box for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. (Some models use the under-bed lamp/light button — hold it until the light blinks blue.) There is no separate Bluetooth pairing button.\n2. While the light is active, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
+          }
+        },
+        "abort": {
+          "pairing_failed": "Pairing didn't complete. Make sure the base is in pairing mode (unplug the control box ~30s, then plug it back in) and in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
+        }
+      }
     }
   }
 }

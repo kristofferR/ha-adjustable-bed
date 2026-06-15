@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
+    async_delete_issue,
 )
 from homeassistant.helpers.issue_registry import (
     async_get as async_get_issue_registry,
@@ -286,30 +287,43 @@ async def create_unsupported_device_issue(
     return True
 
 
+def _pairing_required_issue_id(address: str) -> str:
+    """Return the stable Repairs issue id for a pairing-required bed."""
+    return f"pairing_required_{address.replace(':', '_').lower()}"
+
+
 async def create_pairing_required_issue(
     hass: HomeAssistant,
     address: str,
     name: str,
+    entry_id: str | None = None,
 ) -> None:
-    """Create a persistent issue for beds that require Bluetooth pairing.
+    """Create a fixable issue for beds that require Bluetooth pairing.
 
-    This is shown when a bed requiring pairing fails to connect at runtime,
-    to guide users through the pairing process.
+    This is shown when a bed requiring pairing fails to bond at runtime, to
+    guide users through the pairing process. The issue is fixable: the repair
+    flow (see ``repairs.py``) walks the user through power-cycling the base and
+    re-pairs it. ``entry_id`` (when known) lets the repair flow clear a stale
+    bond marker and reload the entry on success.
     """
-    # Use address as unique identifier (normalized to avoid duplicates)
-    issue_id = f"pairing_required_{address.replace(':', '_').lower()}"
+    issue_id = _pairing_required_issue_id(address)
 
     async_create_issue(
         hass,
         DOMAIN,
         issue_id,
-        is_fixable=False,
+        is_fixable=True,
         is_persistent=True,
         severity=IssueSeverity.ERROR,
         translation_key="pairing_required",
         translation_placeholders={
             "name": name,
             "address": address,
+        },
+        data={
+            "address": address,
+            "name": name,
+            "entry_id": entry_id,
         },
     )
 
@@ -318,3 +332,8 @@ async def create_pairing_required_issue(
         name,
         address,
     )
+
+
+async def delete_pairing_required_issue(hass: HomeAssistant, address: str) -> None:
+    """Remove the pairing-required Repairs issue once the bed is bonded."""
+    async_delete_issue(hass, DOMAIN, _pairing_required_issue_id(address))

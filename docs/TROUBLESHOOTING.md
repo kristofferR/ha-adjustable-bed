@@ -222,35 +222,27 @@ See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default va
 
 ## Pairing Required Beds
 
-Some beds require Bluetooth pairing before they can be controlled.
+Some beds (Okimat / OKIN, Okin CST, Leggett & Platt Okin variant, Logicdata, Vibradorm, Sleep Number Climate 360 / FlexFit Fuzion) require an OS-level Bluetooth **bond** before they can be controlled. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
 
-### How to Pair
+### Putting the bed in pairing mode
 
-1. **On Linux/Raspberry Pi:**
-   ```bash
-   bluetoothctl
-   scan on
-   # Find your bed's MAC address
-   pair XX:XX:XX:XX:XX:XX
-   trust XX:XX:XX:XX:XX:XX
-   ```
+- **OKIN bases (Okimat, Okin CST, Nectar / Mattress Firm 900-O / Rize MF900, etc.):** Power-cycle the control box — **unplug it for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. That window is when the base accepts a new Bluetooth bond. Some models instead use the under-bed **lamp/light button** (hold until it blinks blue). There is **no dedicated Bluetooth pairing button** — any "Pair"/"Learn" button on the control box only syncs the RF remote, not Bluetooth.
+- **Sleep Number Climate 360 / FlexFit Fuzion:** hold the side pairing button until the blue light blinks. (Older Sleep Number BAM/MCR i8 / 360 FlexFit 2 beds do **not** need OS-level pairing.)
 
-2. **On Home Assistant OS:**
-   - SSH into your Home Assistant OS and use `bluetoothctl` (same as Linux)
-   - Note: ESPHome Bluetooth proxies don't support OS-level pairing - use a local Bluetooth adapter for beds that require pairing
+### How the integration pairs
 
-3. **On Windows/macOS (for testing):**
-   - Go to Bluetooth settings
-   - Find the bed and click "Pair"
+The integration connects with pairing enabled and, for OKIN-style beds, verifies the bond afterward by reading an encrypted characteristic. If the link connected but never bonded, it clears its cached bond state and re-pairs on the next attempt, and raises a **"Bluetooth pairing required"** repair with a **Fix** button that walks you through the power-cycle + pair.
 
-Sleep Number Climate 360 / FlexFit Fuzion bases enter pairing mode by holding the side pairing button until the blue light blinks. Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds do not need OS-level pairing.
+**Bluetooth adapter notes:**
+- ESPHome Bluetooth proxies **do** support OS-level pairing, but only on **ESPHome 2024.3.0 or newer**. Pairing over a proxy can be unreliable; if it keeps failing, put the bed in range of a **local Bluetooth adapter** (or the HA host's own adapter) for the initial bond.
+- You can also pair manually from the device running HA's Bluetooth stack — **not your phone**:
+  - **Linux / Raspberry Pi / HA OS (SSH):** `bluetoothctl` → `scan on` → `pair XX:XX:XX:XX:XX:XX` → `trust XX:XX:XX:XX:XX:XX`
+  - **Windows / macOS (for testing):** Bluetooth settings → find the bed → "Pair"
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work
-- Bed specifically requires PIN entry or pairing confirmation
-- "Pairing required" error message
-
-**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds such as Okimat, Leggett Okin, and newer Sleep Number Climate 360 / FlexFit Fuzion bases.
+- Device info (manufacturer/model) is blank and reads fail with "insufficient authentication"
+- "Bluetooth pairing required" repair / error message
 
 ---
 

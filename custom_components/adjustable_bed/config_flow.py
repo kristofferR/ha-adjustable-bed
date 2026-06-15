@@ -225,8 +225,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }:
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_okin",
-                "1. Put the OKIN receiver/control box in pairing mode (press or hold the receiver pairing button until the LED blinks)\n"
-                "2. Click 'Pair Now'",
+                "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: "
+                "unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns "
+                "green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it "
+                "until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn "
+                "button on the box only syncs the RF remote.\n"
+                "2. While the light is active, click 'Pair Now'.",
             )
         return await self._get_config_translation(
             "step.bluetooth_pairing.data_description.pairing_instructions_generic",

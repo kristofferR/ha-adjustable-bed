@@ -113,6 +113,7 @@ from .const import (
     DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
+    DEVICE_INFO_CHARS,
     DOMAIN,
     OKIMAT_SERVICE_UUID,
     POSITION_CHECK_INTERVAL,
@@ -133,7 +134,10 @@ from .const import (
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name, refine_malouf_protocol_from_gatt
 from .diagnostic_payloads import new_connection_attempt_details
-from .unsupported import create_pairing_required_issue
+from .unsupported import (
+    create_pairing_required_issue,
+    delete_pairing_required_issue,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -302,6 +306,12 @@ class AdjustableBedCoordinator:
         self._ble_bond_established: bool = bool(
             entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
         )
+        # Transient (in-memory only) flag: a pairing attempt just failed, so the
+        # single next connection attempt should skip pair=True (some stacks fail
+        # to re-pair on top of an existing bond). Unlike the persisted bond
+        # marker, this never poisons the config entry, so a transient pairing
+        # failure cannot permanently prevent future pairing attempts.
+        self._skip_pair_next_attempt: bool = False
 
         # Connection history tracking for diagnostics (issue #168)
         self._connection_attempt_count: int = 0
@@ -612,7 +622,9 @@ class AdjustableBedCoordinator:
         self._clear_ble_bond_established()
 
         try:
-            await create_pairing_required_issue(self.hass, self._address, self._name)
+            await create_pairing_required_issue(
+                self.hass, self._address, self._name, self.entry.entry_id
+            )
         except Exception:
             _LOGGER.debug(
                 "Failed to create pairing required repair issue for %s",
@@ -622,6 +634,53 @@ class AdjustableBedCoordinator:
 
         if self._client is not None and self._client.is_connected:
             await self.async_disconnect(reason="authentication_failed")
+
+    async def _async_verify_bonded(self) -> bool:
+        """Probe an auth-gated characteristic to confirm the BLE bond is live.
+
+        For beds that require pairing, a connection — even one made with
+        ``pair=True`` — can succeed while the link is still unbonded; every
+        encrypted characteristic then fails with GATT error=5 "Insufficient
+        authentication". Reading one known auth-gated characteristic surfaces
+        this so we can clear a stale bond marker and re-pair instead of
+        silently staying unbonded.
+
+        Returns True if the link is bonded (or the check is inconclusive), and
+        False only when an authentication error is definitively observed — in
+        which case the bond marker is cleared, a repair issue is raised, and the
+        client is disconnected.
+        """
+        client = self._client
+        if client is None or not client.is_connected:
+            return True
+
+        probe_uuid = DEVICE_INFO_CHARS["model_number"]
+        try:
+            await client.read_gatt_char(probe_uuid)
+        except BleakError as err:
+            if _is_ble_authentication_error(err):
+                await self._async_handle_ble_authentication_error(err)
+                return False
+            _LOGGER.debug(
+                "Bond verification read for %s was inconclusive (%s); proceeding.",
+                self._address,
+                err,
+            )
+            return True
+        except (TimeoutError, OSError) as err:
+            _LOGGER.debug(
+                "Bond verification read for %s failed (%s); proceeding.",
+                self._address,
+                err,
+            )
+            return True
+
+        # Read succeeded → the encrypted link works → we are bonded.
+        self._skip_pair_next_attempt = False
+        self._mark_ble_bond_established()
+        await delete_pairing_required_issue(self.hass, self._address)
+        _LOGGER.debug("Bond verification succeeded for %s", self._address)
+        return True
 
     @property
     def cancel_command(self) -> asyncio.Event:
@@ -1115,8 +1174,13 @@ class AdjustableBedCoordinator:
                 use_pairing = (
                     bed_requires_pairing
                     and not self._ble_bond_established
+                    and not self._skip_pair_next_attempt
                     and self._pairing_supported is not False
                 )
+                # Consume the transient skip flag: it only suppresses pairing for
+                # the single attempt immediately following a failed pair, so we
+                # never get stuck skipping pairing forever.
+                self._skip_pair_next_attempt = False
                 keep_connecting_through_startup = self._uses_persistent_connection()
                 if use_pairing:
                     _LOGGER.info(
@@ -1188,22 +1252,26 @@ class AdjustableBedCoordinator:
                             raise
                     except (BleakError, TimeoutError, OSError) as pair_err:
                         # If pairing was requested and the connection failed,
-                        # the BLE bond may already exist from a previous
-                        # session.  Re-pairing on top of an existing bond
-                        # causes auth failures on some ESP-IDF stacks and
-                        # leaves the ESPHome proxy connection stuck.  Mark
-                        # pairing as complete and let the outer retry loop
-                        # reconnect without pair=True.
+                        # a BLE bond may already exist from a previous session;
+                        # re-pairing on top of an existing bond causes auth
+                        # failures on some ESP-IDF stacks and leaves the ESPHome
+                        # proxy connection stuck.  Skip pair=True on the *next*
+                        # attempt only (transient, in-memory) so the outer retry
+                        # loop can reconnect — but do NOT persist a bond marker,
+                        # since the failure may simply mean the base was not in
+                        # its pairing window.  The post-connect bond probe
+                        # (_async_verify_bonded) then confirms whether the link
+                        # is really bonded and re-pairs if not.
                         if use_pairing:
                             _LOGGER.warning(
                                 "Connection with pairing failed for %s: %s. "
-                                "Bond may already exist — next attempt will "
-                                "connect without re-pairing.",
+                                "Next attempt will connect without re-pairing; "
+                                "bond state will be verified after connecting.",
                                 self._name,
                                 pair_err,
                             )
                             self._pairing_supported = True
-                            self._mark_ble_bond_established()
+                            self._skip_pair_next_attempt = True
                             raise
                         raise
                 finally:
@@ -1320,6 +1388,36 @@ class AdjustableBedCoordinator:
                             self._name,
                             sorted(discovered_uuids),
                         )
+
+                # Actively verify the encrypted link is bonded for beds that
+                # require pairing. A connection — even establish_connection with
+                # pair=True — can succeed while the link is still unbonded: every
+                # encrypted characteristic then fails with GATT error=5. Skip the
+                # delay-sensitive bed types whose protocol handshake must run
+                # first (Sleep Number, Jensen).
+                if (
+                    bed_requires_pairing
+                    and self._client is not None
+                    and self._client.services
+                    and self._bed_type
+                    not in (
+                        BED_TYPE_SLEEP_NUMBER,
+                        BED_TYPE_SLEEP_NUMBER_MCR,
+                        BED_TYPE_JENSEN,
+                    )
+                    and not await self._async_verify_bonded()
+                ):
+                    # _async_verify_bonded cleared the bond marker, raised the
+                    # repair issue, and disconnected. Retry — the next attempt
+                    # requests pair=True again (the skip flag was consumed).
+                    _LOGGER.warning(
+                        "Bed %s connected but the BLE link is not bonded; "
+                        "retrying with pairing.",
+                        self._address,
+                    )
+                    self._connecting = False
+                    self._connection_attempt_details.append(attempt_details)
+                    continue
 
                 # Some beds (Sleep Number MCR/Fuzion, Jensen) disconnect if
                 # there is too much delay between the BLE connection and the

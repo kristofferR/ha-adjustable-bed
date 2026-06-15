@@ -324,7 +324,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Adapter explicitly doesn't support pairing (e.g. old ESPHome proxy)
         if coordinator.pairing_supported is False:
             await create_pairing_required_issue(
-                hass, address or "Unknown", entry.data.get("name", entry.title)
+                hass,
+                address or "Unknown",
+                entry.data.get("name", entry.title),
+                entry.entry_id,
             )
             return
 
