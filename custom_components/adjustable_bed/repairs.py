@@ -17,7 +17,14 @@ from homeassistant.components.repairs import RepairsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import CONF_BLE_BOND_ESTABLISHED, DEVICE_INFO_CHARS
+from .adapter import get_discovered_service_info
+from .ble_auth import is_ble_authentication_error
+from .const import (
+    ADAPTER_AUTO,
+    CONF_BLE_BOND_ESTABLISHED,
+    CONF_PREFERRED_ADAPTER,
+    DEVICE_INFO_CHARS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,22 +62,57 @@ class PairingRequiredRepairFlow(RepairsFlow):
             },
         )
 
+    def _find_device(self) -> object | None:
+        """Find the BLE device, honoring the entry's preferred adapter.
+
+        BLE bonds live on the adapter/proxy that performed pairing, so a repair
+        must pair on the same source the coordinator will use — otherwise it can
+        bond one source, mark the entry bonded, and leave the configured source
+        still unauthenticated.
+        """
+        preferred = ADAPTER_AUTO
+        if self._entry_id is not None:
+            entry = self.hass.config_entries.async_get_entry(self._entry_id)
+            if entry is not None:
+                preferred = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+
+        if not preferred or preferred == ADAPTER_AUTO:
+            return bluetooth.async_ble_device_from_address(
+                self.hass, self._address, connectable=True
+            )
+
+        address_upper = self._address.upper()
+        for service_info in get_discovered_service_info(
+            self.hass, include_non_connectable=True
+        ):
+            if service_info.address.upper() != address_upper:
+                continue
+            if getattr(service_info, "source", None) == preferred:
+                return service_info.device
+        return None
+
     async def _async_try_pair(self) -> bool:
         """Connect with pair=True and verify the encrypted link is bonded."""
         from bleak import BleakClient
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
 
-        device = bluetooth.async_ble_device_from_address(
-            self.hass, self._address, connectable=True
-        )
+        device = self._find_device()
         if device is None:
-            _LOGGER.warning("Repair: bed %s not in range — cannot pair", self._address)
+            _LOGGER.warning(
+                "Repair: bed %s not reachable on the configured adapter — cannot pair",
+                self._address,
+            )
             return False
 
         try:
             client = await establish_connection(
-                BleakClient, device, self._name, max_attempts=1, pair=True
+                BleakClient,
+                device,
+                self._name,
+                max_attempts=1,
+                pair=True,
+                use_services_cache=False,
             )
         except Exception as err:  # noqa: BLE001 - any failure means "not paired"
             _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
@@ -79,16 +121,23 @@ class PairingRequiredRepairFlow(RepairsFlow):
         bonded = False
         try:
             # Verify the bond by reading a known auth-gated characteristic. A
-            # still-unbonded link fails here with GATT error=5.
+            # still-unbonded link fails with GATT error=5; non-auth errors
+            # (e.g. the characteristic is absent) are inconclusive, not failures.
             await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
             bonded = True
         except BleakError as err:
-            _LOGGER.warning(
-                "Repair: bond verification failed for %s: %s", self._address, err
-            )
+            if is_ble_authentication_error(err):
+                _LOGGER.warning(
+                    "Repair: bond verification failed for %s: %s", self._address, err
+                )
+            else:
+                _LOGGER.debug(
+                    "Repair: bond verification inconclusive for %s: %s",
+                    self._address,
+                    err,
+                )
+                bonded = True
         except Exception as err:  # noqa: BLE001
-            # A non-auth error (e.g. characteristic absent) doesn't prove the
-            # bond failed — treat as success so we don't block the user.
             _LOGGER.debug(
                 "Repair: bond verification inconclusive for %s: %s",
                 self._address,

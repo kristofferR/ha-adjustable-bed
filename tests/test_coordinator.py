@@ -1773,6 +1773,7 @@ class TestCoordinatorWriteCommand:
         coordinator = AdjustableBedCoordinator(hass, entry)
         client = MagicMock()
         client.is_connected = True
+        client.disconnect = AsyncMock()
         client.read_gatt_char = AsyncMock(
             side_effect=BleakError(
                 "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
@@ -1781,16 +1782,16 @@ class TestCoordinatorWriteCommand:
         )
         coordinator._client = client
 
-        with (
-            patch(
-                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
-                new_callable=AsyncMock,
-            ) as mock_create_issue,
-            patch.object(
-                coordinator, "async_disconnect", new_callable=AsyncMock
-            ) as mock_disconnect,
-        ):
-            bonded = await coordinator._async_verify_bonded()
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ) as mock_create_issue:
+            # Reproduce the real call context: the connect path holds self._lock
+            # while verifying. If the disconnect re-acquired the lock this would
+            # deadlock, so guard with a timeout to fail fast instead of hanging.
+            async with coordinator._lock:
+                async with asyncio.timeout(5):
+                    bonded = await coordinator._async_verify_bonded()
 
         assert bonded is False
         assert coordinator._ble_bond_established is False
@@ -1798,7 +1799,9 @@ class TestCoordinatorWriteCommand:
         mock_create_issue.assert_awaited_once_with(
             hass, TEST_ADDRESS, TEST_NAME, "okimat_verify_bonded_test"
         )
-        mock_disconnect.assert_awaited_once_with(reason="authentication_failed")
+        # Disconnect ran via the lock-free path and cleared the client.
+        client.disconnect.assert_awaited_once()
+        assert coordinator._client is None
 
     async def test_verify_bonded_confirms_and_clears_repair_when_readable(
         self,

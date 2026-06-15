@@ -121,6 +121,24 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     client.disconnect.assert_awaited_once()
 
 
+async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistant) -> None:
+    """A non-auth read failure (e.g. char absent) is inconclusive, not a failure."""
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    flow.hass = hass
+
+    client = MagicMock()
+    client.read_gatt_char = AsyncMock(side_effect=BleakError("Characteristic not found"))
+    client.disconnect = AsyncMock()
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+    ):
+        assert await flow._async_try_pair() is True
+
+    client.disconnect.assert_awaited_once()
+
+
 async def test_try_pair_returns_false_on_auth_error(hass: HomeAssistant) -> None:
     """Pairing that connects but fails the encrypted read is treated as not paired."""
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)

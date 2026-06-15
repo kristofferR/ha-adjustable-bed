@@ -761,16 +761,15 @@
     },
     "pairing_required": {
       "title": "Bluetooth pairing required for {name}",
-      "description": "The bed at `{address}` connected but its Bluetooth link is not bonded, so it cannot be controlled yet.\n\n**Click 'Fix' above** to be guided through pairing, or do it manually:\n\n1. Put the base into pairing mode by **power-cycling the control box** (unplug it for ~30 seconds, then plug it back in). The status light blinks blue, then turns green after ~20 seconds. OKIN bases have **no separate Bluetooth pairing button** — any Pair/Learn button only syncs the RF remote.\n2. Pair from the device running Home Assistant's Bluetooth stack (your HA host or a Bluetooth proxy), **not your phone**.\n\n**Note:** ESPHome Bluetooth proxies support pairing only on ESPHome 2024.3.0 or newer; if pairing keeps failing, try a local Bluetooth adapter near the bed.",
       "fix_flow": {
         "step": {
           "confirm": {
             "title": "Pair your adjustable bed",
-            "description": "**{name}** ({address}) needs to finish Bluetooth pairing before it can be controlled.\n\n1. Put the base into pairing mode: **unplug the control box for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. (Some models use the under-bed lamp/light button — hold it until the light blinks blue.) There is no separate Bluetooth pairing button.\n2. While the light is active, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
+            "description": "**{name}** ({address}) connected but its Bluetooth link is not bonded, so it cannot be controlled yet.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is discoverable, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
           }
         },
         "abort": {
-          "pairing_failed": "Pairing didn't complete. Make sure the base is in pairing mode (unplug the control box ~30s, then plug it back in) and in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
+          "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
         }
       }
     }
