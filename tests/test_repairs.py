@@ -122,8 +122,26 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
 
 
 async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistant) -> None:
-    """A non-auth read failure (e.g. char absent) is inconclusive, not a failure."""
-    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, None)
+    """A non-auth read failure (e.g. char absent) is inconclusive, not a failure.
+
+    It must still persist the bond marker and reload the entry so the repair
+    closes for good rather than re-triggering on the next connection.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: "okimat",
+            CONF_BLE_BOND_ESTABLISHED: False,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_inconclusive_entry",
+    )
+    entry.add_to_hass(hass)
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
     flow.hass = hass
 
     client = MagicMock()
@@ -133,9 +151,12 @@ async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistan
     with (
         patch(BLEAK_DEVICE, return_value=MagicMock()),
         patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as mock_reload,
     ):
         assert await flow._async_try_pair() is True
 
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+    mock_reload.assert_awaited_once_with(entry.entry_id)
     client.disconnect.assert_awaited_once()
 
 

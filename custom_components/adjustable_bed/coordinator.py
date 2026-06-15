@@ -1199,16 +1199,22 @@ class AdjustableBedCoordinator:
                 self._notify_connection_state_change(False)
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
-                    # When pairing is required, disable services cache to force fresh
-                    # GATT discovery. Some devices expose different services depending
-                    # on pairing state, and stale cached services from a previous
-                    # non-paired connection will cause characteristic lookups to fail.
+                    # Disable the services cache to force fresh GATT discovery for
+                    # every pairing-required bed, not just the pair=True attempt.
+                    # These devices expose different services/characteristics
+                    # depending on bond state, so a stale cache from a previous
+                    # non-paired connection would make characteristic lookups (and
+                    # the post-connect bond probe) fail. This also covers the
+                    # no-pair verify retry after a failed pair attempt, which must
+                    # see live services to confirm the bond instead of looping.
                     #
                     # Sleep Number Climate 360 does not pair (see BEDS_REQUIRING_PAIRING)
                     # but the SleepIQ app refreshes the GATT cache on every connect, so
                     # force fresh discovery to keep parity and ensure the app-layer
                     # priming reads always see the live characteristic handles.
-                    disable_cache = use_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
+                    disable_cache = (
+                        bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
+                    )
                     try:
                         self._client = await establish_connection(
                             BleakClient,
