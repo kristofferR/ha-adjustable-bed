@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
@@ -99,6 +100,7 @@ from .const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
+    LEGGETT_VARIANT_OKIN,
     LIMOSS_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
@@ -539,9 +541,16 @@ def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
     return bed_type
 
 
-def refine_okin_shared_uuid_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
+def refine_okin_shared_uuid_protocol_from_gatt(
+    bed_type: str,
+    gatt_services: Any,
+    protocol_variant: str | None = None,
+) -> str:
     """Correct shared OKIN UUID profiles once connected GATT services are known."""
-    if bed_type not in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
+    is_leggett_okin_variant = (
+        bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_OKIN
+    )
+    if bed_type not in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES and not is_leggett_okin_variant:
         return bed_type
 
     gatt_detection = detect_bed_type_from_gatt_services(gatt_services)

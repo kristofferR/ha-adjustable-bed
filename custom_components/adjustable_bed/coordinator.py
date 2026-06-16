@@ -1461,6 +1461,7 @@ class AdjustableBedCoordinator:
                 corrected_bed_type = refine_okin_shared_uuid_protocol_from_gatt(
                     corrected_bed_type,
                     self._client.services,
+                    self._protocol_variant,
                 )
                 corrected_bed_type = refine_nordic_uart_protocol_from_device_info(
                     corrected_bed_type,

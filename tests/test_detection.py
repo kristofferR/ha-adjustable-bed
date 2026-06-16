@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
@@ -62,6 +63,8 @@ from custom_components.adjustable_bed.const import (
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
+    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_OKIN,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
@@ -856,6 +859,66 @@ class TestOkinUUIDDisambiguation:
         assert (
             refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_LEGGETT_OKIN, gatt_services)
             == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_corrects_legacy_leggett_okin_variant_to_cst(self):
+        """A legacy Leggett entry using the OKIN variant should be GATT-refinable."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_LEGGETT_PLATT,
+                gatt_services,
+                LEGGETT_VARIANT_OKIN,
+            )
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_ignores_legacy_leggett_gen2_variant(self):
+        """Only the legacy Leggett OKIN variant should enter the OKIN GATT refiner."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_LEGGETT_PLATT,
+                gatt_services,
+                LEGGETT_VARIANT_GEN2,
+            )
+            == BED_TYPE_LEGGETT_PLATT
         )
 
     def test_shared_okin_gatt_refinement_corrects_canonical_7byte_to_cst(self):
