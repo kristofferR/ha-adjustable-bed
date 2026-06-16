@@ -384,7 +384,21 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
-        if corrected_bed_type not in BEDS_WITH_ANGLE_SENSING and not self._disable_angle_sensing:
+        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data
+        if (
+            corrected_bed_type in BEDS_WITH_ANGLE_SENSING
+            and angle_sensing_defaulted
+            and self._disable_angle_sensing
+        ):
+            self._disable_angle_sensing = False
+            entry_data[CONF_DISABLE_ANGLE_SENSING] = False
+            _LOGGER.info(
+                "Enabled angle sensing for corrected %s protocol on %s: "
+                "the previous entry used the legacy default",
+                corrected_bed_type,
+                self._address,
+            )
+        elif corrected_bed_type not in BEDS_WITH_ANGLE_SENSING and not self._disable_angle_sensing:
             self._disable_angle_sensing = True
             entry_data[CONF_DISABLE_ANGLE_SENSING] = True
             _LOGGER.info(

@@ -2165,6 +2165,48 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.disable_angle_sensing is False
         assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
+    async def test_correction_to_cst_enables_defaulted_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Legacy entries missing the angle key should gain CST position features."""
+        legacy_data = dict(mock_config_entry_data)
+        legacy_data.pop(CONF_DISABLE_ANGLE_SENSING, None)
+        coordinator = self._make_coordinator(
+            hass,
+            legacy_data,
+            {},
+            bed_type=BED_TYPE_OKIMAT,
+        )
+
+        assert coordinator.disable_angle_sensing is True
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_correction_to_cst_preserves_explicit_disabled_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """An explicit user choice to disable angle sensing should survive CST correction."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            bed_type=BED_TYPE_OKIMAT,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert coordinator.disable_angle_sensing is True
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
     async def test_correction_to_rf_eco_bt_disables_angle_sensing(
         self,
         hass: HomeAssistant,
