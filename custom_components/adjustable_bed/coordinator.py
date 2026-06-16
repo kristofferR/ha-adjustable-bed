@@ -79,6 +79,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
+    BEDS_WITH_ANGLE_SENSING,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -380,10 +381,23 @@ class AdjustableBedCoordinator:
             )
 
         self._bed_type = corrected_bed_type
-        if self.entry.data.get(CONF_BED_TYPE) != corrected_bed_type:
+
+        entry_data = dict(self.entry.data)
+        entry_data[CONF_BED_TYPE] = corrected_bed_type
+        if corrected_bed_type not in BEDS_WITH_ANGLE_SENSING and not self._disable_angle_sensing:
+            self._disable_angle_sensing = True
+            entry_data[CONF_DISABLE_ANGLE_SENSING] = True
+            _LOGGER.info(
+                "Disabled angle sensing for corrected %s protocol on %s: "
+                "the corrected profile does not support position feedback",
+                corrected_bed_type,
+                self._address,
+            )
+
+        if entry_data != self.entry.data:
             self.hass.config_entries.async_update_entry(
                 self.entry,
-                data={**self.entry.data, CONF_BED_TYPE: corrected_bed_type},
+                data=entry_data,
             )
 
         return True

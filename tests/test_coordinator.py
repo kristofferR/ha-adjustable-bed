@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -2144,6 +2145,44 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+
+    async def test_correction_to_cst_preserves_enabled_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """CST corrections should keep position sensors and position controls enabled."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: False},
+            bed_type=BED_TYPE_OKIMAT,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_correction_to_rf_eco_bt_disables_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Single-actuator RF ECO BT corrections should not expose position sensors."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: False},
+            bed_type=BED_TYPE_OKIMAT,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_RF_ECO_BT)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_RF_ECO_BT
+        assert coordinator.disable_angle_sensing is True
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_correction_updates_richmat_to_okin_64bit(
         self,

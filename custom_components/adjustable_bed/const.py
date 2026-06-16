@@ -1648,6 +1648,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
@@ -1662,6 +1663,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,

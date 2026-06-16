@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -159,6 +160,10 @@ class TestPairingInstructions:
     async def test_okin_rf_eco_bt_requires_pairing(self) -> None:
         """RF ECO BT should request BLE pairing before authenticated OKIN writes."""
         assert requires_pairing(BED_TYPE_OKIN_RF_ECO_BT)
+
+    async def test_okin_cst_supports_position_feedback(self) -> None:
+        """CST should keep position sliders available after runtime correction."""
+        assert BED_TYPE_OKIN_CST in BEDS_WITH_POSITION_FEEDBACK
 
 
 class TestPairingPersistence:
