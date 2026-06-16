@@ -169,6 +169,20 @@ KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
 )
 
+OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
+    {
+        BED_TYPE_LEGGETT_OKIN,
+        BED_TYPE_NECTAR,
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_64BIT,
+        BED_TYPE_OKIN_CST,
+        BED_TYPE_OKIN_RF_ECO_BT,
+        BED_TYPE_OKIN_UUID,
+    }
+)
+
+NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
+
 
 def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
     """Extract Richmat remote code from device name.
@@ -259,6 +273,16 @@ def _manufacturer_data_contains_ascii(
         marker_lower in payload.decode("ascii", errors="ignore").lower()
         for payload in manufacturer_data.values()
     )
+
+
+def _normalize_compact_identifier(value: str | None) -> str:
+    """Normalize BLE names/model IDs for exact identifier comparisons."""
+    return re.sub(r"[\s_-]+", "", (value or "").strip().lower())
+
+
+def _is_nora_controller_identifier(value: str | None) -> bool:
+    """Return True for NORA_CON / NORACON controller identifiers."""
+    return _normalize_compact_identifier(value) in NORA_CONTROLLER_NORMALIZED_NAMES
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
@@ -514,6 +538,54 @@ def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
     return bed_type
 
 
+def refine_okin_shared_uuid_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
+    """Correct shared OKIN UUID profiles once connected GATT services are known."""
+    if bed_type not in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
+        return bed_type
+
+    gatt_detection = detect_bed_type_from_gatt_services(gatt_services)
+    if gatt_detection.bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT}:
+        if gatt_detection.bed_type != bed_type:
+            _LOGGER.info(
+                "Refined shared OKIN protocol from %s to %s using GATT signals: %s",
+                bed_type,
+                gatt_detection.bed_type,
+                ", ".join(gatt_detection.signals),
+            )
+        return gatt_detection.bed_type
+
+    return bed_type
+
+
+def refine_nordic_uart_protocol_from_device_info(
+    bed_type: str,
+    device_name: str | None,
+    ble_manufacturer: str | None,
+    ble_model: str | None,
+) -> str:
+    """Correct Nordic UART profiles when Device Info identifies a NORA controller."""
+    if bed_type not in {BED_TYPE_RICHMAT, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT}:
+        return bed_type
+
+    has_nora_name = _is_nora_controller_identifier(device_name)
+    has_nora_model = _is_nora_controller_identifier(ble_model)
+    has_idt_manufacturer = (ble_manufacturer or "").strip().lower() == "idt"
+    if not (has_nora_model or (has_nora_name and has_idt_manufacturer)):
+        return bed_type
+
+    if bed_type != BED_TYPE_OKIN_64BIT:
+        _LOGGER.info(
+            "Refined Nordic UART protocol from %s to %s using Device Info "
+            "(name=%s, manufacturer=%s, model=%s)",
+            bed_type,
+            BED_TYPE_OKIN_64BIT,
+            device_name,
+            ble_manufacturer,
+            ble_model,
+        )
+    return BED_TYPE_OKIN_64BIT
+
+
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     """Detect bed type from service info.
 
@@ -573,7 +645,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                     service_info.name,
                     pattern,
                 )
-                return DetectionResult(bed_type=None, confidence=0.0, signals=["excluded:" + pattern])
+                return DetectionResult(
+                    bed_type=None, confidence=0.0, signals=["excluded:" + pattern]
+                )
 
     # Priority 1: Check manufacturer data (highest confidence, unique signal)
     mfr_bed_type, mfr_confidence, mfr_id = _check_manufacturer_data(service_info.manufacturer_data)
@@ -604,8 +678,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     )
     has_kaidi_name = any(device_name.startswith(pattern) for pattern in KAIDI_NAME_PATTERNS)
     has_kaidi_mac = any(
-        service_info.address.upper().startswith(prefix)
-        for prefix in KAIDI_MAC_PREFIXES
+        service_info.address.upper().startswith(prefix) for prefix in KAIDI_MAC_PREFIXES
     )
     if kaidi_adv:
         signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
@@ -1056,7 +1129,9 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_REVERIE_NIGHTSTAND, confidence=1.0, signals=signals)
+        return DetectionResult(
+            bed_type=BED_TYPE_REVERIE_NIGHTSTAND, confidence=1.0, signals=signals
+        )
 
     # Check for Logicdata SimplicityFrame (unique LogicLink UUID)
     if LOGICDATA_SERVICE_UUID.lower() in service_uuids:
@@ -1091,9 +1166,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(
-            bed_type=BED_TYPE_SLEEPYS_BOX24, confidence=0.9, signals=signals
-        )
+        return DetectionResult(bed_type=BED_TYPE_SLEEPYS_BOX24, confidence=0.9, signals=signals)
 
     # Check for Nectar - name-based detection (before Okimat since same UUID)
     # Nectar beds use OKIN service UUID but different command protocol
@@ -1408,9 +1481,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(
-            bed_type=BED_TYPE_SLEEPYS_BOX15, confidence=0.9, signals=signals
-        )
+        return DetectionResult(bed_type=BED_TYPE_SLEEPYS_BOX15, confidence=0.9, signals=signals)
 
     # Check for Cool Base - name pattern detection (before Keeson since same UUID)
     # Cool Base is a Keeson BaseI5 variant with additional fan control
@@ -1489,7 +1560,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
     # Check for Jiecang - name-based detection (Glide beds, Dream Motion app)
     if any(
-        x in device_name for x in ["jiecang", "jc-", "dream motion", "glide", "comfort motion", "lierda"]
+        x in device_name
+        for x in ["jiecang", "jc-", "dream motion", "glide", "comfort motion", "lierda"]
     ):
         signals.append("name:jiecang")
         _LOGGER.info(
@@ -1567,6 +1639,27 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_MATTRESSFIRM, confidence=0.9, signals=signals)
 
+    # NORA_CON / NORACON Mattress Firm controllers use OKIN's 64-bit Nordic UART
+    # profile. Without this name-specific check, the shared Nordic UART service
+    # falls through to Richmat's incompatible single-byte Nordic profile.
+    if (
+        _is_nora_controller_identifier(service_info.name)
+        and RICHMAT_NORDIC_SERVICE_UUID.lower() in service_uuids
+    ):
+        signals.append("name:nora_con")
+        signals.append("uuid:nordic_uart")
+        _LOGGER.info(
+            "Detected NORA_CON OKIN 64-bit bed at %s (name: %s)",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_OKIN_64BIT,
+            confidence=0.85,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_MATTRESSFIRM, BED_TYPE_RICHMAT],
+        )
+
     # Check for Extended Nordic UART (Ergomotion/SFD beds) - maps to Keeson
     if KEESON_EXTENDED_NORDIC_SERVICE_UUID.lower() in service_uuids:
         signals.append("uuid:extended_nordic_uart")
@@ -1584,7 +1677,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
         # If OKIN manufacturer ID is also present, this is likely a CB24 device
         # (e.g., SmartBed by Okin / Lucid L600) that also advertises Nordic UART.
-        if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
+        if (
+            service_info.manufacturer_data
+            and MANUFACTURER_ID_OKIN in service_info.manufacturer_data
+        ):
             signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
             _LOGGER.info(
                 "Detected Okin CB24 bed at %s (name: %s) - Nordic UART + OKIN manufacturer ID",
@@ -1595,7 +1691,12 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 bed_type=BED_TYPE_OKIN_CB24,
                 confidence=0.7,
                 signals=signals,
-                ambiguous_types=[BED_TYPE_RICHMAT, BED_TYPE_KEESON, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT],
+                ambiguous_types=[
+                    BED_TYPE_RICHMAT,
+                    BED_TYPE_KEESON,
+                    BED_TYPE_MATTRESSFIRM,
+                    BED_TYPE_OKIN_64BIT,
+                ],
                 manufacturer_id=MANUFACTURER_ID_OKIN,
             )
 
@@ -1658,9 +1759,7 @@ async def detect_bed_type_by_characteristics(
             _LOGGER.info("Refined detection: OKIN Smart Remote CSS signature found")
             return BED_TYPE_OKIN_RF_ECO_BT
         if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
-            _LOGGER.info(
-                "Refined detection: OKIN CST dual-stack GATT signature found"
-            )
+            _LOGGER.info("Refined detection: OKIN CST dual-stack GATT signature found")
             return BED_TYPE_OKIN_CST
 
         # Build a set of all characteristic UUIDs for easy lookup
@@ -1673,9 +1772,7 @@ async def detect_bed_type_by_characteristics(
         if initial_detection == BED_TYPE_RICHMAT:
             # BedTech has a specific write characteristic
             if BEDTECH_WRITE_CHAR_UUID.lower() in all_chars:
-                _LOGGER.info(
-                    "Refined detection: BedTech characteristic found (was Richmat)"
-                )
+                _LOGGER.info("Refined detection: BedTech characteristic found (was Richmat)")
                 return BED_TYPE_BEDTECH
 
         # For OKIN service (62741523): Check for 64-bit read characteristic
@@ -1684,9 +1781,7 @@ async def detect_bed_type_by_characteristics(
             if OKIMAT_NOTIFY_CHAR_UUID.lower() in all_chars:
                 # The presence of 62741625 doesn't definitively mean 64-bit
                 # (Okimat also has this), but we can note it for logging
-                _LOGGER.debug(
-                    "OKIN notify characteristic found - could be Okimat or OKIN 64-bit"
-                )
+                _LOGGER.debug("OKIN notify characteristic found - could be Okimat or OKIN 64-bit")
                 # To truly distinguish, we'd need to try sending a command
                 # and check the response format (6-byte vs 10-byte)
                 # For now, keep as Okimat since it's more common

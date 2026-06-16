@@ -164,9 +164,7 @@ class TestPairingInstructions:
 class TestPairingPersistence:
     """Test that successful pairing is persisted on the created entry."""
 
-    async def test_bluetooth_pairing_marks_bond_as_established(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_bluetooth_pairing_marks_bond_as_established(self, hass: HomeAssistant) -> None:
         """Pair Now should persist that the bed is already bonded."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
@@ -869,6 +867,37 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_disambiguate"
 
+    async def test_bluetooth_discovery_name_only_okin_receiver_shows_disambiguation(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A pre-pairing OKIN receiver advertisement should not be dropped as unknown."""
+        del enable_custom_integrations
+
+        service_info = MagicMock()
+        service_info.name = "OKIN - Receiver"
+        service_info.address = "F1:8A:7F:61:EE:8B"
+        service_info.rssi = -75
+        service_info.manufacturer_data = {}
+        service_info.service_data = {}
+        service_info.service_uuids = []
+        service_info.source = "local"
+        service_info.device = MagicMock()
+        service_info.advertisement = MagicMock()
+        service_info.connectable = True
+        service_info.time = 0
+        service_info.tx_power = None
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=service_info,
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+
     async def test_bluetooth_disambiguate_selects_type(
         self,
         hass: HomeAssistant,
@@ -1513,9 +1542,7 @@ class TestUserFlow:
                 DOMAIN,
                 context={"source": SOURCE_USER},
             )
-            retrying_option = (
-                f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
-            )
+            retrying_option = f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
             assert result["type"] == FlowResultType.FORM
             selector_options = next(iter(result["data_schema"].schema.values())).container
             assert retrying_option in selector_options
@@ -1528,7 +1555,10 @@ class TestUserFlow:
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "configured_retrying"
-        assert result["description_placeholders"]["address"] == mock_bluetooth_service_info.address.upper()
+        assert (
+            result["description_placeholders"]["address"]
+            == mock_bluetooth_service_info.address.upper()
+        )
         assert result["description_placeholders"]["name"] == "Retrying Bed"
 
 

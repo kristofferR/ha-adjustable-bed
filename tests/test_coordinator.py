@@ -14,10 +14,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER_MCR,
     CONF_BED_TYPE,
@@ -558,9 +561,7 @@ class TestCoordinatorPositionSeek:
         move_stop = AsyncMock()
         readings = iter([7.0, 10.0])
         read_positions = AsyncMock(
-            side_effect=lambda: coordinator._position_data.__setitem__(
-                "legs", next(readings, 10.0)
-            )
+            side_effect=lambda: coordinator._position_data.__setitem__("legs", next(readings, 10.0))
         )
 
         with (
@@ -2031,15 +2032,16 @@ class TestMotorPulseConfiguration:
 
 
 class TestRuntimeBedTypeCorrection:
-    """Test runtime Malouf protocol correction after GATT discovery."""
+    """Test runtime protocol correction after GATT discovery."""
 
     def _make_coordinator(
         self,
         hass: HomeAssistant,
         mock_config_entry_data: dict,
         extra: dict,
+        bed_type: str = BED_TYPE_MALOUF_NEW_OKIN,
     ) -> AdjustableBedCoordinator:
-        mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_MALOUF_NEW_OKIN
+        mock_config_entry_data[CONF_BED_TYPE] = bed_type
         mock_config_entry_data.update(extra)
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -2095,7 +2097,44 @@ class TestRuntimeBedTypeCorrection:
         # Bed type is still corrected...
         assert coordinator.bed_type == BED_TYPE_MALOUF_LEGACY_OKIN
         # ...but the explicit override is preserved, not overwritten.
-        assert (coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms) == new_okin_defaults
+        assert (
+            coordinator.motor_pulse_count,
+            coordinator.motor_pulse_delay_ms,
+        ) == new_okin_defaults
+
+    async def test_correction_updates_shared_okin_bed_type(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Connected GATT correction can move an existing Leggett/Okin entry to CST."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {},
+            bed_type=BED_TYPE_LEGGETT_OKIN,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+
+    async def test_correction_updates_richmat_to_okin_64bit(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Connected Device Info correction can move a Richmat fallback to OKIN 64-bit."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {},
+            bed_type=BED_TYPE_RICHMAT,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_64BIT)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_64BIT
 
 
 class TestMultiMotorConfiguration:

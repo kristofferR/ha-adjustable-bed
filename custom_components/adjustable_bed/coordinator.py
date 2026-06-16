@@ -132,7 +132,12 @@ from .const import (
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
-from .detection import detect_richmat_remote_from_name, refine_malouf_protocol_from_gatt
+from .detection import (
+    detect_richmat_remote_from_name,
+    refine_malouf_protocol_from_gatt,
+    refine_nordic_uart_protocol_from_device_info,
+    refine_okin_shared_uuid_protocol_from_gatt,
+)
 from .diagnostic_payloads import new_connection_attempt_details
 from .unsupported import (
     create_pairing_required_issue,
@@ -292,9 +297,7 @@ class AdjustableBedCoordinator:
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
-        self._ble_bond_established: bool = bool(
-            entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
-        )
+        self._ble_bond_established: bool = bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
         # Transient (in-memory only) flag: a pairing attempt just failed, so the
         # single next connection attempt should skip pair=True (some stacks fail
         # to re-pair on top of an existing bond). Unlike the persisted bond
@@ -580,9 +583,7 @@ class AdjustableBedCoordinator:
 
     def _clear_ble_bond_established(self) -> None:
         """Clear the persisted bond marker after an authentication failure."""
-        if not self._ble_bond_established and not self.entry.data.get(
-            CONF_BLE_BOND_ESTABLISHED
-        ):
+        if not self._ble_bond_established and not self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
             return
 
         self._ble_bond_established = False
@@ -1212,9 +1213,7 @@ class AdjustableBedCoordinator:
                     # but the SleepIQ app refreshes the GATT cache on every connect, so
                     # force fresh discovery to keep parity and ensure the app-layer
                     # priming reads always see the live characteristic handles.
-                    disable_cache = (
-                        bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
-                    )
+                    disable_cache = bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
                     try:
                         self._client = await establish_connection(
                             BleakClient,
@@ -1418,8 +1417,7 @@ class AdjustableBedCoordinator:
                     # repair issue, and disconnected. Retry — the next attempt
                     # requests pair=True again (the skip flag was consumed).
                     _LOGGER.warning(
-                        "Bed %s connected but the BLE link is not bonded; "
-                        "retrying with pairing.",
+                        "Bed %s connected but the BLE link is not bonded; retrying with pairing.",
                         self._address,
                     )
                     self._connecting = False
@@ -1450,6 +1448,16 @@ class AdjustableBedCoordinator:
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
                     self._bed_type,
                     self._client.services,
+                )
+                corrected_bed_type = refine_okin_shared_uuid_protocol_from_gatt(
+                    corrected_bed_type,
+                    self._client.services,
+                )
+                corrected_bed_type = refine_nordic_uart_protocol_from_device_info(
+                    corrected_bed_type,
+                    device.name,
+                    ble_manufacturer,
+                    ble_model,
                 )
                 self._apply_runtime_bed_type_correction(corrected_bed_type)
 
@@ -1904,7 +1912,11 @@ class AdjustableBedCoordinator:
                     # Use command lock to prevent concurrent GATT operations
                     async with self._command_lock:
                         controller = self._controller
-                        if controller is None or self._client is None or not self._client.is_connected:
+                        if (
+                            controller is None
+                            or self._client is None
+                            or not self._client.is_connected
+                        ):
                             return
                         await controller.prepare_for_position_read()
                         await self._async_read_positions()
@@ -2052,9 +2064,7 @@ class AdjustableBedCoordinator:
                 err,
             )
 
-    async def _async_execute_position_reconciliation_query(
-        self, controller: BedController
-    ) -> None:
+    async def _async_execute_position_reconciliation_query(self, controller: BedController) -> None:
         """Run a serialized passive position reconciliation read."""
         await controller.prepare_for_position_read()
         await controller.read_positions(self._motor_count)
@@ -2534,7 +2544,7 @@ class AdjustableBedCoordinator:
                 if _is_ble_authentication_error(err):
                     await self._async_handle_ble_authentication_error(err)
                 raise
-            except (ConnectionError, RuntimeError):
+            except ConnectionError, RuntimeError:
                 if (
                     self._client is not None
                     and self._client.is_connected
@@ -3354,8 +3364,7 @@ class AdjustableBedCoordinator:
                         if (
                             chain_seek_steps
                             and movement >= position_stall_threshold
-                            and remaining_distance
-                            >= position_seek_chain_min_remaining_distance
+                            and remaining_distance >= position_seek_chain_min_remaining_distance
                         ):
                             _LOGGER.debug(
                                 "Position %s still moving at %.1f with %.1f remaining, chaining seek step",
