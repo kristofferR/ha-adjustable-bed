@@ -2544,7 +2544,7 @@ class AdjustableBedCoordinator:
                 if _is_ble_authentication_error(err):
                     await self._async_handle_ble_authentication_error(err)
                 raise
-            except ConnectionError, RuntimeError:
+            except (ConnectionError, RuntimeError):
                 if (
                     self._client is not None
                     and self._client.is_connected
