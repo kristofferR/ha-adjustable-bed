@@ -28,11 +28,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -856,6 +858,32 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_CST
         )
 
+    def test_shared_okin_gatt_refinement_corrects_canonical_7byte_to_cst(self):
+        """A saved canonical OKIN 7-byte entry should still be GATT-refinable."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_7BYTE, gatt_services)
+            == BED_TYPE_OKIN_CST
+        )
+
     def test_shared_okin_gatt_refinement_corrects_okimat_to_rf_eco_bt(self):
         """Connected CSS without DFU identifies the RF ECO BT profile."""
         gatt_services = [
@@ -923,6 +951,18 @@ class TestOkinUUIDDisambiguation:
                 BED_TYPE_MATTRESSFIRM,
                 "Unknown Nordic",
                 None,
+                "NORACON",
+            )
+            == BED_TYPE_OKIN_64BIT
+        )
+
+    def test_nordic_uart_device_info_refinement_corrects_canonical_okin_nordic(self):
+        """A saved canonical OKIN Nordic entry should still be Device Info-refinable."""
+        assert (
+            refine_nordic_uart_protocol_from_device_info(
+                BED_TYPE_OKIN_NORDIC,
+                "NORA_CON",
+                "IDT",
                 "NORACON",
             )
             == BED_TYPE_OKIN_64BIT

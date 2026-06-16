@@ -149,6 +149,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
+_CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS = (ConnectionError, RuntimeError)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
 _READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 _READABLE_LIGHT_STATE_MAX_RETRIES = 3
@@ -340,11 +341,11 @@ class AdjustableBedCoordinator:
             self._connection_profile,
         )
 
-    def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> None:
+    def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
         previous_bed_type = self._bed_type
         if corrected_bed_type == previous_bed_type:
-            return
+            return False
 
         _LOGGER.warning(
             "Correcting bed protocol for %s from %s to %s based on connected GATT services",
@@ -379,6 +380,13 @@ class AdjustableBedCoordinator:
             )
 
         self._bed_type = corrected_bed_type
+        if self.entry.data.get(CONF_BED_TYPE) != corrected_bed_type:
+            self.hass.config_entries.async_update_entry(
+                self.entry,
+                data={**self.entry.data, CONF_BED_TYPE: corrected_bed_type},
+            )
+
+        return True
 
     @property
     def address(self) -> str:
@@ -1445,6 +1453,7 @@ class AdjustableBedCoordinator:
                     self._ble_manufacturer = ble_manufacturer
                     self._ble_model = ble_model
 
+                previous_bed_type = self._bed_type
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
                     self._bed_type,
                     self._client.services,
@@ -1459,7 +1468,29 @@ class AdjustableBedCoordinator:
                     ble_manufacturer,
                     ble_model,
                 )
-                self._apply_runtime_bed_type_correction(corrected_bed_type)
+                bed_type_corrected = self._apply_runtime_bed_type_correction(corrected_bed_type)
+                if (
+                    bed_type_corrected
+                    and not bed_requires_pairing
+                    and requires_pairing(self._bed_type, self._protocol_variant)
+                ):
+                    _LOGGER.info(
+                        "Runtime protocol correction for %s changed %s to pairing-required "
+                        "%s; reconnecting so BLE pairing and bond verification run before "
+                        "controller startup",
+                        self._address,
+                        previous_bed_type,
+                        self._bed_type,
+                    )
+                    attempt_details["total_elapsed_seconds"] = round(
+                        time.monotonic() - attempt_start, 3
+                    )
+                    attempt_details["result"] = "retry_with_pairing_after_protocol_correction"
+                    self._connection_attempt_details.append(attempt_details)
+                    await self._async_disconnect_locked(
+                        reason="protocol_correction_requires_pairing"
+                    )
+                    continue
 
                 # Post-connection protocol verification for DewertOkin Star devices.
                 # The adjustbed app (com.okin.bedding.adjustbed) reads BLE characteristic
@@ -2544,7 +2575,7 @@ class AdjustableBedCoordinator:
                 if _is_ble_authentication_error(err):
                     await self._async_handle_ble_authentication_error(err)
                 raise
-            except (ConnectionError, RuntimeError):
+            except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
                     self._client is not None
                     and self._client.is_connected

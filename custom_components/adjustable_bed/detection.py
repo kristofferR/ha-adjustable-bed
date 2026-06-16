@@ -174,6 +174,7 @@ OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
         BED_TYPE_LEGGETT_OKIN,
         BED_TYPE_NECTAR,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_7BYTE,
         BED_TYPE_OKIN_64BIT,
         BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_RF_ECO_BT,
@@ -564,7 +565,12 @@ def refine_nordic_uart_protocol_from_device_info(
     ble_model: str | None,
 ) -> str:
     """Correct Nordic UART profiles when Device Info identifies a NORA controller."""
-    if bed_type not in {BED_TYPE_RICHMAT, BED_TYPE_MATTRESSFIRM, BED_TYPE_OKIN_64BIT}:
+    if bed_type not in {
+        BED_TYPE_RICHMAT,
+        BED_TYPE_MATTRESSFIRM,
+        BED_TYPE_OKIN_NORDIC,
+        BED_TYPE_OKIN_64BIT,
+    }:
         return bed_type
 
     has_nora_name = _is_nora_controller_identifier(device_name)

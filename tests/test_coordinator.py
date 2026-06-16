@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -18,6 +19,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_NECTAR,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
@@ -35,6 +37,11 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_RICHMAT_REMOTE,
     DOMAIN,
+    NORDIC_DFU_SERVICE_UUID,
+    OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
+    OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+    OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     RICHMAT_REMOTE_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -2050,6 +2057,7 @@ class TestRuntimeBedTypeCorrection:
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="test_entry_runtime_correction",
         )
+        entry.add_to_hass(hass)
         return AdjustableBedCoordinator(hass, entry)
 
     async def test_correction_updates_unconfigured_pulse_defaults(
@@ -2119,6 +2127,24 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
 
+    async def test_correction_persists_bed_type_to_entry(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Runtime corrections must update entry data before platform setup."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {},
+            bed_type=BED_TYPE_OKIMAT,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert coordinator.entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+
     async def test_correction_updates_richmat_to_okin_64bit(
         self,
         hass: HomeAssistant,
@@ -2135,6 +2161,113 @@ class TestRuntimeBedTypeCorrection:
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_64BIT)
 
         assert coordinator.bed_type == BED_TYPE_OKIN_64BIT
+
+    async def test_correction_to_pairing_required_type_reconnects_before_controller_startup(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_adapters,
+    ):
+        """A corrected pairing-required profile should reconnect with pair=True first."""
+        del mock_bluetooth_adapters
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_NECTAR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="test_entry_runtime_correction_pairing",
+        )
+        entry.add_to_hass(hass)
+
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID)],
+            ),
+            SimpleNamespace(uuid=NORDIC_DFU_SERVICE_UUID, characteristics=[]),
+        ]
+        mock_bleak_client.services = MagicMock()
+        mock_bleak_client.services.__iter__ = lambda self: iter(gatt_services)
+        mock_bleak_client.services.__len__ = lambda self: len(gatt_services)
+        mock_bleak_client.services.get_service = MagicMock(return_value=None)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ) as mock_establish_connection,
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=(None, None),
+            ),
+            patch.object(
+                AdjustableBedCoordinator,
+                "_async_verify_bonded",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=MagicMock(),
+            ) as mock_create_controller,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert mock_create_controller.await_count == 1
+        assert mock_create_controller.await_args.kwargs["bed_type"] == BED_TYPE_OKIN_CST
+        assert mock_bleak_client.disconnect.await_count == 1
+        assert [call.kwargs.get("pair") for call in mock_establish_connection.await_args_list] == [
+            False,
+            True,
+        ]
+        assert (
+            coordinator._connection_attempt_details[0]["result"]
+            == "retry_with_pairing_after_protocol_correction"
+        )
 
 
 class TestMultiMotorConfiguration:
