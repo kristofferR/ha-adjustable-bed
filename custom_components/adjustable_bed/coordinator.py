@@ -7,7 +7,6 @@ import contextlib
 import inspect
 import logging
 import random
-import re
 import time
 import traceback
 from collections import deque
@@ -41,6 +40,7 @@ from .adapter import (
     read_ble_device_info,
     select_adapter,
 )
+from .ble_auth import is_ble_authentication_error
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -113,6 +113,7 @@ from .const import (
     DEFAULT_OCTO_PIN,
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
+    DEVICE_INFO_CHARS,
     DOMAIN,
     OKIMAT_SERVICE_UUID,
     POSITION_CHECK_INTERVAL,
@@ -133,7 +134,10 @@ from .const import (
 from .controller_factory import create_controller
 from .detection import detect_richmat_remote_from_name, refine_malouf_protocol_from_gatt
 from .diagnostic_payloads import new_connection_attempt_details
-from .unsupported import create_pairing_required_issue
+from .unsupported import (
+    create_pairing_required_issue,
+    delete_pairing_required_issue,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -147,24 +151,13 @@ _INITIAL_POSITION_READ_TIMEOUT = 10.0
 _INITIAL_POSITION_READ_RETRY_DELAY = 3.0
 _INITIAL_POSITION_READ_MAX_ATTEMPTS = 6
 _PASSIVE_POSITION_RECONCILIATION_IDLE_MARGIN = 15.0
-_BLE_AUTHENTICATION_ERROR_MARKERS: tuple[str, ...] = (
-    "insufficient authentication",
-    "insufficient authorization",
-    "gatt error 5",
-)
-_BLE_AUTHENTICATION_ERROR_CODE_RE = re.compile(r"\berror=5\b")
 
 MAX_COMMAND_TRACE_ENTRIES = 100
 MAX_CONNECTION_ATTEMPT_DETAILS = 25
 
-
-def _is_ble_authentication_error(err: BaseException) -> bool:
-    """Return True if a Bleak error indicates an unauthenticated GATT link."""
-    message = str(err).lower()
-    return (
-        any(marker in message for marker in _BLE_AUTHENTICATION_ERROR_MARKERS)
-        or _BLE_AUTHENTICATION_ERROR_CODE_RE.search(message) is not None
-    )
+# Backwards-compatible private alias; the implementation now lives in ble_auth
+# so the repairs flow can share it without importing the coordinator.
+_is_ble_authentication_error = is_ble_authentication_error
 
 
 class NotConnectedError(Exception):
@@ -302,6 +295,12 @@ class AdjustableBedCoordinator:
         self._ble_bond_established: bool = bool(
             entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
         )
+        # Transient (in-memory only) flag: a pairing attempt just failed, so the
+        # single next connection attempt should skip pair=True (some stacks fail
+        # to re-pair on top of an existing bond). Unlike the persisted bond
+        # marker, this never poisons the config entry, so a transient pairing
+        # failure cannot permanently prevent future pairing attempts.
+        self._skip_pair_next_attempt: bool = False
 
         # Connection history tracking for diagnostics (issue #168)
         self._connection_attempt_count: int = 0
@@ -598,13 +597,20 @@ class AdjustableBedCoordinator:
             },
         )
 
-    async def _async_handle_ble_authentication_error(self, err: BleakError) -> None:
-        """Handle a command failure caused by an unauthenticated BLE connection."""
+    async def _async_handle_ble_authentication_error(
+        self, err: BleakError, *, holding_lock: bool = False
+    ) -> None:
+        """Handle a failure caused by an unauthenticated BLE connection.
+
+        ``holding_lock`` must be True when called from a context that already
+        holds ``self._lock`` (e.g. bond verification inside the connect path),
+        so the disconnect uses the lock-free variant and does not deadlock.
+        """
         if not requires_pairing(self._bed_type, self._protocol_variant):
             return
 
         _LOGGER.warning(
-            "BLE command on %s failed because the GATT link is not authenticated: %s. "
+            "BLE link on %s is not authenticated: %s. "
             "Clearing the cached bond marker so the next connection can request pairing.",
             self._address,
             err,
@@ -612,7 +618,9 @@ class AdjustableBedCoordinator:
         self._clear_ble_bond_established()
 
         try:
-            await create_pairing_required_issue(self.hass, self._address, self._name)
+            await create_pairing_required_issue(
+                self.hass, self._address, self._name, self.entry.entry_id
+            )
         except Exception:
             _LOGGER.debug(
                 "Failed to create pairing required repair issue for %s",
@@ -621,7 +629,59 @@ class AdjustableBedCoordinator:
             )
 
         if self._client is not None and self._client.is_connected:
-            await self.async_disconnect(reason="authentication_failed")
+            if holding_lock:
+                await self._async_disconnect_locked(reason="authentication_failed")
+            else:
+                await self.async_disconnect(reason="authentication_failed")
+
+    async def _async_verify_bonded(self) -> bool:
+        """Probe an auth-gated characteristic to confirm the BLE bond is live.
+
+        For beds that require pairing, a connection — even one made with
+        ``pair=True`` — can succeed while the link is still unbonded; every
+        encrypted characteristic then fails with GATT error=5 "Insufficient
+        authentication". Reading one known auth-gated characteristic surfaces
+        this so we can clear a stale bond marker and re-pair instead of
+        silently staying unbonded.
+
+        Returns True if the link is bonded (or the check is inconclusive), and
+        False only when an authentication error is definitively observed — in
+        which case the bond marker is cleared, a repair issue is raised, and the
+        client is disconnected.
+        """
+        client = self._client
+        if client is None or not client.is_connected:
+            return True
+
+        probe_uuid = DEVICE_INFO_CHARS["model_number"]
+        try:
+            await client.read_gatt_char(probe_uuid)
+        except BleakError as err:
+            if _is_ble_authentication_error(err):
+                # We run inside _async_connect_locked, which holds self._lock —
+                # disconnect via the lock-free path to avoid a deadlock.
+                await self._async_handle_ble_authentication_error(err, holding_lock=True)
+                return False
+            _LOGGER.debug(
+                "Bond verification read for %s was inconclusive (%s); proceeding.",
+                self._address,
+                err,
+            )
+            return True
+        except (TimeoutError, OSError) as err:
+            _LOGGER.debug(
+                "Bond verification read for %s failed (%s); proceeding.",
+                self._address,
+                err,
+            )
+            return True
+
+        # Read succeeded → the encrypted link works → we are bonded.
+        self._skip_pair_next_attempt = False
+        self._mark_ble_bond_established()
+        await delete_pairing_required_issue(self.hass, self._address)
+        _LOGGER.debug("Bond verification succeeded for %s", self._address)
+        return True
 
     @property
     def cancel_command(self) -> asyncio.Event:
@@ -1115,8 +1175,13 @@ class AdjustableBedCoordinator:
                 use_pairing = (
                     bed_requires_pairing
                     and not self._ble_bond_established
+                    and not self._skip_pair_next_attempt
                     and self._pairing_supported is not False
                 )
+                # Consume the transient skip flag: it only suppresses pairing for
+                # the single attempt immediately following a failed pair, so we
+                # never get stuck skipping pairing forever.
+                self._skip_pair_next_attempt = False
                 keep_connecting_through_startup = self._uses_persistent_connection()
                 if use_pairing:
                     _LOGGER.info(
@@ -1134,16 +1199,22 @@ class AdjustableBedCoordinator:
                 self._notify_connection_state_change(False)
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
-                    # When pairing is required, disable services cache to force fresh
-                    # GATT discovery. Some devices expose different services depending
-                    # on pairing state, and stale cached services from a previous
-                    # non-paired connection will cause characteristic lookups to fail.
+                    # Disable the services cache to force fresh GATT discovery for
+                    # every pairing-required bed, not just the pair=True attempt.
+                    # These devices expose different services/characteristics
+                    # depending on bond state, so a stale cache from a previous
+                    # non-paired connection would make characteristic lookups (and
+                    # the post-connect bond probe) fail. This also covers the
+                    # no-pair verify retry after a failed pair attempt, which must
+                    # see live services to confirm the bond instead of looping.
                     #
                     # Sleep Number Climate 360 does not pair (see BEDS_REQUIRING_PAIRING)
                     # but the SleepIQ app refreshes the GATT cache on every connect, so
                     # force fresh discovery to keep parity and ensure the app-layer
                     # priming reads always see the live characteristic handles.
-                    disable_cache = use_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
+                    disable_cache = (
+                        bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
+                    )
                     try:
                         self._client = await establish_connection(
                             BleakClient,
@@ -1188,22 +1259,26 @@ class AdjustableBedCoordinator:
                             raise
                     except (BleakError, TimeoutError, OSError) as pair_err:
                         # If pairing was requested and the connection failed,
-                        # the BLE bond may already exist from a previous
-                        # session.  Re-pairing on top of an existing bond
-                        # causes auth failures on some ESP-IDF stacks and
-                        # leaves the ESPHome proxy connection stuck.  Mark
-                        # pairing as complete and let the outer retry loop
-                        # reconnect without pair=True.
+                        # a BLE bond may already exist from a previous session;
+                        # re-pairing on top of an existing bond causes auth
+                        # failures on some ESP-IDF stacks and leaves the ESPHome
+                        # proxy connection stuck.  Skip pair=True on the *next*
+                        # attempt only (transient, in-memory) so the outer retry
+                        # loop can reconnect — but do NOT persist a bond marker,
+                        # since the failure may simply mean the base was not in
+                        # its pairing window.  The post-connect bond probe
+                        # (_async_verify_bonded) then confirms whether the link
+                        # is really bonded and re-pairs if not.
                         if use_pairing:
                             _LOGGER.warning(
                                 "Connection with pairing failed for %s: %s. "
-                                "Bond may already exist — next attempt will "
-                                "connect without re-pairing.",
+                                "Next attempt will connect without re-pairing; "
+                                "bond state will be verified after connecting.",
                                 self._name,
                                 pair_err,
                             )
                             self._pairing_supported = True
-                            self._mark_ble_bond_established()
+                            self._skip_pair_next_attempt = True
                             raise
                         raise
                 finally:
@@ -1320,6 +1395,36 @@ class AdjustableBedCoordinator:
                             self._name,
                             sorted(discovered_uuids),
                         )
+
+                # Actively verify the encrypted link is bonded for beds that
+                # require pairing. A connection — even establish_connection with
+                # pair=True — can succeed while the link is still unbonded: every
+                # encrypted characteristic then fails with GATT error=5. Skip the
+                # delay-sensitive bed types whose protocol handshake must run
+                # first (Sleep Number, Jensen).
+                if (
+                    bed_requires_pairing
+                    and self._client is not None
+                    and self._client.services
+                    and self._bed_type
+                    not in (
+                        BED_TYPE_SLEEP_NUMBER,
+                        BED_TYPE_SLEEP_NUMBER_MCR,
+                        BED_TYPE_JENSEN,
+                    )
+                    and not await self._async_verify_bonded()
+                ):
+                    # _async_verify_bonded cleared the bond marker, raised the
+                    # repair issue, and disconnected. Retry — the next attempt
+                    # requests pair=True again (the skip flag was consumed).
+                    _LOGGER.warning(
+                        "Bed %s connected but the BLE link is not bonded; "
+                        "retrying with pairing.",
+                        self._address,
+                    )
+                    self._connecting = False
+                    self._connection_attempt_details.append(attempt_details)
+                    continue
 
                 # Some beds (Sleep Number MCR/Fuzion, Jensen) disconnect if
                 # there is too much delay between the BLE connection and the
@@ -1968,49 +2073,58 @@ class AdjustableBedCoordinator:
         """
         _LOGGER.debug("async_disconnect called for %s", self._address)
         async with self._lock:
-            self._cancel_disconnect_timer()
-            self._cancel_controller_state_refresh_retry()
-            if self._controller_state_refresh_task is not None:
-                self._controller_state_refresh_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._controller_state_refresh_task
-                self._controller_state_refresh_task = None
-            # Cancel any pending reconnect timer
-            if self._reconnect_timer is not None:
-                self._reconnect_timer.cancel()
-                self._reconnect_timer = None
-            if self._client is not None:
-                _LOGGER.info("Disconnecting from bed at %s", self._address)
-                # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
-                self._intentional_disconnect = True
-                # Track disconnect reason for diagnostics (issue #168)
-                self._last_disconnect_reason = reason
-                try:
-                    # Stop keep-alive and notifications before disconnecting
-                    if self._controller is not None:
-                        # Stop Octo keep-alive if running
-                        if hasattr(self._controller, "stop_keepalive"):
-                            try:
-                                # Cast to Any to avoid mypy error about BedController not having stop_keepalive
-                                await cast(Any, self._controller).stop_keepalive()
-                            except Exception as err:
-                                _LOGGER.debug("Error stopping keep-alive: %s", err)
+            await self._async_disconnect_locked(reason)
+
+    async def _async_disconnect_locked(self, reason: str = "intentional") -> None:
+        """Disconnect from the bed. The caller MUST already hold ``self._lock``.
+
+        Used by the bond-verification path, which runs inside
+        ``_async_connect_locked`` (lock already held) and would otherwise
+        deadlock on the public ``async_disconnect`` re-acquiring the lock.
+        """
+        self._cancel_disconnect_timer()
+        self._cancel_controller_state_refresh_retry()
+        if self._controller_state_refresh_task is not None:
+            self._controller_state_refresh_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._controller_state_refresh_task
+            self._controller_state_refresh_task = None
+        # Cancel any pending reconnect timer
+        if self._reconnect_timer is not None:
+            self._reconnect_timer.cancel()
+            self._reconnect_timer = None
+        if self._client is not None:
+            _LOGGER.info("Disconnecting from bed at %s", self._address)
+            # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
+            self._intentional_disconnect = True
+            # Track disconnect reason for diagnostics (issue #168)
+            self._last_disconnect_reason = reason
+            try:
+                # Stop keep-alive and notifications before disconnecting
+                if self._controller is not None:
+                    # Stop Octo keep-alive if running
+                    if hasattr(self._controller, "stop_keepalive"):
                         try:
-                            await self._controller.stop_notify()
+                            # Cast to Any to avoid mypy error about BedController not having stop_keepalive
+                            await cast(Any, self._controller).stop_keepalive()
                         except Exception as err:
-                            _LOGGER.debug("Error stopping notifications: %s", err)
-                    await self._client.disconnect()
-                    _LOGGER.debug("Successfully disconnected from %s", self._address)
-                except BleakError as err:
-                    _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
-                finally:
-                    self._client = None
-                    self._controller = None
-                    # Update disconnect timestamp and notify state change
-                    # (don't rely on _on_disconnect callback which may not fire on clean disconnect)
-                    self._last_disconnected = datetime.now(UTC)
-                    self._notify_connection_state_change(False)
-                    self._intentional_disconnect = False
+                            _LOGGER.debug("Error stopping keep-alive: %s", err)
+                    try:
+                        await self._controller.stop_notify()
+                    except Exception as err:
+                        _LOGGER.debug("Error stopping notifications: %s", err)
+                await self._client.disconnect()
+                _LOGGER.debug("Successfully disconnected from %s", self._address)
+            except BleakError as err:
+                _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
+            finally:
+                self._client = None
+                self._controller = None
+                # Update disconnect timestamp and notify state change
+                # (don't rely on _on_disconnect callback which may not fire on clean disconnect)
+                self._last_disconnected = datetime.now(UTC)
+                self._notify_connection_state_change(False)
+                self._intentional_disconnect = False
 
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""

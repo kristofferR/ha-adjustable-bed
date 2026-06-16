@@ -30,6 +30,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Bed Type | Pairing Required |
 |----------|-----------------|
 | Okimat/Okin | ✅ Yes |
+| Okin CST (incl. OKIN-* Nectar Motion / Mattress Firm 900-O / Rize MF900) | ✅ Yes |
 | Leggett & Platt Okin variant | ✅ Yes |
 | Logicdata SimplicityFrame | ✅ Yes |
 | Vibradorm | ✅ Yes |
@@ -37,22 +38,22 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) | ❌ No |
 | Leggett & Platt Gen2 | ❌ No |
 | Leggett & Platt MlRM | ❌ No |
-| Nectar | ❌ No |
+| Nectar (DewertOkin protocol) | ❌ No |
 | DewertOkin | ❌ No |
 | Most other beds | ❌ No |
 
 *Note: the two Sleep Number entries are separate bed types, not variants of the same one — Sleep Number Fuzion always requires pairing, Sleep Number BAM/MCR never does. Leggett & Platt only requires pairing on its Okin variant.*
 
-**How to pair (if required):**
-1. Put your bed in pairing mode (usually hold a button on the remote for 3-5 seconds)
-2. On your Home Assistant host or phone, open Bluetooth settings
-3. Pair with the bed (may appear as `OKIN`, `OKIN-Receiver`, `OKIN - Receiver`, `Okimat`, `Smart bed 123456`, or similar)
-4. Then add the integration in Home Assistant
+> **Nectar is split across two rows on purpose.** "Nectar" branding covers more than one protocol. Bases that advertise as `OKIN-XXXXXX` are detected as **Okin CST** and **do** require pairing; older Nectar bases that use the DewertOkin protocol do **not**. The integration picks the right one by GATT signature — the brand on the bed is only a hint.
 
-For Sleep Number Climate 360 / FlexFit Fuzion bases, hold the side pairing button until the blue light blinks.
+**How to pair (if required):**
+1. Put your bed in pairing mode. For **OKIN** bases (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O, Rize MF900), **power-cycle the control box** — unplug it ~30 seconds, then plug it back in; the light blinks blue then turns green after ~20 s. There is **no Bluetooth pairing button**; any Pair/Learn button only syncs the RF remote. For **Sleep Number Climate 360 / FlexFit Fuzion**, hold the side pairing button until the blue light blinks.
+2. On the device running Home Assistant's Bluetooth stack (HA host or proxy), let the integration pair, or pair manually in Bluetooth settings.
+3. The bed may appear as `OKIN`, `OKIN-XXXXXX`, `OKIN-Receiver`, `Okimat`, `Smart bed 123456`, or similar.
+
 Older Sleep Number BAM/MCR bases connect without OS-level pairing.
 
-**Note:** If you're using an ESPHome Bluetooth Proxy, you may need to pair on the device running Home Assistant, not on your phone.
+**Note:** Pair on the device running Home Assistant's Bluetooth stack, **not your phone**. ESPHome Bluetooth proxies support pairing only on **ESPHome 2024.3.0+**; if pairing keeps failing, use a local adapter near the bed. If a bed connects but stays unbonded, Home Assistant raises a **"Bluetooth pairing required"** repair with a **Fix** button that walks you through it.
 
 ---
 

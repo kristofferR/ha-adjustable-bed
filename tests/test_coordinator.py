@@ -1674,8 +1674,175 @@ class TestCoordinatorWriteCommand:
 
         assert coordinator._ble_bond_established is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
-        mock_create_issue.assert_awaited_once_with(hass, TEST_ADDRESS, TEST_NAME)
+        mock_create_issue.assert_awaited_once_with(
+            hass, TEST_ADDRESS, TEST_NAME, "okimat_auth_failure_test"
+        )
         mock_disconnect.assert_awaited_once_with(reason="authentication_failed")
+
+    async def test_failed_pairing_does_not_persist_bond_marker(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+    ):
+        """A failed pairing attempt must not poison the persisted bond marker.
+
+        Regression: previously a BleakError during a pair=True connect was
+        assumed to mean "already bonded" and persisted CONF_BLE_BOND_ESTABLISHED,
+        which permanently prevented future pairing attempts on a still-unbonded
+        bed. Now it only sets a transient in-memory skip flag.
+        """
+        del mock_bluetooth_adapters
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Unpaired OKIN Bed",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_failed_pairing_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=BleakError("pairing failed"),
+            ) as mock_establish_connection,
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is False
+        # The failed pairing attempt must NOT have persisted a bond marker.
+        assert coordinator._ble_bond_established is False
+        assert entry.data.get(CONF_BLE_BOND_ESTABLISHED) is not True
+        # The transient skip flag should have produced both a pairing attempt
+        # and a no-pair retry across the retry loop.
+        pair_kwargs = [
+            call.kwargs.get("pair") for call in mock_establish_connection.await_args_list
+        ]
+        assert True in pair_kwargs
+        assert False in pair_kwargs
+
+    async def test_verify_bonded_detects_unbonded_link_and_repairs(
+        self,
+        hass: HomeAssistant,
+    ):
+        """An auth error while probing an encrypted char clears the marker + repairs."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_verify_bonded_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        client = MagicMock()
+        client.is_connected = True
+        client.disconnect = AsyncMock()
+        client.read_gatt_char = AsyncMock(
+            side_effect=BleakError(
+                "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+                "handle=24 error=5 description=Insufficient authentication"
+            )
+        )
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ) as mock_create_issue:
+            # Reproduce the real call context: the connect path holds self._lock
+            # while verifying. If the disconnect re-acquired the lock this would
+            # deadlock, so guard with a timeout to fail fast instead of hanging.
+            async with coordinator._lock:
+                async with asyncio.timeout(5):
+                    bonded = await coordinator._async_verify_bonded()
+
+        assert bonded is False
+        assert coordinator._ble_bond_established is False
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        mock_create_issue.assert_awaited_once_with(
+            hass, TEST_ADDRESS, TEST_NAME, "okimat_verify_bonded_test"
+        )
+        # Disconnect ran via the lock-free path and cleared the client.
+        client.disconnect.assert_awaited_once()
+        assert coordinator._client is None
+
+    async def test_verify_bonded_confirms_and_clears_repair_when_readable(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A successful auth-gated read confirms the bond and clears the repair."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_verify_bonded_ok_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._skip_pair_next_attempt = True
+        client = MagicMock()
+        client.is_connected = True
+        client.read_gatt_char = AsyncMock(return_value=b"Model X")
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.delete_pairing_required_issue",
+            new_callable=AsyncMock,
+        ) as mock_delete_issue:
+            bonded = await coordinator._async_verify_bonded()
+
+        assert bonded is True
+        assert coordinator._ble_bond_established is True
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        assert coordinator._skip_pair_next_attempt is False
+        mock_delete_issue.assert_awaited_once_with(hass, TEST_ADDRESS)
 
 
 class TestCoordinatorNotifications:
