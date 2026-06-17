@@ -2188,6 +2188,27 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.disable_angle_sensing is False
         assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
+    async def test_correction_to_cst_enables_stored_no_feedback_default_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Saved no-feedback defaults should not suppress corrected CST position features."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            bed_type=BED_TYPE_NECTAR,
+        )
+
+        assert coordinator.disable_angle_sensing is True
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
+
+        assert coordinator.bed_type == BED_TYPE_OKIN_CST
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
     async def test_correction_to_cst_preserves_explicit_disabled_angle_sensing(
         self,
         hass: HomeAssistant,
@@ -2295,6 +2316,9 @@ class TestRuntimeBedTypeCorrection:
         adapter_result.connectable = True
         adapter_result.available_sources = ["local"]
 
+        mock_controller = MagicMock()
+        mock_controller.start_notify = AsyncMock()
+
         with (
             patch(
                 "custom_components.adjustable_bed.coordinator.select_adapter",
@@ -2325,7 +2349,7 @@ class TestRuntimeBedTypeCorrection:
             patch(
                 "custom_components.adjustable_bed.coordinator.create_controller",
                 new_callable=AsyncMock,
-                return_value=MagicMock(),
+                return_value=mock_controller,
             ) as mock_create_controller,
             patch(
                 "custom_components.adjustable_bed.coordinator.asyncio.sleep",

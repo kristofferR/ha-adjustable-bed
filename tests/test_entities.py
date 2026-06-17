@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
@@ -454,6 +455,53 @@ class TestNumberEntities:
         )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_legs_position")
+            is None
+        )
+
+    async def test_okin_cst_number_entities_only_include_back_and_legs_position(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST should expose only the axes reported by its position payload."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Numbers",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:28",
+                CONF_NAME: "OKIN CST Numbers",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:28",
+            entry_id="okin_cst_number_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_back_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_legs_position")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_head_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_feet_position")
             is None
         )
 

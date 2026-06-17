@@ -555,6 +555,8 @@ def refine_okin_shared_uuid_protocol_from_gatt(
 
     gatt_detection = detect_bed_type_from_gatt_services(gatt_services)
     if gatt_detection.bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT}:
+        if bed_type == BED_TYPE_OKIN_CST and gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+            return bed_type
         if gatt_detection.bed_type != bed_type:
             _LOGGER.info(
                 "Refined shared OKIN protocol from %s to %s using GATT signals: %s",

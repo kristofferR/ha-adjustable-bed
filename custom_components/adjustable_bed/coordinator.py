@@ -80,6 +80,7 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_ANGLE_SENSING,
+    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -384,7 +385,10 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
-        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data
+        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
+            self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
+            and previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+        )
         if (
             corrected_bed_type in BEDS_WITH_ANGLE_SENSING
             and angle_sensing_defaulted

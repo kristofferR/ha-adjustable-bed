@@ -969,6 +969,28 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_RF_ECO_BT
         )
 
+    def test_shared_okin_gatt_refinement_preserves_explicit_cst_without_dfu(self):
+        """A manually selected CST entry should not require DFU to remain CST."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_CST, gatt_services)
+            == BED_TYPE_OKIN_CST
+        )
+
     def test_shared_okin_gatt_refinement_leaves_unrelated_types_unchanged(self):
         """The OKIN correction is scoped away from other shared UUID families."""
         gatt_services = [
