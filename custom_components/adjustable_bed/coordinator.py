@@ -66,6 +66,7 @@ from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_CB35,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -118,6 +119,7 @@ from .const import (
     DEVICE_INFO_CHARS,
     DOMAIN,
     OKIMAT_SERVICE_UUID,
+    OKIN_CST_POSITION_AXES,
     POSITION_CHECK_INTERVAL,
     POSITION_MODE_ACCURACY,
     POSITION_OVERSHOOT_TOLERANCE,
@@ -2026,6 +2028,8 @@ class AdjustableBedCoordinator:
         """Return the logical position axes that startup hydration should populate."""
         if self._motor_count <= 0:
             return set()
+        if self._bed_type == BED_TYPE_OKIN_CST:
+            return set(OKIN_CST_POSITION_AXES)
 
         expected_axes = {"back", "legs"}
         if self._motor_count > 2:

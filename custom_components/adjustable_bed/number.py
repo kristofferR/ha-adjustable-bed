@@ -32,6 +32,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    OKIN_CST_POSITION_AXES,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
@@ -341,7 +342,10 @@ async def async_setup_entry(
                     coordinator.name,
                 )
 
-                for description in NUMBER_DESCRIPTIONS[:2]:
+                for key in ("back_position", "legs_position"):
+                    description = descriptions_by_key[key]
+                    if description.position_key not in OKIN_CST_POSITION_AXES:
+                        continue
                     max_angle = coordinator.get_max_angle(description.position_key)
                     cst_desc = AdjustableBedNumberEntityDescription(
                         key=description.key,

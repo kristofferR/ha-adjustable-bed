@@ -338,6 +338,27 @@ class TestCoordinatorConnection:
         assert controller.prepare_for_position_read.await_count == 2
         mock_sleep.assert_awaited_once()
 
+    async def test_cst_initial_position_axes_ignore_unreported_extra_motors(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ) -> None:
+        """CST startup hydration should not wait for head/feet axes."""
+        mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_OKIN_CST
+        mock_config_entry_data[CONF_MOTOR_COUNT] = 4
+        coordinator = AdjustableBedCoordinator(
+            hass,
+            MockConfigEntry(
+                domain=DOMAIN,
+                title=TEST_NAME,
+                data=mock_config_entry_data,
+                unique_id=TEST_ADDRESS,
+                entry_id="cst_expected_axes",
+            ),
+        )
+
+        assert coordinator._expected_initial_position_axes() == {"back", "legs"}
+
     async def test_passive_position_reconciliation_reads_positions_when_idle(
         self,
         hass: HomeAssistant,
