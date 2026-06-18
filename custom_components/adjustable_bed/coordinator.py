@@ -120,6 +120,8 @@ from .const import (
     DOMAIN,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
+    OKIN_FOOT_MAX_ANGLE,
+    OKIN_HEAD_MAX_ANGLE,
     POSITION_CHECK_INTERVAL,
     POSITION_MODE_ACCURACY,
     POSITION_OVERSHOOT_TOLERANCE,
@@ -348,15 +350,15 @@ class AdjustableBedCoordinator:
     def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
         previous_bed_type = self._bed_type
-        if corrected_bed_type == previous_bed_type:
-            return False
 
-        _LOGGER.warning(
-            "Correcting bed protocol for %s from %s to %s based on connected GATT services",
-            self._address,
-            previous_bed_type,
-            corrected_bed_type,
-        )
+        bed_type_changed = corrected_bed_type != previous_bed_type
+        if bed_type_changed:
+            _LOGGER.warning(
+                "Correcting bed protocol for %s from %s to %s based on connected GATT services",
+                self._address,
+                previous_bed_type,
+                corrected_bed_type,
+            )
         previous_defaults = BED_MOTOR_PULSE_DEFAULTS.get(previous_bed_type)
         corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(corrected_bed_type)
         # Only swap in the corrected protocol's defaults if the user never set
@@ -372,6 +374,7 @@ class AdjustableBedCoordinator:
         if (
             previous_defaults is not None
             and corrected_defaults is not None
+            and bed_type_changed
             and not has_custom_pulse_override
             and (self._motor_pulse_count, self._motor_pulse_delay_ms) == previous_defaults
         ):
@@ -389,7 +392,10 @@ class AdjustableBedCoordinator:
         entry_data[CONF_BED_TYPE] = corrected_bed_type
         angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
             self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
-            and previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+            and (
+                previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+                or previous_bed_type == BED_TYPE_OKIN_CST
+            )
         )
         if (
             corrected_bed_type in BEDS_WITH_ANGLE_SENSING
@@ -404,7 +410,11 @@ class AdjustableBedCoordinator:
                 corrected_bed_type,
                 self._address,
             )
-        elif corrected_bed_type not in BEDS_WITH_ANGLE_SENSING and not self._disable_angle_sensing:
+        elif (
+            bed_type_changed
+            and corrected_bed_type not in BEDS_WITH_ANGLE_SENSING
+            and not self._disable_angle_sensing
+        ):
             self._disable_angle_sensing = True
             entry_data[CONF_DISABLE_ANGLE_SENSING] = True
             _LOGGER.info(
@@ -414,13 +424,14 @@ class AdjustableBedCoordinator:
                 self._address,
             )
 
-        if entry_data != self.entry.data:
+        entry_data_changed = entry_data != self.entry.data
+        if entry_data_changed:
             self.hass.config_entries.async_update_entry(
                 self.entry,
                 data=entry_data,
             )
 
-        return True
+        return bed_type_changed or entry_data_changed
 
     @property
     def address(self) -> str:
@@ -492,10 +503,14 @@ class AdjustableBedCoordinator:
             Maximum angle in degrees for the specified motor.
         """
         if position_key in ("back", "head"):
+            if self._bed_type == BED_TYPE_OKIN_CST:
+                return OKIN_HEAD_MAX_ANGLE
             if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
                 return REVERIE_BACK_MAX_ANGLE
             return self.back_max_angle
         if position_key in ("legs", "feet"):
+            if self._bed_type == BED_TYPE_OKIN_CST:
+                return OKIN_FOOT_MAX_ANGLE
             return self.legs_max_angle
         # Unknown motor, return back max as default
         return self.back_max_angle

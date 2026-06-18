@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    OKIN_HEAD_MAX_ANGLE,
 )
 
 
@@ -1155,6 +1156,63 @@ class TestServices:
                     },
                     blocking=True,
                 )
+
+    async def test_set_position_service_rejects_okin_cst_back_above_reported_range(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST back targets above reported feedback range should be rejected."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Range Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:37",
+                CONF_NAME: "OKIN CST Range Service Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:37",
+            entry_id="okin_cst_range_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(
+            ServiceValidationError,
+            match=rf"Valid range: 0-{OKIN_HEAD_MAX_ANGLE}°",
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {
+                    "device_id": [device_id],
+                    "motor": "back",
+                    "position": OKIN_HEAD_MAX_ANGLE + 1,
+                },
+                blocking=True,
+            )
 
     async def test_set_position_service_accepts_kaidi_back_and_legs_percentages(
         self,

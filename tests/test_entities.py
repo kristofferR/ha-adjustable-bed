@@ -36,6 +36,8 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    OKIN_FOOT_MAX_ANGLE,
+    OKIN_HEAD_MAX_ANGLE,
     SLEEP_NUMBER_VARIANT_LEFT,
 )
 
@@ -503,6 +505,8 @@ class TestNumberEntities:
         assert legs_state is not None
         assert back_state.attributes["max"] == pytest.approx(coordinator.get_max_angle("back"))
         assert legs_state.attributes["max"] == pytest.approx(coordinator.get_max_angle("legs"))
+        assert back_state.attributes["max"] == pytest.approx(OKIN_HEAD_MAX_ANGLE)
+        assert legs_state.attributes["max"] == pytest.approx(OKIN_FOOT_MAX_ANGLE)
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_head_position")
             is None
