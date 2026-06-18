@@ -957,23 +957,31 @@ class AdjustableBedCoordinator:
         exhausted_adapters: set[str] = set()
         adapter_result: AdapterSelectionResult | None = None
 
-        for attempt in range(self._max_retries):
+        attempt = 0
+        attempt_limit = self._max_retries
+        protocol_correction_pairing_retry_reserved = False
+        while attempt < attempt_limit:
+            attempt_index = attempt
+            attempt += 1
+            attempt_number = attempt_index + 1
             attempt_start = time.monotonic()
-            attempt_details = new_connection_attempt_details(attempt + 1, self._preferred_adapter)
+            attempt_details = new_connection_attempt_details(
+                attempt_number, self._preferred_adapter
+            )
             # Track connection attempt for diagnostics (issue #168)
             self._connection_attempt_count += 1
             self._last_connection_attempt = datetime.now(UTC)
 
             # On retries, add a delay before attempting to give the Bluetooth stack time to reset
-            if attempt > 0:
-                base_delay = self._retry_base_delay * (2 ** (attempt - 1))
+            if attempt_index > 0:
+                base_delay = self._retry_base_delay * (2 ** (attempt_index - 1))
                 jitter = random.uniform(1 - self._retry_jitter, 1 + self._retry_jitter)
                 pre_retry_delay = base_delay * jitter
                 _LOGGER.info(
                     "Waiting %.1fs before connection retry %d/%d to %s...",
                     pre_retry_delay,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     self._address,
                 )
                 await asyncio.sleep(pre_retry_delay)
@@ -981,8 +989,8 @@ class AdjustableBedCoordinator:
             try:
                 _LOGGER.debug(
                     "Connection attempt %d/%d: Looking up device %s via HA Bluetooth (preferred adapter: %s)",
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     self._address,
                     self._preferred_adapter,
                 )
@@ -1035,8 +1043,8 @@ class AdjustableBedCoordinator:
                         "Bed may be powered off, out of range, or connected to another device.",
                         self._address,
                         lookup_elapsed,
-                        attempt + 1,
-                        self._max_retries,
+                        attempt_number,
+                        attempt_limit,
                     )
                     # Log what devices ARE visible
                     try:
@@ -1525,6 +1533,9 @@ class AdjustableBedCoordinator:
                     await self._async_disconnect_locked(
                         reason="protocol_correction_requires_pairing"
                     )
+                    if not protocol_correction_pairing_retry_reserved:
+                        protocol_correction_pairing_retry_reserved = True
+                        attempt_limit += 1
                     continue
 
                 # Post-connection protocol verification for DewertOkin Star devices.
@@ -1744,8 +1755,8 @@ class AdjustableBedCoordinator:
                     error_category,
                     self._address,
                     attempt_elapsed,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     err,
                 )
                 _LOGGER.debug(
@@ -1784,8 +1795,8 @@ class AdjustableBedCoordinator:
                 _LOGGER.warning(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     err,
                 )
                 _LOGGER.debug(

@@ -2378,6 +2378,7 @@ class TestRuntimeBedTypeCorrection:
             ),
         ):
             coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
             result = await coordinator.async_connect()
 
         assert result is True
