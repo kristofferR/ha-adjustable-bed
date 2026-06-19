@@ -120,6 +120,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     hass.http.register_view(SupportBundleDownloadView)
 
+    from .frontend import async_register_frontend
+
+    await async_register_frontend(hass)
+
     await _async_register_services(hass)
     return True
 
