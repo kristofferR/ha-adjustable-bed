@@ -1,13 +1,14 @@
 """OKIN CSTProtocol bed controller implementation.
 
 CSTProtocol uses a 14-byte command format with two separate 32-bit fields:
-- Motor field (bytes 2-5): Head, foot, tilt, lumbar motor control
-- Control field (bytes 6-9): Presets, massage, lights
+- Primary field (bytes 2-5): Motor control and several remote button actions
+- Secondary field (bytes 6-9): Discrete light and massage-wave actions
 
 Format: [0x0C, 0x02, motor[4], control[4], 0x00, 0x00, 0x00, 0x00]
 
-Command values are identical to existing OKIN UUID values. Only the packet
-framing differs (14-byte with dual fields vs 6-byte with single field).
+Most command values are identical to existing OKIN UUID values, but the MFirm
+app routes remote actions across both CST fields. Do not infer field placement
+from the feature type alone.
 
 Protocol reverse-engineered from com.okin.bedding.rizemf900 app (CSTProtocol.java).
 Known devices: Rize MF900, other CSTProtocol-based Okin beds.
@@ -43,6 +44,12 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 _NOT_CONNECTED_MSG = "Not connected to bed"
+_PRESET_REPEAT_COUNT = 100
+_PRESET_REPEAT_DELAY_MS = 300
+_BUTTON_PRESS_REPEAT_COUNT = 3
+_BUTTON_PRESS_REPEAT_DELAY_MS = 100
+_STOP_REPEAT_COUNT = 2
+_STOP_REPEAT_DELAY_MS = 100
 
 
 class CstMotorCommands:
@@ -59,28 +66,37 @@ class CstMotorCommands:
     LUMBAR_DOWN = 0x00000080
 
 
-class CstControlCommands:
-    """Control field command values (bytes 6-9)."""
+class CstRemoteCommands:
+    """Remote action command values.
+
+    The CST app chooses the first or second 32-bit field per action. Call sites
+    pass these values to build_cst_command() using the matching field.
+    """
 
     STOP = 0x00000000
     FLAT = 0x08000000
     ZERO_G = 0x00001000
-    MEMORY_1 = 0x00002000
-    MEMORY_2 = 0x00004000
-    MEMORY_3 = 0x00008000
-    MEMORY_4 = 0x00010000
+    LOUNGE = 0x00002000
+    INCLINE = 0x00004000
+    ANTI_SNORE = 0x00008000
+    MEMORY_1 = 0x00010000
     LIGHT_TOGGLE = 0x00020000
-    MASSAGE_ON_OFF = 0x04000000
-    MASSAGE_STOP = 0x02000000
+    LIGHT_ON = 0x00000040
+    LIGHT_OFF = 0x00000080
+    MASSAGE_TOGGLE = 0x02000000
+    MASSAGE_OFF = 0x02000000
+    MASSAGE_INTENSITY = 0x00000C00
+    MASSAGE_INTENSITY_MINUS = 0x01800000
     MASSAGE_HEAD = 0x00000800
     MASSAGE_FEET = 0x00000400
-    MASSAGE_WAIST = 0x00400000
-    MASSAGE_TIMER = 0x00000200
     MASSAGE_HEAD_MINUS = 0x00800000
     MASSAGE_FEET_MINUS = 0x01000000
-    MASSAGE_WAIST_MINUS = 0x10000000
     MASSAGE_WAVE_1 = 0x00080000
     MASSAGE_WAVE_2 = 0x00100000
+    MASSAGE_WAVE_3 = 0x00200000
+
+
+CstControlCommands = CstRemoteCommands
 
 
 class OkinCstController(BedController):
@@ -95,6 +111,7 @@ class OkinCstController(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, int] = {}
+        self._massage_wave_index = 0
 
         _LOGGER.debug("OkinCstController initialized")
 
@@ -110,12 +127,24 @@ class OkinCstController(BedController):
         return True
 
     @property
+    def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_lounge(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_incline(self) -> bool:
+        return True
+
+    @property
     def supports_memory_presets(self) -> bool:
         return True
 
     @property
     def memory_slot_count(self) -> int:
-        return 4
+        return 1
 
     @property
     def supports_memory_programming(self) -> bool:
@@ -127,7 +156,11 @@ class OkinCstController(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        return False
+        return True
+
+    @property
+    def supports_massage(self) -> bool:
+        return True
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -280,32 +313,55 @@ class OkinCstController(BedController):
         finally:
             self._motor_state.pop(motor, None)
             if not self._motor_state:
-                await self.write_command(
-                    build_cst_command(),
-                    cancel_event=asyncio.Event(),
-                )
+                await self._send_stop_sequence()
 
-    async def _send_control(
+    async def _send_stop_sequence(self) -> None:
+        """Send the app-style CST STOP sequence."""
+        stop_event = asyncio.Event()
+        for index in range(_STOP_REPEAT_COUNT):
+            if index:
+                await asyncio.sleep(_STOP_REPEAT_DELAY_MS / 1000)
+            await self.write_command(build_cst_command(), cancel_event=stop_event)
+
+    async def _send_repeated_command(
         self,
-        control_value: int,
-        repeat_count: int = 100,
-        repeat_delay_ms: int = 300,
+        *,
+        motor_value: int = 0,
+        control_value: int = 0,
+        repeat_count: int,
+        repeat_delay_ms: int,
     ) -> None:
-        """Send a control command (preset/massage/light) with stop cleanup."""
+        """Send a CST command with stop cleanup."""
         try:
             await self.write_command(
-                build_cst_command(control_value=control_value),
+                build_cst_command(motor_value=motor_value, control_value=control_value),
                 repeat_count=repeat_count,
                 repeat_delay_ms=repeat_delay_ms,
             )
         finally:
             try:
-                await self.write_command(
-                    build_cst_command(),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug("Failed to send STOP during control cleanup", exc_info=True)
+                await self._send_stop_sequence()
+            except (TimeoutError, BleakError, ConnectionError):
+                _LOGGER.debug("Failed to send STOP during CST cleanup", exc_info=True)
+
+    async def _send_preset(self, motor_value: int) -> None:
+        """Send a long-running preset recall command."""
+        await self._send_repeated_command(
+            motor_value=motor_value,
+            repeat_count=_PRESET_REPEAT_COUNT,
+            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+        )
+
+    async def _send_button_press(
+        self, *, motor_value: int = 0, control_value: int = 0
+    ) -> None:
+        """Send a short app-style button press."""
+        await self._send_repeated_command(
+            motor_value=motor_value,
+            control_value=control_value,
+            repeat_count=_BUTTON_PRESS_REPEAT_COUNT,
+            repeat_delay_ms=_BUTTON_PRESS_REPEAT_DELAY_MS,
+        )
 
     # Motor control - Back/Head (primary)
 
@@ -390,33 +446,36 @@ class OkinCstController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         self._motor_state = {}
-        await self.write_command(
-            build_cst_command(),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop_sequence()
 
     # Presets
 
     async def preset_flat(self) -> None:
         """Go to flat position."""
-        await self._send_control(CstControlCommands.FLAT)
+        await self._send_preset(CstRemoteCommands.FLAT)
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
-        await self._send_control(CstControlCommands.ZERO_G)
+        await self._send_preset(CstRemoteCommands.ZERO_G)
+
+    async def preset_anti_snore(self) -> None:
+        """Go to anti-snore position."""
+        await self._send_preset(CstRemoteCommands.ANTI_SNORE)
+
+    async def preset_lounge(self) -> None:
+        """Go to lounge position."""
+        await self._send_preset(CstRemoteCommands.LOUNGE)
+
+    async def preset_incline(self) -> None:
+        """Go to incline/TV position."""
+        await self._send_preset(CstRemoteCommands.INCLINE)
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
-        commands = {
-            1: CstControlCommands.MEMORY_1,
-            2: CstControlCommands.MEMORY_2,
-            3: CstControlCommands.MEMORY_3,
-            4: CstControlCommands.MEMORY_4,
-        }
-        if command := commands.get(memory_num):
-            await self._send_control(command)
+        if memory_num == 1:
+            await self._send_preset(CstRemoteCommands.MEMORY_1)
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-4)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1)", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
         """Program current position to memory (not supported)."""
@@ -427,53 +486,64 @@ class OkinCstController(BedController):
     # Lights
 
     async def lights_on(self) -> None:
-        """Turn on lights (via toggle)."""
-        await self.lights_toggle()
+        """Turn on lights."""
+        await self._send_button_press(control_value=CstRemoteCommands.LIGHT_ON)
 
     async def lights_off(self) -> None:
-        """Turn off lights (via toggle)."""
-        await self.lights_toggle()
+        """Turn off lights."""
+        await self._send_button_press(control_value=CstRemoteCommands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
         """Toggle lights."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.LIGHT_TOGGLE),
-        )
+        await self._send_button_press(motor_value=CstRemoteCommands.LIGHT_TOGGLE)
 
     # Massage
 
+    async def massage_off(self) -> None:
+        """Turn massage off."""
+        await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_OFF)
+
     async def massage_toggle(self) -> None:
         """Toggle massage on/off."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_ON_OFF),
+        await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_TOGGLE)
+
+    async def massage_intensity_up(self) -> None:
+        """Increase overall massage intensity."""
+        await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_INTENSITY)
+
+    async def massage_intensity_down(self) -> None:
+        """Decrease overall massage intensity."""
+        await self._send_button_press(
+            motor_value=CstRemoteCommands.MASSAGE_INTENSITY_MINUS
         )
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_HEAD),
-        )
+        await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_HEAD)
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_HEAD_MINUS),
+        await self._send_button_press(
+            motor_value=CstRemoteCommands.MASSAGE_HEAD_MINUS
         )
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_FEET),
-        )
+        await self._send_button_press(motor_value=CstRemoteCommands.MASSAGE_FEET)
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_FEET_MINUS),
+        await self._send_button_press(
+            motor_value=CstRemoteCommands.MASSAGE_FEET_MINUS
         )
 
     async def massage_mode_step(self) -> None:
         """Step through massage wave modes."""
-        await self.write_command(
-            build_cst_command(control_value=CstControlCommands.MASSAGE_WAVE_1),
+        commands = (
+            CstRemoteCommands.MASSAGE_WAVE_1,
+            CstRemoteCommands.MASSAGE_WAVE_2,
+            CstRemoteCommands.MASSAGE_WAVE_3,
         )
+        command = commands[self._massage_wave_index]
+        self._massage_wave_index = (self._massage_wave_index + 1) % len(commands)
+        await self._send_button_press(control_value=command)
