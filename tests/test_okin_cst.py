@@ -106,8 +106,8 @@ class TestOkinCstCapabilities:
         assert okin_cst_controller.supports_preset_lounge is True
         assert okin_cst_controller.supports_preset_incline is True
         assert okin_cst_controller.supports_memory_presets is True
-        assert okin_cst_controller.memory_slot_count == 1
-        assert okin_cst_controller.supports_memory_programming is False
+        assert okin_cst_controller.memory_slot_count == 3
+        assert okin_cst_controller.supports_memory_programming is True
         assert okin_cst_controller.supports_discrete_light_control is True
         assert okin_cst_controller.supports_massage is True
         assert okin_cst_controller.supports_massage_off_control is True
@@ -145,7 +145,6 @@ class TestOkinCstCommands:
             ("preset_anti_snore", CstRemoteCommands.ANTI_SNORE),
             ("preset_lounge", CstRemoteCommands.LOUNGE),
             ("preset_incline", CstRemoteCommands.INCLINE),
-            ("preset_memory", CstRemoteCommands.MEMORY_1),
         ],
     )
     @patch(
@@ -162,16 +161,72 @@ class TestOkinCstCommands:
     ) -> None:
         """MFirm preset-style actions are carried in the primary CST field."""
         mock_bleak_client.write_gatt_char.reset_mock()
-        if method_name == "preset_memory":
-            await okin_cst_controller.preset_memory(1)
-        else:
-            method: Callable[[], Awaitable[None]]
-            method = getattr(okin_cst_controller, method_name)
-            await method()
+        method: Callable[[], Awaitable[None]]
+        method = getattr(okin_cst_controller, method_name)
+        await method()
 
         payloads = _payloads(mock_bleak_client)
         assert payloads[0] == build_cst_command(motor_value=command_value)
         assert payloads[-2:] == [build_cst_command()] * 2
+
+    @pytest.mark.parametrize(
+        ("memory_num", "command_value"),
+        [
+            (1, CstRemoteCommands.ZERO_G),
+            (2, CstRemoteCommands.INCLINE),
+            (3, CstRemoteCommands.LOUNGE),
+        ],
+    )
+    @patch(
+        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
+        new_callable=AsyncMock,
+    )
+    async def test_memory_recalls_use_programmable_preset_slots(
+        self,
+        _mock_sleep: AsyncMock,
+        okin_cst_controller: OkinCstController,
+        mock_bleak_client: MagicMock,
+        memory_num: int,
+        command_value: int,
+    ) -> None:
+        """HA memory slots map to MFirm's saveable ZG, incline, and lounge slots."""
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await okin_cst_controller.preset_memory(memory_num)
+
+        payloads = _payloads(mock_bleak_client)
+        assert payloads[0] == build_cst_command(motor_value=command_value)
+        assert payloads[-2:] == [build_cst_command()] * 2
+
+    @pytest.mark.parametrize(
+        ("memory_num", "command_value"),
+        [
+            (1, CstRemoteCommands.SAVE_ZERO_G),
+            (2, CstRemoteCommands.SAVE_INCLINE),
+            (3, CstRemoteCommands.SAVE_LOUNGE),
+        ],
+    )
+    @patch(
+        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
+        new_callable=AsyncMock,
+    )
+    async def test_program_memory_uses_app_save_combos(
+        self,
+        _mock_sleep: AsyncMock,
+        okin_cst_controller: OkinCstController,
+        mock_bleak_client: MagicMock,
+        memory_num: int,
+        command_value: int,
+    ) -> None:
+        """Program memory sends MFirm's Flat+preset save packets."""
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await okin_cst_controller.program_memory(memory_num)
+
+        _assert_button_press_sequence(
+            _payloads(mock_bleak_client),
+            build_cst_command(motor_value=command_value),
+        )
 
     @patch(
         "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",

@@ -91,7 +91,10 @@ Multiple motor bits can be OR'd together for simultaneous movement.
 | Lounge | `0x00002000` |
 | Incline / TV | `0x00004000` |
 | Anti-snore | `0x00008000` |
-| Memory 1 | `0x00010000` |
+| App Memory button | `0x00010000` |
+| Save Zero-G | `0x08001000` |
+| Save Lounge | `0x08002000` |
+| Save Incline | `0x08004000` |
 | Light Toggle | `0x00020000` |
 | Massage Toggle / Off | `0x02000000` |
 | Massage All + | `0x00000C00` |
@@ -119,11 +122,22 @@ by sending cleanup STOP packets after movement, preset, light, and massage
 commands. Preset recalls are held longer so a Home Assistant button press can
 complete the move; light and massage controls use a short simulated press.
 
+### Memory Slots
+
+The MFirm app treats Zero-G, Incline, and Lounge as user-programmable preset
+memories. Home Assistant exposes those as numbered memory slots:
+
+| HA Memory Slot | MFirm App Memory |
+|----------------|------------------|
+| Memory 1 | Zero-G |
+| Memory 2 | Incline |
+| Memory 3 | Lounge |
+
 ## Features
 
 - 4 motors: head, foot, tilt, lumbar
 - Flat, Zero-G, anti-snore, lounge, and incline presets
-- 1 memory preset (recall only, no programming)
+- 3 programmable preset memory slots: Zero-G, Incline, and Lounge
 - Discrete light on/off plus toggle
 - Massage with head/foot intensity control and wave modes
 - Position feedback (same as Okimat)

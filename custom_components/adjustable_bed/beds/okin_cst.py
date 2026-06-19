@@ -79,7 +79,10 @@ class CstRemoteCommands:
     LOUNGE = 0x00002000
     INCLINE = 0x00004000
     ANTI_SNORE = 0x00008000
-    MEMORY_1 = 0x00010000
+    APP_MEMORY = 0x00010000
+    SAVE_ZERO_G = FLAT | ZERO_G
+    SAVE_LOUNGE = FLAT | LOUNGE
+    SAVE_INCLINE = FLAT | INCLINE
     LIGHT_TOGGLE = 0x00020000
     LIGHT_ON = 0x00000040
     LIGHT_OFF = 0x00000080
@@ -144,11 +147,11 @@ class OkinCstController(BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        return 1
+        return 3
 
     @property
     def supports_memory_programming(self) -> bool:
-        return False
+        return True
 
     @property
     def supports_lights(self) -> bool:
@@ -471,17 +474,28 @@ class OkinCstController(BedController):
         await self._send_preset(CstRemoteCommands.INCLINE)
 
     async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        if memory_num == 1:
-            await self._send_preset(CstRemoteCommands.MEMORY_1)
+        """Go to a user-programmable preset memory."""
+        commands = {
+            1: CstRemoteCommands.ZERO_G,
+            2: CstRemoteCommands.INCLINE,
+            3: CstRemoteCommands.LOUNGE,
+        }
+        if command := commands.get(memory_num):
+            await self._send_preset(command)
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1)", memory_num)
+            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
 
-    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning(
-            "CSTProtocol beds don't support programming memory presets via BLE"
-        )
+    async def program_memory(self, memory_num: int) -> None:
+        """Program the current position to a user-programmable preset memory."""
+        commands = {
+            1: CstRemoteCommands.SAVE_ZERO_G,
+            2: CstRemoteCommands.SAVE_INCLINE,
+            3: CstRemoteCommands.SAVE_LOUNGE,
+        }
+        if command := commands.get(memory_num):
+            await self._send_button_press(motor_value=command)
+        else:
+            _LOGGER.warning("Invalid memory number %d (valid: 1-3)", memory_num)
 
     # Lights
 
