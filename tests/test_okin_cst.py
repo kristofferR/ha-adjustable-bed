@@ -64,10 +64,10 @@ def mock_okin_cst_config_entry(
 async def okin_cst_controller(
     hass: HomeAssistant,
     mock_okin_cst_config_entry: MockConfigEntry,
-    mock_coordinator_connected: None,
+    request: pytest.FixtureRequest,
 ) -> OkinCstController:
     """Return a connected Okin CST controller."""
-    del mock_coordinator_connected
+    request.getfixturevalue("mock_coordinator_connected")
     coordinator = AdjustableBedCoordinator(hass, mock_okin_cst_config_entry)
     await coordinator.async_connect()
     controller = coordinator.controller
@@ -92,6 +92,11 @@ def _assert_button_press_sequence(payloads: list[bytes], command: bytes) -> None
     assert payloads == (
         [command] * _BUTTON_PRESS_REPEAT_COUNT + [build_cst_command()] * 2
     )
+
+
+def _assert_preset_sequence(payloads: list[bytes], command: bytes) -> None:
+    """Assert a long preset hold followed by the STOP sequence."""
+    assert payloads == [command] * _PRESET_REPEAT_COUNT + [build_cst_command()] * 2
 
 
 class TestOkinCstCapabilities:
@@ -134,8 +139,7 @@ class TestOkinCstCommands:
 
         expected = build_cst_command(motor_value=CstRemoteCommands.FLAT)
         payloads = _payloads(mock_bleak_client)
-        assert payloads[:_PRESET_REPEAT_COUNT] == [expected] * _PRESET_REPEAT_COUNT
-        assert payloads[_PRESET_REPEAT_COUNT:] == [build_cst_command()] * 2
+        _assert_preset_sequence(payloads, expected)
         _assert_writes_use_cst_characteristic(mock_bleak_client)
 
     @pytest.mark.parametrize(
@@ -166,8 +170,10 @@ class TestOkinCstCommands:
         await method()
 
         payloads = _payloads(mock_bleak_client)
-        assert payloads[0] == build_cst_command(motor_value=command_value)
-        assert payloads[-2:] == [build_cst_command()] * 2
+        _assert_preset_sequence(
+            payloads,
+            build_cst_command(motor_value=command_value),
+        )
 
     @pytest.mark.parametrize(
         ("memory_num", "command_value"),
@@ -195,8 +201,10 @@ class TestOkinCstCommands:
         await okin_cst_controller.preset_memory(memory_num)
 
         payloads = _payloads(mock_bleak_client)
-        assert payloads[0] == build_cst_command(motor_value=command_value)
-        assert payloads[-2:] == [build_cst_command()] * 2
+        _assert_preset_sequence(
+            payloads,
+            build_cst_command(motor_value=command_value),
+        )
 
     @pytest.mark.parametrize(
         ("memory_num", "command_value"),
@@ -246,6 +254,26 @@ class TestOkinCstCommands:
         _assert_button_press_sequence(
             _payloads(mock_bleak_client),
             build_cst_command(control_value=CstRemoteCommands.LIGHT_ON),
+        )
+
+    @patch(
+        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
+        new_callable=AsyncMock,
+    )
+    async def test_lights_off_uses_secondary_field(
+        self,
+        _mock_sleep: AsyncMock,
+        okin_cst_controller: OkinCstController,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Discrete light-off uses the secondary CST field."""
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await okin_cst_controller.lights_off()
+
+        _assert_button_press_sequence(
+            _payloads(mock_bleak_client),
+            build_cst_command(control_value=CstRemoteCommands.LIGHT_OFF),
         )
 
     @patch(
@@ -321,8 +349,10 @@ class TestOkinCstCommands:
         await okin_cst_controller.massage_mode_step()
 
         payloads = _payloads(mock_bleak_client)
-        first_press = payloads[: _BUTTON_PRESS_REPEAT_COUNT + 2]
-        second_press = payloads[_BUTTON_PRESS_REPEAT_COUNT + 2 :]
+        expected_press_length = _BUTTON_PRESS_REPEAT_COUNT + 2
+        assert len(payloads) == expected_press_length * 2
+        first_press = payloads[:expected_press_length]
+        second_press = payloads[expected_press_length:]
         _assert_button_press_sequence(
             first_press,
             build_cst_command(control_value=CstRemoteCommands.MASSAGE_WAVE_1),
