@@ -45,7 +45,10 @@ function presentSections(bed: BedEntities): Record<string, boolean> {
       bed.lights.cycle ||
       bed.lights.timer
     ),
-    massage: bed.massage.buttons.length > 0 || bed.massage.numbers.length > 0,
+    massage:
+      bed.massage.buttons.length > 0 ||
+      bed.massage.numbers.length > 0 ||
+      !!bed.massage.timer,
     climate: bed.climate.entities.length > 0 || bed.climate.selects.length > 0,
     connection: !!(bed.connect || bed.disconnect),
   };

@@ -358,7 +358,8 @@ export class AdjustableBedCard extends LitElement {
 
   private _massage(bed: BedEntities): typeof nothing | TemplateResult {
     const m = bed.massage;
-    if (m.buttons.length === 0 && m.numbers.length === 0) return nothing;
+    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.timer)
+      return nothing;
     return html`
       ${this._heading("section.massage")}
       ${

@@ -224,6 +224,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !l.timer &&
     bed.massage.buttons.length === 0 &&
     bed.massage.numbers.length === 0 &&
+    !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0
   );

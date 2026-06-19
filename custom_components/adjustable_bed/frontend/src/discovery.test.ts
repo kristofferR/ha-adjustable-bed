@@ -154,6 +154,14 @@ test("position-only motor (number, no cover) is discovered", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("timer-only massage is not empty", () => {
+  const hass = hassWith([entry("select.b_mtimer", "massage_timer")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.massage.timer).toBe("select.b_mtimer");
+  expect(bed.massage.buttons).toHaveLength(0);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("not empty when only climate select controls exist", () => {
   const hass = hassWith([entry("select.b_thermal_timer", "thermal_timer")]);
   const bed = bedEntitiesForDevice(hass, "dev1");
