@@ -22,6 +22,7 @@
 
 ## Features
 
+- **Native Dashboard Card** - Auto-loading Lovelace card that adapts to your bed ([details](#dashboard-card))
 - **Motor Control** - Raise/lower head, back, legs, and feet
 - **Direct Position Control** - Native 0-100 target controls on supported beds
 - **Memory Presets** - Jump to saved positions with one tap
@@ -157,6 +158,75 @@ To adjust settings after setup, click the **gear icon** on your device in Settin
 | Richmat Remote | Remote model code for Richmat beds |
 
 See the [Configuration Guide](docs/CONFIGURATION.md) for all options.
+
+</details>
+
+## Dashboard Card
+
+The integration ships a native Lovelace card, **Adjustable Bed Card**, that
+gives you a complete control panel for your bed — position controls, presets,
+memory, lighting, massage, climate, and connection — all in the Home Assistant
+theme. It loads automatically; there's nothing to add as a HACS/Lovelace
+resource.
+
+To add it: edit a dashboard → **Add Card** → search for **Adjustable Bed**, then
+pick your bed device. Or in YAML:
+
+```yaml
+type: custom:adjustable-bed-card
+device_id: <your bed device>
+```
+
+The card adapts to your bed — it only shows the sections your bed actually
+exposes (e.g. massage and climate appear only on beds that support them), so the
+same card works for every supported bed.
+
+### Customizing the card
+
+Everything is configurable from the card's **visual editor** (no YAML needed):
+
+- **Show/hide sections** — toggle Position, Firmness, Presets, Memory, Lighting,
+  Massage, Climate, Connection, and the bed-angle graphic on or off. Only the
+  sections your bed has are listed.
+- **Reorder sections** — use the up/down arrows next to each section to change
+  the order they appear on the card.
+- **Choose which memory positions to show** — pick exactly the memory slots you
+  use instead of showing all of them.
+
+**Recalling and saving positions.** In the Memory section, tap a position to
+move the bed to it. To store the bed's *current* position, tap **Save…** in the
+Memory header, then tap the position you want to overwrite (tap **Cancel** to
+back out). The Save button only appears for beds that support saving.
+
+**Names and icons follow your entities.** The card displays each control using
+its entity's own name and icon, so to relabel something you just rename the
+entity (Settings → Devices & Services → your bed → the entity → ⚙). For example,
+rename **Memory 1** to *"Flat"* and give it a bed icon, and the card's first
+memory tile becomes a bed icon labelled "Flat". This is purely cosmetic and
+local to you — the card finds entities by the integration's internal keys, so
+renaming or re-icon-ing never breaks it, and other users keep the tidy defaults
+(*Memory 1–6* with numbered icons).
+
+<details>
+<summary><b>YAML options</b></summary>
+
+```yaml
+type: custom:adjustable-bed-card
+device_id: <your bed device>   # the bed to control (the card prompts you to pick one if omitted)
+name: Bedroom Bed              # optional, overrides the card title
+section_order: [motors, memory, lighting]  # optional, render order (default order otherwise)
+memory_save: true              # optional, show the "Save…" button (default: true)
+memory_slots: [1, 2, 3]        # optional, which memory positions to show (default: all)
+# Each section defaults to shown; set to false to hide:
+show_graphic: true
+show_motors: true
+show_presets: true
+show_memory: true
+show_lighting: true
+show_massage: true
+show_climate: true
+show_connection: true
+```
 
 </details>
 

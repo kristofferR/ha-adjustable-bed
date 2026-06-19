@@ -190,6 +190,38 @@ When creating a release:
    - **Bug Fixes** - List of fixes with brief descriptions
    - Do NOT include an "Upgrading" section - users already know how to update
 
+## Frontend (Lovelace Card)
+
+The integration ships a native Lovelace card, `custom:adjustable-bed-card`,
+under `custom_components/adjustable_bed/frontend/`.
+
+- **Source**: `frontend/src/*.ts` (Lit + TypeScript). Key modules:
+  - `discovery.ts` — given a `device_id`, buckets the device's entities by
+    `translation_key` into UI sections. This is what makes the card generic
+    across all bed types; **when you add a new entity, give it a stable
+    `translation_key`** and, if it belongs in the card, add it to a bucket here.
+  - `adjustable-bed-card.ts` — the card element (renders only sections that have
+    entities; all colour comes from HA theme CSS variables).
+  - `editor.ts` — visual editor (`ha-form` + device picker + section toggles).
+  - `bed-graphic.ts` — theme-aware angle SVG. `localize.ts` + `translations/`
+    hold the card's own strings (section headers / editor labels) in `en`/`nb`;
+    entity names come from HA's localized `friendly_name`.
+- **Build** (requires [bun](https://bun.sh)):
+  ```bash
+  cd custom_components/adjustable_bed/frontend
+  bun install
+  bun run check   # tsgo typecheck + esbuild bundle
+  bun test        # discovery unit tests
+  ```
+  The bundle is written to `frontend/dist/adjustable-bed-card.js` and is
+  **committed** (it ships with the integration). Rebuild and commit it whenever
+  you change `frontend/src`.
+- **Registration**: `frontend.py` serves `frontend/dist` as a static path and
+  calls `add_extra_js_url`, so the card auto-loads with no manual Lovelace
+  resource. `frontend` is listed in `manifest.json` `after_dependencies` for
+  setup ordering; registration is best-effort and never blocks integration
+  setup.
+
 ## Development
 
 ### Testing in Home Assistant

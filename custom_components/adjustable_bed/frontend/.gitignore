@@ -1,0 +1,6 @@
+node_modules/
+*.tsbuildinfo
+.DS_Store
+
+# dist/ is intentionally committed — it ships with the integration.
+!dist/

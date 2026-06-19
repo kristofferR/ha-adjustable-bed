@@ -1,6 +1,7 @@
 {
   "domain": "adjustable_bed",
   "name": "Adjustable Bed",
+  "after_dependencies": ["frontend"],
   "bluetooth": [
     {
       "service_uuid": "99fa0001-338a-1024-8a49-009c0215f78a"
