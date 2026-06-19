@@ -129,6 +129,45 @@ test("filters out other devices and platforms", () => {
   expect(bed.motors[0].cover).toBe("cover.mine_back");
 });
 
+test("buckets light level, light timer, and firmness numbers", () => {
+  const hass = hassWith([
+    entry("number.b_light", "light_level"),
+    entry("select.b_ltimer", "light_timer"),
+    entry("number.b_firm", "sleep_number_setting"),
+    entry("number.b_firm_l", "sleep_number_setting_left"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.lights.level).toBe("number.b_light");
+  expect(bed.lights.timer).toBe("select.b_ltimer");
+  expect(bed.firmness).toEqual(["number.b_firm", "number.b_firm_l"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("position-only motor (number, no cover) is discovered", () => {
+  const hass = hassWith([entry("number.b_back_pos", "back_position")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors).toHaveLength(1);
+  expect(bed.motors[0]).toMatchObject({
+    key: "back",
+    position: "number.b_back_pos",
+  });
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("not empty when only climate select controls exist", () => {
+  const hass = hassWith([entry("select.b_thermal_timer", "thermal_timer")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.climate.selects).toEqual(["select.b_thermal_timer"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("presence-only device is treated as empty (no presence section)", () => {
+  const hass = hassWith([entry("binary_sensor.b_pres", "bed_presence")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.presence).toEqual(["binary_sensor.b_pres"]);
+  expect(bedIsEmpty(bed)).toBe(true);
+});
+
 test("empty for unknown device", () => {
   const hass = hassWith([entry("cover.b_back", "back", "dev1")]);
   expect(bedIsEmpty(bedEntitiesForDevice(hass, "nope"))).toBe(true);

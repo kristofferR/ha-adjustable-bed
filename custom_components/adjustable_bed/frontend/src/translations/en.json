@@ -1,5 +1,6 @@
 {
   "section.position": "Position",
+  "section.firmness": "Firmness",
   "section.presets": "Presets",
   "section.memory": "Memory",
   "section.lighting": "Lighting",
@@ -25,7 +26,10 @@
   "editor.memory_group": "Memory options",
   "editor.show_graphic": "Bed angle graphic",
   "editor.show_motors": "Position controls",
+  "editor.show_firmness": "Firmness",
   "editor.show_presets": "Presets",
+  "editor.move_up": "Move up",
+  "editor.move_down": "Move down",
   "editor.show_memory": "Memory",
   "editor.memory_save": "Allow saving positions",
   "editor.memory_slots": "Memory positions shown",

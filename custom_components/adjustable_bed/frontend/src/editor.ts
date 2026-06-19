@@ -34,13 +34,16 @@ function presentSections(bed: BedEntities): Record<string, boolean> {
   return {
     graphic: bed.motors.some((m) => m.angle),
     motors: bed.motors.some((m) => m.cover || m.up || m.down) || !!bed.stop,
+    firmness: bed.firmness.length > 0,
     presets: bed.presets.length > 0,
     memory: bed.memory.length > 0,
     lighting: !!(
       bed.lights.light ||
       bed.lights.switch ||
+      bed.lights.level ||
       bed.lights.toggle ||
-      bed.lights.cycle
+      bed.lights.cycle ||
+      bed.lights.timer
     ),
     massage: bed.massage.buttons.length > 0 || bed.massage.numbers.length > 0,
     climate: bed.climate.entities.length > 0 || bed.climate.selects.length > 0,
@@ -219,7 +222,8 @@ export class AdjustableBedCardEditor
                   class="icon-btn"
                   ?disabled=${i === 0}
                   @click=${() => this._moveSection(bed, key, -1)}
-                  title="Move up"
+                  title=${localize(this.hass, "editor.move_up")}
+                  aria-label=${localize(this.hass, "editor.move_up")}
                 >
                   <svg viewBox="0 0 24 24"><path d=${CHEVRON_UP}></path></svg>
                 </button>
@@ -227,7 +231,8 @@ export class AdjustableBedCardEditor
                   class="icon-btn"
                   ?disabled=${i === keys.length - 1}
                   @click=${() => this._moveSection(bed, key, 1)}
-                  title="Move down"
+                  title=${localize(this.hass, "editor.move_down")}
+                  aria-label=${localize(this.hass, "editor.move_down")}
                 >
                   <svg viewBox="0 0 24 24"><path d=${CHEVRON_DOWN}></path></svg>
                 </button>

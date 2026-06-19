@@ -88,6 +88,7 @@ export class AdjustableBedCard extends LitElement {
     const render: Record<string, () => typeof nothing | TemplateResult> = {
       graphic: () => (c.show_graphic !== false ? this._graphic(bed) : nothing),
       motors: () => (c.show_motors !== false ? this._motors(bed) : nothing),
+      firmness: () => (c.show_firmness !== false ? this._firmness(bed) : nothing),
       presets: () => (c.show_presets !== false ? this._presets(bed) : nothing),
       memory: () => (c.show_memory !== false ? this._memory(bed) : nothing),
       lighting: () => (c.show_lighting !== false ? this._lighting(bed) : nothing),
@@ -178,12 +179,25 @@ export class AdjustableBedCard extends LitElement {
 
   private _motors(bed: BedEntities): typeof nothing | TemplateResult {
     const motors = bed.motors.filter((m) => m.cover || m.up || m.down);
-    if (motors.length === 0 && !bed.stop) return nothing;
+    // Beds with direct target numbers (and no cover) get a settable row instead.
+    const positionRows = bed.motors.filter(
+      (m) => !m.cover && !m.up && !m.down && m.position,
+    );
+    if (motors.length === 0 && positionRows.length === 0 && !bed.stop)
+      return nothing;
+    const hasRows = motors.length > 0 || positionRows.length > 0;
     return html`
-      ${motors.length ? this._heading("section.position") : nothing}
+      ${hasRows ? this._heading("section.position") : nothing}
       ${
         motors.length
           ? html`<div class="rows">${motors.map((m) => this._motorRow(m))}</div>`
+          : nothing
+      }
+      ${
+        positionRows.length
+          ? html`<div class="rows">
+              ${positionRows.map((m) => this._moreInfoRow(m.position!))}
+            </div>`
           : nothing
       }
       ${
@@ -197,10 +211,19 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
+  private _firmness(bed: BedEntities): typeof nothing | TemplateResult {
+    if (bed.firmness.length === 0) return nothing;
+    return html`
+      ${this._heading("section.firmness")}
+      <div class="rows">${bed.firmness.map((id) => this._moreInfoRow(id))}</div>
+    `;
+  }
+
   private _motorRow(m: MotorEntity): TemplateResult {
     const readout = this._readout(m);
     const upId = m.cover ?? m.up;
     const downId = m.cover ?? m.down;
+    const canStop = !!m.cover || !!this._bed?.stop;
     return html`
       <div class="row">
         <div class="row-label">
@@ -220,6 +243,7 @@ export class AdjustableBedCard extends LitElement {
             class="cg-btn"
             aria-label=${localize(this.hass, "action.stop")}
             @click=${() => this._motorStop(m)}
+            ?disabled=${!canStop}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
           </button>
@@ -283,7 +307,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _memoryTile(slot: MemorySlot): TemplateResult {
-    const recallId = slot.goto ?? slot.save!;
+    const labelId = slot.goto ?? slot.save!;
     if (this._saveMode) {
       const savable = !!slot.save;
       return html`
@@ -293,14 +317,21 @@ export class AdjustableBedCard extends LitElement {
           @click=${() => savable && this._saveMemory(slot)}
         >
           <ha-icon class="icon" icon="mdi:content-save"></ha-icon>
-          <span class="tile-label">${this._name(recallId)}</span>
+          <span class="tile-label">${this._name(labelId)}</span>
         </button>
       `;
     }
+    // Only a real goto recalls; a save-only slot must not be saved by a plain
+    // tap (that requires Save mode), so its tile is disabled here.
+    const canRecall = !!slot.goto;
     return html`
-      <button class="tile" @click=${() => this._press(recallId)}>
-        ${this._icon(recallId)}
-        <span class="tile-label">${this._name(recallId)}</span>
+      <button
+        class="tile ${canRecall ? "" : "is-disabled"}"
+        ?disabled=${!canRecall}
+        @click=${() => slot.goto && this._press(slot.goto)}
+      >
+        ${this._icon(labelId)}
+        <span class="tile-label">${this._name(labelId)}</span>
       </button>
     `;
   }
@@ -308,10 +339,12 @@ export class AdjustableBedCard extends LitElement {
   private _lighting(bed: BedEntities): typeof nothing | TemplateResult {
     const l = bed.lights;
     const main = l.light ?? l.switch;
-    if (!main && !l.toggle && !l.cycle) return nothing;
+    if (!main && !l.level && !l.timer && !l.toggle && !l.cycle) return nothing;
     return html`
       ${this._heading("section.lighting")}
       ${main ? this._toggleRow(main) : nothing}
+      ${l.level ? this._moreInfoRow(l.level) : nothing}
+      ${l.timer ? this._moreInfoRow(l.timer) : nothing}
       ${
         l.toggle || l.cycle
           ? html`<div class="tiles">
@@ -379,19 +412,37 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
+  // Activate a row from the keyboard (Enter/Space) for non-pointer users.
+  private _onRowKey(e: KeyboardEvent, action: () => void): void {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      action();
+    }
+  }
+
   private _toggleRow(entityId: string): TemplateResult {
     const st = this._state(entityId);
     const on = st?.state === "on";
+    const name = this._name(entityId);
     return html`
-      <div class="entity-row" @click=${() => this._moreInfo(entityId)}>
+      <div
+        class="entity-row"
+        role="button"
+        tabindex="0"
+        aria-label=${name}
+        @click=${() => this._moreInfo(entityId)}
+        @keydown=${(e: KeyboardEvent) =>
+          this._onRowKey(e, () => this._moreInfo(entityId))}
+      >
         ${this._icon(entityId)}
         <div class="entity-row-text">
-          <span>${this._name(entityId)}</span>
+          <span>${name}</span>
           <span class="secondary">${this._stateText(entityId)}</span>
         </div>
         <button
           class="toggle ${on ? "on" : ""}"
           role="switch"
+          aria-label=${name}
           aria-checked=${on ? "true" : "false"}
           @click=${(e: Event) => {
             e.stopPropagation();
@@ -405,11 +456,20 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _moreInfoRow(entityId: string): TemplateResult {
+    const name = this._name(entityId);
     return html`
-      <div class="entity-row" @click=${() => this._moreInfo(entityId)}>
+      <div
+        class="entity-row"
+        role="button"
+        tabindex="0"
+        aria-label=${name}
+        @click=${() => this._moreInfo(entityId)}
+        @keydown=${(e: KeyboardEvent) =>
+          this._onRowKey(e, () => this._moreInfo(entityId))}
+      >
         ${this._icon(entityId)}
         <div class="entity-row-text">
-          <span>${this._name(entityId)}</span>
+          <span>${name}</span>
         </div>
         <span class="secondary value">${this._stateText(entityId)}</span>
       </div>
@@ -516,12 +576,13 @@ export class AdjustableBedCard extends LitElement {
       bed.connectivity,
       bed.lights.light,
       bed.lights.switch,
+      bed.lights.level,
       bed.lights.toggle,
       bed.lights.cycle,
       bed.lights.timer,
       bed.massage.timer,
     ].forEach((x) => x && ids.add(x));
-    bed.presence.forEach((x) => ids.add(x));
+    bed.firmness.forEach((x) => ids.add(x));
     bed.massage.buttons.forEach((x) => ids.add(x));
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));

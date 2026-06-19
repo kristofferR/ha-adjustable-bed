@@ -1,5 +1,6 @@
 {
   "section.position": "Posisjon",
+  "section.firmness": "Fasthet",
   "section.presets": "Forhåndsvalg",
   "section.memory": "Minne",
   "section.lighting": "Belysning",
@@ -25,7 +26,10 @@
   "editor.memory_group": "Minnevalg",
   "editor.show_graphic": "Vinkelgrafikk",
   "editor.show_motors": "Posisjonskontroller",
+  "editor.show_firmness": "Fasthet",
   "editor.show_presets": "Forhåndsvalg",
+  "editor.move_up": "Flytt opp",
+  "editor.move_down": "Flytt ned",
   "editor.show_memory": "Minne",
   "editor.memory_save": "Tillat lagring av posisjoner",
   "editor.memory_slots": "Minneposisjoner som vises",

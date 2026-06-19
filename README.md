@@ -184,9 +184,9 @@ same card works for every supported bed.
 
 Everything is configurable from the card's **visual editor** (no YAML needed):
 
-- **Show/hide sections** — toggle Position, Presets, Memory, Lighting, Massage,
-  Climate, Connection, and the bed-angle graphic on or off. Only the sections
-  your bed has are listed.
+- **Show/hide sections** — toggle Position, Firmness, Presets, Memory, Lighting,
+  Massage, Climate, Connection, and the bed-angle graphic on or off. Only the
+  sections your bed has are listed.
 - **Reorder sections** — use the up/down arrows next to each section to change
   the order they appear on the card.
 - **Choose which memory positions to show** — pick exactly the memory slots you

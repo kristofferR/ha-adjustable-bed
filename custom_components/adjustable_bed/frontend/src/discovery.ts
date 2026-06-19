@@ -17,6 +17,7 @@ export const PLATFORM = "adjustable_bed";
 export const SECTION_ORDER = [
   "graphic",
   "motors",
+  "firmness",
   "presets",
   "memory",
   "lighting",
@@ -62,6 +63,7 @@ const keyOf = (entry: EntityRegistryDisplayEntry): string =>
 function emptyBed(): BedEntities {
   return {
     motors: [],
+    firmness: [],
     presets: [],
     memory: [],
     presence: [],
@@ -121,6 +123,8 @@ export function bedEntitiesForDevice(
         if (key.endsWith("_position")) motor(key.slice(0, -9)).position = id;
         else if (key.startsWith("massage_") && key.endsWith("_intensity"))
           bed.massage.numbers.push(id);
+        else if (key === "light_level") bed.lights.level = id;
+        else if (key.startsWith("sleep_number_setting")) bed.firmness.push(id);
         break;
 
       case "button":
@@ -198,23 +202,29 @@ export function bedEntitiesForDevice(
   return bed;
 }
 
-// True when the bed exposes nothing controllable for the given device.
+// True when the bed exposes nothing the card renders. Presence sensors are not
+// counted because the card has no presence section (it would otherwise produce a
+// header-only card with no controls).
 export function bedIsEmpty(bed: BedEntities): boolean {
+  const l = bed.lights;
   return (
     bed.motors.length === 0 &&
+    bed.firmness.length === 0 &&
     bed.presets.length === 0 &&
     bed.memory.length === 0 &&
     !bed.stop &&
     !bed.connect &&
     !bed.disconnect &&
     !bed.connectivity &&
-    bed.presence.length === 0 &&
-    !bed.lights.light &&
-    !bed.lights.switch &&
-    !bed.lights.toggle &&
-    !bed.lights.cycle &&
+    !l.light &&
+    !l.switch &&
+    !l.level &&
+    !l.toggle &&
+    !l.cycle &&
+    !l.timer &&
     bed.massage.buttons.length === 0 &&
     bed.massage.numbers.length === 0 &&
-    bed.climate.entities.length === 0
+    bed.climate.entities.length === 0 &&
+    bed.climate.selects.length === 0
   );
 }

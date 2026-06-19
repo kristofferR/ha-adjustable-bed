@@ -55,8 +55,9 @@ export interface AdjustableBedCardConfig {
   device_id?: string;
   name?: string;
   show_graphic?: boolean;
-  show_presets?: boolean;
   show_motors?: boolean;
+  show_firmness?: boolean;
+  show_presets?: boolean;
   show_memory?: boolean;
   show_lighting?: boolean;
   show_massage?: boolean;
@@ -102,6 +103,7 @@ export interface MemorySlot {
 export interface LightEntities {
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
+  level?: string; // number.* light_level (brightness)
   toggle?: string; // button.* toggle_light
   cycle?: string; // button.* light_cycle
   timer?: string; // select.* light_timer
@@ -109,6 +111,7 @@ export interface LightEntities {
 
 export interface BedEntities {
   motors: MotorEntity[];
+  firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order
   stop?: string; // button.* stop
   memory: MemorySlot[];

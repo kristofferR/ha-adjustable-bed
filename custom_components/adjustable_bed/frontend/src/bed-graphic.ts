@@ -26,8 +26,10 @@ export function renderBedGraphic(opts: BedGraphicOptions): TemplateResult {
   const upperT = `rotate(${upper} 150 70)`;
   const lowerT = `rotate(${-lower} 150 70)`;
 
-  const fmt = (p: BedGraphicPanel): string =>
-    p.angle === undefined ? "" : `${p.label ? p.label + " " : ""}${Math.round(p.angle)}°`;
+  const fmt = (p: BedGraphicPanel): string => {
+    if (p.angle === undefined) return "";
+    return `${p.label ? `${p.label} ` : ""}${Math.round(clamp(p.angle))}°`;
+  };
 
   return svg`
     <svg
