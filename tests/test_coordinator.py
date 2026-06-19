@@ -1539,6 +1539,47 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         assert coordinator.client is None
         assert coordinator.controller is None
 
+    async def test_disconnect_after_command_skips_auto_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """disconnect_after_command beds must not schedule timer-based auto-reconnect.
+
+        Regression test for #369: a Keeson BT40SA with disconnect_after_command +
+        disable_angle_sensing drops the link on idle; auto-reconnecting on that
+        expected disconnect causes a reconnect storm that pushes the receiver into a
+        protection mode. The next user command should reconnect on demand instead.
+        """
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Keeson BT40SA Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:69",
+                CONF_NAME: "Keeson BT40SA Bed",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:69",
+            entry_id="keeson_disconnect_after_command_reconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        assert coordinator._auto_reconnect_enabled() is False
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = False
+
+        coordinator._on_disconnect(mock_bleak_client)
+
+        assert coordinator._reconnect_timer is None
+
     async def test_sleep_number_mcr_keeps_connecting_guard_through_startup_disconnect(
         self,
         hass: HomeAssistant,
