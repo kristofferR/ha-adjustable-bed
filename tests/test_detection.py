@@ -642,6 +642,20 @@ class TestDetectBedTypeByManufacturerData:
         assert result.confidence == 0.7  # Lower confidence as fallback
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
 
+    def test_bare_manufacturer_id_89_without_okin_name_is_not_a_bed(self):
+        """Manufacturer ID 89 alone (no OKIN/SmartBed name) must not match CB24.
+
+        Regression test for #366: the "ABXM2" device advertises only manufacturer
+        ID 89 (Nordic Semiconductor's generic company ID 0x0059) with no service
+        UUIDs and a non-OKIN name, and was wrongly auto-detected as okin_cb24.
+        """
+        service_info = _make_service_info(
+            name="ABXM2",
+            manufacturer_data={MANUFACTURER_ID_OKIN: bytes.fromhex("0800864100650400000270f90300")},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+
     def test_detect_okin_cb24_nordic_uart_plus_manufacturer_id(self):
         """Test CB24 detection when device has both Nordic UART UUID and OKIN mfr ID.
 

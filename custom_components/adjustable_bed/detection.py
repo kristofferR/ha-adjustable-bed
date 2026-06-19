@@ -186,6 +186,12 @@ OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
 
 NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 
+# Manufacturer ID 89 is Nordic Semiconductor's company ID (0x0059), shared by many
+# non-bed devices. The bare-manufacturer-data CB24 fallback only applies when the
+# device also advertises a recognizable OKIN/SmartBed name, so a random Nordic
+# gadget (e.g. "ABXM2", #366) is not misidentified as a bed.
+OKIN_CB24_MANUFACTURER_NAME_HINTS: frozenset[str] = frozenset({"okin", "smartbed"})
+
 
 def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
     """Extract Richmat remote code from device name.
@@ -1731,10 +1737,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             requires_characteristic_check=True,
         )
 
-    # Fallback: Check for OKIN Automotive manufacturer ID 89 (CB24 protocol)
-    # This catches SmartBed devices that advertise only manufacturer data.
-    # Devices with both Nordic UART + mfr ID 89 are handled above.
-    if service_info.manufacturer_data and MANUFACTURER_ID_OKIN in service_info.manufacturer_data:
+    # Fallback: Check for manufacturer ID 89 (CB24 protocol)
+    # This catches OKIN SmartBed devices that advertise only manufacturer data
+    # (no service UUIDs); devices with Nordic UART + mfr ID 89 are handled above.
+    #
+    # Manufacturer ID 89 is Nordic Semiconductor's Bluetooth SIG company ID
+    # (0x0059), used by countless unrelated devices built on Nordic SoCs, so it is
+    # far too weak on its own to claim a CB24 bed. Require the device to also
+    # advertise an OKIN/SmartBed name; otherwise a bare mfr-89 advertisement from a
+    # random Nordic gadget gets misidentified as a bed (e.g. "ABXM2" in #366).
+    if (
+        service_info.manufacturer_data
+        and MANUFACTURER_ID_OKIN in service_info.manufacturer_data
+        and any(hint in device_name for hint in OKIN_CB24_MANUFACTURER_NAME_HINTS)
+    ):
         signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
         _LOGGER.info(
             "Detected Okin CB24 bed at %s (name: %s) by manufacturer ID %s (fallback)",
