@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
@@ -47,6 +48,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    OKIN_CST_POSITION_AXES,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     requires_pairing,
@@ -726,6 +728,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Define motor configurations.
             # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
             # For BOX25: only head and feet are valid, using direct percentage positions.
+            # For CST: only back and legs publish position feedback.
             # For Kaidi: direct position writes expose back/legs percentage targets.
             # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
             uses_percentage_positions = bed_type in (
@@ -787,6 +790,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
                         "max_value": 100.0,
+                    },
+                }
+            elif bed_type == BED_TYPE_OKIN_CST:
+                valid_motors = set(OKIN_CST_POSITION_AXES)
+                motor_configs = {
+                    "back": {
+                        "position_key": "back",
+                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                        "max_value": coordinator.get_max_angle("back"),  # Degrees
+                    },
+                    "legs": {
+                        "position_key": "legs",
+                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
                     },
                 }
             else:

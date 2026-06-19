@@ -109,6 +109,8 @@ BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 
+OKIN_CST_POSITION_AXES: Final = frozenset({"back", "legs"})
+
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
@@ -1648,6 +1650,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
@@ -1662,6 +1665,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,

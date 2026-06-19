@@ -8,6 +8,8 @@
 - Mattress Firm 900-O / MFirm 900-O
 - Rize MF900
 - Nectar Motion / some `OKIN-*` Nectar bases
+- Leggett & Platt Prodigy Comfort Elite / `LP BED CONTROL` when diagnostics
+  show the CST connected GATT signature
 
 ## Detection
 

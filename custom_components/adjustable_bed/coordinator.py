@@ -66,6 +66,7 @@ from .const import (
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_CB35,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -79,6 +80,8 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
+    BEDS_WITH_ANGLE_SENSING,
+    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -116,6 +119,9 @@ from .const import (
     DEVICE_INFO_CHARS,
     DOMAIN,
     OKIMAT_SERVICE_UUID,
+    OKIN_CST_POSITION_AXES,
+    OKIN_FOOT_MAX_ANGLE,
+    OKIN_HEAD_MAX_ANGLE,
     POSITION_CHECK_INTERVAL,
     POSITION_MODE_ACCURACY,
     POSITION_OVERSHOOT_TOLERANCE,
@@ -132,7 +138,12 @@ from .const import (
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
-from .detection import detect_richmat_remote_from_name, refine_malouf_protocol_from_gatt
+from .detection import (
+    detect_richmat_remote_from_name,
+    refine_malouf_protocol_from_gatt,
+    refine_nordic_uart_protocol_from_device_info,
+    refine_okin_shared_uuid_protocol_from_gatt,
+)
 from .diagnostic_payloads import new_connection_attempt_details
 from .unsupported import (
     create_pairing_required_issue,
@@ -144,6 +155,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
+_CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS = (ConnectionError, RuntimeError)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
 _READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 _READABLE_LIGHT_STATE_MAX_RETRIES = 3
@@ -292,9 +304,7 @@ class AdjustableBedCoordinator:
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
-        self._ble_bond_established: bool = bool(
-            entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
-        )
+        self._ble_bond_established: bool = bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
         # Transient (in-memory only) flag: a pairing attempt just failed, so the
         # single next connection attempt should skip pair=True (some stacks fail
         # to re-pair on top of an existing bond). Unlike the persisted bond
@@ -337,18 +347,18 @@ class AdjustableBedCoordinator:
             self._connection_profile,
         )
 
-    def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> None:
+    def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
         previous_bed_type = self._bed_type
-        if corrected_bed_type == previous_bed_type:
-            return
 
-        _LOGGER.warning(
-            "Correcting bed protocol for %s from %s to %s based on connected GATT services",
-            self._address,
-            previous_bed_type,
-            corrected_bed_type,
-        )
+        bed_type_changed = corrected_bed_type != previous_bed_type
+        if bed_type_changed:
+            _LOGGER.warning(
+                "Correcting bed protocol for %s from %s to %s based on connected GATT services",
+                self._address,
+                previous_bed_type,
+                corrected_bed_type,
+            )
         previous_defaults = BED_MOTOR_PULSE_DEFAULTS.get(previous_bed_type)
         corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(corrected_bed_type)
         # Only swap in the corrected protocol's defaults if the user never set
@@ -364,6 +374,7 @@ class AdjustableBedCoordinator:
         if (
             previous_defaults is not None
             and corrected_defaults is not None
+            and bed_type_changed
             and not has_custom_pulse_override
             and (self._motor_pulse_count, self._motor_pulse_delay_ms) == previous_defaults
         ):
@@ -376,6 +387,51 @@ class AdjustableBedCoordinator:
             )
 
         self._bed_type = corrected_bed_type
+
+        entry_data = dict(self.entry.data)
+        entry_data[CONF_BED_TYPE] = corrected_bed_type
+        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
+            self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
+            and (
+                previous_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+                or previous_bed_type == BED_TYPE_OKIN_CST
+            )
+        )
+        if (
+            corrected_bed_type in BEDS_WITH_ANGLE_SENSING
+            and angle_sensing_defaulted
+            and self._disable_angle_sensing
+        ):
+            self._disable_angle_sensing = False
+            entry_data[CONF_DISABLE_ANGLE_SENSING] = False
+            _LOGGER.info(
+                "Enabled angle sensing for corrected %s protocol on %s: "
+                "the previous entry used the legacy default",
+                corrected_bed_type,
+                self._address,
+            )
+        elif (
+            bed_type_changed
+            and corrected_bed_type not in BEDS_WITH_ANGLE_SENSING
+            and not self._disable_angle_sensing
+        ):
+            self._disable_angle_sensing = True
+            entry_data[CONF_DISABLE_ANGLE_SENSING] = True
+            _LOGGER.info(
+                "Disabled angle sensing for corrected %s protocol on %s: "
+                "the corrected profile does not support position feedback",
+                corrected_bed_type,
+                self._address,
+            )
+
+        entry_data_changed = entry_data != self.entry.data
+        if entry_data_changed:
+            self.hass.config_entries.async_update_entry(
+                self.entry,
+                data=entry_data,
+            )
+
+        return bed_type_changed or entry_data_changed
 
     @property
     def address(self) -> str:
@@ -447,10 +503,14 @@ class AdjustableBedCoordinator:
             Maximum angle in degrees for the specified motor.
         """
         if position_key in ("back", "head"):
+            if self._bed_type == BED_TYPE_OKIN_CST:
+                return OKIN_HEAD_MAX_ANGLE
             if self._bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
                 return REVERIE_BACK_MAX_ANGLE
             return self.back_max_angle
         if position_key in ("legs", "feet"):
+            if self._bed_type == BED_TYPE_OKIN_CST:
+                return OKIN_FOOT_MAX_ANGLE
             return self.legs_max_angle
         # Unknown motor, return back max as default
         return self.back_max_angle
@@ -580,9 +640,7 @@ class AdjustableBedCoordinator:
 
     def _clear_ble_bond_established(self) -> None:
         """Clear the persisted bond marker after an authentication failure."""
-        if not self._ble_bond_established and not self.entry.data.get(
-            CONF_BLE_BOND_ESTABLISHED
-        ):
+        if not self._ble_bond_established and not self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
             return
 
         self._ble_bond_established = False
@@ -914,23 +972,31 @@ class AdjustableBedCoordinator:
         exhausted_adapters: set[str] = set()
         adapter_result: AdapterSelectionResult | None = None
 
-        for attempt in range(self._max_retries):
+        attempt = 0
+        attempt_limit = self._max_retries
+        protocol_correction_pairing_retry_reserved = False
+        while attempt < attempt_limit:
+            attempt_index = attempt
+            attempt += 1
+            attempt_number = attempt_index + 1
             attempt_start = time.monotonic()
-            attempt_details = new_connection_attempt_details(attempt + 1, self._preferred_adapter)
+            attempt_details = new_connection_attempt_details(
+                attempt_number, self._preferred_adapter
+            )
             # Track connection attempt for diagnostics (issue #168)
             self._connection_attempt_count += 1
             self._last_connection_attempt = datetime.now(UTC)
 
             # On retries, add a delay before attempting to give the Bluetooth stack time to reset
-            if attempt > 0:
-                base_delay = self._retry_base_delay * (2 ** (attempt - 1))
+            if attempt_index > 0:
+                base_delay = self._retry_base_delay * (2 ** (attempt_index - 1))
                 jitter = random.uniform(1 - self._retry_jitter, 1 + self._retry_jitter)
                 pre_retry_delay = base_delay * jitter
                 _LOGGER.info(
                     "Waiting %.1fs before connection retry %d/%d to %s...",
                     pre_retry_delay,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     self._address,
                 )
                 await asyncio.sleep(pre_retry_delay)
@@ -938,8 +1004,8 @@ class AdjustableBedCoordinator:
             try:
                 _LOGGER.debug(
                     "Connection attempt %d/%d: Looking up device %s via HA Bluetooth (preferred adapter: %s)",
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     self._address,
                     self._preferred_adapter,
                 )
@@ -992,8 +1058,8 @@ class AdjustableBedCoordinator:
                         "Bed may be powered off, out of range, or connected to another device.",
                         self._address,
                         lookup_elapsed,
-                        attempt + 1,
-                        self._max_retries,
+                        attempt_number,
+                        attempt_limit,
                     )
                     # Log what devices ARE visible
                     try:
@@ -1212,9 +1278,7 @@ class AdjustableBedCoordinator:
                     # but the SleepIQ app refreshes the GATT cache on every connect, so
                     # force fresh discovery to keep parity and ensure the app-layer
                     # priming reads always see the live characteristic handles.
-                    disable_cache = (
-                        bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
-                    )
+                    disable_cache = bed_requires_pairing or self._bed_type == BED_TYPE_SLEEP_NUMBER
                     try:
                         self._client = await establish_connection(
                             BleakClient,
@@ -1418,8 +1482,7 @@ class AdjustableBedCoordinator:
                     # repair issue, and disconnected. Retry — the next attempt
                     # requests pair=True again (the skip flag was consumed).
                     _LOGGER.warning(
-                        "Bed %s connected but the BLE link is not bonded; "
-                        "retrying with pairing.",
+                        "Bed %s connected but the BLE link is not bonded; retrying with pairing.",
                         self._address,
                     )
                     self._connecting = False
@@ -1447,11 +1510,48 @@ class AdjustableBedCoordinator:
                     self._ble_manufacturer = ble_manufacturer
                     self._ble_model = ble_model
 
+                previous_bed_type = self._bed_type
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
                     self._bed_type,
                     self._client.services,
                 )
-                self._apply_runtime_bed_type_correction(corrected_bed_type)
+                corrected_bed_type = refine_okin_shared_uuid_protocol_from_gatt(
+                    corrected_bed_type,
+                    self._client.services,
+                    self._protocol_variant,
+                )
+                corrected_bed_type = refine_nordic_uart_protocol_from_device_info(
+                    corrected_bed_type,
+                    device.name,
+                    ble_manufacturer,
+                    ble_model,
+                )
+                bed_type_corrected = self._apply_runtime_bed_type_correction(corrected_bed_type)
+                if (
+                    bed_type_corrected
+                    and not bed_requires_pairing
+                    and requires_pairing(self._bed_type, self._protocol_variant)
+                ):
+                    _LOGGER.info(
+                        "Runtime protocol correction for %s changed %s to pairing-required "
+                        "%s; reconnecting so BLE pairing and bond verification run before "
+                        "controller startup",
+                        self._address,
+                        previous_bed_type,
+                        self._bed_type,
+                    )
+                    attempt_details["total_elapsed_seconds"] = round(
+                        time.monotonic() - attempt_start, 3
+                    )
+                    attempt_details["result"] = "retry_with_pairing_after_protocol_correction"
+                    self._connection_attempt_details.append(attempt_details)
+                    await self._async_disconnect_locked(
+                        reason="protocol_correction_requires_pairing"
+                    )
+                    if not protocol_correction_pairing_retry_reserved:
+                        protocol_correction_pairing_retry_reserved = True
+                        attempt_limit += 1
+                    continue
 
                 # Post-connection protocol verification for DewertOkin Star devices.
                 # The adjustbed app (com.okin.bedding.adjustbed) reads BLE characteristic
@@ -1670,8 +1770,8 @@ class AdjustableBedCoordinator:
                     error_category,
                     self._address,
                     attempt_elapsed,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     err,
                 )
                 _LOGGER.debug(
@@ -1710,8 +1810,8 @@ class AdjustableBedCoordinator:
                 _LOGGER.warning(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
-                    attempt + 1,
-                    self._max_retries,
+                    attempt_number,
+                    attempt_limit,
                     err,
                 )
                 _LOGGER.debug(
@@ -1904,7 +2004,11 @@ class AdjustableBedCoordinator:
                     # Use command lock to prevent concurrent GATT operations
                     async with self._command_lock:
                         controller = self._controller
-                        if controller is None or self._client is None or not self._client.is_connected:
+                        if (
+                            controller is None
+                            or self._client is None
+                            or not self._client.is_connected
+                        ):
                             return
                         await controller.prepare_for_position_read()
                         await self._async_read_positions()
@@ -1950,6 +2054,8 @@ class AdjustableBedCoordinator:
         """Return the logical position axes that startup hydration should populate."""
         if self._motor_count <= 0:
             return set()
+        if self._bed_type == BED_TYPE_OKIN_CST:
+            return set(OKIN_CST_POSITION_AXES)
 
         expected_axes = {"back", "legs"}
         if self._motor_count > 2:
@@ -2052,9 +2158,7 @@ class AdjustableBedCoordinator:
                 err,
             )
 
-    async def _async_execute_position_reconciliation_query(
-        self, controller: BedController
-    ) -> None:
+    async def _async_execute_position_reconciliation_query(self, controller: BedController) -> None:
         """Run a serialized passive position reconciliation read."""
         await controller.prepare_for_position_read()
         await controller.read_positions(self._motor_count)
@@ -2534,7 +2638,7 @@ class AdjustableBedCoordinator:
                 if _is_ble_authentication_error(err):
                     await self._async_handle_ble_authentication_error(err)
                 raise
-            except (ConnectionError, RuntimeError):
+            except _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS:
                 if (
                     self._client is not None
                     and self._client.is_connected
@@ -3354,8 +3458,7 @@ class AdjustableBedCoordinator:
                         if (
                             chain_seek_steps
                             and movement >= position_stall_threshold
-                            and remaining_distance
-                            >= position_seek_chain_min_remaining_distance
+                            and remaining_distance >= position_seek_chain_min_remaining_distance
                         ):
                             _LOGGER.debug(
                                 "Position %s still moving at %.1f with %.1f remaining, chaining seek step",

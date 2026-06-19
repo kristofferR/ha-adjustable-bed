@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LIMOSS,
     BED_TYPE_LINAK,
@@ -28,10 +29,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
@@ -59,6 +63,8 @@ from custom_components.adjustable_bed.const import (
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
+    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_OKIN,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
@@ -95,6 +101,8 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_from_gatt_services,
     detect_richmat_remote_from_name,
     refine_malouf_protocol_from_gatt,
+    refine_nordic_uart_protocol_from_device_info,
+    refine_okin_shared_uuid_protocol_from_gatt,
 )
 
 
@@ -386,6 +394,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.bed_type == BED_TYPE_LIMOSS
         assert result.confidence == 0.9
 
+
 class TestDetectBedTypeByNamePattern:
     """Test detection by device name patterns."""
 
@@ -432,9 +441,7 @@ class TestDetectBedTypeByNamePattern:
             ("OKIN - Receiver", [DEVICE_INFO_SERVICE_UUID]),
         ],
     )
-    def test_detect_okin_receiver_before_pairing(
-        self, name: str, service_uuids: list[str]
-    ):
+    def test_detect_okin_receiver_before_pairing(self, name: str, service_uuids: list[str]):
         """OKIN receiver modules can require pairing before bed service UUIDs are visible."""
         service_info = _make_service_info(name=name, service_uuids=service_uuids)
         result = detect_bed_type_detailed(service_info)
@@ -663,6 +670,19 @@ class TestDetectBedTypeByManufacturerData:
         assert result.bed_type == BED_TYPE_RICHMAT
         assert result.confidence == 0.5
 
+    def test_nora_con_nordic_uart_detects_okin_64bit(self):
+        """NORA_CON Mattress Firm controllers should not default to Richmat Nordic."""
+        service_info = _make_service_info(
+            name="NORA_CON",
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_OKIN_64BIT
+        assert result.confidence == 0.85
+        assert "name:nora_con" in result.signals
+        assert "uuid:nordic_uart" in result.signals
+
 
 class TestOkinUUIDDisambiguation:
     """Test disambiguation of beds sharing OKIN service UUID (62741523)."""
@@ -814,6 +834,236 @@ class TestOkinUUIDDisambiguation:
         assert result.confidence == 0.8
         assert "gatt_service:nordic_dfu" in result.signals
         assert BED_TYPE_OKIN_RF_ECO_BT in result.ambiguous_types
+
+    def test_shared_okin_gatt_refinement_corrects_leggett_okin_to_cst(self):
+        """A saved Leggett/Okin entry should use CST when connected GATT proves it."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_LEGGETT_OKIN, gatt_services)
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_corrects_legacy_leggett_okin_variant_to_cst(self):
+        """A legacy Leggett entry using the OKIN variant should be GATT-refinable."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_LEGGETT_PLATT,
+                gatt_services,
+                LEGGETT_VARIANT_OKIN,
+            )
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_ignores_legacy_leggett_gen2_variant(self):
+        """Only the legacy Leggett OKIN variant should enter the OKIN GATT refiner."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_LEGGETT_PLATT,
+                gatt_services,
+                LEGGETT_VARIANT_GEN2,
+            )
+            == BED_TYPE_LEGGETT_PLATT
+        )
+
+    def test_shared_okin_gatt_refinement_corrects_canonical_7byte_to_cst(self):
+        """A saved canonical OKIN 7-byte entry should still be GATT-refinable."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_7BYTE, gatt_services)
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_corrects_okimat_to_rf_eco_bt(self):
+        """Connected CSS without DFU identifies the RF ECO BT profile."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIMAT, gatt_services)
+            == BED_TYPE_OKIN_RF_ECO_BT
+        )
+
+    def test_shared_okin_gatt_refinement_preserves_explicit_cst_without_dfu(self):
+        """A manually selected CST entry should not require DFU to remain CST."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_OKIN_CST, gatt_services)
+            == BED_TYPE_OKIN_CST
+        )
+
+    def test_shared_okin_gatt_refinement_leaves_unrelated_types_unchanged(self):
+        """The OKIN correction is scoped away from other shared UUID families."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=NORDIC_DFU_SERVICE_UUID,
+                characteristics=[],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_KEESON, gatt_services)
+            == BED_TYPE_KEESON
+        )
+
+    def test_nordic_uart_device_info_refinement_corrects_richmat_to_okin_64bit(self):
+        """A saved Richmat entry should use OKIN 64-bit when Device Info proves NORA."""
+        assert (
+            refine_nordic_uart_protocol_from_device_info(
+                BED_TYPE_RICHMAT,
+                "NORA_CON",
+                "IDT",
+                "NORACON",
+            )
+            == BED_TYPE_OKIN_64BIT
+        )
+
+    def test_nordic_uart_device_info_refinement_accepts_noracon_model(self):
+        """The model number alone is enough when Device Info reports NORACON."""
+        assert (
+            refine_nordic_uart_protocol_from_device_info(
+                BED_TYPE_MATTRESSFIRM,
+                "Unknown Nordic",
+                None,
+                "NORACON",
+            )
+            == BED_TYPE_OKIN_64BIT
+        )
+
+    def test_nordic_uart_device_info_refinement_corrects_canonical_okin_nordic(self):
+        """A saved canonical OKIN Nordic entry should still be Device Info-refinable."""
+        assert (
+            refine_nordic_uart_protocol_from_device_info(
+                BED_TYPE_OKIN_NORDIC,
+                "NORA_CON",
+                "IDT",
+                "NORACON",
+            )
+            == BED_TYPE_OKIN_64BIT
+        )
+
+    def test_nordic_uart_device_info_refinement_leaves_generic_richmat_unchanged(self):
+        """Generic Nordic UART devices must keep the existing low-confidence fallback."""
+        assert (
+            refine_nordic_uart_protocol_from_device_info(
+                BED_TYPE_RICHMAT,
+                "Unknown Nordic",
+                "Unknown",
+                "Unknown",
+            )
+            == BED_TYPE_RICHMAT
+        )
 
     def test_malouf_new_refines_to_legacy_when_gatt_has_ffe9_only(self):
         """A saved Malouf Nordic entry should use FFE5 when connected GATT proves it."""

@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
@@ -31,6 +32,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    OKIN_CST_POSITION_AXES,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
@@ -334,6 +336,34 @@ async def async_setup_entry(
                         min_motors=2,
                     )
                     entities.append(AdjustableBedPositionNumber(coordinator, box25_desc))
+            elif bed_type == BED_TYPE_OKIN_CST:
+                _LOGGER.debug(
+                    "Setting up CST position numbers for %s",
+                    coordinator.name,
+                )
+
+                for key in ("back_position", "legs_position"):
+                    description = descriptions_by_key[key]
+                    if description.position_key not in OKIN_CST_POSITION_AXES:
+                        continue
+                    max_angle = coordinator.get_max_angle(description.position_key)
+                    cst_desc = AdjustableBedNumberEntityDescription(
+                        key=description.key,
+                        translation_key=description.translation_key,
+                        icon=description.icon,
+                        native_min_value=description.native_min_value,
+                        native_max_value=max_angle,
+                        native_step=description.native_step,
+                        native_unit_of_measurement=description.native_unit_of_measurement,
+                        mode=description.mode,
+                        position_key=description.position_key,
+                        move_up_fn=description.move_up_fn,
+                        move_down_fn=description.move_down_fn,
+                        move_stop_fn=description.move_stop_fn,
+                        max_angle=max_angle,
+                        min_motors=description.min_motors,
+                    )
+                    entities.append(AdjustableBedPositionNumber(coordinator, cst_desc))
             elif bed_type == BED_TYPE_KAIDI and controller is not None:
                 _LOGGER.debug(
                     "Setting up Kaidi direct-position numbers for %s",
