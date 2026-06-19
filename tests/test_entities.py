@@ -2397,6 +2397,58 @@ class TestSensorEntities:
             registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_feet_angle") is None
         )
 
+    async def test_sleep_number_mcr_creates_no_angle_sensors_even_when_enabled(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """MCR/BAM beds report no angles, so no degree angle sensors should be created.
+
+        Regression test for #322: even with angle sensing explicitly enabled (as stored
+        on existing installs), MCR must not get the back/legs/head/feet angle sensors
+        that would otherwise sit at "unknown" forever.
+        """
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Angle Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:60",
+                CONF_NAME: "Sleep Number MCR Angle Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:60",
+            entry_id="sleep_number_mcr_angle_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        for axis in ("back", "legs", "head", "feet"):
+            assert (
+                registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_angle"
+                )
+                is None
+            )
+        # And no position-seeking number entities (MCR cannot read positions).
+        for axis in ("back", "legs", "head", "feet"):
+            assert (
+                registry.async_get_entity_id(
+                    "number", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_position"
+                )
+                is None
+            )
+
 
 class TestEntityAvailability:
     """Test entity availability."""

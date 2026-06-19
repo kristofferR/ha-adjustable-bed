@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_OKIN_CST,
     BEDS_WITH_PERCENTAGE_POSITIONS,
+    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -143,7 +144,13 @@ async def async_setup_entry(
     if not coordinator.disable_angle_sensing:
         # Skip angle sensors for beds that report percentage instead of angles
         # (Keeson/Ergomotion/Serta report 0-100% position, not degrees)
-        if bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
+            _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
+        # Skip beds that report no degree-angle data at all (e.g. Sleep Number MCR/BAM),
+        # which would otherwise create sensors stuck at "unknown" forever (#322).
+        elif bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+            _LOGGER.debug("Skipping angle sensors for %s - no angle feedback", bed_type)
+        else:
             sensor_descriptions = SENSOR_DESCRIPTIONS
             if bed_type == BED_TYPE_OKIN_CST:
                 sensor_descriptions = tuple(
@@ -154,8 +161,6 @@ async def async_setup_entry(
             for description in sensor_descriptions:
                 if motor_count >= description.min_motors:
                     entities.append(AdjustableBedAngleSensor(coordinator, description))
-        else:
-            _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
     else:
         _LOGGER.debug("Angle sensing disabled, skipping angle sensor creation")
 
