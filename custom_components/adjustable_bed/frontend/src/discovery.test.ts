@@ -154,6 +154,14 @@ test("position-only motor (number, no cover) is discovered", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("synchro switch is bucketed and not empty", () => {
+  const hass = hassWith([entry("switch.b_sync", "synchro_mode")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.synchro).toBe("switch.b_sync");
+  expect(bed.lights.switch).toBeUndefined();
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("timer-only massage is not empty", () => {
   const hass = hassWith([entry("select.b_mtimer", "massage_timer")]);
   const bed = bedEntitiesForDevice(hass, "dev1");

@@ -111,6 +111,7 @@ export interface LightEntities {
 
 export interface BedEntities {
   motors: MotorEntity[];
+  synchro?: string; // switch.* synchro_mode (link split-bed sides)
   firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order
   stop?: string; // button.* stop

@@ -211,7 +211,7 @@ renaming or re-icon-ing never breaks it, and other users keep the tidy defaults
 
 ```yaml
 type: custom:adjustable-bed-card
-device_id: <your bed device>   # required
+device_id: <your bed device>   # the bed to control (the card prompts you to pick one if omitted)
 name: Bedroom Bed              # optional, overrides the card title
 section_order: [motors, memory, lighting]  # optional, render order (default order otherwise)
 memory_save: true              # optional, show the "Save…" button (default: true)

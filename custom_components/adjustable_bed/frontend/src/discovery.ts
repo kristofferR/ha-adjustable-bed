@@ -153,6 +153,7 @@ export function bedEntitiesForDevice(
 
       case "switch":
         if (key === "under_bed_lights") bed.lights.switch = id;
+        else if (key === "synchro_mode") bed.synchro = id;
         break;
 
       case "light":
@@ -209,6 +210,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
   const l = bed.lights;
   return (
     bed.motors.length === 0 &&
+    !bed.synchro &&
     bed.firmness.length === 0 &&
     bed.presets.length === 0 &&
     bed.memory.length === 0 &&

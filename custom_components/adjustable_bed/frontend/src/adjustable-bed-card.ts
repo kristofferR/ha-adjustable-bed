@@ -183,11 +183,17 @@ export class AdjustableBedCard extends LitElement {
     const positionRows = bed.motors.filter(
       (m) => !m.cover && !m.up && !m.down && m.position,
     );
-    if (motors.length === 0 && positionRows.length === 0 && !bed.stop)
+    if (
+      motors.length === 0 &&
+      positionRows.length === 0 &&
+      !bed.synchro &&
+      !bed.stop
+    )
       return nothing;
-    const hasRows = motors.length > 0 || positionRows.length > 0;
+    const hasRows = motors.length > 0 || positionRows.length > 0 || !!bed.synchro;
     return html`
       ${hasRows ? this._heading("section.position") : nothing}
+      ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
       ${
         motors.length
           ? html`<div class="rows">${motors.map((m) => this._motorRow(m))}</div>`
@@ -413,8 +419,11 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
-  // Activate a row from the keyboard (Enter/Space) for non-pointer users.
+  // Activate a row from the keyboard (Enter/Space) for non-pointer users. Only
+  // handle events that originate on the row itself, so key presses on the inner
+  // toggle button don't also open more-info.
   private _onRowKey(e: KeyboardEvent, action: () => void): void {
+    if (e.target !== e.currentTarget) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       action();
@@ -572,6 +581,7 @@ export class AdjustableBedCard extends LitElement {
     }
     [
       bed.stop,
+      bed.synchro,
       bed.connect,
       bed.disconnect,
       bed.connectivity,
