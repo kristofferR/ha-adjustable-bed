@@ -2483,7 +2483,9 @@ class TestSensorEntities:
         )
         entry.add_to_hass(hass)
 
-        # Simulate entities a previous version registered for this MCR bed.
+        # Simulate entities a previous version registered for this MCR bed:
+        # both the degree angle sensors and the position number sliders (MCR used
+        # to be in BEDS_WITH_POSITION_FEEDBACK).
         for axis in ("back", "legs"):
             registry.async_get_or_create(
                 "sensor",
@@ -2491,8 +2493,18 @@ class TestSensorEntities:
                 f"AA:BB:CC:DD:EE:61_{axis}_angle",
                 config_entry=entry,
             )
+            registry.async_get_or_create(
+                "number",
+                DOMAIN,
+                f"AA:BB:CC:DD:EE:61_{axis}_position",
+                config_entry=entry,
+            )
         assert (
             registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:61_back_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:61_back_position")
             is not None
         )
 
@@ -2502,6 +2514,10 @@ class TestSensorEntities:
         for axis in ("back", "legs"):
             assert (
                 registry.async_get_entity_id("sensor", DOMAIN, f"AA:BB:CC:DD:EE:61_{axis}_angle")
+                is None
+            )
+            assert (
+                registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:61_{axis}_position")
                 is None
             )
 
