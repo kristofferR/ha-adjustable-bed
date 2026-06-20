@@ -14,6 +14,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
@@ -631,6 +632,14 @@ class TestBluetoothDiscoveryFlow:
             },
         )
 
+        # A connectable scanner is mocked, so the verify_connection step appears.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "My Bed"
         assert result["data"][CONF_ADDRESS] == mock_bluetooth_service_info.address
@@ -666,6 +675,15 @@ class TestBluetoothDiscoveryFlow:
                 CONF_DISABLE_ANGLE_SENSING: False,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
+        )
+
+        # A connectable scanner is mocked, so accepted input proceeds through
+        # the non-blocking verify_connection step before creating the entry.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -989,6 +1007,14 @@ class TestBluetoothDiscoveryFlow:
             },
         )
 
+        # A connectable scanner is mocked, so the verify_connection step appears.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+
         # Should create entry with the disambiguated type
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
@@ -1183,19 +1209,23 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        # Now in manual_entry step, fill the form
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "11:22:33:44:55:66",
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        # Now in manual_entry step, fill the form. No connectable scanner here,
+        # so the read-only verify step is skipped and the entry is created directly.
+        with patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=False
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "11:22:33:44:55:66",
+                    CONF_BED_TYPE: BED_TYPE_LINAK,
+                    CONF_NAME: "Manual Bed",
+                    CONF_MOTOR_COUNT: 3,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "Manual Bed"
@@ -1220,14 +1250,19 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        with patch(
-            "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
-            return_value=KaidiAdvertisement(
-                adv_type=KAIDI_ADV_TYPE_BROADCAST,
-                room_id=0x12345678,
-                vaddr=0x01020304,
-                product_id=136,
-                sofa_acu_no=0x2004,
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.resolve_kaidi_advertisement",
+                return_value=KaidiAdvertisement(
+                    adv_type=KAIDI_ADV_TYPE_BROADCAST,
+                    room_id=0x12345678,
+                    vaddr=0x01020304,
+                    product_id=136,
+                    sofa_acu_no=0x2004,
+                ),
+            ),
+            patch.object(
+                AdjustableBedConfigFlow, "_verification_possible", return_value=False
             ),
         ):
             result = await hass.config_entries.flow.async_configure(
@@ -1305,18 +1340,21 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_ADDRESS: "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_NAME: "Manual Bed",
-                CONF_MOTOR_COUNT: 2,
-                CONF_HAS_MASSAGE: False,
-                CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_PREFERRED_ADAPTER: "auto",
-            },
-        )
+        with patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=False
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_ADDRESS: "aa-bb-cc-dd-ee-ff",  # lowercase with dashes
+                    CONF_BED_TYPE: BED_TYPE_LINAK,
+                    CONF_NAME: "Manual Bed",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_ADDRESS] == "AA:BB:CC:DD:EE:FF"  # Normalized
@@ -1673,3 +1711,220 @@ class TestOptionsFlow:
         assert result["errors"]
         # ...and the discovery toggle was NOT persisted.
         assert await async_is_discovery_disabled(hass) is False
+
+
+# ---------------------------------------------------------------------------
+# verify_connection step (issue #357)
+# ---------------------------------------------------------------------------
+
+
+def _fake_connected_client() -> MagicMock:
+    """Fake BleakClient with one service and a writable characteristic."""
+    char = MagicMock()
+    char.uuid = "0000ffe1-0000-1000-8000-00805f9b34fb"
+    char.properties = ["write", "notify"]
+    service = MagicMock()
+    service.uuid = "0000ffe0-0000-1000-8000-00805f9b34fb"
+    service.characteristics = [char]
+    client = MagicMock()
+    client.is_connected = True
+    client.services = [service]
+    client.disconnect = AsyncMock()
+    return client
+
+
+async def test_verify_connection_success_then_creates_entry(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A successful probe shows the checklist, then submit creates the entry."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    client = _fake_connected_client()
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="esphome_bedroom",
+        rssi=-60,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(return_value=client),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.discover_services",
+            AsyncMock(return_value=True),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.read_ble_device_info",
+            AsyncMock(return_value=("OKIN", None)),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["type"] == FlowResultType.FORM
+        assert verify["step_id"] == "verify_connection"
+        caps = verify["description_placeholders"]["capabilities"]
+        assert "Connected" in caps
+        assert "esphome_bedroom" in caps
+        assert "ESPHome proxy" in caps
+        # GATT + device-info details surface in the checklist.
+        assert "writable characteristic" in caps
+        assert "OKIN" in caps
+        # The probe must release the bed's single BLE connection.
+        client.disconnect.assert_awaited()
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_warns_when_no_writable_characteristic(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """Connecting to a device with no writable characteristic must not show a pass."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    # Service present, but only read/notify - nothing the integration can write to.
+    char = MagicMock()
+    char.uuid = "0000ffe1-0000-1000-8000-00805f9b34fb"
+    char.properties = ["read", "notify"]
+    service = MagicMock()
+    service.uuid = "0000ffe0-0000-1000-8000-00805f9b34fb"
+    service.characteristics = [char]
+    client = MagicMock()
+    client.is_connected = True
+    client.services = [service]
+    client.disconnect = AsyncMock()
+
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="hci0",
+        rssi=-55,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(return_value=client),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.discover_services",
+            AsyncMock(return_value=True),
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.read_ble_device_info",
+            AsyncMock(return_value=(None, None)),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["step_id"] == "verify_connection"
+        caps = verify["description_placeholders"]["capabilities"]
+        assert "No writable characteristic found" in caps
+        assert "⚠️" in caps
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_failure_still_creates_entry(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """A failed probe shows the error note but the user can still finish setup."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    selection = AdapterSelectionResult(
+        device=MagicMock(),
+        source="hci0",
+        rssi=-72,
+        connectable=True,
+        available_sources=[],
+    )
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=True
+        ),
+        patch(
+            "custom_components.adjustable_bed.config_flow.select_adapter",
+            AsyncMock(return_value=selection),
+        ),
+        patch(
+            "bleak_retry_connector.establish_connection",
+            AsyncMock(side_effect=Exception("device busy")),
+        ),
+    ):
+        verify = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+        assert verify["step_id"] == "verify_connection"
+        assert "Could not connect" in verify["description_placeholders"]["capabilities"]
+
+        created = await hass.config_entries.flow.async_configure(
+            verify["flow_id"], user_input={}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+async def test_verify_connection_skipped_without_scanner(
+    hass: HomeAssistant,
+    mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+    enable_custom_integrations,
+) -> None:
+    """With no connectable scanner the verify step is skipped, entry created directly."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
+    )
+    assert result["step_id"] == "bluetooth_confirm"
+
+    with patch.object(
+        AdjustableBedConfigFlow, "_verification_possible", return_value=False
+    ):
+        created = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_PREFERRED_ADAPTER: "auto"}
+        )
+
+    assert created["type"] == FlowResultType.CREATE_ENTRY
+    assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK

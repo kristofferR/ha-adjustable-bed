@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 import voluptuous as vol
@@ -32,7 +33,13 @@ from .actuator_groups import (
     ACTUATOR_GROUPS,
     SINGLE_TYPE_GROUPS,
 )
-from .adapter import find_service_info_by_address, get_discovered_service_info
+from .adapter import (
+    discover_services,
+    find_service_info_by_address,
+    get_discovered_service_info,
+    read_ble_device_info,
+    select_adapter,
+)
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -141,6 +148,29 @@ CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
     CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
 }
 
+# Short, single-attempt timeout for the optional setup-time connection probe.
+# Keep this small so a failing probe (e.g. the phone app holding the bed's single
+# BLE connection) never makes setup feel slow. The probe is best-effort and never
+# blocks entry creation.
+_PROBE_TIMEOUT_SECONDS = 15.0
+
+
+@dataclass
+class CapabilityReport:
+    """Result of the read-only setup-time connection probe."""
+
+    device_found: bool = False
+    connected: bool = False
+    source: str | None = None
+    rssi: int | None = None
+    via_proxy: bool = False
+    service_count: int = 0
+    writable_count: int = 0
+    manufacturer: str | None = None
+    model: str | None = None
+    position_feedback: bool = False
+    error: str | None = None
+
 
 class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Adjustable Bed."""
@@ -175,6 +205,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         self._disambiguated_bed_type: str | None = None
         self._show_full_bed_type_list: bool = False
         self._retrying_devices: dict[str, tuple[ConfigEntry, BluetoothServiceInfoBleak | None]] = {}
+        # Carries the finalized entry across the optional verify_connection step
+        self._pending_entry: dict[str, Any] | None = None
+        self._pending_title: str | None = None
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
@@ -684,9 +717,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 if selected_bed_type and requires_pairing(selected_bed_type, protocol_variant):
                     self._manual_data = entry_data
                     return await self.async_step_bluetooth_pairing()
-                return self.async_create_entry(
-                    title=user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
-                    data=entry_data,
+                return await self._finish_with_verify(
+                    entry_data,
+                    user_input.get(CONF_NAME, self._discovery_info.name or "Adjustable Bed"),
                 )
 
         _LOGGER.debug("Showing bluetooth confirmation form for %s", self._discovery_info.address)
@@ -1274,9 +1307,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     entry_data,
                     manufacturer_data=self._discovery_info.manufacturer_data,
                 )
-                return self.async_create_entry(
-                    title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                    data=entry_data,
+                return await self._finish_with_verify(
+                    entry_data,
+                    user_input.get(CONF_NAME, "Adjustable Bed"),
                 )
 
         _LOGGER.debug("Showing manual config form for device: %s (%s)", device_name, address)
@@ -1477,9 +1510,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         self._manual_data = entry_data
                         return await self.async_step_manual_pairing()
                     entry_data = self._maybe_add_kaidi_metadata(entry_data)
-                    return self.async_create_entry(
-                        title=user_input.get(CONF_NAME, "Adjustable Bed"),
-                        data=entry_data,
+                    return await self._finish_with_verify(
+                        entry_data,
+                        user_input.get(CONF_NAME, "Adjustable Bed"),
                     )
 
         _LOGGER.debug("Showing manual entry form")
@@ -1609,9 +1642,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
             )
 
         return self.async_show_form(
@@ -1666,9 +1699,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             self._manual_data[CONF_RICHMAT_REMOTE] = user_input.get(
                 CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO
             )
-            return self.async_create_entry(
-                title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                data=self._manual_data,
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
             )
 
         return self.async_show_form(
@@ -1894,6 +1927,223 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             return True
         finally:
             await client.disconnect()
+
+    def _verification_possible(self) -> bool:
+        """Return True only when a connectable scanner exists to probe through.
+
+        With no connectable scanner the probe is guaranteed to fail with
+        "device not found", so showing the verify step would only display an
+        unhelpful error - skip straight to creating the entry instead.
+        """
+        try:
+            from homeassistant.components.bluetooth import async_scanner_count
+
+            return async_scanner_count(self.hass, connectable=True) > 0
+        except Exception:  # noqa: BLE001 - absence of scanners must not break setup
+            return False
+
+    async def _finish_with_verify(
+        self, entry_data: dict[str, Any], title: str
+    ) -> ConfigFlowResult:
+        """Stash the finalized entry and route through the verify_connection step.
+
+        Skips the verify step (creating the entry directly) when no connectable
+        scanner is available to probe through.
+        """
+        if not self._verification_possible():
+            return self.async_create_entry(title=title, data=entry_data)
+        self._pending_entry = entry_data
+        self._pending_title = title
+        return await self.async_step_verify_connection()
+
+    async def _probe_capabilities(
+        self,
+        address: str,
+        preferred_adapter: str | None,
+        bed_type: str | None,
+        protocol_variant: str | None = None,
+    ) -> CapabilityReport:
+        """Connect once (read-only) and report what was detected.
+
+        This never sends a movement/control command - it only selects an adapter,
+        establishes a connection, discovers GATT services, and reads the standard
+        Device Information service. It always disconnects in ``finally`` so the
+        coordinator can take the bed's single BLE connection afterwards, and it
+        never raises: any failure is captured in ``report.error`` so setup stays
+        non-blocking.
+        """
+        from bleak import BleakClient
+        from bleak_retry_connector import establish_connection
+
+        # Keeson exposes position feedback only on its Ergomotion variant, so
+        # mirror the same special-case the confirm step uses for angle sensing.
+        has_position_feedback = bool(bed_type) and (
+            bed_type in BEDS_WITH_POSITION_FEEDBACK
+            or (
+                bed_type == BED_TYPE_KEESON
+                and protocol_variant == KEESON_VARIANT_ERGOMOTION
+            )
+        )
+        report = CapabilityReport(position_feedback=has_position_feedback)
+
+        try:
+            selection = await select_adapter(self.hass, address, preferred_adapter)
+        except Exception as err:  # noqa: BLE001 - probe is best-effort
+            report.error = str(err) or err.__class__.__name__
+            return report
+
+        device = selection.device
+        if device is None:
+            report.error = "device_not_found"
+            return report
+
+        report.device_found = True
+        report.source = selection.source
+        report.rssi = selection.rssi
+        report.via_proxy = bool(selection.source and "esphome" in selection.source.lower())
+
+        client: BleakClient | None = None
+        try:
+            client = await establish_connection(
+                BleakClient,
+                device,
+                address,
+                max_attempts=1,
+                timeout=_PROBE_TIMEOUT_SECONDS,
+            )
+            report.connected = bool(client.is_connected)
+            await discover_services(client, address)
+            services = list(client.services) if client.services else []
+            report.service_count = len(services)
+            writable = 0
+            for service in services:
+                for char in service.characteristics:
+                    if (
+                        "write" in char.properties
+                        or "write-without-response" in char.properties
+                    ):
+                        writable += 1
+            report.writable_count = writable
+            report.manufacturer, report.model = await read_ble_device_info(client, address)
+        except Exception as err:  # noqa: BLE001 - probe is best-effort
+            report.error = str(err) or err.__class__.__name__
+            _LOGGER.debug("Capability probe for %s failed: %s", address, err)
+        finally:
+            if client is not None:
+                try:
+                    await client.disconnect()
+                except Exception:  # noqa: BLE001 - cleanup must not raise
+                    pass
+
+        return report
+
+    @staticmethod
+    def _format_capabilities(report: CapabilityReport) -> str:
+        """Build the ✅/❌/⚠️/ℹ️ markdown checklist shown in verify_connection."""
+        lines: list[str] = []
+
+        if not report.device_found:
+            lines.append("❌ Device not found - it may be out of range or not advertising.")
+            lines.append(
+                "You can still finish setup; the integration will keep trying to connect."
+            )
+            return "\n".join(lines)
+
+        lines.append("✅ Device found via Bluetooth")
+
+        if not report.connected:
+            lines.append(
+                "❌ Could not connect - another app or the bed remote may be holding the "
+                "bed's connection (beds allow only one at a time), or it is out of range. "
+                "You can still finish setup and try again later."
+            )
+            return "\n".join(lines)
+
+        connected_parts = ["✅ Connected"]
+        if report.source:
+            connected_parts.append(f"via {report.source}")
+        if report.via_proxy:
+            connected_parts.append("(ESPHome proxy)")
+        if report.rssi is not None:
+            connected_parts.append(f"(RSSI {report.rssi} dBm)")
+        lines.append(" ".join(connected_parts))
+
+        if report.service_count:
+            services_word = "service" if report.service_count == 1 else "services"
+            writable_word = (
+                "writable characteristic"
+                if report.writable_count == 1
+                else "writable characteristics"
+            )
+            # The integration controls beds by writing commands to a
+            # characteristic, so zero writable characteristics means this setup
+            # cannot send commands - flag it instead of giving a false pass
+            # (often a sign the probe reached the wrong device).
+            marker = "✅" if report.writable_count else "⚠️"
+            lines.append(
+                f"{marker} GATT services discovered ({report.service_count} {services_word}, "
+                f"{report.writable_count} {writable_word})"
+            )
+            if not report.writable_count:
+                lines.append(
+                    "⚠️ No writable characteristic found - this device may not be "
+                    "controllable, or the probe reached the wrong device."
+                )
+        else:
+            lines.append("⚠️ Connected, but no GATT services were discovered.")
+
+        if report.manufacturer or report.model:
+            info = " · ".join(
+                part
+                for part in (
+                    f"Manufacturer: {report.manufacturer}" if report.manufacturer else None,
+                    f"Model: {report.model}" if report.model else None,
+                )
+                if part
+            )
+            lines.append(f"ℹ️ {info}")
+
+        if report.position_feedback:
+            lines.append("✅ Position feedback supported by this bed type")
+        else:
+            lines.append("⚠️ Position feedback: not available on this bed type")
+
+        return "\n".join(lines)
+
+    async def async_step_verify_connection(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Probe the bed once (read-only) and show a capability checklist.
+
+        Shown after the confirm/manual step for non-PIN/non-pairing beds. The
+        Submit button always finishes setup - a failed probe is informational
+        only and never blocks entry creation.
+        """
+        assert self._pending_entry is not None
+
+        if user_input is not None:
+            return self.async_create_entry(
+                title=self._pending_title
+                or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                data=self._pending_entry,
+            )
+
+        report = await self._probe_capabilities(
+            self._pending_entry[CONF_ADDRESS],
+            self._pending_entry.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+            self._pending_entry.get(CONF_BED_TYPE),
+            self._pending_entry.get(CONF_PROTOCOL_VARIANT),
+        )
+
+        return self.async_show_form(
+            step_id="verify_connection",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "name": self._pending_entry.get(CONF_NAME)
+                or self._pending_entry[CONF_ADDRESS],
+                "capabilities": self._format_capabilities(report),
+            },
+        )
 
     async def async_step_diagnostic(
         self, user_input: dict[str, Any] | None = None
