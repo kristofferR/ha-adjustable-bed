@@ -96,7 +96,8 @@ Multiple motor bits can be OR'd together for simultaneous movement.
 | Save Lounge | `0x08002000` |
 | Save Incline | `0x08004000` |
 | Light Toggle | `0x00020000` |
-| Massage Toggle / Off | `0x02000000` |
+| Massage Toggle | `0x04000000` |
+| Massage Off | `0x02000000` |
 | Massage All + | `0x00000C00` |
 | Massage All - | `0x01800000` |
 | Massage Head + | `0x00000800` |

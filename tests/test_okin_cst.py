@@ -118,6 +118,12 @@ class TestOkinCstCapabilities:
         assert okin_cst_controller.supports_massage_off_control is True
         assert okin_cst_controller.supports_massage_intensity_step_control is True
 
+    def test_remote_command_values_match_cst_protocol_constants(self) -> None:
+        """Massage toggle and stop are distinct CSTProtocol constants."""
+        assert CstRemoteCommands.MASSAGE_TOGGLE == 0x04000000
+        assert CstRemoteCommands.MASSAGE_OFF == 0x02000000
+        assert CstRemoteCommands.MASSAGE_TOGGLE != CstRemoteCommands.MASSAGE_OFF
+
 
 class TestOkinCstCommands:
     """Test Okin CST command routing and timing."""
