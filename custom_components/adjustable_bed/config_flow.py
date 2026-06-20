@@ -1129,6 +1129,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # history-preserving device re-homing is a follow-up.)
                 await self.hass.config_entries.async_remove(left.entry_id)
                 await self.hass.config_entries.async_remove(right.entry_id)
+                # Don't create a pair that shares a member MAC / entity unique_ids
+                # with an original that somehow survived removal (would duplicate
+                # devices / drop a side's controls). Abort cleanly instead.
+                if (
+                    self.hass.config_entries.async_get_entry(left.entry_id) is not None
+                    or self.hass.config_entries.async_get_entry(right.entry_id)
+                    is not None
+                ):
+                    return self.async_abort(reason="combine_cleanup_failed")
                 _LOGGER.info(
                     "Combined %s + %s into paired bed %s",
                     left.title,

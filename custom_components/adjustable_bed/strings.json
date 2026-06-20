@@ -245,7 +245,8 @@
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
-      "not_enough_beds": "You need at least two set-up beds of the same type to combine."
+      "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
     },
     "error": {
       "cannot_connect": "Failed to connect to bed. Check that the bed is powered on and in range.",

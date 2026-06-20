@@ -197,16 +197,17 @@ class PairedBedCoordinator:
     ) -> None:
         targets = self._targets_for(side)
 
-        # Single side: no fan-out, the child owns its own STOP-on-failure.
-        if len(targets) == 1:
-            await op(targets[0][1])
-            return
-
-        # Serialize whole-bed ('both') commands at the parent so two overlapping
-        # commands can't interleave and desync the sides (and so sequential mode
-        # orders connection switching across sides). STOP never takes this lock,
-        # so it can always interrupt a running command.
+        # Serialize ALL paired commands at the parent — including a single-side
+        # command, which must wait for an in-flight whole-bed command so the two
+        # sides can't desync (and so sequential mode orders connection switching
+        # across sides). STOP never takes this lock, so it can always interrupt a
+        # running command.
         async with self._pair_command_lock:
+            if len(targets) == 1:
+                # Single side: no fan-out, the child owns its own STOP-on-failure.
+                await op(targets[0][1])
+                return
+
             if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
                 await self._run_both_sequential(action, targets, op)
             else:
