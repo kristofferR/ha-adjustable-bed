@@ -1661,6 +1661,9 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
 # Includes all angle sensing beds plus beds that report percentage positions
 # Note: BED_TYPE_KEESON is NOT included here because only the ergomotion variant supports
 # position feedback - this is handled specially in number.py with variant checking
+# Note: BED_TYPE_SLEEP_NUMBER_MCR (BAM beds) is NOT included - the MCR controller only
+# reports sleep-number values and bed presence over BLE, never motor angle/position
+# feedback, so it must not get angle sensors or position-seeking number entities (#322).
 BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_LINAK,
@@ -1673,11 +1676,18 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_JENSEN,
         BED_TYPE_LIMOSS,
         BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEP_NUMBER_MCR,
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
     }
 )
+
+# Bed types that may have angle sensing enabled but report NO degree-angle data.
+# Sleep Number MCR/BAM beds only report sleep-number values and bed presence over BLE
+# (no motor angle feedback at all), so degree angle sensors would sit at "unknown"
+# forever. These are skipped during angle-sensor creation regardless of the
+# disable_angle_sensing option, which also fixes existing installs whose stored config
+# still has angle sensing enabled (#322).
+BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset({BED_TYPE_SLEEP_NUMBER_MCR})
 
 # Bed types that report positions as 0-100 percentages (not angle degrees)
 # These bed types return percentage values directly, so no angle-to-percent conversion is needed

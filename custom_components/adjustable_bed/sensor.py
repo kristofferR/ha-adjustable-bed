@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -21,6 +22,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_OKIN_CST,
     BEDS_WITH_PERCENTAGE_POSITIONS,
+    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -139,11 +141,24 @@ async def async_setup_entry(
 
     entities: list[SensorEntity] = []
 
+    # Beds that never report degree angles (e.g. Sleep Number MCR/BAM) must not keep
+    # angle sensors. Remove any an earlier version registered (when angle sensing was
+    # enabled by default) so existing installs stop showing dead "unknown" entities
+    # after upgrading, regardless of the current disable_angle_sensing value (#322).
+    if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+        _async_remove_stale_angle_entities(hass, coordinator)
+
     # Set up angle sensors (only for non-percentage beds with angle sensing enabled)
     if not coordinator.disable_angle_sensing:
         # Skip angle sensors for beds that report percentage instead of angles
         # (Keeson/Ergomotion/Serta report 0-100% position, not degrees)
-        if bed_type not in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
+            _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
+        # Skip beds that report no degree-angle data at all (e.g. Sleep Number MCR/BAM),
+        # which would otherwise create sensors stuck at "unknown" forever (#322).
+        elif bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+            _LOGGER.debug("Skipping angle sensors for %s - no angle feedback", bed_type)
+        else:
             sensor_descriptions = SENSOR_DESCRIPTIONS
             if bed_type == BED_TYPE_OKIN_CST:
                 sensor_descriptions = tuple(
@@ -154,8 +169,6 @@ async def async_setup_entry(
             for description in sensor_descriptions:
                 if motor_count >= description.min_motors:
                     entities.append(AdjustableBedAngleSensor(coordinator, description))
-        else:
-            _LOGGER.debug("Skipping angle sensors for %s - reports percentage, not angle", bed_type)
     else:
         _LOGGER.debug("Angle sensing disabled, skipping angle sensor creation")
 
@@ -179,6 +192,25 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _async_remove_stale_angle_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove angle sensor entities the integration no longer creates.
+
+    Beds in BEDS_WITHOUT_ANGLE_FEEDBACK (e.g. Sleep Number MCR/BAM) report no
+    angles, but an earlier version registered back/legs/head/feet angle sensors
+    for them; those would otherwise linger as dead "unknown" entities (#322).
+    """
+    registry = er.async_get(hass)
+    for description in SENSOR_DESCRIPTIONS:
+        entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{coordinator.address}_{description.key}"
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):

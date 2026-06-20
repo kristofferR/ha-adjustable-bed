@@ -2397,6 +2397,130 @@ class TestSensorEntities:
             registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_feet_angle") is None
         )
 
+    async def test_sleep_number_mcr_creates_no_angle_sensors_even_when_enabled(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """MCR/BAM beds report no angles, so no degree angle sensors should be created.
+
+        Regression test for #322: even with angle sensing explicitly enabled (as stored
+        on existing installs), MCR must not get the back/legs/head/feet angle sensors
+        that would otherwise sit at "unknown" forever.
+        """
+        del mock_coordinator_connected, enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Angle Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:60",
+                CONF_NAME: "Sleep Number MCR Angle Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:60",
+            entry_id="sleep_number_mcr_angle_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        for axis in ("back", "legs", "head", "feet"):
+            assert (
+                registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_angle"
+                )
+                is None
+            )
+        # And no position-seeking number entities (MCR cannot read positions).
+        for axis in ("back", "legs", "head", "feet"):
+            assert (
+                registry.async_get_entity_id(
+                    "number", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_position"
+                )
+                is None
+            )
+
+    async def test_sleep_number_mcr_removes_pre_existing_stale_angle_entities(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Stale MCR angle entities from older versions must be removed on setup.
+
+        Regression test for #322 (Codex review): existing installs created the
+        *_back_angle/*_legs_angle entities before angle sensing was disabled for
+        MCR; setting up the entry should clean them out of the registry, not leave
+        them as dead "unknown" entities.
+        """
+        del mock_coordinator_connected, enable_custom_integrations
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Stale Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:61",
+                CONF_NAME: "Sleep Number MCR Stale Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:61",
+            entry_id="sleep_number_mcr_stale_angle_entry",
+        )
+        entry.add_to_hass(hass)
+
+        # Simulate entities a previous version registered for this MCR bed:
+        # both the degree angle sensors and the position number sliders (MCR used
+        # to be in BEDS_WITH_POSITION_FEEDBACK).
+        for axis in ("back", "legs"):
+            registry.async_get_or_create(
+                "sensor",
+                DOMAIN,
+                f"AA:BB:CC:DD:EE:61_{axis}_angle",
+                config_entry=entry,
+            )
+            registry.async_get_or_create(
+                "number",
+                DOMAIN,
+                f"AA:BB:CC:DD:EE:61_{axis}_position",
+                config_entry=entry,
+            )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:61_back_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:61_back_position")
+            is not None
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        for axis in ("back", "legs"):
+            assert (
+                registry.async_get_entity_id("sensor", DOMAIN, f"AA:BB:CC:DD:EE:61_{axis}_angle")
+                is None
+            )
+            assert (
+                registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:61_{axis}_position")
+                is None
+            )
+
 
 class TestEntityAvailability:
     """Test entity availability."""

@@ -25,6 +25,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
+    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -241,6 +242,12 @@ async def async_setup_entry(
     controller = coordinator.controller
 
     entities: list[NumberEntity] = []
+
+    # Beds with no angle/position feedback (e.g. Sleep Number MCR/BAM) were briefly
+    # in BEDS_WITH_POSITION_FEEDBACK and may have registered position number sliders;
+    # remove any so existing installs don't keep dead orphaned numbers (#322).
+    if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+        _async_remove_stale_position_entities(hass, coordinator)
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
@@ -579,6 +586,26 @@ def _async_remove_stale_sleep_number_entity(
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
+
+
+def _async_remove_stale_position_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove position number entities the integration no longer creates.
+
+    Beds in BEDS_WITHOUT_ANGLE_FEEDBACK (e.g. Sleep Number MCR/BAM) have no
+    position feedback, but were briefly in BEDS_WITH_POSITION_FEEDBACK and so
+    registered *_back_position/*_legs_position sliders that now linger as dead
+    orphaned numbers (#322).
+    """
+    registry = er.async_get(hass)
+    for description in NUMBER_DESCRIPTIONS:
+        entity_id = registry.async_get_entity_id(
+            "number", DOMAIN, f"{coordinator.address}_{description.key}"
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
