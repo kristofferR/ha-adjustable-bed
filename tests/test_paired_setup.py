@@ -343,3 +343,37 @@ class TestSideServiceRouting:
                 {"device_id": [parent.id], "side": side},
                 blocking=True,
             )
+
+    async def test_unconverted_services_reject_paired_cleanly(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """set_position/timed_move raise a clean error (not AttributeError) on a pair."""
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        parent = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, PAIR_ID)})
+        assert parent is not None
+
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "set_position",
+                {"device_id": [parent.id], "motor": "back", "position": 50},
+                blocking=True,
+            )
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "timed_move",
+                {
+                    "device_id": [parent.id],
+                    "motor": "back",
+                    "direction": "up",
+                    "duration_ms": 1000,
+                },
+                blocking=True,
+            )

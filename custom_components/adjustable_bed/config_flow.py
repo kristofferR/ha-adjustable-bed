@@ -391,6 +391,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 configured[member] = entry
         return configured
 
+    def _is_absorbed_pair_member(self, address: str) -> bool:
+        """Whether ``address`` is already a side of an existing paired bed."""
+        member = address.upper()
+        return any(
+            member in pair_member_addresses(entry.data)
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+        )
+
     def _async_abort_retrying_entry(self, address: str) -> ConfigFlowResult:
         """Explain how to recover when the bed is already stuck retrying setup."""
         entry, info = self._retrying_devices[address]
@@ -460,6 +468,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # between Bluetooth discovery (may be lowercase) and manual entry (normalized)
         await self.async_set_unique_id(discovery_info.address.upper())
         self._abort_if_unique_id_configured()
+
+        # Don't re-offer a side already absorbed into a paired bed: its MAC is a
+        # pair member, not the paired entry's (synthetic) unique_id, so the abort
+        # above won't catch it.
+        if self._is_absorbed_pair_member(discovery_info.address):
+            return self.async_abort(reason="already_configured")
 
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(discovery_info)
@@ -1098,10 +1112,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 pair_data = build_pair_entry_data(left.data, right.data, name=name)
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
-                # Free the member MACs by removing the singles first, then create
-                # the pair (avoids two entries contending for the same MAC).
-                await self.hass.config_entries.async_remove(left.entry_id)
-                await self.hass.config_entries.async_remove(right.entry_id)
+                # Create the pair first, then remove the two originals as a
+                # deferred task. This way a failure here can never leave the user
+                # with both beds deleted and no pair. The brief overlap (both the
+                # singles and the pair's children targeting the same MACs) clears
+                # once the originals are removed and the pair retry-connects.
+                left_id, right_id = left.entry_id, right.entry_id
+                hass = self.hass
+
+                async def _remove_originals() -> None:
+                    await hass.config_entries.async_remove(left_id)
+                    await hass.config_entries.async_remove(right_id)
+
+                hass.async_create_task(_remove_originals())
                 _LOGGER.info(
                     "Combined %s + %s into paired bed %s",
                     left.title,

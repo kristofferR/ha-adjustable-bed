@@ -781,6 +781,9 @@
     },
     "side_not_available": {
       "message": "This bed has no {side} side."
+    },
+    "service_not_supported_for_paired": {
+      "message": "'{device_name}' is a paired bed; {service} is not yet supported on paired beds."
     }
   },
   "issues": {

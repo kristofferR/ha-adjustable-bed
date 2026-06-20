@@ -273,7 +273,7 @@ class PairedBedCoordinator:
             try:
                 await op(child)
                 started.append((side, child))
-            except (Exception, asyncio.CancelledError) as err:  # noqa: BLE001
+            except Exception as err:  # noqa: BLE001 - CancelledError must propagate
                 errors[side] = err
                 started.append((side, child))
                 break
@@ -319,7 +319,7 @@ class PairedBedCoordinator:
                 try:
                     if await child.async_connect():
                         any_connected = True
-                except (Exception, asyncio.CancelledError) as err:  # noqa: BLE001
+                except Exception as err:  # noqa: BLE001 - CancelledError must propagate
                     _LOGGER.warning("Connect failed on %s side: %s", side, err)
             return any_connected
 

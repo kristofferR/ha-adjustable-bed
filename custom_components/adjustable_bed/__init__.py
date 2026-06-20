@@ -734,6 +734,26 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 command_fn, cancel_running=cancel_running
             )
 
+    def _reject_paired_service(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator, service: str
+    ) -> None:
+        """Reject services that do not yet support paired beds, with a clean error.
+
+        Without this, calling set_position/timed_move on a paired device would hit
+        a raw AttributeError (PairedBedCoordinator has no controller/motor specs).
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            raise ServiceValidationError(
+                f"'{coordinator.name}' is a paired bed; {service} is not yet "
+                "supported on paired beds.",
+                translation_domain=DOMAIN,
+                translation_key="service_not_supported_for_paired",
+                translation_placeholders={
+                    "device_name": coordinator.name,
+                    "service": service,
+                },
+            )
+
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
         preset = call.data[ATTR_PRESET]
@@ -927,6 +947,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
+            _reject_paired_service(coordinator, "set_position")
             controller = await _get_controller_for_service(coordinator)
 
             # Get config entry for bed type and motor count
@@ -1182,6 +1203,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
+            _reject_paired_service(coordinator, "timed_move")
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
             controller = await _get_controller_for_service(coordinator)
