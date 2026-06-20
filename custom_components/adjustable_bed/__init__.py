@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any, cast
@@ -779,6 +780,20 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 command_fn, cancel_running=cancel_running
             )
 
+    async def _release_validation_connections(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        connected: list[AdjustableBedCoordinator],
+    ) -> None:
+        """Give idle-connected paired sides a normal disconnect after a failed
+        pre-flight, so a validation abort doesn't tie up a side's BLE link (the
+        command finalizer that would reset the idle timer never ran)."""
+        if not isinstance(coordinator, PairedBedCoordinator):
+            return
+        for target in connected:
+            if target.is_connected:
+                with contextlib.suppress(Exception):
+                    await target.async_ensure_connected(reset_timer=True)
+
     def _require_single_bed(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator, service: str
     ) -> AdjustableBedCoordinator:
@@ -820,28 +835,34 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             # Pre-flight: validate the preset on EVERY targeted side before
             # moving any, so a paired 'both' never half-executes.
-            for target in _command_targets(coordinator, side):
-                controller = await _get_controller_for_service(target)
-                if not getattr(controller, "supports_memory_presets", False):
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_presets_not_supported",
-                        translation_placeholders={"device_name": target.name},
-                    )
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": target.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
+            preflighted: list[AdjustableBedCoordinator] = []
+            try:
+                for target in _command_targets(coordinator, side):
+                    controller = await _get_controller_for_service(target)
+                    preflighted.append(target)
+                    if not getattr(controller, "supports_memory_presets", False):
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_presets_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    slot_count = getattr(controller, "memory_slot_count", 4)
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+            except ServiceValidationError:
+                await _release_validation_connections(coordinator, preflighted)
+                raise
 
             await _execute_sided(
                 coordinator,
@@ -867,28 +888,34 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_placeholders={"device_id": device_id},
                 )
 
-            for target in _command_targets(coordinator, side):
-                controller = await _get_controller_for_service(target)
-                if not getattr(controller, "supports_memory_programming", False):
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' does not support programming memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_programming_not_supported",
-                        translation_placeholders={"device_name": target.name},
-                    )
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": target.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
+            preflighted: list[AdjustableBedCoordinator] = []
+            try:
+                for target in _command_targets(coordinator, side):
+                    controller = await _get_controller_for_service(target)
+                    preflighted.append(target)
+                    if not getattr(controller, "supports_memory_programming", False):
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support programming memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_programming_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    slot_count = getattr(controller, "memory_slot_count", 4)
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+            except ServiceValidationError:
+                await _release_validation_connections(coordinator, preflighted)
+                raise
 
             await _execute_sided(
                 coordinator,
