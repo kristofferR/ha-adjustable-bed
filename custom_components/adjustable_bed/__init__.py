@@ -58,6 +58,9 @@ from .const import (
     OKIN_CST_POSITION_AXES,
     PAIR_SIDES,
     RICHMAT_REMOTE_AUTO,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
     VARIANT_AUTO,
     requires_pairing,
 )
@@ -80,6 +83,7 @@ SERVICE_TIMED_MOVE = "timed_move"
 ATTR_PRESET = "preset"
 ATTR_MOTOR = "motor"
 ATTR_POSITION = "position"
+ATTR_SIDE = "side"
 ATTR_TARGET_ADDRESS = "target_address"
 ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
@@ -677,88 +681,119 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
         return controller
 
+    def _command_targets(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
+    ) -> list[AdjustableBedCoordinator]:
+        """Return the per-side coordinators a sided command must validate.
+
+        For a paired bed this is the child coordinator(s) for ``side``; the
+        caller validates each (pre-flight all sides before commanding any) and
+        then executes via the paired coordinator's fan-out. For a single bed,
+        ``left``/``right`` is rejected and ``both`` maps to the one controller.
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            if side == SIDE_BOTH:
+                return list(coordinator.children.values())
+            child = coordinator.child_for_side(side)
+            if child is None:
+                raise ServiceValidationError(
+                    f"This bed has no {side} side",
+                    translation_domain=DOMAIN,
+                    translation_key="side_not_available",
+                    translation_placeholders={"side": side},
+                )
+            return [child]
+
+        if side != SIDE_BOTH:
+            raise ServiceValidationError(
+                "This is a single bed; the Left/Right/Both option only applies to "
+                "paired beds.",
+                translation_domain=DOMAIN,
+                translation_key="side_not_supported",
+            )
+        return [coordinator]
+
+    async def _execute_sided(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        side: str,
+        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+        *,
+        cancel_running: bool = True,
+    ) -> None:
+        """Run a command on the targeted side(s).
+
+        A paired bed fans out (with the both-failure stop-the-other contract); a
+        single bed runs exactly as before.
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            await coordinator.async_execute_controller_command(
+                command_fn, side=side, cancel_running=cancel_running
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn, cancel_running=cancel_running
+            )
+
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        side = call.data.get(ATTR_SIDE, SIDE_BOTH)
 
-        _LOGGER.info("Service goto_preset called: preset=%d", preset)
+        _LOGGER.info("Service goto_preset called: preset=%d (side=%s)", preset, side)
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
-            if coordinator:
-                # Check if controller supports memory presets
-                controller = await _get_controller_for_service(coordinator)
-                if not getattr(controller, "supports_memory_presets", False):
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' does not support memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_presets_not_supported",
-                        translation_placeholders={"device_name": coordinator.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": coordinator.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-                await coordinator.async_execute_controller_command(
-                    lambda ctrl, p=preset: ctrl.preset_memory(p)  # type: ignore[misc]
-                )
-            else:
+            if not coordinator:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
+
+            # Pre-flight: validate the preset on EVERY targeted side before
+            # moving any, so a paired 'both' never half-executes.
+            for target in _command_targets(coordinator, side):
+                controller = await _get_controller_for_service(target)
+                if not getattr(controller, "supports_memory_presets", False):
+                    raise ServiceValidationError(
+                        f"Device '{target.name}' does not support memory presets",
+                        translation_domain=DOMAIN,
+                        translation_key="memory_presets_not_supported",
+                        translation_placeholders={"device_name": target.name},
+                    )
+                slot_count = getattr(controller, "memory_slot_count", 4)
+                if preset > slot_count:
+                    raise ServiceValidationError(
+                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                        f"Preset {preset} is not available for this bed type.",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_preset_number",
+                        translation_placeholders={
+                            "device_name": target.name,
+                            "max_preset": str(slot_count),
+                            "requested_preset": str(preset),
+                        },
+                    )
+
+            await _execute_sided(
+                coordinator,
+                side,
+                lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
+            )
 
     async def handle_save_preset(call: ServiceCall) -> None:
         """Handle save_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        side = call.data.get(ATTR_SIDE, SIDE_BOTH)
 
-        _LOGGER.info("Service save_preset called: preset=%d", preset)
+        _LOGGER.info("Service save_preset called: preset=%d (side=%s)", preset, side)
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
-            if coordinator:
-                # Check if controller supports programming memory presets
-                controller = await _get_controller_for_service(coordinator)
-                if not getattr(controller, "supports_memory_programming", False):
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' does not support programming memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_programming_not_supported",
-                        translation_placeholders={"device_name": coordinator.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": coordinator.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-                await coordinator.async_execute_controller_command(
-                    lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
-                    cancel_running=False,
-                )
-            else:
+            if not coordinator:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
@@ -766,18 +801,54 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_placeholders={"device_id": device_id},
                 )
 
+            for target in _command_targets(coordinator, side):
+                controller = await _get_controller_for_service(target)
+                if not getattr(controller, "supports_memory_programming", False):
+                    raise ServiceValidationError(
+                        f"Device '{target.name}' does not support programming memory presets",
+                        translation_domain=DOMAIN,
+                        translation_key="memory_programming_not_supported",
+                        translation_placeholders={"device_name": target.name},
+                    )
+                slot_count = getattr(controller, "memory_slot_count", 4)
+                if preset > slot_count:
+                    raise ServiceValidationError(
+                        f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                        f"Preset {preset} is not available for this bed type.",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_preset_number",
+                        translation_placeholders={
+                            "device_name": target.name,
+                            "max_preset": str(slot_count),
+                            "requested_preset": str(preset),
+                        },
+                    )
+
+            await _execute_sided(
+                coordinator,
+                side,
+                lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
+                cancel_running=False,
+            )
+
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        side = call.data.get(ATTR_SIDE, SIDE_BOTH)
 
-        _LOGGER.info("Service stop_all called")
+        _LOGGER.info("Service stop_all called (side=%s)", side)
 
         missing_device_ids: list[str] = []
 
         for device_id in device_ids:
             coordinator = await _get_coordinator_from_device(hass, device_id)
             if coordinator:
-                await coordinator.async_stop_command()
+                # Validate that side applies (rejects left/right on a single bed).
+                _command_targets(coordinator, side)
+                if isinstance(coordinator, PairedBedCoordinator):
+                    await coordinator.async_stop_command(side=side)
+                else:
+                    await coordinator.async_stop_command()
             else:
                 missing_device_ids.append(device_id)
 
@@ -789,6 +860,14 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
             )
 
+    # Optional left/right/both target (paired beds). Default 'both' keeps every
+    # existing automation working unchanged on single beds.
+    side_field = {
+        vol.Optional(ATTR_SIDE, default=SIDE_BOTH): vol.In(
+            [SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH]
+        )
+    }
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,
@@ -797,6 +876,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                **side_field,
             }
         ),
     )
@@ -809,6 +889,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                **side_field,
             }
         ),
     )
@@ -820,6 +901,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                **side_field,
             }
         ),
     )

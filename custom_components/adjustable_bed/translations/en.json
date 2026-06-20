@@ -452,6 +452,9 @@
       },
       "legs_down": {
         "name": "Legs Down"
+      },
+      "stop_both": {
+        "name": "Stop Both Sides"
       }
     },
     "cover": {
@@ -760,6 +763,12 @@
     },
     "multiple_device_targets_not_supported": {
       "message": "Support bundle generation only supports one configured device at a time. Select a single device or use target_address for an unconfigured bed."
+    },
+    "side_not_supported": {
+      "message": "This is a single bed; the Left/Right/Both option only applies to paired beds."
+    },
+    "side_not_available": {
+      "message": "This bed has no {side} side."
     }
   },
   "issues": {

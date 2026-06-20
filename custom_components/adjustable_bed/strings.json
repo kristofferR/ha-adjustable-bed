@@ -452,6 +452,9 @@
       },
       "legs_down": {
         "name": "Legs Down"
+      },
+      "stop_both": {
+        "name": "Stop Both Sides"
       }
     },
     "cover": {
@@ -757,6 +760,12 @@
     },
     "invalid_position_range": {
       "message": "Position {position} is out of range for motor \"{motor}\". Valid range: 0-{max_value}{unit}."
+    },
+    "side_not_supported": {
+      "message": "This is a single bed; the Left/Right/Both option only applies to paired beds."
+    },
+    "side_not_available": {
+      "message": "This bed has no {side} side."
     }
   },
   "issues": {

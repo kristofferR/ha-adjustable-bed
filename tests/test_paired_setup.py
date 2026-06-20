@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -208,3 +210,51 @@ class TestPairedBuilders:
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT, baseline)
         persist(dict(baseline))  # no change
         assert entry.data is before  # entry not updated
+
+
+class TestSideServiceRouting:
+    """The left/right/both service field routes correctly."""
+
+    async def test_side_left_rejected_on_single_bed(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A single bed rejects a left/right side with a clean error."""
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        devices = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )
+        assert devices
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "stop_all",
+                {"device_id": [devices[0].id], "side": SIDE_LEFT},
+                blocking=True,
+            )
+
+    async def test_stop_all_sides_on_paired_bed(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """stop_all with both/left/right is accepted on a paired bed."""
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        parent = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, PAIR_ID)})
+        assert parent is not None
+        for side in ("both", SIDE_LEFT, SIDE_RIGHT):
+            await hass.services.async_call(
+                DOMAIN,
+                "stop_all",
+                {"device_id": [parent.id], "side": side},
+                blocking=True,
+            )
