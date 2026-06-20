@@ -105,6 +105,21 @@ PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 # Internal forward-compat marker for the paired-entry data shape within v4.
 PAIR_SCHEMA_VERSION: Final = 1
 
+# How the two sides' BLE links are driven. ``auto``/``concurrent`` hold both
+# links at once (correct for independent two-device beds like Linak — both sides
+# run truly simultaneously). ``sequential`` switches the active connection per
+# command (the Octo profile, where the firmware allows only one active link).
+CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
+PAIR_CONNECTION_MODE_AUTO: Final = "auto"
+PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
+PAIR_CONNECTION_MODE_SEQUENTIAL: Final = "sequential"
+PAIR_CONNECTION_MODES: Final = (
+    PAIR_CONNECTION_MODE_AUTO,
+    PAIR_CONNECTION_MODE_CONCURRENT,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
+)
+DEFAULT_PAIR_CONNECTION_MODE: Final = PAIR_CONNECTION_MODE_AUTO
+
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
 DEFAULT_LEGS_MAX_ANGLE: Final = 45.0
