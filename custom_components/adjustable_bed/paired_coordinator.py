@@ -221,27 +221,32 @@ class PairedBedCoordinator:
         tasks: dict[str, asyncio.Task[None]] = {
             side: asyncio.ensure_future(op(child)) for side, child in targets
         }
-        # Return as soon as the FIRST side fails (or all complete), so the
-        # stop-the-other cleanup fires immediately instead of waiting for the
-        # healthy side to finish its full send window.
-        await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
+        try:
+            # Return as soon as the FIRST side fails (or all complete), so the
+            # stop-the-other cleanup fires immediately instead of waiting for the
+            # healthy side to finish its full send window.
+            await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
 
-        errors: dict[str, BaseException] = {}
-        for side, task in tasks.items():
-            if task.done() and not task.cancelled():
-                exc = task.exception()
-                if exc is not None:
-                    errors[side] = exc
+            errors: dict[str, BaseException] = {}
+            for side, task in tasks.items():
+                if task.done() and not task.cancelled():
+                    exc = task.exception()
+                    if exc is not None:
+                        errors[side] = exc
 
-        if errors:
-            # STOP every side now (this also makes each child's in-flight command
-            # exit early), swallow per-side STOP errors, settle the tasks, raise.
-            await self._stop_children(targets)
+            if errors:
+                # STOP every side now (this also makes each child's in-flight
+                # command exit early), swallowing per-side STOP errors, then raise.
+                await self._stop_children(targets)
+                raise PairedSideError(action, errors)
+        finally:
+            # Never let a child task outlive this call (e.g. if the parent
+            # coroutine is cancelled mid-wait): cancel any still-running task and
+            # settle them all so none keep writing outside the parent lock.
+            for task in tasks.values():
+                if not task.done():
+                    task.cancel()
             await asyncio.gather(*tasks.values(), return_exceptions=True)
-            raise PairedSideError(action, errors)
-
-        # No failures: FIRST_EXCEPTION already waited for all to complete.
-        await asyncio.gather(*tasks.values(), return_exceptions=True)
 
     async def _run_both_sequential(
         self,

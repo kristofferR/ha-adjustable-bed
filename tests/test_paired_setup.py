@@ -310,6 +310,7 @@ class TestPairBedsConversion:
 
         result = await self._reach_pair_step(hass)
         entries = self._pairable_octo_ids(hass)
+        assert len(entries) >= 2  # keep the real assertion below diagnostic
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {"left_entry": entries[0], "right_entry": entries[1]},
