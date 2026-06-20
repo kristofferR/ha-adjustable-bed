@@ -948,6 +948,15 @@ class AdjustableBedCoordinator:
 
     def _auto_reconnect_enabled(self) -> bool:
         """Return True when unexpected disconnects should schedule a reconnect timer."""
+        # disconnect_after_command beds intentionally drop the link after each command
+        # (and on idle), so an unexpected disconnect is expected behaviour, not a fault.
+        # Scheduling a reconnect there causes a storm: some receivers (e.g. Keeson
+        # BT40SA) require GATT activity within ~12s or they drop the link, and after a
+        # few reconnect cycles enter a protection mode where they stop advertising
+        # entirely until power-cycled (#369). The next user command reconnects on
+        # demand, so no reconnect timer is needed for these beds.
+        if self._disconnect_after_operation_enabled():
+            return False
         return not self._uses_persistent_connection()
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
@@ -1921,7 +1930,8 @@ class AdjustableBedCoordinator:
 
         if not self._auto_reconnect_enabled():
             _LOGGER.debug(
-                "Skipping auto-reconnect timer for persistent connection bed type %s",
+                "Skipping auto-reconnect timer for %s (persistent connection or "
+                "disconnect_after_command); next command reconnects on demand",
                 self._bed_type,
             )
             if self._reconnect_timer is not None:
