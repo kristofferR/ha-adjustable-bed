@@ -50,6 +50,8 @@ class ChildDescriptor(TypedDict, total=False):
     jensen_pin: str
     cb24_bed_selection: int
     capabilities: dict[str, Any]
+    # Set once a BLE bond is established, so future connects skip pairing.
+    ble_bond_established: bool
     # Provenance, used to revert an opt-in conversion (unpair) losslessly.
     absorbed_entry_id: str
     origin_unique_id: str
@@ -143,12 +145,11 @@ def with_updated_child(
     if not children:
         raise ValueError("with_updated_child called on a non-paired entry")
 
-    updated: list[ChildDescriptor] = []
+    updated: list[dict[str, Any]] = []
     matched = False
     for child in children:
         if child.get(CONF_SIDE) == side:
-            merged: ChildDescriptor = {**child, **patch}  # type: ignore[misc]
-            updated.append(merged)
+            updated.append({**child, **patch})
             matched = True
         else:
             updated.append({**child})

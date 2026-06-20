@@ -15,11 +15,12 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    CONF_HAS_MASSAGE,
     DOMAIN,
+    SIDE_BOTH,
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -482,20 +483,39 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed button entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-    has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    # Paired beds expose per-side buttons (presets, stop, connect) built against
+    # each child, plus a single combined "Stop" on the parent that fans STOP out
+    # to both sides with the resilient stop contract.
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[ButtonEntity] = []
+        for child in coordinator.children.values():
+            entities.extend(_button_entities_for(hass, child))
+        entities.append(PairedBedStopButton(coordinator))
+        async_add_entities(entities)
+        return
+
+    async_add_entities(_button_entities_for(hass, coordinator))
+
+
+def _button_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[ButtonEntity]:
+    """Build button entities for a single (child or standalone) coordinator."""
+    has_massage = coordinator.has_massage
     controller = coordinator.controller
 
     if controller is not None:
         _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
 
-    entities = []
+    entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if not _should_add_button(description, controller, has_massage):
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
-    async_add_entities(entities)
+    return entities
 
 
 def _should_add_button(
@@ -621,3 +641,30 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
                 self.entity_description.key,
             )
             raise
+
+
+class PairedBedStopButton(ButtonEntity):
+    """Combined STOP for a paired bed.
+
+    Lives on the synthetic parent device and stops BOTH sides with the resilient
+    stop contract — one side's STOP failure never prevents stopping the other.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "stop_both"
+
+    def __init__(self, coordinator: PairedBedCoordinator) -> None:
+        """Initialize the combined stop button."""
+        self._coordinator = coordinator
+        self._attr_unique_id = f"{coordinator.pair_id}_stop_both"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def available(self) -> bool:
+        """Always available (the bed reconnects on demand)."""
+        return True
+
+    async def async_press(self) -> None:
+        """Stop both sides."""
+        _LOGGER.info("Combined stop pressed for paired bed %s", self._coordinator.name)
+        await self._coordinator.async_stop_command(side=SIDE_BOTH)

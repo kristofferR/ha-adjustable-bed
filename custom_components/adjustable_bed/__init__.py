@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -43,20 +43,29 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
+    CONF_PAIR_ID,
+    CONF_PAIR_MEMBER_ADDRESSES,
+    CONF_PAIR_MODE,
+    CONF_PAIR_SCHEMA_VERSION,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONF_SIDE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
+    PAIR_SIDES,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     requires_pairing,
 )
-from .coordinator import AdjustableBedCoordinator
+from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .pairing import is_paired
+from .paired_coordinator import PairedBedCoordinator
+from .pairing import get_child, is_paired, with_updated_child
 from .unsupported import create_pairing_required_issue
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -112,6 +121,16 @@ PLATFORMS: list[Platform] = [
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
+]
+
+# Platforms a paired bed (Dual Bed 4.0) sets up. A paired entry exposes per-side
+# motors, presets/stop, combined "both" controls and per-side connectivity; the
+# remaining single-bed platforms (climate/light/select/number/sensor/switch) are
+# not forwarded for pairs yet, so they never see a PairedBedCoordinator.
+PAIRED_PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.COVER,
 ]
 
 
@@ -287,21 +306,137 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
-async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a paired (Dual Bed 4.0) entry.
+# Entry-data keys that belong to the pair itself and must NOT be handed down to a
+# child coordinator (which expects single-bed config).
+_PAIR_ONLY_KEYS = frozenset(
+    {
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_SCHEMA_VERSION,
+        CONF_PAIR_CONNECTION_MODE,
+    }
+)
 
-    Dormant in Phase 0: no flow creates a paired entry yet, so this is never
-    reached in practice. It is wired into async_setup_entry now so the v4 setup
-    path exists and routing is in place; Phase 1 replaces this body with the
-    PairedBedCoordinator.
+
+def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Parent-level config inherited by every child (each descriptor overrides)."""
+    return {
+        key: value for key, value in parent_data.items() if key not in _PAIR_ONLY_KEYS
+    }
+
+
+def _make_child_persist_cb(
+    hass: HomeAssistant, entry: ConfigEntry, side: str, baseline: Mapping[str, Any]
+) -> Callable[[dict[str, Any]], None]:
+    """Route a child's runtime config change back to its parent descriptor.
+
+    Only the keys that actually changed (vs. the build-time config) are written
+    back, so the descriptor stays minimal instead of absorbing the shared fields.
     """
-    _LOGGER.error(
-        "Paired bed entry %s (%s) cannot be set up: paired-bed support is not yet "
-        "implemented in this build",
-        entry.title,
-        entry.entry_id,
+
+    def persist(new_child_data: dict[str, Any]) -> None:
+        delta = {
+            key: value
+            for key, value in new_child_data.items()
+            if baseline.get(key) != value
+        }
+        if not delta:
+            return
+        hass.config_entries.async_update_entry(
+            entry, data=with_updated_child(entry.data, side, delta)
+        )
+
+    return persist
+
+
+def _build_paired_children(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> dict[str, AdjustableBedCoordinator]:
+    """Build one child coordinator per side from the paired entry's descriptors."""
+    shared = _shared_child_fields(entry.data)
+    children: dict[str, AdjustableBedCoordinator] = {}
+    for side in PAIR_SIDES:
+        descriptor = get_child(entry.data, side)
+        if descriptor is None:
+            continue
+        child_data: dict[str, Any] = {**shared, **descriptor}
+        view = ChildEntryView(
+            entry, child_data, _make_child_persist_cb(hass, entry, side, child_data)
+        )
+        # The view duck-types a ConfigEntry for the coordinator's purposes.
+        children[side] = AdjustableBedCoordinator(hass, cast("ConfigEntry", view))
+    return children
+
+
+def _async_ensure_paired_device_registry(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: PairedBedCoordinator
+) -> None:
+    """Eagerly create the synthetic parent device and its child sub-devices.
+
+    Created before the first connect so the device (and its diagnostics) survive
+    a half-available pair or a SETUP_RETRY.
+    """
+    registry = dr.async_get(hass)
+    parent_info = coordinator.device_info
+    registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers=parent_info.get("identifiers"),
+        name=parent_info.get("name"),
+        manufacturer=parent_info.get("manufacturer"),
+        model=parent_info.get("model"),
     )
-    raise ConfigEntryNotReady("Paired-bed support is not yet available")
+    parent_identifier = (DOMAIN, coordinator.pair_id)
+    for child in coordinator.children.values():
+        child_info = child.device_info
+        registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers=child_info.get("identifiers"),
+            name=child_info.get("name"),
+            manufacturer=child_info.get("manufacturer"),
+            model=child_info.get("model"),
+            via_device=parent_identifier,
+        )
+
+
+async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a paired (Dual Bed 4.0) entry as one logical device."""
+    _LOGGER.info(
+        "Setting up paired bed %s (pair_id=%s, mode=%s, sides=%s)",
+        entry.title,
+        entry.data.get(CONF_PAIR_ID),
+        entry.data.get(CONF_PAIR_MODE),
+        [child.get(CONF_SIDE) for child in entry.data.get(CONF_PAIR_CHILDREN, [])],
+    )
+
+    children = _build_paired_children(hass, entry)
+    if not children:
+        raise ConfigEntryNotReady("Paired bed has no child sides configured")
+
+    coordinator = PairedBedCoordinator(hass, entry, children)
+    _async_ensure_paired_device_registry(hass, entry, coordinator)
+
+    try:
+        async with asyncio.timeout(SETUP_TIMEOUT):
+            connected = await coordinator.async_connect()
+    except TimeoutError:
+        raise ConfigEntryNotReady(
+            f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
+        ) from None
+
+    if not connected:
+        # Half-available is fine, but if NO side connected there is nothing to
+        # control yet — retry like a single bed.
+        raise ConfigEntryNotReady(
+            f"No side of paired bed {entry.title} could be connected"
+        )
+
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+    _LOGGER.info("Paired bed setup complete for %s", entry.title)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1217,8 +1352,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: AdjustableBedCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
+    platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[
+            DOMAIN
+        ].pop(entry.entry_id)
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
