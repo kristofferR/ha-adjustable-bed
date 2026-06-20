@@ -1119,19 +1119,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 pair_data = build_pair_entry_data(left.data, right.data, name=name)
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
-                # Create the pair first, then remove the two originals as a
-                # deferred task. This way a failure here can never leave the user
-                # with both beds deleted and no pair. The brief overlap (both the
-                # singles and the pair's children targeting the same MACs) clears
-                # once the originals are removed and the pair retry-connects.
-                left_id, right_id = left.entry_id, right.entry_id
-                hass = self.hass
-
-                async def _remove_originals() -> None:
-                    await hass.config_entries.async_remove(left_id)
-                    await hass.config_entries.async_remove(right_id)
-
-                hass.async_create_task(_remove_originals())
+                # Remove the two originals BEFORE creating the pair. The paired
+                # platforms reuse the same {address}_{key} entity unique_ids, so
+                # the originals' entities must be gone first or the paired ones
+                # would be rejected as duplicates (leaving the pair without
+                # per-side controls). pair_data is already built and the unique_id
+                # checked, and there is no await between the removals and the
+                # return, so this can't leave the user with no bed. (Full
+                # history-preserving device re-homing is a follow-up.)
+                await self.hass.config_entries.async_remove(left.entry_id)
+                await self.hass.config_entries.async_remove(right.entry_id)
                 _LOGGER.info(
                     "Combined %s + %s into paired bed %s",
                     left.title,
