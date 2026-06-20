@@ -73,6 +73,7 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_PIN,
+    CONF_PAIR_ID,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -124,7 +125,7 @@ from .discovery_settings import (
     async_set_discovery_disabled,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .pairing import pair_member_addresses
+from .pairing import build_pair_entry_data, is_paired, pair_member_addresses
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
@@ -928,6 +929,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             if address == "diagnostic":
                 _LOGGER.debug("User selected diagnostic mode")
                 return await self.async_step_diagnostic()
+            if address == "pair_beds":
+                _LOGGER.debug("User selected combine two beds")
+                return await self.async_step_pair_beds()
 
             _LOGGER.info("User selected device: %s", address)
             # Normalize address to uppercase to match Bluetooth discovery
@@ -1049,10 +1053,80 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             devices["select_by_brand"] = "Select by actuator brand (recommended)"
         devices["manual"] = "Show all BLE devices"
         devices["diagnostic"] = "Browse unsupported BLE devices"
+        if len(self._pairable_single_entries()) >= 2:
+            devices["pair_beds"] = "Combine two beds into one (Dual Bed)"
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+        )
+
+    def _pairable_single_entries(self) -> list[ConfigEntry]:
+        """Configured single-bed entries that could be combined into a pair."""
+        return [
+            entry
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if not is_paired(entry.data) and entry.data.get(CONF_ADDRESS)
+        ]
+
+    async def async_step_pair_beds(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Combine two existing single-bed entries into one paired (Dual Bed) device.
+
+        The two originals are removed and one paired entry is created. Per-side
+        entities keep their {address}_{key} unique_ids, so history follows.
+        """
+        entries = self._pairable_single_entries()
+        if len(entries) < 2:
+            return self.async_abort(reason="not_enough_beds")
+
+        by_id = {entry.entry_id: entry for entry in entries}
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            left = by_id.get(user_input["left_entry"])
+            right = by_id.get(user_input["right_entry"])
+            if left is None or right is None:
+                errors["base"] = "unknown"
+            elif left.entry_id == right.entry_id:
+                errors["right_entry"] = "same_device"
+            elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
+                errors["base"] = "mismatched_bed_types"
+            else:
+                name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
+                pair_data = build_pair_entry_data(left.data, right.data, name=name)
+                await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
+                self._abort_if_unique_id_configured()
+                # Free the member MACs by removing the singles first, then create
+                # the pair (avoids two entries contending for the same MAC).
+                await self.hass.config_entries.async_remove(left.entry_id)
+                await self.hass.config_entries.async_remove(right.entry_id)
+                _LOGGER.info(
+                    "Combined %s + %s into paired bed %s",
+                    left.title,
+                    right.title,
+                    name,
+                )
+                return self.async_create_entry(title=name, data=pair_data)
+
+        options = [
+            SelectOptionDict(value=entry.entry_id, label=entry.title or entry.entry_id)
+            for entry in entries
+        ]
+        side_selector = SelectSelector(
+            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+        )
+        return self.async_show_form(
+            step_id="pair_beds",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("left_entry"): side_selector,
+                    vol.Required("right_entry"): side_selector,
+                    vol.Optional(CONF_NAME): str,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_select_actuator(

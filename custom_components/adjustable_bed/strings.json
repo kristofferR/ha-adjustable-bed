@@ -227,6 +227,15 @@
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX"
         }
+      },
+      "pair_beds": {
+        "title": "Combine two beds",
+        "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently — if a sync cable already keeps both sides together, keep a single bed instead.",
+        "data": {
+          "left_entry": "Left side bed",
+          "right_entry": "Right side bed",
+          "name": "Name for the combined bed"
+        }
       }
     },
     "abort": {
@@ -235,7 +244,8 @@
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
-      "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle."
+      "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
+      "not_enough_beds": "You need at least two set-up beds of the same type to combine."
     },
     "error": {
       "cannot_connect": "Failed to connect to bed. Check that the bed is powered on and in range.",
@@ -249,7 +259,9 @@
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
-      "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0."
+      "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
+      "same_device": "Pick two different beds — you selected the same one for both sides.",
+      "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices."
     }
   },
   "options": {

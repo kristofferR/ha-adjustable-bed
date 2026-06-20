@@ -21,14 +21,22 @@ import hashlib
 from collections.abc import Iterable, Mapping
 from typing import Any, TypedDict, cast
 
-from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    CONF_BED_TYPE,
     CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
+    CONF_PAIR_MODE,
+    CONF_PAIR_SCHEMA_VERSION,
     CONF_SIDE,
+    PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_SCHEMA_VERSION,
     PAIR_SIDES,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 
 
@@ -160,3 +168,60 @@ def with_updated_child(
     new_data = dict(entry_data)
     new_data[CONF_PAIR_CHILDREN] = updated
     return new_data
+
+
+# Pair-only keys live on the parent and must never appear in a child descriptor
+# built from a single-bed entry's data.
+_PAIR_ONLY_DESCRIPTOR_KEYS = frozenset(
+    {
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_SCHEMA_VERSION,
+    }
+)
+
+
+def _descriptor_from_single(data: Mapping[str, Any], side: str) -> dict[str, Any]:
+    """Build a child descriptor from a single-bed entry's data."""
+    descriptor = {
+        key: value
+        for key, value in data.items()
+        if key not in _PAIR_ONLY_DESCRIPTOR_KEYS
+    }
+    descriptor[CONF_SIDE] = side
+    return descriptor
+
+
+def build_pair_entry_data(
+    left_data: Mapping[str, Any],
+    right_data: Mapping[str, Any],
+    *,
+    name: str,
+    connection_mode: str | None = None,
+) -> dict[str, Any]:
+    """Build a separate-address paired entry's data from two single-bed datas.
+
+    Each single bed becomes a child descriptor (its full config, plus a ``side``).
+    The shared family ``bed_type`` is taken from the left side. The synthetic
+    ``pair_id`` is deterministic, so re-pairing the same two MACs is idempotent.
+    """
+    left_addr = left_data[CONF_ADDRESS]
+    right_addr = right_data[CONF_ADDRESS]
+
+    data: dict[str, Any] = {
+        CONF_PAIR_ID: make_pair_id([left_addr, right_addr]),
+        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
+        CONF_BED_TYPE: left_data.get(CONF_BED_TYPE),
+        CONF_NAME: name,
+        CONF_PAIR_MEMBER_ADDRESSES: [left_addr.upper(), right_addr.upper()],
+        CONF_PAIR_CHILDREN: [
+            _descriptor_from_single(left_data, SIDE_LEFT),
+            _descriptor_from_single(right_data, SIDE_RIGHT),
+        ],
+    }
+    if connection_mode is not None:
+        data[CONF_PAIR_CONNECTION_MODE] = connection_mode
+    return data

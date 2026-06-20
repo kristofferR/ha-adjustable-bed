@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.pairing import (
+    build_pair_entry_data,
     get_child,
     is_paired,
     iter_children,
@@ -111,6 +112,41 @@ class TestPairMemberAddresses:
 
     def test_single_bed_has_no_members(self):
         assert pair_member_addresses({CONF_ADDRESS: LEFT_ADDR}) == []
+
+
+class TestBuildPairEntryData:
+    def test_builds_separate_address_pair(self):
+        left = {
+            "address": LEFT_ADDR,
+            "name": "Seng",
+            "bed_type": "linak",
+            "motor_count": 2,
+            "ble_bond_established": True,
+        }
+        right = {"address": RIGHT_ADDR, "name": "Bed 4587", "bed_type": "linak", "motor_count": 2}
+
+        data = build_pair_entry_data(left, right, name="Master Bed")
+
+        assert is_paired(data)
+        assert data[CONF_PAIR_ID] == make_pair_id([LEFT_ADDR, RIGHT_ADDR])
+        assert data["pair_mode"] == "separate_address"
+        assert data["bed_type"] == "linak"
+        assert data["name"] == "Master Bed"
+        assert pair_member_addresses(data) == [LEFT_ADDR, RIGHT_ADDR]
+        # children carry their full single-bed config + a side
+        left_child = get_child(data, SIDE_LEFT)
+        assert left_child[CONF_ADDRESS] == LEFT_ADDR
+        assert left_child[CONF_SIDE] == SIDE_LEFT
+        assert left_child["name"] == "Seng"
+        assert left_child["ble_bond_established"] is True
+        assert get_child(data, SIDE_RIGHT)[CONF_ADDRESS] == RIGHT_ADDR
+
+    def test_descriptor_excludes_pair_only_keys(self):
+        # If a source somehow carries pair keys, they must not leak into a child.
+        left = {"address": LEFT_ADDR, "bed_type": "linak", CONF_PAIR_ID: "stale"}
+        right = {"address": RIGHT_ADDR, "bed_type": "linak"}
+        data = build_pair_entry_data(left, right, name="x")
+        assert CONF_PAIR_ID not in get_child(data, SIDE_LEFT)
 
 
 class TestWithUpdatedChild:

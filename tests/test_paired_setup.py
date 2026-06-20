@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import pytest
+from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -34,7 +36,11 @@ from custom_components.adjustable_bed.const import (
     SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
-from custom_components.adjustable_bed.pairing import get_child
+from custom_components.adjustable_bed.pairing import (
+    get_child,
+    is_paired,
+    pair_member_addresses,
+)
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
 RIGHT_ADDR = "AA:BB:CC:DD:EE:02"
@@ -210,6 +216,85 @@ class TestPairedBuilders:
         persist = _make_child_persist_cb(hass, entry, SIDE_LEFT, baseline)
         persist(dict(baseline))  # no change
         assert entry.data is before  # entry not updated
+
+
+class TestPairBedsConversion:
+    """The 'combine two beds' config-flow step."""
+
+    def _single(self, hass: HomeAssistant, address: str, name: str) -> MockConfigEntry:
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=name,
+            data={
+                CONF_ADDRESS: address,
+                CONF_NAME: name,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=address,
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        return entry
+
+    async def _reach_pair_step(self, hass: HomeAssistant):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["type"] == FlowResultType.FORM
+        return await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ADDRESS: "pair_beds"}
+        )
+
+    async def test_combine_two_singles_into_one_pair(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        left = self._single(hass, LEFT_ADDR, "Seng")
+        right = self._single(hass, RIGHT_ADDR, "Bed 4587")
+
+        result = await self._reach_pair_step(hass)
+        assert result["step_id"] == "pair_beds"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                "left_entry": left.entry_id,
+                "right_entry": right.entry_id,
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        remaining = hass.config_entries.async_entries(DOMAIN)
+        ids = {entry.entry_id for entry in remaining}
+        assert left.entry_id not in ids  # originals removed
+        assert right.entry_id not in ids
+        paired = [entry for entry in remaining if is_paired(entry.data)]
+        assert len(paired) == 1
+        assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
+
+    async def test_same_entry_twice_is_rejected(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        left = self._single(hass, LEFT_ADDR, "Seng")
+        self._single(hass, RIGHT_ADDR, "Bed 4587")
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"left_entry": left.entry_id, "right_entry": left.entry_id},
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]
 
 
 class TestSideServiceRouting:
