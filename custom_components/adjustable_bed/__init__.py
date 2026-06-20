@@ -33,6 +33,7 @@ from .const import (
     BEDS_WITH_POSITION_FEEDBACK,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -310,8 +311,10 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
-# Entry-data keys that belong to the pair itself and must NOT be handed down to a
-# child coordinator (which expects single-bed config).
+# Entry-data keys that must NOT be inherited by a child coordinator: the pair's
+# own keys, plus per-side state like the BLE bond marker — inheriting a top-level
+# bond marker would poison BOTH sides (one repaired side must not flip the other
+# to "already bonded" and skip pairing).
 _PAIR_ONLY_KEYS = frozenset(
     {
         CONF_PAIR_ID,
@@ -320,6 +323,7 @@ _PAIR_ONLY_KEYS = frozenset(
         CONF_PAIR_MEMBER_ADDRESSES,
         CONF_PAIR_SCHEMA_VERSION,
         CONF_PAIR_CONNECTION_MODE,
+        CONF_BLE_BOND_ESTABLISHED,
     }
 )
 
