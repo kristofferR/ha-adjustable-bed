@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine, Mapping
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -36,6 +36,9 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+
+if TYPE_CHECKING:
+    from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,43 +60,6 @@ class PairedSideError(HomeAssistantError):
         super().__init__(f"Paired {action} failed on side(s): {sides}")
 
 
-class ChildCoordinator(Protocol):
-    """The slice of ``AdjustableBedCoordinator`` the pair relies on.
-
-    Both the real coordinator and the test doubles satisfy this.
-    """
-
-    @property
-    def address(self) -> str: ...
-    @property
-    def name(self) -> str: ...
-    @property
-    def is_connected(self) -> bool: ...
-    @property
-    def device_info(self) -> DeviceInfo: ...
-    async def async_connect(self) -> bool: ...
-    async def async_disconnect(self, reason: str = ...) -> None: ...
-    async def async_shutdown(self) -> None: ...
-    async def async_execute_controller_command(
-        self,
-        command_fn: CommandFn,
-        cancel_running: bool = ...,
-        skip_disconnect: bool = ...,
-    ) -> None: ...
-    async def async_seek_position(
-        self,
-        position_key: str,
-        target_angle: float,
-        move_up_fn: CommandFn,
-        move_down_fn: CommandFn,
-        move_stop_fn: CommandFn,
-    ) -> None: ...
-    async def async_stop_command(self) -> None: ...
-    def register_connection_state_callback(
-        self, callback_fn: Callable[[bool], None]
-    ) -> Callable[[], None]: ...
-
-
 class PairedBedCoordinator:
     """Routes left/right/both commands across two child coordinators."""
 
@@ -101,7 +67,7 @@ class PairedBedCoordinator:
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
-        children: Mapping[str, ChildCoordinator],
+        children: Mapping[str, AdjustableBedCoordinator],
         *,
         connection_mode: str | None = None,
     ) -> None:
@@ -112,7 +78,7 @@ class PairedBedCoordinator:
         # Ordered {side: child}, left first. A side may be absent only in
         # degraded/test setups; normally both are present (a disconnected child
         # is still present, just not is_connected).
-        self._children: dict[str, ChildCoordinator] = {
+        self._children: dict[str, AdjustableBedCoordinator] = {
             side: children[side] for side in PAIR_SIDES if side in children
         }
         if not self._children:
@@ -145,10 +111,10 @@ class PairedBedCoordinator:
         return tuple(self._children)
 
     @property
-    def children(self) -> dict[str, ChildCoordinator]:
+    def children(self) -> dict[str, AdjustableBedCoordinator]:
         return dict(self._children)
 
-    def child_for_side(self, side: str) -> ChildCoordinator | None:
+    def child_for_side(self, side: str) -> AdjustableBedCoordinator | None:
         return self._children.get(side)
 
     @property
@@ -178,7 +144,7 @@ class PairedBedCoordinator:
         if side in (SIDE_LEFT, SIDE_RIGHT) and side not in self._children:
             raise ValueError(f"Paired bed has no {side} side")
 
-    def _targets_for(self, side: str) -> list[tuple[str, ChildCoordinator]]:
+    def _targets_for(self, side: str) -> list[tuple[str, AdjustableBedCoordinator]]:
         self._validate_side(side)
         if side == SIDE_BOTH:
             return [(s, self._children[s]) for s in PAIR_SIDES if s in self._children]
@@ -195,7 +161,7 @@ class PairedBedCoordinator:
     ) -> None:
         """Run ``command_fn`` on the targeted side(s) with the both-failure contract."""
 
-        async def op(child: ChildCoordinator) -> None:
+        async def op(child: AdjustableBedCoordinator) -> None:
             await child.async_execute_controller_command(
                 command_fn,
                 cancel_running=cancel_running,
@@ -216,7 +182,7 @@ class PairedBedCoordinator:
     ) -> None:
         """Seek a target position on the targeted side(s)."""
 
-        async def op(child: ChildCoordinator) -> None:
+        async def op(child: AdjustableBedCoordinator) -> None:
             await child.async_seek_position(
                 position_key, target_angle, move_up_fn, move_down_fn, move_stop_fn
             )
@@ -227,7 +193,7 @@ class PairedBedCoordinator:
         self,
         action: str,
         side: str,
-        op: Callable[[ChildCoordinator], Coroutine[Any, Any, None]],
+        op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
     ) -> None:
         targets = self._targets_for(side)
 
@@ -236,38 +202,54 @@ class PairedBedCoordinator:
             await op(targets[0][1])
             return
 
-        if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-            await self._run_both_sequential(action, targets, op)
-        else:
-            await self._run_both_concurrent(action, targets, op)
+        # Serialize whole-bed ('both') commands at the parent so two overlapping
+        # commands can't interleave and desync the sides (and so sequential mode
+        # orders connection switching across sides). STOP never takes this lock,
+        # so it can always interrupt a running command.
+        async with self._pair_command_lock:
+            if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+                await self._run_both_sequential(action, targets, op)
+            else:
+                await self._run_both_concurrent(action, targets, op)
 
     async def _run_both_concurrent(
         self,
         action: str,
-        targets: list[tuple[str, ChildCoordinator]],
-        op: Callable[[ChildCoordinator], Coroutine[Any, Any, None]],
+        targets: list[tuple[str, AdjustableBedCoordinator]],
+        op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
     ) -> None:
-        results = await asyncio.gather(
-            *(op(child) for _, child in targets), return_exceptions=True
-        )
-        errors = {
-            side: result
-            for (side, _), result in zip(targets, results, strict=True)
-            if isinstance(result, BaseException)
+        tasks: dict[str, asyncio.Task[None]] = {
+            side: asyncio.ensure_future(op(child)) for side, child in targets
         }
+        # Return as soon as the FIRST side fails (or all complete), so the
+        # stop-the-other cleanup fires immediately instead of waiting for the
+        # healthy side to finish its full send window.
+        await asyncio.wait(tasks.values(), return_when=asyncio.FIRST_EXCEPTION)
+
+        errors: dict[str, BaseException] = {}
+        for side, task in tasks.items():
+            if task.done() and not task.cancelled():
+                exc = task.exception()
+                if exc is not None:
+                    errors[side] = exc
+
         if errors:
-            # Stop EVERY started side (both were dispatched concurrently), even
-            # the one whose command succeeded, then surface one error.
+            # STOP every side now (this also makes each child's in-flight command
+            # exit early), swallow per-side STOP errors, settle the tasks, raise.
             await self._stop_children(targets)
+            await asyncio.gather(*tasks.values(), return_exceptions=True)
             raise PairedSideError(action, errors)
+
+        # No failures: FIRST_EXCEPTION already waited for all to complete.
+        await asyncio.gather(*tasks.values(), return_exceptions=True)
 
     async def _run_both_sequential(
         self,
         action: str,
-        targets: list[tuple[str, ChildCoordinator]],
-        op: Callable[[ChildCoordinator], Coroutine[Any, Any, None]],
+        targets: list[tuple[str, AdjustableBedCoordinator]],
+        op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
     ) -> None:
-        started: list[tuple[str, ChildCoordinator]] = []
+        started: list[tuple[str, AdjustableBedCoordinator]] = []
         errors: dict[str, BaseException] = {}
         for side, child in targets:
             try:
@@ -289,7 +271,7 @@ class PairedBedCoordinator:
             raise PairedSideError("stop", errors)
 
     async def _stop_children(
-        self, targets: list[tuple[str, ChildCoordinator]]
+        self, targets: list[tuple[str, AdjustableBedCoordinator]]
     ) -> dict[str, BaseException]:
         """Send STOP to every target, swallowing individual failures.
 

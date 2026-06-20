@@ -199,7 +199,7 @@ class TestPairedBuilders:
     ):
         entry = _paired_entry(hass)
         baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
-        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT, baseline)
+        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
 
         # Persist a change (e.g. a BLE bond marker) for the left side.
         persist({**baseline, "ble_bond_established": True})
@@ -213,9 +213,21 @@ class TestPairedBuilders:
         entry = _paired_entry(hass)
         before = entry.data
         baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
-        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT, baseline)
+        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
         persist(dict(baseline))  # no change
         assert entry.data is before  # entry not updated
+
+    async def test_child_persist_can_revert_a_value(self, hass: HomeAssistant):
+        # A value set then reverted must still be written (compares against the
+        # live descriptor, not a stale build-time baseline).
+        entry = _paired_entry(hass)
+        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
+
+        persist({**baseline, "ble_bond_established": True})
+        assert get_child(entry.data, SIDE_LEFT)["ble_bond_established"] is True
+        persist({**baseline, "ble_bond_established": False})
+        assert get_child(entry.data, SIDE_LEFT)["ble_bond_established"] is False
 
 
 class TestPairBedsConversion:

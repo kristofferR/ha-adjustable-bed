@@ -332,19 +332,22 @@ def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _make_child_persist_cb(
-    hass: HomeAssistant, entry: ConfigEntry, side: str, baseline: Mapping[str, Any]
+    hass: HomeAssistant, entry: ConfigEntry, side: str
 ) -> Callable[[dict[str, Any]], None]:
     """Route a child's runtime config change back to its parent descriptor.
 
-    Only the keys that actually changed (vs. the build-time config) are written
-    back, so the descriptor stays minimal instead of absorbing the shared fields.
+    Only keys that differ from the CURRENTLY persisted descriptor are written
+    (so it stays minimal). Comparing against the live descriptor — not a static
+    build-time baseline — means a value reverted to its original is still
+    written, instead of leaving a stale override behind.
     """
 
     def persist(new_child_data: dict[str, Any]) -> None:
+        current = get_child(entry.data, side) or {}
         delta = {
             key: value
             for key, value in new_child_data.items()
-            if baseline.get(key) != value
+            if current.get(key) != value
         }
         if not delta:
             return
@@ -367,7 +370,7 @@ def _build_paired_children(
             continue
         child_data: dict[str, Any] = {**shared, **descriptor}
         view = ChildEntryView(
-            entry, child_data, _make_child_persist_cb(hass, entry, side, child_data)
+            entry, child_data, _make_child_persist_cb(hass, entry, side)
         )
         # The view duck-types a ConfigEntry for the coordinator's purposes.
         children[side] = AdjustableBedCoordinator(hass, cast("ConfigEntry", view))
@@ -621,8 +624,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
     async def _get_coordinator_from_device(
         hass: HomeAssistant, device_id: str
-    ) -> AdjustableBedCoordinator | None:
-        """Get coordinator from device ID."""
+    ) -> AdjustableBedCoordinator | PairedBedCoordinator | None:
+        """Get coordinator (single or paired) from device ID."""
         device_registry = dr.async_get(hass)
         device = device_registry.async_get(device_id)
         if not device:
@@ -630,7 +633,10 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         for entry_id in device.config_entries:
             if entry_id in hass.data.get(DOMAIN, {}):
-                return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
+                return cast(
+                    "AdjustableBedCoordinator | PairedBedCoordinator",
+                    hass.data[DOMAIN][entry_id],
+                )
         return None
 
     def _get_support_bundle_target_from_device(
@@ -734,17 +740,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 command_fn, cancel_running=cancel_running
             )
 
-    def _reject_paired_service(
+    def _require_single_bed(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator, service: str
-    ) -> None:
-        """Reject services that do not yet support paired beds, with a clean error.
+    ) -> AdjustableBedCoordinator:
+        """Return a single-bed coordinator, or reject paired beds with a clean error.
 
         Without this, calling set_position/timed_move on a paired device would hit
         a raw AttributeError (PairedBedCoordinator has no controller/motor specs).
         """
         if isinstance(coordinator, PairedBedCoordinator):
             raise ServiceValidationError(
-                f"'{coordinator.name}' is a paired bed; {service} is not yet "
+                f"{coordinator.name} is a paired bed; {service} is not yet "
                 "supported on paired beds.",
                 translation_domain=DOMAIN,
                 translation_key="service_not_supported_for_paired",
@@ -753,6 +759,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     "service": service,
                 },
             )
+        return coordinator
 
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
@@ -947,7 +954,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
-            _reject_paired_service(coordinator, "set_position")
+            coordinator = _require_single_bed(coordinator, "set_position")
             controller = await _get_controller_for_service(coordinator)
 
             # Get config entry for bed type and motor count
@@ -1203,7 +1210,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
-            _reject_paired_service(coordinator, "timed_move")
+            coordinator = _require_single_bed(coordinator, "timed_move")
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
             controller = await _get_controller_for_service(coordinator)

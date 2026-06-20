@@ -97,6 +97,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -951,6 +952,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Normalize address to uppercase to match Bluetooth discovery
             await self.async_set_unique_id(address.upper())
             self._abort_if_unique_id_configured()
+            if self._is_absorbed_pair_member(address):
+                return self.async_abort(reason="already_configured")
 
             self._discovery_info = self._discovered_devices[address]
             return await self.async_step_bluetooth_confirm()
@@ -1109,7 +1112,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "mismatched_bed_types"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
-                pair_data = build_pair_entry_data(left.data, right.data, name=name)
+                # Octo's firmware switches one active connection at a time, so an
+                # Octo pair must use sequential mode; others default to auto.
+                connection_mode = (
+                    PAIR_CONNECTION_MODE_SEQUENTIAL
+                    if left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+                    else None
+                )
+                pair_data = build_pair_entry_data(
+                    left.data, right.data, name=name, connection_mode=connection_mode
+                )
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
                 # Create the pair first, then remove the two originals as a
@@ -1255,6 +1267,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Normalize address to uppercase to match Bluetooth discovery
             await self.async_set_unique_id(address.upper())
             self._abort_if_unique_id_configured()
+            if self._is_absorbed_pair_member(address):
+                return self.async_abort(reason="already_configured")
 
             self._discovery_info = self._all_ble_devices[address]
             return await self.async_step_manual_config()
@@ -1571,6 +1585,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
+                    if self._is_absorbed_pair_member(address):
+                        return self.async_abort(reason="already_configured")
 
                     _LOGGER.info(
                         "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
