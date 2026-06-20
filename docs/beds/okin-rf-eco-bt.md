@@ -37,6 +37,10 @@ can identify it after connecting when this GATT signature is present:
 - CSS service `90311623-25fa-3346-12ef-3cfb7a2556ac`
 - CSS write characteristic `90311625-25fa-3346-12ef-3cfb7a2556ac`
 
+If the same device also exposes Nordic DFU service
+`00001530-1212-efde-1523-785feabcd123`, it may be a full bed controller using
+[Okin CST](okin-cst.md), not this single-actuator stair profile.
+
 Generic `OKIN-*` devices remain ambiguous because multiple unrelated OKIN
 protocols use that naming pattern.
 

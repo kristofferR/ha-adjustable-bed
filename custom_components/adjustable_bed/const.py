@@ -109,6 +109,8 @@ BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
 BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 
+OKIN_CST_POSITION_AXES: Final = frozenset({"back", "legs"})
+
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
@@ -476,6 +478,11 @@ OKIMAT_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 OKIN_SMART_REMOTE_CSS_SERVICE_UUID: Final = "90311623-25fa-3346-12ef-3cfb7a2556ac"
 OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID: Final = "90311625-25fa-3346-12ef-3cfb7a2556ac"
 OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID: Final = "90311725-25fa-3346-12ef-3cfb7a2556ac"
+
+# Nordic DFU service observed on some newer OKIN dual-stack controllers. It is
+# not a control surface, but helps distinguish full bed controllers from the
+# RF ECO BT single-actuator profile when both expose OKIN Smart Remote CSS.
+NORDIC_DFU_SERVICE_UUID: Final = "00001530-1212-efde-1523-785feabcd123"
 
 # OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
 # Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
@@ -1643,6 +1650,7 @@ BEDS_WITH_ANGLE_SENSING: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,
@@ -1657,6 +1665,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
     {
         BED_TYPE_LINAK,
         BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_CST,
         BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
         BED_TYPE_REVERIE,
         BED_TYPE_REVERIE_NIGHTSTAND,

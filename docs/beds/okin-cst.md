@@ -5,17 +5,48 @@
 
 ## Known Brands
 
+- Mattress Firm 900-O / MFirm 900-O
 - Rize MF900
+- Nectar Motion / some `OKIN-*` Nectar bases
+- Leggett & Platt Prodigy Comfort Elite / `LP BED CONTROL` when diagnostics
+  show the CST connected GATT signature
 
 ## Detection
 
 | Signal | Value |
 |--------|-------|
 | Service UUID | `62741523-52f9-8864-b1ab-3b3a8d65950b` (standard OKIN) |
-| Name patterns | Varies (shared UUID requires disambiguation) |
+| Name patterns | Varies (shared UUID requires disambiguation; some report as `OKIN-XXXXXX`) |
+| Connected GATT hint | CSS `90311623-...` plus Nordic DFU `00001530-...` |
 | BLE Pairing | Required |
 
 Manual selection may be needed since the service UUID is shared with other Okin protocols.
+Choose this profile for Nectar Motion style `OKIN-*` bases when diagnostics show
+both the CSS service and Nordic DFU service.
+This also applies to Mattress Firm 900-O / MFirm 900-O bases advertising as
+`OKIN-XXXXXX` with the same connected GATT signature.
+
+## Pairing
+
+These bases require an OS-level Bluetooth **bond** before commands are accepted.
+Pairing is "Just Works" — **no PIN** and **no dedicated Bluetooth pairing button**.
+The bond is negotiated automatically by the OS when a client accesses one of the
+firmware's encrypted characteristics; on a real device every read/notify and
+Device Information characteristic returns GATT `error=5` "Insufficient
+authentication" until the link is bonded, while the command write characteristic
+(`62741525-…`) is reachable unbonded.
+
+**To enter pairing mode, power-cycle the control box:** unplug it for ~30 seconds,
+then plug it back in. The status light blinks blue, then turns green after ~20 s —
+that window is when the base accepts a new bond. Some models instead use the
+under-bed lamp/light button (hold until it blinks blue). The physical "Pair"/"Learn"
+button found on some OKIN control boxes only syncs the **RF remote**, not Bluetooth.
+
+The integration requests `pair=True` automatically and verifies the bond after
+connecting; if the link connected but did not bond it clears its cached bond state,
+re-pairs on the next attempt, and surfaces a **"Bluetooth pairing required"** repair
+with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on ESPHome
+≥ 2024.3.0; a local adapter near the bed is the most reliable for the first bond.
 
 ## Protocol
 
@@ -81,8 +112,10 @@ Command values are identical to Okimat/Okin UUID values. The difference is the p
 
 ## App
 
-- **Android:** `com.okin.bedding.rizemf900`
+- **Android:** Mattress Firm 900 - O / MFirm 900-O (`com.okin.bedding.rizemf900`)
+- **Android:** `com.okin.bedding.nectarmotion`
 
 ## Source
 
-Protocol reverse-engineered from `CSTProtocol.java` in the Rize MF900 APK.
+Protocol reverse-engineered from `CSTProtocol.java` in the Rize MF900 and
+Nectar Motion APKs.

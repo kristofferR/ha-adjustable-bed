@@ -204,7 +204,7 @@ class OkinOreController(BedController):
             response=True,
         )
 
-    async def _move_with_stop(self, cmd_value: int) -> None:
+    async def _move_with_stop(self, cmd_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         try:
             pulse_count = self._coordinator.motor_pulse_count
@@ -223,7 +223,7 @@ class OkinOreController(BedController):
             except BleakError:
                 _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
-    async def _preset_with_stop(self, command: bytes) -> None:
+    async def _preset_with_stop(self, command: bytes) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a preset command and always send STOP at the end."""
         try:
             pulse_count = self._coordinator.motor_pulse_count

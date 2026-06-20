@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
@@ -47,6 +48,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    OKIN_CST_POSITION_AXES,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     requires_pairing,
@@ -119,6 +121,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     from .download import SupportBundleDownloadView
 
     hass.http.register_view(SupportBundleDownloadView)
+
+    from .frontend import async_register_frontend
+
+    await async_register_frontend(hass)
 
     await _async_register_services(hass)
     return True
@@ -216,7 +222,7 @@ def _async_ensure_device_registry_entry(
     device_info = coordinator.device_info
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers=device_info["identifiers"],
+        identifiers=device_info.get("identifiers"),
         name=device_info.get("name"),
         manufacturer=device_info.get("manufacturer"),
         model=device_info.get("model"),
@@ -237,7 +243,11 @@ async def _async_finish_entry_setup(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if schedule_initial_position_read:
-        hass.async_create_task(coordinator.async_read_initial_positions())
+        entry.async_create_background_task(
+            hass,
+            coordinator.async_read_initial_positions(),
+            name=f"adjustable_bed_initial_position_read_{entry.entry_id}",
+        )
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
@@ -320,7 +330,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Adapter explicitly doesn't support pairing (e.g. old ESPHome proxy)
         if coordinator.pairing_supported is False:
             await create_pairing_required_issue(
-                hass, address or "Unknown", entry.data.get("name", entry.title)
+                hass,
+                address or "Unknown",
+                entry.data.get("name", entry.title),
+                entry.entry_id,
             )
             return
 
@@ -719,6 +732,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Define motor configurations.
             # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
             # For BOX25: only head and feet are valid, using direct percentage positions.
+            # For CST: only back and legs publish position feedback.
             # For Kaidi: direct position writes expose back/legs percentage targets.
             # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
             uses_percentage_positions = bed_type in (
@@ -780,6 +794,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
                         "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
                         "max_value": 100.0,
+                    },
+                }
+            elif bed_type == BED_TYPE_OKIN_CST:
+                valid_motors = set(OKIN_CST_POSITION_AXES)
+                motor_configs = {
+                    "back": {
+                        "position_key": "back",
+                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                        "max_value": coordinator.get_max_angle("back"),  # Degrees
+                    },
+                    "legs": {
+                        "position_key": "legs",
+                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
                     },
                 }
             else:
@@ -1045,7 +1077,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     translation_domain=DOMAIN,
                     translation_key="multiple_device_targets_not_supported",
                 )
-            selected_device_id = device_ids[0]
+            # str() narrows the untyped service-call value for the str-typed parameter
+            selected_device_id = str(device_ids[0])
             target = _get_support_bundle_target_from_device(hass, selected_device_id)
             if target is not None:
                 address, coordinator, entry = target

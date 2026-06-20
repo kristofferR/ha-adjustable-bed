@@ -6,7 +6,8 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.components.light import ATTR_RGBW_COLOR, ColorMode
+from homeassistant.components.light import ATTR_RGBW_COLOR
+from homeassistant.components.light.const import ColorMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -19,7 +20,6 @@ from custom_components.adjustable_bed.beds.octo import (
     OctoController,
     OctoStar2Controller,
 )
-from custom_components.adjustable_bed.light import AdjustableBedLight, LIGHT_DESCRIPTION
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     CONF_BED_TYPE,
@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STAR2,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
 
 
 @pytest.fixture

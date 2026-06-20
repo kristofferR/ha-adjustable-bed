@@ -442,7 +442,8 @@ class OctoController(BedController):
         self._notify_callback = callback
         if self.client is not None and self.client.is_connected:
             try:
-                await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
+                async with self._ble_lock:
+                    await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
                 self._notifications_started = True
                 _LOGGER.debug("Started Octo notifications for feature discovery")
             except BleakError as err:
@@ -453,7 +454,8 @@ class OctoController(BedController):
         self._notifications_started = False
         if self.client is not None and self.client.is_connected:
             with contextlib.suppress(BleakError):
-                await self.client.stop_notify(OCTO_CHAR_UUID)
+                async with self._ble_lock:
+                    await self.client.stop_notify(OCTO_CHAR_UUID)
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data."""
@@ -619,7 +621,8 @@ class OctoController(BedController):
         # needs notifications for feature discovery (PIN/lights detection)
         if not self._notifications_started:
             try:
-                await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
+                async with self._ble_lock:
+                    await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
                 self._notifications_started = True
                 _LOGGER.debug("Started Octo notifications for feature discovery")
             except BleakError as err:
@@ -851,9 +854,9 @@ class OctoController(BedController):
                 MotorControlSpec(
                     key="head",
                     translation_key="head",
-                    open_fn=lambda ctrl: ctrl._move_motor3_up(),
-                    close_fn=lambda ctrl: ctrl._move_motor3_down(),
-                    stop_fn=lambda ctrl: ctrl._move_motor3_stop(),
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor3_stop(),
                 )
             )
 
@@ -862,9 +865,9 @@ class OctoController(BedController):
                 MotorControlSpec(
                     key="feet",
                     translation_key="feet",
-                    open_fn=lambda ctrl: ctrl._move_motor4_up(),
-                    close_fn=lambda ctrl: ctrl._move_motor4_down(),
-                    stop_fn=lambda ctrl: ctrl._move_motor4_stop(),
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_motor4_stop(),
                     max_angle=45,
                 )
             )

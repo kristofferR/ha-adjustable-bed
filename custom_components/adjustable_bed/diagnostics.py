@@ -97,22 +97,29 @@ async def async_get_config_entry_diagnostics(
         )
 
         # Add variant info for controllers that have it
-        if hasattr(controller, "_is_wilinke"):
-            controller_info["richmat_is_wilinke"] = controller._is_wilinke
-        if hasattr(controller, "_variant"):
-            controller_info["variant"] = controller._variant
-        if hasattr(controller, "_variant_source"):
-            controller_info["variant_source"] = controller._variant_source
-        if hasattr(controller, "_char_uuid"):
-            controller_info["char_uuid"] = controller._char_uuid
+        is_wilinke = getattr(controller, "_is_wilinke", None)
+        if is_wilinke is not None:
+            controller_info["richmat_is_wilinke"] = is_wilinke
+        variant = getattr(controller, "_variant", None)
+        if variant is not None:
+            controller_info["variant"] = variant
+        variant_source = getattr(controller, "_variant_source", None)
+        if variant_source is not None:
+            controller_info["variant_source"] = variant_source
+        char_uuid = getattr(controller, "_char_uuid", None)
+        if char_uuid is not None:
+            controller_info["char_uuid"] = char_uuid
 
         # Add Octo-specific discovered features
-        if hasattr(controller, "discovered_motor_count"):
-            controller_info["discovered_motor_count"] = controller.discovered_motor_count
-        if hasattr(controller, "supports_synchro"):
-            controller_info["supports_synchro"] = controller.supports_synchro
-        if hasattr(controller, "is_synchro_active"):
-            controller_info["synchro_active"] = controller.is_synchro_active
+        discovered_motor_count = getattr(controller, "discovered_motor_count", None)
+        if discovered_motor_count is not None:
+            controller_info["discovered_motor_count"] = discovered_motor_count
+        supports_synchro = getattr(controller, "supports_synchro", None)
+        if supports_synchro is not None:
+            controller_info["supports_synchro"] = supports_synchro
+        is_synchro_active = getattr(controller, "is_synchro_active", None)
+        if is_synchro_active is not None:
+            controller_info["synchro_active"] = is_synchro_active
 
     # Get position data
     position_data = dict(coordinator.position_data)

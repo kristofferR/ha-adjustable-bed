@@ -6,8 +6,8 @@ import re
 from pathlib import Path
 
 from aiohttp import web
-from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.http import HomeAssistantView
 
 from .const import DOMAIN
 

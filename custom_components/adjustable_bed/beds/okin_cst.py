@@ -189,10 +189,11 @@ class OkinCstController(BedController):
             return
 
         try:
-            await self.client.start_notify(
-                OKIN_POSITION_NOTIFY_CHAR_UUID,
-                self._handle_position_notification,
-            )
+            async with self._ble_lock:
+                await self.client.start_notify(
+                    OKIN_POSITION_NOTIFY_CHAR_UUID,
+                    self._handle_position_notification,
+                )
             _LOGGER.info("Position notifications active for OKIN CST bed")
         except BleakError as err:
             _LOGGER.debug(
@@ -231,7 +232,8 @@ class OkinCstController(BedController):
             return
 
         try:
-            await self.client.stop_notify(OKIN_POSITION_NOTIFY_CHAR_UUID)
+            async with self._ble_lock:
+                await self.client.stop_notify(OKIN_POSITION_NOTIFY_CHAR_UUID)
         except BleakError:
             pass
 

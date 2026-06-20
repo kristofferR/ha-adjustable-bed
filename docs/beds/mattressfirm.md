@@ -2,6 +2,11 @@
 
 **Status:** ❓ Needs testing
 
+> **MFirm 900-O / Mattress Firm 900-O note:** beds using the official
+> `com.okin.bedding.rizemf900` app and advertising as `OKIN-XXXXXX` are
+> [Okin CST](okin-cst.md), not this older Nordic UART profile. Use this page
+> for iFlex/Nordic UART bases only.
+
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [David Delahoz](https://github.com/daviddelahoz) - [BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)
 
 ## Known Models
@@ -12,7 +17,7 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | [Mattress Firm 900 - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) | `com.okin.bedding.rizemf900` |
+| See [Okin CST](okin-cst.md) | Mattress Firm 900 - O / MFirm 900-O | `com.okin.bedding.rizemf900` |
 
 ## Features
 
@@ -104,12 +109,13 @@ From app disassembly analysis:
 
 ### Alternative Packet Format (from app analysis)
 
-The official app uses a 14-byte format:
+The `com.okin.bedding.rizemf900` app uses a 14-byte CST format:
 ```
 [0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]
 ```
 
-Device detection uses device name prefix: "okin" (case-insensitive).
+Device detection uses device name prefix `okin` (case-insensitive). See
+[Okin CST](okin-cst.md) for this protocol.
 
 ## Notes
 

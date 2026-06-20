@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
 
 import pytest
-from homeassistant.components.climate import HVACMode
+from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
@@ -35,6 +36,8 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    OKIN_FOOT_MAX_ANGLE,
+    OKIN_HEAD_MAX_ANGLE,
     SLEEP_NUMBER_VARIANT_LEFT,
 )
 
@@ -454,6 +457,62 @@ class TestNumberEntities:
         )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_legs_position")
+            is None
+        )
+
+    async def test_okin_cst_number_entities_only_include_back_and_legs_position(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST should expose only the axes reported by its position payload."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Numbers",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:28",
+                CONF_NAME: "OKIN CST Numbers",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:28",
+            entry_id="okin_cst_number_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        back_entity_id = registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:28_back_position"
+        )
+        legs_entity_id = registry.async_get_entity_id(
+            "number", DOMAIN, "AA:BB:CC:DD:EE:28_legs_position"
+        )
+        assert back_entity_id is not None
+        assert legs_entity_id is not None
+        back_state = hass.states.get(back_entity_id)
+        legs_state = hass.states.get(legs_entity_id)
+        assert back_state is not None
+        assert legs_state is not None
+        assert back_state.attributes["max"] == pytest.approx(coordinator.get_max_angle("back"))
+        assert legs_state.attributes["max"] == pytest.approx(coordinator.get_max_angle("legs"))
+        assert back_state.attributes["max"] == pytest.approx(OKIN_HEAD_MAX_ANGLE)
+        assert legs_state.attributes["max"] == pytest.approx(OKIN_FOOT_MAX_ANGLE)
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_head_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:28_feet_position")
             is None
         )
 
@@ -2292,6 +2351,51 @@ class TestSensorEntities:
 
         # With 2 motors, should have back_angle and legs_angle sensors
         assert len(sensor_states) == 2
+
+    async def test_okin_cst_angle_sensors_only_include_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST should only create angle sensors for axes reported by notifications."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Sensor Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:29",
+                CONF_NAME: "OKIN CST Sensor Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:29",
+            entry_id="okin_cst_sensor_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_back_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_legs_angle")
+            is not None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_head_angle") is None
+        )
+        assert (
+            registry.async_get_entity_id("sensor", DOMAIN, "AA:BB:CC:DD:EE:29_feet_angle") is None
+        )
 
 
 class TestEntityAvailability:

@@ -14,14 +14,13 @@
 
 ## Apps
 
-19 apps use this protocol:
+Several apps use this protocol:
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) | `com.ore.okincomfortbed` |
 | ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` |
-| ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) | `com.okin.bedding.adjustbed` |
 | ✅ | Rize II | `com.okin.bedding.rizeii` |
 | ✅ | Rize Resident | `com.okin.bedding.rizeResident` |
 | ✅ | Customatic Clarity | `com.okin.bedding.customaticclarity` |
@@ -54,7 +53,8 @@
 > | [Nectar](nectar.md) | 7-byte | Different command structure |
 > | [DewertOkin](dewertokin.md) | 6-byte | Handle-based writes (not UUID) |
 > | [Mattress Firm 900](mattressfirm.md) | 7-byte | Uses Nordic UART service |
-> | **Okin 64-Bit** | 10-byte | 64-bit commands, `0x08 0x02` header |
+> | [Okin CST](okin-cst.md) | 14-byte | MFirm 900-O / Rize MF900-style OKIN service devices |
+> | [Okin 64-Bit](okin-64bit.md) | 10-byte | 64-bit commands, `0x08 0x02` header |
 >
 > See [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for detection priority and troubleshooting.
 
@@ -69,8 +69,9 @@ Detection priority:
 1. Device name contains "nectar" → Nectar
 2. Device name contains "leggett", "l&p", or "adjustable base" → Leggett & Platt
 3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat/Okin UUID
-4. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
-5. Fallback → Okimat (with warning)
+4. Connected GATT has OKIN UUID + CSS + Nordic DFU → Okin CST
+5. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
+6. Fallback → Okimat (with warning)
 
 **If your bed is misidentified:** Change the bed type in integration settings.
 
@@ -178,58 +179,9 @@ The app supports multiple protocol versions based on device name:
 
 ---
 
-## Okin 64-Bit Protocol
+## Related Okin 64-Bit Protocol
 
-Some newer Okin beds use a different 64-bit command protocol. This was discovered in the `com.okin.bedding.adjustbed` app (Flutter/Dart).
-
-**Select "Okin 64-Bit" as bed type if your bed uses this protocol.**
-
-### Protocol Variants
-
-| Variant | Service UUID | Write Characteristic | Mode |
-|---------|--------------|---------------------|------|
-| Nordic (25_42_02) | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-...` | Fire-and-forget |
-| Custom (36_33_04a) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response |
-
-### Packet Format
-
-**Format:** `[0x08, 0x02, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7]]`
-
-- Header: `0x08 0x02` (distinguishes from 32-bit Keeson `0x04 0x02` and Malouf `0x05 0x02`)
-- Command: 8 bytes (64-bit bitmask value)
-- No checksum
-
-### Commands (64-bit Values)
-
-| Command | Bytes | Description |
-|---------|-------|-------------|
-| Stop | `00 00 00 00 00 00 00 00` | Stop all motors |
-| Head Up | `00 00 00 01 00 00 00 00` | Raise head |
-| Head Down | `00 00 00 02 00 00 00 00` | Lower head |
-| Foot Up | `00 00 00 04 00 00 00 00` | Raise foot |
-| Foot Down | `00 00 00 08 00 00 00 00` | Lower foot |
-| Lumbar Up | `00 00 00 10 00 00 00 00` | Raise lumbar |
-| Lumbar Down | `00 00 00 20 00 00 00 00` | Lower lumbar |
-| Flat | `08 00 00 00 00 00 00 00` | Flat preset |
-| Zero-G | `00 00 10 00 00 00 00 00` | Zero gravity |
-| Lounge | `00 00 20 00 00 00 00 00` | Lounge preset |
-| TV/PC | `00 00 40 00 00 00 00 00` | TV position |
-| Anti-Snore | `00 00 80 00 00 00 00 00` | Anti-snore |
-| Memory 1 | `00 01 00 00 00 00 00 00` | Go to memory 1 |
-| Memory 2 | `00 04 00 00 00 00 00 00` | Go to memory 2 |
-| Light Toggle | `00 02 00 00 00 00 00 00` | Toggle lights |
-| Light On | `00 00 00 00 00 00 00 40` | Turn light on |
-| Light Off | `00 00 00 00 00 00 00 80` | Turn light off |
-| Massage Switch | `00 00 01 00 00 00 00 00` | Switch massage mode |
-| Massage Stop | `02 00 00 00 00 00 00 00` | Stop massage |
-
-### Features
-
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ Head, Foot, Lumbar |
-| Position Feedback | ❌ |
-| Memory Presets | ✅ (2 slots) |
-| Massage | ✅ (with timer, wave modes) |
-| Under-bed Lights | ✅ |
-| Zero-G / Anti-Snore / TV / Lounge | ✅ |
+Some newer Okin controllers use the separate [Okin 64-Bit](okin-64bit.md)
+protocol with 10-byte `0x08 0x02` frames. Select **Okin 64-Bit** instead of
+Okimat if diagnostics show a `NORA_CON` / `NORACON` controller or the 64-bit
+packet format from the `com.okin.bedding.adjustbed` app.

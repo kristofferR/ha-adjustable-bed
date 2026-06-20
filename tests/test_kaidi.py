@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -85,9 +86,9 @@ async def _prepare_controller(
         variant=variant,
     )
 
-    notify_callback: object | None = None
+    notify_callback: Callable[..., None] | None = None
 
-    async def start_notify(_uuid: str, callback: object) -> None:
+    async def start_notify(_uuid: str, callback: Callable[..., None]) -> None:
         nonlocal notify_callback
         notify_callback = callback
 
@@ -282,9 +283,9 @@ async def test_session_uses_advertised_vaddr_without_ping(mock_bleak_client: Mag
         manufacturer_data=BROADCAST_MANUFACTURER_DATA,
     )
 
-    notify_callback: object | None = None
+    notify_callback: Callable[..., None] | None = None
 
-    async def start_notify(_uuid: str, callback: object) -> None:
+    async def start_notify(_uuid: str, callback: Callable[..., None]) -> None:
         nonlocal notify_callback
         notify_callback = callback
 
@@ -315,9 +316,9 @@ async def test_session_pings_when_advertisement_lacks_vaddr(mock_bleak_client: M
         manufacturer_data=SINGLE_MANUFACTURER_DATA,
     )
 
-    notify_callback: object | None = None
+    notify_callback: Callable[..., None] | None = None
 
-    async def start_notify(_uuid: str, callback: object) -> None:
+    async def start_notify(_uuid: str, callback: Callable[..., None]) -> None:
         nonlocal notify_callback
         notify_callback = callback
 
@@ -354,9 +355,9 @@ async def test_session_uses_cached_room_id_when_manufacturer_data_is_missing(
         manufacturer_data=None,
     )
 
-    notify_callback: object | None = None
+    notify_callback: Callable[..., None] | None = None
 
-    async def start_notify(_uuid: str, callback: object) -> None:
+    async def start_notify(_uuid: str, callback: Callable[..., None]) -> None:
         nonlocal notify_callback
         notify_callback = callback
 

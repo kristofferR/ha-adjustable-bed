@@ -1,8 +1,8 @@
 [project]
 name = "ha-adjustable-bed"
-version = "2.9.12"
+version = "2.9.14"
 description = "Home Assistant integration for adjustable beds"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 [project.optional-dependencies]
 dev = [
@@ -10,8 +10,11 @@ dev = [
     "pytest-asyncio>=0.23.5",
     "pytest-homeassistant-custom-component>=0.13.206",
     "pytest-cov>=4.1.0",
+    "pytest-split>=0.10.0",
     "pytest-xdist>=3.5.0",
     "pyserial>=3.5",
+    "serialx>=1.0.0",
+    "aioesphomeapi>=42.0.0",
     "aiousbwatcher>=1.1.1",
     "mypy>=1.19.1",
 ]
@@ -27,7 +30,7 @@ markers = [
 ]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 100
 
 [tool.ruff.lint]
@@ -35,19 +38,29 @@ select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
 ignore = ["E501", "SIM102", "SIM105", "SIM108"]
 
 [tool.pyright]
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+include = ["custom_components", "tests"]
+reportIncompatibleVariableOverride = "none"  # HA entities use @property over cached_property
+reportUnusedImport = "none"  # Covered by ruff F401; pyright also flags TYPE_CHECKING-only imports
+
+# Tests get relaxed rules (mocks, private-member access, asserts on known state).
+# Production code in custom_components/ runs at full standard strictness.
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["."]  # Resolve custom_components imports from the repo root
 reportTypedDictNotRequiredAccess = "none"  # Tests assert on known state
 reportOptionalMemberAccess = "none"  # Tests use coordinator.controller after setup
 reportAttributeAccessIssue = "none"  # Tests access private methods
 reportOperatorIssue = "none"  # Tests use "in" on optional strings
 reportArgumentType = "none"  # Tests use mock objects for type parameters
 reportOptionalOperand = "none"  # Tests use optional remote values that are known set
-reportIncompatibleVariableOverride = "none"  # HA entities use @property over cached_property
-reportUnusedImport = "none"  # Some imports used only for type checking
+reportOptionalSubscript = "none"  # Tests index into flow results asserted non-None
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 platform = "linux"
 show_error_codes = true
 follow_imports = "silent"

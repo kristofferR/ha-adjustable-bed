@@ -277,7 +277,8 @@ class ReverieController(BedController):
                 self.forward_raw_notification(REVERIE_CHAR_UUID, bytes(data))
                 self._parse_position_data(data)
 
-            await self.client.start_notify(REVERIE_CHAR_UUID, handler)
+            async with self._ble_lock:
+                await self.client.start_notify(REVERIE_CHAR_UUID, handler)
             _LOGGER.debug("Started Reverie notifications")
         except BleakError:
             _LOGGER.debug("Could not start notifications")
@@ -332,7 +333,8 @@ class ReverieController(BedController):
         if self.client is None or not self.client.is_connected:
             return
         with contextlib.suppress(BleakError):
-            await self.client.stop_notify(REVERIE_CHAR_UUID)
+            async with self._ble_lock:
+                await self.client.stop_notify(REVERIE_CHAR_UUID)
 
     async def read_positions(self, motor_count: int = 2) -> None:
         """Read current position data.

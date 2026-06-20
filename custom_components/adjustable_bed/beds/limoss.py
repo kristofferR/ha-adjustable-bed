@@ -523,7 +523,7 @@ class LimossController(BedController):
             cancel_event=asyncio.Event(),
         )
 
-    async def _move_with_stop(self, cmd: int) -> None:
+    async def _move_with_stop(self, cmd: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Send a hold-style movement command and then stop."""
         try:
             await self._send_command(

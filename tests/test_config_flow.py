@@ -40,6 +40,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BEDS_WITH_POSITION_FEEDBACK,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -161,13 +162,15 @@ class TestPairingInstructions:
         """RF ECO BT should request BLE pairing before authenticated OKIN writes."""
         assert requires_pairing(BED_TYPE_OKIN_RF_ECO_BT)
 
+    async def test_okin_cst_supports_position_feedback(self) -> None:
+        """CST should keep position sliders available after runtime correction."""
+        assert BED_TYPE_OKIN_CST in BEDS_WITH_POSITION_FEEDBACK
+
 
 class TestPairingPersistence:
     """Test that successful pairing is persisted on the created entry."""
 
-    async def test_bluetooth_pairing_marks_bond_as_established(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_bluetooth_pairing_marks_bond_as_established(self, hass: HomeAssistant) -> None:
         """Pair Now should persist that the bed is already bonded."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
@@ -645,6 +648,38 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_HAS_MASSAGE] is True
         assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
 
+    async def test_bluetooth_discovery_confirm_coerces_string_motor_count(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Regression for #361: HA frontend submits the dropdown value as a string.
+
+        ``vol.In([2, 3, 4])`` rejected ``"3"`` with "value must be one of [2, 3, 4]",
+        blocking the config flow. The schema must coerce the string to an int.
+        """
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "My Bed",
+                # Frontend sends select-dropdown values as strings, not ints.
+                CONF_MOTOR_COUNT: "3",
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_MOTOR_COUNT] == 3
+
     async def test_bluetooth_discovery_duplicate_octo_names_warn_about_split_setup(
         self,
         hass: HomeAssistant,
@@ -843,6 +878,37 @@ class TestBluetoothDiscoveryFlow:
         )
 
         # Should show disambiguation form instead of confirm
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+    async def test_bluetooth_discovery_name_only_okin_receiver_shows_disambiguation(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A pre-pairing OKIN receiver advertisement should not be dropped as unknown."""
+        del enable_custom_integrations
+
+        service_info = MagicMock()
+        service_info.name = "OKIN - Receiver"
+        service_info.address = "F1:8A:7F:61:EE:8B"
+        service_info.rssi = -75
+        service_info.manufacturer_data = {}
+        service_info.service_data = {}
+        service_info.service_uuids = []
+        service_info.source = "local"
+        service_info.device = MagicMock()
+        service_info.advertisement = MagicMock()
+        service_info.connectable = True
+        service_info.time = 0
+        service_info.tx_power = None
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=service_info,
+        )
+
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_disambiguate"
 
@@ -1510,9 +1576,7 @@ class TestUserFlow:
                 DOMAIN,
                 context={"source": SOURCE_USER},
             )
-            retrying_option = (
-                f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
-            )
+            retrying_option = f"configured_retry::{mock_bluetooth_service_info.address.upper()}"
             assert result["type"] == FlowResultType.FORM
             selector_options = next(iter(result["data_schema"].schema.values())).container
             assert retrying_option in selector_options
@@ -1525,7 +1589,10 @@ class TestUserFlow:
 
         assert result["type"] == FlowResultType.ABORT
         assert result["reason"] == "configured_retrying"
-        assert result["description_placeholders"]["address"] == mock_bluetooth_service_info.address.upper()
+        assert (
+            result["description_placeholders"]["address"]
+            == mock_bluetooth_service_info.address.upper()
+        )
         assert result["description_placeholders"]["name"] == "Retrying Bed"
 
 

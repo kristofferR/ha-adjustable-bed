@@ -307,5 +307,5 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
 ## Related Protocols
 
 - **[DewertOkin](dewertokin.md)** - Different command format, uses handle writes
-- **[Okin 64-bit](okimat.md#okin-64-bit-protocol)** - Similar service UUID but different packet format
+- **[Okin 64-bit](okin-64bit.md)** - Similar service UUID but different packet format
 - **[Keeson](keeson.md)** - Same FFE5 service but different command encoding

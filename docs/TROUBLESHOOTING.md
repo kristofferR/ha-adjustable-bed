@@ -222,35 +222,27 @@ See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default va
 
 ## Pairing Required Beds
 
-Some beds require Bluetooth pairing before they can be controlled.
+Some beds (Okimat / OKIN, Okin CST, Leggett & Platt Okin variant, Logicdata, Vibradorm, Sleep Number Climate 360 / FlexFit Fuzion) require an OS-level Bluetooth **bond** before they can be controlled. The integration requests pairing automatically; the steps below are for putting the bed into pairing mode and recovering when a bond fails.
 
-### How to Pair
+### Putting the bed in pairing mode
 
-1. **On Linux/Raspberry Pi:**
-   ```bash
-   bluetoothctl
-   scan on
-   # Find your bed's MAC address
-   pair XX:XX:XX:XX:XX:XX
-   trust XX:XX:XX:XX:XX:XX
-   ```
+- **OKIN bases (Okimat, Okin CST, Nectar / Mattress Firm 900-O / Rize MF900, etc.):** Power-cycle the control box — **unplug it for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. That window is when the base accepts a new Bluetooth bond. Some models instead use the under-bed **lamp/light button** (hold until it blinks blue). There is **no dedicated Bluetooth pairing button** — any "Pair"/"Learn" button on the control box only syncs the RF remote, not Bluetooth.
+- **Sleep Number Climate 360 / FlexFit Fuzion:** hold the side pairing button until the blue light blinks. (Older Sleep Number BAM/MCR i8 / 360 FlexFit 2 beds do **not** need OS-level pairing.)
 
-2. **On Home Assistant OS:**
-   - SSH into your Home Assistant OS and use `bluetoothctl` (same as Linux)
-   - Note: ESPHome Bluetooth proxies don't support OS-level pairing - use a local Bluetooth adapter for beds that require pairing
+### How the integration pairs
 
-3. **On Windows/macOS (for testing):**
-   - Go to Bluetooth settings
-   - Find the bed and click "Pair"
+The integration connects with pairing enabled and, for OKIN-style beds, verifies the bond afterward by reading an encrypted characteristic. If the link connected but never bonded, it clears its cached bond state and re-pairs on the next attempt, and raises a **"Bluetooth pairing required"** repair with a **Fix** button that walks you through the power-cycle + pair.
 
-Sleep Number Climate 360 / FlexFit Fuzion bases enter pairing mode by holding the side pairing button until the blue light blinks. Older Sleep Number BAM/MCR bases such as some i8 / 360 FlexFit 2 beds do not need OS-level pairing.
+**Bluetooth adapter notes:**
+- ESPHome Bluetooth proxies **do** support OS-level pairing, but only on **ESPHome 2024.3.0 or newer**. Pairing over a proxy can be unreliable; if it keeps failing, put the bed in range of a **local Bluetooth adapter** (or the HA host's own adapter) for the initial bond.
+- You can also pair manually from the device running HA's Bluetooth stack — **not your phone**:
+  - **Linux / Raspberry Pi / HA OS (SSH):** `bluetoothctl` → `scan on` → `pair XX:XX:XX:XX:XX:XX` → `trust XX:XX:XX:XX:XX:XX`
+  - **Windows / macOS (for testing):** Bluetooth settings → find the bed → "Pair"
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work
-- Bed specifically requires PIN entry or pairing confirmation
-- "Pairing required" error message
-
-**Note:** If discovery works but connection fails, first try the [pairing mode procedure](#bed-is-discovered-but-wont-connect) above. OS-level Bluetooth pairing is only needed for specific beds such as Okimat, Leggett Okin, and newer Sleep Number Climate 360 / FlexFit Fuzion bases.
+- Device info (manufacturer/model) is blank and reads fail with "insufficient authentication"
+- "Bluetooth pairing required" repair / error message
 
 ---
 
@@ -285,12 +277,12 @@ Use these to identify your bed type in a BLE scanner:
 | `0000ffe0-0000-1000-8000-00805f9b34fb` | Solace, MotoSleep, Octo (standard), Limoss/Stawett (name-based) |
 | `0000ffe5-0000-1000-8000-00805f9b34fb` | Keeson Base, Ergomotion, Malouf LEGACY_OKIN, OKIN FFE, Serta |
 | `0000fff0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback), Richmat WiLinke (variant) |
-| `01000001-0000-1000-8000-00805f9b34fb` | Malouf NEW_OKIN |
+| `01000001-0000-1000-8000-00805f9b34fb` | Malouf/Lucid family (usually NEW_OKIN; `OKIN-BLE` + `BTCB` uses LEGACY_OKIN/FFE5) |
 | `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Reverie |
 | `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
 | `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |
 | `ffffd1fd-388d-938b-344a-939d1f6efee0` | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) |
-| `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, OKIN 64-bit, Sleepy's BOX24 |
+| `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, Okin CST (MFirm 900-O / Rize MF900), OKIN 64-bit, Sleepy's BOX24 |
 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Richmat Nordic, Keeson KSBT, Mattress Firm 900 |
 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | Richmat WiLinke |
 | `99fa0001-338a-1024-8a49-009c0215f78a` | Linak |

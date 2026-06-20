@@ -224,10 +224,10 @@ class Okin64BitController(BedController):
         pulse_delay = self._coordinator.motor_pulse_delay_ms
         await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
 
-    async def _move_with_stop(self, cmd_bytes: bytes) -> None:
+    async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and send STOP at the end."""
         try:
-            await self._send_command(cmd_bytes)
+            await self._send_command(command)
         finally:
             try:
                 await self.write_command(

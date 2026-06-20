@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_REVERIE,
     BED_TYPE_RICHMAT,
@@ -45,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    OKIN_HEAD_MAX_ANGLE,
 )
 
 
@@ -1029,6 +1031,185 @@ class TestServices:
                     "device_id": [device_id],
                     "motor": "back",
                     "position": 20,
+                },
+                blocking=True,
+            )
+
+    async def test_set_position_service_accepts_okin_cst_back_and_legs(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST set_position should accept only axes reported by position feedback."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:35",
+                CONF_NAME: "OKIN CST Service Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:35",
+            entry_id="okin_cst_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        coordinator.async_seek_position = AsyncMock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "back",
+                "position": 50,
+            },
+            blocking=True,
+        )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "legs",
+                "position": 40,
+            },
+            blocking=True,
+        )
+
+        assert [
+            call.kwargs["position_key"] for call in coordinator.async_seek_position.await_args_list
+        ] == ["back", "legs"]
+
+    async def test_set_position_service_rejects_okin_cst_head_and_feet(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST set_position should reject axes without position data."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Invalid Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:36",
+                CONF_NAME: "OKIN CST Invalid Service Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:36",
+            entry_id="okin_cst_invalid_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        for motor in ("head", "feet"):
+            with pytest.raises(ServiceValidationError, match="Valid motors: back, legs"):
+                await hass.services.async_call(
+                    DOMAIN,
+                    SERVICE_SET_POSITION,
+                    {
+                        "device_id": [device_id],
+                        "motor": motor,
+                        "position": 20,
+                    },
+                    blocking=True,
+                )
+
+    async def test_set_position_service_rejects_okin_cst_back_above_reported_range(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """CST back targets above reported feedback range should be rejected."""
+        import pytest
+        from homeassistant.exceptions import ServiceValidationError
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OKIN CST Range Service Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:37",
+                CONF_NAME: "OKIN CST Range Service Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:37",
+            entry_id="okin_cst_range_service_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator."
+            "AdjustableBedCoordinator.async_read_initial_positions",
+            new=AsyncMock(),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+
+        with pytest.raises(
+            ServiceValidationError,
+            match=rf"Valid range: 0-{OKIN_HEAD_MAX_ANGLE}°",
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_POSITION,
+                {
+                    "device_id": [device_id],
+                    "motor": "back",
+                    "position": OKIN_HEAD_MAX_ANGLE + 1,
                 },
                 blocking=True,
             )

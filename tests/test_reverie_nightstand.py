@@ -9,7 +9,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.reverie_nightstand import (
     ReverieNightstandCommands,
-    ReverieNightstandController,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -26,7 +25,6 @@ from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_PRESETS_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures

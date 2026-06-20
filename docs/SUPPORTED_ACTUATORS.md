@@ -13,12 +13,13 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
+| [Okin 64-Bit](beds/okin-64bit.md) | 🧪 Needs Testing | 10-byte Nordic/custom OKIN protocol, lumbar, lights, massage |
 | [Jiecang](beds/jiecang.md) | ✅ Supported | Motor control, 3 memory slots, massage, split bed support |
 | [Kaidi](beds/kaidi.md) | 🧪 Needs Testing | Mouselet-based beds, Flat/Zero-G/Anti-Snore, 4 memory slots |
 | [Jensen](beds/jensen.md) | ✅ Supported | Go-to-position, variable massage (0-10), dynamic feature detection |
 | [DewertOkin](beds/dewertokin.md) | ✅ Supported | 79 brands (many older Rize/Simmons models), multiple protocols |
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
-| [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Lumbar control, 3-level massage, built-in presets |
+| [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
 | [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
@@ -36,7 +37,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Remacro](beds/remacro.md) | ✅ Supported | 4 motors, 8 presets, RGB lights, heat |
 | [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
 | [Okin CB35](beds/okin-cb35.md) | 🧪 Needs Testing | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
-| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize MF900) |
+| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion) |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 🧪 Needs Testing | Single stair actuator for Elda BTH / MEGAMAT |
 
 ---
@@ -54,7 +55,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | Bed Type | Command Format | Write Method | Pairing Required | Detection |
 |----------|---------------|--------------|------------------|-----------|
 | [Okimat](beds/okimat.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns or fallback |
-| [Okin 64-bit](beds/sleepys.md#box24-protocol-7-byte-packets) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | Manual selection |
+| [Okin 64-bit](beds/okin-64bit.md) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | `NORA_CON` / `NORACON`, manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
 | [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` without response | ❌ No | Name contains "nectar" or generic `OKIN-*` disambiguation |
 | [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
@@ -62,11 +63,11 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Name patterns |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, some `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**
-- **6-byte vs 7-byte vs 8-byte vs 10-byte**: Different command structures - not interchangeable
+- **6-byte vs 7-byte vs 8-byte vs 10-byte vs 14-byte**: Different command structures - not interchangeable
 - **32-bit vs 64-bit commands**: Okin 64-bit uses 8-byte command values instead of 4-byte
 - **UUID vs Handle**: DewertOkin writes to a BLE handle instead of a characteristic UUID
 - **Nordic UART**: Many newer beds use the Nordic UART service
@@ -79,8 +80,9 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 3. Name contains "okimat", "okin rf", or "okin ble" → Okimat
 4. Name starts with `OKIN-` → prompt for Okin-family protocol (confirmed Nectar bases can advertise this way)
 5. Name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for Okin-family protocol
-6. Connected GATT has `62741525-...` plus CSS `90311625-...` → OKIN Smart Remote / RF ECO BT
-7. Fallback → Okimat (with warning logged)
+6. Connected GATT has `62741525-...` plus CSS `90311625-...` and Nordic DFU `00001530-...` → Okin CST
+7. Connected GATT has `62741525-...` plus CSS `90311625-...` without Nordic DFU → OKIN Smart Remote / RF ECO BT
+8. Fallback → Okimat (with warning logged)
 
 ---
 
@@ -128,6 +130,7 @@ These beds have their own dedicated integrations:
    - `Serta*` or `Motion Perfect*` → Serta
    - `Octo*` → Octo (Standard variant)
    - `iFlex*` → Mattress Firm 900
+   - `OKIN-*` with service `62741523-...` plus CSS service `90311623-...` and Nordic DFU `00001530-...` → [Okin CST](beds/okin-cst.md), including MFirm 900-O / Rize MF900-style bases
    - `Malouf*`, `Structures*` → Malouf
    - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - MAC-address-like name such as `64:DB:A0:07:DD:02` + service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)
@@ -142,14 +145,15 @@ These beds have their own dedicated integrations:
    - `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/dewertokin.md)
    - `Star35*` → [Okin CB35](beds/okin-cb35.md) (Sealy Posturematic)
    - `SILVERmotion*` or Logicdata manufacturer ID → [Logicdata](beds/logicdata.md)
-   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
+   - `OKIN-*` with no advertised service UUIDs → manual setup; use diagnostics to check for [Okin CST](beds/okin-cst.md) or [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
 
 4. **Use the support bundle to find service UUIDs**: If unsure, use **Browse unsupported BLE devices** to find the MAC address, then run `adjustable_bed.generate_support_bundle` with `target_address`. The output includes service UUIDs:
    - Service `62741523-...` → Okin family (see [Okin Protocol Family](#okin-protocol-family))
-   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` → [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
+   - Service `62741523-...` plus CSS service `90311623-...`, write characteristic `90311625-...`, and Nordic DFU service `00001530-...` → [Okin CST](beds/okin-cst.md)
+   - Service `62741523-...` plus CSS service `90311623-...` and write characteristic `90311625-...` without Nordic DFU → [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md)
    - Service `45e25100-...` → Leggett & Platt Gen2
    - Service `0000aa5c-...` → Octo Star2 variant
-   - Service `01000001-...` → Malouf (New OKIN)
+   - Service `01000001-...` → Malouf/Lucid family (usually New OKIN; `OKIN-BLE` + `BTCB` uses Legacy OKIN)
    - Service `0000ffe5-...` → Malouf (Legacy OKIN) or Keeson OKIN variant
    - Service `0000fff0-...` + name `SUTA-*` → SUTA Smart Home
    - Service `6e400001-...` + name `AHF*` → TiMOTION AHF

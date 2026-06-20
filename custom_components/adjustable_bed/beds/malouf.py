@@ -219,7 +219,7 @@ class MaloufNewOkinController(BedController):
             0x00,
         ])
 
-    async def _move_with_stop(self, command_value: int) -> None:
+    async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(command_value)
         try:
@@ -540,7 +540,7 @@ class MaloufLegacyOkinController(BedController):
         data.append(checksum)
         return bytes(data)
 
-    async def _move_with_stop(self, command_value: int) -> None:
+    async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         command = self._build_command(command_value)
         try:

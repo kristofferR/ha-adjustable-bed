@@ -258,8 +258,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }:
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_okin",
-                "1. Put the OKIN receiver/control box in pairing mode (press or hold the receiver pairing button until the LED blinks)\n"
-                "2. Click 'Pair Now'",
+                "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: "
+                "unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns "
+                "green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it "
+                "until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn "
+                "button on the box only syncs the RF remote.\n"
+                "2. While the light is active, click 'Pair Now'.",
             )
         return await self._get_config_translation(
             "step.bluetooth_pairing.data_description.pairing_instructions_generic",
@@ -763,7 +767,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         schema_dict: dict[vol.Marker, Any] = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): bed_type_selector,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
-            vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.In([2, 3, 4]),
+            vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.All(
+                vol.Coerce(int), vol.In([2, 3, 4])
+            ),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
             vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
@@ -1379,7 +1385,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONF_NAME, default=device_name if device_name != "Unknown" else "Adjustable Bed"
                 ): str,
-                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
+                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
+                    vol.Coerce(int), vol.In([2, 3, 4])
+                ),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
@@ -1394,7 +1402,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): bool,
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.In(range(10, 301)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
 
@@ -1566,7 +1574,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         schema_dict.update(
             {
                 vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
-                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.In([2, 3, 4]),
+                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
+                    vol.Coerce(int), vol.In([2, 3, 4])
+                ),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=ADAPTER_AUTO): vol.In(adapters),
@@ -1581,7 +1591,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): bool,
                 vol.Optional(
                     CONF_IDLE_DISCONNECT_SECONDS, default=DEFAULT_IDLE_DISCONNECT_SECONDS
-                ): vol.In(range(10, 301)),
+                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
 
@@ -2273,7 +2283,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             vol.Optional(
                 CONF_MOTOR_COUNT,
                 default=current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-            ): vol.In([2, 3, 4]),
+            ): vol.All(vol.Coerce(int), vol.In([2, 3, 4])),
             vol.Optional(
                 CONF_HAS_MASSAGE,
                 default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
@@ -2307,7 +2317,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 default=current_data.get(
                     CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                 ),
-            ): vol.In(range(10, 301)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             vol.Optional(
                 CONF_DISABLE_ANGLE_SENSING,
                 default=current_data.get(CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING),

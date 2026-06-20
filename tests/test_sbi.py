@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.sbi import (
-    HEAD_PULSE_TABLE,
     FOOT_PULSE_TABLE,
+    HEAD_PULSE_TABLE,
     SBICommands,
     SBIController,
     pulse_to_angle,
@@ -31,7 +31,6 @@ from custom_components.adjustable_bed.const import (
     SBI_VARIANT_SIDE_B,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-
 
 # -----------------------------------------------------------------------------
 # Test Fixtures

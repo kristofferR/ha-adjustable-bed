@@ -282,7 +282,7 @@ class RemacroController(BedController):
         packet = self._build_packet(command)
         await self.write_command(packet, repeat_count=repeat_count)
 
-    async def _move_with_stop(self, command: int) -> None:
+    async def _move_with_stop(self, command: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
         try:
             packet = self._build_packet(command)

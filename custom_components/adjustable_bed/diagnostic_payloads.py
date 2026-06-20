@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
@@ -77,7 +78,7 @@ def format_mapping_payloads(mapping: dict[Any, bytes] | None) -> dict[str, dict[
 
 
 def summarize_repeated_payloads(
-    payloads: list[bytes | bytearray | memoryview],
+    payloads: Sequence[bytes | bytearray | memoryview],
     *,
     limit: int = MAX_REPEATED_PAYLOADS,
 ) -> list[dict[str, Any]]:
