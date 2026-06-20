@@ -68,7 +68,7 @@ class Box25Commands:
     NECK_TILT_UP = bytes([0x05, 0x02, 0x00, 0x40, 0x00, 0x00, 0x00])
     NECK_TILT_DOWN = bytes([0x05, 0x02, 0x00, 0x80, 0x00, 0x00, 0x00])
 
-    # Presets (send command, then MOTOR_STOP to confirm)
+    # Presets (fire-and-forget, needConfirm=0 — a trailing STOP cancels them)
     PRESET_FLAT = bytes([0x05, 0x02, 0x08, 0x00, 0x00, 0x00, 0x00])
     PRESET_ZERO_GRAVITY = bytes([0x05, 0x02, 0x00, 0x00, 0x10, 0x00, 0x00])
     PRESET_ANTI_SNORE = bytes([0x05, 0x02, 0x00, 0x00, 0x80, 0x00, 0x00])
@@ -115,7 +115,6 @@ class Box25Commands:
 # Timing constants (seconds)
 _WAKE_DELAY = 0.15
 _INIT_DELAY = 0.08
-_COMMAND_DELAY = 0.05
 
 
 class SleepysBox25Controller(BedController):
@@ -125,8 +124,8 @@ class SleepysBox25Controller(BedController):
     motor commands require 0xD0 init, massage/light commands require 0xB0 init.
     Both tracks need a wake command (5A 0B 00 A5) sent first.
 
-    Presets use a send-then-confirm pattern: send preset command, then
-    send MOTOR_STOP to trigger execution.
+    Presets are fire-and-forget (the decompiled OKIN app marks them
+    needConfirm=0); a trailing MOTOR_STOP cancels the preset on some firmware.
     """
 
     # Position feedback: head/feet/lumbar at 0-100 percentage
@@ -558,15 +557,15 @@ class SleepysBox25Controller(BedController):
     # ─── Presets ─────────────────────────────────────────────────────────
 
     async def _send_preset(self, preset_cmd: bytes) -> None:
-        """Send a preset command with the required confirm-with-stop pattern."""
-        try:
-            await self._write_motor_command(preset_cmd)
-            await asyncio.sleep(_COMMAND_DELAY)
-        finally:
-            try:
-                await self._send_stop()
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP during BOX25 preset cleanup", exc_info=True)
+        """Send a BOX25 preset/memory command (fire-and-forget).
+
+        BOX25 presets do not need a confirm: the decompiled OKIN app marks these
+        commands needConfirm=0. Sending a trailing MOTOR_STOP actually *cancels*
+        the just-issued preset on some firmware (e.g. 25_22_01, Ashley/Nectar
+        M1X1232), so the bed never moves (#372). The bed drives itself to the
+        target position and stops on its own.
+        """
+        await self._write_motor_command(preset_cmd)
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.PRESET_FLAT)
@@ -591,17 +590,8 @@ class SleepysBox25Controller(BedController):
         if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_STORE):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        try:
-            await self._write_motor_command(Box25Commands.MEMORY_STORE[memory_num - 1])
-            await asyncio.sleep(_COMMAND_DELAY)
-        finally:
-            try:
-                await self._send_stop()
-            except (BleakError, ConnectionError):
-                _LOGGER.debug(
-                    "Failed to send STOP during BOX25 memory-program cleanup",
-                    exc_info=True,
-                )
+        # Fire-and-forget (needConfirm=0); see _send_preset for why no STOP follows.
+        await self._write_motor_command(Box25Commands.MEMORY_STORE[memory_num - 1])
 
     # ─── Lights ──────────────────────────────────────────────────────────
 

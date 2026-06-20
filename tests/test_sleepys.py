@@ -1246,53 +1246,50 @@ class TestSleepysBox25Controller:
         assert controller._motor_initialized is False
         mock_client.write_gatt_char.assert_not_called()
 
-    async def test_preset_cleanup_always_sends_stop(
+    async def test_preset_is_fire_and_forget_no_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Preset failures should still run STOP cleanup."""
+        """BOX25 presets are fire-and-forget (needConfirm=0): no trailing STOP.
+
+        Regression test for #372: a trailing MOTOR_STOP cancels the just-issued
+        preset on some firmware (e.g. 25_22_01 / Ashley/Nectar M1X1232), so the
+        bed never moves. The preset command alone must be sent.
+        """
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(
-                controller,
-                "_write_motor_command",
-                AsyncMock(side_effect=RuntimeError("boom")),
-            ),
+            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
-            pytest.raises(RuntimeError, match="boom"),
         ):
             await controller.preset_flat()
 
-        mock_stop.assert_awaited_once()
+        mock_write.assert_awaited_once_with(Box25Commands.PRESET_FLAT)
+        mock_stop.assert_not_called()
 
-    async def test_program_memory_cleanup_always_sends_stop(
+    async def test_program_memory_is_fire_and_forget_no_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Memory-program failures should still run STOP cleanup."""
+        """BOX25 memory store is fire-and-forget too: no trailing STOP (#372)."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(
-                controller,
-                "_write_motor_command",
-                AsyncMock(side_effect=RuntimeError("boom")),
-            ),
+            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
-            pytest.raises(RuntimeError, match="boom"),
         ):
             await controller.program_memory(1)
 
-        mock_stop.assert_awaited_once()
+        mock_write.assert_awaited_once_with(Box25Commands.MEMORY_STORE[0])
+        mock_stop.assert_not_called()
 
     async def test_set_motor_position_supports_lumbar(
         self,
