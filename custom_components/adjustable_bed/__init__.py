@@ -56,6 +56,7 @@ from .const import (
 from .coordinator import AdjustableBedCoordinator
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .pairing import is_paired
 from .unsupported import create_pairing_required_issue
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -139,7 +140,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 3:
+    if entry.version > 4:
         _LOGGER.error(
             "Cannot migrate config entry %s for %s from unsupported future version %s",
             entry.entry_id,
@@ -167,6 +168,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
         hass.config_entries.async_update_entry(entry, data=new_data, version=3)
+
+    if entry.version < 4:
+        # v3 -> v4: introduce the paired-bed schema (Dual Bed 4.0). STRICT no-op
+        # for every existing (non-paired) entry — only the version is stamped, no
+        # data is touched — so the migration that runs for *every* entry on
+        # upgrade can never corrupt a single bed. Paired entries are created only
+        # by the opt-in pairing flow (already at v4) and never reach this branch.
+        hass.config_entries.async_update_entry(entry, version=4)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
@@ -278,10 +287,32 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
+async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a paired (Dual Bed 4.0) entry.
+
+    Dormant in Phase 0: no flow creates a paired entry yet, so this is never
+    reached in practice. It is wired into async_setup_entry now so the v4 setup
+    path exists and routing is in place; Phase 1 replaces this body with the
+    PairedBedCoordinator.
+    """
+    _LOGGER.error(
+        "Paired bed entry %s (%s) cannot be set up: paired-bed support is not yet "
+        "implemented in this build",
+        entry.title,
+        entry.entry_id,
+    )
+    raise ConfigEntryNotReady("Paired-bed support is not yet available")
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     await _async_register_services(hass)
+
+    # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
+    # entries (no pair_id) fall through to the unchanged logic below.
+    if is_paired(entry.data):
+        return await _async_setup_paired_entry(hass, entry)
 
     await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)

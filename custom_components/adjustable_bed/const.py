@@ -79,6 +79,32 @@ CONF_KAIDI_ADV_TYPE: Final = "kaidi_adv_type"
 CONF_KAIDI_RESOLVED_VARIANT: Final = "kaidi_resolved_variant"
 CONF_KAIDI_VARIANT_SOURCE: Final = "kaidi_variant_source"
 
+# Paired-bed (Dual Bed 4.0) keys — see docs/design/dual-bed-4.0-plan.md.
+# A paired entry stores a synthetic pair_id plus an ordered list of two child
+# descriptors. Single-bed entries never carry CONF_PAIR_ID and are unaffected.
+CONF_PAIR_ID: Final = "pair_id"
+CONF_PAIR_MODE: Final = "pair_mode"
+CONF_PAIR_CHILDREN: Final = "pair_children"
+CONF_PAIR_MEMBER_ADDRESSES: Final = "pair_member_addresses"
+CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
+# Per-child descriptor key for which physical side the child drives.
+CONF_SIDE: Final = "side"
+
+# pair_mode values: one shared BLE link vs two separate per-side links.
+PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
+PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
+PAIR_MODES: Final = (PAIR_MODE_SINGLE_ADDRESS, PAIR_MODE_SEPARATE_ADDRESS)
+
+# Side vocabulary — central, so no module invents ad-hoc magic strings.
+SIDE_LEFT: Final = "left"
+SIDE_RIGHT: Final = "right"
+SIDE_BOTH: Final = "both"
+# The two physical sides, in stable order (left first, right second).
+PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
+
+# Internal forward-compat marker for the paired-entry data shape within v4.
+PAIR_SCHEMA_VERSION: Final = 1
+
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
 DEFAULT_LEGS_MAX_ANGLE: Final = 45.0

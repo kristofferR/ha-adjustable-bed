@@ -124,6 +124,7 @@ from .discovery_settings import (
     async_set_discovery_disabled,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .pairing import pair_member_addresses
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
@@ -175,7 +176,9 @@ class CapabilityReport:
 class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Adjustable Bed."""
 
-    VERSION = 3
+    # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
+    # a strict no-op for non-paired entries; see async_migrate_entry.
+    VERSION = 4
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -370,12 +373,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     def _configured_entries_by_address(self) -> dict[str, ConfigEntry]:
-        """Return configured entries keyed by normalized Bluetooth address."""
+        """Return configured entries keyed by normalized Bluetooth address.
+
+        Paired entries (Dual Bed 4.0) have a synthetic ``pair_<id>`` unique_id, so
+        they are additionally indexed by each member MAC. Otherwise re-discovery
+        of an absorbed side would slip past the dedup and create a duplicate
+        standalone entry. Single-bed entries have no members, so they are
+        unaffected.
+        """
         configured: dict[str, ConfigEntry] = {}
         for entry in self.hass.config_entries.async_entries(DOMAIN):
             candidate = entry.unique_id or entry.data.get(CONF_ADDRESS)
             if isinstance(candidate, str):
                 configured[candidate.upper()] = entry
+            for member in pair_member_addresses(entry.data):
+                configured[member] = entry
         return configured
 
     def _async_abort_retrying_entry(self, address: str) -> ConfigFlowResult:
