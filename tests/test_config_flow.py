@@ -677,6 +677,15 @@ class TestBluetoothDiscoveryFlow:
             },
         )
 
+        # A connectable scanner is mocked, so accepted input proceeds through
+        # the non-blocking verify_connection step before creating the entry.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_MOTOR_COUNT] == 3
 
