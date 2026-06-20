@@ -20,6 +20,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
+    BED_TYPE_OCTO,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_MOTOR_COUNT,
@@ -290,6 +291,39 @@ class TestPairBedsConversion:
         paired = [entry for entry in remaining if is_paired(entry.data)]
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
+
+    async def test_octo_pairing_is_rejected(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Octo pairing is blocked (sequential profile is Phase 2)."""
+        for addr, name in ((LEFT_ADDR, "Octo L"), (RIGHT_ADDR, "Octo R")):
+            MockConfigEntry(
+                domain=DOMAIN,
+                title=name,
+                data={CONF_ADDRESS: addr, CONF_NAME: name, CONF_BED_TYPE: BED_TYPE_OCTO},
+                unique_id=addr,
+                version=4,
+            ).add_to_hass(hass)
+
+        result = await self._reach_pair_step(hass)
+        entries = self._pairable_octo_ids(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"left_entry": entries[0], "right_entry": entries[1]},
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]["base"] == "octo_pairing_unsupported"
+
+    @staticmethod
+    def _pairable_octo_ids(hass: HomeAssistant) -> list[str]:
+        return [
+            entry.entry_id
+            for entry in hass.config_entries.async_entries(DOMAIN)
+            if entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+        ]
 
     async def test_same_entry_twice_is_rejected(
         self,

@@ -69,7 +69,12 @@ from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator
-from .pairing import get_child, is_paired, with_updated_child
+from .pairing import (
+    get_child,
+    is_paired,
+    pair_member_addresses,
+    with_updated_child,
+)
 from .unsupported import create_pairing_required_issue
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -446,6 +451,17 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+
+    # Seed each connected child's positions, like the single-bed path does, so
+    # per-side covers don't sit at "unknown" until the first movement.
+    for child in coordinator.children.values():
+        if child.is_connected:
+            entry.async_create_background_task(
+                hass,
+                child.async_read_initial_positions(),
+                name=f"adjustable_bed_paired_initial_read_{child.address}",
+            )
+
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
 
@@ -658,10 +674,29 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 continue
 
             address = entry.data.get(CONF_ADDRESS)
+            if not isinstance(address, str) and is_paired(entry.data):
+                # Paired entries keep addresses only in pair_children. Resolve to
+                # the targeted child sub-device's MAC (else the first member) so
+                # the bundle can still capture BLE/GATT for that side by address.
+                members = pair_member_addresses(entry.data)
+                device_macs = {
+                    ident[1].upper()
+                    for ident in device.identifiers
+                    if ident[0] == DOMAIN
+                }
+                address = next(
+                    (m for m in members if m in device_macs),
+                    members[0] if members else None,
+                )
             if not isinstance(address, str):
                 continue
 
-            coordinator = cast(AdjustableBedCoordinator | None, hass.data.get(DOMAIN, {}).get(entry_id))
+            # Child coordinators aren't in hass.data, so paired targets use the
+            # address-only bundle path (coordinator=None).
+            coordinator = cast(
+                "AdjustableBedCoordinator | None",
+                None if is_paired(entry.data) else hass.data.get(DOMAIN, {}).get(entry_id),
+            )
             return address, coordinator, entry
 
         return None

@@ -97,7 +97,6 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
-    PAIR_CONNECTION_MODE_SEQUENTIAL,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -1110,18 +1109,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["right_entry"] = "same_device"
             elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
                 errors["base"] = "mismatched_bed_types"
+            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
+                # Octo needs sequential active-connection switching + per-side PIN
+                # and keepalive (Phase 2). Pairing it with the current concurrent
+                # path would be unreliable, so block it until that lands.
+                errors["base"] = "octo_pairing_unsupported"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
-                # Octo's firmware switches one active connection at a time, so an
-                # Octo pair must use sequential mode; others default to auto.
-                connection_mode = (
-                    PAIR_CONNECTION_MODE_SEQUENTIAL
-                    if left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
-                    else None
-                )
-                pair_data = build_pair_entry_data(
-                    left.data, right.data, name=name, connection_mode=connection_mode
-                )
+                pair_data = build_pair_entry_data(left.data, right.data, name=name)
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
                 # Create the pair first, then remove the two originals as a

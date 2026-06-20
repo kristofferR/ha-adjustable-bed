@@ -261,7 +261,8 @@
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
       "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
       "same_device": "Pick two different beds — you selected the same one for both sides.",
-      "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices."
+      "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
+      "octo_pairing_unsupported": "Octo split beds can't be combined yet (their per-side connection switching is coming in a later update). Add each Octo side as a separate device for now."
     }
   },
   "options": {
