@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -140,6 +141,13 @@ async def async_setup_entry(
 
     entities: list[SensorEntity] = []
 
+    # Beds that never report degree angles (e.g. Sleep Number MCR/BAM) must not keep
+    # angle sensors. Remove any an earlier version registered (when angle sensing was
+    # enabled by default) so existing installs stop showing dead "unknown" entities
+    # after upgrading, regardless of the current disable_angle_sensing value (#322).
+    if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
+        _async_remove_stale_angle_entities(hass, coordinator)
+
     # Set up angle sensors (only for non-percentage beds with angle sensing enabled)
     if not coordinator.disable_angle_sensing:
         # Skip angle sensors for beds that report percentage instead of angles
@@ -184,6 +192,25 @@ async def async_setup_entry(
 
     if entities:
         async_add_entities(entities)
+
+
+def _async_remove_stale_angle_entities(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove angle sensor entities the integration no longer creates.
+
+    Beds in BEDS_WITHOUT_ANGLE_FEEDBACK (e.g. Sleep Number MCR/BAM) report no
+    angles, but an earlier version registered back/legs/head/feet angle sensors
+    for them; those would otherwise linger as dead "unknown" entities (#322).
+    """
+    registry = er.async_get(hass)
+    for description in SENSOR_DESCRIPTIONS:
+        entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{coordinator.address}_{description.key}"
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 class AdjustableBedAngleSensor(AdjustableBedEntity, SensorEntity):
