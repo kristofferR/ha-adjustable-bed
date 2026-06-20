@@ -55,12 +55,13 @@ def build_cst_command(
 ) -> bytes:
     """Build a 14-byte CSTProtocol command.
 
-    CSTProtocol uses two separate 32-bit fields for motor and control commands.
-    Command values are identical to standard OKIN UUID values.
+    CSTProtocol uses two separate 32-bit command fields. The first field carries
+    motor movement plus several remote actions; the second carries the remaining
+    remote actions. Field placement comes from the CST app's protocol mapping.
 
     Args:
-        motor_value: 32-bit motor command (head, foot, etc.)
-        control_value: 32-bit control command (presets, massage, lights)
+        motor_value: 32-bit first-field command
+        control_value: 32-bit second-field command
 
     Returns:
         14-byte command: [0x0C, 0x02, motor[4], control[4], 0x00*4]

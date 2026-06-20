@@ -53,15 +53,20 @@ with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on ESPHome
 Uses a 14-byte command format with two separate 32-bit fields:
 
 ```text
-[0x0C, 0x02, motor[4], control[4], 0x00, 0x00, 0x00, 0x00]
+[0x0C, 0x02, primary[4], secondary[4], 0x00, 0x00, 0x00, 0x00]
 ```
 
-- **Motor field** (bytes 2-5): Head, foot, tilt, lumbar motor control
-- **Control field** (bytes 6-9): Presets, massage, lights
+- **Primary field** (bytes 2-5): Head, foot, tilt, lumbar motor control plus
+  several remote actions, including presets, memory, light toggle, and most
+  massage controls
+- **Secondary field** (bytes 6-9): Discrete light on/off and massage wave modes
 - **Write characteristic:** `62741525-...` (write-with-response)
 - **Position notify:** `62741524-...` (same as Okimat)
 
-### Motor Commands (motor field)
+Field placement is app-specific. Do not assume all presets, lights, or massage
+commands use the secondary field.
+
+### Motor Commands (primary field)
 
 | Action | Value |
 |--------|-------|
@@ -77,38 +82,71 @@ Uses a 14-byte command format with two separate 32-bit fields:
 
 Multiple motor bits can be OR'd together for simultaneous movement.
 
-### Control Commands (control field)
+### Remote Actions (primary field)
 
 | Action | Value |
 |--------|-------|
 | Flat | `0x08000000` |
 | Zero-G | `0x00001000` |
-| Memory 1 | `0x00002000` |
-| Memory 2 | `0x00004000` |
-| Memory 3 | `0x00008000` |
-| Memory 4 | `0x00010000` |
+| Lounge | `0x00002000` |
+| Incline / TV | `0x00004000` |
+| Anti-snore | `0x00008000` |
+| App Memory button | `0x00010000` |
+| Save Zero-G | `0x08001000` |
+| Save Lounge | `0x08002000` |
+| Save Incline | `0x08004000` |
 | Light Toggle | `0x00020000` |
-| Massage On/Off | `0x04000000` |
-| Massage Stop | `0x02000000` |
+| Massage Toggle | `0x04000000` |
+| Massage Off | `0x02000000` |
+| Massage All + | `0x00000C00` |
+| Massage All - | `0x01800000` |
 | Massage Head + | `0x00000800` |
 | Massage Head - | `0x00800000` |
 | Massage Feet + | `0x00000400` |
 | Massage Feet - | `0x01000000` |
+
+### Remote Actions (secondary field)
+
+| Action | Value |
+|--------|-------|
+| Light On | `0x00000040` |
+| Light Off | `0x00000080` |
 | Massage Wave 1 | `0x00080000` |
 | Massage Wave 2 | `0x00100000` |
-| Massage Timer | `0x00000200` |
+| Massage Wave 3 | `0x00200000` |
+
+### Timing
+
+The Android app repeats the active remote button command while the button is
+held, then sends STOP twice after release. The integration mirrors that behavior
+by sending cleanup STOP packets after movement, preset, light, and massage
+commands. Preset recalls are held longer so a Home Assistant button press can
+complete the move; light and massage controls use a short simulated press.
+
+### Memory Slots
+
+The MFirm app treats Zero-G, Incline, and Lounge as user-programmable preset
+memories. Home Assistant exposes those as numbered memory slots:
+
+| HA Memory Slot | MFirm App Memory |
+|----------------|------------------|
+| Memory 1 | Zero-G |
+| Memory 2 | Incline |
+| Memory 3 | Lounge |
 
 ## Features
 
 - 4 motors: head, foot, tilt, lumbar
-- 4 memory presets (recall only, no programming)
-- Toggle lights
+- Flat, Zero-G, anti-snore, lounge, and incline presets
+- 3 programmable preset memory slots: Zero-G, Incline, and Lounge
+- Discrete light on/off plus toggle
 - Massage with head/foot intensity control and wave modes
 - Position feedback (same as Okimat)
 
 ## Relationship to Other Okin Protocols
 
-Command values are identical to Okimat/Okin UUID values. The difference is the packet framing: 14-byte with dual motor+control fields vs 6-byte with a single field.
+Many command values match Okimat/Okin UUID values. CST differs in packet framing
+and in which 32-bit field carries each remote action.
 
 ## App
 
