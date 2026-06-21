@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from homeassistant.components.bluetooth import (
@@ -2433,19 +2433,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
-    """Return the default value each Optional field in the options form showed.
+    """Return the default value each field in the options form showed, validated
+    the SAME way ``user_input`` was.
 
-    Lets the paired-options save measure what the user actually changed against
-    what the form displayed (the schema default, seeded from the representative
-    child / parent data), so untouched fields don't propagate to the children.
+    HA validates submitted input against this schema before handing it back, so
+    a raw default of ``"10"`` would mis-compare against the coerced ``10``.
+    Validating an empty input through the same schema coerces the defaults
+    identically, so the paired-options save can tell which fields the user really
+    changed (and not clobber per-side values with mistyped "changes").
     """
-    shown: dict[str, Any] = {}
-    for marker in schema_dict:
-        key = getattr(marker, "schema", None)
-        default = getattr(marker, "default", vol.UNDEFINED)
-        if isinstance(key, str) and default is not vol.UNDEFINED:
-            shown[key] = default() if callable(default) else default
-    return shown
+    try:
+        return cast("dict[str, Any]", vol.Schema(schema_dict)({}))
+    except vol.Invalid:
+        return {}
 
 
 class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
