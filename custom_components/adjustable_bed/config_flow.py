@@ -131,6 +131,7 @@ from .pairing import (
     build_pair_entry_data,
     get_child,
     is_paired,
+    iter_children,
     pair_member_addresses,
     with_updated_child,
 )
@@ -2429,7 +2430,16 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         # Get current values from config entry
-        current_data = self.config_entry.data
+        current_data: dict[str, Any] = dict(self.config_entry.data)
+        if is_paired(current_data):
+            # Per-side settings (motor count, massage, adapter, angle limits)
+            # live in the child descriptors, not parent data. Show the first
+            # side's real values so the form isn't generic defaults; on save,
+            # only the keys the user actually changed propagate (see below), so
+            # untouched values can't clobber the other side's per-side settings.
+            first_child = next(iter(iter_children(current_data)), None)
+            if first_child is not None:
+                current_data = {**current_data, **first_child}
         bed_type = current_data.get(CONF_BED_TYPE)
 
         # Get available Bluetooth adapters
@@ -2651,12 +2661,19 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
             if is_paired(new_data):
-                # A paired bed edits the whole bed from one form; push the shared
-                # edits into each child descriptor too, or the frozen per-side
-                # descriptors would shadow them when the children reload.
-                for side in PAIR_SIDES:
-                    if get_child(new_data, side) is not None:
-                        new_data = with_updated_child(new_data, side, dict(user_input))
+                # Apply ONLY the keys the user actually changed (vs the per-side
+                # values the form showed) to each child descriptor. Writing the
+                # whole form back would clobber the other side's untouched
+                # per-side settings with the first side's shown values.
+                changed = {
+                    key: value
+                    for key, value in user_input.items()
+                    if current_data.get(key) != value
+                }
+                if changed:
+                    for side in PAIR_SIDES:
+                        if get_child(new_data, side) is not None:
+                            new_data = with_updated_child(new_data, side, changed)
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,

@@ -432,16 +432,14 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
-            # Paired side covers go through a PairedSideProxy (it exposes
-            # `_pair_side`); route their STOP via the parent's immediate-cancel
-            # stop path, which bypasses the pair lock, so it interrupts an
-            # in-flight command instead of queueing behind it.
-            if getattr(self._coordinator, "_pair_side", None) is not None:
-                await self._coordinator.async_stop_command()
-            else:
-                await self._coordinator.async_execute_controller_command(
-                    self.entity_description.stop_fn
-                )
+            # cancel_running=True (the default) cancels the in-flight movement
+            # first, then sends this motor's specific stop. For a paired side this
+            # routes through the proxy → the parent preempts the in-flight pulse
+            # (round-16 cancel) before the lock, so the stop is both immediate and
+            # motor-specific (not a side-wide stop_all).
+            await self._coordinator.async_execute_controller_command(
+                self.entity_description.stop_fn
+            )
             _LOGGER.debug("Stop command sent for %s", self.entity_description.key)
         except Exception:
             _LOGGER.exception(

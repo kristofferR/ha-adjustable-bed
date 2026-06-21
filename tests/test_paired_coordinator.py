@@ -292,18 +292,29 @@ class TestConnectionLifecycle:
 class TestPreemption:
     """STOP / cancel_running preempt the pair lock instead of queueing."""
 
-    async def test_cancel_running_preempts_in_flight_children(self):
+    async def test_cancel_running_preempts_only_targeted_side(self):
         log: list = []
         coord, left, right = _pair(log)
-        # Simulate a whole-bed command currently executing under the lock.
+        # Simulate both sides currently executing under the lock.
         coord._active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
 
-        # The new side command cancelled the in-flight children before running.
+        # A left command preempts the in-flight LEFT side only — never the
+        # independent right side — then runs.
+        assert ("left", "cancel") in log
+        assert ("right", "cancel") not in log
+        assert ("left", "command") in log
+
+    async def test_cancel_running_both_preempts_both_sides(self):
+        log: list = []
+        coord, left, right = _pair(log)
+        coord._active_children = {left, right}
+
+        await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+
         assert ("left", "cancel") in log
         assert ("right", "cancel") in log
-        assert ("left", "command") in log
 
     async def test_stop_bumps_pair_cancel_counter(self):
         log: list = []

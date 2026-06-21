@@ -162,6 +162,25 @@ class TestPairedSetup:
             f"{PAIR_ID}_stop_both"
         }, "expected combined movement/preset buttons on the parent"
 
+    async def test_diagnostics_for_paired_entry_does_not_crash(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Diagnostics for a paired entry aggregate per side instead of crashing."""
+        from custom_components.adjustable_bed.diagnostics import (
+            async_get_config_entry_diagnostics,
+        )
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        diag = await async_get_config_entry_diagnostics(hass, entry)
+        assert diag["paired"] is True
+        assert set(diag["sides"]) == {SIDE_LEFT, SIDE_RIGHT}
+
     async def test_stop_all_on_child_device_infers_that_side(
         self,
         hass: HomeAssistant,

@@ -969,13 +969,19 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             await _release_preflighted(preflighted)
             raise
 
-        # Phase 2: every target validated — now move them.
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
-            )
+        # Phase 2: every target validated — now move them. If one bed's command
+        # fails, release the still-connected preflighted beds that never ran (and
+        # so never reset their idle timer) before propagating.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
+                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     async def handle_save_preset(call: ServiceCall) -> None:
         """Handle save_preset service call."""
@@ -1032,14 +1038,19 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             await _release_preflighted(preflighted)
             raise
 
-        # Phase 2: every target validated — now program them.
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
-                cancel_running=False,
-            )
+        # Phase 2: every target validated — now program them. Release any
+        # still-connected preflighted bed that never ran if one fails.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
+                    cancel_running=False,
+                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""

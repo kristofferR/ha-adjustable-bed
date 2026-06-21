@@ -206,13 +206,16 @@ class PairedBedCoordinator:
         targets = self._targets_for(side)
 
         # Preempt: invalidate any OLDER movement still queued on the lock AND
-        # cancel whatever is executing, so this newer command (e.g. a reverse)
-        # wins instead of waiting out the in-flight pulse window or letting a
-        # stale queued movement run first. Mirrors standalone-bed cancel_running.
+        # cancel the in-flight command on THIS command's own target sides, so a
+        # reverse wins instead of waiting out the pulse window or letting a stale
+        # queued movement run first. Only the targeted sides are cancelled — a
+        # left command must not abort an independent right movement.
         if cancel_running:
             self._pair_cancel_counter += 1
+            target_children = {child for _, child in targets}
             for child in list(self._active_children):
-                child.request_command_cancel()
+                if child in target_children:
+                    child.request_command_cancel()
         entry_cancel = self._pair_cancel_counter
 
         # Serialize ALL paired commands at the parent — including a single-side
