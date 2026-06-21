@@ -2675,7 +2675,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 changed = {
                     key: value
                     for key, value in user_input.items()
-                    if current_data.get(key) != value
+                    if key in current_data and current_data[key] != value
                 }
                 if changed:
                     for side in PAIR_SIDES:
