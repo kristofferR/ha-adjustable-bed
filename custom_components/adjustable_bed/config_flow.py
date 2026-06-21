@@ -143,6 +143,12 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIGURED_RETRY_PREFIX = "configured_retry::"
 
+# Sentinel value for the "Auto-detect" entry in the full manual bed-type list.
+# When chosen, the flow re-runs detection on the selected device instead of
+# forcing the user to guess a protocol (and instead of silently defaulting to
+# the first alphabetical entry). Must not collide with any real bed type.
+BED_TYPE_AUTO_DETECT = "auto_detect"
+
 CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
     CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
     CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
@@ -602,6 +608,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # Get user-selected bed type (may differ from auto-detected)
             selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
+            # "Auto-detect" in the full manual list: resolve to the detected type
+            # if detection produced one, otherwise re-show the form with a clear
+            # error instead of guessing.
+            if selected_bed_type == BED_TYPE_AUTO_DETECT:
+                if detected_bed_type:
+                    _LOGGER.info(
+                        "Auto-detect resolved bed type to %s for %s",
+                        detected_bed_type,
+                        self._discovery_info.address,
+                    )
+                    selected_bed_type = detected_bed_type
+                else:
+                    errors["base"] = "auto_detect_failed"
+                    selected_bed_type = None
             octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
             if (
                 selected_bed_type == BED_TYPE_OCTO
@@ -754,18 +774,30 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Build schema with optional variant selection
         # Use searchable dropdown when user asked for all bed types, otherwise simple dropdown
         bed_type_selector: Any
+        bed_type_default: Any = bed_type
         if self._show_full_bed_type_list:
+            # Prepend an "Auto-detect" option and default to it when detection
+            # didn't identify the device, so the user isn't silently dropped onto
+            # the first alphabetical protocol and forced to guess.
+            auto_label = await self._get_config_translation(
+                "step.bluetooth_confirm.data.auto_detect_option",
+                "Auto-detect (recommended)",
+            )
             bed_type_selector = SelectSelector(
                 SelectSelectorConfig(
-                    options=get_bed_type_options(),
+                    options=[
+                        SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_label),
+                        *get_bed_type_options(),
+                    ],
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             )
+            bed_type_default = bed_type or BED_TYPE_AUTO_DETECT
         else:
             bed_type_selector = vol.In(SUPPORTED_BED_TYPES)
 
         schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_BED_TYPE, default=bed_type): bed_type_selector,
+            vol.Optional(CONF_BED_TYPE, default=bed_type_default): bed_type_selector,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.All(
                 vol.Coerce(int), vol.In([2, 3, 4])

@@ -56,7 +56,8 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
-          "jensen_pin": "Jensen PIN"
+          "jensen_pin": "Jensen PIN",
+          "auto_detect_option": "Auto-detect (recommended)"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect.",
@@ -249,7 +250,8 @@
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
-      "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0."
+      "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
+      "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support."
     }
   },
   "options": {

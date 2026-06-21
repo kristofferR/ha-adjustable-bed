@@ -1019,6 +1019,79 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
 
+    async def test_bluetooth_confirm_auto_detect_resolves_to_detected_type(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """'Auto-detect' in the full list resolves to the detected type, not an error."""
+        del enable_custom_integrations
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+        from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+        expected = detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).bed_type
+        assert expected  # fixture is detectable
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": "show_all"},
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Auto Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Auto resolved to the detected type and progressed past the confirm form
+        # (to verify_connection or a pairing step) rather than erroring.
+        assert not (
+            result["type"] == FlowResultType.FORM
+            and result["step_id"] == "bluetooth_confirm"
+        )
+
+    async def test_bluetooth_confirm_auto_detect_failure_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_unknown: MagicMock,
+    ):
+        """'Auto-detect' on an unidentifiable device re-shows the form with an error."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_unknown
+        flow._show_full_bed_type_list = True
+
+        result = await flow.async_step_bluetooth_confirm(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Mystery Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert result["errors"] == {"base": "auto_detect_failed"}
+
     async def test_bluetooth_disambiguate_okin_cst_requires_pairing(
         self,
         hass: HomeAssistant,
