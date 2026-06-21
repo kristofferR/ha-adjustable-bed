@@ -1,6 +1,10 @@
 """Leggett & Platt Gen2 bed controller implementation.
 
-Reverse engineering by MarcusW and Richard Hopton (smartbed-mqtt).
+Also known as the Leggett & Platt "LP Comfort Connect" controller (control box
+209-M001, an ESP32-WROOM-32D board). Originally reverse-engineered by MarcusW
+and Richard Hopton (smartbed-mqtt); the motor command format and detection here
+were corrected from a decompile of the LP Control app
+(com.leggett.android.universal) — see docs/beds/leggett-platt.md.
 
 This controller handles Leggett & Platt beds using the Gen2 (Richmat-based) ASCII protocol.
 
@@ -8,14 +12,21 @@ Protocol details:
     Service UUID: 45e25100-3171-4cfc-ae89-1d83cf8d8071
     Write characteristic: 45e25101-3171-4cfc-ae89-1d83cf8d8071
     Read characteristic: 45e25103-3171-4cfc-ae89-1d83cf8d8071
-    Command format: ASCII text (e.g., b"MEM 0" for flat preset)
+    Command format: ASCII text (e.g., b"MEM 0" for flat preset; motor moves use
+        "M {down}:{up}:{stop}").
+
+Connection note:
+    The ESP32 controller only accepts a BLE connection while the bed is in
+    pairing mode and refuses reconnection afterwards, so this bed type uses a
+    persistent connection (it is never idle-disconnected). See
+    coordinator._uses_persistent_connection().
 
 Features:
+    - Motor control (head/back, feet, pillow, lumbar) via the ASCII "M" command
     - Position presets (Flat, Unwind, Sleep, Wake Up, Relax, Anti-Snore)
     - Memory position programming
     - RGB under-bed lighting control
     - Massage control with adjustable strength
-    - No motor control (position-based control only)
     - No position feedback
 """
 
@@ -79,22 +90,34 @@ class LeggettGen2Commands:
     MASSAGE_WAVE_ON = b"MMODE 0:0"
     MASSAGE_WAVE_OFF = b"MMODE 0:2"
 
-    # Motor control: M {up_motors}:{down_motors}:{stop_motors}
-    # Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
+    # Motor control: the LP Control app formats motor commands as
+    #   M {down_codes}:{up_codes}:{stop_codes}
+    # with the actuator code in exactly ONE of the three colon-separated fields
+    # (the others empty), and no trailing stop list. Actuator codes:
+    #   0=head, 1=feet, 2=pillow, 3=lumbar.
+    # Examples (from com.leggett.android.universal Gen2CommandFormatter):
+    #   head up = "M :0:", head down = "M 0::", stop head = "M ::0".
+    # Source: APK reverse engineering (replaces the earlier smartbed-mqtt guess,
+    # which had up/down swapped and appended a stop list).
     @staticmethod
-    def motor_move(up: str = "", down: str = "", stop: str = "") -> bytes:
-        """Build motor move command."""
-        return f"M {up}:{down}:{stop}".encode()
+    def motor_move(down: str = "", up: str = "", stop: str = "") -> bytes:
+        """Build a motor move/stop command (``M {down}:{up}:{stop}``)."""
+        return f"M {down}:{up}:{stop}".encode()
 
-    MOTOR_HEAD_UP = b"M 0::123"
-    MOTOR_HEAD_DOWN = b"M :0:123"
-    MOTOR_FEET_UP = b"M 1::023"
-    MOTOR_FEET_DOWN = b"M :1:023"
-    MOTOR_PILLOW_UP = b"M 2::013"
-    MOTOR_PILLOW_DOWN = b"M :2:013"
-    MOTOR_LUMBAR_UP = b"M 3::012"
-    MOTOR_LUMBAR_DOWN = b"M :3:012"
-    MOTOR_STOP_ALL = b"M ::0123"
+    MOTOR_HEAD_UP = b"M :0:"
+    MOTOR_HEAD_DOWN = b"M 0::"
+    MOTOR_HEAD_STOP = b"M ::0"
+    MOTOR_FEET_UP = b"M :1:"
+    MOTOR_FEET_DOWN = b"M 1::"
+    MOTOR_FEET_STOP = b"M ::1"
+    MOTOR_PILLOW_UP = b"M :2:"
+    MOTOR_PILLOW_DOWN = b"M 2::"
+    MOTOR_PILLOW_STOP = b"M ::2"
+    MOTOR_LUMBAR_UP = b"M :3:"
+    MOTOR_LUMBAR_DOWN = b"M 3::"
+    MOTOR_LUMBAR_STOP = b"M ::3"
+    # The app uses the plain "STOP" string to halt all actuators.
+    MOTOR_STOP_ALL = b"STOP"
 
     @staticmethod
     def massage_wave_level(level: int) -> bytes:
@@ -185,34 +208,39 @@ class LeggettGen2Controller(BedController):
         """Return True - Gen2 beds support programming memory positions."""
         return True
 
-    # Motor control methods - Gen2 uses ASCII "M up:down:stop" format
-    async def _move_with_stop(self, command: bytes) -> None:
-        """Execute a movement command and always send STOP at the end."""
+    # Motor control methods - Gen2 re-sends the move command every 200 ms while
+    # held and sends an explicit per-actuator stop on release (matching the app).
+    async def _move_with_stop(
+        self, command: bytes, stop_command: bytes = LeggettGen2Commands.MOTOR_STOP_ALL
+    ) -> None:
+        """Execute a movement command and always send a stop at the end."""
         try:
             await self.write_command(command, repeat_count=25, repeat_delay_ms=200)
         finally:
             try:
-                await self.write_command(
-                    LeggettGen2Commands.MOTOR_STOP_ALL,
-                    cancel_event=asyncio.Event(),
-                )
+                await self.write_command(stop_command, cancel_event=asyncio.Event())
             except Exception:
                 _LOGGER.debug("Failed to send stop during motor cleanup")
 
+    async def _stop(self, stop_command: bytes) -> None:
+        """Send a stop command (per-actuator or stop-all)."""
+        await self.write_command(stop_command, cancel_event=asyncio.Event())
+
     async def move_head_up(self) -> None:
         """Move head up."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_HEAD_UP)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_HEAD_UP, LeggettGen2Commands.MOTOR_HEAD_STOP
+        )
 
     async def move_head_down(self) -> None:
         """Move head down."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_HEAD_DOWN)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_HEAD_DOWN, LeggettGen2Commands.MOTOR_HEAD_STOP
+        )
 
     async def move_head_stop(self) -> None:
         """Stop head motor."""
-        await self.write_command(
-            LeggettGen2Commands.MOTOR_STOP_ALL,
-            cancel_event=asyncio.Event(),
-        )
+        await self._stop(LeggettGen2Commands.MOTOR_HEAD_STOP)
 
     async def move_back_up(self) -> None:
         """Move back up (same as head)."""
@@ -228,15 +256,19 @@ class LeggettGen2Controller(BedController):
 
     async def move_legs_up(self) -> None:
         """Move legs up."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_FEET_UP)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_FEET_UP, LeggettGen2Commands.MOTOR_FEET_STOP
+        )
 
     async def move_legs_down(self) -> None:
         """Move legs down."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_FEET_DOWN)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_FEET_DOWN, LeggettGen2Commands.MOTOR_FEET_STOP
+        )
 
     async def move_legs_stop(self) -> None:
         """Stop legs motor."""
-        await self.move_head_stop()
+        await self._stop(LeggettGen2Commands.MOTOR_FEET_STOP)
 
     async def move_feet_up(self) -> None:
         """Move feet up."""
@@ -252,34 +284,39 @@ class LeggettGen2Controller(BedController):
 
     async def move_pillow_up(self) -> None:
         """Move pillow up."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_PILLOW_UP)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_PILLOW_UP, LeggettGen2Commands.MOTOR_PILLOW_STOP
+        )
 
     async def move_pillow_down(self) -> None:
         """Move pillow down."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_PILLOW_DOWN)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_PILLOW_DOWN, LeggettGen2Commands.MOTOR_PILLOW_STOP
+        )
 
     async def move_pillow_stop(self) -> None:
         """Stop pillow motor."""
-        await self.move_head_stop()
+        await self._stop(LeggettGen2Commands.MOTOR_PILLOW_STOP)
 
     async def move_lumbar_up(self) -> None:
         """Move lumbar up."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_LUMBAR_UP)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_LUMBAR_UP, LeggettGen2Commands.MOTOR_LUMBAR_STOP
+        )
 
     async def move_lumbar_down(self) -> None:
         """Move lumbar down."""
-        await self._move_with_stop(LeggettGen2Commands.MOTOR_LUMBAR_DOWN)
+        await self._move_with_stop(
+            LeggettGen2Commands.MOTOR_LUMBAR_DOWN, LeggettGen2Commands.MOTOR_LUMBAR_STOP
+        )
 
     async def move_lumbar_stop(self) -> None:
         """Stop lumbar motor."""
-        await self.move_head_stop()
+        await self._stop(LeggettGen2Commands.MOTOR_LUMBAR_STOP)
 
     async def stop_all(self) -> None:
         """Stop all motors."""
-        await self.write_command(
-            LeggettGen2Commands.MOTOR_STOP_ALL,
-            cancel_event=asyncio.Event(),
-        )
+        await self._stop(LeggettGen2Commands.MOTOR_STOP_ALL)
 
     # Preset methods
     async def preset_flat(self) -> None:

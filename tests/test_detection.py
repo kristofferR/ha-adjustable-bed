@@ -305,6 +305,29 @@ class TestDetectBedTypeByServiceUUID:
         )
         assert detect_bed_type(service_info) == BED_TYPE_LEGGETT_GEN2
 
+    def test_detect_leggett_gen2_by_manufacturer_data(self):
+        """LP Comfort Connect advertises no UUID, only mfr data (company 0x092D,
+        'XP'/'CP' payload prefix) — detect it from that (issue #385)."""
+        # Real-device payload from the support bundle: "XP" + 05 00 00 00.
+        service_info = _make_service_info(
+            name="Smart Bed 22D8",
+            service_uuids=[],
+            manufacturer_data={0x092D: bytes.fromhex("585005000000")},
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_LEGGETT_GEN2
+
+        # "CP" prefix is also accepted.
+        cp = _make_service_info(
+            name="Smart Bed", manufacturer_data={0x092D: b"CP\x00\x00"}
+        )
+        assert detect_bed_type(cp) == BED_TYPE_LEGGETT_GEN2
+
+        # Same company id but an unrelated payload must NOT match.
+        other = _make_service_info(
+            name="Smart Bed", manufacturer_data={0x092D: b"ZZ\x00\x00"}
+        )
+        assert detect_bed_type(other) != BED_TYPE_LEGGETT_GEN2
+
     def test_detect_reverie_nightstand_by_uuid(self):
         """Test Reverie Nightstand detection by unique service UUID."""
         service_info = _make_service_info(

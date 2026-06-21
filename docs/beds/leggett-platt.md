@@ -15,6 +15,7 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) | `com.richmat.lp2` |
+| ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) (LP Comfort Connect) | `com.leggett.android.universal` |
 
 ## Features
 
@@ -35,8 +36,20 @@
 Leggett & Platt beds have three protocol variants with different detection methods:
 
 ### Gen2 Variant
-- **Service UUID:** `45e25100-...` (unique to Gen2)
-- Detection: Automatic by service UUID
+- **Service UUID:** `45e25100-...` (unique to Gen2), when advertised
+- **LP Comfort Connect (control box 209-M001, ESP32):** advertises **no service
+  UUID** — only manufacturer data under company ID `0x092D` (2349) whose payload
+  begins with ASCII `XP` or `CP` (e.g. `58 50 05 00 00 00` = `"XP"…`). Detected
+  from that prefix, matching the LP Control app's `isGen2Box()` check.
+- Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
+
+> **Connection note (LP Comfort Connect):** the ESP32 controller only accepts a
+> BLE connection while the bed is **in pairing mode**, and refuses reconnection
+> afterwards. The integration therefore keeps the link open for this bed type
+> (no idle disconnect). If Home Assistant loses the connection (e.g. a restart),
+> put the bed back into pairing mode (pull the remote's batteries / re-enable
+> pairing) before it can reconnect. While Home Assistant is connected the
+> physical remote cannot be used.
 
 ### Okin Variant
 - **Service UUID:** `62741523-...` (shared with Okimat and Nectar)
@@ -80,21 +93,32 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 
 ### Motor Commands
 
-Format: `M {up}:{down}:{stop}` where each field is a comma-separated list of motor numbers.
+Format: `M {down}:{up}:{stop}` — three colon-separated fields, each a list of
+motor numbers. For a single press the motor number goes in **exactly one**
+field and the others are empty; there is no trailing stop list. The app
+re-sends the move command every 200 ms while a button is held and sends a
+per-actuator stop on release.
 
 Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
 
+> **Corrected from the LP Control app (`com.leggett.android.universal`).** The
+> earlier values (smartbed-mqtt-derived) had up/down swapped and appended a stop
+> list; they were never confirmed on hardware.
+
 | Command | Text | Description |
 |---------|------|-------------|
-| Head Up | `M 0::123` | Head up, stop feet/pillow/lumbar |
-| Head Down | `M :0:123` | Head down, stop feet/pillow/lumbar |
-| Feet Up | `M 1::023` | Feet up, stop head/pillow/lumbar |
-| Feet Down | `M :1:023` | Feet down, stop head/pillow/lumbar |
-| Pillow Up | `M 2::013` | Pillow up, stop head/feet/lumbar |
-| Pillow Down | `M :2:013` | Pillow down, stop head/feet/lumbar |
-| Lumbar Up | `M 3::012` | Lumbar up, stop head/feet/pillow |
-| Lumbar Down | `M :3:012` | Lumbar down, stop head/feet/pillow |
-| Stop All | `M ::0123` | Stop all motors |
+| Head Up | `M :0:` | Raise head |
+| Head Down | `M 0::` | Lower head |
+| Head Stop | `M ::0` | Stop head |
+| Feet Up | `M :1:` | Raise feet |
+| Feet Down | `M 1::` | Lower feet |
+| Pillow Up | `M :2:` | Raise pillow |
+| Pillow Down | `M 2::` | Lower pillow |
+| Lumbar Up | `M :3:` | Raise lumbar |
+| Lumbar Down | `M 3::` | Lower lumbar |
+| Stop All | `STOP` | Stop all motors |
+
+Combined moves put codes in two fields, e.g. head down + feet up = `M 0:1:`.
 
 ### Massage Commands
 

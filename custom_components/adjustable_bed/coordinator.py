@@ -118,6 +118,8 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -939,8 +941,26 @@ class AdjustableBedCoordinator:
             return await self._async_connect_locked()
 
     def _uses_persistent_connection(self) -> bool:
-        """Return True when this controller should stay connected indefinitely."""
-        return self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+        """Return True when this controller should stay connected indefinitely.
+
+        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included because
+        its ESP32 controller only accepts a BLE connection while in pairing mode
+        and refuses reconnection afterwards. Idle-disconnecting it leaves the bed
+        unreachable until it is power-cycled / re-paired, so we hold the link open
+        for the lifetime of the entry instead (issue #385). Trade-off: the physical
+        remote cannot be used while Home Assistant is connected.
+
+        This also covers legacy ``leggett_platt`` entries that resolve to the Gen2
+        controller (i.e. every variant except Okin and WiLinke/MlRM).
+        """
+        if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
+            return True
+        if self._bed_type == BED_TYPE_LEGGETT_PLATT:
+            return self._protocol_variant not in (
+                LEGGETT_VARIANT_OKIN,
+                LEGGETT_VARIANT_MLRM,
+            )
+        return False
 
     def _disconnect_after_operation_enabled(self) -> bool:
         """Return True when commands should disconnect immediately after completion."""

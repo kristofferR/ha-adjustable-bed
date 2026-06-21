@@ -116,6 +116,40 @@ class TestLeggettOkinController:
         assert command[2:] == bytes([0x00, 0x00, 0x00, 0x01])
 
 
+class TestLeggettGen2CommandFormat:
+    """Verify Gen2 motor command bytes match the LP Control app (issue #385)."""
+
+    def test_motor_command_bytes(self):
+        """Format is ``M {down}:{up}:{stop}`` with the code in exactly one field."""
+        c = LeggettGen2Commands
+        assert c.MOTOR_HEAD_UP == b"M :0:"
+        assert c.MOTOR_HEAD_DOWN == b"M 0::"
+        assert c.MOTOR_HEAD_STOP == b"M ::0"
+        assert c.MOTOR_FEET_UP == b"M :1:"
+        assert c.MOTOR_FEET_DOWN == b"M 1::"
+        assert c.MOTOR_FEET_STOP == b"M ::1"
+        assert c.MOTOR_PILLOW_UP == b"M :2:"
+        assert c.MOTOR_LUMBAR_UP == b"M :3:"
+        assert c.MOTOR_STOP_ALL == b"STOP"
+
+    def test_motor_move_builder(self):
+        """The builder lays fields out as down:up:stop."""
+        assert LeggettGen2Commands.motor_move(up="0") == b"M :0:"
+        assert LeggettGen2Commands.motor_move(down="1") == b"M 1::"
+        assert LeggettGen2Commands.motor_move(stop="2") == b"M ::2"
+
+
+class TestLeggettGen2Connection:
+    """Gen2 / LP Comfort Connect connection behaviour."""
+
+    async def test_uses_persistent_connection(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        """LP Comfort Connect must stay connected (it can't reconnect once idle)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        assert coordinator._uses_persistent_connection() is True
+
+
 class TestLeggettMovement:
     """Test Leggett & Platt movement commands."""
 
@@ -132,10 +166,13 @@ class TestLeggettMovement:
 
         await coordinator.controller.move_head_up()
 
-        # _move_with_stop sends the motor command then MOTOR_STOP_ALL
+        # _move_with_stop sends the head-up command then the per-actuator stop
         assert mock_bleak_client.write_gatt_char.called
         last_call = mock_bleak_client.write_gatt_char.call_args
-        assert last_call[0][1] == LeggettGen2Commands.MOTOR_STOP_ALL
+        assert last_call[0][1] == LeggettGen2Commands.MOTOR_HEAD_STOP
+        # The move command itself (head up = "M :0:") was sent before the stop
+        sent = [c[0][1] for c in mock_bleak_client.write_gatt_char.call_args_list]
+        assert LeggettGen2Commands.MOTOR_HEAD_UP in sent
 
     async def test_move_head_stop_gen2(
         self,
@@ -144,14 +181,14 @@ class TestLeggettMovement:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test move head stop sends MOTOR_STOP_ALL command."""
+        """Test move head stop sends the per-actuator head stop command."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.move_head_stop()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MOTOR_STOP_ALL, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MOTOR_HEAD_STOP, response=True
         )
 
     async def test_stop_all_gen2(
