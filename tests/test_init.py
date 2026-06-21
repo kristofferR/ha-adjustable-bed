@@ -1480,6 +1480,8 @@ class TestServices:
         coordinator.name = entry.title
         coordinator.entry = entry
         coordinator.disable_angle_sensing = False
+        coordinator.is_connected = True
+        coordinator.async_ensure_connected = AsyncMock()
         coordinator.get_max_angle.side_effect = lambda motor: {
             "back": 50.0,
             "head": 50.0,
@@ -1501,6 +1503,10 @@ class TestServices:
                 },
                 blocking=True,
             )
+
+        # A failed validation must release the bed it reconnected for the check,
+        # so it doesn't sit connected with no idle timer.
+        coordinator.async_ensure_connected.assert_awaited_with(reset_timer=True)
 
     async def test_set_position_service_rejects_kaidi_head_and_feet(
         self,

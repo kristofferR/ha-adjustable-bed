@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable, Coroutine, Mapping
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -1127,6 +1127,23 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
+    @contextlib.asynccontextmanager
+    async def _release_idle_on_validation_failure(
+        coordinator: AdjustableBedCoordinator,
+    ) -> AsyncIterator[None]:
+        """Release a bed reconnected for a per-motor service if validation fails.
+
+        _get_controller_for_service reconnects with reset_timer=False; without
+        this an invalid set_position/timed_move would leave the BLE link open
+        with no idle timer (the preset preflight path already guards this way)."""
+        try:
+            yield
+        except ServiceValidationError:
+            if coordinator.is_connected:
+                with contextlib.suppress(Exception):
+                    await coordinator.async_ensure_connected(reset_timer=True)
+            raise
+
     async def handle_set_position(call: ServiceCall) -> None:
         """Handle set_position service call."""
         device_ids = call.data.get(CONF_DEVICE_ID, [])
@@ -1151,212 +1168,213 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             coordinator = _single_bed_for_service(
                 resolved[0], resolved[1], "set_position"
             )
-            controller = await _get_controller_for_service(coordinator)
+            async with _release_idle_on_validation_failure(coordinator):
+                controller = await _get_controller_for_service(coordinator)
 
-            # Bed type / motor count come from the coordinator's own entry (the
-            # child's ChildEntryView for a paired-side target — children aren't in
-            # hass.data, so don't scan it).
-            entry = coordinator.entry
-            bed_type = entry.data.get(CONF_BED_TYPE)
-            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-            protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-            supports_direct_position_control = bool(
-                getattr(controller, "supports_direct_position_control", False)
-            )
-
-            # Validate bed supports position feedback
-            # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
-            has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                bed_type == BED_TYPE_KEESON
-                and protocol_variant == KEESON_VARIANT_ERGOMOTION
-            )
-            if not has_position_feedback and not supports_direct_position_control:
-                raise ServiceValidationError(
-                    f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
-                    translation_domain=DOMAIN,
-                    translation_key="position_feedback_not_supported",
-                    translation_placeholders={
-                        "device_name": coordinator.name,
-                        "bed_type": bed_type or "unknown",
-                    },
+                # Bed type / motor count come from the coordinator's own entry (the
+                # child's ChildEntryView for a paired-side target — children aren't in
+                # hass.data, so don't scan it).
+                entry = coordinator.entry
+                bed_type = entry.data.get(CONF_BED_TYPE)
+                motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+                protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+                supports_direct_position_control = bool(
+                    getattr(controller, "supports_direct_position_control", False)
                 )
 
-            # Validate angle sensing is enabled
-            if coordinator.disable_angle_sensing:
-                raise ServiceValidationError(
-                    f"Angle sensing is disabled for device '{coordinator.name}'",
-                    translation_domain=DOMAIN,
-                    translation_key="angle_sensing_disabled",
-                    translation_placeholders={"device_name": coordinator.name},
+                # Validate bed supports position feedback
+                # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
+                has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
+                    bed_type == BED_TYPE_KEESON
+                    and protocol_variant == KEESON_VARIANT_ERGOMOTION
                 )
+                if not has_position_feedback and not supports_direct_position_control:
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
+                        translation_domain=DOMAIN,
+                        translation_key="position_feedback_not_supported",
+                        translation_placeholders={
+                            "device_name": coordinator.name,
+                            "bed_type": bed_type or "unknown",
+                        },
+                    )
 
-            # Define motor configurations.
-            # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
-            # For BOX25: only head and feet are valid, using direct percentage positions.
-            # For CST: only back and legs publish position feedback.
-            # For Kaidi: direct position writes expose back/legs percentage targets.
-            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
-            uses_percentage_positions = bed_type in (
-                BED_TYPE_KEESON,
-                BED_TYPE_ERGOMOTION,
-                BED_TYPE_SLEEPYS_BOX25,
-            ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
+                # Validate angle sensing is enabled
+                if coordinator.disable_angle_sensing:
+                    raise ServiceValidationError(
+                        f"Angle sensing is disabled for device '{coordinator.name}'",
+                        translation_domain=DOMAIN,
+                        translation_key="angle_sensing_disabled",
+                        translation_placeholders={"device_name": coordinator.name},
+                    )
 
-            if bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
-                valid_motors = {"back", "legs"}
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": 100.0,
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": 100.0,
-                    },
-                }
-            elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-                # Keeson/Ergomotion only have head and feet motors
-                valid_motors = {"head", "feet"}
-                motor_configs = {
-                    "head": {
-                        "position_key": "back",  # Maps to "back" in position_data
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": 100.0,  # Percentage
-                    },
-                    "feet": {
-                        "position_key": "legs",  # Maps to "legs" in position_data
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": 100.0,  # Percentage
-                    },
-                }
-            elif bed_type == BED_TYPE_SLEEPYS_BOX25:
-                valid_motors = {"head", "feet"}
-                motor_configs = {
-                    "head": {
-                        "position_key": "head",
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": 100.0,
-                    },
-                    "feet": {
-                        "position_key": "feet",
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": 100.0,
-                    },
-                }
-            elif bed_type == BED_TYPE_OKIN_CST:
-                valid_motors = set(OKIN_CST_POSITION_AXES)
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": coordinator.get_max_angle("back"),  # Degrees
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
-                    },
-                }
-            else:
-                # Standard beds: motor availability depends on motor_count
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": coordinator.get_max_angle("back"),  # Degrees
-                        "min_motors": 2,
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
-                        "min_motors": 2,
-                    },
-                    "head": {
-                        "position_key": "head",
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": coordinator.get_max_angle("head"),  # Degrees
-                        "min_motors": 3,
-                    },
-                    "feet": {
-                        "position_key": "feet",
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": coordinator.get_max_angle("feet"),  # Degrees
-                        "min_motors": 4,
-                    },
-                }
-                # Filter to valid motors based on motor_count
-                valid_motors = {
-                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
-                }
+                # Define motor configurations.
+                # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
+                # For BOX25: only head and feet are valid, using direct percentage positions.
+                # For CST: only back and legs publish position feedback.
+                # For Kaidi: direct position writes expose back/legs percentage targets.
+                # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
+                uses_percentage_positions = bed_type in (
+                    BED_TYPE_KEESON,
+                    BED_TYPE_ERGOMOTION,
+                    BED_TYPE_SLEEPYS_BOX25,
+                ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
-            # Validate motor is valid for this bed
-            if motor not in valid_motors:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                    f"Valid motors: {', '.join(sorted(valid_motors))}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_motor_for_bed_type",
-                    translation_placeholders={
-                        "motor": motor,
-                        "device_name": coordinator.name,
-                        "valid_motors": ", ".join(sorted(valid_motors)),
-                    },
+                if bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
+                    valid_motors = {"back", "legs"}
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": 100.0,
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": 100.0,
+                        },
+                    }
+                elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+                    # Keeson/Ergomotion only have head and feet motors
+                    valid_motors = {"head", "feet"}
+                    motor_configs = {
+                        "head": {
+                            "position_key": "back",  # Maps to "back" in position_data
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": 100.0,  # Percentage
+                        },
+                        "feet": {
+                            "position_key": "legs",  # Maps to "legs" in position_data
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": 100.0,  # Percentage
+                        },
+                    }
+                elif bed_type == BED_TYPE_SLEEPYS_BOX25:
+                    valid_motors = {"head", "feet"}
+                    motor_configs = {
+                        "head": {
+                            "position_key": "head",
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": 100.0,
+                        },
+                        "feet": {
+                            "position_key": "feet",
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": 100.0,
+                        },
+                    }
+                elif bed_type == BED_TYPE_OKIN_CST:
+                    valid_motors = set(OKIN_CST_POSITION_AXES)
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": coordinator.get_max_angle("back"),  # Degrees
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": coordinator.get_max_angle("legs"),  # Degrees
+                        },
+                    }
+                else:
+                    # Standard beds: motor availability depends on motor_count
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": coordinator.get_max_angle("back"),  # Degrees
+                            "min_motors": 2,
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": coordinator.get_max_angle("legs"),  # Degrees
+                            "min_motors": 2,
+                        },
+                        "head": {
+                            "position_key": "head",
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": coordinator.get_max_angle("head"),  # Degrees
+                            "min_motors": 3,
+                        },
+                        "feet": {
+                            "position_key": "feet",
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": coordinator.get_max_angle("feet"),  # Degrees
+                            "min_motors": 4,
+                        },
+                    }
+                    # Filter to valid motors based on motor_count
+                    valid_motors = {
+                        m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
+                    }
+
+                # Validate motor is valid for this bed
+                if motor not in valid_motors:
+                    raise ServiceValidationError(
+                        f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                        f"Valid motors: {', '.join(sorted(valid_motors))}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_motor_for_bed_type",
+                        translation_placeholders={
+                            "motor": motor,
+                            "device_name": coordinator.name,
+                            "valid_motors": ", ".join(sorted(valid_motors)),
+                        },
+                    )
+
+                config = motor_configs[motor]
+                max_value = config["max_value"]
+
+                # Validate position is in range
+                if position < 0 or position > max_value:
+                    unit = "%" if uses_percentage_positions else "°"
+                    raise ServiceValidationError(
+                        f"Position {position} is out of range for motor '{motor}'. "
+                        f"Valid range: 0-{max_value}{unit}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_position_range",
+                        translation_placeholders={
+                            "position": str(position),
+                            "motor": motor,
+                            "max_value": str(max_value),
+                            "unit": unit,
+                        },
+                    )
+
+                # Call async_seek_position
+                await coordinator.async_seek_position(
+                    position_key=cast(str, config["position_key"]),
+                    target_angle=position,
+                    move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
+                    move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
+                    move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
                 )
-
-            config = motor_configs[motor]
-            max_value = config["max_value"]
-
-            # Validate position is in range
-            if position < 0 or position > max_value:
-                unit = "%" if uses_percentage_positions else "°"
-                raise ServiceValidationError(
-                    f"Position {position} is out of range for motor '{motor}'. "
-                    f"Valid range: 0-{max_value}{unit}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_position_range",
-                    translation_placeholders={
-                        "position": str(position),
-                        "motor": motor,
-                        "max_value": str(max_value),
-                        "unit": unit,
-                    },
-                )
-
-            # Call async_seek_position
-            await coordinator.async_seek_position(
-                position_key=cast(str, config["position_key"]),
-                target_angle=position,
-                move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
-                move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
-                move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
-            )
 
     hass.services.async_register(
         DOMAIN,
@@ -1400,88 +1418,89 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
-            controller = await _get_controller_for_service(coordinator)
-            motor_configs = {
-                spec.key: {
-                    "move_up_fn": spec.open_fn,
-                    "move_down_fn": spec.close_fn,
-                    "move_stop_fn": spec.stop_fn,
+            async with _release_idle_on_validation_failure(coordinator):
+                controller = await _get_controller_for_service(coordinator)
+                motor_configs = {
+                    spec.key: {
+                        "move_up_fn": spec.open_fn,
+                        "move_down_fn": spec.close_fn,
+                        "move_stop_fn": spec.stop_fn,
+                    }
+                    for spec in controller.motor_control_specs
+                    if spec.key in TIMED_MOVE_MOTOR_OPTIONS
                 }
-                for spec in controller.motor_control_specs
-                if spec.key in TIMED_MOVE_MOTOR_OPTIONS
-            }
-            valid_motors = set(motor_configs)
+                valid_motors = set(motor_configs)
 
-            # Validate motor is valid for this bed
-            if motor not in valid_motors:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                    f"Valid motors: {', '.join(sorted(valid_motors))}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_motor_for_bed_type",
-                    translation_placeholders={
-                        "motor": motor,
-                        "device_name": coordinator.name,
-                        "valid_motors": ", ".join(sorted(valid_motors)),
-                    },
-                )
+                # Validate motor is valid for this bed
+                if motor not in valid_motors:
+                    raise ServiceValidationError(
+                        f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                        f"Valid motors: {', '.join(sorted(valid_motors))}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_motor_for_bed_type",
+                        translation_placeholders={
+                            "motor": motor,
+                            "device_name": coordinator.name,
+                            "valid_motors": ", ".join(sorted(valid_motors)),
+                        },
+                    )
 
-            config = motor_configs[motor]
+                config = motor_configs[motor]
 
-            # Get the appropriate move function based on direction
-            move_fn = config["move_up_fn"] if direction == "up" else config["move_down_fn"]
-            stop_fn = config["move_stop_fn"]
+                # Get the appropriate move function based on direction
+                move_fn = config["move_up_fn"] if direction == "up" else config["move_down_fn"]
+                stop_fn = config["move_stop_fn"]
 
-            # Execute timed movement
-            # Calculate repeat count: duration_ms / pulse_delay_ms
-            # Example: 3500ms on Octo (350ms delay) = 10 repeats
-            pulse_delay_ms = coordinator.motor_pulse_delay_ms
-            if pulse_delay_ms <= 0:
-                _LOGGER.warning(
-                    "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
+                # Execute timed movement
+                # Calculate repeat count: duration_ms / pulse_delay_ms
+                # Example: 3500ms on Octo (350ms delay) = 10 repeats
+                pulse_delay_ms = coordinator.motor_pulse_delay_ms
+                if pulse_delay_ms <= 0:
+                    _LOGGER.warning(
+                        "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
+                        pulse_delay_ms,
+                        coordinator.name,
+                    )
+                    pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
+                # Round up to honor requested duration as minimum
+                calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
+
+                _LOGGER.debug(
+                    "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
+                    duration_ms,
                     pulse_delay_ms,
-                    coordinator.name,
+                    calculated_repeat_count,
                 )
-                pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-            # Round up to honor requested duration as minimum
-            calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
 
-            _LOGGER.debug(
-                "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
-                duration_ms,
-                pulse_delay_ms,
-                calculated_repeat_count,
-            )
+                # Store original pulse count to restore after
+                original_pulse_count = coordinator.motor_pulse_count
 
-            # Store original pulse count to restore after
-            original_pulse_count = coordinator.motor_pulse_count
+                # Bind closure variables as defaults to avoid late-binding bugs
+                async def timed_movement(
+                    ctrl: BedController,
+                    *,
+                    _coordinator: AdjustableBedCoordinator = coordinator_,
+                    _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
+                    _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
+                    _calculated_repeat_count: int = calculated_repeat_count,
+                    _original_pulse_count: int = original_pulse_count,
+                ) -> None:
+                    """Execute movement for specified duration, always sending stop."""
+                    try:
+                        # Temporarily set pulse count to calculated value
+                        # This is safe because we're inside the command lock
+                        _coordinator._motor_pulse_count = _calculated_repeat_count
 
-            # Bind closure variables as defaults to avoid late-binding bugs
-            async def timed_movement(
-                ctrl: BedController,
-                *,
-                _coordinator: AdjustableBedCoordinator = coordinator_,
-                _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
-                _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
-                _calculated_repeat_count: int = calculated_repeat_count,
-                _original_pulse_count: int = original_pulse_count,
-            ) -> None:
-                """Execute movement for specified duration, always sending stop."""
-                try:
-                    # Temporarily set pulse count to calculated value
-                    # This is safe because we're inside the command lock
-                    _coordinator._motor_pulse_count = _calculated_repeat_count
+                        # Call the movement function (uses coordinator's pulse settings)
+                        await _move_fn(ctrl)
+                    finally:
+                        # Restore original pulse count
+                        _coordinator._motor_pulse_count = _original_pulse_count
 
-                    # Call the movement function (uses coordinator's pulse settings)
-                    await _move_fn(ctrl)
-                finally:
-                    # Restore original pulse count
-                    _coordinator._motor_pulse_count = _original_pulse_count
+                        # Always send stop command
+                        await asyncio.shield(_stop_fn(ctrl))
 
-                    # Always send stop command
-                    await asyncio.shield(_stop_fn(ctrl))
-
-            await coordinator.async_execute_controller_command(timed_movement)
+                await coordinator.async_execute_controller_command(timed_movement)
 
     hass.services.async_register(
         DOMAIN,
