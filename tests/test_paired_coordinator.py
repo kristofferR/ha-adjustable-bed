@@ -306,6 +306,12 @@ class TestSideProxy:
         assert proxy.address == child.address
         assert proxy.name == "Left"
 
+    def test_writes_delegate_to_child(self):
+        # timed_move temporarily tunes _motor_pulse_count on its coordinator.
+        _, child, proxy = self._proxy()
+        proxy._motor_pulse_count = 7
+        assert child._motor_pulse_count == 7
+
     async def test_command_routes_through_parent_with_side(self):
         parent, _, proxy = self._proxy()
 

@@ -69,7 +69,7 @@ from .const import (
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 from .pairing import (
     get_child,
     is_paired,
@@ -877,7 +877,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             if inferred_side is not None:
                 child = coordinator.child_for_side(inferred_side)
                 if child is not None:
-                    return child
+                    # Wrap so the per-motor service routes writes through the
+                    # parent (pair lock) yet reads the child's entry/controller.
+                    return cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, inferred_side),
+                    )
             raise ServiceValidationError(
                 f"{coordinator.name} is a paired bed; target one side's device "
                 f"for {service}.",
@@ -1098,21 +1103,10 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             controller = await _get_controller_for_service(coordinator)
 
-            # Get config entry for bed type and motor count
-            entry: ConfigEntry | None = None
-            for entry_id, coord in hass.data[DOMAIN].items():
-                if coord is coordinator:
-                    entry = hass.config_entries.async_get_entry(entry_id)
-                    break
-
-            if not entry:
-                raise ServiceValidationError(
-                    f"Could not find config entry for device {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-
+            # Bed type / motor count come from the coordinator's own entry (the
+            # child's ChildEntryView for a paired-side target — children aren't in
+            # hass.data, so don't scan it).
+            entry = coordinator.entry
             bed_type = entry.data.get(CONF_BED_TYPE)
             motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
             protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)

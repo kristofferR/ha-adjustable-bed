@@ -394,6 +394,14 @@ class PairedSideProxy:
             raise AttributeError(name)
         return getattr(self._pair_child, name)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # The proxy's own wiring stays local; everything else delegates to the
+        # child (e.g. timed_move temporarily tuning the child's _motor_pulse_count).
+        if name.startswith("_pair_"):
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._pair_child, name, value)
+
     async def async_execute_controller_command(
         self, command_fn: CommandFn, **kwargs: Any
     ) -> None:

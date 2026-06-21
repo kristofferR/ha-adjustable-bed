@@ -1381,6 +1381,7 @@ class TestServices:
         coordinator = MagicMock()
         coordinator.controller = MagicMock()
         coordinator.name = entry.title
+        coordinator.entry = entry
         coordinator.disable_angle_sensing = False
         coordinator.get_max_angle.side_effect = lambda motor: {
             "back": 80.0,
@@ -1477,6 +1478,7 @@ class TestServices:
         coordinator = MagicMock()
         coordinator.controller = MagicMock()
         coordinator.name = entry.title
+        coordinator.entry = entry
         coordinator.disable_angle_sensing = False
         coordinator.get_max_angle.side_effect = lambda motor: {
             "back": 50.0,
