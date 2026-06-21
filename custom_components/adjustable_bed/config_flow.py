@@ -1113,6 +1113,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             if not is_paired(entry.data)
             and entry.data.get(CONF_ADDRESS)
             and not self._is_absorbed_pair_member(entry.data[CONF_ADDRESS])
+            # Only fully-loaded beds: a bed still in SETUP_RETRY / failed initial
+            # setup hasn't registered its entities yet, so _has_unpairable_entities
+            # can't see climate/light/select it would later expose (which a pair
+            # doesn't forward and would drop).
+            and entry.state == ConfigEntryState.LOADED
         ]
 
     async def async_step_pair_beds(

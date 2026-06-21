@@ -760,10 +760,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     for ident in device.identifiers
                     if ident[0] == DOMAIN
                 }
-                address = next(
-                    (m for m in members if m in device_macs),
-                    members[0] if members else None,
-                )
+                address = next((m for m in members if m in device_macs), None)
+                if address is None and members:
+                    # The synthetic parent device (pair_id identifier) covers both
+                    # sides; a bundle is per-address, so make the user pick one
+                    # side's device instead of silently capturing only the first.
+                    raise ServiceValidationError(
+                        f"{entry.title} is a paired bed; target one side's device "
+                        "for the support bundle.",
+                        translation_domain=DOMAIN,
+                        translation_key="bundle_needs_side_for_paired",
+                        translation_placeholders={"device_name": entry.title},
+                    )
             if not isinstance(address, str):
                 continue
 

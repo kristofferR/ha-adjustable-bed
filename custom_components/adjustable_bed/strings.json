@@ -791,6 +791,9 @@
     },
     "missing_target": {
       "message": "Provide either a device or a target MAC address for the support bundle."
+    },
+    "bundle_needs_side_for_paired": {
+      "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
     }
   },
   "issues": {

@@ -368,6 +368,7 @@ class TestPairBedsConversion:
             },
             unique_id=address,
             version=4,
+            state=ConfigEntryState.LOADED,
         )
         entry.add_to_hass(hass)
         return entry
@@ -456,6 +457,7 @@ class TestPairBedsConversion:
             },
             unique_id=f"{LEFT_ADDR}-dup",
             version=4,
+            state=ConfigEntryState.LOADED,
         )
         right.add_to_hass(hass)
 
@@ -513,6 +515,7 @@ class TestPairBedsConversion:
                 data={CONF_ADDRESS: addr, CONF_NAME: name, CONF_BED_TYPE: BED_TYPE_OCTO},
                 unique_id=addr,
                 version=4,
+                state=ConfigEntryState.LOADED,
             ).add_to_hass(hass)
 
         result = await self._reach_pair_step(hass)
