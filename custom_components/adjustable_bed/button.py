@@ -519,7 +519,10 @@ def _button_entities_for(
 ) -> list[ButtonEntity]:
     """Build button entities for a single (child or standalone) coordinator."""
     has_massage = coordinator.has_massage
-    controller = coordinator.controller
+    # capability_controller: an offline paired side still gets its buttons built
+    # from a client-free controller minted from config (see coordinator); stale
+    # cleanup below runs against it too (only when non-None).
+    controller = coordinator.capability_controller
 
     if controller is not None:
         _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
@@ -544,15 +547,20 @@ def _combined_button_entities_for(
     """
     if not children:
         return []
-    # Build the combined surface only from the sides we can actually read. A pair
-    # is the same protocol, so an OFFLINE side at setup falls back to the
-    # connected side(s) — controls still register (a half-available pair loads),
-    # and press-time fan-out reconnects/fails the offline side. With BOTH online,
-    # require both (intersection): the pair flow only rejects a different
-    # bed_type, so two same-protocol sides can still differ in motor_count /
-    # has_massage / variant, and a capability only one side has must NOT be
-    # exposed as a combined control the other can't honour.
-    eligible = [child for child in children if child.controller is not None] or children
+    # Build the combined surface from each side's capability controller (live when
+    # connected, else a client-free controller minted from config). For client-free
+    # beds (e.g. Linak) an OFFLINE side still participates via its offline
+    # controller, so the combined controls register up-front and survive reconnect.
+    # Require EVERY eligible side to support a capability (intersection): the pair
+    # flow only rejects a different bed_type, so two same-protocol sides can still
+    # differ in motor_count / has_massage / variant, and a capability only one side
+    # has must NOT be exposed as a combined control the other can't honour. A side
+    # with no capability source at all (auto-variant, never connected) is excluded,
+    # falling back to the side(s) we can read.
+    eligible = (
+        [child for child in children if child.capability_controller is not None]
+        or children
+    )
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if description.is_coordinator_action or description.press_fn is None:
@@ -562,7 +570,7 @@ def _combined_button_entities_for(
             # {pair_id}_stop_both unique_id); don't also build a generic one.
             continue
         if not all(
-            _should_add_button(description, child.controller, child.has_massage)
+            _should_add_button(description, child.capability_controller, child.has_massage)
             for child in eligible
         ):
             continue
@@ -580,18 +588,19 @@ def _combined_motor_buttons_for(
     eligible: list[AdjustableBedCoordinator],
 ) -> list[ButtonEntity]:
     """Per-motor 'both sides' up/down buttons for a cover-based paired bed — only
-    the motors EVERY eligible (connected) side exposes."""
+    the motors EVERY eligible side exposes (read from each side's capability
+    controller, so an offline client-free side still counts)."""
     cover_by_key = {desc.key: desc for desc in COVER_DESCRIPTIONS}
     common: set[str] | None = None
     for child in eligible:
-        controller = child.controller
+        controller = child.capability_controller
         if (
             controller is None
             or not getattr(controller, "supports_motor_control", False)
             or getattr(controller, "has_discrete_motor_control", False)
         ):
             # Not a cover-based bed (discrete motors get combined buttons above),
-            # or no side connected yet to read the motor layout from.
+            # or no capability source for this side.
             return []
         keys = {spec.key for spec in controller.motor_control_specs}
         common = keys if common is None else (common & keys)

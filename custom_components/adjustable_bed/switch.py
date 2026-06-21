@@ -90,7 +90,10 @@ def _switch_entities_for(
     hass: HomeAssistant, coordinator: AdjustableBedCoordinator
 ) -> list[AdjustableBedSwitch]:
     """Build switch entities for a single (child or standalone) coordinator."""
-    controller = coordinator.controller
+    # capability_controller: an offline paired side (e.g. Linak under-bed lights)
+    # still gets its switches built from a client-free controller minted from
+    # config (see coordinator).
+    controller = coordinator.capability_controller
     registry = er.async_get(hass)
 
     entities = []
@@ -145,9 +148,11 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
         self._attr_is_on = False  # We don't have state feedback
-        # Cache discrete control capability at init (controller should exist at setup time)
-        # Default to False for toggle-only beds when controller disconnects
-        controller = coordinator.controller
+        # Cache discrete control capability at init. Use capability_controller so
+        # a switch created for an offline paired side still caches the correct
+        # capability (from the client-free controller) instead of defaulting to
+        # False; the live controller takes over for actual commands.
+        controller = coordinator.capability_controller
         self._supports_discrete_light_control = (
             getattr(controller, "supports_discrete_light_control", False)
             if controller is not None

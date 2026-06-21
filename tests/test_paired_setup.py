@@ -638,3 +638,69 @@ class TestSideServiceRouting:
                 },
                 blocking=True,
             )
+
+
+class TestOfflineSideEntities:
+    """Phase 2.1: a side offline at setup still gets its per-side entities,
+    built from a client-free 'capability' controller minted from config, so a
+    reconnect needs no reload."""
+
+    async def test_offline_side_builds_covers_from_capability_controller(
+        self, hass: HomeAssistant
+    ):
+        from custom_components.adjustable_bed.beds.linak import LinakController
+        from custom_components.adjustable_bed.cover import _cover_entities_for
+
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        right = children[SIDE_RIGHT]
+
+        # The side never connected: no live controller, and not primed yet.
+        assert right.controller is None
+        assert right.capability_controller is None
+
+        # Priming mints a client-free Linak controller purely for capabilities.
+        await right.async_prime_offline_controller()
+        cap = right.capability_controller
+        assert isinstance(cap, LinakController)
+
+        # Its covers are created up-front with byte-identical unique_ids, so the
+        # live controller can silently take over on reconnect (no re-add).
+        covers = _cover_entities_for(hass, right)
+        assert {c.unique_id for c in covers} == {
+            f"{RIGHT_ADDR}_back",
+            f"{RIGHT_ADDR}_legs",
+        }
+
+    async def test_offline_side_builds_switches_from_capability_controller(
+        self, hass: HomeAssistant
+    ):
+        from custom_components.adjustable_bed.switch import _switch_entities_for
+
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        left = children[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+
+        # Linak under-bed lighting is a per-side switch; it must exist offline too.
+        uids = {s.unique_id for s in _switch_entities_for(hass, left)}
+        assert any(u.startswith(f"{LEFT_ADDR}_") for u in uids)
+
+    async def test_capability_controller_precedence_and_default(
+        self, hass: HomeAssistant
+    ):
+        from unittest.mock import MagicMock
+
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        child = children[SIDE_LEFT]
+
+        # No live and no offline controller -> None (exactly today's behaviour).
+        assert child.capability_controller is None
+        await child.async_prime_offline_controller()
+        assert child.capability_controller is not None
+
+        # A live controller always takes precedence over the offline one.
+        live = MagicMock()
+        child._controller = live
+        assert child.capability_controller is live

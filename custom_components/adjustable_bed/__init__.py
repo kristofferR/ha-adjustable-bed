@@ -463,6 +463,15 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # Prime a client-free capability controller for any side that did NOT connect,
+    # so its per-side entities are still created up-front (with byte-identical
+    # unique_ids); the live controller takes over on reconnect with no reload.
+    # Connected sides already have a live controller and are skipped. Bed types
+    # whose controller needs a live connection (auto-detected variants) stay as
+    # before until they connect. (Paired light/climate/select branches are not
+    # yet implemented — those platforms are out of Phase 2.1 scope.)
+    for child in coordinator.children.values():
+        await child.async_prime_offline_controller()
     await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
 
     # Seed each connected child's positions, like the single-bed path does, so

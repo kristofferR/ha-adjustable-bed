@@ -263,7 +263,9 @@ def _number_entities_for(
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     bed_type = entry.data.get(CONF_BED_TYPE)
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
-    controller = coordinator.controller
+    # capability_controller: an offline paired side still gets its number entities
+    # built from a client-free controller minted from config (see coordinator).
+    controller = coordinator.capability_controller
 
     entities: list[NumberEntity] = []
 

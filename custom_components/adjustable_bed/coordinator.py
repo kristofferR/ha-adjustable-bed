@@ -310,6 +310,12 @@ class AdjustableBedCoordinator:
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
+        # A client-free controller minted from config purely to read this bed's
+        # CAPABILITIES (which entities to expose) when no live controller exists.
+        # Paired children prime this before platform setup so an offline side
+        # still gets its per-side entities up-front. None until primed / for bed
+        # types whose controller needs a live connection (auto-detected variants).
+        self._offline_controller: BedController | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._lock = asyncio.Lock()
@@ -446,6 +452,9 @@ class AdjustableBedCoordinator:
             )
 
         self._bed_type = corrected_bed_type
+        # The cached offline capability-controller was minted for the OLD type;
+        # drop it so it is re-minted for the corrected type on next read.
+        self._offline_controller = None
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
@@ -590,6 +599,57 @@ class AdjustableBedCoordinator:
     def controller(self) -> BedController | None:
         """Return the bed controller."""
         return self._controller
+
+    @property
+    def capability_controller(self) -> BedController | None:
+        """Return the controller to read CAPABILITIES from (which entities to expose).
+
+        The live controller when connected, else a client-free 'offline'
+        controller minted from config. Paired children prime the offline
+        controller before platform setup so an offline side still gets its
+        per-side entities (with byte-identical unique_ids), and the live
+        controller silently takes over on connect with no reload. None when
+        neither exists (e.g. an auto-detected-variant bed that has never
+        connected) — in which case behaviour is exactly as before.
+        """
+        if self._controller is not None:
+            return self._controller
+        return self._offline_controller
+
+    async def async_prime_offline_controller(self) -> None:
+        """Best-effort mint of a client-free controller for capability reads.
+
+        Construction only — never connects or starts notifications. Failures are
+        non-fatal (a bad mint just leaves this side as before). Bed types whose
+        controller needs a live client (auto-detected Richmat/L&P/Keeson
+        variants) raise ConnectionError and are left without an offline
+        controller until they connect.
+        """
+        if self._offline_controller is not None or self._controller is not None:
+            return
+        try:
+            self._offline_controller = await create_controller(
+                coordinator=self,
+                bed_type=self._bed_type,
+                protocol_variant=self._protocol_variant,
+                client=None,
+                device_name=self._name,
+                octo_pin=self._octo_pin,
+                richmat_remote=self._richmat_remote,
+                jensen_pin=self._jensen_pin,
+                cb24_bed_selection=self._cb24_bed_selection,
+            )
+        except ConnectionError:
+            # Auto-detected variant: needs a live client to resolve. Leave the
+            # offline controller unset (this side behaves as today until connect).
+            self._offline_controller = None
+        except Exception:  # noqa: BLE001 - capability priming must never block setup
+            _LOGGER.debug(
+                "Offline capability-controller mint failed for %s",
+                self._name,
+                exc_info=True,
+            )
+            self._offline_controller = None
 
     @property
     def position_data(self) -> dict[str, float]:
