@@ -1246,49 +1246,71 @@ class TestSleepysBox25Controller:
         assert controller._motor_initialized is False
         mock_client.write_gatt_char.assert_not_called()
 
-    async def test_preset_is_fire_and_forget_no_stop(
+    async def test_preset_resends_frame_no_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 presets are fire-and-forget (needConfirm=0): no trailing STOP.
+        """BOX25 presets resend the frame at 100 ms with no trailing STOP.
 
-        Regression test for #372: a trailing MOTOR_STOP cancels the just-issued
-        preset on some firmware (e.g. 25_22_01 / Ashley/Nectar M1X1232), so the
-        bed never moves. The preset command alone must be sent.
+        Regression test for #372: a single fire-and-forget write never moves
+        firmware 252201 (Ashley/Nectar M1X1232) — the bed latches the target on
+        the first frame but only starts driving when a follow-up frame arrives
+        >=100 ms later (the OKIN app drives presets via a 100 ms periodic
+        resend). The frame must be resent, and no STOP may follow (it would
+        cancel the move).
         """
+        from custom_components.adjustable_bed.beds.sleepys_box25 import (
+            _PRESET_REPEAT_COUNT,
+            _PRESET_REPEAT_DELAY_MS,
+        )
+
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
+            patch.object(controller, "write_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
         ):
             await controller.preset_flat()
 
-        mock_write.assert_awaited_once_with(Box25Commands.PRESET_FLAT)
+        mock_write.assert_awaited_once_with(
+            Box25Commands.PRESET_FLAT,
+            repeat_count=_PRESET_REPEAT_COUNT,
+            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+        )
+        assert _PRESET_REPEAT_COUNT > 1  # must resend, not fire once
         mock_stop.assert_not_called()
 
-    async def test_program_memory_is_fire_and_forget_no_stop(
+    async def test_program_memory_resends_frame_no_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 memory store is fire-and-forget too: no trailing STOP (#372)."""
+        """BOX25 memory store resends the frame too, with no trailing STOP (#372)."""
+        from custom_components.adjustable_bed.beds.sleepys_box25 import (
+            _PRESET_REPEAT_COUNT,
+            _PRESET_REPEAT_DELAY_MS,
+        )
+
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
+            patch.object(controller, "write_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
         ):
             await controller.program_memory(1)
 
-        mock_write.assert_awaited_once_with(Box25Commands.MEMORY_STORE[0])
+        mock_write.assert_awaited_once_with(
+            Box25Commands.MEMORY_STORE[0],
+            repeat_count=_PRESET_REPEAT_COUNT,
+            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+        )
         mock_stop.assert_not_called()
 
     async def test_set_motor_position_supports_lumbar(
