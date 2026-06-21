@@ -134,14 +134,17 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
 ]
 
-# Platforms a paired bed (Dual Bed 4.0) sets up. A paired entry exposes per-side
-# motors, presets/stop, combined "both" controls and per-side connectivity; the
-# remaining single-bed platforms (climate/light/select/number/sensor/switch) are
-# not forwarded for pairs yet, so they never see a PairedBedCoordinator.
+# Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
+# against the child coordinators. The remaining platforms (climate/light/select)
+# are not forwarded for pairs yet; the combine flow blocks beds that expose them
+# so their entities are never silently dropped.
 PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.COVER,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
 ]
 
 

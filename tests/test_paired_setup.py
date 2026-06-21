@@ -292,6 +292,61 @@ class TestPairBedsConversion:
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
 
+    async def test_pairing_blocked_for_unforwarded_entities(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A bed exposing climate/light/select can't be paired (those would drop)."""
+        from homeassistant.helpers import entity_registry as er
+
+        left = self._single(hass, LEFT_ADDR, "Left")
+        right = self._single(hass, RIGHT_ADDR, "Right")
+        er.async_get(hass).async_get_or_create(
+            "select", DOMAIN, f"{LEFT_ADDR}_firmness", config_entry=left
+        )
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]["base"] == "pairing_unsupported_entities"
+
+    async def test_pairing_preserves_angle_options(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Customized angle limits in entry.options survive into the child."""
+        from custom_components.adjustable_bed.const import SIDE_LEFT
+        from custom_components.adjustable_bed.pairing import get_child
+
+        left = self._single(hass, LEFT_ADDR, "Left")
+        right = self._single(hass, RIGHT_ADDR, "Right")
+        hass.config_entries.async_update_entry(left, options={"back_max_angle": 55.0})
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+        )
+        await hass.async_block_till_done()
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+
+        paired = next(
+            entry
+            for entry in hass.config_entries.async_entries(DOMAIN)
+            if is_paired(entry.data)
+        )
+        left_child = get_child(paired.data, SIDE_LEFT)
+        assert left_child is not None
+        assert left_child[CONF_ADDRESS] == LEFT_ADDR
+        assert left_child.get("back_max_angle") == 55.0
+
     async def test_octo_pairing_is_rejected(
         self,
         hass: HomeAssistant,

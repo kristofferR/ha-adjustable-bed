@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -67,7 +68,20 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed switch entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[AdjustableBedSwitch] = []
+        for child in coordinator.children.values():
+            entities.extend(_switch_entities_for(hass, child))
+        async_add_entities(entities)
+        return
+    async_add_entities(_switch_entities_for(hass, coordinator))
+
+
+def _switch_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[AdjustableBedSwitch]:
+    """Build switch entities for a single (child or standalone) coordinator."""
     controller = coordinator.controller
     registry = er.async_get(hass)
 
@@ -105,7 +119,7 @@ async def async_setup_entry(
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
-    async_add_entities(entities)
+    return entities
 
 
 class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):

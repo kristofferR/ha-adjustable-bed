@@ -37,6 +37,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -235,7 +236,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed number entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(coordinator, PairedBedCoordinator):
+        paired_entities: list[NumberEntity] = []
+        for child in coordinator.children.values():
+            paired_entities.extend(_number_entities_for(hass, child))
+        if paired_entities:
+            async_add_entities(paired_entities)
+        return
+    async_add_entities(_number_entities_for(hass, coordinator))
+
+
+def _number_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[NumberEntity]:
+    """Build number entities for a single (child or standalone) coordinator."""
+    entry = coordinator.entry  # ChildEntryView for a paired child; real entry otherwise
     motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
     bed_type = entry.data.get(CONF_BED_TYPE)
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
@@ -569,8 +585,7 @@ async def async_setup_entry(
             )
         )
 
-    if entities:
-        async_add_entities(entities)
+    return entities
 
 
 def _async_remove_stale_sleep_number_entity(
