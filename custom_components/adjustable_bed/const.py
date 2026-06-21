@@ -161,6 +161,22 @@ BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
 BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset({BED_TYPE_LINAK})
 
+# Bed types whose entity-gating capabilities are FULLY determined by stored config
+# (bed_type + options) with NO live BLE connection — the only beds safe to mint a
+# client-free "capability" controller for an OFFLINE paired side (Phase 2.1).
+# DELIBERATELY CONSERVATIVE (deny-by-default): a type must be EXCLUDED if it
+#   (a) auto-detects its variant/profile from live GATT services or BLE
+#       advertisement (Keeson "auto", Richmat non-Nordic, Leggett & Platt "auto",
+#       CB24, Kaidi, CoolBase) — offline it silently resolves the WRONG profile;
+#   (b) can be connect-time corrected to a DIFFERENT bed_type (CB35<->BOX25,
+#       Malouf new/legacy, OKIN shared-UUID, Nordic-UART) — the stored type is not
+#       final; or
+#   (c) mutates its capabilities from a post-connect config query / feature
+#       discovery (Octo, Jensen, Sleep Number).
+# Linak is verified safe on all three. Expanding this set requires verifying each
+# candidate against (a)-(c) (see the offline-snapshot capability audit).
+OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset({BED_TYPE_LINAK})
+
 
 def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
     """Return True if the bed type supports passive position reconciliation."""

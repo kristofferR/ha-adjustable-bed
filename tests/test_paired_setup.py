@@ -704,3 +704,22 @@ class TestOfflineSideEntities:
         live = MagicMock()
         child._controller = live
         assert child.capability_controller is live
+
+    async def test_unsafe_bed_type_side_is_not_offline_minted(self, hass: HomeAssistant):
+        # A bed type that is NOT capability-deterministic offline (auto-variant /
+        # connect-corrected / post-connect query) must NOT be offline-minted, so
+        # it can't register entities from a wrong profile. It keeps today's
+        # behaviour (no offline entities until it connects).
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+        entry = MockConfigEntry(
+            domain=DOMAIN, title="Octo", data=data, unique_id="pair_octo", version=4
+        )
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        left = children[SIDE_LEFT]
+
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is None

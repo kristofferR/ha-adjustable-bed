@@ -118,6 +118,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -626,6 +627,15 @@ class AdjustableBedCoordinator:
         controller until they connect.
         """
         if self._offline_controller is not None or self._controller is not None:
+            return
+        if self._bed_type not in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
+            # Only beds whose entity-gating capabilities are fully determined by
+            # stored config offline are safe to mint without a live connection.
+            # Others auto-detect their variant from live GATT/advertisement, can
+            # be connect-time corrected to a different bed_type, or mutate
+            # capabilities from a post-connect query — minting offline would
+            # register entities from a WRONG profile. They keep today's behaviour
+            # (no offline entities until the side connects).
             return
         try:
             self._offline_controller = await create_controller(
