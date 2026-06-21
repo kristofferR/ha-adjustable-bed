@@ -204,15 +204,16 @@ class PairedBedCoordinator:
         cancel_running: bool = True,
     ) -> None:
         targets = self._targets_for(side)
-        entry_cancel = self._pair_cancel_counter
 
-        # Preempt: cancel whatever is executing under the lock so it releases the
-        # lock promptly instead of making this command wait out its BLE pulse
-        # window. Mirrors a standalone bed, where cancel_running interrupts the
-        # in-flight movement before the new one starts.
+        # Preempt: invalidate any OLDER movement still queued on the lock AND
+        # cancel whatever is executing, so this newer command (e.g. a reverse)
+        # wins instead of waiting out the in-flight pulse window or letting a
+        # stale queued movement run first. Mirrors standalone-bed cancel_running.
         if cancel_running:
+            self._pair_cancel_counter += 1
             for child in list(self._active_children):
                 child.request_command_cancel()
+        entry_cancel = self._pair_cancel_counter
 
         # Serialize ALL paired commands at the parent — including a single-side
         # command, which must wait for an in-flight whole-bed command so the two

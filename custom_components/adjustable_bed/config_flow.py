@@ -98,6 +98,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -126,7 +127,13 @@ from .discovery_settings import (
     async_set_discovery_disabled,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .pairing import build_pair_entry_data, is_paired, pair_member_addresses
+from .pairing import (
+    build_pair_entry_data,
+    get_child,
+    is_paired,
+    pair_member_addresses,
+    with_updated_child,
+)
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
@@ -2643,6 +2650,13 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
+            if is_paired(new_data):
+                # A paired bed edits the whole bed from one form; push the shared
+                # edits into each child descriptor too, or the frozen per-side
+                # descriptors would shadow them when the children reload.
+                for side in PAIR_SIDES:
+                    if get_child(new_data, side) is not None:
+                        new_data = with_updated_child(new_data, side, dict(user_input))
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,
