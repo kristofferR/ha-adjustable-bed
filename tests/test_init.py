@@ -497,7 +497,7 @@ class TestMigration:
             domain=DOMAIN,
             title=f"{bed_type} v3->v4",
             data=data,
-            unique_id=f"AA:BB:CC:DD:E4:{abs(hash(bed_type)) % 100:02d}",
+            unique_id=f"migration_v3v4_{bed_type}",
             entry_id=f"migration_v3v4_{bed_type}",
             version=3,
         )

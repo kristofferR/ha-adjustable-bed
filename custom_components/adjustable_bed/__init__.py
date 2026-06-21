@@ -441,6 +441,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
+        # The coordinator isn't in hass.data yet, so the unload path won't run —
+        # shut it down here or a side that already connected keeps its BLE link
+        # alive across SETUP_RETRY.
+        await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
         ) from None
@@ -448,6 +452,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     if not connected:
         # Half-available is fine, but if NO side connected there is nothing to
         # control yet — retry like a single bed.
+        await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"No side of paired bed {entry.title} could be connected"
         )
@@ -860,6 +865,28 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 with contextlib.suppress(Exception):
                     await target.async_ensure_connected(reset_timer=True)
 
+    async def _release_preflighted(
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+    ) -> None:
+        """Release every side connected during a multi-target pre-flight (grouped
+        by coordinator) after the validated plan was abandoned."""
+        grouped: dict[
+            int,
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                list[AdjustableBedCoordinator],
+            ],
+        ] = {}
+        for coordinator, target in preflighted:
+            grouped.setdefault(id(coordinator), (coordinator, []))[1].append(target)
+        for coordinator, connected in grouped.values():
+            await _release_validation_connections(coordinator, connected)
+
     def _single_bed_for_service(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
         inferred_side: str | None,
@@ -913,14 +940,19 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 translation_key="device_not_found",
                 translation_placeholders={"device_id": missing[0]},
             )
-        for coordinator, side in targets:
-            # Pre-flight: validate the preset on EVERY targeted side before
-            # moving any, so a paired 'both' never half-executes.
-            preflighted: list[AdjustableBedCoordinator] = []
-            try:
+        # Phase 1: validate the preset on EVERY targeted side before moving any
+        # bed, so a multi-target call never half-executes.
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        try:
+            for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
                     controller = await _get_controller_for_service(target)
-                    preflighted.append(target)
+                    preflighted.append((coordinator, target))
                     if not getattr(controller, "supports_memory_presets", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support memory presets",
@@ -941,10 +973,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                                 "requested_preset": str(preset),
                             },
                         )
-            except ServiceValidationError:
-                await _release_validation_connections(coordinator, preflighted)
-                raise
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
 
+        # Phase 2: every target validated — now move them.
+        for coordinator, side in targets:
             await _execute_sided(
                 coordinator,
                 side,
@@ -969,12 +1003,19 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 translation_key="device_not_found",
                 translation_placeholders={"device_id": missing[0]},
             )
-        for coordinator, side in targets:
-            preflighted: list[AdjustableBedCoordinator] = []
-            try:
+        # Phase 1: validate that every targeted side can program this slot before
+        # programming any, so a multi-target call never half-executes.
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        try:
+            for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
                     controller = await _get_controller_for_service(target)
-                    preflighted.append(target)
+                    preflighted.append((coordinator, target))
                     if not getattr(controller, "supports_memory_programming", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support programming memory presets",
@@ -995,10 +1036,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                                 "requested_preset": str(preset),
                             },
                         )
-            except ServiceValidationError:
-                await _release_validation_connections(coordinator, preflighted)
-                raise
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
 
+        # Phase 2: every target validated — now program them.
+        for coordinator, side in targets:
             await _execute_sided(
                 coordinator,
                 side,
