@@ -154,8 +154,12 @@ class TestPairedSetup:
         assert f"{RIGHT_ADDR}_back" in cover_uids
         assert f"{RIGHT_ADDR}_legs" in cover_uids
 
-        # exactly one combined stop button on the parent.
-        assert any(e.unique_id == f"{PAIR_ID}_stop_both" for e in buttons)
+        # combined controls on the parent: stop + 'both' movement/preset buttons.
+        both_uids = {e.unique_id for e in buttons if e.unique_id.endswith("_both")}
+        assert f"{PAIR_ID}_stop_both" in both_uids
+        assert both_uids - {
+            f"{PAIR_ID}_stop_both"
+        }, "expected combined movement/preset buttons on the parent"
 
     async def test_paired_entry_unloads(
         self,
@@ -314,6 +318,38 @@ class TestPairBedsConversion:
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "pairing_unsupported_entities"
+
+    async def test_pairing_blocked_for_same_address(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Two distinct entries for the same MAC can't be paired (would collide)."""
+        left = self._single(hass, LEFT_ADDR, "Left")
+        right = MockConfigEntry(
+            domain=DOMAIN,
+            title="Left duplicate",
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_NAME: "Left duplicate",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=f"{LEFT_ADDR}-dup",
+            version=4,
+        )
+        right.add_to_hass(hass)
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+        )
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"].get("right_entry") == "same_address"
 
     async def test_pairing_preserves_angle_options(
         self,

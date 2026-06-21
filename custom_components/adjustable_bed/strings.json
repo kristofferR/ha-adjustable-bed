@@ -264,7 +264,8 @@
       "same_device": "Pick two different beds — you selected the same one for both sides.",
       "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
       "octo_pairing_unsupported": "Octo split beds can't be combined yet (their per-side connection switching is coming in a later update). Add each Octo side as a separate device for now.",
-      "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now."
+      "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
+      "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine."
     }
   },
   "options": {

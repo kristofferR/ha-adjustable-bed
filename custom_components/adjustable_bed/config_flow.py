@@ -1122,6 +1122,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             elif left.entry_id == right.entry_id:
                 errors["right_entry"] = "same_device"
+            elif (left.data.get(CONF_ADDRESS) or "").upper() == (
+                right.data.get(CONF_ADDRESS) or ""
+            ).upper():
+                # Two distinct entries for the same MAC would build children with
+                # identical addresses and so collide on {address}_{key} unique IDs.
+                errors["right_entry"] = "same_address"
             elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
                 errors["base"] = "mismatched_bed_types"
             elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:

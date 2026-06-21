@@ -486,13 +486,17 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     # Paired beds expose per-side buttons (presets, stop, connect) built against
-    # each child, plus a single combined "Stop" on the parent that fans STOP out
-    # to both sides with the resilient stop contract.
+    # each child, plus combined controls on the parent device: a resilient "Stop"
+    # that fans STOP to both sides, and "both" movement/preset buttons for actions
+    # both sides support (since paired setup omits a combined cover, these buttons
+    # are how the whole bed is driven from the parent device/card).
     if isinstance(coordinator, PairedBedCoordinator):
         entities: list[ButtonEntity] = []
-        for child in coordinator.children.values():
+        children = list(coordinator.children.values())
+        for child in children:
             entities.extend(_button_entities_for(hass, child))
         entities.append(PairedBedStopButton(coordinator))
+        entities.extend(_combined_button_entities_for(coordinator, children))
         async_add_entities(entities)
         return
 
@@ -515,6 +519,30 @@ def _button_entities_for(
             continue
         entities.append(AdjustableBedButton(coordinator, description))
 
+    return entities
+
+
+def _combined_button_entities_for(
+    coordinator: PairedBedCoordinator,
+    children: list[AdjustableBedCoordinator],
+) -> list[ButtonEntity]:
+    """Build the parent device's combined 'both sides' movement/preset buttons.
+
+    Only actions supported by BOTH children are exposed (connect/disconnect/stop
+    are coordinator actions handled separately by the combined Stop button).
+    """
+    if not children:
+        return []
+    entities: list[ButtonEntity] = []
+    for description in BUTTON_DESCRIPTIONS:
+        if description.is_coordinator_action or description.press_fn is None:
+            continue
+        if not all(
+            _should_add_button(description, child.controller, child.has_massage)
+            for child in children
+        ):
+            continue
+        entities.append(PairedBedCombinedButton(coordinator, description))
     return entities
 
 
@@ -668,3 +696,47 @@ class PairedBedStopButton(ButtonEntity):
         """Stop both sides."""
         _LOGGER.info("Combined stop pressed for paired bed %s", self._coordinator.name)
         await self._coordinator.async_stop_command(side=SIDE_BOTH)
+
+
+class PairedBedCombinedButton(ButtonEntity):
+    """A 'both sides' movement/preset button on the paired parent device.
+
+    Reuses the per-side button's translation_key (the parent device name keeps it
+    distinct from the per-side entities) and fans the action out to both sides.
+    """
+
+    _attr_has_entity_name = True
+    entity_description: AdjustableBedButtonEntityDescription
+
+    def __init__(
+        self,
+        coordinator: PairedBedCoordinator,
+        description: AdjustableBedButtonEntityDescription,
+    ) -> None:
+        """Initialize the combined button."""
+        self._coordinator = coordinator
+        self.entity_description = description
+        self._attr_translation_key = description.translation_key
+        self._attr_unique_id = f"{coordinator.pair_id}_{description.key}_both"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def available(self) -> bool:
+        """Always available (the bed reconnects on demand)."""
+        return True
+
+    async def async_press(self) -> None:
+        """Run the action on both sides."""
+        description = self.entity_description
+        if description.press_fn is None:
+            return
+        _LOGGER.info(
+            "Combined button %s pressed for paired bed %s",
+            description.key,
+            self._coordinator.name,
+        )
+        await self._coordinator.async_execute_controller_command(
+            description.press_fn,
+            side=SIDE_BOTH,
+            cancel_running=description.cancel_movement,
+        )
