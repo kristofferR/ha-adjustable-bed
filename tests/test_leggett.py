@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -167,18 +168,20 @@ class TestLeggettGen2Connection:
         [
             (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            # Before a controller is resolved, leggett_platt + auto is assumed
-            # persistent (auto defaults to Gen2); only explicit MlRM is excluded.
+            # Before a controller is resolved, only auto/gen2 leggett_platt is
+            # assumed persistent; okin and mlrm reconnect normally.
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
         ],
     )
     async def test_persistent_connection_fallback(
         self, hass: HomeAssistant, bed_type: str, variant: str, expected: bool
     ):
-        """Pre-connect (no controller yet): fall back to the bed-type heuristic."""
+        """Pre-connect (no controller, no cache): fall back to the bed-type heuristic."""
         coordinator = self._coordinator(hass, bed_type, variant)
         assert coordinator._controller is None
+        assert coordinator._persistent_connection_resolved is None
         assert coordinator._uses_persistent_connection() is expected
 
     async def test_resolved_controller_is_authoritative(self, hass: HomeAssistant):
@@ -196,6 +199,22 @@ class TestLeggettGen2Connection:
         assert coordinator._uses_persistent_connection() is False
 
         coordinator._controller = LeggettGen2Controller(coordinator)
+        assert coordinator._uses_persistent_connection() is True
+
+    async def test_persistence_cached_across_disconnect(self, hass: HomeAssistant):
+        """_on_disconnect clears the controller before the reconnect decision, so
+        the cached resolved value must drive it — an MlRM bed resolved via auto
+        must stay non-persistent (and thus reconnect) after the drop (issue #385
+        review)."""
+        coordinator = self._coordinator(hass, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO)
+
+        # Resolved to a non-persistent controller, then cleared on disconnect.
+        coordinator._persistent_connection_resolved = False
+        coordinator._controller = None
+        assert coordinator._uses_persistent_connection() is False
+
+        # Resolved to a persistent (Gen2) controller, then cleared.
+        coordinator._persistent_connection_resolved = True
         assert coordinator._uses_persistent_connection() is True
 
 

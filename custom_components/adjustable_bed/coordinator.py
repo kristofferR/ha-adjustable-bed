@@ -118,7 +118,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
-    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -132,6 +132,7 @@ from .const import (
     POSITION_TOLERANCE,
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
+    VARIANT_AUTO,
     get_richmat_features,
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
@@ -265,6 +266,11 @@ class AdjustableBedCoordinator:
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
+        # Persistence is a property of the resolved controller, but _on_disconnect
+        # clears the controller before the reconnect decision runs. Cache the last
+        # resolved value so connection-lifecycle checks stay correct across the
+        # disconnect (issue #385 review).
+        self._persistent_connection_resolved: bool | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._lock = asyncio.Lock()
@@ -949,21 +955,25 @@ class AdjustableBedCoordinator:
         for the lifetime of the entry instead (issue #385). Trade-off: the physical
         remote cannot be used while Home Assistant is connected.
 
-        Once a controller is resolved it is authoritative via
-        ``requires_persistent_connection`` — this correctly handles legacy
-        ``leggett_platt`` entries on ``auto`` that resolve to *either* the Gen2
-        controller (persistent) or the WiLinke/MlRM controller (not), which the
-        raw bed type/variant alone cannot distinguish. Before the controller
-        exists we fall back to a bed-type heuristic (assume persistent for
-        ``leggett_platt`` unless explicitly MlRM, since auto defaults to Gen2).
+        Resolution order:
+        1. The live controller's ``requires_persistent_connection`` (authoritative).
+        2. The value cached from the last resolved controller — needed because
+           ``_on_disconnect`` clears the controller *before* the reconnect
+           decision runs, so an Okin/MlRM bed must still be recognised as
+           non-persistent and get its reconnect timer.
+        3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
+           ``leggett_platt`` entries are assumed persistent here; ``okin`` and
+           ``mlrm`` are not (they reconnect normally).
         """
         controller = self._controller
         if controller is not None:
             return controller.requires_persistent_connection
+        if self._persistent_connection_resolved is not None:
+            return self._persistent_connection_resolved
         if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT:
-            return self._protocol_variant != LEGGETT_VARIANT_MLRM
+            return self._protocol_variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2)
         return False
 
     def _disconnect_after_operation_enabled(self) -> bool:
@@ -1664,6 +1674,11 @@ class AdjustableBedCoordinator:
                 )
                 self._controller_state_refresh_retry_count = 0
                 self._controller_state_refresh_completed = False
+                # Remember the resolved persistence so reconnect/idle decisions are
+                # correct even after _on_disconnect clears the controller.
+                self._persistent_connection_resolved = (
+                    self._controller.requires_persistent_connection
+                )
                 _LOGGER.debug("Controller created successfully")
 
                 if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
