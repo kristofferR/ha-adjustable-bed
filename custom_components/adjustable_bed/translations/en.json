@@ -788,6 +788,9 @@
     },
     "service_not_supported_for_paired": {
       "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."
+    },
+    "service_needs_side_for_paired": {
+      "message": "{device_name} is a paired bed; target one side's device for {service}."
     }
   },
   "issues": {

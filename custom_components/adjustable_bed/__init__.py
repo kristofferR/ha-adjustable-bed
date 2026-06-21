@@ -646,23 +646,6 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
-    async def _get_coordinator_from_device(
-        hass: HomeAssistant, device_id: str
-    ) -> AdjustableBedCoordinator | PairedBedCoordinator | None:
-        """Get coordinator (single or paired) from device ID."""
-        device_registry = dr.async_get(hass)
-        device = device_registry.async_get(device_id)
-        if not device:
-            return None
-
-        for entry_id in device.config_entries:
-            if entry_id in hass.data.get(DOMAIN, {}):
-                return cast(
-                    "AdjustableBedCoordinator | PairedBedCoordinator",
-                    hass.data[DOMAIN][entry_id],
-                )
-        return None
-
     def _resolve_sided_target(
         hass: HomeAssistant, device_id: str
     ) -> tuple[AdjustableBedCoordinator | PairedBedCoordinator, str | None] | None:
@@ -877,20 +860,29 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 with contextlib.suppress(Exception):
                     await target.async_ensure_connected(reset_timer=True)
 
-    def _require_single_bed(
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator, service: str
+    def _single_bed_for_service(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        inferred_side: str | None,
+        service: str,
     ) -> AdjustableBedCoordinator:
-        """Return a single-bed coordinator, or reject paired beds with a clean error.
+        """Resolve a per-motor service target to one coordinator.
 
-        Without this, calling set_position/timed_move on a paired device would hit
-        a raw AttributeError (PairedBedCoordinator has no controller/motor specs).
+        These services drive a single bed's motors directly (controller/motor
+        specs), so for a paired bed a call that targets one side's child device
+        routes to that child; targeting the paired parent (no side) is rejected
+        with guidance to pick a side. Avoids a raw AttributeError on
+        PairedBedCoordinator and keeps the services usable after pairing.
         """
         if isinstance(coordinator, PairedBedCoordinator):
+            if inferred_side is not None:
+                child = coordinator.child_for_side(inferred_side)
+                if child is not None:
+                    return child
             raise ServiceValidationError(
-                f"{coordinator.name} is a paired bed; {service} is not yet "
-                "supported on paired beds.",
+                f"{coordinator.name} is a paired bed; target one side's device "
+                f"for {service}.",
                 translation_domain=DOMAIN,
-                translation_key="service_not_supported_for_paired",
+                translation_key="service_needs_side_for_paired",
                 translation_placeholders={
                     "device_name": coordinator.name,
                     "service": service,
@@ -1093,15 +1085,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         )
 
         for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if not coordinator:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
-            coordinator = _require_single_bed(coordinator, "set_position")
+            coordinator = _single_bed_for_service(
+                resolved[0], resolved[1], "set_position"
+            )
             controller = await _get_controller_for_service(coordinator)
 
             # Get config entry for bed type and motor count
@@ -1349,15 +1343,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         )
 
         for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if not coordinator:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
-            coordinator = _require_single_bed(coordinator, "timed_move")
+            coordinator = _single_bed_for_service(
+                resolved[0], resolved[1], "timed_move"
+            )
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
             controller = await _get_controller_for_service(coordinator)

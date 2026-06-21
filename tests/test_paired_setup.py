@@ -233,6 +233,31 @@ class TestPairedSetup:
             )
         mock_stop.assert_awaited_once_with(side=SIDE_BOTH)
 
+    async def test_set_position_on_parent_device_needs_a_side(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Per-motor services on the paired parent ask the user to pick a side."""
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        dev_reg = dr.async_get(hass)
+        parent = next(
+            device
+            for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
+            if (DOMAIN, PAIR_ID) in device.identifiers
+        )
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "set_position",
+                {"device_id": parent.id, "motor": "back", "position": 50},
+                blocking=True,
+            )
+
     async def test_paired_entry_unloads(
         self,
         hass: HomeAssistant,
