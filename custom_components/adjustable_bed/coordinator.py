@@ -1731,6 +1731,10 @@ class AdjustableBedCoordinator:
                     self._connecting = False
                     self._last_connection_error = "Connection dropped during controller startup"
                     self._last_connection_error_type = ConnectionError.__name__
+                    # A failed (re)connect is not an intentional/idle disconnect;
+                    # clear the prior reason so the connectivity sensor doesn't keep
+                    # reporting "idle" after the attempt failed (issue #385 review).
+                    self._last_disconnect_reason = "connect_failed"
                     attempt_details["total_elapsed_seconds"] = round(
                         time.monotonic() - attempt_start, 3
                     )
@@ -1864,6 +1868,10 @@ class AdjustableBedCoordinator:
                 # Delay is handled at the start of the next iteration with progressive backoff
 
         total_elapsed = time.monotonic() - overall_start
+        # All attempts failed: the bed is unreachable, not idle-disconnected, so
+        # ensure the connectivity sensor reports "disconnected" rather than "idle"
+        # (issue #385 review).
+        self._last_disconnect_reason = "connect_failed"
         _LOGGER.error(
             "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
             "Troubleshooting:\n"

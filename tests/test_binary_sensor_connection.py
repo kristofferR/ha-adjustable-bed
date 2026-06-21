@@ -67,3 +67,11 @@ def test_no_reason_omits_disconnect_reason() -> None:
     attrs = _attrs(last_disconnect_reason=None)
     assert attrs["state_detail"] == "disconnected"
     assert "disconnect_reason" not in attrs
+
+
+def test_failed_reconnect_is_not_idle() -> None:
+    # A failed (re)connect must not be reported as "idle" just because the prior
+    # disconnect was an idle timeout (issue #385 review).
+    attrs = _attrs(last_disconnect_reason="connect_failed")
+    assert attrs["state_detail"] == "disconnected"
+    assert attrs["disconnect_reason"] == "connect_failed"
