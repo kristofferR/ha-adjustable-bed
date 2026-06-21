@@ -629,17 +629,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # Get user-selected bed type (may differ from auto-detected)
             selected_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
-            # "Auto-detect" in the full manual list: resolve to the detected type
-            # if detection produced one, otherwise re-show the form with a clear
-            # error instead of guessing.
+            # "Auto-detect" in the full manual list: resolve to an explicitly
+            # disambiguated choice or a high-confidence, unambiguous detection;
+            # otherwise re-show the form with a clear error instead of committing
+            # to a low-confidence/ambiguous guess.
             if selected_bed_type == BED_TYPE_AUTO_DETECT:
-                if detected_bed_type:
+                resolved = self._disambiguated_bed_type or _confident_auto_detect(
+                    detection_result
+                )
+                if resolved:
                     _LOGGER.info(
                         "Auto-detect resolved bed type to %s for %s",
-                        detected_bed_type,
+                        resolved,
                         self._discovery_info.address,
                     )
-                    selected_bed_type = detected_bed_type
+                    selected_bed_type = resolved
                 else:
                     errors["base"] = "auto_detect_failed"
                     selected_bed_type = None
@@ -813,7 +817,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             )
-            bed_type_default = bed_type or BED_TYPE_AUTO_DETECT
+            # Default to an explicit disambiguation choice or a high-confidence,
+            # unambiguous detection; otherwise keep "Auto-detect" selected so an
+            # ambiguous/low-confidence guess isn't silently accepted.
+            bed_type_default = (
+                self._disambiguated_bed_type
+                or _confident_auto_detect(detection_result)
+                or BED_TYPE_AUTO_DETECT
+            )
         else:
             bed_type_selector = vol.In(SUPPORTED_BED_TYPES)
 
@@ -1442,17 +1453,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
 
-        # Determine smart defaults based on preselected bed type and variant
-        if preselected_bed_type:
+        # Determine smart defaults based on the bed type the form will default to:
+        # a pre-selected brand, or the high-confidence detection that the
+        # Auto-detect default resolves to. Otherwise a one-click "accept the
+        # default" would persist generic timing/angle options for a known bed.
+        defaults_bed_type = preselected_bed_type or confident_bed_type
+        if defaults_bed_type:
             # Keeson with Ergomotion variant supports position feedback
-            has_position_feedback = preselected_bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                preselected_bed_type == BED_TYPE_KEESON
+            has_position_feedback = defaults_bed_type in BEDS_WITH_POSITION_FEEDBACK or (
+                defaults_bed_type == BED_TYPE_KEESON
                 and preselected_protocol_variant == KEESON_VARIANT_ERGOMOTION
             )
             default_disable_angle = not has_position_feedback
             # Use bed-specific motor pulse defaults if available
             pulse_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
-                preselected_bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
+                defaults_bed_type, (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS)
             )
             default_pulse_count, default_pulse_delay = pulse_defaults
         else:

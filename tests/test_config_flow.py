@@ -1019,19 +1019,20 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
 
-    async def test_bluetooth_confirm_auto_detect_resolves_to_detected_type(
+    async def test_bluetooth_confirm_auto_detect_ambiguous_reprompts(
         self,
         hass: HomeAssistant,
         mock_bluetooth_service_info_ambiguous_okin: MagicMock,
         enable_custom_integrations,
     ):
-        """'Auto-detect' in the full list resolves to the detected type, not an error."""
+        """In the disambiguate -> show-all -> confirm path, 'Auto-detect' must not
+        silently resolve an ambiguous detection (issue #385, Codex round 3)."""
         del enable_custom_integrations
         from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
         from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 
-        expected = detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).bed_type
-        assert expected  # fixture is detectable
+        # Sanity: the fixture is an ambiguous detection.
+        assert detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).ambiguous_types
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -1057,12 +1058,10 @@ class TestBluetoothDiscoveryFlow:
             },
         )
 
-        # Auto resolved to the detected type and progressed past the confirm form
-        # (to verify_connection or a pairing step) rather than erroring.
-        assert not (
-            result["type"] == FlowResultType.FORM
-            and result["step_id"] == "bluetooth_confirm"
-        )
+        # Ambiguous → re-prompt on the confirm form rather than guessing.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert result["errors"] == {"base": "auto_detect_failed"}
 
     async def test_bluetooth_confirm_auto_detect_failure_reprompts(
         self,
