@@ -1870,8 +1870,11 @@ class AdjustableBedCoordinator:
         total_elapsed = time.monotonic() - overall_start
         # All attempts failed: the bed is unreachable, not idle-disconnected, so
         # ensure the connectivity sensor reports "disconnected" rather than "idle"
-        # (issue #385 review).
+        # (issue #385 review). Notify listeners so the sensor/card re-render now —
+        # the device-not-found retries don't otherwise emit a state change, so a
+        # previously published "idle" would linger until some later event.
         self._last_disconnect_reason = "connect_failed"
+        self._notify_connection_state_change(False)
         _LOGGER.error(
             "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
             "Troubleshooting:\n"
