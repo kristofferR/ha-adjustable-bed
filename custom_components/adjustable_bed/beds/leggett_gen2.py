@@ -34,10 +34,11 @@ leggett_gen2_profiles; the bed does not report its feature set over BLE):
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from ..const import LEGGETT_GEN2_WRITE_CHAR_UUID
+from ..const import LEGGETT_GEN2_READ_CHAR_UUID, LEGGETT_GEN2_WRITE_CHAR_UUID
 from .base import BedController
 from .leggett_gen2_profiles import (
     Gen2Capabilities,
@@ -46,7 +47,7 @@ from .leggett_gen2_profiles import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from ..coordinator import AdjustableBedCoordinator
 
@@ -83,9 +84,9 @@ class LeggettGen2Commands:
     #   RGBSET 0:RRGGBBAA     - set colour (8 hex: red, green, blue, alpha/brightness)
     #   RGBBRT 0:AA           - set brightness (2 hex)
     # Source: com.leggett.android.universal Gen2BedControlBoxInterface.
-    # NOTE: reliable explicit on/off needs the live light state (mode byte) from the
-    # 45e25103 STATE frame (StateChangeParser); that state layer is a follow-up, so
-    # for now on/off is best-effort via the toggle.
+    # On/off is the toggle; the live light state (on/off + colour) is read back from
+    # the 45e25103 STATE frame (see _handle_state_notification), so Home Assistant
+    # knows the current state and the toggle resolves to the intended on/off.
     LIGHT_TOGGLE = b"UBL TOGGLE"
 
     @staticmethod
@@ -175,6 +176,7 @@ class LeggettGen2Controller(BedController):
         # Live under-bed light on/off, populated from 45e25103 STATE notifications.
         self._light_on: bool | None = None
         self._light_rgb: tuple[int, int, int] | None = None
+        self._notify_started = False
         _LOGGER.debug(
             "LeggettGen2Controller initialized (product_id=%s, caps=%s)",
             product_id,
@@ -191,6 +193,12 @@ class LeggettGen2Controller(BedController):
         """LP Comfort Connect's ESP32 only accepts a connection while in pairing
         mode and refuses reconnection afterwards, so the link must be held open."""
         return True
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Subscribe to STATE notifications even with angle sensing disabled, so we
+        receive live under-bed light on/off + colour state from the bed."""
+        return self._caps.light != "none"
 
     # Capability properties
     @property
@@ -455,9 +463,9 @@ class LeggettGen2Controller(BedController):
     async def lights_off(self) -> None:
         """Turn off the under-bed light.
 
-        The app's only on/off primitive is the toggle, so this is best-effort
-        until the live light-state layer lands. Home Assistant only issues "off"
-        when it believes the light is on, so a toggle is a reasonable proxy.
+        The app's only on/off primitive is the toggle. Home Assistant tracks the
+        live on/off state from STATE notifications and only issues "off" when it
+        believes the light is on, so the toggle resolves to the intended state.
         """
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
@@ -467,6 +475,56 @@ class LeggettGen2Controller(BedController):
         if not all(0 <= v <= 255 for v in (r, g, b)):
             raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
         await self.write_command(LeggettGen2Commands.rgb_set(r, g, b))
+
+    # ---- Live light state from 45e25103 STATE notifications -----------------
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Subscribe to the STATE characteristic for live light on/off + colour.
+
+        The position callback is unused (Gen2 reports no motor angle); we parse the
+        under-bed light state ourselves and publish it as controller state.
+        """
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Not connected to bed")
+        if not self._notify_started:
+            async with self._ble_lock:
+                await client.start_notify(
+                    LEGGETT_GEN2_READ_CHAR_UUID, self._handle_state_notification
+                )
+            self._notify_started = True
+            _LOGGER.debug("Started Gen2 STATE notifications for %s", self._coordinator.address)
+
+    async def stop_notify(self) -> None:
+        """Unsubscribe from the STATE characteristic."""
+        client = self.client
+        if client is not None and client.is_connected and self._notify_started:
+            with contextlib.suppress(Exception):
+                async with self._ble_lock:
+                    await client.stop_notify(LEGGETT_GEN2_READ_CHAR_UUID)
+        self._notify_started = False
+
+    def _handle_state_notification(self, _sender: Any, data: bytearray) -> None:
+        """Parse a Gen2 STATE frame for the under-bed light state.
+
+        Per the app's StateChangeParser: byte 6 is the light OperatingMode
+        (0x01 = constant-colour/on, 0x04 = off) and bytes 7-9 are R, G, B (byte 10
+        is alpha). Other frame types leave byte 6 outside {0x01, 0x04} and are
+        ignored here.
+        """
+        self.forward_raw_notification(LEGGETT_GEN2_READ_CHAR_UUID, bytes(data))
+        if len(data) <= 10:
+            return
+        mode = data[6]
+        if mode == 0x01:
+            light_on = True
+            self._light_rgb = (data[7], data[8], data[9])
+        elif mode == 0x04:
+            light_on = False
+        else:
+            return
+        if light_on != self._light_on:
+            self._light_on = light_on
+            self.forward_controller_state_update("under_bed_lights_on", light_on)
 
     # Massage methods. Gen2 intensity is relative (VII raise/lower), so no level is
     # tracked locally. "Off" sets all four channels to 0 (matching the app's

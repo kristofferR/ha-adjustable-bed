@@ -636,17 +636,51 @@ class TestLeggettMassage:
 class TestLeggettPositionNotifications:
     """Test Leggett & Platt position notification handling."""
 
-    async def test_start_notify_no_support(
+    async def test_start_notify_subscribes_to_state_char(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Gen2 subscribes to the 45e25103 STATE characteristic for light state."""
+        from custom_components.adjustable_bed.const import LEGGETT_GEN2_READ_CHAR_UUID
+
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.start_notify(None)
+
+        chars = [c.args[0] for c in mock_bleak_client.start_notify.call_args_list]
+        assert LEGGETT_GEN2_READ_CHAR_UUID in chars
+        assert coordinator.controller._notify_started is True
+
+    async def test_light_state_notification_parses_on_off(
         self,
         hass: HomeAssistant,
         mock_leggett_gen2_config_entry,
         mock_coordinator_connected,
     ):
-        """Test start_notify stores callback without BLE subscription."""
+        """STATE byte 6 = OperatingMode (0x01 on / 0x04 off); 7-9 = RGB."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
+        controller = coordinator.controller
 
-        callback = MagicMock()
-        await coordinator.controller.start_notify(callback)
+        # Constant-colour (on), red: bytes [..6 header.., 0x01, FF, 00, 00, FF, ...]
+        on_frame = bytearray([0x6E, 0x20, 0x00, 0x04, 0x01, 0x03, 0x01, 0xFF, 0x00, 0x00, 0xFF])
+        controller._handle_state_notification(None, on_frame)
+        assert controller._light_on is True
+        assert controller._light_rgb == (0xFF, 0x00, 0x00)
+        assert coordinator.controller_state.get("under_bed_lights_on") is True
 
-        assert coordinator.controller._notify_callback is callback
+        # Off frame (byte 6 = 0x04).
+        off_frame = bytearray([0x6E, 0x20, 0x00, 0x04, 0x01, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00])
+        controller._handle_state_notification(None, off_frame)
+        assert controller._light_on is False
+        assert coordinator.controller_state.get("under_bed_lights_on") is False
+
+        # A non-light frame (byte 6 outside {0x01,0x04}) is ignored.
+        controller._handle_state_notification(
+            None, bytearray([0] * 6 + [0x09] + [0] * 5)
+        )
+        assert controller._light_on is False  # unchanged
