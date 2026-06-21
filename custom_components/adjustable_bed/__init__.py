@@ -695,6 +695,54 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     break
         return coordinator, inferred_side
 
+    def _resolve_sided_targets(
+        hass: HomeAssistant,
+        device_ids: list[str],
+        explicit_side: str | None,
+    ) -> tuple[
+        list[tuple[AdjustableBedCoordinator | PairedBedCoordinator, str]],
+        list[str],
+    ]:
+        """Group sided-service targets by coordinator, merging inferred sides.
+
+        Targeting both of a pair's child devices (or the parent) in one call
+        collapses to a single ``both`` fan-out — preserving the both-failure
+        contract — instead of two separate side commands. Each coordinator
+        appears once in first-seen order. Returns (targets, missing_device_ids).
+        """
+        ordered: list[int] = []
+        by_key: dict[
+            int,
+            tuple[AdjustableBedCoordinator | PairedBedCoordinator, set[str | None]],
+        ] = {}
+        missing: list[str] = []
+        for device_id in device_ids:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
+                missing.append(device_id)
+                continue
+            coordinator, inferred_side = resolved
+            key = id(coordinator)
+            if key not in by_key:
+                by_key[key] = (coordinator, set())
+                ordered.append(key)
+            by_key[key][1].add(inferred_side)
+
+        targets: list[tuple[AdjustableBedCoordinator | PairedBedCoordinator, str]] = []
+        for key in ordered:
+            coordinator, sides = by_key[key]
+            if explicit_side is not None:
+                side = explicit_side
+            elif sides == {SIDE_LEFT}:
+                side = SIDE_LEFT
+            elif sides == {SIDE_RIGHT}:
+                side = SIDE_RIGHT
+            else:
+                # parent device (None), both children, or a mix → whole bed.
+                side = SIDE_BOTH
+            targets.append((coordinator, side))
+        return targets, missing
+
     def _get_support_bundle_target_from_device(
         hass: HomeAssistant, device_id: str
     ) -> tuple[str, AdjustableBedCoordinator | None, ConfigEntry] | None:
@@ -860,18 +908,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             "Service goto_preset called: preset=%d (side=%s)", preset, explicit_side
         )
 
-        for device_id in device_ids:
-            resolved = _resolve_sided_target(hass, device_id)
-            if resolved is None:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-            coordinator, inferred_side = resolved
-            side = explicit_side or inferred_side or SIDE_BOTH
-
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+        for coordinator, side in targets:
             # Pre-flight: validate the preset on EVERY targeted side before
             # moving any, so a paired 'both' never half-executes.
             preflighted: list[AdjustableBedCoordinator] = []
@@ -919,18 +964,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             "Service save_preset called: preset=%d (side=%s)", preset, explicit_side
         )
 
-        for device_id in device_ids:
-            resolved = _resolve_sided_target(hass, device_id)
-            if resolved is None:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-            coordinator, inferred_side = resolved
-            side = explicit_side or inferred_side or SIDE_BOTH
-
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+        for coordinator, side in targets:
             preflighted: list[AdjustableBedCoordinator] = []
             try:
                 for target in _command_targets(coordinator, side):
@@ -974,15 +1016,10 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-        missing_device_ids: list[str] = []
-
-        for device_id in device_ids:
-            resolved = _resolve_sided_target(hass, device_id)
-            if resolved is None:
-                missing_device_ids.append(device_id)
-                continue
-            coordinator, inferred_side = resolved
-            side = explicit_side or inferred_side or SIDE_BOTH
+        targets, missing_device_ids = _resolve_sided_targets(
+            hass, device_ids, explicit_side
+        )
+        for coordinator, side in targets:
             # Validate that side applies (rejects left/right on a single bed).
             _command_targets(coordinator, side)
             if isinstance(coordinator, PairedBedCoordinator):

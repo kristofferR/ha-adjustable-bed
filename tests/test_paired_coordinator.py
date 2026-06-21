@@ -324,7 +324,9 @@ class TestSideProxy:
             return None
 
         await proxy.async_seek_position("back", 30.0, fn, fn, fn)
-        assert parent.async_seek_position.await_args.kwargs["side"] == SIDE_LEFT
+        parent.async_seek_position.assert_awaited_once_with(
+            "back", 30.0, fn, fn, fn, side=SIDE_LEFT
+        )
 
         await proxy.async_stop_command()
         parent.async_stop_command.assert_awaited_once_with(side=SIDE_LEFT)
