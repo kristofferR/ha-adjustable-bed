@@ -27,7 +27,6 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -148,24 +147,8 @@ class TestLeggettGen2CommandFormat:
 class TestLeggettGen2Connection:
     """Gen2 / LP Comfort Connect connection behaviour."""
 
-    @pytest.mark.parametrize(
-        ("bed_type", "variant", "expected"),
-        [
-            # LP Comfort Connect (explicit gen2) must stay connected.
-            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
-            # Legacy leggett_platt pinned to gen2 → persistent.
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            # leggett_platt + auto can resolve to MlRM, so it must NOT be forced
-            # persistent (would block the physical remote) — issue #385 review.
-            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
-        ],
-    )
-    async def test_uses_persistent_connection(
-        self, hass: HomeAssistant, bed_type: str, variant: str, expected: bool
-    ):
-        """Only explicit Gen2 (LP Comfort Connect) holds the link open."""
+    @staticmethod
+    def _coordinator(hass: HomeAssistant, bed_type: str, variant: str):
         entry = MockConfigEntry(
             domain=DOMAIN,
             data={
@@ -177,8 +160,43 @@ class TestLeggettGen2Connection:
             unique_id="AA:BB:CC:DD:EE:FF",
         )
         entry.add_to_hass(hass)
-        coordinator = AdjustableBedCoordinator(hass, entry)
+        return AdjustableBedCoordinator(hass, entry)
+
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            # Before a controller is resolved, leggett_platt + auto is assumed
+            # persistent (auto defaults to Gen2); only explicit MlRM is excluded.
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
+        ],
+    )
+    async def test_persistent_connection_fallback(
+        self, hass: HomeAssistant, bed_type: str, variant: str, expected: bool
+    ):
+        """Pre-connect (no controller yet): fall back to the bed-type heuristic."""
+        coordinator = self._coordinator(hass, bed_type, variant)
+        assert coordinator._controller is None
         assert coordinator._uses_persistent_connection() is expected
+
+    async def test_resolved_controller_is_authoritative(self, hass: HomeAssistant):
+        """Once resolved, the controller decides — a leggett_platt+auto that
+        resolved to WiLinke/MlRM is NOT persistent; one that resolved to Gen2 is
+        (issue #385 review, both directions)."""
+        from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Controller
+        from custom_components.adjustable_bed.beds.leggett_wilinke import (
+            LeggettWilinkeController,
+        )
+
+        coordinator = self._coordinator(hass, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO)
+
+        coordinator._controller = LeggettWilinkeController(coordinator)
+        assert coordinator._uses_persistent_connection() is False
+
+        coordinator._controller = LeggettGen2Controller(coordinator)
+        assert coordinator._uses_persistent_connection() is True
 
 
 class TestLeggettMovement:

@@ -118,7 +118,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
-    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_MLRM,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -949,16 +949,21 @@ class AdjustableBedCoordinator:
         for the lifetime of the entry instead (issue #385). Trade-off: the physical
         remote cannot be used while Home Assistant is connected.
 
-        This also covers legacy ``leggett_platt`` entries pinned to the Gen2
-        variant. The ``auto`` variant is deliberately excluded because it can
-        resolve to the WiLinke/MlRM controller at connect time (a different,
-        non-persistent controller); such users should select the ``gen2`` variant
-        explicitly.
+        Once a controller is resolved it is authoritative via
+        ``requires_persistent_connection`` — this correctly handles legacy
+        ``leggett_platt`` entries on ``auto`` that resolve to *either* the Gen2
+        controller (persistent) or the WiLinke/MlRM controller (not), which the
+        raw bed type/variant alone cannot distinguish. Before the controller
+        exists we fall back to a bed-type heuristic (assume persistent for
+        ``leggett_platt`` unless explicitly MlRM, since auto defaults to Gen2).
         """
+        controller = self._controller
+        if controller is not None:
+            return controller.requires_persistent_connection
         if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT:
-            return self._protocol_variant == LEGGETT_VARIANT_GEN2
+            return self._protocol_variant != LEGGETT_VARIANT_MLRM
         return False
 
     def _disconnect_after_operation_enabled(self) -> bool:

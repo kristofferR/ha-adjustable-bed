@@ -144,6 +144,12 @@ class LeggettGen2Controller(BedController):
         """Return the UUID of the control characteristic."""
         return LEGGETT_GEN2_WRITE_CHAR_UUID
 
+    @property
+    def requires_persistent_connection(self) -> bool:
+        """LP Comfort Connect's ESP32 only accepts a connection while in pairing
+        mode and refuses reconnection afterwards, so the link must be held open."""
+        return True
+
     # Capability properties
     @property
     def supports_preset_zero_g(self) -> bool:
