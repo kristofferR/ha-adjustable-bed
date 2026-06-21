@@ -43,6 +43,14 @@
       "service_uuid": "45e25100-3171-4cfc-ae89-1d83cf8d8071"
     },
     {
+      "manufacturer_id": 2349,
+      "manufacturer_data_start": [88, 80]
+    },
+    {
+      "manufacturer_id": 2349,
+      "manufacturer_data_start": [67, 80]
+    },
+    {
       "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
     },
     {

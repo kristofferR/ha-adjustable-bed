@@ -15,14 +15,20 @@ from custom_components.adjustable_bed.beds.leggett_okin import (
     LeggettOkinController,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_PLATT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
+    VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -142,12 +148,37 @@ class TestLeggettGen2CommandFormat:
 class TestLeggettGen2Connection:
     """Gen2 / LP Comfort Connect connection behaviour."""
 
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            # LP Comfort Connect (explicit gen2) must stay connected.
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
+            # Legacy leggett_platt pinned to gen2 → persistent.
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            # leggett_platt + auto can resolve to MlRM, so it must NOT be forced
+            # persistent (would block the physical remote) — issue #385 review.
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+        ],
+    )
     async def test_uses_persistent_connection(
-        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+        self, hass: HomeAssistant, bed_type: str, variant: str, expected: bool
     ):
-        """LP Comfort Connect must stay connected (it can't reconnect once idle)."""
-        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
-        assert coordinator._uses_persistent_connection() is True
+        """Only explicit Gen2 (LP Comfort Connect) holds the link open."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+                CONF_NAME: "LP Bed",
+                CONF_BED_TYPE: bed_type,
+                CONF_PROTOCOL_VARIANT: variant,
+            },
+            unique_id="AA:BB:CC:DD:EE:FF",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        assert coordinator._uses_persistent_connection() is expected
 
 
 class TestLeggettMovement:
