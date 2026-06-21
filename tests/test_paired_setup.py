@@ -161,6 +161,38 @@ class TestPairedSetup:
             f"{PAIR_ID}_stop_both"
         }, "expected combined movement/preset buttons on the parent"
 
+    async def test_stop_all_on_child_device_infers_that_side(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """stop_all targeting a side's child device acts on only that side."""
+        from unittest.mock import AsyncMock, patch
+
+        entry = _paired_entry(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+
+        dev_reg = dr.async_get(hass)
+        left_device = next(
+            device
+            for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
+            if any(
+                i[0] == DOMAIN and i[1].upper() == LEFT_ADDR.upper()
+                for i in device.identifiers
+            )
+        )
+
+        with patch.object(
+            coordinator, "async_stop_command", new=AsyncMock()
+        ) as mock_stop:
+            await hass.services.async_call(
+                DOMAIN, "stop_all", {"device_id": left_device.id}, blocking=True
+            )
+        mock_stop.assert_awaited_once_with(side=SIDE_LEFT)
+
     async def test_paired_entry_unloads(
         self,
         hass: HomeAssistant,
