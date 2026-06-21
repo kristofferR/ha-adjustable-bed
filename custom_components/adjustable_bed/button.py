@@ -544,6 +544,14 @@ def _combined_button_entities_for(
     """
     if not children:
         return []
+    # Use a connected side as representative — a pair is the same bed type, so
+    # both expose the same capabilities. Building from it keeps the combined
+    # controls registered even when one side is offline at setup (a half-available
+    # pair still loads), instead of dropping them until a reload; press-time
+    # fan-out reconnects or fails the offline side.
+    representative = next(
+        (child for child in children if child.controller is not None), children[0]
+    )
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if description.is_coordinator_action or description.press_fn is None:
@@ -552,9 +560,8 @@ def _combined_button_entities_for(
             # The combined stop is the dedicated PairedBedStopButton (same
             # {pair_id}_stop_both unique_id); don't also build a generic one.
             continue
-        if not all(
-            _should_add_button(description, child.controller, child.has_massage)
-            for child in children
+        if not _should_add_button(
+            description, representative.controller, representative.has_massage
         ):
             continue
         entities.append(PairedBedCombinedButton(coordinator, description))
@@ -562,33 +569,28 @@ def _combined_button_entities_for(
     # Cover-based pairs (e.g. Linak) move via covers, not discrete up/down
     # buttons, and paired setup creates no combined cover — so add per-motor
     # "both sides" up/down motion buttons from the cover descriptors.
-    entities.extend(_combined_motor_buttons_for(coordinator, children))
+    entities.extend(_combined_motor_buttons_for(coordinator, representative.controller))
     return entities
 
 
 def _combined_motor_buttons_for(
     coordinator: PairedBedCoordinator,
-    children: list[AdjustableBedCoordinator],
+    controller: BedController | None,
 ) -> list[ButtonEntity]:
-    """Per-motor 'both sides' up/down buttons for cover-based paired beds."""
+    """Per-motor 'both sides' up/down buttons for a cover-based paired bed,
+    built from a representative connected side's motor layout."""
+    if (
+        controller is None
+        or not getattr(controller, "supports_motor_control", False)
+        or getattr(controller, "has_discrete_motor_control", False)
+    ):
+        # Not a cover-based bed (discrete motors get combined buttons above), or
+        # no side is connected yet to read the motor layout from.
+        return []
     cover_by_key = {desc.key: desc for desc in COVER_DESCRIPTIONS}
-    common: set[str] | None = None
-    for child in children:
-        controller = child.controller
-        if (
-            controller is None
-            or not getattr(controller, "supports_motor_control", False)
-            or getattr(controller, "has_discrete_motor_control", False)
-        ):
-            # Not a cover-based bed (discrete motors get combined buttons above),
-            # or a side has no controller yet — nothing to add.
-            return []
-        keys = {spec.key for spec in controller.motor_control_specs}
-        common = keys if common is None else (common & keys)
-
     entities: list[ButtonEntity] = []
-    for key in sorted(common or set()):
-        desc = cover_by_key.get(key)
+    for spec in controller.motor_control_specs:
+        desc = cover_by_key.get(spec.key)
         if desc is None:
             continue
         entities.append(PairedBedCombinedMotorButton(coordinator, desc, "up"))
