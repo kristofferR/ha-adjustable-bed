@@ -149,6 +149,27 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 # the first alphabetical entry). Must not collide with any real bed type.
 BED_TYPE_AUTO_DETECT = "auto_detect"
 
+# Minimum confidence for the manual "Auto-detect" flow to commit to a concrete
+# bed type. Below this — or when the detection is ambiguous (shared-UUID guesses
+# such as OKIN receivers) — we keep "Auto-detect" selected and ask the user to
+# choose, rather than silently configuring a guessed protocol.
+_AUTO_DETECT_MIN_CONFIDENCE = 0.7
+
+
+def _confident_auto_detect(result: DetectionResult) -> str | None:
+    """Return the detected bed type only for a high-confidence, unambiguous match.
+
+    Used by the manual Auto-detect path so a low-confidence or ambiguous
+    detection does not become a silent default/auto-resolution.
+    """
+    if (
+        result.bed_type is not None
+        and result.confidence >= _AUTO_DETECT_MIN_CONFIDENCE
+        and not result.ambiguous_types
+    ):
+        return result.bed_type
+    return None
+
 CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
     CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
     CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
@@ -1267,11 +1288,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             bed_type = user_input[CONF_BED_TYPE]
 
-            # "Auto-detect" resolves to the detected type if detection identifies
-            # the device, otherwise re-shows the form with a clear error instead
-            # of forcing a guess (issue #385).
+            # "Auto-detect" resolves only to a high-confidence, unambiguous match;
+            # otherwise it re-shows the form with a clear error instead of silently
+            # configuring a guessed protocol (issue #385).
             if bed_type == BED_TYPE_AUTO_DETECT:
-                resolved = detect_bed_type(self._discovery_info)
+                resolved = _confident_auto_detect(
+                    detect_bed_type_detailed(self._discovery_info)
+                )
                 if resolved:
                     _LOGGER.info(
                         "Auto-detect resolved bed type to %s for %s", resolved, address
@@ -1372,6 +1395,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         preselected_bed_type = self._selected_bed_type
         preselected_protocol_variant = self._selected_protocol_variant or VARIANT_AUTO
         detected_bed_type = detect_bed_type(self._discovery_info)
+        # Only a high-confidence, unambiguous detection becomes the Auto-detect
+        # default; ambiguous/low-confidence guesses keep "Auto-detect" selected.
+        confident_bed_type = _confident_auto_detect(
+            detect_bed_type_detailed(self._discovery_info)
+        )
 
         # Build base schema with bed type selector (alphabetically sorted)
         if preselected_bed_type:
@@ -1399,7 +1427,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             schema_dict = {
                 vol.Required(
-                    CONF_BED_TYPE, default=detected_bed_type or BED_TYPE_AUTO_DETECT
+                    CONF_BED_TYPE, default=confident_bed_type or BED_TYPE_AUTO_DETECT
                 ): SelectSelector(
                     SelectSelectorConfig(
                         options=[
