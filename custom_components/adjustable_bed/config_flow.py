@@ -2683,24 +2683,28 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             if discovery_disabled_input is not None:
                 await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
-            new_data = {**self.config_entry.data, **user_input}
-            if is_paired(new_data):
-                # Apply ONLY the keys the user actually changed to each child
-                # descriptor. "Changed" is measured against the value the form
-                # ACTUALLY SHOWED (the schema default, which itself was seeded
-                # from the representative child / parent data). This avoids both
-                # clobbering the other side's untouched per-side values AND
-                # dropping a first-time change to a key neither side stored yet.
+            if is_paired(self.config_entry.data):
+                # For a paired bed, ONLY the keys the user actually changed go
+                # anywhere. "Changed" is measured against the value the form
+                # ACTUALLY SHOWED (the schema default, seeded from the
+                # representative child / parent data, and validated/coerced the
+                # same way user_input was). Writing the whole form (incl.
+                # unchanged defaults) to parent data would also leak into the
+                # children, since _build_paired_children treats parent data as
+                # shared fields for any key a child descriptor doesn't store.
                 shown = _shown_option_values(schema_dict)
                 changed = {
                     key: value
                     for key, value in user_input.items()
                     if key in shown and shown[key] != value
                 }
+                new_data = {**self.config_entry.data, **changed}
                 if changed:
                     for side in PAIR_SIDES:
                         if get_child(new_data, side) is not None:
                             new_data = with_updated_child(new_data, side, changed)
+            else:
+                new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,
