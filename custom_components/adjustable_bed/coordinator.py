@@ -2388,8 +2388,7 @@ class AdjustableBedCoordinator:
         """
         if cancel_running:
             # Cancel any running command immediately
-            self._cancel_counter += 1
-            self._cancel_command.set()
+            self.request_command_cancel()
 
         # Capture cancel count at entry to detect if we get cancelled while waiting
         entry_cancel_count = self._cancel_counter
@@ -2463,13 +2462,22 @@ class AdjustableBedCoordinator:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
 
+    def request_command_cancel(self) -> None:
+        """Signal the running command to stop ASAP, without sending a STOP write.
+
+        Lets the paired parent preempt an in-flight child command before taking
+        the pair lock, so a cancel_running movement (or STOP) isn't queued behind
+        the BLE pulse window.
+        """
+        self._cancel_counter += 1
+        self._cancel_command.set()
+
     async def async_stop_command(self) -> None:
         """Immediately stop any running command and send stop to bed."""
         _LOGGER.info("Stop requested - cancelling current command")
 
         # Signal cancellation to any running command
-        self._cancel_counter += 1
-        self._cancel_command.set()
+        self.request_command_cancel()
 
         # Acquire the command lock to wait for any in-flight GATT write to complete
         # This prevents concurrent BLE writes which cause "operation in progress" errors

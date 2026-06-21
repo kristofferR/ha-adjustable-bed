@@ -88,6 +88,12 @@ class PairedBedCoordinator:
         )
         # Orders connection switching in sequential mode; unused when concurrent.
         self._pair_command_lock = asyncio.Lock()
+        # Preemption: STOP bumps this so a movement still queued on the lock is
+        # dropped instead of starting after the stop; _active_children are the
+        # sides executing under the lock, so a cancel_running command can cancel
+        # them before queueing and preempt instead of waiting out the pulse window.
+        self._pair_cancel_counter = 0
+        self._active_children: set[AdjustableBedCoordinator] = set()
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
         self._child_unsubs: list[Callable[[], None]] = []
         self._wire_child_connection_callbacks()
@@ -168,7 +174,7 @@ class PairedBedCoordinator:
                 skip_disconnect=skip_disconnect,
             )
 
-        await self._run("command", side, op)
+        await self._run("command", side, op, cancel_running=cancel_running)
 
     async def async_seek_position(
         self,
@@ -194,24 +200,43 @@ class PairedBedCoordinator:
         action: str,
         side: str,
         op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
+        *,
+        cancel_running: bool = True,
     ) -> None:
         targets = self._targets_for(side)
+        entry_cancel = self._pair_cancel_counter
+
+        # Preempt: cancel whatever is executing under the lock so it releases the
+        # lock promptly instead of making this command wait out its BLE pulse
+        # window. Mirrors a standalone bed, where cancel_running interrupts the
+        # in-flight movement before the new one starts.
+        if cancel_running:
+            for child in list(self._active_children):
+                child.request_command_cancel()
 
         # Serialize ALL paired commands at the parent — including a single-side
         # command, which must wait for an in-flight whole-bed command so the two
         # sides can't desync (and so sequential mode orders connection switching
-        # across sides). STOP never takes this lock, so it can always interrupt a
-        # running command.
+        # across sides). STOP never takes this lock, so it can always interrupt.
         async with self._pair_command_lock:
-            if len(targets) == 1:
-                # Single side: no fan-out, the child owns its own STOP-on-failure.
-                await op(targets[0][1])
+            # A STOP arrived while we waited for the lock — drop this now-stale
+            # movement instead of starting it right after the safety stop.
+            if self._pair_cancel_counter != entry_cancel:
                 return
 
-            if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-                await self._run_both_sequential(action, targets, op)
-            else:
-                await self._run_both_concurrent(action, targets, op)
+            self._active_children = {child for _, child in targets}
+            try:
+                if len(targets) == 1:
+                    # Single side: no fan-out, the child owns its STOP-on-failure.
+                    await op(targets[0][1])
+                    return
+
+                if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+                    await self._run_both_sequential(action, targets, op)
+                else:
+                    await self._run_both_concurrent(action, targets, op)
+            finally:
+                self._active_children = set()
 
     async def _run_both_concurrent(
         self,
@@ -271,6 +296,9 @@ class PairedBedCoordinator:
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
+        # Bump first so any movement still queued on the pair lock sees the change
+        # and drops itself instead of starting right after this safety stop.
+        self._pair_cancel_counter += 1
         targets = self._targets_for(side)
         errors = await self._stop_children(targets)
         if errors:

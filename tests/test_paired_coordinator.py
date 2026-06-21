@@ -8,6 +8,7 @@ returned the asserted value could hide broken fan-out logic.
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -43,6 +44,7 @@ class RecordingChild:
         fail_stop: bool = False,
         connect_result: bool = True,
         connect_raises: bool = False,
+        block: bool = False,
     ) -> None:
         self.side = side
         self.address = ADDR[side]
@@ -54,6 +56,14 @@ class RecordingChild:
         self.connect_result = connect_result
         self.connect_raises = connect_raises
         self.connection_cb = None
+        # When block=True a command waits on this gate; request_command_cancel /
+        # async_stop_command release it (mirrors the real cancel-aware child).
+        self._gate = asyncio.Event()
+        self._block = block
+
+    def request_command_cancel(self) -> None:
+        self.log.append((self.side, "cancel"))
+        self._gate.set()
 
     @property
     def is_connected(self) -> bool:
@@ -71,6 +81,8 @@ class RecordingChild:
         self, command_fn, cancel_running=True, skip_disconnect=False
     ) -> None:
         self.log.append((self.side, "command"))
+        if self._block:
+            await self._gate.wait()
         if self.fail_command:
             raise RuntimeError(f"{self.side} command boom")
 
@@ -83,6 +95,7 @@ class RecordingChild:
 
     async def async_stop_command(self) -> None:
         self.log.append((self.side, "stop"))
+        self._gate.set()
         if self.fail_stop:
             raise RuntimeError(f"{self.side} stop boom")
 
@@ -274,6 +287,45 @@ class TestConnectionLifecycle:
         left._connected = True
         left.connection_cb(True)
         assert seen == [True]
+
+
+class TestPreemption:
+    """STOP / cancel_running preempt the pair lock instead of queueing."""
+
+    async def test_cancel_running_preempts_in_flight_children(self):
+        log: list = []
+        coord, left, right = _pair(log)
+        # Simulate a whole-bed command currently executing under the lock.
+        coord._active_children = {left, right}
+
+        await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
+
+        # The new side command cancelled the in-flight children before running.
+        assert ("left", "cancel") in log
+        assert ("right", "cancel") in log
+        assert ("left", "command") in log
+
+    async def test_stop_bumps_pair_cancel_counter(self):
+        log: list = []
+        coord, _left, _right = _pair(log)
+        before = coord._pair_cancel_counter
+        await coord.async_stop_command(side=SIDE_BOTH)
+        assert coord._pair_cancel_counter == before + 1
+
+    async def test_movement_queued_when_stop_lands_is_dropped(self):
+        log: list = []
+        coord, _left, _right = _pair(log)
+        # Hold the lock, queue a movement, then bump the counter (a STOP landed
+        # while the movement waited) before releasing.
+        async with coord._pair_command_lock:
+            queued = asyncio.ensure_future(
+                coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
+            )
+            await asyncio.sleep(0.01)  # let it queue on the lock
+            coord._pair_cancel_counter += 1  # a STOP landed
+        await asyncio.wait_for(queued, timeout=1)
+        # The queued movement saw the bumped counter and dropped — no command ran.
+        assert ("left", "command") not in log
 
 
 class TestDeviceInfo:

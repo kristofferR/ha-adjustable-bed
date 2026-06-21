@@ -767,12 +767,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             if not isinstance(address, str):
                 continue
 
-            # Child coordinators aren't in hass.data, so paired targets use the
-            # address-only bundle path (coordinator=None).
-            coordinator = cast(
-                "AdjustableBedCoordinator | None",
-                None if is_paired(entry.data) else hass.data.get(DOMAIN, {}).get(entry_id),
-            )
+            coordinator: AdjustableBedCoordinator | None = None
+            stored = hass.data.get(DOMAIN, {}).get(entry_id)
+            if isinstance(stored, PairedBedCoordinator):
+                # Reuse the matching live child coordinator so the bundle pauses
+                # and reuses its connection instead of opening a second BLE link
+                # (single-connection beds can't take two).
+                for child in stored.children.values():
+                    if child.address.upper() == address.upper():
+                        coordinator = child
+                        break
+            else:
+                coordinator = cast("AdjustableBedCoordinator | None", stored)
             return address, coordinator, entry
 
         return None
