@@ -161,6 +161,10 @@ class TestPairedSetup:
         assert both_uids - {
             f"{PAIR_ID}_stop_both"
         }, "expected combined movement/preset buttons on the parent"
+        # A cover-based pair (Linak) has no combined cover, so the parent gets
+        # per-motor "both sides" up/down motion buttons instead.
+        for key in ("back_up", "back_down", "legs_up", "legs_down"):
+            assert f"{PAIR_ID}_{key}_both" in both_uids
 
     async def test_diagnostics_for_paired_entry_does_not_crash(
         self,

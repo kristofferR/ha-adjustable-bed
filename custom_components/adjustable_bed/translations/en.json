@@ -471,6 +471,24 @@
       },
       "stop_both": {
         "name": "Stop Both Sides"
+      },
+      "back_up": {
+        "name": "Back Up"
+      },
+      "back_down": {
+        "name": "Back Down"
+      },
+      "feet_up": {
+        "name": "Feet Up"
+      },
+      "feet_down": {
+        "name": "Feet Down"
+      },
+      "lumbar_up": {
+        "name": "Lumbar Up"
+      },
+      "lumbar_down": {
+        "name": "Lumbar Down"
       }
     },
     "cover": {

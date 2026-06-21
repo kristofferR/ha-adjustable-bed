@@ -19,6 +19,7 @@ from .const import (
     SIDE_BOTH,
 )
 from .coordinator import AdjustableBedCoordinator
+from .cover import COVER_DESCRIPTIONS, AdjustableBedCoverEntityDescription
 from .entity import AdjustableBedEntity
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
@@ -557,6 +558,41 @@ def _combined_button_entities_for(
         ):
             continue
         entities.append(PairedBedCombinedButton(coordinator, description))
+
+    # Cover-based pairs (e.g. Linak) move via covers, not discrete up/down
+    # buttons, and paired setup creates no combined cover — so add per-motor
+    # "both sides" up/down motion buttons from the cover descriptors.
+    entities.extend(_combined_motor_buttons_for(coordinator, children))
+    return entities
+
+
+def _combined_motor_buttons_for(
+    coordinator: PairedBedCoordinator,
+    children: list[AdjustableBedCoordinator],
+) -> list[ButtonEntity]:
+    """Per-motor 'both sides' up/down buttons for cover-based paired beds."""
+    cover_by_key = {desc.key: desc for desc in COVER_DESCRIPTIONS}
+    common: set[str] | None = None
+    for child in children:
+        controller = child.controller
+        if (
+            controller is None
+            or not getattr(controller, "supports_motor_control", False)
+            or getattr(controller, "has_discrete_motor_control", False)
+        ):
+            # Not a cover-based bed (discrete motors get combined buttons above),
+            # or a side has no controller yet — nothing to add.
+            return []
+        keys = {spec.key for spec in controller.motor_control_specs}
+        common = keys if common is None else (common & keys)
+
+    entities: list[ButtonEntity] = []
+    for key in sorted(common or set()):
+        desc = cover_by_key.get(key)
+        if desc is None:
+            continue
+        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "up"))
+        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "down"))
     return entities
 
 
@@ -753,4 +789,45 @@ class PairedBedCombinedButton(ButtonEntity):
             description.press_fn,
             side=SIDE_BOTH,
             cancel_running=description.cancel_movement,
+        )
+
+
+class PairedBedCombinedMotorButton(ButtonEntity):
+    """A 'move both sides' up/down motion button on the paired parent device.
+
+    Cover-based pairs (Linak etc.) have no discrete motor buttons and no combined
+    cover, so these drive a motor on BOTH sides from the parent device/card.
+    """
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: PairedBedCoordinator,
+        cover_description: AdjustableBedCoverEntityDescription,
+        direction: str,
+    ) -> None:
+        """Initialize the combined motor button (``direction`` is up/down)."""
+        self._coordinator = coordinator
+        self._direction = direction
+        self._move_fn = (
+            cover_description.open_fn
+            if direction == "up"
+            else cover_description.close_fn
+        )
+        self._attr_translation_key = f"{cover_description.key}_{direction}"
+        self._attr_unique_id = (
+            f"{coordinator.pair_id}_{cover_description.key}_{direction}_both"
+        )
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def available(self) -> bool:
+        """Always available (the bed reconnects on demand)."""
+        return True
+
+    async def async_press(self) -> None:
+        """Move this motor on both sides."""
+        await self._coordinator.async_execute_controller_command(
+            self._move_fn, side=SIDE_BOTH, cancel_running=True
         )
