@@ -251,10 +251,21 @@ class PairedBedCoordinator:
                     await op(targets[0][1])
                     return
 
-                if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-                    await self._run_both_sequential(action, targets, op)
-                else:
-                    await self._run_both_concurrent(action, targets, op)
+                try:
+                    if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+                        await self._run_both_sequential(action, targets, op)
+                    else:
+                        await self._run_both_concurrent(action, targets, op)
+                except asyncio.CancelledError:
+                    # The parent command was cancelled (service cancellation or
+                    # config-entry unload) while a side may still be moving.
+                    # Cancelling the child TASKS is not the same as a STOP write,
+                    # so explicitly STOP both sides before propagating — otherwise
+                    # a motor can be left running. _stop_children never raises (it
+                    # collects per-side errors), and we re-raise the cancellation
+                    # regardless, so this is purely best-effort cleanup.
+                    await self._stop_children(targets)
+                    raise
             finally:
                 self._active_children = set()
 

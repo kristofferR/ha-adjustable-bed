@@ -204,6 +204,22 @@ class TestBothFailureContract:
         assert (SIDE_LEFT, "stop") in log
         assert (SIDE_RIGHT, "stop") in log
 
+    async def test_cancelled_both_command_stops_both_sides(self):
+        # If the parent command coroutine is cancelled (service cancellation /
+        # unload) while both sides may be moving, an explicit STOP must reach
+        # each side — cancelling the child tasks alone is not a STOP write.
+        log: list = []
+        coord, _, _ = _pair(log, left={"block": True}, right={"block": True})
+        task = asyncio.ensure_future(
+            coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        )
+        await asyncio.sleep(0.01)  # both children dispatched and blocking
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "stop") in log
+
 
 class TestStopAll:
     async def test_stop_both_attempts_each_side(self):
