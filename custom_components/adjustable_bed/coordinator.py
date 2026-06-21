@@ -454,8 +454,11 @@ class AdjustableBedCoordinator:
 
         self._bed_type = corrected_bed_type
         # The cached offline capability-controller was minted for the OLD type;
-        # drop it so it is re-minted for the corrected type on next read.
-        self._offline_controller = None
+        # drop it ONLY on an actual change, so a no-op correction doesn't discard
+        # the already-primed offline fallback (which capability_controller would
+        # then miss after a later disconnect).
+        if bed_type_changed:
+            self._offline_controller = None
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type

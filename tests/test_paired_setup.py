@@ -682,9 +682,10 @@ class TestOfflineSideEntities:
         left = children[SIDE_LEFT]
         await left.async_prime_offline_controller()
 
-        # Linak under-bed lighting is a per-side switch; it must exist offline too.
+        # Linak under-bed lighting is a per-side switch; the exact entity must
+        # exist offline too (not just "some" switch).
         uids = {s.unique_id for s in _switch_entities_for(hass, left)}
-        assert any(u.startswith(f"{LEFT_ADDR}_") for u in uids)
+        assert f"{LEFT_ADDR}_under_bed_lights" in uids
 
     async def test_capability_controller_precedence_and_default(
         self, hass: HomeAssistant
@@ -723,3 +724,19 @@ class TestOfflineSideEntities:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is None
+
+    async def test_no_op_bed_type_correction_keeps_offline_controller(
+        self, hass: HomeAssistant
+    ):
+        # A connect-time correction that does NOT change the bed type must keep
+        # the already-primed offline controller (so capability_controller still
+        # resolves it after a later disconnect).
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        left = children[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        primed = left.capability_controller
+        assert primed is not None
+
+        left._apply_runtime_bed_type_correction(left.bed_type)
+        assert left.capability_controller is primed
