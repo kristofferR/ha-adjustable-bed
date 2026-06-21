@@ -1101,11 +1101,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     def _pairable_single_entries(self) -> list[ConfigEntry]:
-        """Configured single-bed entries that could be combined into a pair."""
+        """Configured single-bed entries that could be combined into a pair.
+
+        Excludes any standalone entry whose MAC is already a member of an
+        existing pair (a stale/imported duplicate) — combining it again would
+        create a second pair sharing the same child {address}_{key} unique IDs.
+        """
         return [
             entry
             for entry in self.hass.config_entries.async_entries(DOMAIN)
-            if not is_paired(entry.data) and entry.data.get(CONF_ADDRESS)
+            if not is_paired(entry.data)
+            and entry.data.get(CONF_ADDRESS)
+            and not self._is_absorbed_pair_member(entry.data[CONF_ADDRESS])
         ]
 
     async def async_step_pair_beds(

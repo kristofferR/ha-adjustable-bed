@@ -45,6 +45,18 @@ _LOGGER = logging.getLogger(__name__)
 CommandFn = Callable[[Any], Coroutine[Any, Any, None]]
 
 
+def _merge_stop_errors(
+    errors: Mapping[str, BaseException],
+    stop_errors: Mapping[str, BaseException],
+) -> dict[str, BaseException]:
+    """Merge command errors with cleanup-STOP failures under distinct keys, so a
+    combined failure surfaces both — a dropped STOP can leave a side moving."""
+    merged: dict[str, BaseException] = dict(errors)
+    for side, err in stop_errors.items():
+        merged.setdefault(f"{side} (stop)", err)
+    return merged
+
+
 class PairedSideError(HomeAssistantError):
     """A side-targeted paired command failed.
 
@@ -92,7 +104,7 @@ class PairedBedCoordinator:
         # dropped instead of starting after the stop; _active_children are the
         # sides executing under the lock, so a cancel_running command can cancel
         # them before queueing and preempt instead of waiting out the pulse window.
-        self._pair_cancel_counter = 0
+        self._pair_cancel_counter: dict[str, int] = {SIDE_LEFT: 0, SIDE_RIGHT: 0}
         self._active_children: set[AdjustableBedCoordinator] = set()
         self._connection_state_callbacks: set[Callable[[bool], None]] = set()
         self._child_unsubs: list[Callable[[], None]] = []
@@ -204,28 +216,32 @@ class PairedBedCoordinator:
         cancel_running: bool = True,
     ) -> None:
         targets = self._targets_for(side)
+        target_sides = [target_side for target_side, _ in targets]
 
         # Preempt: invalidate any OLDER movement still queued on the lock AND
         # cancel the in-flight command on THIS command's own target sides, so a
         # reverse wins instead of waiting out the pulse window or letting a stale
-        # queued movement run first. Only the targeted sides are cancelled — a
-        # left command must not abort an independent right movement.
+        # queued movement run first. Both the cancel and the counter bump are
+        # per-side — a left command must not abort or invalidate an independent
+        # right movement (and vice versa).
         if cancel_running:
-            self._pair_cancel_counter += 1
+            for target_side in target_sides:
+                self._pair_cancel_counter[target_side] += 1
             target_children = {child for _, child in targets}
             for child in list(self._active_children):
                 if child in target_children:
                     child.request_command_cancel()
-        entry_cancel = self._pair_cancel_counter
+        entry_cancel = {s: self._pair_cancel_counter[s] for s in target_sides}
 
         # Serialize ALL paired commands at the parent — including a single-side
         # command, which must wait for an in-flight whole-bed command so the two
         # sides can't desync (and so sequential mode orders connection switching
         # across sides). STOP never takes this lock, so it can always interrupt.
         async with self._pair_command_lock:
-            # A STOP arrived while we waited for the lock — drop this now-stale
-            # movement instead of starting it right after the safety stop.
-            if self._pair_cancel_counter != entry_cancel:
+            # A STOP (or newer command) bumped one of OUR target sides while we
+            # waited — drop this now-stale movement instead of starting it right
+            # after the safety stop.
+            if any(self._pair_cancel_counter[s] != entry_cancel[s] for s in target_sides):
                 return
 
             self._active_children = {child for _, child in targets}
@@ -266,9 +282,10 @@ class PairedBedCoordinator:
 
             if errors:
                 # STOP every side now (this also makes each child's in-flight
-                # command exit early), swallowing per-side STOP errors, then raise.
-                await self._stop_children(targets)
-                raise PairedSideError(action, errors)
+                # command exit early). Surface any cleanup-STOP failure too, so a
+                # caller knows the "healthy" side may still be moving.
+                stop_errors = await self._stop_children(targets)
+                raise PairedSideError(action, _merge_stop_errors(errors, stop_errors))
         finally:
             # Never let a child task outlive this call (e.g. if the parent
             # coroutine is cancelled mid-wait): cancel any still-running task and
@@ -295,15 +312,16 @@ class PairedBedCoordinator:
                 started.append((side, child))
                 break
         if errors:
-            await self._stop_children(started)
-            raise PairedSideError(action, errors)
+            stop_errors = await self._stop_children(started)
+            raise PairedSideError(action, _merge_stop_errors(errors, stop_errors))
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
-        # Bump first so any movement still queued on the pair lock sees the change
-        # and drops itself instead of starting right after this safety stop.
-        self._pair_cancel_counter += 1
         targets = self._targets_for(side)
+        # Bump each targeted side's counter so a movement still queued on the pair
+        # lock for that side drops instead of starting right after this safety stop.
+        for target_side, _ in targets:
+            self._pair_cancel_counter[target_side] += 1
         errors = await self._stop_children(targets)
         if errors:
             raise PairedSideError("stop", errors)

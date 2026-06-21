@@ -189,7 +189,10 @@ class TestBothFailureContract:
 
         assert (SIDE_LEFT, "stop") in log  # attempted despite raising
         assert (SIDE_RIGHT, "stop") in log
-        assert set(exc.value.side_errors) == {SIDE_RIGHT}
+        # The original command failure is surfaced AND the failed cleanup STOP,
+        # so the caller knows the left side may still be moving.
+        assert SIDE_RIGHT in exc.value.side_errors
+        assert "left (stop)" in exc.value.side_errors
 
     async def test_seek_both_failure_stops_both(self):
         log: list = []
@@ -316,27 +319,43 @@ class TestPreemption:
         assert ("left", "cancel") in log
         assert ("right", "cancel") in log
 
-    async def test_stop_bumps_pair_cancel_counter(self):
+    async def test_stop_bumps_pair_cancel_counter_per_side(self):
         log: list = []
         coord, _left, _right = _pair(log)
-        before = coord._pair_cancel_counter
-        await coord.async_stop_command(side=SIDE_BOTH)
-        assert coord._pair_cancel_counter == before + 1
+        before = dict(coord._pair_cancel_counter)
+        await coord.async_stop_command(side=SIDE_LEFT)
+        # A left-only stop bumps only the left counter.
+        assert coord._pair_cancel_counter[SIDE_LEFT] == before[SIDE_LEFT] + 1
+        assert coord._pair_cancel_counter[SIDE_RIGHT] == before[SIDE_RIGHT]
 
     async def test_movement_queued_when_stop_lands_is_dropped(self):
         log: list = []
         coord, _left, _right = _pair(log)
-        # Hold the lock, queue a movement, then bump the counter (a STOP landed
-        # while the movement waited) before releasing.
+        # Hold the lock, queue a LEFT movement, then bump LEFT's counter (a stop
+        # landed while it waited) before releasing.
         async with coord._pair_command_lock:
             queued = asyncio.ensure_future(
                 coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
             )
             await asyncio.sleep(0.01)  # let it queue on the lock
-            coord._pair_cancel_counter += 1  # a STOP landed
+            coord._pair_cancel_counter[SIDE_LEFT] += 1  # a left STOP landed
         await asyncio.wait_for(queued, timeout=1)
         # The queued movement saw the bumped counter and dropped — no command ran.
         assert ("left", "command") not in log
+
+    async def test_queued_side_survives_other_side_preemption(self):
+        log: list = []
+        coord, _left, _right = _pair(log)
+        # A queued RIGHT movement must NOT be dropped when LEFT's counter bumps
+        # (an independent left reverse), only when RIGHT's does.
+        async with coord._pair_command_lock:
+            queued = asyncio.ensure_future(
+                coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+            )
+            await asyncio.sleep(0.01)
+            coord._pair_cancel_counter[SIDE_LEFT] += 1  # independent left activity
+        await asyncio.wait_for(queued, timeout=1)
+        assert ("right", "command") in log
 
 
 class TestDeviceInfo:
