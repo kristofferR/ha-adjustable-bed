@@ -1267,11 +1267,26 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             bed_type = user_input[CONF_BED_TYPE]
 
+            # "Auto-detect" resolves to the detected type if detection identifies
+            # the device, otherwise re-shows the form with a clear error instead
+            # of forcing a guess (issue #385).
+            if bed_type == BED_TYPE_AUTO_DETECT:
+                resolved = detect_bed_type(self._discovery_info)
+                if resolved:
+                    _LOGGER.info(
+                        "Auto-detect resolved bed type to %s for %s", resolved, address
+                    )
+                    bed_type = resolved
+                else:
+                    errors["base"] = "auto_detect_failed"
+
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
             # Validate protocol variant is valid for bed type
-            if not is_valid_variant_for_bed_type(bed_type, protocol_variant):
+            if bed_type != BED_TYPE_AUTO_DETECT and not is_valid_variant_for_bed_type(
+                bed_type, protocol_variant
+            ):
                 errors[CONF_PROTOCOL_VARIANT] = "invalid_variant_for_bed_type"
 
             # Get bed-specific defaults for motor pulse settings
@@ -1375,10 +1390,22 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
         else:
+            # No pre-selected brand: offer "Auto-detect" first and default to it
+            # (or to the detected type) so the user isn't dropped onto the first
+            # alphabetical protocol and forced to guess (issue #385).
+            auto_label = await self._get_config_translation(
+                "step.bluetooth_confirm.data.auto_detect_option",
+                "Auto-detect (recommended)",
+            )
             schema_dict = {
-                vol.Required(CONF_BED_TYPE): SelectSelector(
+                vol.Required(
+                    CONF_BED_TYPE, default=detected_bed_type or BED_TYPE_AUTO_DETECT
+                ): SelectSelector(
                     SelectSelectorConfig(
-                        options=get_bed_type_options(),
+                        options=[
+                            SelectOptionDict(value=BED_TYPE_AUTO_DETECT, label=auto_label),
+                            *get_bed_type_options(),
+                        ],
                         mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),

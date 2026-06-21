@@ -1092,6 +1092,65 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "bluetooth_confirm"
         assert result["errors"] == {"base": "auto_detect_failed"}
 
+    async def test_manual_config_auto_detect_failure_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_unknown: MagicMock,
+    ):
+        """'Auto-detect' in the 'Show all BLE devices' manual path re-prompts on
+        failure rather than guessing (issue #385, Codex review)."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_unknown
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Mystery Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_config"
+        assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_manual_config_auto_detect_resolves(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_leggett: MagicMock,
+    ):
+        """'Auto-detect' resolves to the detected type and leaves the manual form."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+        from custom_components.adjustable_bed.detection import detect_bed_type
+
+        assert detect_bed_type(mock_bluetooth_service_info_leggett)  # fixture is detectable
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_leggett
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Leggett Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Resolved to a real type and progressed past manual_config (no error).
+        assert not (
+            result["type"] == FlowResultType.FORM and result["step_id"] == "manual_config"
+        )
+
     async def test_bluetooth_disambiguate_okin_cst_requires_pairing(
         self,
         hass: HomeAssistant,
