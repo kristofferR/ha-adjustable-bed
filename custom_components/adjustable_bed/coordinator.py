@@ -203,6 +203,12 @@ class ChildEntryView:
 
     @property
     def data(self) -> dict[str, Any]:
+        # Parent-level option edits (made on the paired bed after pairing) win
+        # over the frozen per-side descriptor for any shared key, so they aren't
+        # silently shadowed for settings the coordinator reads from `.data`.
+        # Per-side identity (address/side/bond) isn't in options, so it's kept.
+        if self._parent.options:
+            return {**self._child_data, **self._parent.options}
         return self._child_data
 
     @property

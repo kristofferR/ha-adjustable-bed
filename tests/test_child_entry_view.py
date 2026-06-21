@@ -9,7 +9,7 @@ from custom_components.adjustable_bed.coordinator import ChildEntryView
 
 def test_serves_child_data_and_delegates_to_parent():
     parent = SimpleNamespace(
-        entry_id="parent-id", title="Master Bed", options={"x": 1}, version=4
+        entry_id="parent-id", title="Master Bed", options={}, version=4
     )
     view = ChildEntryView(parent, {"address": "AA:BB", "side": "left"}, lambda _d: None)
 
@@ -20,7 +20,25 @@ def test_serves_child_data_and_delegates_to_parent():
     assert view.title == "Master Bed"
     assert view.version == 4
     # options come from the parent.
-    assert view.options == {"x": 1}
+    assert view.options == {}
+
+
+def test_parent_option_edits_win_over_descriptor():
+    # Editing the paired bed's options must reach the child, overriding the
+    # frozen per-side descriptor for shared keys while keeping identity.
+    parent = SimpleNamespace(
+        entry_id="parent-id", options={"motor_pulse_count": 15}, version=4
+    )
+    view = ChildEntryView(
+        parent,
+        {"address": "AA:BB", "side": "left", "motor_pulse_count": 10},
+        lambda _d: None,
+    )
+    assert view.data == {
+        "address": "AA:BB",
+        "side": "left",
+        "motor_pulse_count": 15,
+    }
 
 
 def test_persist_updates_view_in_place_and_routes_to_callback():

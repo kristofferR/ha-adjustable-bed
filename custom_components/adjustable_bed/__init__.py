@@ -357,10 +357,14 @@ def _make_child_persist_cb(
 
     def persist(new_child_data: dict[str, Any]) -> None:
         current = get_child(entry.data, side) or {}
+        # Parent options now flow into the child view's `.data`; never write
+        # those option-managed keys back into the per-side descriptor (they'd
+        # become a stale per-side override that shadows future option edits).
+        option_keys = set(entry.options)
         delta = {
             key: value
             for key, value in new_child_data.items()
-            if current.get(key) != value
+            if current.get(key) != value and key not in option_keys
         }
         if not delta:
             return
