@@ -2683,7 +2683,10 @@ class AdjustableBedCoordinator:
                     if self._position_mode == POSITION_MODE_ACCURACY:
                         await self._async_read_positions()
                     else:
-                        self.hass.async_create_task(self._async_read_positions_background())
+                        # Tracked + deduplicated: tie the read to the entry
+                        # lifecycle. A raw async_create_task here would leak a
+                        # task on every command and across reloads.
+                        self._start_background_position_read()
 
                 return result
             except BleakError as err:

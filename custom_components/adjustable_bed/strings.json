@@ -788,6 +788,9 @@
     },
     "service_needs_side_for_paired": {
       "message": "{device_name} is a paired bed; target one side's device for {service}."
+    },
+    "missing_target": {
+      "message": "Provide either a device or a target MAC address for the support bundle."
     }
   },
   "issues": {

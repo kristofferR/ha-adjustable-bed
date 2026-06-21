@@ -851,20 +851,6 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 command_fn, cancel_running=cancel_running
             )
 
-    async def _release_validation_connections(
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
-        connected: list[AdjustableBedCoordinator],
-    ) -> None:
-        """Give idle-connected paired sides a normal disconnect after a failed
-        pre-flight, so a validation abort doesn't tie up a side's BLE link (the
-        command finalizer that would reset the idle timer never ran)."""
-        if not isinstance(coordinator, PairedBedCoordinator):
-            return
-        for target in connected:
-            if target.is_connected:
-                with contextlib.suppress(Exception):
-                    await target.async_ensure_connected(reset_timer=True)
-
     async def _release_preflighted(
         preflighted: list[
             tuple[
@@ -873,19 +859,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             ]
         ],
     ) -> None:
-        """Release every side connected during a multi-target pre-flight (grouped
-        by coordinator) after the validated plan was abandoned."""
-        grouped: dict[
-            int,
-            tuple[
-                AdjustableBedCoordinator | PairedBedCoordinator,
-                list[AdjustableBedCoordinator],
-            ],
-        ] = {}
-        for coordinator, target in preflighted:
-            grouped.setdefault(id(coordinator), (coordinator, []))[1].append(target)
-        for coordinator, connected in grouped.values():
-            await _release_validation_connections(coordinator, connected)
+        """Give every bed/side connected during a failed pre-flight a normal idle
+        disconnect, so a validation abort doesn't leave a BLE link open with no
+        idle timer (the command finalizer that would reset it never ran). Applies
+        to single beds too, not just paired sides — both reconnect with
+        reset_timer=False during validation."""
+        for _coordinator, target in preflighted:
+            if target.is_connected:
+                with contextlib.suppress(Exception):
+                    await target.async_ensure_connected(reset_timer=True)
 
     def _single_bed_for_service(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
@@ -1059,13 +1041,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         targets, missing_device_ids = _resolve_sided_targets(
             hass, device_ids, explicit_side
         )
-        for coordinator, side in targets:
+
+        async def _stop_one(
+            coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
+        ) -> None:
             # Validate that side applies (rejects left/right on a single bed).
             _command_targets(coordinator, side)
             if isinstance(coordinator, PairedBedCoordinator):
                 await coordinator.async_stop_command(side=side)
             else:
                 await coordinator.async_stop_command()
+
+        # STOP is a safety action: attempt every target before surfacing an
+        # error, so one bed's failure never leaves another still moving.
+        results = await asyncio.gather(
+            *(_stop_one(coordinator, side) for coordinator, side in targets),
+            return_exceptions=True,
+        )
+        stop_errors = [r for r in results if isinstance(r, BaseException)]
 
         if missing_device_ids:
             raise ServiceValidationError(
@@ -1074,6 +1067,10 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 translation_key="devices_not_found",
                 translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
             )
+
+        if stop_errors:
+            # Every target was attempted; surface the first failure.
+            raise stop_errors[0]
 
     # Optional left/right/both target (paired beds). No default: when omitted, a
     # call that targets one side's child device acts on just that side, otherwise
