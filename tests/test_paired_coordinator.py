@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
+    PairedSideProxy,
 )
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
@@ -284,3 +285,46 @@ class TestDeviceInfo:
         assert info["model"] == "Adjustable Bed (paired)"
         assert info["manufacturer"] == "Linak"
         assert coord.name == "Master Bed"
+
+
+class TestSideProxy:
+    """Per-side entities route writes through the parent (pair lock), read child."""
+
+    def _proxy(self):
+        from unittest.mock import AsyncMock
+
+        parent = SimpleNamespace(
+            async_execute_controller_command=AsyncMock(),
+            async_seek_position=AsyncMock(),
+            async_stop_command=AsyncMock(),
+        )
+        child = SimpleNamespace(address="AA:BB:CC:DD:EE:01", name="Left")
+        return parent, child, PairedSideProxy(parent, child, SIDE_LEFT)
+
+    def test_reads_delegate_to_child(self):
+        _, child, proxy = self._proxy()
+        assert proxy.address == child.address
+        assert proxy.name == "Left"
+
+    async def test_command_routes_through_parent_with_side(self):
+        parent, _, proxy = self._proxy()
+
+        async def cmd(_ctrl):
+            return None
+
+        await proxy.async_execute_controller_command(cmd, cancel_running=False)
+        parent.async_execute_controller_command.assert_awaited_once_with(
+            cmd, side=SIDE_LEFT, cancel_running=False
+        )
+
+    async def test_seek_and_stop_route_through_parent_with_side(self):
+        parent, _, proxy = self._proxy()
+
+        async def fn(_ctrl):
+            return None
+
+        await proxy.async_seek_position("back", 30.0, fn, fn, fn)
+        assert parent.async_seek_position.await_args.kwargs["side"] == SIDE_LEFT
+
+        await proxy.async_stop_command()
+        parent.async_stop_command.assert_awaited_once_with(side=SIDE_LEFT)

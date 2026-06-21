@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.cover import (
     CoverDeviceClass,
@@ -27,7 +27,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController, MotorControlSpec
@@ -187,8 +187,16 @@ async def async_setup_entry(
     # exposed as "both" buttons instead.
     if isinstance(coordinator, PairedBedCoordinator):
         entities: list[AdjustableBedCover] = []
-        for child in coordinator.children.values():
-            entities.extend(_cover_entities_for(hass, child))
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _cover_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
         async_add_entities(entities)
         return
 

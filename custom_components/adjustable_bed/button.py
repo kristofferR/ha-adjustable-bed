@@ -20,7 +20,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -493,9 +493,19 @@ async def async_setup_entry(
     if isinstance(coordinator, PairedBedCoordinator):
         entities: list[ButtonEntity] = []
         children = list(coordinator.children.values())
-        for child in children:
-            entities.extend(_button_entities_for(hass, child))
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _button_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
         entities.append(PairedBedStopButton(coordinator))
+        # Combined buttons read both children's live capabilities, so pass the
+        # raw children (the button itself dispatches via the parent, side=both).
         entities.extend(_combined_button_entities_for(coordinator, children))
         async_add_entities(entities)
         return
@@ -536,6 +546,10 @@ def _combined_button_entities_for(
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if description.is_coordinator_action or description.press_fn is None:
+            continue
+        if description.key == "stop":
+            # The combined stop is the dedicated PairedBedStopButton (same
+            # {pair_id}_stop_both unique_id); don't also build a generic one.
             continue
         if not all(
             _should_add_button(description, child.controller, child.has_massage)

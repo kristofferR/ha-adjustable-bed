@@ -37,7 +37,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -239,8 +239,16 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
         paired_entities: list[NumberEntity] = []
-        for child in coordinator.children.values():
-            paired_entities.extend(_number_entities_for(hass, child))
+        for side, child in coordinator.children.items():
+            paired_entities.extend(
+                _number_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
         if paired_entities:
             async_add_entities(paired_entities)
         return

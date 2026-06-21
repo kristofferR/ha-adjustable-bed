@@ -361,3 +361,53 @@ class PairedBedCoordinator:
             self._connection_state_callbacks.discard(callback_fn)
 
         return unregister
+
+
+class PairedSideProxy:
+    """A child coordinator as seen by its per-side entities, with writes routed
+    through the parent so they take the pair command lock.
+
+    Per-side cover/button/number/switch entities are built against this proxy:
+    reads and identity (device, unique_id, controller, positions, listeners)
+    come straight from the wrapped child, while movement/command writes go
+    through the parent with this side. That way a side command waits for an
+    in-flight whole-bed command instead of starting concurrently and
+    desyncing the pair. (Connect/disconnect stay per-child — they're connection
+    management, not motion, and don't need the pair lock.)
+    """
+
+    def __init__(
+        self,
+        parent: PairedBedCoordinator,
+        child: AdjustableBedCoordinator,
+        side: str,
+    ) -> None:
+        """Wrap ``child`` (on ``side``) with writes routed through ``parent``."""
+        self._pair_parent = parent
+        self._pair_child = child
+        self._pair_side = side
+
+    def __getattr__(self, name: str) -> Any:
+        # Everything not overridden below delegates to the wrapped child. Guard
+        # the proxy's own attrs so a miss before __init__ can't infinitely recurse.
+        if name.startswith("_pair_"):
+            raise AttributeError(name)
+        return getattr(self._pair_child, name)
+
+    async def async_execute_controller_command(
+        self, command_fn: CommandFn, **kwargs: Any
+    ) -> None:
+        """Route a side command through the parent (takes the pair lock)."""
+        await self._pair_parent.async_execute_controller_command(
+            command_fn, side=self._pair_side, **kwargs
+        )
+
+    async def async_seek_position(self, *args: Any, **kwargs: Any) -> None:
+        """Route a side seek through the parent (takes the pair lock)."""
+        await self._pair_parent.async_seek_position(
+            *args, side=self._pair_side, **kwargs
+        )
+
+    async def async_stop_command(self, **kwargs: Any) -> None:
+        """Stop just this side via the parent's resilient stop contract."""
+        await self._pair_parent.async_stop_command(side=self._pair_side)

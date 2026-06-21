@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -17,7 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -71,8 +71,16 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     if isinstance(coordinator, PairedBedCoordinator):
         entities: list[AdjustableBedSwitch] = []
-        for child in coordinator.children.values():
-            entities.extend(_switch_entities_for(hass, child))
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _switch_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
         async_add_entities(entities)
         return
     async_add_entities(_switch_entities_for(hass, coordinator))
