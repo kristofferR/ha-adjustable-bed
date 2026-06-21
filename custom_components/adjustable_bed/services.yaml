@@ -20,9 +20,8 @@ goto_preset:
           mode: box
     side:
       name: Side
-      description: Which side of a paired bed to target. Paired (Dual Bed) devices only; leave as Both for single beds.
+      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
       required: false
-      default: both
       selector:
         select:
           options:
@@ -55,9 +54,8 @@ save_preset:
           mode: box
     side:
       name: Side
-      description: Which side of a paired bed to target. Paired (Dual Bed) devices only; leave as Both for single beds.
+      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
       required: false
-      default: both
       selector:
         select:
           options:
@@ -81,9 +79,8 @@ stop_all:
           integration: adjustable_bed
     side:
       name: Side
-      description: Which side of a paired bed to stop. Paired (Dual Bed) devices only; leave as Both for single beds.
+      description: Which side of a paired bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed.
       required: false
-      default: both
       selector:
         select:
           options:
