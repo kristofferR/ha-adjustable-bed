@@ -11,6 +11,7 @@
   "action.stop": "Stopp",
   "action.down": "Ned",
   "status.connected": "Tilkoblet",
+  "status.idle": "Hvilemodus – kobler til ved behov",
   "status.disconnected": "Frakoblet",
   "memory.set": "Lagre…",
   "memory.cancel": "Avbryt",
