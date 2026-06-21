@@ -270,6 +270,48 @@ class LeggettGen2Controller(BedController):
         """Return True when the model exposes memory positions (per profile)."""
         return self._caps.memory_slots > 0
 
+    # The base capability helpers detect overridden methods, so they would report
+    # massage/light controls for every Gen2 bed. Gate them on the profile so models
+    # without massage or an under-bed light don't get phantom entities.
+    @property
+    def supports_under_bed_lights(self) -> bool:
+        return self._caps.light != "none"
+
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        return self._caps.light != "none"
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
+    def supports_massage_intensity_step_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
+    def motor_control_specs(self) -> tuple:
+        """Expose only the primary actuators the model actually has (per profile)."""
+        present = {
+            "back": self._caps.has_head,
+            "legs": self._caps.has_foot,
+            "pillow": self._caps.has_pillow,
+            "lumbar": self._caps.has_lumbar,
+        }
+        return tuple(
+            spec
+            for spec in super().motor_control_specs
+            if present.get(spec.key, True)
+        )
+
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
     async def _move_with_stop(
@@ -457,16 +499,20 @@ class LeggettGen2Controller(BedController):
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
     async def lights_on(self) -> None:
-        """Turn on the under-bed light (white at full brightness)."""
-        await self.write_command(LeggettGen2Commands.rgb_set(255, 255, 255))
+        """Turn on the under-bed light (idempotent against the live state).
+
+        The only on/off primitive is the toggle, so we toggle only when the
+        bed-reported state (from STATE notifications) says the light is not already
+        on, to avoid inverting it on stale assumed state.
+        """
+        if self._light_on is True:
+            return
+        await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
     async def lights_off(self) -> None:
-        """Turn off the under-bed light.
-
-        The app's only on/off primitive is the toggle. Home Assistant tracks the
-        live on/off state from STATE notifications and only issues "off" when it
-        believes the light is on, so the toggle resolves to the intended state.
-        """
+        """Turn off the under-bed light (idempotent against the live state)."""
+        if self._light_on is False:
+            return
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:

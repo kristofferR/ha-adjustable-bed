@@ -272,6 +272,29 @@ class TestLeggettGen2Capabilities:
         c = self._controller(hass, mock_leggett_gen2_config_entry, 999999)
         assert c.supports_light_color_control and c.has_pillow_support
 
+    async def test_no_light_no_massage_profile_suppresses_helpers(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        # Product 10011: head-only, no foot, no light, no massage.
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
+        # Light + massage capability helpers are gated off (no phantom entities).
+        assert not c.supports_light_toggle_control
+        assert not c.supports_under_bed_lights
+        assert not c.supports_massage_off_control
+        assert not c.supports_massage_toggle_control
+        # Motor specs expose only present primary actuators (head, not foot).
+        keys = {spec.key for spec in c.motor_control_specs}
+        assert "back" in keys  # head present
+        assert "legs" not in keys  # no foot
+
+    async def test_full_profile_keeps_helpers(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 5)
+        assert c.supports_light_toggle_control and c.supports_massage_off_control
+        keys = {spec.key for spec in c.motor_control_specs}
+        assert {"back", "legs"} <= keys
+
 
 class TestLeggettMovement:
     """Test Leggett & Platt movement commands."""
@@ -451,16 +474,22 @@ class TestLeggettLights:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test lights on Gen2 sends RGB white command."""
+        """Lights on (state unknown) sends the toggle; idempotent once state known."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
+        controller = coordinator.controller
 
-        await coordinator.controller.lights_on()
-
-        expected = LeggettGen2Commands.rgb_set(255, 255, 255, 255)
+        # State unknown -> toggle to turn on.
+        await controller.lights_on()
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.LIGHT_TOGGLE, response=True
         )
+
+        # Once the bed reports the light is on, lights_on is a no-op (no inversion).
+        controller._light_on = True
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.lights_on()
+        mock_bleak_client.write_gatt_char.assert_not_called()
 
     async def test_lights_off_gen2(
         self,
