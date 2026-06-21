@@ -2104,13 +2104,9 @@ class TestLightEntities:
             blocking=True,
         )
 
-        # Should send lights_on (white RGBSET) then set_light_color (custom RGBSET)
+        # Gen2 has no explicit-on command, so turn_on just sets the colour
+        # (RGBSET turns an RGB light on); no separate white-on is sent.
         assert mock_bleak_client.write_gatt_char.call_args_list == [
-            call(
-                LEGGETT_GEN2_WRITE_CHAR_UUID,
-                LeggettGen2Commands.rgb_set(255, 255, 255, 255),
-                response=True,
-            ),
             call(
                 LEGGETT_GEN2_WRITE_CHAR_UUID,
                 b"RGBSET 0:FF0080FF",
@@ -2175,11 +2171,11 @@ class TestLightEntities:
             blocking=True,
         )
 
-        # Should send lights_off which is RGBENABLE 0:0
+        # Should send lights_off which is the confirmed toggle (UBL TOGGLE)
         assert mock_bleak_client.write_gatt_char.call_args_list == [
             call(
                 LEGGETT_GEN2_WRITE_CHAR_UUID,
-                LeggettGen2Commands.RGB_OFF,
+                LeggettGen2Commands.LIGHT_TOGGLE,
                 response=True,
             )
         ]

@@ -21,13 +21,14 @@ Connection note:
     persistent connection (it is never idle-disconnected). See
     coordinator._uses_persistent_connection().
 
-Features:
-    - Motor control (head/back, feet, pillow, lumbar) via the ASCII "M" command
+Features (gated per model by the bundled capability profile — see
+leggett_gen2_profiles; the bed does not report its feature set over BLE):
+    - Motor control (head/back, feet, and pillow/lumbar where present) via "M"
     - Position presets (Flat, Unwind, Sleep, Wake Up, Relax, Anti-Snore)
-    - Memory position programming
-    - RGB under-bed lighting control
+    - Memory position programming (slot count per model, typically 3)
+    - Under-bed lighting: none / on-off toggle / single-colour / RGB per model,
+      with live on/off + colour state from 45e25103 notifications
     - Massage control with adjustable strength
-    - No position feedback
 """
 
 from __future__ import annotations
@@ -38,8 +39,15 @@ from typing import TYPE_CHECKING
 
 from ..const import LEGGETT_GEN2_WRITE_CHAR_UUID
 from .base import BedController
+from .leggett_gen2_profiles import (
+    Gen2Capabilities,
+    capabilities_for_product,
+    compute_product_id,
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,34 +69,57 @@ class LeggettGen2Commands:
     PROGRAM_SLEEP = b"SMEM 2"
     PROGRAM_WAKE_UP = b"SMEM 3"
     PROGRAM_RELAX = b"SMEM 4"
-    PROGRAM_ANTI_SNORE = b"SNPOS 0"
+    # (Gen2 has no anti-snore *program* command; SNPOS is not a Gen2 command.)
 
     # Control
     STOP = b"STOP"
     GET_STATE = b"GET STATE"
 
-    # Lighting
-    RGB_OFF = b"RGBENABLE 0:0"
+    # Lighting (under-bed light, LightID 0). The LP Control app has NO "RGBENABLE"
+    # command (the previous off/toggle command was invalid). The confirmed GEN2
+    # light commands are:
+    #   UBL TOGGLE            - toggle the under-bed light on/off (the only on/off
+    #                           primitive; the app has no separate on/off command)
+    #   RGBSET 0:RRGGBBAA     - set colour (8 hex: red, green, blue, alpha/brightness)
+    #   RGBBRT 0:AA           - set brightness (2 hex)
+    # Source: com.leggett.android.universal Gen2BedControlBoxInterface.
+    # NOTE: reliable explicit on/off needs the live light state (mode byte) from the
+    # 45e25103 STATE frame (StateChangeParser); that state layer is a follow-up, so
+    # for now on/off is best-effort via the toggle.
+    LIGHT_TOGGLE = b"UBL TOGGLE"
 
     @staticmethod
-    def rgb_set(red: int, green: int, blue: int, brightness: int) -> bytes:
-        """Create RGB color command."""
-        hex_str = f"{red:02X}{green:02X}{blue:02X}{brightness:02X}"
+    def rgb_set(red: int, green: int, blue: int, alpha: int = 0xFF) -> bytes:
+        """Create an RGBSET colour command (``RGBSET 0:RRGGBBAA``)."""
+        hex_str = f"{red:02X}{green:02X}{blue:02X}{alpha:02X}"
         return f"RGBSET 0:{hex_str}".encode()
 
-    # Massage
     @staticmethod
-    def massage_head_strength(strength: int) -> bytes:
-        """Set head massage strength (0-10)."""
-        return f"MVI 0:{strength}".encode()
+    def brightness_set(level: int) -> bytes:
+        """Create an RGBBRT brightness command (``RGBBRT 0:AA``, level 0-255)."""
+        return f"RGBBRT 0:{max(0, min(255, level)):02X}".encode()
+
+    # Massage. Gen2 intensity is RELATIVE: "VII :<ch>" raises and "VII <ch>::"
+    # lowers the given channel (0=primary head, 1=primary foot). Absolute set uses
+    # "MVI <ch>:<level>" with level 0=off, 1=low, 2=med, 3=high (used for "off").
+    # Mode is "MMODE <group>:<mode>" (group 0=primary; mode 0=wave, 1=pulse,
+    # 2=always-on); wave speed is "WSP <group>:<speed>" (0=slow, 1=med, 2=fast);
+    # "WVE TOGGLE" toggles wave. Source: Gen2BedControlBoxInterface/Gen2CommandFormatter.
+    MASSAGE_HEAD_UP = b"VII :0"
+    MASSAGE_HEAD_DOWN = b"VII 0::"
+    MASSAGE_FOOT_UP = b"VII :1"
+    MASSAGE_FOOT_DOWN = b"VII 1::"
+    WAVE_TOGGLE = b"WVE TOGGLE"
 
     @staticmethod
-    def massage_foot_strength(strength: int) -> bytes:
-        """Set foot massage strength (0-10)."""
-        return f"MVI 1:{strength}".encode()
+    def massage_set(channel: int, level: int) -> bytes:
+        """Set absolute massage intensity (``MVI <channel>:<level>``, level 0-3)."""
+        return f"MVI {channel}:{max(0, min(3, level))}".encode()
 
-    MASSAGE_WAVE_ON = b"MMODE 0:0"
-    MASSAGE_WAVE_OFF = b"MMODE 0:2"
+    @staticmethod
+    def wave_speed(speed: int) -> bytes:
+        """Set primary wave speed (``WSP 0:<speed>``, 0=slow, 1=med, 2=fast)."""
+        return f"WSP 0:{max(0, min(2, speed))}".encode()
 
     # Motor control: the LP Control app formats motor commands as
     #   M {down_codes}:{up_codes}:{stop_codes}
@@ -119,11 +150,6 @@ class LeggettGen2Commands:
     # The app uses the plain "STOP" string to halt all actuators.
     MOTOR_STOP_ALL = b"STOP"
 
-    @staticmethod
-    def massage_wave_level(level: int) -> bytes:
-        """Set wave massage level."""
-        return f"WSP 0:{level}".encode()
-
 
 class LeggettGen2Controller(BedController):
     """Controller for Leggett & Platt Gen2 beds.
@@ -132,12 +158,28 @@ class LeggettGen2Controller(BedController):
     They do not support direct motor control (uses position-based control instead).
     """
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Leggett & Platt Gen2 controller."""
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        manufacturer_data: Mapping[int, bytes] | None = None,
+    ) -> None:
+        """Initialize the Leggett & Platt Gen2 controller.
+
+        The bed's feature set is not reported over BLE; it is looked up from the
+        bundled per-model profile keyed by a productId derived from the
+        advertisement manufacturer data (see leggett_gen2_profiles).
+        """
         super().__init__(coordinator)
-        self._massage_head_level = 0
-        self._massage_foot_level = 0
-        _LOGGER.debug("LeggettGen2Controller initialized")
+        product_id = compute_product_id(manufacturer_data)
+        self._caps: Gen2Capabilities = capabilities_for_product(product_id)
+        # Live under-bed light on/off, populated from 45e25103 STATE notifications.
+        self._light_on: bool | None = None
+        self._light_rgb: tuple[int, int, int] | None = None
+        _LOGGER.debug(
+            "LeggettGen2Controller initialized (product_id=%s, caps=%s)",
+            product_id,
+            self._caps,
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -161,58 +203,64 @@ class LeggettGen2Controller(BedController):
 
     @property
     def supports_lights(self) -> bool:
-        """Return True - Gen2 beds support RGB lighting."""
-        return True
+        """Return True when this model has an under-bed light (per profile)."""
+        return self._caps.light != "none"
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True - Gen2 has RGB control with discrete on/off."""
-        return True
+        """Return True for any model with a light (on/off via RGBSET/UBL)."""
+        return self._caps.light != "none"
 
     @property
     def supports_light_color_control(self) -> bool:
-        """Return True - Gen2 beds support RGB light color control."""
-        return True
+        """Return True only for RGB (multi-colour) under-bed lights."""
+        return self._caps.light == "rgb"
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
-        """Return True - RGBSET command turns the light on."""
-        return True
+        """Return False - the only confirmed on/off primitive is UBL TOGGLE, so we
+        don't issue a separate explicit "on"; setting a colour turns RGB lights on."""
+        return False
 
     @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
-        """Return default white color."""
-        return (255, 255, 255)
+        """Return default white color for RGB lights."""
+        return (255, 255, 255) if self._caps.light == "rgb" else None
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Gen2 beds support memory presets 1-4."""
-        return True
+        """Return True when the model exposes memory positions (per profile)."""
+        return self._caps.memory_slots > 0
 
     @property
     def supports_motor_control(self) -> bool:
-        """Return True - Gen2 supports motor control via ASCII M command."""
-        return True
+        """Return True when the model has at least one actuator."""
+        return (
+            self._caps.has_head
+            or self._caps.has_foot
+            or self._caps.has_pillow
+            or self._caps.has_lumbar
+        )
 
     @property
     def has_pillow_support(self) -> bool:
-        """Return True - Gen2 beds support pillow motor."""
-        return True
+        """Return True when the model has a pillow actuator (per profile)."""
+        return self._caps.has_pillow
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True - Gen2 beds support lumbar motor."""
-        return True
+        """Return True when the model has a lumbar actuator (per profile)."""
+        return self._caps.has_lumbar
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 4 - Gen2 beds support memory slots 1-4."""
-        return 4
+        """Return the model's memory slot count (per profile; typically 3)."""
+        return self._caps.memory_slots
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return True - Gen2 beds support programming memory positions."""
-        return True
+        """Return True when the model exposes memory positions (per profile)."""
+        return self._caps.memory_slots > 0
 
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
@@ -394,62 +442,56 @@ class LeggettGen2Controller(BedController):
             except Exception:
                 _LOGGER.debug("Failed to send STOP command during preset_anti_snore cleanup")
 
-    # Light methods
+    # Light methods. The app toggles with "UBL TOGGLE" and turns the light off by
+    # setting the colour to 0 (RGBSET 0:00000000); a non-zero colour turns it on.
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        await self.write_command(LeggettGen2Commands.RGB_OFF)
+        """Toggle the under-bed light."""
+        await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
     async def lights_on(self) -> None:
-        """Turn on lights (white at full brightness)."""
-        await self.write_command(LeggettGen2Commands.rgb_set(255, 255, 255, 255))
+        """Turn on the under-bed light (white at full brightness)."""
+        await self.write_command(LeggettGen2Commands.rgb_set(255, 255, 255))
 
     async def lights_off(self) -> None:
-        """Turn off lights."""
-        await self.write_command(LeggettGen2Commands.RGB_OFF)
+        """Turn off the under-bed light.
+
+        The app's only on/off primitive is the toggle, so this is best-effort
+        until the live light-state layer lands. Home Assistant only issues "off"
+        when it believes the light is on, so a toggle is a reasonable proxy.
+        """
+        await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        """Set light RGB color using RGBSET command."""
+        """Set the under-bed light colour using the RGBSET command."""
         r, g, b = rgb_color
         if not all(0 <= v <= 255 for v in (r, g, b)):
             raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
-        await self.write_command(LeggettGen2Commands.rgb_set(r, g, b, 255))
+        await self.write_command(LeggettGen2Commands.rgb_set(r, g, b))
 
-    # Massage methods
+    # Massage methods. Gen2 intensity is relative (VII raise/lower), so no level is
+    # tracked locally. "Off" sets all four channels to 0 (matching the app's
+    # stopMassage(ALL)).
     async def massage_off(self) -> None:
-        """Turn off massage."""
-        self._massage_head_level = 0
-        self._massage_foot_level = 0
-        await self.write_command(LeggettGen2Commands.massage_head_strength(0))
-        await self.write_command(LeggettGen2Commands.massage_foot_strength(0))
+        """Turn off massage (set every channel's intensity to 0)."""
+        for channel in (0, 1, 2, 3):
+            await self.write_command(LeggettGen2Commands.massage_set(channel, 0))
 
     async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
-        self._massage_head_level = min(10, self._massage_head_level + 1)
-        await self.write_command(
-            LeggettGen2Commands.massage_head_strength(self._massage_head_level)
-        )
+        """Increase head massage intensity (relative)."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_HEAD_UP)
 
     async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
-        self._massage_head_level = max(0, self._massage_head_level - 1)
-        await self.write_command(
-            LeggettGen2Commands.massage_head_strength(self._massage_head_level)
-        )
+        """Decrease head massage intensity (relative)."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_HEAD_DOWN)
 
     async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
-        self._massage_foot_level = min(10, self._massage_foot_level + 1)
-        await self.write_command(
-            LeggettGen2Commands.massage_foot_strength(self._massage_foot_level)
-        )
+        """Increase foot massage intensity (relative)."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_FOOT_UP)
 
     async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
-        self._massage_foot_level = max(0, self._massage_foot_level - 1)
-        await self.write_command(
-            LeggettGen2Commands.massage_foot_strength(self._massage_foot_level)
-        )
+        """Decrease foot massage intensity (relative)."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_FOOT_DOWN)
 
     async def massage_toggle(self) -> None:
-        """Toggle massage."""
-        await self.write_command(LeggettGen2Commands.MASSAGE_WAVE_ON)
+        """Toggle the wave massage mode (the only Gen2 massage toggle)."""
+        await self.write_command(LeggettGen2Commands.WAVE_TOGGLE)

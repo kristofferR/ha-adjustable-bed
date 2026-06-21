@@ -89,7 +89,6 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 | Save Sleep | `SMEM 2` |
 | Save Wake Up | `SMEM 3` |
 | Save Relax | `SMEM 4` |
-| Save Anti-Snore | `SNPOS 0` |
 
 ### Motor Commands
 
@@ -100,10 +99,6 @@ re-sends the move command every 200 ms while a button is held and sends a
 per-actuator stop on release.
 
 Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
-
-> **Corrected from the LP Control app (`com.leggett.android.universal`).** The
-> earlier values (smartbed-mqtt-derived) had up/down swapped and appended a stop
-> list; they were never confirmed on hardware.
 
 | Command | Text | Description |
 |---------|------|-------------|
@@ -122,23 +117,39 @@ Combined moves put codes in two fields, e.g. head down + feet up = `M 0:1:`.
 
 ### Massage Commands
 
+Gen2 massage uses an increase/decrease model (no absolute level):
+
 | Command | Text |
 |---------|------|
-| Head Massage (0-10) | `MVI 0:{level}` |
-| Foot Massage (0-10) | `MVI 1:{level}` |
-| Wave On | `MMODE 0:0` |
-| Wave Off | `MMODE 0:2` |
-| Wave Level | `WSP 0:{level}` |
+| Increase intensity | `VII :{location}` |
+| Decrease intensity | `VII {location}:` |
+| Set massage mode | `MMODE {modeGroup}:{mode}` |
+| Set wave speed | `WSP {modeGroup}:{waveSpeed}` |
 
 ### Light Commands
 
-Gen2 beds with RGB lighting expose a **Light** entity with a color picker instead of a simple on/off switch. The default color is white (255, 255, 255).
+Under-bed light (LightID `0`). The toggle is the only on/off primitive.
 
 | Command | Text | Description |
 |---------|------|-------------|
-| Get State | `GET STATE` | Query current bed state |
-| RGB Off | `RGBENABLE 0:0` | Turn off RGB lights |
-| RGB Set | `RGBSET 0:{RRGGBBBB}` | Set RGB color + brightness (hex RRGGBBBB, brightness fixed at FF) |
+| Toggle | `UBL TOGGLE` | Toggle the under-bed light on/off |
+| Set colour | `RGBSET 0:RRGGBBAA` | Set colour (8 hex: red, green, blue, alpha/brightness) |
+| Set brightness | `RGBBRT 0:AA` | Set brightness (2 hex) |
+| Default colour | `RGD 0[,<decimal>]` | Get/set the stored default colour |
+
+Live light state (on/off + colour) is reported in the `45e25103` STATE frame via a
+mode byte (`OperatingMode` `CONSTANT_COLOR`/`OFF`) with RGBA bytes.
+
+### Per-model capabilities
+
+Gen2 beds **do not report their feature set over BLE**. The app ships a bundled
+profile per model (`assets/ID_<productId>.json`) and selects it by a `productId`
+it derives from the advertisement manufacturer data (hex each payload byte after
+the `XP`/`CP` prefix, reverse, take the first four, parse base-16 — e.g.
+`58 50 05 …` → `5`). The profile declares the under-bed light style
+(**none / toggle / single-colour / RGB**), which actuators are present (**pillow
+and lumbar vary by model**), massage, and memory slot count (**typically 3**).
+Unknown product ids fall back to a fully-featured profile.
 
 ## Okin Variant (Binary)
 

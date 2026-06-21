@@ -9,7 +9,10 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
+from custom_components.adjustable_bed.beds.leggett_gen2 import (
+    LeggettGen2Commands,
+    LeggettGen2Controller,
+)
 from custom_components.adjustable_bed.beds.leggett_okin import (
     LeggettOkinCommands,
     LeggettOkinController,
@@ -144,6 +147,18 @@ class TestLeggettGen2CommandFormat:
         assert LeggettGen2Commands.motor_move(down="1") == b"M 1::"
         assert LeggettGen2Commands.motor_move(stop="2") == b"M ::2"
 
+    def test_massage_command_bytes(self):
+        """Massage uses VII (relative) / MVI (absolute) / WSP / WVE TOGGLE."""
+        c = LeggettGen2Commands
+        assert c.MASSAGE_HEAD_UP == b"VII :0"
+        assert c.MASSAGE_HEAD_DOWN == b"VII 0::"
+        assert c.MASSAGE_FOOT_UP == b"VII :1"
+        assert c.MASSAGE_FOOT_DOWN == b"VII 1::"
+        assert c.WAVE_TOGGLE == b"WVE TOGGLE"
+        assert c.massage_set(0, 0) == b"MVI 0:0"  # off, head channel
+        assert c.massage_set(1, 3) == b"MVI 1:3"  # foot channel, high
+        assert c.wave_speed(2) == b"WSP 0:2"  # fast
+
 
 class TestLeggettGen2Connection:
     """Gen2 / LP Comfort Connect connection behaviour."""
@@ -216,6 +231,46 @@ class TestLeggettGen2Connection:
         # Resolved to a persistent (Gen2) controller, then cleared.
         coordinator._persistent_connection_resolved = True
         assert coordinator._uses_persistent_connection() is True
+
+
+class TestLeggettGen2Capabilities:
+    """Gen2 capabilities are gated per model by the bundled product profile."""
+
+    @staticmethod
+    def _controller(hass, entry, product_id: int) -> LeggettGen2Controller:
+        # Payload encodes the productId: "XP" + little-endian bytes -> reversed
+        # first 4 hex -> base16. For ids < 256 that is just byte[2].
+        payload = bytes([0x58, 0x50]) + product_id.to_bytes(4, "little")
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        return LeggettGen2Controller(coordinator, manufacturer_data={0x092D: payload})
+
+    async def test_rgb_bed_with_pillow_lumbar(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 5)
+        assert c.supports_lights and c.supports_light_color_control
+        assert c.has_pillow_support and c.has_lumbar_support
+        assert c.memory_slot_count == 3  # not the old hardcoded 4
+
+    async def test_toggle_light_bed_without_pillow_lumbar(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 8)
+        assert c.supports_lights and not c.supports_light_color_control
+        assert not c.has_pillow_support and not c.has_lumbar_support
+
+    async def test_bed_without_light(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
+        assert not c.supports_lights and not c.supports_light_color_control
+        assert c.default_light_rgb_color is None
+
+    async def test_unknown_product_falls_back_to_full_featured(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 999999)
+        assert c.supports_light_color_control and c.has_pillow_support
 
 
 class TestLeggettMovement:
@@ -378,15 +433,16 @@ class TestLeggettLights:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test lights toggle on Gen2 sends RGB_OFF command."""
+        """Test lights toggle on Gen2 sends the UBL TOGGLE command."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.RGB_OFF, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.LIGHT_TOGGLE, response=True
         )
+        assert LeggettGen2Commands.LIGHT_TOGGLE == b"UBL TOGGLE"
 
     async def test_lights_on_gen2(
         self,
@@ -413,14 +469,14 @@ class TestLeggettLights:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test lights off Gen2 sends RGB_OFF command."""
+        """Test lights off Gen2 uses the confirmed toggle (UBL TOGGLE)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_off()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.RGB_OFF, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.LIGHT_TOGGLE, response=True
         )
 
 
@@ -445,11 +501,12 @@ class TestLeggettGen2RgbLights:
         mock_leggett_gen2_config_entry,
         mock_coordinator_connected,
     ):
-        """Test Gen2 controller reports explicit light on support."""
+        """Gen2 has no separate explicit on command (only UBL TOGGLE); setting a
+        colour turns RGB lights on, so explicit-on is reported False."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_explicit_light_on_control is True
+        assert coordinator.controller.supports_explicit_light_on_control is False
 
     async def test_default_light_rgb_color(
         self,
@@ -546,17 +603,16 @@ class TestLeggettMassage:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test head massage up on Gen2."""
+        """Head massage up on Gen2 sends the relative increase command (VII :0)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_head_up()
 
-        # Level should increment to 1
-        expected = LeggettGen2Commands.massage_head_strength(1)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MASSAGE_HEAD_UP, response=True
         )
+        assert LeggettGen2Commands.MASSAGE_HEAD_UP == b"VII :0"
 
     async def test_massage_toggle_gen2(
         self,
@@ -565,15 +621,16 @@ class TestLeggettMassage:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage toggle on Gen2."""
+        """Massage toggle on Gen2 sends the wave toggle (WVE TOGGLE)."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.MASSAGE_WAVE_ON, response=True
+            LEGGETT_GEN2_WRITE_CHAR_UUID, LeggettGen2Commands.WAVE_TOGGLE, response=True
         )
+        assert LeggettGen2Commands.WAVE_TOGGLE == b"WVE TOGGLE"
 
 
 class TestLeggettPositionNotifications:
