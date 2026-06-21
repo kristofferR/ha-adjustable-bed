@@ -1176,15 +1176,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # history-preserving device re-homing is a follow-up.)
                 await self.hass.config_entries.async_remove(left.entry_id)
                 await self.hass.config_entries.async_remove(right.entry_id)
-                # Don't create a pair that shares a member MAC / entity unique_ids
-                # with an original that somehow survived removal (would duplicate
-                # devices / drop a side's controls). Abort cleanly instead.
-                if (
-                    self.hass.config_entries.async_get_entry(left.entry_id) is not None
-                    or self.hass.config_entries.async_get_entry(right.entry_id)
-                    is not None
-                ):
-                    return self.async_abort(reason="combine_cleanup_failed")
+                # async_remove always removes the entry — an unload failure still
+                # deletes it and only flags require_restart — so there is no
+                # surviving-original / partial-removal case to roll back here. (A
+                # truly transactional, history-preserving conversion via device
+                # re-homing is the documented follow-up.)
                 _LOGGER.info(
                     "Combined %s + %s into paired bed %s",
                     left.title,
@@ -2431,6 +2427,22 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
+    """Return the default value each Optional field in the options form showed.
+
+    Lets the paired-options save measure what the user actually changed against
+    what the form displayed (the schema default, seeded from the representative
+    child / parent data), so untouched fields don't propagate to the children.
+    """
+    shown: dict[str, Any] = {}
+    for marker in schema_dict:
+        key = getattr(marker, "schema", None)
+        default = getattr(marker, "default", vol.UNDEFINED)
+        if isinstance(key, str) and default is not vol.UNDEFINED:
+            shown[key] = default() if callable(default) else default
+    return shown
+
+
 class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     """Handle Adjustable Bed options."""
 
@@ -2668,14 +2680,17 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             # Update the config entry with new options
             new_data = {**self.config_entry.data, **user_input}
             if is_paired(new_data):
-                # Apply ONLY the keys the user actually changed (vs the per-side
-                # values the form showed) to each child descriptor. Writing the
-                # whole form back would clobber the other side's untouched
-                # per-side settings with the first side's shown values.
+                # Apply ONLY the keys the user actually changed to each child
+                # descriptor. "Changed" is measured against the value the form
+                # ACTUALLY SHOWED (the schema default, which itself was seeded
+                # from the representative child / parent data). This avoids both
+                # clobbering the other side's untouched per-side values AND
+                # dropping a first-time change to a key neither side stored yet.
+                shown = _shown_option_values(schema_dict)
                 changed = {
                     key: value
                     for key, value in user_input.items()
-                    if key in current_data and current_data[key] != value
+                    if key in shown and shown[key] != value
                 }
                 if changed:
                     for side in PAIR_SIDES:
