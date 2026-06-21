@@ -2699,10 +2699,25 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     if key in shown and shown[key] != value
                 }
                 new_data = {**self.config_entry.data, **changed}
-                if changed:
-                    for side in PAIR_SIDES:
-                        if get_child(new_data, side) is not None:
-                            new_data = with_updated_child(new_data, side, changed)
+                submitted_adapter = user_input.get(CONF_PREFERRED_ADAPTER)
+                for side in PAIR_SIDES:
+                    child = get_child(new_data, side)
+                    if child is None:
+                        continue
+                    child_changed = dict(changed)
+                    # A child whose stored adapter has disappeared shows the
+                    # 'auto' fallback; normalize it even though the submitted
+                    # value looks unchanged vs that fallback, so a stale adapter
+                    # doesn't linger.
+                    stored_adapter = child.get(CONF_PREFERRED_ADAPTER)
+                    if (
+                        submitted_adapter is not None
+                        and stored_adapter is not None
+                        and stored_adapter not in adapters
+                    ):
+                        child_changed[CONF_PREFERRED_ADAPTER] = submitted_adapter
+                    if child_changed:
+                        new_data = with_updated_child(new_data, side, child_changed)
             else:
                 new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(
