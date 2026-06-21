@@ -311,19 +311,34 @@ class TestConnectionLifecycle:
 class TestPreemption:
     """STOP / cancel_running preempt the pair lock instead of queueing."""
 
-    async def test_cancel_running_preempts_only_targeted_side(self):
+    async def test_cancel_running_preempts_whole_active_whole_bed_move(self):
         log: list = []
         coord, left, right = _pair(log)
-        # Simulate both sides currently executing under the lock.
+        # Simulate an active WHOLE-BED move (both children under one command).
         coord._active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
 
-        # A left command preempts the in-flight LEFT side only — never the
-        # independent right side — then runs.
+        # A left command that overlaps the in-flight whole-bed move preempts the
+        # WHOLE move — both sides — not just left: the whole-bed command holds the
+        # lock until both children finish, so a half-cancel would leave the right
+        # side moving and stall this command.
         assert ("left", "cancel") in log
-        assert ("right", "cancel") not in log
+        assert ("right", "cancel") in log
         assert ("left", "command") in log
+
+    async def test_cancel_running_leaves_independent_side_alone(self):
+        log: list = []
+        coord, left, _right = _pair(log)
+        # Simulate an active LEFT-ONLY move.
+        coord._active_children = {left}
+
+        await coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
+
+        # A right command that does NOT overlap the in-flight left-only move must
+        # not cancel it — they're independent; right just waits its turn.
+        assert ("left", "cancel") not in log
+        assert ("right", "command") in log
 
     async def test_cancel_running_both_preempts_both_sides(self):
         log: list = []

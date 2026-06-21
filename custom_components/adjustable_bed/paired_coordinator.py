@@ -228,8 +228,16 @@ class PairedBedCoordinator:
             for target_side in target_sides:
                 self._pair_cancel_counter[target_side] += 1
             target_children = {child for _, child in targets}
-            for child in list(self._active_children):
-                if child in target_children:
+            # If this command overlaps the in-flight one, preempt the WHOLE
+            # in-flight command (all its children), not just the shared side: a
+            # whole-bed command holds the pair lock until BOTH its children
+            # finish, so cancelling only the shared side would leave the other
+            # still moving AND keep the lock held until its pulse window ends,
+            # delaying this command. A NON-overlapping command (e.g. a right
+            # command while an independent left-only move runs) leaves the other
+            # side alone — it just waits its turn on the lock.
+            if any(child in target_children for child in self._active_children):
+                for child in list(self._active_children):
                     child.request_command_cancel()
         entry_cancel = {s: self._pair_cancel_counter[s] for s in target_sides}
 
