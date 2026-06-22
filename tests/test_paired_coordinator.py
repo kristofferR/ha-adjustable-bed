@@ -107,10 +107,12 @@ class RecordingChild:
         self.log.append((self.side, "connect"))
         if self.connect_raises:
             raise RuntimeError(f"{self.side} connect boom")
+        self._connected = self.connect_result
         return self.connect_result
 
     async def async_disconnect(self, reason: str = "intentional") -> None:
         self.log.append((self.side, "disconnect"))
+        self._connected = False
 
     async def async_shutdown(self) -> None:
         self.log.append((self.side, "shutdown"))
@@ -250,22 +252,26 @@ class TestSequentialMode:
         )
         with pytest.raises(PairedSideError):
             await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
-        assert (SIDE_RIGHT, "command") not in log  # never dispatched
-        assert (SIDE_LEFT, "stop") in log
+        # Left failed first -> the right side is never even connected.
+        assert (SIDE_RIGHT, "connect") not in log
+        assert (SIDE_RIGHT, "command") not in log
+        # Left was released (disconnect halts it — no separate STOP, dead-man).
+        assert (SIDE_LEFT, "disconnect") in log
+        assert (SIDE_LEFT, "stop") not in log
 
     async def test_right_failure_after_left_stops_both(self):
         log: list = []
-        coord, _, _ = _pair(
+        coord, left, right = _pair(
             log, mode=PAIR_CONNECTION_MODE_SEQUENTIAL, right={"fail_command": True}
         )
         with pytest.raises(PairedSideError):
             await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
-        assert log == [
-            (SIDE_LEFT, "command"),
-            (SIDE_RIGHT, "command"),
-            (SIDE_LEFT, "stop"),
-            (SIDE_RIGHT, "stop"),
-        ]
+        # Both sides end disconnected (halted): left released before right ran,
+        # right released by the failure path — neither is left connected/moving.
+        assert left.is_connected is False
+        assert right.is_connected is False
+        assert (SIDE_LEFT, "disconnect") in log
+        assert (SIDE_RIGHT, "disconnect") in log
 
 
 class TestConnectionLifecycle:
@@ -492,3 +498,104 @@ class TestConnectionModeResolution:
             self._coord(BED_TYPE_LINAK, mode=PAIR_CONNECTION_MODE_SEQUENTIAL).connection_mode
             == PAIR_CONNECTION_MODE_SEQUENTIAL
         )
+
+
+class TestSequentialCycle:
+    """Phase 2.5 C2: single-connection beds (Octo) hold ONE BLE link at a time —
+    connect/op/disconnect each side in turn, never two links at once."""
+
+    SEQ = PAIR_CONNECTION_MODE_SEQUENTIAL
+
+    async def test_both_success_connects_acts_disconnects_each_in_turn(self):
+        log: list = []
+        coord, _, _ = _pair(log, mode=self.SEQ)
+        await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        # The one-link invariant: A is fully disconnected BEFORE B connects.
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "command"),
+            (SIDE_LEFT, "disconnect"),
+            (SIDE_RIGHT, "connect"),
+            (SIDE_RIGHT, "command"),
+            (SIDE_RIGHT, "disconnect"),
+        ]
+
+    async def test_single_side_connects_acts_disconnects(self):
+        log: list = []
+        coord, _, _ = _pair(log, mode=self.SEQ)
+        await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "command"),
+            (SIDE_LEFT, "disconnect"),
+        ]
+
+    async def test_side_b_op_failure_disconnects_both_no_reconnect(self):
+        log: list = []
+        coord, _, _ = _pair(log, mode=self.SEQ, right={"fail_command": True})
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        # A finished + released; B connected, command failed, still disconnected
+        # by the finally. The already-disconnected A is NOT reconnected to STOP.
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "command"),
+            (SIDE_LEFT, "disconnect"),
+            (SIDE_RIGHT, "connect"),
+            (SIDE_RIGHT, "command"),
+            (SIDE_RIGHT, "disconnect"),
+        ]
+        assert (SIDE_LEFT, "stop") not in log
+        assert set(exc.value.side_errors) == {SIDE_RIGHT}
+
+    async def test_side_b_connect_failure_breaks_no_op_on_b(self):
+        log: list = []
+        coord, _, _ = _pair(log, mode=self.SEQ, right={"connect_raises": True})
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        # B's connect raised -> no command/disconnect on B; A already released.
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "command"),
+            (SIDE_LEFT, "disconnect"),
+            (SIDE_RIGHT, "connect"),
+        ]
+        assert set(exc.value.side_errors) == {SIDE_RIGHT}
+
+    async def test_stop_only_targets_a_still_connected_side(self):
+        log: list = []
+        # left still connected (mid-move), right already released.
+        coord, left, right = _pair(log, mode=self.SEQ)
+        right._connected = False
+        await coord.async_stop_command(side=SIDE_BOTH)
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "stop") not in log  # not reconnected just to STOP
+
+    async def test_async_connect_verifies_then_releases_each_side(self):
+        log: list = []
+        coord, _, _ = _pair(log, mode=self.SEQ)
+        assert await coord.async_connect() is True
+        # Each side connected to verify reachability, then released (steady
+        # state: both disconnected) — never both connected at once.
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "disconnect"),
+            (SIDE_RIGHT, "connect"),
+            (SIDE_RIGHT, "disconnect"),
+        ]
+
+    async def test_stop_mid_cycle_aborts_remaining_side(self):
+        log: list = []
+        coord, left, right = _pair(log, mode=self.SEQ, left={"block": True})
+        cmd = asyncio.ensure_future(
+            coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        )
+        # Wait until the cycle has connected left and reached its blocked command.
+        while (SIDE_LEFT, "command") not in log:
+            await asyncio.sleep(0)
+        # STOP while left is mid-command: bumps both counters, stops + releases left.
+        await coord.async_stop_command(side=SIDE_BOTH)
+        await cmd
+        # The cycle aborts after the mid-cycle STOP — right is never connected.
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "connect") not in log
