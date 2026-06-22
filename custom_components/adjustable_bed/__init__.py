@@ -441,7 +441,7 @@ async def _async_rehome_absorbed_singles(
     the pair entry IN PLACE:
 
     * Each child device already shares the single's ``(DOMAIN, MAC)`` identifier,
-      so ``_async_ensure_paired_device_registry`` (run just before this) merged the
+      so ``_async_ensure_paired_device_registry`` (run earlier in setup) merged the
       pair's config-entry id into the existing device and nested it under the
       synthetic parent. Removing the original then only drops the original's
       config-entry id, leaving the SAME device object (id, name_by_user, area)
@@ -505,14 +505,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
-    # Absorb the original single entries BEFORE connecting: re-home their registry
-    # rows onto the pair, then remove them. Separate-address children connect to the
-    # SAME MACs as the originals, and a bed allows only ONE BLE link, so the
-    # originals must release their links first (async_remove awaits the disconnect)
-    # or the pair's children can't connect. Re-homing the rows first means that
-    # removal deletes none of them; the pair entry already exists, so the user is
-    # never left without a bed entry. No-op on reload (originals already gone).
-    await _async_rehome_absorbed_singles(hass, entry)
 
     async def _pairing_repairs_for_unconnected() -> None:
         # Surface a per-side pairing repair for any side that needs OS-level BLE
@@ -550,6 +542,17 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # At least one child connected, so the pair can provide controls. ONLY NOW
+    # absorb the original single entries — re-home their entity/device registry
+    # rows onto the pair, then remove them. Deferring this until after a successful
+    # connect keeps the originals (and their live controls) intact on the timeout /
+    # no-side-connected paths above: if the pair can't load, the user keeps two
+    # working beds, and the still-loaded originals idle-disconnect on their own so a
+    # later retry's children can take the single-link BLE. Must run before
+    # forwarding platforms so the originals' live entities are torn down first,
+    # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
+    # No-op on reload (originals already gone).
+    await _async_rehome_absorbed_singles(hass, entry)
     # Prime a client-free capability controller for any side that did NOT connect,
     # so its per-side entities are still created up-front (with byte-identical
     # unique_ids); the live controller takes over on reconnect with no reload.

@@ -722,16 +722,16 @@ class TestPairBedsConversion:
         assert left_after.name_by_user == "Left headboard"
         assert left_after.via_device_id == parent.id
 
-    async def test_conversion_connect_failure_keeps_pair_and_rehomed_rows(
+    async def test_conversion_connect_failure_preserves_originals(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """If the pair can't connect mid-conversion (an unreachable bed — when the
-        singles would be equally non-functional), the user is not left with no bed:
-        the paired entry still exists (retrying) and the re-homed registry rows are
-        intact, so nothing is lost and setup recovers on reconnect."""
+        """If no paired child can connect, the originals are NOT absorbed: re-homing
+        only happens after a successful connect, so the two single beds stay loaded
+        and controllable (owning their rows) while the pair retries. The user is
+        never left with no controllable bed."""
         from unittest.mock import patch
 
         left = await self._setup_single(hass, LEFT_ADDR, "Seng")
@@ -741,9 +741,10 @@ class TestPairBedsConversion:
         cover_uid = f"{LEFT_ADDR}_back"
         cover_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
         assert cover_id is not None
+        assert ent_reg.async_get(cover_id).config_entry_id == left.entry_id
 
         result = await self._reach_pair_step(hass)
-        # Make the pair's setup unable to find the beds, so its connect fails.
+        # Make the pair's setup unable to find the beds, so no child connects.
         with patch(
             "custom_components.adjustable_bed.coordinator.bluetooth."
             "async_ble_device_from_address",
@@ -756,20 +757,21 @@ class TestPairBedsConversion:
             await hass.async_block_till_done()
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        remaining = hass.config_entries.async_entries(DOMAIN)
-        paired = [e for e in remaining if is_paired(e.data)]
+        remaining = {e.entry_id: e for e in hass.config_entries.async_entries(DOMAIN)}
+        paired = [e for e in remaining.values() if is_paired(e.data)]
         assert len(paired) == 1
-        pair = paired[0]
-        # The bed is unreachable, so the pair retries — but it EXISTS (never no bed).
-        assert pair.state == ConfigEntryState.SETUP_RETRY
+        # The pair exists but is retrying (no side connected).
+        assert paired[0].state == ConfigEntryState.SETUP_RETRY
 
-        # No data loss: the row was re-homed onto the pair before the failed connect
-        # and survives, with its entity_id, and no duplicate/orphan was left behind.
-        after_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
-        assert after_id == cover_id
-        after_row = ent_reg.async_get(after_id)
-        assert after_row is not None
-        assert after_row.config_entry_id == pair.entry_id
+        # The originals were NOT absorbed: they're still configured and LOADED, and
+        # still own their entity rows — the user keeps two working beds.
+        assert left.entry_id in remaining
+        assert right.entry_id in remaining
+        assert remaining[left.entry_id].state == ConfigEntryState.LOADED
+        assert remaining[right.entry_id].state == ConfigEntryState.LOADED
+        after = ent_reg.async_get(cover_id)
+        assert after is not None
+        assert after.config_entry_id == left.entry_id  # still on the original
         rows = [e for e in ent_reg.entities.values() if e.unique_id == cover_uid]
         assert len(rows) == 1
 
