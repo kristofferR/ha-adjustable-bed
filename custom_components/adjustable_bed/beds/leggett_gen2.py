@@ -101,16 +101,23 @@ class LeggettGen2Commands:
         return f"RGBBRT 0:{max(0, min(255, level)):02X}".encode()
 
     # Massage. Gen2 intensity is RELATIVE: "VII :<ch>" raises and "VII <ch>::"
-    # lowers the given channel (0=primary head, 1=primary foot). Absolute set uses
+    # lowers a channel (0=head, 1=foot; "0123" = all channels). Absolute set uses
     # "MVI <ch>:<level>" with level 0=off, 1=low, 2=med, 3=high (used for "off").
     # Mode is "MMODE <group>:<mode>" (group 0=primary; mode 0=wave, 1=pulse,
-    # 2=always-on); wave speed is "WSP <group>:<speed>" (0=slow, 1=med, 2=fast);
-    # "WVE TOGGLE" toggles wave. Source: Gen2BedControlBoxInterface/Gen2CommandFormatter.
+    # 2=always-on); "WVE TOGGLE" toggles wave.
+    # Source: Gen2BedControlBoxInterface/Gen2CommandFormatter.
     MASSAGE_HEAD_UP = b"VII :0"
     MASSAGE_HEAD_DOWN = b"VII 0::"
     MASSAGE_FOOT_UP = b"VII :1"
     MASSAGE_FOOT_DOWN = b"VII 1::"
+    MASSAGE_ALL_UP = b"VII :0123"
+    MASSAGE_ALL_DOWN = b"VII 0123::"
     WAVE_TOGGLE = b"WVE TOGGLE"
+
+    # MMODE mode codes (primary group).
+    MODE_WAVE = 0
+    MODE_PULSE = 1
+    MODE_ALWAYS_ON = 2
 
     @staticmethod
     def massage_set(channel: int, level: int) -> bytes:
@@ -118,9 +125,9 @@ class LeggettGen2Commands:
         return f"MVI {channel}:{max(0, min(3, level))}".encode()
 
     @staticmethod
-    def wave_speed(speed: int) -> bytes:
-        """Set primary wave speed (``WSP 0:<speed>``, 0=slow, 1=med, 2=fast)."""
-        return f"WSP 0:{max(0, min(2, speed))}".encode()
+    def massage_mode(mode: int) -> bytes:
+        """Set the primary massage mode (``MMODE 0:<mode>``)."""
+        return f"MMODE 0:{mode}".encode()
 
     # Motor control: the LP Control app formats motor commands as
     #   M {down_codes}:{up_codes}:{stop_codes}
@@ -177,6 +184,8 @@ class LeggettGen2Controller(BedController):
         self._light_on: bool | None = None
         self._light_rgb: tuple[int, int, int] | None = None
         self._notify_started = False
+        # Index into the model's massage-mode cycle for massage_mode_step().
+        self._massage_mode_idx = 0
         _LOGGER.debug(
             "LeggettGen2Controller initialized (product_id=%s, caps=%s)",
             product_id,
@@ -287,7 +296,9 @@ class LeggettGen2Controller(BedController):
 
     @property
     def supports_massage_toggle_control(self) -> bool:
-        return self._caps.has_massage
+        # The only massage toggle is the wave toggle (WVE TOGGLE), so only expose
+        # it on models that actually have wave massage.
+        return self._caps.has_massage and self._caps.has_massage_wave
 
     @property
     def supports_massage_intensity_step_control(self) -> bool:
@@ -492,28 +503,28 @@ class LeggettGen2Controller(BedController):
             except Exception:
                 _LOGGER.debug("Failed to send STOP command during preset_anti_snore cleanup")
 
-    # Light methods. The app toggles with "UBL TOGGLE" and turns the light off by
-    # setting the colour to 0 (RGBSET 0:00000000); a non-zero colour turns it on.
+    # Light methods. The only on/off primitive is "UBL TOGGLE", so on/off are
+    # toggles guarded by the cached state (updated optimistically here and
+    # corrected by STATE notifications) to stay idempotent.
     async def lights_toggle(self) -> None:
         """Toggle the under-bed light."""
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
+        if self._light_on is not None:
+            self._light_on = not self._light_on
 
     async def lights_on(self) -> None:
-        """Turn on the under-bed light (idempotent against the live state).
-
-        The only on/off primitive is the toggle, so we toggle only when the
-        bed-reported state (from STATE notifications) says the light is not already
-        on, to avoid inverting it on stale assumed state.
-        """
+        """Turn on the under-bed light (idempotent against the cached state)."""
         if self._light_on is True:
             return
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
+        self._light_on = True
 
     async def lights_off(self) -> None:
-        """Turn off the under-bed light (idempotent against the live state)."""
+        """Turn off the under-bed light (idempotent against the cached state)."""
         if self._light_on is False:
             return
         await self.write_command(LeggettGen2Commands.LIGHT_TOGGLE)
+        self._light_on = False
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Set the under-bed light colour using the RGBSET command."""
@@ -605,3 +616,25 @@ class LeggettGen2Controller(BedController):
     async def massage_toggle(self) -> None:
         """Toggle the wave massage mode (the only Gen2 massage toggle)."""
         await self.write_command(LeggettGen2Commands.WAVE_TOGGLE)
+
+    async def massage_intensity_up(self) -> None:
+        """Raise overall (all-channel) massage intensity."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_ALL_UP)
+
+    async def massage_intensity_down(self) -> None:
+        """Lower overall (all-channel) massage intensity."""
+        await self.write_command(LeggettGen2Commands.MASSAGE_ALL_DOWN)
+
+    def _massage_modes(self) -> tuple[int, ...]:
+        """Massage modes to cycle for this model (wave only if supported)."""
+        modes: list[int] = []
+        if self._caps.has_massage_wave:
+            modes.append(LeggettGen2Commands.MODE_WAVE)
+        modes += [LeggettGen2Commands.MODE_PULSE, LeggettGen2Commands.MODE_ALWAYS_ON]
+        return tuple(modes)
+
+    async def massage_mode_step(self) -> None:
+        """Step to the next massage mode (MMODE), cycling the model's modes."""
+        modes = self._massage_modes()
+        self._massage_mode_idx = (self._massage_mode_idx + 1) % len(modes)
+        await self.write_command(LeggettGen2Commands.massage_mode(modes[self._massage_mode_idx]))

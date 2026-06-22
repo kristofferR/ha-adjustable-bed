@@ -148,16 +148,21 @@ class TestLeggettGen2CommandFormat:
         assert LeggettGen2Commands.motor_move(stop="2") == b"M ::2"
 
     def test_massage_command_bytes(self):
-        """Massage uses VII (relative) / MVI (absolute) / WSP / WVE TOGGLE."""
+        """Massage uses VII (relative) / MVI (absolute) / MMODE / WVE TOGGLE."""
         c = LeggettGen2Commands
         assert c.MASSAGE_HEAD_UP == b"VII :0"
         assert c.MASSAGE_HEAD_DOWN == b"VII 0::"
         assert c.MASSAGE_FOOT_UP == b"VII :1"
         assert c.MASSAGE_FOOT_DOWN == b"VII 1::"
+        assert c.MASSAGE_ALL_UP == b"VII :0123"
+        assert c.MASSAGE_ALL_DOWN == b"VII 0123::"
         assert c.WAVE_TOGGLE == b"WVE TOGGLE"
         assert c.massage_set(0, 0) == b"MVI 0:0"  # off, head channel
         assert c.massage_set(1, 3) == b"MVI 1:3"  # foot channel, high
-        assert c.wave_speed(2) == b"WSP 0:2"  # fast
+        # Mode codes verified from Gen2CommandFormatter: wave=0, pulse=1, always-on=2.
+        assert c.massage_mode(c.MODE_WAVE) == b"MMODE 0:0"
+        assert c.massage_mode(c.MODE_PULSE) == b"MMODE 0:1"
+        assert c.massage_mode(c.MODE_ALWAYS_ON) == b"MMODE 0:2"
 
 
 class TestLeggettGen2Connection:
@@ -294,6 +299,69 @@ class TestLeggettGen2Capabilities:
         assert c.supports_light_toggle_control and c.supports_massage_off_control
         keys = {spec.key for spec in c.motor_control_specs}
         assert {"back", "legs"} <= keys
+
+    async def test_massage_toggle_gated_on_wave(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        # Product 10012: massage but NO wave -> no massage toggle (WVE TOGGLE),
+        # but intensity step + mode step are still available.
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 10012)
+        assert c.supports_massage_off_control
+        assert c.supports_massage_intensity_step_control
+        assert c.supports_massage_mode_step_control
+        assert not c.supports_massage_toggle_control
+        # Product 5 has wave -> toggle available.
+        assert self._controller(
+            hass, mock_leggett_gen2_config_entry, 5
+        ).supports_massage_toggle_control
+
+    async def test_massage_intensity_all_and_mode_step(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        await controller.massage_intensity_up()
+        assert mock_bleak_client.write_gatt_char.call_args[0][1] == b"VII :0123"
+        await controller.massage_intensity_down()
+        assert mock_bleak_client.write_gatt_char.call_args[0][1] == b"VII 0123::"
+
+        # Mode step cycles wave -> pulse -> always-on -> wave (fallback profile has wave).
+        sent = []
+        for _ in range(4):
+            await controller.massage_mode_step()
+            sent.append(mock_bleak_client.write_gatt_char.call_args[0][1])
+        assert sent == [b"MMODE 0:1", b"MMODE 0:2", b"MMODE 0:0", b"MMODE 0:1"]
+
+    async def test_lights_on_off_idempotent_and_optimistic(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        # Unknown state -> on toggles and caches True; repeat is a no-op.
+        await controller.lights_on()
+        assert controller._light_on is True
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.lights_on()
+        mock_bleak_client.write_gatt_char.assert_not_called()
+
+        # Off toggles once and caches False; repeat is a no-op (no inversion).
+        await controller.lights_off()
+        assert controller._light_on is False
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.lights_off()
+        mock_bleak_client.write_gatt_char.assert_not_called()
 
 
 class TestLeggettMovement:
