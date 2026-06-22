@@ -550,6 +550,11 @@ class LeggettGen2Controller(BedController):
                 )
             self._notify_started = True
             _LOGGER.debug("Started Gen2 STATE notifications for %s", self._coordinator.address)
+            # Proactively request current state so light on/off is resolved before
+            # any user action — otherwise a toggle issued while state is unknown
+            # could invert the light (issue #385 review). Best-effort.
+            with contextlib.suppress(Exception):
+                await self.write_command(LeggettGen2Commands.GET_STATE)
 
     async def stop_notify(self) -> None:
         """Unsubscribe from the STATE characteristic."""

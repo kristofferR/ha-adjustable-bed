@@ -436,6 +436,7 @@ class TestLeggettPresets:
         """Test preset flat command on Gen2."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
         await coordinator.controller.preset_flat()
 
@@ -452,6 +453,7 @@ class TestLeggettPresets:
         """Test preset anti-snore command on Gen2."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
         await coordinator.controller.preset_anti_snore()
 
@@ -479,6 +481,7 @@ class TestLeggettPresets:
         """Test preset memory commands on Gen2."""
         coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
         await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char.reset_mock()  # ignore the GET STATE on connect
 
         await coordinator.controller.preset_memory(memory_num)
 
