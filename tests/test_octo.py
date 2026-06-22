@@ -780,3 +780,50 @@ class TestOctoRGBWILightEntity:
             response=False,
         )
         assert light.is_on is False
+
+
+class TestCapabilitySnapshot:
+    """Phase 2.5 C3a: a live controller's discovered capabilities round-trip
+    through a JSON snapshot so an OFFLINE paired side mints with the same gating."""
+
+    @staticmethod
+    def _coord():
+        from types import SimpleNamespace
+
+        return SimpleNamespace(motor_count=2)
+
+    def test_snapshot_roundtrip_restores_entity_gating(self):
+        live = OctoController(self._coord())
+        live._has_lights = True
+        live._has_rgbwi = True
+        live._rgbwi_value_type = 0x05
+        live._memory_count = 4
+        live._discovered_motor_count = 2
+        live._has_synchro = True
+        live._has_pin = True
+        live._pin_locked = False
+
+        snap = live.capability_snapshot()
+        assert snap == {
+            "has_pin": True,
+            "pin_locked": False,
+            "has_lights": True,
+            "has_rgbwi": True,
+            "rgbwi_value_type": 0x05,
+            "memory_count": 4,
+            "discovered_motor_count": 2,
+            "has_synchro": True,
+        }
+
+        # Minting a fresh controller from the snapshot restores entity gating
+        # without any live discovery.
+        offline = OctoController(self._coord(), capability_snapshot=snap)
+        assert offline.supports_lights is True
+        assert offline.supports_light_color_control is True
+        assert offline.supports_memory_presets is True
+        assert offline.supports_synchro is True
+
+    def test_no_snapshot_when_nothing_discovered(self):
+        # An all-unknown controller yields no snapshot (don't persist over a real
+        # one with all-None).
+        assert OctoController(self._coord()).capability_snapshot() is None

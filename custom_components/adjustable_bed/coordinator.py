@@ -146,6 +146,7 @@ from .detection import (
     refine_okin_shared_uuid_protocol_from_gatt,
 )
 from .diagnostic_payloads import new_connection_attempt_details
+from .pairing import octo_snapshot_from_descriptor
 from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
@@ -631,7 +632,18 @@ class AdjustableBedCoordinator:
         """
         if self._offline_controller is not None or self._controller is not None:
             return
-        if self._bed_type not in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
+        # Octo is not statically offline-safe (it discovers capabilities post
+        # connect), but a paired side that captured a capability snapshot AT
+        # PAIRING can be minted offline from that snapshot.
+        octo_snapshot = (
+            octo_snapshot_from_descriptor(self.entry.data)
+            if self._bed_type == BED_TYPE_OCTO
+            else None
+        )
+        mintable = self._bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES or (
+            self._bed_type == BED_TYPE_OCTO and octo_snapshot is not None
+        )
+        if not mintable:
             # Only beds whose entity-gating capabilities are fully determined by
             # stored config offline are safe to mint without a live connection.
             # Others auto-detect their variant from live GATT/advertisement, can
@@ -651,6 +663,7 @@ class AdjustableBedCoordinator:
                 richmat_remote=self._richmat_remote,
                 jensen_pin=self._jensen_pin,
                 cb24_bed_selection=self._cb24_bed_selection,
+                capability_snapshot=octo_snapshot,
             )
         except ConnectionError:
             # Auto-detected variant: needs a live client to resolve. Leave the

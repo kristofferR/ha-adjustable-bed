@@ -798,3 +798,45 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+
+
+class TestOctoOfflineSnapshot:
+    """Phase 2.5 C3 (commit 2): a paired Octo side mints offline from a captured
+    capability snapshot; without one it stays non-minted (today's behaviour)."""
+
+    def _octo_children(self, hass: HomeAssistant, *, left_snapshot):
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+        if left_snapshot is not None:
+            data[CONF_PAIR_CHILDREN][0]["capabilities"] = {"octo": left_snapshot}
+        entry = MockConfigEntry(
+            domain=DOMAIN, title="Octo", data=data, unique_id="pair_octo", version=4
+        )
+        entry.add_to_hass(hass)
+        return _build_paired_children(hass, entry)
+
+    async def test_octo_side_with_snapshot_mints_offline(self, hass: HomeAssistant):
+        snap = {
+            "has_pin": True,
+            "pin_locked": False,
+            "has_lights": True,
+            "has_rgbwi": True,
+            "rgbwi_value_type": 5,
+            "memory_count": 4,
+            "discovered_motor_count": 2,
+            "has_synchro": True,
+        }
+        left = self._octo_children(hass, left_snapshot=snap)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        ctrl = left.capability_controller
+        assert ctrl is not None
+        assert ctrl.supports_lights is True
+        assert ctrl.supports_memory_presets is True
+
+    async def test_octo_side_without_snapshot_not_minted(self, hass: HomeAssistant):
+        left = self._octo_children(hass, left_snapshot=None)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        # No snapshot -> Octo is not offline-mintable (keeps today's behaviour).
+        assert left.capability_controller is None

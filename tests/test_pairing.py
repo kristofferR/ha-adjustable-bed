@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.pairing import (
     is_paired,
     iter_children,
     make_pair_id,
+    octo_snapshot_from_descriptor,
     pair_member_addresses,
     with_updated_child,
 )
@@ -175,3 +176,27 @@ class TestWithUpdatedChild:
     def test_non_paired_raises(self):
         with pytest.raises(ValueError):
             with_updated_child({CONF_ADDRESS: LEFT_ADDR}, SIDE_LEFT, {"x": 1})
+
+
+class TestOctoSnapshotPlumbing:
+    """Phase 2.5 C3 (commit 1): per-side Octo capability snapshots round-trip
+    through the child descriptor's capabilities['octo']."""
+
+    def test_snapshot_stored_and_read_per_side(self):
+        snap = {"has_lights": True, "has_rgbwi": True, "memory_count": 4}
+        data = build_pair_entry_data(
+            {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", "bed_type": "octo"},
+            {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": "octo"},
+            name="Master",
+            left_octo_snapshot=snap,
+        )
+        children = data["pair_children"]
+        # Left carries the snapshot; right (no snapshot passed) has none.
+        assert octo_snapshot_from_descriptor(children[0]) == snap
+        assert octo_snapshot_from_descriptor(children[1]) is None
+
+    def test_snapshot_none_for_old_or_empty_descriptors(self):
+        assert octo_snapshot_from_descriptor(None) is None
+        assert octo_snapshot_from_descriptor({}) is None
+        assert octo_snapshot_from_descriptor({"capabilities": {}}) is None
+        assert octo_snapshot_from_descriptor({"capabilities": {"octo": {}}}) == {}

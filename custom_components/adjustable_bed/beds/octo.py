@@ -19,8 +19,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -37,6 +37,22 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Capability fields discovered post-connect (from CAP notifications) that gate
+# which entities exist. They are captured into a per-side snapshot at pairing and
+# restored when minting a client-free controller for an OFFLINE paired Octo side,
+# so its light/RGBW/memory/synchro entities match the live bed without a link.
+# Keys are the field names without the leading underscore (JSON-serialisable).
+_CAPABILITY_SNAPSHOT_KEYS: tuple[str, ...] = (
+    "has_pin",
+    "pin_locked",
+    "has_lights",
+    "has_rgbwi",
+    "rgbwi_value_type",
+    "memory_count",
+    "discovered_motor_count",
+    "has_synchro",
+)
 
 
 # Motor bit masks
@@ -79,12 +95,20 @@ OCTO_UNESCAPE_MAP: dict[int, int] = {v: k for k, v in OCTO_ESCAPE_MAP.items()}
 class OctoController(BedController):
     """Controller for Octo beds."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, pin: str = "") -> None:
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        pin: str = "",
+        capability_snapshot: Mapping[str, Any] | None = None,
+    ) -> None:
         """Initialize the Octo controller.
 
         Args:
             coordinator: The bed coordinator.
             pin: Optional PIN for authentication. Required for some Octo beds.
+            capability_snapshot: Capabilities captured at pairing, used to mint a
+                client-free controller for an OFFLINE paired side (no live
+                discovery). Ignored once a live discovery overwrites the fields.
         """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
@@ -108,10 +132,36 @@ class OctoController(BedController):
             asyncio.Event()
         )  # Set when 0xFFFFFF sentinel received
 
+        if capability_snapshot:
+            # Offline mint: pre-populate discovered capabilities so entity gating
+            # matches the live bed, and mark discovery "done" so nothing awaits a
+            # connection that will never happen for this client-free controller.
+            self._apply_capability_snapshot(capability_snapshot)
+            self._features_loaded.set()
+            self._features_complete.set()
+
         _LOGGER.debug(
-            "OctoController initialized (PIN %s)",
+            "OctoController initialized (PIN %s%s)",
             "configured" if pin else "not configured",
+            ", from capability snapshot" if capability_snapshot else "",
         )
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return discovered capabilities as a JSON-serialisable snapshot to
+        persist for a paired side, or None if nothing has been discovered yet (so
+        an all-unknown snapshot is never stored over a real one)."""
+        snap = {
+            key: getattr(self, f"_{key}") for key in _CAPABILITY_SNAPSHOT_KEYS
+        }
+        if all(value is None or value is False for value in snap.values()):
+            return None
+        return snap
+
+    def _apply_capability_snapshot(self, snap: Mapping[str, Any]) -> None:
+        """Restore capability fields from a persisted snapshot (offline mint)."""
+        for key in _CAPABILITY_SNAPSHOT_KEYS:
+            if key in snap:
+                setattr(self, f"_{key}", snap[key])
 
     @property
     def control_characteristic_uuid(self) -> str:

@@ -184,14 +184,43 @@ _PAIR_ONLY_DESCRIPTOR_KEYS = frozenset(
 )
 
 
-def _descriptor_from_single(data: Mapping[str, Any], side: str) -> dict[str, Any]:
-    """Build a child descriptor from a single-bed entry's data."""
+def octo_snapshot_from_descriptor(
+    descriptor: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Return a side's persisted Octo capability snapshot, or None.
+
+    The snapshot lives under the descriptor's ``capabilities`` dict, namespaced
+    by bed type (``capabilities['octo']``). Old pairs that predate the snapshot
+    simply have no ``capabilities``/``octo`` key and fall back to None.
+    """
+    if not descriptor:
+        return None
+    caps = descriptor.get("capabilities") or {}
+    octo = caps.get("octo")
+    return dict(octo) if isinstance(octo, Mapping) else None
+
+
+def _descriptor_from_single(
+    data: Mapping[str, Any],
+    side: str,
+    octo_snapshot: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a child descriptor from a single-bed entry's data.
+
+    ``octo_snapshot`` is an optional Octo capability snapshot captured from the
+    live bed at pairing; it is stored under ``capabilities['octo']`` so an OFFLINE
+    paired side can be minted with the right light/RGBW/memory/synchro entities.
+    """
     descriptor = {
         key: value
         for key, value in data.items()
         if key not in _PAIR_ONLY_DESCRIPTOR_KEYS
     }
     descriptor[CONF_SIDE] = side
+    if octo_snapshot:
+        capabilities = dict(descriptor.get("capabilities") or {})
+        capabilities["octo"] = dict(octo_snapshot)
+        descriptor["capabilities"] = capabilities
     return descriptor
 
 
@@ -201,12 +230,17 @@ def build_pair_entry_data(
     *,
     name: str,
     connection_mode: str | None = None,
+    left_octo_snapshot: Mapping[str, Any] | None = None,
+    right_octo_snapshot: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a separate-address paired entry's data from two single-bed datas.
 
     Each single bed becomes a child descriptor (its full config, plus a ``side``).
     The shared family ``bed_type`` is taken from the left side. The synthetic
     ``pair_id`` is deterministic, so re-pairing the same two MACs is idempotent.
+
+    ``left_octo_snapshot`` / ``right_octo_snapshot`` are optional per-side Octo
+    capability snapshots captured from the live beds at pairing.
     """
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
@@ -219,8 +253,8 @@ def build_pair_entry_data(
         CONF_NAME: name,
         CONF_PAIR_MEMBER_ADDRESSES: [left_addr.upper(), right_addr.upper()],
         CONF_PAIR_CHILDREN: [
-            _descriptor_from_single(left_data, SIDE_LEFT),
-            _descriptor_from_single(right_data, SIDE_RIGHT),
+            _descriptor_from_single(left_data, SIDE_LEFT, left_octo_snapshot),
+            _descriptor_from_single(right_data, SIDE_RIGHT, right_octo_snapshot),
         ],
     }
     if connection_mode is not None:
