@@ -366,6 +366,16 @@ class PairedBedCoordinator:
                 # A STOP / newer command for this side landed mid-cycle — abort
                 # before connecting it (the earlier side already disconnected).
                 break
+
+            # One-link guard: release any OTHER side that is still connected (it
+            # may have been connected out-of-band, e.g. a per-side diagnostic
+            # Connect button) before opening this link, so we never hold two.
+            if not await self._release_other_sides(child):
+                errors[side] = HomeAssistantError(
+                    "could not release the other side before switching"
+                )
+                break
+
             try:
                 connected = await child.async_connect()
             except Exception as err:  # noqa: BLE001 - CancelledError must propagate
@@ -376,29 +386,65 @@ class PairedBedCoordinator:
                     f"{side} side of the pair could not be connected"
                 )
                 break
+
+            # A STOP (or newer command) may have landed WHILE we were connecting —
+            # _stop_children couldn't reach this side then (it wasn't connected
+            # yet), so re-check now and bail (releasing the link) instead of
+            # starting a motor command after the STOP was accepted.
+            if self._pair_cancel_counter[side] != entry_cancel[side]:
+                await self._safe_disconnect(side, child)
+                break
+
+            op_error: BaseException | None = None
             try:
                 await op(child)
-            except Exception as err:  # noqa: BLE001 - CancelledError must propagate
-                errors[side] = err
-                break
-            finally:
-                # Tear the link down before switching sides (and on failure), so
-                # only one side is ever connected and this side's motors stop.
+            except asyncio.CancelledError:
+                # Release this side (halts it) before propagating the cancellation.
                 await self._safe_disconnect(side, child)
+                raise
+            except Exception as err:  # noqa: BLE001
+                op_error = err
+
+            # Disconnecting is BOTH the one-link guard and the halt for this side,
+            # so a disconnect failure is fatal: abort rather than connect the next
+            # side onto a possibly-still-live/moving link.
+            disconnected = await self._safe_disconnect(side, child)
+            if op_error is not None:
+                errors[side] = op_error
+                break
+            if not disconnected:
+                errors[side] = HomeAssistantError(
+                    f"{side} side failed to disconnect — aborting to keep one link"
+                )
+                break
         if errors:
             raise PairedSideError(action, errors)
 
+    async def _release_other_sides(self, keep: AdjustableBedCoordinator) -> bool:
+        """Disconnect every side except ``keep`` (the one-link guard before a
+        sequential connect). Returns False if any disconnect failed, so the caller
+        can abort rather than risk opening a second link."""
+        ok = True
+        for side, child in self._children.items():
+            if child is not keep and child.is_connected:
+                if not await self._safe_disconnect(side, child):
+                    ok = False
+        return ok
+
     async def _safe_disconnect(
         self, side: str, child: AdjustableBedCoordinator
-    ) -> None:
-        """Disconnect one side, swallowing failures — a disconnect error must not
-        mask the command outcome or block switching to the other side."""
+    ) -> bool:
+        """Disconnect one side, swallowing failures. Returns True on success — a
+        disconnect error must not mask the command outcome, but callers that rely
+        on the link actually being down (sequential switching) check the result."""
         try:
             await child.async_disconnect("sequential_switch")
         except Exception as err:  # noqa: BLE001 - CancelledError must propagate
             _LOGGER.warning(
                 "Disconnect failed on %s side (%s): %s", side, child.address, err
             )
+            return False
+        return True
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
@@ -457,6 +503,11 @@ class PairedBedCoordinator:
                     continue
                 if connected:
                     any_connected = True
+                    # Keep the just-discovered live controller as this side's
+                    # offline capability source BEFORE releasing the link, so its
+                    # per-side entities still build after this disconnect (which
+                    # drops the live controller).
+                    child.cache_capability_controller()
                     await self._safe_disconnect(side, child)
             return any_connected
 

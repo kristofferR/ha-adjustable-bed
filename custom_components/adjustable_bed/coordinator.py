@@ -677,6 +677,20 @@ class AdjustableBedCoordinator:
             )
             self._offline_controller = None
 
+    def cache_capability_controller(self) -> None:
+        """Retain the current live controller as the client-free offline
+        capability controller, so its discovered capabilities survive a
+        disconnect.
+
+        A sequential pair connects each side at setup then releases it; that
+        disconnect drops the live controller, and a bed that can't be minted
+        offline from config/snapshot would otherwise build no per-side entities.
+        Caching the just-discovered live controller keeps them. No-op if an
+        offline controller is already set or there is no live controller.
+        """
+        if self._offline_controller is None and self._controller is not None:
+            self._offline_controller = self._controller
+
     @property
     def position_data(self) -> dict[str, float]:
         """Return current position data."""
