@@ -566,6 +566,16 @@ class AdjustableBedCoordinator:
         return self._last_disconnected
 
     @property
+    def last_disconnect_reason(self) -> str | None:
+        """Return why the bed last disconnected (for diagnostics/UI).
+
+        Common values: ``idle_timeout``, ``intentional``,
+        ``authentication_failed``, ``unexpected``. Intentional/idle reasons mean
+        the bed is fine and will reconnect on demand on the next command.
+        """
+        return self._last_disconnect_reason
+
+    @property
     def connection_source(self) -> str | None:
         """Return the adapter/source used for the current connection."""
         return self._connection_source
@@ -970,7 +980,14 @@ class AdjustableBedCoordinator:
                 self._reset_disconnect_timer()
             return True
 
-        _LOGGER.info(
+        # Routine reconnects after an intentional/idle disconnect are expected for
+        # non-persistent beds and shouldn't spam the log. Only the first successful
+        # connection of the entry's lifetime logs the happy path at INFO; subsequent
+        # on-demand reconnects log at DEBUG (still captured with debug logging enabled).
+        # Retries, warnings, and failures keep their levels regardless (see below).
+        connect_log = _LOGGER.info if self._last_connected is None else _LOGGER.debug
+
+        connect_log(
             "Initiating BLE connection to %s (max %d attempts)",
             self._address,
             self._max_retries,
@@ -1107,7 +1124,7 @@ class AdjustableBedCoordinator:
 
                 lookup_elapsed = time.monotonic() - attempt_start
                 attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
-                _LOGGER.info(
+                connect_log(
                     "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
                     self._address,
                     lookup_elapsed,
@@ -1149,7 +1166,7 @@ class AdjustableBedCoordinator:
                 # Using standard BleakClient (not cached) for better compatibility
                 # with devices that have connection stability issues
                 connect_start = time.monotonic()
-                _LOGGER.info(
+                connect_log(
                     "Attempting BLE GATT connection to %s (timeout: %.0fs)...",
                     self._address,
                     self._connection_timeout,
@@ -1384,7 +1401,7 @@ class AdjustableBedCoordinator:
                 attempt_details["connect_elapsed_seconds"] = round(connect_elapsed, 3)
                 attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
                 attempt_details["result"] = "connected"
-                _LOGGER.info(
+                connect_log(
                     "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
                     total_elapsed,
@@ -1714,6 +1731,10 @@ class AdjustableBedCoordinator:
                     self._connecting = False
                     self._last_connection_error = "Connection dropped during controller startup"
                     self._last_connection_error_type = ConnectionError.__name__
+                    # A failed (re)connect is not an intentional/idle disconnect;
+                    # clear the prior reason so the connectivity sensor doesn't keep
+                    # reporting "idle" after the attempt failed (issue #385 review).
+                    self._last_disconnect_reason = "connect_failed"
                     attempt_details["total_elapsed_seconds"] = round(
                         time.monotonic() - attempt_start, 3
                     )
@@ -1847,6 +1868,13 @@ class AdjustableBedCoordinator:
                 # Delay is handled at the start of the next iteration with progressive backoff
 
         total_elapsed = time.monotonic() - overall_start
+        # All attempts failed: the bed is unreachable, not idle-disconnected, so
+        # ensure the connectivity sensor reports "disconnected" rather than "idle"
+        # (issue #385 review). Notify listeners so the sensor/card re-render now —
+        # the device-not-found retries don't otherwise emit a state change, so a
+        # previously published "idle" would linger until some later event.
+        self._last_disconnect_reason = "connect_failed"
+        self._notify_connection_state_change(False)
         _LOGGER.error(
             "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
             "Troubleshooting:\n"
@@ -2208,7 +2236,12 @@ class AdjustableBedCoordinator:
             self._reconnect_timer.cancel()
             self._reconnect_timer = None
         if self._client is not None:
-            _LOGGER.info("Disconnecting from bed at %s", self._address)
+            # Intentional disconnects (manual, idle timeout, disconnect-after-command)
+            # are routine for non-persistent beds; keep them at DEBUG so normal use
+            # doesn't spam the log. The reason is preserved in _last_disconnect_reason.
+            _LOGGER.debug(
+                "Disconnecting from bed at %s (reason: %s)", self._address, reason
+            )
             # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
             self._intentional_disconnect = True
             # Track disconnect reason for diagnostics (issue #168)
@@ -2299,7 +2332,10 @@ class AdjustableBedCoordinator:
 
     async def _async_idle_disconnect(self) -> None:
         """Disconnect after idle timeout."""
-        _LOGGER.info(
+        # Expected for non-persistent beds: we drop the link so the physical remote
+        # can take over, and reconnect on demand on the next command. Logged at DEBUG
+        # to avoid spamming the log during normal use.
+        _LOGGER.debug(
             "Idle timeout reached (%d seconds), disconnecting from %s",
             self._idle_disconnect_seconds,
             self._address,

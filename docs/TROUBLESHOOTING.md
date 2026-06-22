@@ -158,6 +158,19 @@ This guide covers common issues and their solutions when using the Adjustable Be
 3. **Press "Disconnect" button:** Manually disconnect HA to use the physical remote
 4. **Idle timeout:** HA automatically disconnects after 40 seconds of inactivity
 
+### BLE connection shows "Disconnected" shortly after adding the bed
+
+**This is normal.** For most beds the integration deliberately drops the BLE
+link after about 40 seconds of inactivity (the `idle_disconnect_seconds`
+option) so the physical remote can take over. It reconnects automatically on
+the next command from Home Assistant — no action is needed.
+
+- The connection sensor reports `state_detail: idle` (and a `disconnect_reason`
+  attribute) while it's intentionally disconnected, and the Lovelace card shows
+  an "Idle — reconnects on demand" Bluetooth icon rather than an error.
+- Routine idle disconnects and on-demand reconnects are logged at debug level,
+  so they no longer fill the log. Enable debug logging if you need to see them.
+
 ### Remote works but bed doesn't respond to HA afterward
 
 **Possible Causes:**
