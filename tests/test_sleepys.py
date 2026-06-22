@@ -1246,50 +1246,58 @@ class TestSleepysBox25Controller:
         assert controller._motor_initialized is False
         mock_client.write_gatt_char.assert_not_called()
 
-    async def test_preset_is_fire_and_forget_no_stop(
+    async def test_preset_arms_then_commits_with_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 presets are fire-and-forget (needConfirm=0): no trailing STOP.
+        """BOX25 presets are armed by repeating the key, then committed by STOP.
 
-        Regression test for #372: a trailing MOTOR_STOP cancels the just-issued
-        preset on some firmware (e.g. 25_22_01 / Ashley/Nectar M1X1232), so the
-        bed never moves. The preset command alone must be sent.
+        Regression test for #372: the decompiled Adjustable Comfort M1X12 app
+        sends every preset as the preset key ×3 followed by the all-zero
+        MOTOR_STOP that *commits* it. Sending the key without the trailing STOP
+        leaves the bed armed but stationary until the user manually presses Stop
+        All — exactly the reported symptom.
         """
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
+            patch.object(controller, "write_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
+            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.preset_flat()
 
-        mock_write.assert_awaited_once_with(Box25Commands.PRESET_FLAT)
-        mock_stop.assert_not_called()
+        mock_write.assert_awaited_once_with(
+            Box25Commands.PRESET_FLAT, repeat_count=3, repeat_delay_ms=100
+        )
+        mock_stop.assert_awaited_once()
 
-    async def test_program_memory_is_fire_and_forget_no_stop(
+    async def test_program_memory_arms_then_commits_with_stop(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 memory store is fire-and-forget too: no trailing STOP (#372)."""
+        """BOX25 memory store uses the same arm-then-commit sequence (#372)."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
-            patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write,
+            patch.object(controller, "write_command", AsyncMock()) as mock_write,
             patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
+            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.program_memory(1)
 
-        mock_write.assert_awaited_once_with(Box25Commands.MEMORY_STORE[0])
-        mock_stop.assert_not_called()
+        mock_write.assert_awaited_once_with(
+            Box25Commands.MEMORY_STORE[0], repeat_count=3, repeat_delay_ms=100
+        )
+        mock_stop.assert_awaited_once()
 
     async def test_set_motor_position_supports_lumbar(
         self,
