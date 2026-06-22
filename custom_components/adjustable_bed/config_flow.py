@@ -19,7 +19,6 @@ from homeassistant.config_entries import (
     OptionsFlowWithConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
@@ -399,20 +398,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             for member in pair_member_addresses(entry.data):
                 configured[member] = entry
         return configured
-
-    def _has_unpairable_entities(self, entry: ConfigEntry) -> bool:
-        """Whether ``entry`` exposes entities a pair can't recreate yet.
-
-        Paired setup forwards binary_sensor/button/cover/number/sensor/switch.
-        A bed with climate/light/select entities would lose them on conversion,
-        so block pairing for those rather than silently dropping them.
-        """
-        registry = er.async_get(self.hass)
-        unsupported = {"climate", "light", "select"}
-        return any(
-            entity.domain in unsupported
-            for entity in er.async_entries_for_config_entry(registry, entry.entry_id)
-        )
 
     def _is_absorbed_pair_member(self, address: str) -> bool:
         """Whether ``address`` is already a side of an existing paired bed."""
@@ -1155,10 +1140,6 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # and keepalive (Phase 2). Pairing it with the current concurrent
                 # path would be unreliable, so block it until that lands.
                 errors["base"] = "octo_pairing_unsupported"
-            elif self._has_unpairable_entities(left) or self._has_unpairable_entities(
-                right
-            ):
-                errors["base"] = "pairing_unsupported_entities"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
                 # Merge each side's options (e.g. customized angle limits, which the

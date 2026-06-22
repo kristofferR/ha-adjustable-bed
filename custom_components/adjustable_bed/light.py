@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
@@ -23,6 +23,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -73,27 +74,47 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed light entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-    controller = coordinator.controller
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[LightEntity] = []
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _light_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
+        async_add_entities(entities)
+        return
+    async_add_entities(_light_entities_for(hass, coordinator))
+
+
+def _light_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[LightEntity]:
+    """Build light entities for a single (child or standalone) coordinator."""
+    controller = coordinator.capability_controller
 
     if controller is None:
         _async_remove_stale_light_entity(hass, coordinator)
-        return
+        return []
 
     if getattr(controller, "supports_light_color_control", False):
         _async_remove_stale_switch_entity(hass, coordinator)
-        async_add_entities([AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)])
-        return
+        return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
     if (
         coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
         and getattr(controller, "supports_discrete_light_control", False)
     ):
         _async_remove_stale_switch_entity(hass, coordinator)
-        async_add_entities([AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)])
-        return
+        return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
     _async_remove_stale_light_entity(hass, coordinator)
+    return []
 
 
 def _async_remove_stale_light_entity(

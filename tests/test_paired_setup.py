@@ -417,13 +417,15 @@ class TestPairBedsConversion:
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
 
-    async def test_pairing_blocked_for_unforwarded_entities(
+    async def test_pairing_allowed_with_per_side_platform_entities(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A bed exposing climate/light/select can't be paired (those would drop)."""
+        """A bed exposing climate/light/select is no longer blocked from pairing —
+        those platforms are forwarded per-side (Phase 2.3), so they're recreated
+        on each child rather than dropped."""
         from homeassistant.helpers import entity_registry as er
 
         left = self._single(hass, LEFT_ADDR, "Left")
@@ -437,8 +439,9 @@ class TestPairBedsConversion:
             result["flow_id"],
             {"left_entry": left.entry_id, "right_entry": right.entry_id},
         )
-        assert result["type"] == FlowResultType.FORM
-        assert result["errors"]["base"] == "pairing_unsupported_entities"
+        # The pair is created (not the old pairing_unsupported_entities block).
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result.get("errors") is None or "base" not in result["errors"]
 
     async def test_pairing_blocked_for_same_address(
         self,
