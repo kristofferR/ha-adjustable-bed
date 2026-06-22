@@ -183,12 +183,12 @@ var Ue=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var y=(o,s,e
       gap: 4px;
       cursor: pointer;
     }
-  `,y([P({attribute:!1})],C.prototype,"hass",2),y([q()],C.prototype,"_config",2),C=y([X("adjustable-bed-card-editor")],C);var x=class extends v{constructor(){super(...arguments);this._saveMode=!1;this._watched=[]}static async getConfigElement(){return document.createElement("adjustable-bed-card-editor")}static getStubConfig(e){return{type:"custom:adjustable-bed-card",device_id:e?Object.values(e.entities).find(i=>i.platform===pe)?.device_id:void 0}}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config=e}getCardSize(){return 8}shouldUpdate(e){if(e.has("_config")||!e.has("hass")||!this.hass)return!0;let t=e.get("hass");if(!t||t.entities!==this.hass.entities)return!0;for(let i of this._watched)if(t.states[i]!==this.hass.states[i])return!0;return!1}render(){if(!this.hass||!this._config)return c;if(!this._config.device_id)return this._notice("card.no_device");let e=Be(this.hass,this._config.device_id);if(e.length)return this._renderPaired(this._config.device_id,e);let t=H(this.hass,this._config.device_id);return this._bed=t,this._watched=this._collectWatched(t),ge(t)?this._notice("card.no_entities"):p`
+  `,y([P({attribute:!1})],C.prototype,"hass",2),y([q()],C.prototype,"_config",2),C=y([X("adjustable-bed-card-editor")],C);var x=class extends v{constructor(){super(...arguments);this._saveMode=!1;this._watched=[]}static async getConfigElement(){return document.createElement("adjustable-bed-card-editor")}static getStubConfig(e){return{type:"custom:adjustable-bed-card",device_id:e?Object.values(e.entities).find(i=>i.platform===pe)?.device_id:void 0}}setConfig(e){if(!e)throw new Error("Invalid configuration");this._config=e}getCardSize(){return 8}shouldUpdate(e){if(e.has("_config")||!e.has("hass")||!this.hass)return!0;let t=e.get("hass");if(!t||t.entities!==this.hass.entities||t.devices!==this.hass.devices)return!0;for(let i of this._watched)if(t.states[i]!==this.hass.states[i])return!0;return!1}render(){if(!this.hass||!this._config)return c;if(!this._config.device_id)return this._notice("card.no_device");let e=Be(this.hass,this._config.device_id);if(e.length)return this._renderPaired(this._config.device_id,e);let t=H(this.hass,this._config.device_id);return this._watched=this._collectWatched(t),ge(t)?this._notice("card.no_entities"):p`
       <ha-card>
         ${this._header(t)}
         ${this._renderSections(t)}
       </ha-card>
-    `}_renderSections(e){let t=this._config,i={graphic:()=>t.show_graphic!==!1?this._graphic(e):c,motors:()=>t.show_motors!==!1?this._motors(e):c,firmness:()=>t.show_firmness!==!1?this._firmness(e):c,presets:()=>t.show_presets!==!1?this._presets(e):c,memory:()=>t.show_memory!==!1?this._memory(e):c,lighting:()=>t.show_lighting!==!1?this._lighting(e):c,massage:()=>t.show_massage!==!1?this._massage(e):c,climate:()=>t.show_climate!==!1?this._climate(e):c,connection:()=>t.show_connection!==!1?this._connection(e):c};return this._orderedSections().map(r=>i[r]?.()??c)}_renderPaired(e,t){let i=this.hass,r=H(i,e),n=t.map(l=>({label:this._deviceLabel(l),bed:H(i,l)}));this._bed=r,this._watched=[r,...n.map(l=>l.bed)].flatMap(l=>this._collectWatched(l));let a=(l,m)=>ge(m)?c:p`
+    `}_renderSections(e){let t=this._config,i={graphic:()=>t.show_graphic!==!1?this._graphic(e):c,motors:()=>t.show_motors!==!1?this._motors(e):c,firmness:()=>t.show_firmness!==!1?this._firmness(e):c,presets:()=>t.show_presets!==!1?this._presets(e):c,memory:()=>t.show_memory!==!1?this._memory(e):c,lighting:()=>t.show_lighting!==!1?this._lighting(e):c,massage:()=>t.show_massage!==!1?this._massage(e):c,climate:()=>t.show_climate!==!1?this._climate(e):c,connection:()=>t.show_connection!==!1?this._connection(e):c};return this._orderedSections().map(r=>i[r]?.()??c)}_renderPaired(e,t){let i=this.hass,r=H(i,e),n=t.map(l=>({label:this._deviceLabel(l),bed:H(i,l)}));this._watched=[r,...n.map(l=>l.bed)].flatMap(l=>this._collectWatched(l));let a=(l,m)=>ge(m)?c:p`
             <div class="side">
               <div class="side-label">${l}</div>
               ${this._renderSections(m)}
@@ -222,7 +222,9 @@ var Ue=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var y=(o,s,e
     `}_motors(e){let t=e.motors.filter(n=>n.cover||n.up||n.down),i=e.motors.filter(n=>!n.cover&&!n.up&&!n.down&&n.position);if(t.length===0&&i.length===0&&!e.synchro&&!e.stop)return c;let r=t.length>0||i.length>0||!!e.synchro;return p`
       ${r?this._heading("section.position"):c}
       ${e.synchro?this._toggleRow(e.synchro):c}
-      ${t.length?p`<div class="rows">${t.map(n=>this._motorRow(n))}</div>`:c}
+      ${t.length?p`<div class="rows">
+              ${t.map(n=>this._motorRow(n,e.stop))}
+            </div>`:c}
       ${i.length?p`<div class="rows">
               ${i.map(n=>this._moreInfoRow(n.position))}
             </div>`:c}
@@ -233,26 +235,26 @@ var Ue=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var y=(o,s,e
     `}_firmness(e){return e.firmness.length===0?c:p`
       ${this._heading("section.firmness")}
       <div class="rows">${e.firmness.map(t=>this._moreInfoRow(t))}</div>
-    `}_motorRow(e){let t=this._readout(e),i=e.cover??e.up,r=e.cover??e.down,n=!!e.cover||!!this._bed?.stop;return p`
+    `}_motorRow(e,t){let i=this._readout(e),r=e.cover??e.up,n=e.cover??e.down,a=!!e.cover||!!t;return p`
       <div class="row">
         <div class="row-label">
           <span>${this._name(e.cover??e.up??e.down??e.angle??e.key)}</span>
-          ${t?p`<span class="readout">${t}</span>`:c}
+          ${i?p`<span class="readout">${i}</span>`:c}
         </div>
         <div class="control-group">
           <button
             class="cg-btn"
             aria-label=${u(this.hass,"action.up")}
             @click=${()=>this._motorAction(e,"up")}
-            ?disabled=${!i}
+            ?disabled=${!r}
           >
             <ha-icon icon="mdi:chevron-up"></ha-icon>
           </button>
           <button
             class="cg-btn"
             aria-label=${u(this.hass,"action.stop")}
-            @click=${()=>this._motorStop(e)}
-            ?disabled=${!n}
+            @click=${()=>this._motorStop(e,t)}
+            ?disabled=${!a}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
           </button>
@@ -260,7 +262,7 @@ var Ue=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var y=(o,s,e
             class="cg-btn"
             aria-label=${u(this.hass,"action.down")}
             @click=${()=>this._motorAction(e,"down")}
-            ?disabled=${!r}
+            ?disabled=${!n}
           >
             <ha-icon icon="mdi:chevron-down"></ha-icon>
           </button>
@@ -377,7 +379,7 @@ var Ue=Object.defineProperty;var De=Object.getOwnPropertyDescriptor;var y=(o,s,e
         class="icon"
         .hass=${this.hass}
         .stateObj=${i}
-      ></ha-state-icon>`:p`<ha-icon class="icon" icon=${t??"mdi:bed"}></ha-icon>`}_notice(e){return p`<ha-card><div class="notice">${u(this.hass,e)}</div></ha-card>`}_state(e){return this.hass?.states[e]}_title(){return this._config?.name?this._config.name:this._deviceName()??u(this.hass,"card.default_name")}_deviceName(){let e=this._config?.device_id?this.hass?.devices[this._config.device_id]:void 0;return e?.name_by_user||e?.name||void 0}_name(e){let t=this._state(e)?.attributes.friendly_name??this.hass?.entities[e]?.name??e,i=this._deviceName();return i&&t.startsWith(i+" ")?t.slice(i.length+1):t}_angle(e){let t=e.angle??e.position;if(!t)return;let i=Number.parseFloat(this._state(t)?.state??"");return Number.isFinite(i)?i:void 0}_readout(e){if(e.angle){let t=this._angle(e);return t===void 0?void 0:`${Math.round(t)}\xB0`}if(e.position){let t=this._angle(e);return t===void 0?void 0:`${Math.round(t)}%`}if(e.cover){let t=this._state(e.cover)?.attributes.current_position;return typeof t=="number"?`${Math.round(t)}%`:void 0}}_stateText(e){let t=this._state(e);if(!t)return"";let i=this.hass?.formatEntityState;return typeof i=="function"?i(t):t.state}_collectWatched(e){let t=new Set;for(let i of e.motors)[i.cover,i.up,i.down,i.angle,i.position].forEach(r=>r&&t.add(r));e.presets.forEach(i=>t.add(i));for(let i of e.memory)[i.goto,i.save].forEach(r=>r&&t.add(r));return[e.stop,e.synchro,e.connect,e.disconnect,e.connectivity,e.lights.light,e.lights.switch,e.lights.level,e.lights.toggle,e.lights.cycle,e.lights.timer,e.massage.timer].forEach(i=>i&&t.add(i)),e.firmness.forEach(i=>t.add(i)),e.massage.buttons.forEach(i=>t.add(i)),e.massage.numbers.forEach(i=>t.add(i)),e.climate.entities.forEach(i=>t.add(i)),e.climate.selects.forEach(i=>t.add(i)),[...t]}_motorAction(e,t){if(e.cover)this._cover(e.cover,t==="up"?"open_cover":"close_cover");else{let i=t==="up"?e.up:e.down;i&&this._press(i)}}_motorStop(e){e.cover?this._cover(e.cover,"stop_cover"):this._bed?.stop&&this._press(this._bed.stop)}_toggleSaveMode(){this._saveMode=!this._saveMode}_saveMemory(e){e.save&&this._press(e.save),this._saveMode=!1}_call(e,t,i){this.hass?.callService(e,t,{entity_id:i})?.catch(()=>{})}_press(e){this._call("button","press",e)}_cover(e,t){this._call("cover",t,e)}_toggle(e){this._call("homeassistant","toggle",e)}_moreInfo(e){this.dispatchEvent(new CustomEvent("hass-more-info",{detail:{entityId:e},bubbles:!0,composed:!0}))}};x.styles=N`
+      ></ha-state-icon>`:p`<ha-icon class="icon" icon=${t??"mdi:bed"}></ha-icon>`}_notice(e){return p`<ha-card><div class="notice">${u(this.hass,e)}</div></ha-card>`}_state(e){return this.hass?.states[e]}_title(){return this._config?.name?this._config.name:this._deviceName()??u(this.hass,"card.default_name")}_deviceName(){let e=this._config?.device_id?this.hass?.devices[this._config.device_id]:void 0;return e?.name_by_user||e?.name||void 0}_name(e){let t=this._state(e)?.attributes.friendly_name??this.hass?.entities[e]?.name??e,i=this._deviceName();return i&&t.startsWith(i+" ")?t.slice(i.length+1):t}_angle(e){let t=e.angle??e.position;if(!t)return;let i=Number.parseFloat(this._state(t)?.state??"");return Number.isFinite(i)?i:void 0}_readout(e){if(e.angle){let t=this._angle(e);return t===void 0?void 0:`${Math.round(t)}\xB0`}if(e.position){let t=this._angle(e);return t===void 0?void 0:`${Math.round(t)}%`}if(e.cover){let t=this._state(e.cover)?.attributes.current_position;return typeof t=="number"?`${Math.round(t)}%`:void 0}}_stateText(e){let t=this._state(e);if(!t)return"";let i=this.hass?.formatEntityState;return typeof i=="function"?i(t):t.state}_collectWatched(e){let t=new Set;for(let i of e.motors)[i.cover,i.up,i.down,i.angle,i.position].forEach(r=>r&&t.add(r));e.presets.forEach(i=>t.add(i));for(let i of e.memory)[i.goto,i.save].forEach(r=>r&&t.add(r));return[e.stop,e.synchro,e.connect,e.disconnect,e.connectivity,e.lights.light,e.lights.switch,e.lights.level,e.lights.toggle,e.lights.cycle,e.lights.timer,e.massage.timer].forEach(i=>i&&t.add(i)),e.firmness.forEach(i=>t.add(i)),e.massage.buttons.forEach(i=>t.add(i)),e.massage.numbers.forEach(i=>t.add(i)),e.climate.entities.forEach(i=>t.add(i)),e.climate.selects.forEach(i=>t.add(i)),[...t]}_motorAction(e,t){if(e.cover)this._cover(e.cover,t==="up"?"open_cover":"close_cover");else{let i=t==="up"?e.up:e.down;i&&this._press(i)}}_motorStop(e,t){e.cover?this._cover(e.cover,"stop_cover"):t&&this._press(t)}_toggleSaveMode(){this._saveMode=!this._saveMode}_saveMemory(e){e.save&&this._press(e.save),this._saveMode=!1}_call(e,t,i){this.hass?.callService(e,t,{entity_id:i})?.catch(()=>{})}_press(e){this._call("button","press",e)}_cover(e,t){this._call("cover",t,e)}_toggle(e){this._call("homeassistant","toggle",e)}_moreInfo(e){this.dispatchEvent(new CustomEvent("hass-more-info",{detail:{entityId:e},bubbles:!0,composed:!0}))}};x.styles=N`
     :host {
       --ab-gap: 10px;
     }

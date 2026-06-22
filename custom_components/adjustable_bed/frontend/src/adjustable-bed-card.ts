@@ -40,7 +40,6 @@ export class AdjustableBedCard extends LitElement {
   // position into that slot instead of recalling it.
   @state() private _saveMode = false;
 
-  private _bed?: BedEntities;
   private _watched: string[] = [];
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -69,6 +68,10 @@ export class AdjustableBedCard extends LitElement {
     if (!changed.has("hass") || !this.hass) return true;
     const old = changed.get("hass") as HomeAssistant | undefined;
     if (!old || old.entities !== this.hass.entities) return true;
+    // Paired detection (pairedChildDeviceIds) reads the device registry, so a
+    // registry change — sides linked/relinked or a device renamed — must
+    // re-render even when no entity or watched state changed.
+    if (old.devices !== this.hass.devices) return true;
     for (const id of this._watched) {
       if (old.states[id] !== this.hass.states[id]) return true;
     }
@@ -86,7 +89,6 @@ export class AdjustableBedCard extends LitElement {
     if (childIds.length) return this._renderPaired(this._config.device_id, childIds);
 
     const bed = bedEntitiesForDevice(this.hass, this._config.device_id);
-    this._bed = bed;
     this._watched = this._collectWatched(bed);
 
     if (bedIsEmpty(bed)) return this._notice("card.no_entities");
@@ -122,8 +124,8 @@ export class AdjustableBedCard extends LitElement {
 
   // Render a paired parent: the combined "both sides" controls (on the parent
   // device) followed by each side's own section, labelled by the child device
-  // name. The card's _bed/_watched track the parent plus every side so state
-  // changes on any side re-render the card.
+  // name. _watched tracks the parent plus every side so a state change on any
+  // side re-renders the card.
   private _renderPaired(parentId: string, childIds: string[]): TemplateResult {
     const hass = this.hass!;
     const parentBed = bedEntitiesForDevice(hass, parentId);
@@ -131,7 +133,6 @@ export class AdjustableBedCard extends LitElement {
       label: this._deviceLabel(id),
       bed: bedEntitiesForDevice(hass, id),
     }));
-    this._bed = parentBed;
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
       this._collectWatched(b),
     );
@@ -253,7 +254,9 @@ export class AdjustableBedCard extends LitElement {
       ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
       ${
         motors.length
-          ? html`<div class="rows">${motors.map((m) => this._motorRow(m))}</div>`
+          ? html`<div class="rows">
+              ${motors.map((m) => this._motorRow(m, bed.stop))}
+            </div>`
           : nothing
       }
       ${
@@ -282,11 +285,15 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
-  private _motorRow(m: MotorEntity): TemplateResult {
+  // `stopId` is the STOP entity for the bed this row belongs to (a side's own
+  // stop for a paired side, the parent's stop_both for the combined block) —
+  // passed in rather than read from this._bed, which during a paired render
+  // points at the parent for every side.
+  private _motorRow(m: MotorEntity, stopId?: string): TemplateResult {
     const readout = this._readout(m);
     const upId = m.cover ?? m.up;
     const downId = m.cover ?? m.down;
-    const canStop = !!m.cover || !!this._bed?.stop;
+    const canStop = !!m.cover || !!stopId;
     return html`
       <div class="row">
         <div class="row-label">
@@ -305,7 +312,7 @@ export class AdjustableBedCard extends LitElement {
           <button
             class="cg-btn"
             aria-label=${localize(this.hass, "action.stop")}
-            @click=${() => this._motorStop(m)}
+            @click=${() => this._motorStop(m, stopId)}
             ?disabled=${!canStop}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
@@ -669,9 +676,9 @@ export class AdjustableBedCard extends LitElement {
     }
   }
 
-  private _motorStop(m: MotorEntity): void {
+  private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) this._cover(m.cover, "stop_cover");
-    else if (this._bed?.stop) this._press(this._bed.stop);
+    else if (stopId) this._press(stopId);
   }
 
   private _toggleSaveMode(): void {
