@@ -99,7 +99,11 @@ def _light_entities_for(
     controller = coordinator.capability_controller
 
     if controller is None:
-        _async_remove_stale_light_entity(hass, coordinator)
+        # No controller to read capabilities from (e.g. a paired side offline at
+        # setup whose type can't be offline-minted). Don't run the stale cleanup
+        # here — we can't tell whether the bed has a light, and removing the
+        # existing registry entry would drop a real light that won't be recreated
+        # until the side reconnects and the platform re-runs.
         return []
 
     if getattr(controller, "supports_light_color_control", False):

@@ -21,6 +21,7 @@ from custom_components.adjustable_bed import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
+    BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_MOTOR_COUNT,
@@ -358,14 +359,20 @@ class TestPairedBuilders:
 class TestPairBedsConversion:
     """The 'combine two beds' config-flow step."""
 
-    def _single(self, hass: HomeAssistant, address: str, name: str) -> MockConfigEntry:
+    def _single(
+        self,
+        hass: HomeAssistant,
+        address: str,
+        name: str,
+        bed_type: str = BED_TYPE_LINAK,
+    ) -> MockConfigEntry:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=name,
             data={
                 CONF_ADDRESS: address,
                 CONF_NAME: name,
-                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_BED_TYPE: bed_type,
                 CONF_MOTOR_COUNT: 2,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
@@ -417,19 +424,20 @@ class TestPairBedsConversion:
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
 
-    async def test_pairing_allowed_with_per_side_platform_entities(
+    async def test_pairing_blocked_for_unsafe_offline_platform_entities(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A bed exposing climate/light/select is no longer blocked from pairing —
-        those platforms are forwarded per-side (Phase 2.3), so they're recreated
-        on each child rather than dropped."""
+        """A NON-offline-capability-safe bed exposing climate/light/select stays
+        blocked: those platforms are forwarded per-side now (Phase 2.3), but such
+        a bed can't rebuild them when a side is offline, so a half-available pair
+        would lose them. (Richmat is not in OFFLINE_CAPABILITY_SAFE_BED_TYPES.)"""
         from homeassistant.helpers import entity_registry as er
 
-        left = self._single(hass, LEFT_ADDR, "Left")
-        right = self._single(hass, RIGHT_ADDR, "Right")
+        left = self._single(hass, LEFT_ADDR, "Left", bed_type=BED_TYPE_RICHMAT)
+        right = self._single(hass, RIGHT_ADDR, "Right", bed_type=BED_TYPE_RICHMAT)
         er.async_get(hass).async_get_or_create(
             "select", DOMAIN, f"{LEFT_ADDR}_firmness", config_entry=left
         )
@@ -439,9 +447,8 @@ class TestPairBedsConversion:
             result["flow_id"],
             {"left_entry": left.entry_id, "right_entry": right.entry_id},
         )
-        # The pair is created (not the old pairing_unsupported_entities block).
-        assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result.get("errors") is None or "base" not in result["errors"]
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]["base"] == "pairing_unsupported_entities"
 
     async def test_pairing_blocked_for_same_address(
         self,
