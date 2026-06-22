@@ -444,6 +444,16 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
 
+    async def _pairing_repairs_for_unconnected() -> None:
+        # Surface a per-side pairing repair for any side that needs OS-level BLE
+        # pairing and didn't connect — like a single bed does. Run this BEFORE any
+        # abort (timeout / no-side-connected) so a paired bonding bed (OKIN/Leggett)
+        # whose sides all fail to pair still prompts the user instead of silently
+        # retrying forever.
+        for child in coordinator.children.values():
+            if not child.is_connected:
+                await _maybe_create_pairing_issue_for(hass, child)
+
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
@@ -451,14 +461,18 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         # The coordinator isn't in hass.data yet, so the unload path won't run —
         # shut it down here or a side that already connected keeps its BLE link
         # alive across SETUP_RETRY.
+        await _pairing_repairs_for_unconnected()
         await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
         ) from None
 
+    # Half-available is fine, but surface pairing repairs for any unconnected side
+    # first — including the all-offline case, which aborts below.
+    await _pairing_repairs_for_unconnected()
     if not connected:
-        # Half-available is fine, but if NO side connected there is nothing to
-        # control yet — retry like a single bed.
+        # If NO side connected there is nothing to control yet — retry like a
+        # single bed.
         await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"No side of paired bed {entry.title} could be connected"
@@ -471,8 +485,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     # unique_ids); the live controller takes over on reconnect with no reload.
     # Connected sides already have a live controller and are skipped. Bed types
     # whose controller needs a live connection (auto-detected variants) stay as
-    # before until they connect. (Paired light/climate/select branches are not
-    # yet implemented — those platforms are out of Phase 2.1 scope.)
+    # before until they connect.
     for child in coordinator.children.values():
         await child.async_prime_offline_controller()
     await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
@@ -486,13 +499,6 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 child.async_read_initial_positions(),
                 name=f"adjustable_bed_paired_initial_read_{child.address}",
             )
-
-    # A side that needs OS-level BLE pairing but didn't connect should surface a
-    # repair issue per side, exactly like a single bed does — otherwise a paired
-    # bonding bed (OKIN/Leggett) silently never prompts the user to pair.
-    for child in coordinator.children.values():
-        if not child.is_connected:
-            await _maybe_create_pairing_issue_for(hass, child)
 
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
