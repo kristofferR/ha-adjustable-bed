@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_SIDE,
     DOMAIN,
+    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -769,3 +770,31 @@ class TestPairedPairingIssue:
         # Linak doesn't require OS-level pairing -> no repair issue, no crash.
         await _maybe_create_pairing_issue_for(hass, left)
         assert len(ir.async_get(hass).issues) == before
+
+
+class TestOfflineSafeBedTypes:
+    """Every member of OFFLINE_CAPABILITY_SAFE_BED_TYPES must mint a client-free
+    capability controller — guards against a future bed introducing a live-client
+    dependency / post-connect capability mutation while still in the safe set."""
+
+    @pytest.mark.parametrize("bed_type", sorted(OFFLINE_CAPABILITY_SAFE_BED_TYPES))
+    async def test_offline_safe_bed_mints_capability_controller(
+        self, hass: HomeAssistant, bed_type: str
+    ):
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = bed_type
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = bed_type
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=bed_type,
+            data=data,
+            unique_id=f"pair_{bed_type}",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        left = children[SIDE_LEFT]
+
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is not None, bed_type

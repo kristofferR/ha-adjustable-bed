@@ -161,23 +161,6 @@ BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
 BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset({BED_TYPE_LINAK})
 
-# Bed types whose entity-gating capabilities are FULLY determined by stored config
-# (bed_type + options) with NO live BLE connection — the only beds safe to mint a
-# client-free "capability" controller for an OFFLINE paired side (Phase 2.1).
-# DELIBERATELY CONSERVATIVE (deny-by-default): a type must be EXCLUDED if it
-#   (a) auto-detects its variant/profile from live GATT services or BLE
-#       advertisement (Keeson "auto", Richmat non-Nordic, Leggett & Platt "auto",
-#       CB24, Kaidi, CoolBase) — offline it silently resolves the WRONG profile;
-#   (b) can be connect-time corrected to a DIFFERENT bed_type (CB35<->BOX25,
-#       Malouf new/legacy, OKIN shared-UUID, Nordic-UART) — the stored type is not
-#       final; or
-#   (c) mutates its capabilities from a post-connect config query / feature
-#       discovery (Octo, Jensen, Sleep Number).
-# Linak is verified safe on all three. Expanding this set requires verifying each
-# candidate against (a)-(c) (see the offline-snapshot capability audit).
-OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset({BED_TYPE_LINAK})
-
-
 def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
     """Return True if the bed type supports passive position reconciliation."""
     return bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION
@@ -308,6 +291,55 @@ SUPPORTED_BED_TYPES: Final = [
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
 ]
+
+
+# Bed types whose entity-gating capabilities are FULLY determined by stored config
+# (bed_type + options) with NO live BLE connection — the only beds safe to mint a
+# client-free "capability" controller for an OFFLINE paired side (Phase 2.1).
+# DELIBERATELY CONSERVATIVE (deny-by-default): a type must be EXCLUDED if it
+#   (a) auto-detects its variant/profile from live GATT services or BLE
+#       advertisement (Keeson "auto", Richmat non-Nordic, Leggett & Platt "auto",
+#       CB24, Kaidi, CoolBase) — offline it silently resolves the WRONG profile;
+#   (b) can be connect-time corrected to a DIFFERENT bed_type (CB35<->BOX25,
+#       Malouf new/legacy, the OKIN shared-UUID set, Nordic-UART) — the stored
+#       type is not final; or
+#   (c) mutates its capabilities from a post-connect config query / feature
+#       discovery (Octo, Jensen, Sleep Number, Limoss, Vibradorm).
+# Every member below was verified against (a)-(c) in a per-bed-type capability
+# audit. A regression test asserts create_controller(client=None) succeeds for
+# every member, so adding a post-connect mutation later fails loudly.
+OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
+    {
+        BED_TYPE_LINAK,
+        BED_TYPE_OKIN_HANDLE,
+        BED_TYPE_DEWERTOKIN,
+        BED_TYPE_OKIN_ORE,
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_LEGGETT_WILINKE,
+        BED_TYPE_SOLACE,
+        BED_TYPE_MOTOSLEEP,
+        BED_TYPE_REVERIE,
+        BED_TYPE_REVERIE_NIGHTSTAND,
+        BED_TYPE_JIECANG,
+        BED_TYPE_COMFORT_MOTION,
+        BED_TYPE_ERGOMOTION,
+        BED_TYPE_SERTA,
+        BED_TYPE_OKIN_FFE,
+        BED_TYPE_BEDTECH,
+        BED_TYPE_SLEEP_NUMBER_MCR,
+        BED_TYPE_SLEEPYS_BOX15,
+        BED_TYPE_SLEEPYS_BOX24,
+        BED_TYPE_SVANE,
+        BED_TYPE_RONDURE,
+        BED_TYPE_REMACRO,
+        BED_TYPE_SCOTT_LIVING,
+        BED_TYPE_SBI,
+        BED_TYPE_SUTA,
+        BED_TYPE_TIMOTION_AHF,
+        BED_TYPE_LOGICDATA,
+    }
+)
+
 
 # Mapping from legacy bed types to their protocol-based equivalents
 # Used by controller_factory to resolve the correct controller
