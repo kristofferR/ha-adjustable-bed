@@ -116,6 +116,20 @@ class Box25Commands:
 _WAKE_DELAY = 0.15
 _INIT_DELAY = 0.08
 
+# Preset/memory frames must be *resent*, not fired once. The decompiled OKIN app
+# (com.okin.bedding.sleepy) drives presets via ControlManager._writeContinueData,
+# which writes the same frame on a Timer.periodic at a 100 ms cadence — exactly
+# like a motor move — for the on-screen (button) source. This firmware (252201 /
+# 25_22_01, Ashley/Nectar M1X1232) latches the preset target on the first frame
+# but only begins its autonomous drive once a follow-up motor frame arrives
+# >=100 ms later. That is why a single fire-and-forget write never moved the bed,
+# while a human-delayed STOP press or a BLE disconnect "executed" it, and why the
+# old 50 ms preset->STOP was too fast to latch (#372). Resend the frame a handful
+# of times at the app's cadence to reliably latch + trigger; no trailing STOP
+# (the app never sends one after a preset and the bed completes the drive itself).
+_PRESET_REPEAT_COUNT = 15
+_PRESET_REPEAT_DELAY_MS = 100
+
 
 class SleepysBox25Controller(BedController):
     """Controller for Sleepy's Elite BOX25 Star beds.
@@ -124,8 +138,10 @@ class SleepysBox25Controller(BedController):
     motor commands require 0xD0 init, massage/light commands require 0xB0 init.
     Both tracks need a wake command (5A 0B 00 A5) sent first.
 
-    Presets are fire-and-forget (the decompiled OKIN app marks them
-    needConfirm=0); a trailing MOTOR_STOP cancels the preset on some firmware.
+    Presets/memory recalls are resent at a 100 ms cadence (matching the OKIN
+    app's periodic-resend timer) rather than fired once: the bed latches the
+    target on the first frame but needs a follow-up frame to start its
+    autonomous drive. No trailing STOP is sent (it would cancel the move).
     """
 
     # Position feedback: head/feet/lumbar at 0-100 percentage
@@ -557,15 +573,21 @@ class SleepysBox25Controller(BedController):
     # ─── Presets ─────────────────────────────────────────────────────────
 
     async def _send_preset(self, preset_cmd: bytes) -> None:
-        """Send a BOX25 preset/memory command (fire-and-forget).
+        """Send a BOX25 preset/memory recall by resending the frame at 100 ms.
 
-        BOX25 presets do not need a confirm: the decompiled OKIN app marks these
-        commands needConfirm=0. Sending a trailing MOTOR_STOP actually *cancels*
-        the just-issued preset on some firmware (e.g. 25_22_01, Ashley/Nectar
-        M1X1232), so the bed never moves (#372). The bed drives itself to the
-        target position and stops on its own.
+        The OKIN app drives presets with a periodic resend (one frame every
+        100 ms), not a single write. On firmware 252201 (Ashley/Nectar M1X1232)
+        a lone frame latches the target but never starts moving; a follow-up
+        frame >=100 ms later triggers the bed's autonomous drive to the preset
+        (#372). Resend the frame ``_PRESET_REPEAT_COUNT`` times at the app's
+        cadence; no trailing STOP — the bed completes the drive on its own and a
+        STOP would cancel it.
         """
-        await self._write_motor_command(preset_cmd)
+        await self.write_command(
+            preset_cmd,
+            repeat_count=_PRESET_REPEAT_COUNT,
+            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+        )
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.PRESET_FLAT)
@@ -590,8 +612,13 @@ class SleepysBox25Controller(BedController):
         if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_STORE):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        # Fire-and-forget (needConfirm=0); see _send_preset for why no STOP follows.
-        await self._write_motor_command(Box25Commands.MEMORY_STORE[memory_num - 1])
+        # Resend the store frame at the app's cadence so the bed registers the
+        # save (see _send_preset); re-saving the same position is idempotent.
+        await self.write_command(
+            Box25Commands.MEMORY_STORE[memory_num - 1],
+            repeat_count=_PRESET_REPEAT_COUNT,
+            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+        )
 
     # ─── Lights ──────────────────────────────────────────────────────────
 
