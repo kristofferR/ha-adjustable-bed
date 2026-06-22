@@ -16,7 +16,10 @@ from custom_components.adjustable_bed.beds.octo import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_LIGHT,
     OCTO_FEATURE_LIGHT_RGBWI,
+    OCTO_MEMPOS_STREAM_REPEATS,
     OCTO_MOTOR_HEAD,
+    OCTO_SYSTEM_PIN_LOCK,
+    OCTO_SYSTEM_PIN_STATE,
     OctoController,
     OctoStar2Controller,
 )
@@ -827,3 +830,66 @@ class TestCapabilitySnapshot:
         # An all-unknown controller yields no snapshot (don't persist over a real
         # one with all-None).
         assert OctoController(self._coord()).capability_snapshot() is None
+
+
+class TestMemPosStreaming:
+    """Phase 2.5 C4: memory-recall STREAMS MEMPOS (the bed only travels while the
+    stream arrives — verified from the app) then STOPs, instead of firing once."""
+
+    @staticmethod
+    def _ctrl():
+        from types import SimpleNamespace
+
+        ctrl = OctoController(SimpleNamespace(motor_count=2))
+        ctrl._memory_count = 4  # supports memory presets
+        return ctrl
+
+    async def test_preset_memory_streams_then_stops(self):
+        ctrl = self._ctrl()
+        calls: list = []
+        ctrl._write_octo_command = AsyncMock(side_effect=lambda **kw: calls.append(kw))
+        ctrl._stop_motors = AsyncMock()
+
+        await ctrl.preset_memory(2)
+
+        assert len(calls) == 1
+        assert calls[0]["command"] == [0x02, 0x72]  # NORMAL MOTOR_MEMPOS
+        assert calls[0]["data"] == [1]  # slot 2 -> 0-based 1
+        assert calls[0]["repeat_count"] == OCTO_MEMPOS_STREAM_REPEATS  # streamed
+        assert calls[0]["repeat_count"] > 1
+        ctrl._stop_motors.assert_awaited_once()  # STOP at the end, like the app
+
+    async def test_preset_memory_stops_even_if_stream_raises(self):
+        ctrl = self._ctrl()
+        ctrl._write_octo_command = AsyncMock(side_effect=RuntimeError("boom"))
+        ctrl._stop_motors = AsyncMock()
+        with pytest.raises(RuntimeError):
+            await ctrl.preset_memory(1)
+        ctrl._stop_motors.assert_awaited_once()
+
+
+class TestPinReauth:
+    """Phase 2.5 C4: react to the bed's PIN_LOCK challenge by re-sending the PIN
+    immediately (verified from the app), and track lock state from PIN_STATE."""
+
+    @staticmethod
+    def _ctrl():
+        from types import SimpleNamespace
+
+        return OctoController(SimpleNamespace(motor_count=2))
+
+    async def test_pin_lock_schedules_resend(self):
+        ctrl = self._ctrl()
+        ctrl.send_pin = AsyncMock()
+        ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
+        assert ctrl._pin_locked is True
+        assert ctrl._pin_resend_task is not None
+        await ctrl._pin_resend_task
+        ctrl.send_pin.assert_awaited_once()
+
+    async def test_pin_state_tracks_lock(self):
+        ctrl = self._ctrl()
+        ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_STATE, [1])  # unlocked
+        assert ctrl._pin_locked is False
+        ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_STATE, [0])  # locked
+        assert ctrl._pin_locked is True
