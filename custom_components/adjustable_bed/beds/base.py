@@ -160,6 +160,18 @@ class BedController(ABC):
         return False
 
     @property
+    def manual_disconnect_strands_connection(self) -> bool:
+        """Return True if a manual disconnect would leave the bed unrecoverable.
+
+        Distinct from ``requires_persistent_connection``: persistent beds that can
+        still reconnect on demand (e.g. Sleep Number MCR) keep the Disconnect
+        control as a way to release the single BLE connection. Beds that can only
+        reconnect in pairing mode (LP Comfort Connect) override this to True so the
+        Disconnect button is hidden — pressing it would strand the integration.
+        """
+        return False
+
+    @property
     def reverses_position_seek_on_overshoot(self) -> bool:
         """Return True if position seeking should reverse after overshooting.
 

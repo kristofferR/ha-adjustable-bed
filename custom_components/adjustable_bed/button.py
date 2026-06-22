@@ -507,11 +507,11 @@ def _should_add_button(
     if description.requires_massage and not has_massage:
         return False
 
-    # Persistent-connection beds (e.g. LP Comfort Connect) only accept a BLE
-    # connection while in pairing mode and cannot reconnect on demand, so a manual
-    # Disconnect would strand the integration until the user re-pairs. Hide it.
+    # Hide the manual Disconnect for beds that can't recover from it — e.g. LP
+    # Comfort Connect only accepts a connection while in pairing mode. Beds that
+    # stay connected but CAN reconnect on demand (e.g. Sleep Number MCR) keep it.
     if description.key == "disconnect" and getattr(
-        controller, "requires_persistent_connection", False
+        controller, "manual_disconnect_strands_connection", False
     ):
         return False
 

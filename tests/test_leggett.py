@@ -299,17 +299,45 @@ class TestLeggettGen2Capabilities:
         assert c.supports_light_toggle_control and c.supports_massage_off_control
         keys = {spec.key for spec in c.motor_control_specs}
         assert {"back", "legs"} <= keys
+        # Gen2 never exposes the base's duplicate head/feet specs.
+        assert not ({"head", "feet"} & keys)
+
+    async def test_no_massage_profile_hides_zone_buttons(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        # Product 10011: no massage -> all massage helpers (incl. zone) report False.
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
+        assert not c.supports_head_massage_intensity_step_control
+        assert not c.supports_foot_massage_intensity_step_control
+        assert not c.supports_massage_off_control
+
+    async def test_manual_disconnect_strands_connection(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        # Gen2 can only reconnect in pairing mode -> manual disconnect strands it.
+        assert self._controller(
+            hass, mock_leggett_gen2_config_entry, 5
+        ).manual_disconnect_strands_connection is True
 
     async def test_stale_motor_keys_for_absent_actuators(
         self, hass: HomeAssistant, mock_leggett_gen2_config_entry
     ):
-        # Product 10011: head only -> legs/pillow/lumbar covers should be removable.
+        # Product 10011: head only -> legs/pillow/lumbar removable, plus the
+        # duplicate head/feet keys Gen2 never exposes.
         c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
-        assert c.stale_motor_entity_keys == frozenset({"legs", "pillow", "lumbar"})
-        # Full profile (5): nothing stale.
+        assert c.stale_motor_entity_keys == frozenset(
+            {"legs", "pillow", "lumbar", "head", "feet"}
+        )
+        # Full profile (5): only the duplicate head/feet keys are stale.
         assert self._controller(
             hass, mock_leggett_gen2_config_entry, 5
-        ).stale_motor_entity_keys == frozenset()
+        ).stale_motor_entity_keys == frozenset({"head", "feet"})
+        # No-actuator profile (10014): everything is stale.
+        assert self._controller(
+            hass, mock_leggett_gen2_config_entry, 10014
+        ).stale_motor_entity_keys == frozenset(
+            {"back", "legs", "pillow", "lumbar", "head", "feet"}
+        )
 
     async def test_set_light_color_updates_cache(
         self,

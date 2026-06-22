@@ -204,6 +204,11 @@ class LeggettGen2Controller(BedController):
         return True
 
     @property
+    def manual_disconnect_strands_connection(self) -> bool:
+        """A manual disconnect can't be recovered without re-entering pairing mode."""
+        return True
+
+    @property
     def requires_notification_channel(self) -> bool:
         """Subscribe to STATE notifications even with angle sensing disabled, so we
         receive live under-bed light on/off + colour state from the bed."""
@@ -291,6 +296,14 @@ class LeggettGen2Controller(BedController):
         return self._caps.light != "none"
 
     @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return self._caps.has_massage
+
+    @property
     def supports_massage_off_control(self) -> bool:
         return self._caps.has_massage
 
@@ -308,35 +321,42 @@ class LeggettGen2Controller(BedController):
     def supports_massage_mode_step_control(self) -> bool:
         return self._caps.has_massage
 
-    @property
-    def motor_control_specs(self) -> tuple:
-        """Expose only the primary actuators the model actually has (per profile)."""
-        present = {
+    # Gen2 models head/foot as the primary "back"/"legs" controls; the base's
+    # extra "head"/"feet" specs (added at higher motor_count) would be duplicates.
+    _PRESENT_SPEC_KEYS = ("back", "legs", "pillow", "lumbar")
+
+    def _present_specs(self) -> dict[str, bool]:
+        return {
             "back": self._caps.has_head,
             "legs": self._caps.has_foot,
             "pillow": self._caps.has_pillow,
             "lumbar": self._caps.has_lumbar,
         }
+
+    @property
+    def motor_control_specs(self) -> tuple:
+        """Expose only the primary actuators the model has (per profile).
+
+        Only the four profile keys are ever exposed; any other base spec (e.g. the
+        duplicate ``head``/``feet`` added for high motor counts) is dropped.
+        """
+        present = self._present_specs()
         return tuple(
-            spec
-            for spec in super().motor_control_specs
-            if present.get(spec.key, True)
+            spec for spec in super().motor_control_specs if present.get(spec.key, False)
         )
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove covers for actuators the profile says are absent.
+        """Remove covers for actuators not in this profile.
 
-        Lets cover.py clean up covers left over from the old always-full feature
-        set when an existing entry resolves to a profile that hides actuators.
+        Covers absent profile actuators plus the duplicate ``head``/``feet`` keys,
+        so cover.py cleans up covers left over from the old always-full feature set
+        (including no-actuator profiles).
         """
-        present = {
-            "back": self._caps.has_head,
-            "legs": self._caps.has_foot,
-            "pillow": self._caps.has_pillow,
-            "lumbar": self._caps.has_lumbar,
-        }
-        return frozenset(key for key, is_present in present.items() if not is_present)
+        present = self._present_specs()
+        stale = {key for key, is_present in present.items() if not is_present}
+        stale.update({"head", "feet"})
+        return frozenset(stale)
 
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
