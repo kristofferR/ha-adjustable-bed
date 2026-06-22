@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -71,8 +72,10 @@ from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 from .pairing import (
+    KEY_ABSORBED_ENTRY_ID,
     get_child,
     is_paired,
+    iter_children,
     pair_member_addresses,
     with_updated_child,
 )
@@ -427,6 +430,65 @@ def _async_ensure_paired_device_registry(
         )
 
 
+async def _async_rehome_absorbed_singles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Re-home absorbed single entries' registry rows onto the pair, then remove them.
+
+    Conversion is ADDITIVE. Instead of deleting each original single entry's
+    registry rows and letting the paired platforms recreate them (which would
+    reset per-side history and customizations), this moves the existing rows onto
+    the pair entry IN PLACE:
+
+    * Each child device already shares the single's ``(DOMAIN, MAC)`` identifier,
+      so ``_async_ensure_paired_device_registry`` (run just before this) merged the
+      pair's config-entry id into the existing device and nested it under the
+      synthetic parent. Removing the original then only drops the original's
+      config-entry id, leaving the SAME device object (id, name_by_user, area)
+      alive.
+    * Each entity row is re-pointed ``config_entry_id`` -> pair BEFORE the original
+      is removed, so clearing the original config entry no longer deletes it (HA
+      deletes entity rows indexed by the removed config entry). The paired platform
+      later adopts the row by unique_id (same ``entity_id``, history, name, area)
+      instead of creating a new one.
+
+    Provenance is each child descriptor's ``absorbed_entry_id`` (recorded by the
+    pairing wizard). Idempotent: on a reload the originals are already gone, so each
+    lookup misses and this is a no-op; pairs created by the old remove-then-create
+    path carry no ``absorbed_entry_id`` and are skipped.
+    """
+    ent_reg = er.async_get(hass)
+    for child in iter_children(entry.data):
+        absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
+        if not absorbed_id:
+            continue
+        original = hass.config_entries.async_get_entry(absorbed_id)
+        if original is None or is_paired(original.data):
+            # Already absorbed (e.g. a reload) or no longer a plain single —
+            # nothing to move.
+            continue
+        # Re-point the original's entity rows onto the pair first. After this they
+        # are indexed under the pair, not the original, so removing the original
+        # config entry below clears none of them.
+        rehomed = 0
+        for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
+            ent_reg.async_update_entity(
+                reg_entry.entity_id, config_entry_id=entry.entry_id
+            )
+            rehomed += 1
+        # Now safe to drop the original entry: its entities are re-homed and its
+        # device still carries the pair's config entry, so HA deletes neither.
+        await hass.config_entries.async_remove(absorbed_id)
+        _LOGGER.info(
+            "Re-homed %d entit%s from absorbed bed %s (%s) onto paired entry %s",
+            rehomed,
+            "y" if rehomed == 1 else "ies",
+            original.title,
+            absorbed_id,
+            entry.entry_id,
+        )
+
+
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
     _LOGGER.info(
@@ -443,6 +505,14 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
+    # Absorb the original single entries BEFORE connecting: re-home their registry
+    # rows onto the pair, then remove them. Separate-address children connect to the
+    # SAME MACs as the originals, and a bed allows only ONE BLE link, so the
+    # originals must release their links first (async_remove awaits the disconnect)
+    # or the pair's children can't connect. Re-homing the rows first means that
+    # removal deletes none of them; the pair entry already exists, so the user is
+    # never left without a bed entry. No-op on reload (originals already gone).
+    await _async_rehome_absorbed_singles(hass, entry)
 
     async def _pairing_repairs_for_unconnected() -> None:
         # Surface a per-side pairing repair for any side that needs OS-level BLE

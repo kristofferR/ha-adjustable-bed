@@ -1153,8 +1153,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Combine two existing single-bed entries into one paired (Dual Bed) device.
 
-        The two originals are removed and one paired entry is created. Per-side
-        entities keep their {address}_{key} unique_ids, so history follows.
+        Conversion is ADDITIVE: one paired entry is created and the two originals
+        are absorbed. Per-side entities keep their {address}_{key} unique_ids and
+        their device keeps its (DOMAIN, MAC) identifier, so the pair's setup
+        re-homes each original's registry rows in place (history/customizations
+        preserved) and only then removes the original entry. The originals stay
+        loaded and controllable until that handoff, so a failed pair setup never
+        leaves the user without a bed.
         """
         entries = self._pairable_single_entries()
         if len(entries) < 2:
@@ -1198,33 +1203,31 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
                 # Merge each side's options (e.g. customized angle limits, which the
                 # coordinator reads before data) into its descriptor so they aren't
-                # lost when the originals are removed.
+                # lost when the original is absorbed. Each side's (entry_id,
+                # unique_id) is recorded as provenance so the pair's setup can find
+                # and re-home the original entry's registry rows in place.
                 pair_data = build_pair_entry_data(
                     {**left.data, **dict(left.options)},
                     {**right.data, **dict(right.options)},
                     name=name,
                     left_octo_snapshot=self._octo_capability_snapshot(left),
                     right_octo_snapshot=self._octo_capability_snapshot(right),
+                    left_origin=(left.entry_id, left.unique_id),
+                    right_origin=(right.entry_id, right.unique_id),
                 )
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
-                # Remove the two originals BEFORE creating the pair. The paired
-                # platforms reuse the same {address}_{key} entity unique_ids, so
-                # the originals' entities must be gone first or the paired ones
-                # would be rejected as duplicates (leaving the pair without
-                # per-side controls). pair_data is already built and the unique_id
-                # checked, and there is no await between the removals and the
-                # return, so this can't leave the user with no bed. (Full
-                # history-preserving device re-homing is a follow-up.)
-                await self.hass.config_entries.async_remove(left.entry_id)
-                await self.hass.config_entries.async_remove(right.entry_id)
-                # async_remove always removes the entry — an unload failure still
-                # deletes it and only flags require_restart — so there is no
-                # surviving-original / partial-removal case to roll back here. (A
-                # truly transactional, history-preserving conversion via device
-                # re-homing is the documented follow-up.)
+                # Do NOT remove the originals here. They stay loaded (so the user
+                # keeps two working beds) until the pair entry's setup re-homes
+                # their entity/device registry rows onto the pair and removes them
+                # — a history-preserving handoff. Removing them now (the old path)
+                # tore down their registry rows and let the paired platforms
+                # recreate fresh ones, resetting per-side history/customizations.
+                # The pair's unique_id (pair_<hash>) never collides with the
+                # originals' MAC unique_ids, so create can proceed while they live.
+                # See _async_rehome_absorbed_singles in __init__.py.
                 _LOGGER.info(
-                    "Combined %s + %s into paired bed %s",
+                    "Combining %s + %s into paired bed %s (originals re-homed at setup)",
                     left.title,
                     right.title,
                     name,

@@ -396,6 +396,30 @@ class TestPairBedsConversion:
             result["flow_id"], {CONF_ADDRESS: "pair_beds"}
         )
 
+    async def _setup_single(
+        self, hass: HomeAssistant, address: str, name: str
+    ) -> MockConfigEntry:
+        """Set up a REAL single Linak bed so it owns real entity/device rows."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=name,
+            data={
+                CONF_ADDRESS: address,
+                CONF_NAME: name,
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=address,
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state == ConfigEntryState.LOADED
+        return entry
+
     async def test_combine_two_singles_into_one_pair(
         self,
         hass: HomeAssistant,
@@ -615,6 +639,139 @@ class TestPairBedsConversion:
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]
+
+    async def test_conversion_rehomes_rows_preserving_history(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Converting two singles re-homes each side's existing entity AND device
+        registry rows onto the pair IN PLACE (Phase 2.6): entity_id, the registry
+        row identity, user customizations, and the device all survive — proving
+        the conversion is additive and per-side history follows."""
+        ent_reg = er.async_get(hass)
+        dev_reg = dr.async_get(hass)
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+
+        # Snapshot one real per-side entity's identity and customize it, so we can
+        # prove the SAME row survives (not a freshly recreated one).
+        cover_uid = f"{LEFT_ADDR}_back"
+        cover_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
+        assert cover_id is not None
+        ent_reg.async_update_entity(cover_id, name="Kris head angle")
+        before_row = ent_reg.async_get(cover_id)
+        assert before_row is not None
+        before_row_id = before_row.id
+        assert before_row.config_entry_id == left.entry_id
+
+        # Customize the left side's device too.
+        left_device = dev_reg.async_get_device(identifiers={(DOMAIN, LEFT_ADDR)})
+        assert left_device is not None
+        left_device_id = left_device.id
+        dev_reg.async_update_device(left_device_id, name_by_user="Left headboard")
+
+        # Convert.
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                "left_entry": left.entry_id,
+                "right_entry": right.entry_id,
+                CONF_NAME: "Master Bed",
+            },
+        )
+        await hass.async_block_till_done()
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+
+        # Originals absorbed; exactly one paired entry, now LOADED.
+        remaining = hass.config_entries.async_entries(DOMAIN)
+        ids = {e.entry_id for e in remaining}
+        assert left.entry_id not in ids
+        assert right.entry_id not in ids
+        paired = [e for e in remaining if is_paired(e.data)]
+        assert len(paired) == 1
+        pair = paired[0]
+        assert pair.state == ConfigEntryState.LOADED
+
+        # The cover row survived IN PLACE: same entity_id, same registry-row id
+        # (not recreated), now owned by the pair, customization intact.
+        after_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
+        assert after_id == cover_id  # entity_id unchanged -> recorder history follows
+        after_row = ent_reg.async_get(after_id)
+        assert after_row is not None
+        assert after_row.id == before_row_id  # same row object, not recreated
+        assert after_row.config_entry_id == pair.entry_id  # re-homed onto the pair
+        assert after_row.name == "Kris head angle"  # user customization preserved
+
+        # No orphaned/duplicate row for that unique_id.
+        rows = [e for e in ent_reg.entities.values() if e.unique_id == cover_uid]
+        assert len(rows) == 1
+
+        # The device survived in place (same id), keeps its user name, and now
+        # nests under the synthetic parent.
+        parent = dev_reg.async_get_device(
+            identifiers={(DOMAIN, pair.data[CONF_PAIR_ID])}
+        )
+        assert parent is not None
+        left_after = dev_reg.async_get_device(identifiers={(DOMAIN, LEFT_ADDR)})
+        assert left_after is not None
+        assert left_after.id == left_device_id  # same device, not recreated
+        assert left_after.name_by_user == "Left headboard"
+        assert left_after.via_device_id == parent.id
+
+    async def test_conversion_connect_failure_keeps_pair_and_rehomed_rows(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """If the pair can't connect mid-conversion (an unreachable bed — when the
+        singles would be equally non-functional), the user is not left with no bed:
+        the paired entry still exists (retrying) and the re-homed registry rows are
+        intact, so nothing is lost and setup recovers on reconnect."""
+        from unittest.mock import patch
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+
+        ent_reg = er.async_get(hass)
+        cover_uid = f"{LEFT_ADDR}_back"
+        cover_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
+        assert cover_id is not None
+
+        result = await self._reach_pair_step(hass)
+        # Make the pair's setup unable to find the beds, so its connect fails.
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth."
+            "async_ble_device_from_address",
+            return_value=None,
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        remaining = hass.config_entries.async_entries(DOMAIN)
+        paired = [e for e in remaining if is_paired(e.data)]
+        assert len(paired) == 1
+        pair = paired[0]
+        # The bed is unreachable, so the pair retries — but it EXISTS (never no bed).
+        assert pair.state == ConfigEntryState.SETUP_RETRY
+
+        # No data loss: the row was re-homed onto the pair before the failed connect
+        # and survives, with its entity_id, and no duplicate/orphan was left behind.
+        after_id = ent_reg.async_get_entity_id("cover", DOMAIN, cover_uid)
+        assert after_id == cover_id
+        after_row = ent_reg.async_get(after_id)
+        assert after_row is not None
+        assert after_row.config_entry_id == pair.entry_id
+        rows = [e for e in ent_reg.entities.values() if e.unique_id == cover_uid]
+        assert len(rows) == 1
 
 
 class TestSideServiceRouting:

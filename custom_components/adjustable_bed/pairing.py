@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterable, Mapping
-from typing import Any, TypedDict, cast
+from typing import Any, Final, TypedDict, cast
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
@@ -63,6 +63,15 @@ class ChildDescriptor(TypedDict, total=False):
     # Provenance, used to revert an opt-in conversion (unpair) losslessly.
     absorbed_entry_id: str
     origin_unique_id: str
+
+
+# Descriptor provenance keys (mirror the ``ChildDescriptor`` fields above).
+# Recorded when two singles are combined so the pair's setup can re-home each
+# original entry's registry rows in place (additive, history-preserving) and a
+# future unpair can recreate the single losslessly. Module constants keep the
+# config-flow writer and the setup reader from drifting on a stringly-typed key.
+KEY_ABSORBED_ENTRY_ID: Final = "absorbed_entry_id"
+KEY_ORIGIN_UNIQUE_ID: Final = "origin_unique_id"
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -204,12 +213,19 @@ def _descriptor_from_single(
     data: Mapping[str, Any],
     side: str,
     octo_snapshot: Mapping[str, Any] | None = None,
+    *,
+    absorbed_entry_id: str | None = None,
+    origin_unique_id: str | None = None,
 ) -> dict[str, Any]:
     """Build a child descriptor from a single-bed entry's data.
 
     ``octo_snapshot`` is an optional Octo capability snapshot captured from the
     live bed at pairing; it is stored under ``capabilities['octo']`` so an OFFLINE
     paired side can be minted with the right light/RGBW/memory/synchro entities.
+
+    ``absorbed_entry_id`` / ``origin_unique_id`` are the original single entry's
+    provenance, recorded so the pair's setup can re-home its registry rows in
+    place (history-preserving conversion) and a future unpair can recreate it.
     """
     descriptor = {
         key: value
@@ -221,6 +237,10 @@ def _descriptor_from_single(
         capabilities = dict(descriptor.get("capabilities") or {})
         capabilities["octo"] = dict(octo_snapshot)
         descriptor["capabilities"] = capabilities
+    if absorbed_entry_id:
+        descriptor[KEY_ABSORBED_ENTRY_ID] = absorbed_entry_id
+    if origin_unique_id:
+        descriptor[KEY_ORIGIN_UNIQUE_ID] = origin_unique_id
     return descriptor
 
 
@@ -232,6 +252,8 @@ def build_pair_entry_data(
     connection_mode: str | None = None,
     left_octo_snapshot: Mapping[str, Any] | None = None,
     right_octo_snapshot: Mapping[str, Any] | None = None,
+    left_origin: tuple[str, str | None] | None = None,
+    right_origin: tuple[str, str | None] | None = None,
 ) -> dict[str, Any]:
     """Build a separate-address paired entry's data from two single-bed datas.
 
@@ -241,9 +263,16 @@ def build_pair_entry_data(
 
     ``left_octo_snapshot`` / ``right_octo_snapshot`` are optional per-side Octo
     capability snapshots captured from the live beds at pairing.
+
+    ``left_origin`` / ``right_origin`` are each ``(entry_id, unique_id)`` for the
+    original single entry being absorbed, recorded as descriptor provenance so the
+    pair's setup re-homes that entry's registry rows in place instead of letting
+    the platforms recreate them (preserving per-side history/customizations).
     """
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
+    left_entry_id, left_unique_id = left_origin or (None, None)
+    right_entry_id, right_unique_id = right_origin or (None, None)
 
     data: dict[str, Any] = {
         CONF_PAIR_ID: make_pair_id([left_addr, right_addr]),
@@ -253,8 +282,20 @@ def build_pair_entry_data(
         CONF_NAME: name,
         CONF_PAIR_MEMBER_ADDRESSES: [left_addr.upper(), right_addr.upper()],
         CONF_PAIR_CHILDREN: [
-            _descriptor_from_single(left_data, SIDE_LEFT, left_octo_snapshot),
-            _descriptor_from_single(right_data, SIDE_RIGHT, right_octo_snapshot),
+            _descriptor_from_single(
+                left_data,
+                SIDE_LEFT,
+                left_octo_snapshot,
+                absorbed_entry_id=left_entry_id,
+                origin_unique_id=left_unique_id,
+            ),
+            _descriptor_from_single(
+                right_data,
+                SIDE_RIGHT,
+                right_octo_snapshot,
+                absorbed_entry_id=right_entry_id,
+                origin_unique_id=right_unique_id,
+            ),
         ],
     }
     if connection_mode is not None:
