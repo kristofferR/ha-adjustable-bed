@@ -442,10 +442,17 @@ LOGICDATA_CHAR_UUID: Final = "b9934c44-5c91-462b-80a1-30fccc29d758"
 MANUFACTURER_ID_LOGICDATA: Final = 1351  # 0x0547
 
 # Leggett & Platt specific UUIDs
-# Gen2 variant (Richmat-based, ASCII commands)
+# Gen2 variant (a.k.a. LP Comfort Connect, control box 209-M001, ESP32-based;
+# Richmat-derived ASCII commands)
 LEGGETT_GEN2_SERVICE_UUID: Final = "45e25100-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_WRITE_CHAR_UUID: Final = "45e25101-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_READ_CHAR_UUID: Final = "45e25103-3171-4cfc-ae89-1d83cf8d8071"
+# LP Comfort Connect beds advertise NO service UUID — only manufacturer data
+# under company ID 0x092D whose payload begins with ASCII "XP" or "CP". The LP
+# Control app (com.leggett.android.universal) recognizes these beds purely by
+# this prefix (isGen2Box()); the company ID is an additional filter.
+MANUFACTURER_ID_LEGGETT_GEN2: Final = 0x092D  # 2349
+LEGGETT_GEN2_MANUFACTURER_PREFIXES: Final = (b"XP", b"CP")
 
 # Okin variant (requires pairing)
 LEGGETT_OKIN_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"

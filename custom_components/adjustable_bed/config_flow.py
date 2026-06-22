@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
@@ -96,6 +97,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    LEGGETT_VARIANT_GEN2,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -180,6 +182,22 @@ CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
 # BLE connection) never makes setup feel slow. The probe is best-effort and never
 # blocks entry creation.
 _PROBE_TIMEOUT_SECONDS = 15.0
+
+
+def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
+    """Return True for beds whose single connection must not be spent on the probe.
+
+    The setup verify probe connects read-only and always disconnects afterwards.
+    LP Comfort Connect (Leggett & Platt Gen2) only accepts a BLE connection while
+    in pairing mode and refuses reconnection afterwards, so probing would consume
+    the pairing-window connection and leave ``async_setup_entry`` unable to
+    reconnect (issue #385). Skip the probe and create the entry directly for those.
+    """
+    if bed_type == BED_TYPE_LEGGETT_GEN2:
+        return True
+    if bed_type == BED_TYPE_LEGGETT_PLATT:
+        return variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2, None)
+    return False
 
 
 @dataclass
@@ -2050,9 +2068,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         """Stash the finalized entry and route through the verify_connection step.
 
         Skips the verify step (creating the entry directly) when no connectable
-        scanner is available to probe through.
+        scanner is available to probe through, or for one-connection pairing-window
+        beds whose single connection must be left for setup (issue #385).
         """
-        if not self._verification_possible():
+        if not self._verification_possible() or _skips_setup_connection_probe(
+            entry_data.get(CONF_BED_TYPE), entry_data.get(CONF_PROTOCOL_VARIANT)
+        ):
             return self.async_create_entry(title=title, data=entry_data)
         self._pending_entry = entry_data
         self._pending_title = title

@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MOTOSLEEP,
@@ -73,6 +74,23 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
+
+
+def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
+    """LP Comfort Connect (Gen2) must skip the disconnecting setup probe so its
+    single pairing-window connection is left for setup (issue #385 review)."""
+    from custom_components.adjustable_bed.config_flow import _skips_setup_connection_probe
+
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_GEN2, "auto") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "auto") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "gen2") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, None) is True
+    # MlRM/Okin Leggett beds reconnect normally, so the probe is fine.
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "mlrm") is False
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "okin") is False
+    # Unrelated beds are unaffected.
+    assert _skips_setup_connection_probe(BED_TYPE_KEESON, "auto") is False
+    assert _skips_setup_connection_probe(None, None) is False
 
 
 class TestPairingInstructions:
