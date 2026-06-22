@@ -15,8 +15,12 @@ import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LINAK,
+    BED_TYPE_OCTO,
+    CONF_BED_TYPE,
     CONF_PAIR_ID,
     DOMAIN,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -449,3 +453,42 @@ class TestSideProxy:
 
         await proxy.async_stop_command()
         parent.async_stop_command.assert_awaited_once_with(side=SIDE_LEFT)
+
+
+class TestConnectionModeResolution:
+    """Phase 2.5 C1: 'auto' resolves to sequential for single-connection beds
+    (Octo) and concurrent for everything else; an explicit choice is honoured."""
+
+    def _coord(self, bed_type, *, mode=None):
+        entry = SimpleNamespace(
+            data={CONF_PAIR_ID: "pair_abc123", "name": "X", CONF_BED_TYPE: bed_type}
+        )
+        children = {
+            SIDE_LEFT: RecordingChild(SIDE_LEFT, []),
+            SIDE_RIGHT: RecordingChild(SIDE_RIGHT, []),
+        }
+        return PairedBedCoordinator(None, entry, children, connection_mode=mode)
+
+    def test_auto_resolves_sequential_for_octo(self):
+        assert (
+            self._coord(BED_TYPE_OCTO).connection_mode
+            == PAIR_CONNECTION_MODE_SEQUENTIAL
+        )
+
+    def test_auto_resolves_concurrent_for_linak(self):
+        assert (
+            self._coord(BED_TYPE_LINAK).connection_mode
+            == PAIR_CONNECTION_MODE_CONCURRENT
+        )
+
+    def test_explicit_concurrent_preserved_for_octo(self):
+        assert (
+            self._coord(BED_TYPE_OCTO, mode=PAIR_CONNECTION_MODE_CONCURRENT).connection_mode
+            == PAIR_CONNECTION_MODE_CONCURRENT
+        )
+
+    def test_explicit_sequential_preserved_for_linak(self):
+        assert (
+            self._coord(BED_TYPE_LINAK, mode=PAIR_CONNECTION_MODE_SEQUENTIAL).connection_mode
+            == PAIR_CONNECTION_MODE_SEQUENTIAL
+        )

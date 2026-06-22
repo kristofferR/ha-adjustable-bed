@@ -344,6 +344,21 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
 )
 
 
+# Bed types whose firmware allows only ONE concurrent BLE link, so a paired bed
+# of this type must use the SEQUENTIAL active-connection profile (connect one
+# side, act, disconnect, switch to the other) instead of holding both links at
+# once. Verified from the Octo app: it holds a single connected-device slot and
+# switches sequentially (disconnect-then-connect). This is a SEPARATE marker from
+# BEDS_REQUIRING_PAIRING — Octo PIN-auths per connection, it does not OS-bond.
+SINGLE_CONNECTION_BED_TYPES: Final = frozenset({BED_TYPE_OCTO})
+
+
+def requires_sequential_pairing(bed_type: str | None) -> bool:
+    """Return True if a paired bed of this type must use the sequential
+    active-connection profile (only one BLE link held at a time)."""
+    return bed_type in SINGLE_CONNECTION_BED_TYPES
+
+
 # Mapping from legacy bed types to their protocol-based equivalents
 # Used by controller_factory to resolve the correct controller
 LEGACY_BED_TYPE_MAPPING: Final = {
