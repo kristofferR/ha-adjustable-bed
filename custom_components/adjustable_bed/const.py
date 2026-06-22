@@ -315,13 +315,20 @@ BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
 # W1 is the default fallback when no specific service is found
 RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+# W5 uses a Telink-style custom 128-bit base (the "0xe0ff" is the little-endian
+# encoding of the generic 0xFFE0 short UUID). That base is shared by many non-bed
+# Telink-chip devices (e.g. a "Nokia-*" headset reported in issue #382), so this
+# UUID is NOT bed-unique: detection must require a corroborating Richmat name
+# signal before treating a W5 advertisement as a bed, and it is intentionally
+# left out of manifest.json's passive bluetooth discovery matchers.
+RICHMAT_WILINKE_W5_SERVICE_UUID: Final = "0000e0ff-3c17-d293-8e48-14fe2e4da212"
 RICHMAT_WILINKE_SERVICE_UUIDS: Final = [
     "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7",  # Custom (legacy, index 0)
     "0000fee9-0000-1000-8000-00805f9b34fb",  # W1 (index 1) - default fallback
     "0000fee9-0000-1000-8000-00805f9b34bb",  # W2 (index 2) - note different base UUID suffix
     "0000ffe0-0000-1000-8000-00805f9b34fb",  # W3 (index 3)
     "0000fff0-0000-1000-8000-00805f9b34fb",  # W4 (index 4) - Germany Motions DHN-* beds
-    "0000e0ff-3c17-d293-8e48-14fe2e4da212",  # W5 (index 5) - custom base UUID
+    RICHMAT_WILINKE_W5_SERVICE_UUID,  # W5 (index 5) - shared Telink base, name-guarded
 ]
 RICHMAT_WILINKE_CHAR_UUIDS: Final = [
     # (write_char, notify_char) pairs matching service UUIDs above

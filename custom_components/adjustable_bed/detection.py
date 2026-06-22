@@ -134,6 +134,7 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W5_SERVICE_UUID,
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
@@ -1423,6 +1424,21 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
         if wilinke_uuid.lower() in service_uuids:
+            # W5 (E0FF) uses a Telink-style custom base that non-bed devices also
+            # advertise (e.g. a "Nokia-*" headset, issue #382). It is not
+            # bed-unique, so only trust it when a Richmat name corroborates the
+            # match; otherwise keep scanning and let detection fall through.
+            if (
+                wilinke_uuid.lower() == RICHMAT_WILINKE_W5_SERVICE_UUID.lower()
+                and not is_richmat_named
+            ):
+                _LOGGER.debug(
+                    "Ignoring W5 WiLinke UUID for %s (name: %s): shared Telink "
+                    "base with no Richmat name to corroborate",
+                    service_info.address,
+                    service_info.name,
+                )
+                continue
             signals.append("uuid:wilinke")
             # FEE9 is ambiguous - could be Richmat or BedTech
             if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():

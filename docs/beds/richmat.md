@@ -252,6 +252,13 @@ The app tries BLE services in this order:
 4. **FFF0**: `0000FFF0-0000-1000-8000-00805F9B34FB`
 5. **FFE0**: `0000FFE0-0000-1000-8000-00805F9B34FB`
 
+> **W5 (`0000E0FF-3C17-D293-8E48-14FE2E4DA212`) caveat:** the Germany Motions app
+> also lists a sixth "W5" service on a Telink-style custom 128-bit base (`0xE0FF`
+> is just the little-endian form of the generic `0xFFE0`). That base is shared by
+> non-bed Telink-chip devices, so a "Nokia-*" headset was misdetected as a Richmat
+> bed (issue #382). W5 is therefore **not** used for passive discovery and only
+> detects as a bed when the device name also matches a Richmat pattern.
+
 ## Device Detection
 
 | Device Name Prefix | Features |
