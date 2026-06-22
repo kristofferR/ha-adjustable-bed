@@ -114,7 +114,6 @@ from .detection import (
     detect_bed_type,
     detect_bed_type_detailed,
     detect_richmat_remote_from_name,
-    determine_unsupported_reason,
     get_bed_type_options,
     is_mac_like_name,
 )
@@ -127,8 +126,6 @@ from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisemen
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
-    create_unsupported_device_issue,
-    log_unsupported_device,
 )
 from .validators import (
     get_available_adapters,
@@ -453,18 +450,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         bed_type = detection_result.bed_type
 
         if bed_type is None:
-            # Check if device was excluded as a known non-bed device
-            is_excluded = any(s.startswith("excluded:") for s in detection_result.signals)
-
-            if not is_excluded:
-                # Only create Repairs issue for genuinely unknown devices,
-                # not for devices already identified as non-bed (speakers, etc.)
-                device_info = capture_device_info(discovery_info)
-                reason = determine_unsupported_reason(discovery_info)
-                created = await create_unsupported_device_issue(self.hass, device_info, reason)
-                if created:
-                    log_unsupported_device(device_info, reason)
-
+            # Devices that match our broad Bluetooth manifest matchers but aren't
+            # recognised as a bed are silently ignored. We deliberately do NOT
+            # raise a Repairs issue here: most matches are unrelated BLE devices
+            # (the manifest matches generic manufacturer IDs / name prefixes), so
+            # nagging the user about every passing speaker, sensor or phone would
+            # be noise. Discovery simply aborts; users add unsupported beds via
+            # the manual flow, which offers a support bundle.
             _LOGGER.debug(
                 "Device %s is not a supported bed type, aborting",
                 discovery_info.address,

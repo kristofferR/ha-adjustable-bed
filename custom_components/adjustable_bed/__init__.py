@@ -56,7 +56,10 @@ from .const import (
 from .coordinator import AdjustableBedCoordinator
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .unsupported import create_pairing_required_issue
+from .unsupported import (
+    async_clear_unsupported_device_issues,
+    create_pairing_required_issue,
+)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -117,6 +120,10 @@ PLATFORMS: list[Platform] = [
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Adjustable Bed integration domain."""
     hass.data.setdefault(DOMAIN, {})
+
+    # Clear obsolete "unsupported BLE device" Repairs issues from older versions
+    # that nagged about every discovered non-bed device (feature removed).
+    async_clear_unsupported_device_issues(hass)
 
     from .download import SupportBundleDownloadView
 
