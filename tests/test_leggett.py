@@ -800,6 +800,8 @@ class TestLeggettPositionNotifications:
         assert controller._light_on is True
         assert controller._light_rgb == (0xFF, 0x00, 0x00)
         assert coordinator.controller_state.get("under_bed_lights_on") is True
+        # RGB must be published to controller state, not just cached privately.
+        assert coordinator.controller_state.get("under_bed_lights_rgb") == (0xFF, 0x00, 0x00)
 
         # Off frame (byte 6 = 0x04).
         off_frame = bytearray([0x6E, 0x20, 0x00, 0x04, 0x01, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00])
