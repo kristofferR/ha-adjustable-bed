@@ -234,7 +234,11 @@ export function resolvePairedParentId(
 ): string | undefined {
   if (!deviceId || !hass?.devices) return deviceId;
   const parentId = hass.devices[deviceId]?.via_device_id;
-  if (parentId && pairedChildDeviceIds(hass, parentId).length) return parentId;
+  // Only resolve to a parent that still exists in the registry (a stale
+  // via_device_id would otherwise point at a deleted device).
+  if (parentId && hass.devices[parentId] && pairedChildDeviceIds(hass, parentId).length) {
+    return parentId;
+  }
   return deviceId;
 }
 
