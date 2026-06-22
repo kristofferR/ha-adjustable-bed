@@ -323,6 +323,21 @@ class LeggettGen2Controller(BedController):
             if present.get(spec.key, True)
         )
 
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove covers for actuators the profile says are absent.
+
+        Lets cover.py clean up covers left over from the old always-full feature
+        set when an existing entry resolves to a profile that hides actuators.
+        """
+        present = {
+            "back": self._caps.has_head,
+            "legs": self._caps.has_foot,
+            "pillow": self._caps.has_pillow,
+            "lumbar": self._caps.has_lumbar,
+        }
+        return frozenset(key for key, is_present in present.items() if not is_present)
+
     # Motor control methods - Gen2 re-sends the move command every 200 ms while
     # held and sends an explicit per-actuator stop on release (matching the app).
     async def _move_with_stop(
@@ -527,11 +542,17 @@ class LeggettGen2Controller(BedController):
         self._light_on = False
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        """Set the under-bed light colour using the RGBSET command."""
+        """Set the under-bed light colour using the RGBSET command.
+
+        This is also the RGB turn-on path (the light entity calls it without a
+        separate lights_on), so reflect that the light is now on in the cache —
+        otherwise a following lights_off() would hit the off-guard and no-op.
+        """
         r, g, b = rgb_color
         if not all(0 <= v <= 255 for v in (r, g, b)):
             raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
         await self.write_command(LeggettGen2Commands.rgb_set(r, g, b))
+        self._light_on = any(rgb_color)
 
     # ---- Live light state from 45e25103 STATE notifications -----------------
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

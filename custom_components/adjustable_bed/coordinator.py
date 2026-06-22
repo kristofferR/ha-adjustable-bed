@@ -1650,6 +1650,16 @@ class AdjustableBedCoordinator:
                     self._address,
                     connectable=True,
                 )
+                if advertisement is None or not advertisement.manufacturer_data:
+                    # Fall back to the non-connectable advert: this integration
+                    # supports misclassified ESPHome/proxy advertisements, and the
+                    # manufacturer data (e.g. the Gen2 XP/CP product id) carries
+                    # capability info we'd otherwise lose on that path.
+                    advertisement = bluetooth.async_last_service_info(
+                        self.hass,
+                        self._address,
+                        connectable=False,
+                    )
                 if advertisement and advertisement.manufacturer_data:
                     manufacturer_data = dict(advertisement.manufacturer_data)
                     _LOGGER.debug(

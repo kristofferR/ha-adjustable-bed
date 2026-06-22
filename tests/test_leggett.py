@@ -300,6 +300,34 @@ class TestLeggettGen2Capabilities:
         keys = {spec.key for spec in c.motor_control_specs}
         assert {"back", "legs"} <= keys
 
+    async def test_stale_motor_keys_for_absent_actuators(
+        self, hass: HomeAssistant, mock_leggett_gen2_config_entry
+    ):
+        # Product 10011: head only -> legs/pillow/lumbar covers should be removable.
+        c = self._controller(hass, mock_leggett_gen2_config_entry, 10011)
+        assert c.stale_motor_entity_keys == frozenset({"legs", "pillow", "lumbar"})
+        # Full profile (5): nothing stale.
+        assert self._controller(
+            hass, mock_leggett_gen2_config_entry, 5
+        ).stale_motor_entity_keys == frozenset()
+
+    async def test_set_light_color_updates_cache(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        # RGBSET is the RGB turn-on path -> cache must flip on, so a later off works.
+        await controller.set_light_color((255, 0, 0))
+        assert controller._light_on is True
+        await controller.set_light_color((0, 0, 0))
+        assert controller._light_on is False
+
     async def test_massage_toggle_gated_on_wave(
         self, hass: HomeAssistant, mock_leggett_gen2_config_entry
     ):
