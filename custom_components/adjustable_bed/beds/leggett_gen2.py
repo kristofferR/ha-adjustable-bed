@@ -561,16 +561,22 @@ class LeggettGen2Controller(BedController):
         if len(data) <= 10:
             return
         mode = data[6]
+        updates: dict[str, Any] = {}
         if mode == 0x01:
             light_on = True
-            self._light_rgb = (data[7], data[8], data[9])
+            rgb = (data[7], data[8], data[9])
+            if rgb != self._light_rgb:
+                self._light_rgb = rgb
+                updates["under_bed_lights_rgb"] = rgb
         elif mode == 0x04:
             light_on = False
         else:
             return
         if light_on != self._light_on:
             self._light_on = light_on
-            self.forward_controller_state_update("under_bed_lights_on", light_on)
+            updates["under_bed_lights_on"] = light_on
+        if updates:
+            self.forward_controller_state_updates(updates)
 
     # Massage methods. Gen2 intensity is relative (VII raise/lower), so no level is
     # tracked locally. "Off" sets all four channels to 0 (matching the app's

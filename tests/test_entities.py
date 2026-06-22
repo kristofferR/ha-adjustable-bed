@@ -2063,7 +2063,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Leggett Gen2 light turn_on with rgb_color should send lights_on + RGBSET."""
+        """Leggett Gen2 light turn_on with rgb_color sends RGBSET only (no separate on)."""
         del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -2125,7 +2125,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Leggett Gen2 light turn_off should send RGBENABLE 0:0."""
+        """Leggett Gen2 light turn_off should send the toggle (UBL TOGGLE)."""
         del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,

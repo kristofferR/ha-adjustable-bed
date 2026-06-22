@@ -117,14 +117,17 @@ Combined moves put codes in two fields, e.g. head down + feet up = `M 0:1:`.
 
 ### Massage Commands
 
-Gen2 massage uses an increase/decrease model (no absolute level):
+Gen2 massage intensity is relative (`VII`); an absolute set (`MVI`) also exists
+and is used to switch everything off. Location/channel: 0=head, 1=foot.
 
 | Command | Text |
 |---------|------|
 | Increase intensity | `VII :{location}` |
-| Decrease intensity | `VII {location}:` |
+| Decrease intensity | `VII {location}::` |
+| Set intensity (absolute) | `MVI {location}:{level}` (level 0-3; 0=off) |
 | Set massage mode | `MMODE {modeGroup}:{mode}` |
 | Set wave speed | `WSP {modeGroup}:{waveSpeed}` |
+| Toggle wave | `WVE TOGGLE` |
 
 ### Light Commands
 

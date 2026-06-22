@@ -173,8 +173,14 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_rgb_color = self._default_rgb_color
 
     async def async_added_to_hass(self) -> None:
-        """Restore the last light state when available."""
+        """Restore the last light state and subscribe to live light state."""
         await super().async_added_to_hass()
+
+        # Reflect bed-reported on/off + colour where the controller publishes it
+        # (e.g. Leggett Gen2). No-op for controllers that don't report light state.
+        self._unregister_light_state = self._coordinator.register_controller_state_callback(
+            self._handle_light_state
+        )
 
         if (last_state := await self.async_get_last_state()) is None:
             return
@@ -188,6 +194,33 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             restored_rgb = _normalize_rgb_color(last_state.attributes.get(ATTR_RGB_COLOR))
             if restored_rgb is not None:
                 self._attr_rgb_color = restored_rgb
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from live light-state updates."""
+        unregister = getattr(self, "_unregister_light_state", None)
+        if unregister is not None:
+            unregister()
+            self._unregister_light_state = None
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_light_state(self, state: dict[str, Any]) -> None:
+        """Update on/off + colour from controller-reported light state."""
+        changed = False
+        if "under_bed_lights_on" in state:
+            self._attr_is_on = bool(state["under_bed_lights_on"])
+            changed = True
+        rgb = state.get("under_bed_lights_rgb")
+        if rgb is not None and len(rgb) == 3:
+            r, g, b = rgb
+            if self._attr_color_mode == ColorMode.RGBW:
+                w = self._attr_rgbw_color[3] if self._attr_rgbw_color else 255
+                self._attr_rgbw_color = (r, g, b, w)
+            else:
+                self._attr_rgb_color = (r, g, b)
+            changed = True
+        if changed:
+            self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on and optionally set a specific color."""

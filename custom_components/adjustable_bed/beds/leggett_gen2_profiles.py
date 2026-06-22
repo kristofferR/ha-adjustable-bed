@@ -28,6 +28,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final, Literal
 
+from ..const import MANUFACTURER_ID_LEGGETT_GEN2
+
 # Under-bed light style declared by the profile's ``lightConfig.colorPallet`` +
 # ``ublEnabled``: no light, a plain on/off toggle, a single (non-RGB) colour, or
 # full RGB colour control.
@@ -134,15 +136,12 @@ def compute_product_id(manufacturer_data: Mapping[int, bytes] | None) -> int | N
     """
     if not manufacturer_data:
         return None
-    for payload in manufacturer_data.values():
-        if payload[:2] in _GEN2_PREFIXES:
-            hex_bytes = [f"{b:02x}" for b in payload]
-            hex_bytes.reverse()
-            try:
-                return int("".join(hex_bytes[:4]), 16)
-            except ValueError:
-                return None
-    return None
+    payload = manufacturer_data.get(MANUFACTURER_ID_LEGGETT_GEN2)
+    if payload is None or len(payload) < 6 or payload[:2] not in _GEN2_PREFIXES:
+        return None
+    # Reverse the hex of the four bytes after the prefix and parse base-16 — this
+    # is exactly the four payload bytes [2:6] read little-endian.
+    return int.from_bytes(payload[2:6], "little")
 
 
 def capabilities_for_product(product_id: int | None) -> Gen2Capabilities:
