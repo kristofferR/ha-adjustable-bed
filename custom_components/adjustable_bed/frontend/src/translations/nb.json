@@ -36,5 +36,6 @@
   "editor.show_lighting": "Belysning",
   "editor.show_massage": "Massasje",
   "editor.show_climate": "Klima",
-  "editor.show_connection": "Tilkoblingskontroller"
+  "editor.show_connection": "Tilkoblingskontroller",
+  "card.both_sides": "Begge sider"
 }

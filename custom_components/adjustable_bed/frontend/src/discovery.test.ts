@@ -1,7 +1,11 @@
 // Unit tests for entity discovery across different bed shapes.
 // Run with: bun test
 import { expect, test } from "bun:test";
-import { bedEntitiesForDevice, bedIsEmpty } from "./discovery";
+import {
+  bedEntitiesForDevice,
+  bedIsEmpty,
+  pairedChildDeviceIds,
+} from "./discovery";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
 function entry(
@@ -193,4 +197,19 @@ test("presence-only device is treated as empty (no presence section)", () => {
 test("empty for unknown device", () => {
   const hass = hassWith([entry("cover.b_back", "back", "dev1")]);
   expect(bedIsEmpty(bedEntitiesForDevice(hass, "nope"))).toBe(true);
+});
+
+test("pairedChildDeviceIds returns sided children ordered by name", () => {
+  const hass = hassWith([]);
+  hass.devices = {
+    parent: { id: "parent", name: "Master Bed" },
+    right: { id: "right", name: "Master Bed Right", via_device_id: "parent" },
+    left: { id: "left", name: "Master Bed Left", via_device_id: "parent" },
+    other: { id: "other", name: "Unrelated" },
+  };
+  // Both sides, ordered Left before Right; unrelated devices excluded.
+  expect(pairedChildDeviceIds(hass, "parent")).toEqual(["left", "right"]);
+  // A single (non-parent) device has no children -> single-device rendering.
+  expect(pairedChildDeviceIds(hass, "left")).toEqual([]);
+  expect(pairedChildDeviceIds(hass, undefined)).toEqual([]);
 });

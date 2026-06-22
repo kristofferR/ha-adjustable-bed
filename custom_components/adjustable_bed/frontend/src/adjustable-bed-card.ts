@@ -17,6 +17,7 @@ import {
   SECTION_ORDER,
   bedEntitiesForDevice,
   bedIsEmpty,
+  pairedChildDeviceIds,
 } from "./discovery";
 import { localize } from "./localize";
 import {
@@ -78,13 +79,32 @@ export class AdjustableBedCard extends LitElement {
     if (!this.hass || !this._config) return nothing;
     if (!this._config.device_id) return this._notice("card.no_device");
 
+    // A paired "Dual Bed" parent: render the combined "both sides" controls
+    // (which live on the parent device) plus a per-side section for each child
+    // device, instead of a single bed. Falls back to single-device rendering.
+    const childIds = pairedChildDeviceIds(this.hass, this._config.device_id);
+    if (childIds.length) return this._renderPaired(this._config.device_id, childIds);
+
     const bed = bedEntitiesForDevice(this.hass, this._config.device_id);
     this._bed = bed;
     this._watched = this._collectWatched(bed);
 
     if (bedIsEmpty(bed)) return this._notice("card.no_entities");
-    const c = this._config;
 
+    return html`
+      <ha-card>
+        ${this._header(bed)}
+        ${this._renderSections(bed)}
+      </ha-card>
+    `;
+  }
+
+  // The ordered section templates for a single bed (shared by single-device and
+  // each per-side block of a paired bed).
+  private _renderSections(
+    bed: BedEntities,
+  ): (typeof nothing | TemplateResult)[] {
+    const c = this._config!;
     const render: Record<string, () => typeof nothing | TemplateResult> = {
       graphic: () => (c.show_graphic !== false ? this._graphic(bed) : nothing),
       motors: () => (c.show_motors !== false ? this._motors(bed) : nothing),
@@ -97,13 +117,50 @@ export class AdjustableBedCard extends LitElement {
       connection: () =>
         c.show_connection !== false ? this._connection(bed) : nothing,
     };
+    return this._orderedSections().map((k) => render[k]?.() ?? nothing);
+  }
+
+  // Render a paired parent: the combined "both sides" controls (on the parent
+  // device) followed by each side's own section, labelled by the child device
+  // name. The card's _bed/_watched track the parent plus every side so state
+  // changes on any side re-render the card.
+  private _renderPaired(parentId: string, childIds: string[]): TemplateResult {
+    const hass = this.hass!;
+    const parentBed = bedEntitiesForDevice(hass, parentId);
+    const sides = childIds.map((id) => ({
+      label: this._deviceLabel(id),
+      bed: bedEntitiesForDevice(hass, id),
+    }));
+    this._bed = parentBed;
+    this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
+      this._collectWatched(b),
+    );
+
+    const block = (
+      label: string,
+      bed: BedEntities,
+    ): typeof nothing | TemplateResult =>
+      bedIsEmpty(bed)
+        ? nothing
+        : html`
+            <div class="side">
+              <div class="side-label">${label}</div>
+              ${this._renderSections(bed)}
+            </div>
+          `;
 
     return html`
       <ha-card>
-        ${this._header(bed)}
-        ${this._orderedSections().map((k) => render[k]?.() ?? nothing)}
+        ${this._header(parentBed)}
+        ${block(localize(this.hass, "card.both_sides"), parentBed)}
+        ${sides.map((s) => block(s.label, s.bed))}
       </ha-card>
     `;
+  }
+
+  private _deviceLabel(id: string): string {
+    const d = this.hass?.devices[id];
+    return d?.name_by_user ?? d?.name ?? id;
   }
 
   // Section keys in render order: the configured order first, then any default
@@ -712,6 +769,16 @@ export class AdjustableBedCard extends LitElement {
       text-transform: uppercase;
       color: var(--secondary-text-color);
       padding: 14px 4px 8px;
+    }
+    .side + .side {
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+      margin-top: 12px;
+    }
+    .side-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--primary-text-color);
+      padding: 12px 4px 2px;
     }
     .heading-row {
       display: flex;

@@ -204,6 +204,26 @@ export function bedEntitiesForDevice(
   return bed;
 }
 
+// Child (per-side) device IDs of a paired "Dual Bed" parent, ordered by display
+// name (so Left precedes Right). The per-side covers/numbers/sensors live on
+// these child devices, linked to the synthetic parent via `via_device_id`; the
+// parent itself only carries the combined "both sides" controls. Empty for a
+// non-paired (single) device, so the card falls back to single-device rendering.
+export function pairedChildDeviceIds(
+  hass: HomeAssistant,
+  parentId: string | undefined,
+): string[] {
+  if (!parentId || !hass?.devices) return [];
+  const name = (id: string): string => {
+    const d = hass.devices[id];
+    return (d?.name_by_user ?? d?.name ?? id).toLowerCase();
+  };
+  return Object.values(hass.devices)
+    .filter((d) => d.via_device_id === parentId)
+    .map((d) => d.id)
+    .sort((a, b) => (name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0));
+}
+
 // True when the bed exposes nothing the card renders. Presence sensors are not
 // counted because the card has no presence section (it would otherwise produce a
 // header-only card with no controls).
