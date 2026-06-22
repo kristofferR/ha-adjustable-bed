@@ -44,6 +44,7 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.pairing import (
     get_child,
     is_paired,
+    octo_snapshot_from_descriptor,
     pair_member_addresses,
 )
 
@@ -886,3 +887,37 @@ class TestOctoOfflineSnapshot:
         await left.async_prime_offline_controller()
         # No snapshot -> Octo is not offline-mintable (keeps today's behaviour).
         assert left.capability_controller is None
+
+
+class TestOctoSnapshotBackfill:
+    """Phase 2.5 C3 (commit 4): a paired Octo side persists its freshly-discovered
+    capability snapshot into its child descriptor on connect."""
+
+    async def test_backfill_persists_snapshot_into_descriptor(
+        self, hass: HomeAssistant
+    ):
+        from types import SimpleNamespace
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo",
+            data=data,
+            unique_id="pair_octo_bf",
+            entry_id="pair_octo_bf",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+
+        snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": False}
+        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(snap))
+        left._backfill_octo_snapshot()
+
+        # The snapshot was persisted into the parent entry's left descriptor.
+        assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == snap
+        # Right side untouched.
+        assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_RIGHT)) is None

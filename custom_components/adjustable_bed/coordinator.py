@@ -763,6 +763,26 @@ class AdjustableBedCoordinator:
                 return True
         return False
 
+    def _backfill_octo_snapshot(self) -> None:
+        """Persist this paired Octo side's freshly-discovered capabilities into its
+        child descriptor, so the OFFLINE side and reloads mint correct entities and
+        a firmware capability change is reflected. No-op for a single bed (not a
+        ``ChildEntryView``) or when nothing was discovered / it is unchanged.
+        """
+        if not isinstance(self.entry, ChildEntryView):
+            return
+        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
+        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        if not snapshot:
+            return
+        capabilities = dict(self.entry.data.get("capabilities") or {})
+        if capabilities.get("octo") == snapshot:
+            return  # unchanged — avoid a redundant persist
+        capabilities["octo"] = snapshot
+        self._async_persist_config(
+            {**self.entry.data, "capabilities": capabilities}
+        )
+
     def _mark_ble_bond_established(self) -> None:
         """Record that future connections should skip `pair=True`."""
         if self._ble_bond_established:
@@ -1814,6 +1834,10 @@ class AdjustableBedCoordinator:
                     # Discover features to detect PIN requirement
                     if hasattr(self._controller, "discover_features"):
                         await cast(Any, self._controller).discover_features()
+                    # Persist this paired side's freshly-discovered capabilities so
+                    # the OFFLINE side / a reload mints correct entities (no-op for
+                    # a single bed or if nothing was discovered).
+                    self._backfill_octo_snapshot()
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, "send_pin"):
                         await cast(Any, self._controller).send_pin()
