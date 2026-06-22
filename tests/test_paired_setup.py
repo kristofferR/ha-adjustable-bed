@@ -517,13 +517,15 @@ class TestPairBedsConversion:
         assert left_child[CONF_ADDRESS] == LEFT_ADDR
         assert left_child.get("back_max_angle") == 55.0
 
-    async def test_octo_pairing_is_rejected(
+    async def test_octo_pairing_blocked_without_connection(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Octo pairing is blocked (sequential profile is Phase 2)."""
+        """Octo pairing is blocked when the beds aren't connected: their offline
+        side is minted from a capability snapshot captured here from the live bed,
+        which doesn't exist until connected (Phase 2.5)."""
         for addr, name in ((LEFT_ADDR, "Octo L"), (RIGHT_ADDR, "Octo R")):
             MockConfigEntry(
                 domain=DOMAIN,
@@ -542,7 +544,51 @@ class TestPairBedsConversion:
             {"left_entry": entries[0], "right_entry": entries[1]},
         )
         assert result["type"] == FlowResultType.FORM
-        assert result["errors"]["base"] == "octo_pairing_unsupported"
+        assert result["errors"]["base"] == "octo_pairing_needs_connection"
+
+    async def test_octo_gate_allows_and_captures_when_snapshot_present(
+        self, hass: HomeAssistant
+    ):
+        """With a live capability snapshot, Octo is offline-safe (gate passes) and
+        the snapshot is captured into the built pair descriptor."""
+        from types import SimpleNamespace
+
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedConfigFlow,
+        )
+        from custom_components.adjustable_bed.pairing import (
+            build_pair_entry_data,
+            octo_snapshot_from_descriptor,
+        )
+
+        snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": False}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = SimpleNamespace(
+            controller=SimpleNamespace(capability_snapshot=lambda: dict(snap))
+        )
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        # Gate: a snapshot makes Octo offline-safe; without one it stays unsafe.
+        assert flow._octo_capability_snapshot(entry) == snap
+        assert flow._has_unsafe_offline_platforms(entry) is False
+        hass.data[DOMAIN].pop(entry.entry_id)
+        assert flow._has_unsafe_offline_platforms(entry) is True
+        # Capture: the snapshot lands in the built descriptor's capabilities['octo'].
+        pair = build_pair_entry_data(
+            {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            {CONF_ADDRESS: RIGHT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            name="Master Octo",
+            left_octo_snapshot=snap,
+            right_octo_snapshot=snap,
+        )
+        assert octo_snapshot_from_descriptor(get_child(pair, SIDE_LEFT)) == snap
 
     @staticmethod
     def _pairable_octo_ids(hass: HomeAssistant) -> list[str]:

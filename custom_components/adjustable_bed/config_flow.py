@@ -401,6 +401,23 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 configured[member] = entry
         return configured
 
+    def _octo_capability_snapshot(self, entry: ConfigEntry) -> dict | None:
+        """Capability snapshot from a single Octo entry's LIVE controller, or None
+        (not an Octo entry / not connected / nothing discovered yet).
+
+        Octo discovers its capabilities post-connect, so this is only non-None
+        when the bed is connected at pairing time — which is exactly when a
+        paired Octo's offline side can be minted from the captured snapshot.
+        """
+        if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
+            return None
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        snapshot_fn = getattr(
+            getattr(coordinator, "controller", None), "capability_snapshot", None
+        )
+        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        return snapshot if isinstance(snapshot, dict) else None
+
     def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` exposes climate/light/select a half-available pair
         couldn't recreate.
@@ -410,9 +427,14 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         offline-capability-safe bed type has when a side is offline at setup. For
         any other type, a half-available pair (or a conversion where a side drops
         before connecting) would lose those entities, so keep blocking those.
+
+        Octo is offline-capable ONLY via a captured snapshot, so it is unsafe iff
+        it has no snapshot (i.e. wasn't connected at pairing).
         """
         if entry.data.get(CONF_BED_TYPE) in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
             return False
+        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
+            return self._octo_capability_snapshot(entry) is None
         registry = er.async_get(self.hass)
         platforms = {"climate", "light", "select"}
         return any(
@@ -1156,11 +1178,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["right_entry"] = "same_address"
             elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
                 errors["base"] = "mismatched_bed_types"
-            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
-                # Octo needs sequential active-connection switching + per-side PIN
-                # and keepalive (Phase 2). Pairing it with the current concurrent
-                # path would be unreliable, so block it until that lands.
-                errors["base"] = "octo_pairing_unsupported"
+            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO and (
+                self._octo_capability_snapshot(left) is None
+                or self._octo_capability_snapshot(right) is None
+            ):
+                # Octo is paired via the sequential active-connection profile, and
+                # its OFFLINE side mints its light/RGBW/memory/synchro entities from
+                # a capability snapshot captured here from the live bed — so BOTH
+                # Octo beds must be connected at pairing for the snapshot to exist.
+                errors["base"] = "octo_pairing_needs_connection"
             elif self._has_unsafe_offline_platforms(
                 left
             ) or self._has_unsafe_offline_platforms(right):
@@ -1177,6 +1203,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     {**left.data, **dict(left.options)},
                     {**right.data, **dict(right.options)},
                     name=name,
+                    left_octo_snapshot=self._octo_capability_snapshot(left),
+                    right_octo_snapshot=self._octo_capability_snapshot(right),
                 )
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
