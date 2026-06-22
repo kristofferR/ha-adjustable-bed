@@ -18,6 +18,7 @@ import {
   bedEntitiesForDevice,
   bedIsEmpty,
   pairedChildDeviceIds,
+  resolvePairedParentId,
 } from "./discovery";
 import { localize } from "./localize";
 import {
@@ -82,11 +83,14 @@ export class AdjustableBedCard extends LitElement {
     if (!this.hass || !this._config) return nothing;
     if (!this._config.device_id) return this._notice("card.no_device");
 
-    // A paired "Dual Bed" parent: render the combined "both sides" controls
-    // (which live on the parent device) plus a per-side section for each child
-    // device, instead of a single bed. Falls back to single-device rendering.
-    const childIds = pairedChildDeviceIds(this.hass, this._config.device_id);
-    if (childIds.length) return this._renderPaired(this._config.device_id, childIds);
+    // A paired "Dual Bed": render the combined "both sides" controls (on the
+    // parent device) plus a per-side section for each child device. The config
+    // may point at the synthetic parent OR at one side's child device — resolve
+    // a side up to its parent so either renders the whole pair. Falls back to
+    // single-device rendering for a non-paired bed.
+    const parentId = resolvePairedParentId(this.hass, this._config.device_id);
+    const childIds = pairedChildDeviceIds(this.hass, parentId);
+    if (parentId && childIds.length) return this._renderPaired(parentId, childIds);
 
     const bed = bedEntitiesForDevice(this.hass, this._config.device_id);
     this._watched = this._collectWatched(bed);

@@ -224,6 +224,20 @@ export function pairedChildDeviceIds(
     .sort((a, b) => (name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0));
 }
 
+// If `deviceId` is one side (child) of a paired bed, return the synthetic
+// parent's id so a card pointed at a side still renders the whole pair (the card
+// editor / stub config can easily land on a child device); otherwise return
+// `deviceId` unchanged.
+export function resolvePairedParentId(
+  hass: HomeAssistant,
+  deviceId: string | undefined,
+): string | undefined {
+  if (!deviceId || !hass?.devices) return deviceId;
+  const parentId = hass.devices[deviceId]?.via_device_id;
+  if (parentId && pairedChildDeviceIds(hass, parentId).length) return parentId;
+  return deviceId;
+}
+
 // True when the bed exposes nothing the card renders. Presence sensors are not
 // counted because the card has no presence section (it would otherwise produce a
 // header-only card with no controls).
