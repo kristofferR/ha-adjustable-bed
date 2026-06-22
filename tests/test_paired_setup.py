@@ -16,6 +16,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed import (
     _build_paired_children,
     _make_child_persist_cb,
+    _maybe_create_pairing_issue_for,
     _shared_child_fields,
 )
 from custom_components.adjustable_bed.const import (
@@ -750,3 +751,21 @@ class TestOfflineSideEntities:
 
         left._apply_runtime_bed_type_correction(left.bed_type)
         assert left.capability_controller is primed
+
+
+class TestPairedPairingIssue:
+    """Phase 2.4: a paired side that needs OS-level BLE pairing surfaces a repair."""
+
+    async def test_pairing_issue_noop_for_non_pairing_side(
+        self, hass: HomeAssistant
+    ):
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        left = children[SIDE_LEFT]
+
+        before = len(ir.async_get(hass).issues)
+        # Linak doesn't require OS-level pairing -> no repair issue, no crash.
+        await _maybe_create_pairing_issue_for(hass, left)
+        assert len(ir.async_get(hass).issues) == before

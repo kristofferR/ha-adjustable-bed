@@ -487,8 +487,65 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 name=f"adjustable_bed_paired_initial_read_{child.address}",
             )
 
+    # A side that needs OS-level BLE pairing but didn't connect should surface a
+    # repair issue per side, exactly like a single bed does — otherwise a paired
+    # bonding bed (OKIN/Leggett) silently never prompts the user to pair.
+    for child in coordinator.children.values():
+        if not child.is_connected:
+            await _maybe_create_pairing_issue_for(hass, child)
+
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
+
+
+async def _maybe_create_pairing_issue_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Surface a pairing-required repair issue for one bed (a single bed or one
+    side of a pair) when it needs OS-level BLE pairing and the failure looks like
+    a pairing problem — not a transient one.
+
+    No-op for beds that don't require pairing, or that are already bonded at the
+    OS level (BlueZ), or where the connection simply failed before pairing could
+    be attempted (HA retries and pairing happens on the next connect).
+    """
+    entry_data = coordinator.entry.data
+    bed_type = entry_data.get(CONF_BED_TYPE)
+    protocol_variant = entry_data.get(CONF_PROTOCOL_VARIANT)
+    if not (bed_type and requires_pairing(bed_type, protocol_variant)):
+        return
+
+    address = entry_data.get(CONF_ADDRESS, "")
+    if address:
+        ble_device = bluetooth.async_ble_device_from_address(
+            hass, address, connectable=True
+        )
+        if ble_device is not None and isinstance(
+            getattr(ble_device, "details", None), dict
+        ):
+            props = ble_device.details.get("props", {})
+            if props.get("Paired") or props.get("Bonded"):
+                _LOGGER.debug(
+                    "Bed %s is already paired/bonded at OS level — skipping "
+                    "pairing repair (connection failure is transient)",
+                    address,
+                )
+                return
+
+    if coordinator.pairing_supported is False:
+        await create_pairing_required_issue(
+            hass,
+            address or "Unknown",
+            entry_data.get("name", coordinator.entry.title),
+            coordinator.entry.entry_id,
+        )
+        return
+
+    _LOGGER.debug(
+        "Bed %s requires pairing but connection failed before pairing could be "
+        "attempted — not creating pairing repair (will retry automatically)",
+        address,
+    )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -516,61 +573,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
 
-    # Helper to create pairing issue — only when there's actual evidence of a pairing
-    # problem. Generic connection failures (timeout, device not found) should NOT
-    # trigger this, since the bed may just be temporarily unreachable after a restart.
-    async def _maybe_create_pairing_issue() -> None:
-        bed_type = entry.data.get(CONF_BED_TYPE)
-        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        if not (bed_type and requires_pairing(bed_type, protocol_variant)):
-            return
-
-        address = entry.data.get(CONF_ADDRESS, "")
-
-        # Check if the device is already paired/bonded at the OS level (BlueZ).
-        # If it is, the connection failure is transient — not a pairing problem.
-        if address:
-            ble_device = bluetooth.async_ble_device_from_address(
-                hass, address, connectable=True
-            )
-            if ble_device is not None and isinstance(
-                getattr(ble_device, "details", None), dict
-            ):
-                props = ble_device.details.get("props", {})
-                if props.get("Paired") or props.get("Bonded"):
-                    _LOGGER.debug(
-                        "Bed %s is already paired/bonded at OS level — "
-                        "connection failure is transient, skipping pairing repair",
-                        address,
-                    )
-                    return
-
-        # Adapter explicitly doesn't support pairing (e.g. old ESPHome proxy)
-        if coordinator.pairing_supported is False:
-            await create_pairing_required_issue(
-                hass,
-                address or "Unknown",
-                entry.data.get("name", entry.title),
-                entry.entry_id,
-            )
-            return
-
-        # Connection failed before pairing was even attempted (device not found,
-        # timeout, etc.). Don't create repair — HA will retry automatically and
-        # pairing will be attempted on the next successful connection.
-        _LOGGER.debug(
-            "Bed %s requires pairing but connection failed before pairing could be "
-            "attempted — not creating pairing repair (will retry automatically)",
-            address,
-        )
-
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
-        await _maybe_create_pairing_issue()
+        await _maybe_create_pairing_issue_for(hass, coordinator)
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
                 hass,
@@ -584,7 +593,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) from None
 
     if not connected:
-        await _maybe_create_pairing_issue()
+        await _maybe_create_pairing_issue_for(hass, coordinator)
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
                 hass,
