@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -48,6 +49,7 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1,
     OKIN_HEAD_MAX_ANGLE,
 )
+from custom_components.adjustable_bed.pairing import is_paired
 
 
 class TestIntegrationSetup:
@@ -359,7 +361,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 3
+        assert entry.version == 4
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
@@ -385,7 +387,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 3
+        assert entry.version == 4
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_migrate_v2_vibradorm_enables_angle_sensing(
@@ -410,7 +412,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 3
+        assert entry.version == 4
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v1_vibradorm_keeps_existing_enabled_angle_setting(
@@ -436,7 +438,7 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 3
+        assert entry.version == 4
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
@@ -462,8 +464,71 @@ class TestMigration:
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
-        assert entry.version == 3
+        assert entry.version == 4
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+    @pytest.mark.parametrize(
+        "bed_type",
+        [
+            BED_TYPE_LINAK,
+            BED_TYPE_VIBRADORM,
+            BED_TYPE_RICHMAT,
+            BED_TYPE_KAIDI,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_REVERIE,
+            BED_TYPE_SLEEPYS_BOX25,
+        ],
+    )
+    async def test_migrate_v3_to_v4_is_byte_identical(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        bed_type: str,
+    ):
+        """v3 -> v4 must be a strict no-op for every (non-paired) bed type.
+
+        This migration runs for EVERY entry on upgrade, so a defect here would
+        brick every user's bed — assert the data is byte-identical afterward.
+        """
+        data = {**mock_config_entry_data, CONF_BED_TYPE: bed_type}
+        before = dict(data)
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"{bed_type} v3->v4",
+            data=data,
+            unique_id=f"migration_v3v4_{bed_type}",
+            entry_id=f"migration_v3v4_{bed_type}",
+            version=3,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is True
+        assert entry.version == 4
+        assert dict(entry.data) == before  # byte-identical, nothing added/removed
+        assert is_paired(entry.data) is False
+
+    async def test_migrate_rejects_future_version(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """An entry from a newer (v5) schema must be refused, not silently mangled."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Future version",
+            data={**mock_config_entry_data},
+            unique_id="AA:BB:CC:DD:E5:01",
+            entry_id="migration_future_v5",
+            version=5,
+        )
+        entry.add_to_hass(hass)
+
+        result = await async_migrate_entry(hass, entry)
+
+        assert result is False
 
 
 class TestServices:
@@ -1316,6 +1381,7 @@ class TestServices:
         coordinator = MagicMock()
         coordinator.controller = MagicMock()
         coordinator.name = entry.title
+        coordinator.entry = entry
         coordinator.disable_angle_sensing = False
         coordinator.get_max_angle.side_effect = lambda motor: {
             "back": 80.0,
@@ -1412,7 +1478,10 @@ class TestServices:
         coordinator = MagicMock()
         coordinator.controller = MagicMock()
         coordinator.name = entry.title
+        coordinator.entry = entry
         coordinator.disable_angle_sensing = False
+        coordinator.is_connected = True
+        coordinator.async_ensure_connected = AsyncMock()
         coordinator.get_max_angle.side_effect = lambda motor: {
             "back": 50.0,
             "head": 50.0,
@@ -1434,6 +1503,10 @@ class TestServices:
                 },
                 blocking=True,
             )
+
+        # A failed validation must release the bed it reconnected for the check,
+        # so it doesn't sit connected with no idle timer.
+        coordinator.async_ensure_connected.assert_awaited_with(reset_timer=True)
 
     async def test_set_position_service_rejects_kaidi_head_and_feet(
         self,

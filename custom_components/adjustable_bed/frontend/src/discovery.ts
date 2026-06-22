@@ -134,7 +134,8 @@ export function bedEntitiesForDevice(
           else presetMap.set(key, id);
         } else if ((match = key.match(/^program_memory_(\d+)$/))) {
           memory(Number(match[1])).save = id;
-        } else if (key === "stop") {
+        } else if (key === "stop" || key === "stop_both") {
+          // stop_both is the paired parent device's combined STOP.
           bed.stop = id;
         } else if (key === "connect") {
           bed.connect = id;

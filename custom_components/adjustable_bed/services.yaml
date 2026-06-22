@@ -18,6 +18,19 @@ goto_preset:
           min: 1
           max: 6
           mode: box
+    side:
+      name: Side
+      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
 
 save_preset:
   name: Save to Preset
@@ -39,6 +52,19 @@ save_preset:
           min: 1
           max: 6
           mode: box
+    side:
+      name: Side
+      description: Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed.
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
 
 stop_all:
   name: Stop All Motors
@@ -51,6 +77,19 @@ stop_all:
       selector:
         device:
           integration: adjustable_bed
+    side:
+      name: Side
+      description: Which side of a paired bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed.
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
 
 set_position:
   name: Set Motor Position

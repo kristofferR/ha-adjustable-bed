@@ -24,6 +24,7 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_PAIR_ID,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -34,6 +35,7 @@ from .diagnostics_utils import get_gatt_summary
 from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .paired_coordinator import PairedBedCoordinator
 from .redaction import redact_data
 
 
@@ -57,11 +59,57 @@ def _config_entry_addresses(entry: ConfigEntry) -> set[str]:
     }
 
 
+async def _async_paired_diagnostics(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: PairedBedCoordinator
+) -> dict[str, Any]:
+    """Aggregate diagnostics for a paired (Dual Bed 4.0) entry, per side."""
+    integration = await async_get_integration(hass, DOMAIN)
+
+    sides: dict[str, Any] = {}
+    for side, child in coordinator.children.items():
+        child_controller = child.controller
+        sides[side] = {
+            "address": getattr(child, "address", None),
+            "connected": child.is_connected,
+            "controller_type": (
+                type(child_controller).__name__
+                if child_controller is not None
+                else None
+            ),
+            "position_data": getattr(child, "position_data", None),
+            "config": dict(child.entry.data),
+        }
+
+    data: dict[str, Any] = {
+        "integration_version": integration.version,
+        "ha_version": HA_VERSION,
+        "python_version": sys.version,
+        "paired": True,
+        "pair_id": entry.data.get(CONF_PAIR_ID),
+        "name": coordinator.name,
+        "connection_mode": getattr(coordinator, "connection_mode", None),
+        "is_connected": coordinator.is_connected,
+        "config_entry": {
+            "title": entry.title,
+            "version": entry.version,
+            "data": dict(entry.data),
+            "options": dict(entry.options),
+        },
+        "sides": sides,
+    }
+    return redact_data(data)
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    stored = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(stored, PairedBedCoordinator):
+        # A paired entry stores a PairedBedCoordinator, which has no client /
+        # controller / position_data — aggregate per side instead of crashing.
+        return await _async_paired_diagnostics(hass, entry, stored)
+    coordinator: AdjustableBedCoordinator = stored
 
     # Get integration version from manifest
     integration = await async_get_integration(hass, DOMAIN)

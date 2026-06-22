@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ from .const import (
     BEDS_WITH_POSITION_FEEDBACK,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -43,19 +45,37 @@ from .const import (
     CONF_KAIDI_TARGET_VADDR,
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
+    CONF_PAIR_ID,
+    CONF_PAIR_MEMBER_ADDRESSES,
+    CONF_PAIR_MODE,
+    CONF_PAIR_SCHEMA_VERSION,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONF_SIDE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
+    PAIR_SIDES,
     RICHMAT_REMOTE_AUTO,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
     VARIANT_AUTO,
     requires_pairing,
 )
-from .coordinator import AdjustableBedCoordinator
+from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
+from .pairing import (
+    get_child,
+    is_paired,
+    pair_member_addresses,
+    with_updated_child,
+)
 from .unsupported import create_pairing_required_issue
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -70,6 +90,7 @@ SERVICE_TIMED_MOVE = "timed_move"
 ATTR_PRESET = "preset"
 ATTR_MOTOR = "motor"
 ATTR_POSITION = "position"
+ATTR_SIDE = "side"
 ATTR_TARGET_ADDRESS = "target_address"
 ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
@@ -113,6 +134,19 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
 ]
 
+# Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
+# against the child coordinators. The remaining platforms (climate/light/select)
+# are not forwarded for pairs yet; the combine flow blocks beds that expose them
+# so their entities are never silently dropped.
+PAIRED_PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.COVER,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Adjustable Bed integration domain."""
@@ -139,7 +173,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 3:
+    if entry.version > 4:
         _LOGGER.error(
             "Cannot migrate config entry %s for %s from unsupported future version %s",
             entry.entry_id,
@@ -167,6 +201,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
         hass.config_entries.async_update_entry(entry, data=new_data, version=3)
+
+    if entry.version < 4:
+        # v3 -> v4: introduce the paired-bed schema (Dual Bed 4.0). STRICT no-op
+        # for every existing (non-paired) entry — only the version is stamped, no
+        # data is touched — so the migration that runs for *every* entry on
+        # upgrade can never corrupt a single bed. Paired entries are created only
+        # by the opt-in pairing flow (already at v4) and never reach this branch.
+        hass.config_entries.async_update_entry(entry, version=4)
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
@@ -278,10 +320,174 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
+# Entry-data keys that must NOT be inherited by a child coordinator: the pair's
+# own keys, plus per-side state like the BLE bond marker — inheriting a top-level
+# bond marker would poison BOTH sides (one repaired side must not flip the other
+# to "already bonded" and skip pairing).
+_PAIR_ONLY_KEYS = frozenset(
+    {
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_SCHEMA_VERSION,
+        CONF_PAIR_CONNECTION_MODE,
+        CONF_BLE_BOND_ESTABLISHED,
+    }
+)
+
+
+def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
+    """Parent-level config inherited by every child (each descriptor overrides)."""
+    return {
+        key: value for key, value in parent_data.items() if key not in _PAIR_ONLY_KEYS
+    }
+
+
+def _make_child_persist_cb(
+    hass: HomeAssistant, entry: ConfigEntry, side: str
+) -> Callable[[dict[str, Any]], None]:
+    """Route a child's runtime config change back to its parent descriptor.
+
+    Only keys that differ from the CURRENTLY persisted descriptor are written
+    (so it stays minimal). Comparing against the live descriptor — not a static
+    build-time baseline — means a value reverted to its original is still
+    written, instead of leaving a stale override behind.
+    """
+
+    def persist(new_child_data: dict[str, Any]) -> None:
+        current = get_child(entry.data, side) or {}
+        # Parent options now flow into the child view's `.data`; never write
+        # those option-managed keys back into the per-side descriptor (they'd
+        # become a stale per-side override that shadows future option edits).
+        option_keys = set(entry.options)
+        delta = {
+            key: value
+            for key, value in new_child_data.items()
+            if current.get(key) != value and key not in option_keys
+        }
+        if not delta:
+            return
+        hass.config_entries.async_update_entry(
+            entry, data=with_updated_child(entry.data, side, delta)
+        )
+
+    return persist
+
+
+def _build_paired_children(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> dict[str, AdjustableBedCoordinator]:
+    """Build one child coordinator per side from the paired entry's descriptors."""
+    shared = _shared_child_fields(entry.data)
+    children: dict[str, AdjustableBedCoordinator] = {}
+    for side in PAIR_SIDES:
+        descriptor = get_child(entry.data, side)
+        if descriptor is None:
+            continue
+        child_data: dict[str, Any] = {**shared, **descriptor}
+        view = ChildEntryView(
+            entry, child_data, _make_child_persist_cb(hass, entry, side)
+        )
+        # The view duck-types a ConfigEntry for the coordinator's purposes.
+        children[side] = AdjustableBedCoordinator(hass, cast("ConfigEntry", view))
+    return children
+
+
+def _async_ensure_paired_device_registry(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: PairedBedCoordinator
+) -> None:
+    """Eagerly create the synthetic parent device and its child sub-devices.
+
+    Created before the first connect so the device (and its diagnostics) survive
+    a half-available pair or a SETUP_RETRY.
+    """
+    registry = dr.async_get(hass)
+    parent_info = coordinator.device_info
+    registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers=parent_info.get("identifiers"),
+        name=parent_info.get("name"),
+        manufacturer=parent_info.get("manufacturer"),
+        model=parent_info.get("model"),
+    )
+    parent_identifier = (DOMAIN, coordinator.pair_id)
+    for child in coordinator.children.values():
+        child_info = child.device_info
+        registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers=child_info.get("identifiers"),
+            name=child_info.get("name"),
+            manufacturer=child_info.get("manufacturer"),
+            model=child_info.get("model"),
+            via_device=parent_identifier,
+        )
+
+
+async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a paired (Dual Bed 4.0) entry as one logical device."""
+    _LOGGER.info(
+        "Setting up paired bed %s (pair_id=%s, mode=%s, sides=%s)",
+        entry.title,
+        entry.data.get(CONF_PAIR_ID),
+        entry.data.get(CONF_PAIR_MODE),
+        [child.get(CONF_SIDE) for child in entry.data.get(CONF_PAIR_CHILDREN, [])],
+    )
+
+    children = _build_paired_children(hass, entry)
+    if not children:
+        raise ConfigEntryNotReady("Paired bed has no child sides configured")
+
+    coordinator = PairedBedCoordinator(hass, entry, children)
+    _async_ensure_paired_device_registry(hass, entry, coordinator)
+
+    try:
+        async with asyncio.timeout(SETUP_TIMEOUT):
+            connected = await coordinator.async_connect()
+    except TimeoutError:
+        # The coordinator isn't in hass.data yet, so the unload path won't run —
+        # shut it down here or a side that already connected keeps its BLE link
+        # alive across SETUP_RETRY.
+        await coordinator.async_shutdown()
+        raise ConfigEntryNotReady(
+            f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
+        ) from None
+
+    if not connected:
+        # Half-available is fine, but if NO side connected there is nothing to
+        # control yet — retry like a single bed.
+        await coordinator.async_shutdown()
+        raise ConfigEntryNotReady(
+            f"No side of paired bed {entry.title} could be connected"
+        )
+
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+
+    # Seed each connected child's positions, like the single-bed path does, so
+    # per-side covers don't sit at "unknown" until the first movement.
+    for child in coordinator.children.values():
+        if child.is_connected:
+            entry.async_create_background_task(
+                hass,
+                child.async_read_initial_positions(),
+                name=f"adjustable_bed_paired_initial_read_{child.address}",
+            )
+
+    _LOGGER.info("Paired bed setup complete for %s", entry.title)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     await _async_register_services(hass)
+
+    # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
+    # entries (no pair_id) fall through to the unchanged logic below.
+    if is_paired(entry.data):
+        return await _async_setup_paired_entry(hass, entry)
 
     await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
@@ -449,19 +655,85 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
-    async def _get_coordinator_from_device(
+    def _resolve_sided_target(
         hass: HomeAssistant, device_id: str
-    ) -> AdjustableBedCoordinator | None:
-        """Get coordinator from device ID."""
+    ) -> tuple[AdjustableBedCoordinator | PairedBedCoordinator, str | None] | None:
+        """Resolve (coordinator, inferred_side) for a sided service target.
+
+        ``inferred_side`` is the left/right of a targeted paired child sub-device
+        (matched by its MAC identifier), or ``None`` for a single bed or the
+        paired parent device. Lets a caller targeting one side's device act on
+        just that side without passing ``side`` explicitly.
+        """
         device_registry = dr.async_get(hass)
         device = device_registry.async_get(device_id)
         if not device:
             return None
-
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator | None = None
         for entry_id in device.config_entries:
             if entry_id in hass.data.get(DOMAIN, {}):
-                return cast(AdjustableBedCoordinator, hass.data[DOMAIN][entry_id])
-        return None
+                coordinator = hass.data[DOMAIN][entry_id]
+                break
+        if coordinator is None:
+            return None
+        inferred_side: str | None = None
+        if isinstance(coordinator, PairedBedCoordinator):
+            macs = {
+                ident[1].upper() for ident in device.identifiers if ident[0] == DOMAIN
+            }
+            for side, child in coordinator.children.items():
+                if child.address.upper() in macs:
+                    inferred_side = side
+                    break
+        return coordinator, inferred_side
+
+    def _resolve_sided_targets(
+        hass: HomeAssistant,
+        device_ids: list[str],
+        explicit_side: str | None,
+    ) -> tuple[
+        list[tuple[AdjustableBedCoordinator | PairedBedCoordinator, str]],
+        list[str],
+    ]:
+        """Group sided-service targets by coordinator, merging inferred sides.
+
+        Targeting both of a pair's child devices (or the parent) in one call
+        collapses to a single ``both`` fan-out — preserving the both-failure
+        contract — instead of two separate side commands. Each coordinator
+        appears once in first-seen order. Returns (targets, missing_device_ids).
+        """
+        ordered: list[int] = []
+        by_key: dict[
+            int,
+            tuple[AdjustableBedCoordinator | PairedBedCoordinator, set[str | None]],
+        ] = {}
+        missing: list[str] = []
+        for device_id in device_ids:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
+                missing.append(device_id)
+                continue
+            coordinator, inferred_side = resolved
+            key = id(coordinator)
+            if key not in by_key:
+                by_key[key] = (coordinator, set())
+                ordered.append(key)
+            by_key[key][1].add(inferred_side)
+
+        targets: list[tuple[AdjustableBedCoordinator | PairedBedCoordinator, str]] = []
+        for key in ordered:
+            coordinator, sides = by_key[key]
+            if explicit_side is not None:
+                side = explicit_side
+            elif sides == {SIDE_LEFT}:
+                side = SIDE_LEFT
+            elif sides == {SIDE_RIGHT}:
+                side = SIDE_RIGHT
+            else:
+                # parent device (None), both children, or a mix → whole bed.
+                side = SIDE_BOTH
+            targets.append((coordinator, side))
+        return targets, missing
 
     def _get_support_bundle_target_from_device(
         hass: HomeAssistant, device_id: str
@@ -478,10 +750,43 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 continue
 
             address = entry.data.get(CONF_ADDRESS)
+            if not isinstance(address, str) and is_paired(entry.data):
+                # Paired entries keep addresses only in pair_children. Resolve to
+                # the targeted child sub-device's MAC (else the first member) so
+                # the bundle can still capture BLE/GATT for that side by address.
+                members = pair_member_addresses(entry.data)
+                device_macs = {
+                    ident[1].upper()
+                    for ident in device.identifiers
+                    if ident[0] == DOMAIN
+                }
+                address = next((m for m in members if m in device_macs), None)
+                if address is None and members:
+                    # The synthetic parent device (pair_id identifier) covers both
+                    # sides; a bundle is per-address, so make the user pick one
+                    # side's device instead of silently capturing only the first.
+                    raise ServiceValidationError(
+                        f"{entry.title} is a paired bed; target one side's device "
+                        "for the support bundle.",
+                        translation_domain=DOMAIN,
+                        translation_key="bundle_needs_side_for_paired",
+                        translation_placeholders={"device_name": entry.title},
+                    )
             if not isinstance(address, str):
                 continue
 
-            coordinator = cast(AdjustableBedCoordinator | None, hass.data.get(DOMAIN, {}).get(entry_id))
+            coordinator: AdjustableBedCoordinator | None = None
+            stored = hass.data.get(DOMAIN, {}).get(entry_id)
+            if isinstance(stored, PairedBedCoordinator):
+                # Reuse the matching live child coordinator so the bundle pauses
+                # and reuses its connection instead of opening a second BLE link
+                # (single-connection beds can't take two).
+                for child in stored.children.values():
+                    if child.address.upper() == address.upper():
+                        coordinator = child
+                        break
+            else:
+                coordinator = cast("AdjustableBedCoordinator | None", stored)
             return address, coordinator, entry
 
         return None
@@ -511,109 +816,278 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
         return controller
 
+    def _command_targets(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
+    ) -> list[AdjustableBedCoordinator]:
+        """Return the per-side coordinators a sided command must validate.
+
+        For a paired bed this is the child coordinator(s) for ``side``; the
+        caller validates each (pre-flight all sides before commanding any) and
+        then executes via the paired coordinator's fan-out. For a single bed,
+        ``left``/``right`` is rejected and ``both`` maps to the one controller.
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            if side == SIDE_BOTH:
+                return list(coordinator.children.values())
+            child = coordinator.child_for_side(side)
+            if child is None:
+                raise ServiceValidationError(
+                    f"This bed has no {side} side",
+                    translation_domain=DOMAIN,
+                    translation_key="side_not_available",
+                    translation_placeholders={"side": side},
+                )
+            return [child]
+
+        if side != SIDE_BOTH:
+            raise ServiceValidationError(
+                "This is a single bed; the Left/Right/Both option only applies to "
+                "paired beds.",
+                translation_domain=DOMAIN,
+                translation_key="side_not_supported",
+            )
+        return [coordinator]
+
+    async def _execute_sided(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        side: str,
+        command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+        *,
+        cancel_running: bool = True,
+    ) -> None:
+        """Run a command on the targeted side(s).
+
+        A paired bed fans out (with the both-failure stop-the-other contract); a
+        single bed runs exactly as before.
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            await coordinator.async_execute_controller_command(
+                command_fn, side=side, cancel_running=cancel_running
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn, cancel_running=cancel_running
+            )
+
+    async def _release_preflighted(
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+    ) -> None:
+        """Give every bed/side connected during a failed pre-flight a normal idle
+        disconnect, so a validation abort doesn't leave a BLE link open with no
+        idle timer (the command finalizer that would reset it never ran). Applies
+        to single beds too, not just paired sides — both reconnect with
+        reset_timer=False during validation."""
+        for _coordinator, target in preflighted:
+            if target.is_connected:
+                with contextlib.suppress(Exception):
+                    await target.async_ensure_connected(reset_timer=True)
+
+    def _single_bed_for_service(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        inferred_side: str | None,
+        service: str,
+    ) -> AdjustableBedCoordinator:
+        """Resolve a per-motor service target to one coordinator.
+
+        These services drive a single bed's motors directly (controller/motor
+        specs), so for a paired bed a call that targets one side's child device
+        routes to that child; targeting the paired parent (no side) is rejected
+        with guidance to pick a side. Avoids a raw AttributeError on
+        PairedBedCoordinator and keeps the services usable after pairing.
+        """
+        if isinstance(coordinator, PairedBedCoordinator):
+            if inferred_side is not None:
+                child = coordinator.child_for_side(inferred_side)
+                if child is not None:
+                    # Wrap so the per-motor service routes writes through the
+                    # parent (pair lock) yet reads the child's entry/controller.
+                    return cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, inferred_side),
+                    )
+            raise ServiceValidationError(
+                f"{coordinator.name} is a paired bed; target one side's device "
+                f"for {service}.",
+                translation_domain=DOMAIN,
+                translation_key="service_needs_side_for_paired",
+                translation_placeholders={
+                    "device_name": coordinator.name,
+                    "service": service,
+                },
+            )
+        return coordinator
+
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        explicit_side = call.data.get(ATTR_SIDE)
 
-        _LOGGER.info("Service goto_preset called: preset=%d", preset)
+        _LOGGER.info(
+            "Service goto_preset called: preset=%d (side=%s)", preset, explicit_side
+        )
 
-        for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if coordinator:
-                # Check if controller supports memory presets
-                controller = await _get_controller_for_service(coordinator)
-                if not getattr(controller, "supports_memory_presets", False):
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' does not support memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_presets_not_supported",
-                        translation_placeholders={"device_name": coordinator.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": coordinator.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-                await coordinator.async_execute_controller_command(
-                    lambda ctrl, p=preset: ctrl.preset_memory(p)  # type: ignore[misc]
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+        # Phase 1: validate the preset on EVERY targeted side before moving any
+        # bed, so a multi-target call never half-executes.
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _get_controller_for_service(target)
+                    preflighted.append((coordinator, target))
+                    if not getattr(controller, "supports_memory_presets", False):
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_presets_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    slot_count = getattr(controller, "memory_slot_count", 4)
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
+
+        # Phase 2: every target validated — now move them. If one bed's command
+        # fails, release the still-connected preflighted beds that never ran (and
+        # so never reset their idle timer) before propagating.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    lambda ctrl, p=preset: ctrl.preset_memory(p),  # type: ignore[misc]
                 )
-            else:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     async def handle_save_preset(call: ServiceCall) -> None:
         """Handle save_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        explicit_side = call.data.get(ATTR_SIDE)
 
-        _LOGGER.info("Service save_preset called: preset=%d", preset)
+        _LOGGER.info(
+            "Service save_preset called: preset=%d (side=%s)", preset, explicit_side
+        )
 
-        for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if coordinator:
-                # Check if controller supports programming memory presets
-                controller = await _get_controller_for_service(coordinator)
-                if not getattr(controller, "supports_memory_programming", False):
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' does not support programming memory presets",
-                        translation_domain=DOMAIN,
-                        translation_key="memory_programming_not_supported",
-                        translation_placeholders={"device_name": coordinator.name},
-                    )
-                # Validate preset against controller's memory slot count
-                slot_count = getattr(controller, "memory_slot_count", 4)
-                if preset > slot_count:
-                    raise ServiceValidationError(
-                        f"Device '{coordinator.name}' only supports memory presets 1-{slot_count}. "
-                        f"Preset {preset} is not available for this bed type.",
-                        translation_domain=DOMAIN,
-                        translation_key="invalid_preset_number",
-                        translation_placeholders={
-                            "device_name": coordinator.name,
-                            "max_preset": str(slot_count),
-                            "requested_preset": str(preset),
-                        },
-                    )
-                await coordinator.async_execute_controller_command(
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+        # Phase 1: validate that every targeted side can program this slot before
+        # programming any, so a multi-target call never half-executes.
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    controller = await _get_controller_for_service(target)
+                    preflighted.append((coordinator, target))
+                    if not getattr(controller, "supports_memory_programming", False):
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' does not support programming memory presets",
+                            translation_domain=DOMAIN,
+                            translation_key="memory_programming_not_supported",
+                            translation_placeholders={"device_name": target.name},
+                        )
+                    slot_count = getattr(controller, "memory_slot_count", 4)
+                    if preset > slot_count:
+                        raise ServiceValidationError(
+                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
+                            f"Preset {preset} is not available for this bed type.",
+                            translation_domain=DOMAIN,
+                            translation_key="invalid_preset_number",
+                            translation_placeholders={
+                                "device_name": target.name,
+                                "max_preset": str(slot_count),
+                                "requested_preset": str(preset),
+                            },
+                        )
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
+
+        # Phase 2: every target validated — now program them. Release any
+        # still-connected preflighted bed that never ran if one fails.
+        try:
+            for coordinator, side in targets:
+                await _execute_sided(
+                    coordinator,
+                    side,
                     lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
                     cancel_running=False,
                 )
-            else:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     async def handle_stop_all(call: ServiceCall) -> None:
         """Handle stop_all service call."""
         device_ids = call.data.get(CONF_DEVICE_ID, [])
+        explicit_side = call.data.get(ATTR_SIDE)
 
-        _LOGGER.info("Service stop_all called")
+        _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-        missing_device_ids: list[str] = []
+        targets, missing_device_ids = _resolve_sided_targets(
+            hass, device_ids, explicit_side
+        )
 
-        for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if coordinator:
-                await coordinator.async_stop_command()
+        async def _stop_one(
+            coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
+        ) -> None:
+            # Validate that side applies (rejects left/right on a single bed).
+            _command_targets(coordinator, side)
+            if isinstance(coordinator, PairedBedCoordinator):
+                await coordinator.async_stop_command(side=side)
             else:
-                missing_device_ids.append(device_id)
+                await coordinator.async_stop_command()
+
+        # STOP is a safety action: attempt every target before surfacing an
+        # error, so one bed's failure never leaves another still moving.
+        results = await asyncio.gather(
+            *(_stop_one(coordinator, side) for coordinator, side in targets),
+            return_exceptions=True,
+        )
+        stop_errors = [r for r in results if isinstance(r, BaseException)]
 
         if missing_device_ids:
             raise ServiceValidationError(
@@ -623,6 +1097,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
             )
 
+        if stop_errors:
+            # Every target was attempted; surface the first failure.
+            raise stop_errors[0]
+
+    # Optional left/right/both target (paired beds). No default: when omitted, a
+    # call that targets one side's child device acts on just that side, otherwise
+    # it falls back to 'both' — so single-bed automations are unchanged.
+    side_field = {
+        vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
+    }
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,
@@ -631,6 +1116,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                **side_field,
             }
         ),
     )
@@ -643,6 +1129,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                **side_field,
             }
         ),
     )
@@ -654,9 +1141,27 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                **side_field,
             }
         ),
     )
+
+    @contextlib.asynccontextmanager
+    async def _release_idle_on_validation_failure(
+        coordinator: AdjustableBedCoordinator,
+    ) -> AsyncIterator[None]:
+        """Release a bed reconnected for a per-motor service if validation fails.
+
+        _get_controller_for_service reconnects with reset_timer=False; without
+        this an invalid set_position/timed_move would leave the BLE link open
+        with no idle timer (the preset preflight path already guards this way)."""
+        try:
+            yield
+        except ServiceValidationError:
+            if coordinator.is_connected:
+                with contextlib.suppress(Exception):
+                    await coordinator.async_ensure_connected(reset_timer=True)
+            raise
 
     async def handle_set_position(call: ServiceCall) -> None:
         """Handle set_position service call."""
@@ -671,231 +1176,224 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         )
 
         for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if not coordinator:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
-            controller = await _get_controller_for_service(coordinator)
-
-            # Get config entry for bed type and motor count
-            entry: ConfigEntry | None = None
-            for entry_id, coord in hass.data[DOMAIN].items():
-                if coord is coordinator:
-                    entry = hass.config_entries.async_get_entry(entry_id)
-                    break
-
-            if not entry:
-                raise ServiceValidationError(
-                    f"Could not find config entry for device {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-
-            bed_type = entry.data.get(CONF_BED_TYPE)
-            motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-            protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-            supports_direct_position_control = bool(
-                getattr(controller, "supports_direct_position_control", False)
+            coordinator = _single_bed_for_service(
+                resolved[0], resolved[1], "set_position"
             )
+            async with _release_idle_on_validation_failure(coordinator):
+                controller = await _get_controller_for_service(coordinator)
 
-            # Validate bed supports position feedback
-            # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
-            has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                bed_type == BED_TYPE_KEESON
-                and protocol_variant == KEESON_VARIANT_ERGOMOTION
-            )
-            if not has_position_feedback and not supports_direct_position_control:
-                raise ServiceValidationError(
-                    f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
-                    translation_domain=DOMAIN,
-                    translation_key="position_feedback_not_supported",
-                    translation_placeholders={
-                        "device_name": coordinator.name,
-                        "bed_type": bed_type or "unknown",
-                    },
+                # Bed type / motor count come from the coordinator's own entry (the
+                # child's ChildEntryView for a paired-side target — children aren't in
+                # hass.data, so don't scan it).
+                entry = coordinator.entry
+                bed_type = entry.data.get(CONF_BED_TYPE)
+                motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+                protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+                supports_direct_position_control = bool(
+                    getattr(controller, "supports_direct_position_control", False)
                 )
 
-            # Validate angle sensing is enabled
-            if coordinator.disable_angle_sensing:
-                raise ServiceValidationError(
-                    f"Angle sensing is disabled for device '{coordinator.name}'",
-                    translation_domain=DOMAIN,
-                    translation_key="angle_sensing_disabled",
-                    translation_placeholders={"device_name": coordinator.name},
+                # Validate bed supports position feedback
+                # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
+                has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
+                    bed_type == BED_TYPE_KEESON
+                    and protocol_variant == KEESON_VARIANT_ERGOMOTION
                 )
+                if not has_position_feedback and not supports_direct_position_control:
+                    raise ServiceValidationError(
+                        f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
+                        translation_domain=DOMAIN,
+                        translation_key="position_feedback_not_supported",
+                        translation_placeholders={
+                            "device_name": coordinator.name,
+                            "bed_type": bed_type or "unknown",
+                        },
+                    )
 
-            # Define motor configurations.
-            # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
-            # For BOX25: only head and feet are valid, using direct percentage positions.
-            # For CST: only back and legs publish position feedback.
-            # For Kaidi: direct position writes expose back/legs percentage targets.
-            # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
-            uses_percentage_positions = bed_type in (
-                BED_TYPE_KEESON,
-                BED_TYPE_ERGOMOTION,
-                BED_TYPE_SLEEPYS_BOX25,
-            ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
+                # Validate angle sensing is enabled
+                if coordinator.disable_angle_sensing:
+                    raise ServiceValidationError(
+                        f"Angle sensing is disabled for device '{coordinator.name}'",
+                        translation_domain=DOMAIN,
+                        translation_key="angle_sensing_disabled",
+                        translation_placeholders={"device_name": coordinator.name},
+                    )
 
-            if bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
-                valid_motors = {"back", "legs"}
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": 100.0,
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": 100.0,
-                    },
-                }
-            elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-                # Keeson/Ergomotion only have head and feet motors
-                valid_motors = {"head", "feet"}
-                motor_configs = {
-                    "head": {
-                        "position_key": "back",  # Maps to "back" in position_data
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": 100.0,  # Percentage
-                    },
-                    "feet": {
-                        "position_key": "legs",  # Maps to "legs" in position_data
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": 100.0,  # Percentage
-                    },
-                }
-            elif bed_type == BED_TYPE_SLEEPYS_BOX25:
-                valid_motors = {"head", "feet"}
-                motor_configs = {
-                    "head": {
-                        "position_key": "head",
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": 100.0,
-                    },
-                    "feet": {
-                        "position_key": "feet",
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": 100.0,
-                    },
-                }
-            elif bed_type == BED_TYPE_OKIN_CST:
-                valid_motors = set(OKIN_CST_POSITION_AXES)
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": coordinator.get_max_angle("back"),  # Degrees
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
-                    },
-                }
-            else:
-                # Standard beds: motor availability depends on motor_count
-                motor_configs = {
-                    "back": {
-                        "position_key": "back",
-                        "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                        "max_value": coordinator.get_max_angle("back"),  # Degrees
-                        "min_motors": 2,
-                    },
-                    "legs": {
-                        "position_key": "legs",
-                        "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                        "max_value": coordinator.get_max_angle("legs"),  # Degrees
-                        "min_motors": 2,
-                    },
-                    "head": {
-                        "position_key": "head",
-                        "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                        "max_value": coordinator.get_max_angle("head"),  # Degrees
-                        "min_motors": 3,
-                    },
-                    "feet": {
-                        "position_key": "feet",
-                        "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                        "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                        "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                        "max_value": coordinator.get_max_angle("feet"),  # Degrees
-                        "min_motors": 4,
-                    },
-                }
-                # Filter to valid motors based on motor_count
-                valid_motors = {
-                    m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
-                }
+                # Define motor configurations.
+                # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
+                # For BOX25: only head and feet are valid, using direct percentage positions.
+                # For CST: only back and legs publish position feedback.
+                # For Kaidi: direct position writes expose back/legs percentage targets.
+                # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
+                uses_percentage_positions = bed_type in (
+                    BED_TYPE_KEESON,
+                    BED_TYPE_ERGOMOTION,
+                    BED_TYPE_SLEEPYS_BOX25,
+                ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control)
 
-            # Validate motor is valid for this bed
-            if motor not in valid_motors:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                    f"Valid motors: {', '.join(sorted(valid_motors))}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_motor_for_bed_type",
-                    translation_placeholders={
-                        "motor": motor,
-                        "device_name": coordinator.name,
-                        "valid_motors": ", ".join(sorted(valid_motors)),
-                    },
+                if bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
+                    valid_motors = {"back", "legs"}
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": 100.0,
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": 100.0,
+                        },
+                    }
+                elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+                    # Keeson/Ergomotion only have head and feet motors
+                    valid_motors = {"head", "feet"}
+                    motor_configs = {
+                        "head": {
+                            "position_key": "back",  # Maps to "back" in position_data
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": 100.0,  # Percentage
+                        },
+                        "feet": {
+                            "position_key": "legs",  # Maps to "legs" in position_data
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": 100.0,  # Percentage
+                        },
+                    }
+                elif bed_type == BED_TYPE_SLEEPYS_BOX25:
+                    valid_motors = {"head", "feet"}
+                    motor_configs = {
+                        "head": {
+                            "position_key": "head",
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": 100.0,
+                        },
+                        "feet": {
+                            "position_key": "feet",
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": 100.0,
+                        },
+                    }
+                elif bed_type == BED_TYPE_OKIN_CST:
+                    valid_motors = set(OKIN_CST_POSITION_AXES)
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": coordinator.get_max_angle("back"),  # Degrees
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": coordinator.get_max_angle("legs"),  # Degrees
+                        },
+                    }
+                else:
+                    # Standard beds: motor availability depends on motor_count
+                    motor_configs = {
+                        "back": {
+                            "position_key": "back",
+                            "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                            "max_value": coordinator.get_max_angle("back"),  # Degrees
+                            "min_motors": 2,
+                        },
+                        "legs": {
+                            "position_key": "legs",
+                            "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                            "max_value": coordinator.get_max_angle("legs"),  # Degrees
+                            "min_motors": 2,
+                        },
+                        "head": {
+                            "position_key": "head",
+                            "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                            "max_value": coordinator.get_max_angle("head"),  # Degrees
+                            "min_motors": 3,
+                        },
+                        "feet": {
+                            "position_key": "feet",
+                            "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                            "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                            "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                            "max_value": coordinator.get_max_angle("feet"),  # Degrees
+                            "min_motors": 4,
+                        },
+                    }
+                    # Filter to valid motors based on motor_count
+                    valid_motors = {
+                        m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
+                    }
+
+                # Validate motor is valid for this bed
+                if motor not in valid_motors:
+                    raise ServiceValidationError(
+                        f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                        f"Valid motors: {', '.join(sorted(valid_motors))}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_motor_for_bed_type",
+                        translation_placeholders={
+                            "motor": motor,
+                            "device_name": coordinator.name,
+                            "valid_motors": ", ".join(sorted(valid_motors)),
+                        },
+                    )
+
+                config = motor_configs[motor]
+                max_value = config["max_value"]
+
+                # Validate position is in range
+                if position < 0 or position > max_value:
+                    unit = "%" if uses_percentage_positions else "°"
+                    raise ServiceValidationError(
+                        f"Position {position} is out of range for motor '{motor}'. "
+                        f"Valid range: 0-{max_value}{unit}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_position_range",
+                        translation_placeholders={
+                            "position": str(position),
+                            "motor": motor,
+                            "max_value": str(max_value),
+                            "unit": unit,
+                        },
+                    )
+
+                # Call async_seek_position
+                await coordinator.async_seek_position(
+                    position_key=cast(str, config["position_key"]),
+                    target_angle=position,
+                    move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
+                    move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
+                    move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
                 )
-
-            config = motor_configs[motor]
-            max_value = config["max_value"]
-
-            # Validate position is in range
-            if position < 0 or position > max_value:
-                unit = "%" if uses_percentage_positions else "°"
-                raise ServiceValidationError(
-                    f"Position {position} is out of range for motor '{motor}'. "
-                    f"Valid range: 0-{max_value}{unit}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_position_range",
-                    translation_placeholders={
-                        "position": str(position),
-                        "motor": motor,
-                        "max_value": str(max_value),
-                        "unit": unit,
-                    },
-                )
-
-            # Call async_seek_position
-            await coordinator.async_seek_position(
-                position_key=cast(str, config["position_key"]),
-                target_angle=position,
-                move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
-                move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
-                move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
-            )
 
     hass.services.async_register(
         DOMAIN,
@@ -926,98 +1424,102 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         )
 
         for device_id in device_ids:
-            coordinator = await _get_coordinator_from_device(hass, device_id)
-            if not coordinator:
+            resolved = _resolve_sided_target(hass, device_id)
+            if resolved is None:
                 raise ServiceValidationError(
                     f"Could not find Adjustable Bed device with ID {device_id}",
                     translation_domain=DOMAIN,
                     translation_key="device_not_found",
                     translation_placeholders={"device_id": device_id},
                 )
+            coordinator = _single_bed_for_service(
+                resolved[0], resolved[1], "timed_move"
+            )
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
-            controller = await _get_controller_for_service(coordinator)
-            motor_configs = {
-                spec.key: {
-                    "move_up_fn": spec.open_fn,
-                    "move_down_fn": spec.close_fn,
-                    "move_stop_fn": spec.stop_fn,
+            async with _release_idle_on_validation_failure(coordinator):
+                controller = await _get_controller_for_service(coordinator)
+                motor_configs = {
+                    spec.key: {
+                        "move_up_fn": spec.open_fn,
+                        "move_down_fn": spec.close_fn,
+                        "move_stop_fn": spec.stop_fn,
+                    }
+                    for spec in controller.motor_control_specs
+                    if spec.key in TIMED_MOVE_MOTOR_OPTIONS
                 }
-                for spec in controller.motor_control_specs
-                if spec.key in TIMED_MOVE_MOTOR_OPTIONS
-            }
-            valid_motors = set(motor_configs)
+                valid_motors = set(motor_configs)
 
-            # Validate motor is valid for this bed
-            if motor not in valid_motors:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                    f"Valid motors: {', '.join(sorted(valid_motors))}",
-                    translation_domain=DOMAIN,
-                    translation_key="invalid_motor_for_bed_type",
-                    translation_placeholders={
-                        "motor": motor,
-                        "device_name": coordinator.name,
-                        "valid_motors": ", ".join(sorted(valid_motors)),
-                    },
-                )
+                # Validate motor is valid for this bed
+                if motor not in valid_motors:
+                    raise ServiceValidationError(
+                        f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
+                        f"Valid motors: {', '.join(sorted(valid_motors))}",
+                        translation_domain=DOMAIN,
+                        translation_key="invalid_motor_for_bed_type",
+                        translation_placeholders={
+                            "motor": motor,
+                            "device_name": coordinator.name,
+                            "valid_motors": ", ".join(sorted(valid_motors)),
+                        },
+                    )
 
-            config = motor_configs[motor]
+                config = motor_configs[motor]
 
-            # Get the appropriate move function based on direction
-            move_fn = config["move_up_fn"] if direction == "up" else config["move_down_fn"]
-            stop_fn = config["move_stop_fn"]
+                # Get the appropriate move function based on direction
+                move_fn = config["move_up_fn"] if direction == "up" else config["move_down_fn"]
+                stop_fn = config["move_stop_fn"]
 
-            # Execute timed movement
-            # Calculate repeat count: duration_ms / pulse_delay_ms
-            # Example: 3500ms on Octo (350ms delay) = 10 repeats
-            pulse_delay_ms = coordinator.motor_pulse_delay_ms
-            if pulse_delay_ms <= 0:
-                _LOGGER.warning(
-                    "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
+                # Execute timed movement
+                # Calculate repeat count: duration_ms / pulse_delay_ms
+                # Example: 3500ms on Octo (350ms delay) = 10 repeats
+                pulse_delay_ms = coordinator.motor_pulse_delay_ms
+                if pulse_delay_ms <= 0:
+                    _LOGGER.warning(
+                        "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
+                        pulse_delay_ms,
+                        coordinator.name,
+                    )
+                    pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
+                # Round up to honor requested duration as minimum
+                calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
+
+                _LOGGER.debug(
+                    "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
+                    duration_ms,
                     pulse_delay_ms,
-                    coordinator.name,
+                    calculated_repeat_count,
                 )
-                pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-            # Round up to honor requested duration as minimum
-            calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
 
-            _LOGGER.debug(
-                "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
-                duration_ms,
-                pulse_delay_ms,
-                calculated_repeat_count,
-            )
+                # Store original pulse count to restore after
+                original_pulse_count = coordinator.motor_pulse_count
 
-            # Store original pulse count to restore after
-            original_pulse_count = coordinator.motor_pulse_count
+                # Bind closure variables as defaults to avoid late-binding bugs
+                async def timed_movement(
+                    ctrl: BedController,
+                    *,
+                    _coordinator: AdjustableBedCoordinator = coordinator_,
+                    _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
+                    _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
+                    _calculated_repeat_count: int = calculated_repeat_count,
+                    _original_pulse_count: int = original_pulse_count,
+                ) -> None:
+                    """Execute movement for specified duration, always sending stop."""
+                    try:
+                        # Temporarily set pulse count to calculated value
+                        # This is safe because we're inside the command lock
+                        _coordinator._motor_pulse_count = _calculated_repeat_count
 
-            # Bind closure variables as defaults to avoid late-binding bugs
-            async def timed_movement(
-                ctrl: BedController,
-                *,
-                _coordinator: AdjustableBedCoordinator = coordinator_,
-                _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
-                _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
-                _calculated_repeat_count: int = calculated_repeat_count,
-                _original_pulse_count: int = original_pulse_count,
-            ) -> None:
-                """Execute movement for specified duration, always sending stop."""
-                try:
-                    # Temporarily set pulse count to calculated value
-                    # This is safe because we're inside the command lock
-                    _coordinator._motor_pulse_count = _calculated_repeat_count
+                        # Call the movement function (uses coordinator's pulse settings)
+                        await _move_fn(ctrl)
+                    finally:
+                        # Restore original pulse count
+                        _coordinator._motor_pulse_count = _original_pulse_count
 
-                    # Call the movement function (uses coordinator's pulse settings)
-                    await _move_fn(ctrl)
-                finally:
-                    # Restore original pulse count
-                    _coordinator._motor_pulse_count = _original_pulse_count
+                        # Always send stop command
+                        await asyncio.shield(_stop_fn(ctrl))
 
-                    # Always send stop command
-                    await asyncio.shield(_stop_fn(ctrl))
-
-            await coordinator.async_execute_controller_command(timed_movement)
+                await coordinator.async_execute_controller_command(timed_movement)
 
     hass.services.async_register(
         DOMAIN,
@@ -1186,8 +1688,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: AdjustableBedCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
+    platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[
+            DOMAIN
+        ].pop(entry.entry_id)
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)

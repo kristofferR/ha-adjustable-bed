@@ -10,7 +10,7 @@ import random
 import time
 import traceback
 from collections import deque
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -180,6 +180,52 @@ class NoControllerError(Exception):
     """Raised when no controller is available."""
 
 
+class ChildEntryView:
+    """A per-side config view of a parent ConfigEntry (Dual Bed 4.0).
+
+    A paired bed is one config entry but two child coordinators. Each child reads
+    its per-side config from ``.data`` (this view) and persists runtime changes
+    through ``persist_data`` — which updates this view in place and routes to the
+    parent's child descriptor. Everything else proxies to the real parent entry,
+    so background tasks, ``entry_id`` and the entry lifecycle stay attached to the
+    single real entry. Single beds never use this — they get the real entry.
+    """
+
+    def __init__(
+        self,
+        parent: ConfigEntry,
+        child_data: Mapping[str, Any],
+        persist_cb: Callable[[dict[str, Any]], None],
+    ) -> None:
+        self._parent = parent
+        self._child_data: dict[str, Any] = dict(child_data)
+        self._persist_cb = persist_cb
+
+    @property
+    def data(self) -> dict[str, Any]:
+        # Parent-level option edits (made on the paired bed after pairing) win
+        # over the frozen per-side descriptor for any shared key, so they aren't
+        # silently shadowed for settings the coordinator reads from `.data`.
+        # Per-side identity (address/side/bond) isn't in options, so it's kept.
+        if self._parent.options:
+            return {**self._child_data, **self._parent.options}
+        return self._child_data
+
+    @property
+    def options(self) -> Mapping[str, Any]:
+        return self._parent.options
+
+    def persist_data(self, new_data: Mapping[str, Any]) -> None:
+        """Update this side's config in place and route it to the parent."""
+        self._child_data = dict(new_data)
+        self._persist_cb(self._child_data)
+
+    def __getattr__(self, name: str) -> Any:
+        # Anything not overridden above (entry_id, title, unique_id, version,
+        # async_create_background_task, async_on_unload, ...) comes from the parent.
+        return getattr(self._parent, name)
+
+
 class AdjustableBedCoordinator:
     """Coordinator for managing bed connection and state."""
 
@@ -347,6 +393,19 @@ class AdjustableBedCoordinator:
             self._connection_profile,
         )
 
+    def _async_persist_config(self, new_data: dict[str, Any]) -> None:
+        """Persist a runtime config change to the correct backing store.
+
+        For a paired child the entry is a ChildEntryView, which routes the update
+        to the parent's per-side descriptor. For a single bed it is the real
+        entry, so this is exactly the previous async_update_entry call.
+        """
+        entry = self.entry
+        if isinstance(entry, ChildEntryView):
+            entry.persist_data(new_data)
+        else:
+            self.hass.config_entries.async_update_entry(entry, data=new_data)
+
     def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
         previous_bed_type = self._bed_type
@@ -426,10 +485,7 @@ class AdjustableBedCoordinator:
 
         entry_data_changed = entry_data != self.entry.data
         if entry_data_changed:
-            self.hass.config_entries.async_update_entry(
-                self.entry,
-                data=entry_data,
-            )
+            self._async_persist_config(entry_data)
 
         return bed_type_changed or entry_data_changed
 
@@ -630,12 +686,8 @@ class AdjustableBedCoordinator:
         if self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
             return
 
-        self.hass.config_entries.async_update_entry(
-            self.entry,
-            data={
-                **self.entry.data,
-                CONF_BLE_BOND_ESTABLISHED: True,
-            },
+        self._async_persist_config(
+            {**self.entry.data, CONF_BLE_BOND_ESTABLISHED: True}
         )
 
     def _clear_ble_bond_established(self) -> None:
@@ -647,12 +699,8 @@ class AdjustableBedCoordinator:
         if not self.entry.data.get(CONF_BLE_BOND_ESTABLISHED):
             return
 
-        self.hass.config_entries.async_update_entry(
-            self.entry,
-            data={
-                **self.entry.data,
-                CONF_BLE_BOND_ESTABLISHED: False,
-            },
+        self._async_persist_config(
+            {**self.entry.data, CONF_BLE_BOND_ESTABLISHED: False}
         )
 
     async def _async_handle_ble_authentication_error(
@@ -2340,8 +2388,7 @@ class AdjustableBedCoordinator:
         """
         if cancel_running:
             # Cancel any running command immediately
-            self._cancel_counter += 1
-            self._cancel_command.set()
+            self.request_command_cancel()
 
         # Capture cancel count at entry to detect if we get cancelled while waiting
         entry_cancel_count = self._cancel_counter
@@ -2415,13 +2462,22 @@ class AdjustableBedCoordinator:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
 
+    def request_command_cancel(self) -> None:
+        """Signal the running command to stop ASAP, without sending a STOP write.
+
+        Lets the paired parent preempt an in-flight child command before taking
+        the pair lock, so a cancel_running movement (or STOP) isn't queued behind
+        the BLE pulse window.
+        """
+        self._cancel_counter += 1
+        self._cancel_command.set()
+
     async def async_stop_command(self) -> None:
         """Immediately stop any running command and send stop to bed."""
         _LOGGER.info("Stop requested - cancelling current command")
 
         # Signal cancellation to any running command
-        self._cancel_counter += 1
-        self._cancel_command.set()
+        self.request_command_cancel()
 
         # Acquire the command lock to wait for any in-flight GATT write to complete
         # This prevents concurrent BLE writes which cause "operation in progress" errors
@@ -2641,7 +2697,10 @@ class AdjustableBedCoordinator:
                     if self._position_mode == POSITION_MODE_ACCURACY:
                         await self._async_read_positions()
                     else:
-                        self.hass.async_create_task(self._async_read_positions_background())
+                        # Tracked + deduplicated: tie the read to the entry
+                        # lifecycle. A raw async_create_task here would leak a
+                        # task on every command and across reloads.
+                        self._start_background_position_read()
 
                 return result
             except BleakError as err:
