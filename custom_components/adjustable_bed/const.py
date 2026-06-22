@@ -304,7 +304,10 @@ SUPPORTED_BED_TYPES: Final = [
 #       Malouf new/legacy, the OKIN shared-UUID set, Nordic-UART) — the stored
 #       type is not final; or
 #   (c) mutates its capabilities from a post-connect config query / feature
-#       discovery (Octo, Jensen, Sleep Number, Limoss, Vibradorm).
+#       discovery (Octo, Jensen, Sleep Number 360/i8, Limoss, Vibradorm). NB the
+#       MCR variant (BED_TYPE_SLEEP_NUMBER_MCR) is SAFE and IS in the set below —
+#       its query_config only hydrates firmness/light STATE, not which entities
+#       exist; only the Climate-360/i8 BED_TYPE_SLEEP_NUMBER is excluded.
 # Every member below was verified against (a)-(c) in a per-bed-type capability
 # audit. A regression test asserts create_controller(client=None) succeeds for
 # every member, so adding a post-connect mutation later fails loudly.

@@ -166,7 +166,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
 
-        controller = coordinator.controller
+        # Use the capability controller (live when connected, else the client-free
+        # one minted from config) so an OFFLINE offline-safe side still gets the
+        # right colour mode / default colour instead of falling back to plain RGB.
+        controller = coordinator.capability_controller
         color_mode_str = (
             getattr(controller, "supported_color_mode", None) if controller is not None else None
         )
