@@ -781,20 +781,21 @@ class TestPairBedsConversion:
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """A registry error while absorbing a side must not propagate: re-homing
-        runs after the live coordinator is in hass.data, so a raised exception
-        would fail paired setup and leak the coordinator's open BLE links. The
-        pair still loads and the un-absorbed single survives for the next reload."""
+        """A registry error while absorbing ONE side must not propagate (re-homing
+        runs after the live coordinator is in hass.data, so a raised exception would
+        fail paired setup and leak its open BLE links) nor abort the OTHER side. The
+        pair still loads, the failing side survives for the next reload, and the
+        healthy side is absorbed normally."""
         from unittest.mock import patch
 
         left = await self._setup_single(hass, LEFT_ADDR, "Seng")
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
-        absorbed = {left.entry_id, right.entry_id}
+        failing_id = left.entry_id  # only the left side's removal blows up
 
         orig_remove = hass.config_entries.async_remove
 
         async def _failing_remove(entry_id):
-            if entry_id in absorbed:
+            if entry_id == failing_id:
                 raise RuntimeError("boom")
             return await orig_remove(entry_id)
 
@@ -815,9 +816,57 @@ class TestPairBedsConversion:
         # coordinator is live in hass.data — not leaked by a propagating exception.
         assert pair.state == ConfigEntryState.LOADED
         assert pair.entry_id in hass.data[DOMAIN]
-        # The un-absorbed singles survive to be retried on the next reload.
+        # Per-side isolation: the failing side survives for a retry on the next
+        # reload, while the healthy side is absorbed normally.
         assert left.entry_id in remaining
-        assert right.entry_id in remaining
+        assert right.entry_id not in remaining
+
+    async def test_conversion_retries_contended_side_after_absorb(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A concurrent child that fails its initial connect only because its
+        original single still held the single-link BLE is retried after the absorb
+        frees the link — so a non-offline-mintable side isn't left empty until a
+        reload."""
+        from unittest.mock import MagicMock, patch
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+
+        calls: dict[str, int] = {}
+
+        async def fake_connect(self):
+            calls[self.address] = calls.get(self.address, 0) + 1
+            # The left child's FIRST connect fails (its original single still
+            # holds the link); every other connect — including the post-absorb
+            # retry — succeeds and marks the link live.
+            if self.address == LEFT_ADDR and calls[self.address] == 1:
+                return False
+            client = MagicMock()
+            client.is_connected = True
+            self._client = client
+            return True
+
+        result = await self._reach_pair_step(hass)
+        with patch.object(AdjustableBedCoordinator, "async_connect", fake_connect):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        # The left child was retried after the absorb (initial fail + one retry);
+        # the already-connected right child was not retried.
+        assert calls.get(LEFT_ADDR, 0) == 2
+        assert calls.get(RIGHT_ADDR, 0) == 1
 
 
 class TestSideServiceRouting:

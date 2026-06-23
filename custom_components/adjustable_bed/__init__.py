@@ -59,6 +59,7 @@ from .const import (
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_SIDES,
     RICHMAT_REMOTE_AUTO,
     SIDE_BOTH,
@@ -432,7 +433,7 @@ def _async_ensure_paired_device_registry(
 
 async def _async_rehome_absorbed_singles(
     hass: HomeAssistant, entry: ConfigEntry
-) -> None:
+) -> set[str]:
     """Re-home absorbed single entries' registry rows onto the pair, then remove them.
 
     Conversion is ADDITIVE. Instead of deleting each original single entry's
@@ -456,8 +457,13 @@ async def _async_rehome_absorbed_singles(
     pairing wizard). Idempotent: on a reload the originals are already gone, so each
     lookup misses and this is a no-op; pairs created by the old remove-then-create
     path carry no ``absorbed_entry_id`` and are skipped.
+
+    Returns the set of child sides whose original single was actually absorbed
+    here, so the caller can retry those sides' connect now that their (single-link)
+    BLE has been freed.
     """
     ent_reg = er.async_get(hass)
+    absorbed_sides: set[str] = set()
     for child in iter_children(entry.data):
         absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
         if not absorbed_id:
@@ -495,6 +501,9 @@ async def _async_rehome_absorbed_singles(
                 entry.entry_id,
             )
             continue
+        side = child.get(CONF_SIDE)
+        if side:
+            absorbed_sides.add(side)
         _LOGGER.info(
             "Re-homed %d entit%s from absorbed bed %s (%s) onto paired entry %s",
             rehomed,
@@ -503,6 +512,7 @@ async def _async_rehome_absorbed_singles(
             absorbed_id,
             entry.entry_id,
         )
+    return absorbed_sides
 
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -568,7 +578,25 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     # forwarding platforms so the originals' live entities are torn down first,
     # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
     # No-op on reload (originals already gone).
-    await _async_rehome_absorbed_singles(hass, entry)
+    absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
+    # A just-absorbed concurrent side may have failed its initial connect ONLY
+    # because its original single was still holding the (single-link) BLE — which
+    # the absorb above has now freed. Retry such a side once so a non-offline-
+    # mintable side (an auto-detected Richmat/L&P/Keeson variant) gets its live
+    # controller and exposes entities, instead of staying empty until a reload.
+    # Skip in sequential mode (Octo), which deliberately releases each side's link
+    # and mints offline sides from the pairing-time capability snapshot.
+    if absorbed_sides and coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL:
+        for side in absorbed_sides:
+            child = coordinator.children.get(side)
+            if child is None or child.is_connected:
+                continue
+            try:
+                await child.async_connect()
+            except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                _LOGGER.debug(
+                    "Post-absorb reconnect of %s side failed; priming offline", side
+                )
     # Prime a client-free capability controller for any side that did NOT connect,
     # so its per-side entities are still created up-front (with byte-identical
     # unique_ids); the live controller takes over on reconnect with no reload.
