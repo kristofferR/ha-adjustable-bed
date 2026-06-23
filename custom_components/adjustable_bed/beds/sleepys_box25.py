@@ -68,7 +68,7 @@ class Box25Commands:
     NECK_TILT_UP = bytes([0x05, 0x02, 0x00, 0x40, 0x00, 0x00, 0x00])
     NECK_TILT_DOWN = bytes([0x05, 0x02, 0x00, 0x80, 0x00, 0x00, 0x00])
 
-    # Presets (fire-and-forget, needConfirm=0 — a trailing STOP cancels them)
+    # Presets (preset key, repeated, then a trailing MOTOR_STOP to commit it)
     PRESET_FLAT = bytes([0x05, 0x02, 0x08, 0x00, 0x00, 0x00, 0x00])
     PRESET_ZERO_GRAVITY = bytes([0x05, 0x02, 0x00, 0x00, 0x10, 0x00, 0x00])
     PRESET_ANTI_SNORE = bytes([0x05, 0x02, 0x00, 0x00, 0x80, 0x00, 0x00])
@@ -116,19 +116,14 @@ class Box25Commands:
 _WAKE_DELAY = 0.15
 _INIT_DELAY = 0.08
 
-# Preset/memory frames must be *resent*, not fired once. The decompiled OKIN app
-# (com.okin.bedding.sleepy) drives presets via ControlManager._writeContinueData,
-# which writes the same frame on a Timer.periodic at a 100 ms cadence — exactly
-# like a motor move — for the on-screen (button) source. This firmware (252201 /
-# 25_22_01, Ashley/Nectar M1X1232) latches the preset target on the first frame
-# but only begins its autonomous drive once a follow-up motor frame arrives
-# >=100 ms later. That is why a single fire-and-forget write never moved the bed,
-# while a human-delayed STOP press or a BLE disconnect "executed" it, and why the
-# old 50 ms preset->STOP was too fast to latch (#372). Resend the frame a handful
-# of times at the app's cadence to reliably latch + trigger; no trailing STOP
-# (the app never sends one after a preset and the bed completes the drive itself).
-_PRESET_REPEAT_COUNT = 15
+# Preset send tuning, mirroring the decompiled "Adjustable Comfort M1X12" app
+# (StarCode/DewertOkin CB25 protocol). The app enqueues every preset/memory
+# recall as four packets drained 100 ms apart by its periodic BLE sender: the
+# preset key ×3, then the all-zero STOP/idle packet (05 02 00 00 00 00 00). The
+# trailing STOP is what *commits* the preset — see _send_preset (#372).
+_PRESET_REPEAT_COUNT = 3
 _PRESET_REPEAT_DELAY_MS = 100
+_PRESET_COMMIT_DELAY = 0.1
 
 
 class SleepysBox25Controller(BedController):
@@ -138,10 +133,8 @@ class SleepysBox25Controller(BedController):
     motor commands require 0xD0 init, massage/light commands require 0xB0 init.
     Both tracks need a wake command (5A 0B 00 A5) sent first.
 
-    Presets/memory recalls are resent at a 100 ms cadence (matching the OKIN
-    app's periodic-resend timer) rather than fired once: the bed latches the
-    target on the first frame but needs a follow-up frame to start its
-    autonomous drive. No trailing STOP is sent (it would cancel the move).
+    Presets are armed by repeating the preset key, then committed by a trailing
+    MOTOR_STOP — see _send_preset (#372).
     """
 
     # Position feedback: head/feet/lumbar at 0-100 percentage
@@ -573,21 +566,35 @@ class SleepysBox25Controller(BedController):
     # ─── Presets ─────────────────────────────────────────────────────────
 
     async def _send_preset(self, preset_cmd: bytes) -> None:
-        """Send a BOX25 preset/memory recall by resending the frame at 100 ms.
+        """Send a BOX25/CB25 preset or memory recall, then commit it with STOP.
 
-        The OKIN app drives presets with a periodic resend (one frame every
-        100 ms), not a single write. On firmware 252201 (Ashley/Nectar M1X1232)
-        a lone frame latches the target but never starts moving; a follow-up
-        frame >=100 ms later triggers the bed's autonomous drive to the preset
-        (#372). Resend the frame ``_PRESET_REPEAT_COUNT`` times at the app's
-        cadence; no trailing STOP — the bed completes the drive on its own and a
-        STOP would cancel it.
+        The decompiled "Adjustable Comfort M1X12" app (StarCode/DewertOkin CB25
+        protocol, e.g. Star252201 / Ashley/Nectar M1X1232) sends every preset as
+        the preset key ×3 at 100 ms followed by the all-zero STOP/idle packet
+        (MOTOR_STOP, 05 02 00 00 00 00 00). The trailing STOP is what *commits*
+        the preset: the bed arms while it keeps receiving the key and only drives
+        to the target once the STOP arrives.
+
+        Without the STOP the bed stays armed but never moves until the user
+        manually presses Stop All or disconnects (#372). Conversely a STOP sent
+        too soon (the old 50 ms confirm) lands before the bed arms and cancels
+        the preset — hence the key is repeated first to hold it long enough.
         """
-        await self.write_command(
-            preset_cmd,
-            repeat_count=_PRESET_REPEAT_COUNT,
-            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
-        )
+        try:
+            await self.write_command(
+                preset_cmd,
+                repeat_count=_PRESET_REPEAT_COUNT,
+                repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
+            )
+            await asyncio.sleep(_PRESET_COMMIT_DELAY)
+        finally:
+            try:
+                await self._send_stop()
+            except (BleakError, ConnectionError):
+                _LOGGER.debug(
+                    "Failed to send committing STOP after BOX25 preset",
+                    exc_info=True,
+                )
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.PRESET_FLAT)
@@ -612,13 +619,9 @@ class SleepysBox25Controller(BedController):
         if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_STORE):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        # Resend the store frame at the app's cadence so the bed registers the
-        # save (see _send_preset); re-saving the same position is idempotent.
-        await self.write_command(
-            Box25Commands.MEMORY_STORE[memory_num - 1],
-            repeat_count=_PRESET_REPEAT_COUNT,
-            repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
-        )
+        # Memory store uses the same arm-then-commit sequence as recall; see
+        # _send_preset for why a trailing STOP is required.
+        await self._send_preset(Box25Commands.MEMORY_STORE[memory_num - 1])
 
     # ─── Lights ──────────────────────────────────────────────────────────
 
