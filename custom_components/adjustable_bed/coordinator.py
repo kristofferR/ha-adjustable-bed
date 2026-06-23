@@ -803,6 +803,13 @@ class AdjustableBedCoordinator:
         self._async_persist_config(
             {**self.entry.data, "capabilities": capabilities}
         )
+        # The offline controller minted from the pairing-time snapshot is now stale
+        # (cache_capability_controller only fills an EMPTY slot, so it never refreshes
+        # it). Point it at the live controller — the same client-free capability
+        # source — so a later sequential release gates per-side entities off the
+        # freshly discovered capabilities, not the old snapshot, before the next
+        # reload.
+        self._offline_controller = self._controller
 
     def _mark_ble_bond_established(self) -> None:
         """Record that future connections should skip `pair=True`."""

@@ -1500,3 +1500,44 @@ class TestOctoSnapshotBackfill:
         left._controller = SimpleNamespace(capability_snapshot=lambda: None)
         left._backfill_octo_snapshot()
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
+
+    async def test_backfill_refreshes_stale_offline_controller(
+        self, hass: HomeAssistant
+    ):
+        """A backfill that discovers NEW caps must also refresh the in-memory
+        offline controller — cache_capability_controller only fills an empty slot,
+        so without this a later sequential release falls back to the stale
+        pairing-time controller and per-side entity gating stays wrong until
+        reload."""
+        from types import SimpleNamespace
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo",
+            data=data,
+            unique_id="pair_octo_refresh",
+            entry_id="pair_octo_refresh",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+
+        # Offline controller minted from the OLD pairing-time snapshot.
+        stale = SimpleNamespace(tag="stale-pairing-time")
+        left._offline_controller = stale
+        # Live controller has freshly discovered (different) caps.
+        new_snap = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
+        live = SimpleNamespace(capability_snapshot=lambda: dict(new_snap))
+        left._controller = live
+
+        left._backfill_octo_snapshot()
+
+        # Descriptor backfilled AND the offline controller refreshed to the live
+        # one (no longer the stale pairing-time controller).
+        assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == new_snap
+        assert left._offline_controller is live
+        assert left._offline_controller is not stale
