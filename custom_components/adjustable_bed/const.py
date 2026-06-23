@@ -1075,6 +1075,32 @@ LEGGETT_VARIANTS: Final = {
     LEGGETT_VARIANT_MLRM: "MlRM (WiLinke protocol, discrete massage control)",
 }
 
+
+def resolve_explicit_bed_type(
+    bed_type: str | None, protocol_variant: str | None
+) -> str | None:
+    """Resolve a legacy umbrella bed type to the concrete type an EXPLICIT
+    protocol variant selects.
+
+    The offline-capability path must agree across three places — the pairing
+    gate, offline minting (``async_prime_offline_controller``), and the pair
+    child descriptors — so they all funnel a stored bed type + variant through
+    this one resolver. Currently only ``leggett_platt`` needs it: an explicit
+    variant maps to leggett_wilinke (mlrm) / leggett_okin (okin) / leggett_gen2
+    (gen2), mirroring the explicit-variant branches of
+    ``controller_factory.create_controller``. ``auto``/unset can only be resolved
+    from a live connection, so the umbrella type is returned unchanged (and stays
+    offline-unsafe, which is correct — it can't be minted without connecting).
+    """
+    if bed_type == BED_TYPE_LEGGETT_PLATT:
+        if protocol_variant == LEGGETT_VARIANT_MLRM:
+            return BED_TYPE_LEGGETT_WILINKE
+        if protocol_variant == LEGGETT_VARIANT_OKIN:
+            return BED_TYPE_LEGGETT_OKIN
+        if protocol_variant == LEGGETT_VARIANT_GEN2:
+            return BED_TYPE_LEGGETT_GEN2
+    return bed_type
+
 # Richmat protocol variants (auto-detected, but can be overridden)
 RICHMAT_VARIANT_NORDIC: Final = "nordic"
 RICHMAT_VARIANT_WILINKE: Final = "wilinke"

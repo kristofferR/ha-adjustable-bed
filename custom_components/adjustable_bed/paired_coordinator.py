@@ -508,7 +508,19 @@ class PairedBedCoordinator:
                     # per-side entities still build after this disconnect (which
                     # drops the live controller).
                     child.cache_capability_controller()
-                    await self._safe_disconnect(side, child)
+                    if not await self._safe_disconnect(side, child):
+                        # Releasing the just-verified side failed; opening the
+                        # next side now would hold two links at once, which the
+                        # single-connection profile must never do (the reference
+                        # app strictly disconnects-before-connect and aborts on a
+                        # genuine disconnect error). Stop verifying the rest — one
+                        # side left up beats two — commands reconnect on demand.
+                        _LOGGER.warning(
+                            "Could not release %s side after verify; skipping the "
+                            "remaining side(s) to keep a single BLE link",
+                            side,
+                        )
+                        break
             return any_connected
 
         results = await asyncio.gather(

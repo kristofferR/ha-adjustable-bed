@@ -21,6 +21,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
@@ -661,12 +662,20 @@ class TestPairBedsConversion:
         )
         assert (
             flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_OKIN))
-            == BED_TYPE_LEGGETT_PLATT
+            == BED_TYPE_LEGGETT_OKIN
         )
         assert (
             flow._offline_safe_bed_type(_entry(LEFT_ADDR, "auto"))
             == BED_TYPE_LEGGETT_PLATT
         )
+
+        # Gate <-> minting consistency: the resolved type the gate calls safe is a
+        # concrete type async_prime_offline_controller can actually mint (it is in
+        # the offline-safe set). The umbrella type is NOT, which is why the pair
+        # descriptor must store the resolved type (asserted in the conversion test).
+        assert BED_TYPE_LEGGETT_GEN2 in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+        assert BED_TYPE_LEGGETT_WILINKE in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+        assert BED_TYPE_LEGGETT_PLATT not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
 
         ent_reg = er.async_get(hass)
 
@@ -687,6 +696,55 @@ class TestPairBedsConversion:
             "light", DOMAIN, f"{RIGHT_ADDR}_rgb_light", config_entry=okin
         )
         assert flow._has_unsafe_offline_platforms(okin) is True
+
+        # The pair descriptor is built through the SAME resolver, so a stored
+        # child carries the concrete (mintable) type — not the umbrella — and
+        # options are merged in. Without this the gate would pass but
+        # async_prime_offline_controller would refuse to mint the side.
+        gen2_with_opts = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
+                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_GEN2,
+            },
+            options={CONF_PREFERRED_ADAPTER: "hci1"},
+            unique_id="leggett-resolve-test",
+            version=4,
+        )
+        resolved = flow._resolved_pair_side_data(gen2_with_opts)
+        assert resolved[CONF_BED_TYPE] == BED_TYPE_LEGGETT_GEN2
+        assert resolved[CONF_PREFERRED_ADAPTER] == "hci1"  # option merged in
+
+    def test_resolve_explicit_bed_type_pure(self):
+        """The shared resolver: explicit Leggett variants -> concrete types,
+        everything else (other beds, auto/unset) passes through unchanged."""
+        from custom_components.adjustable_bed.const import resolve_explicit_bed_type
+
+        assert (
+            resolve_explicit_bed_type(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2)
+            == BED_TYPE_LEGGETT_GEN2
+        )
+        assert (
+            resolve_explicit_bed_type(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM)
+            == BED_TYPE_LEGGETT_WILINKE
+        )
+        assert (
+            resolve_explicit_bed_type(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN)
+            == BED_TYPE_LEGGETT_OKIN
+        )
+        # auto / unset can't be resolved offline -> umbrella unchanged.
+        assert (
+            resolve_explicit_bed_type(BED_TYPE_LEGGETT_PLATT, "auto")
+            == BED_TYPE_LEGGETT_PLATT
+        )
+        assert (
+            resolve_explicit_bed_type(BED_TYPE_LEGGETT_PLATT, None)
+            == BED_TYPE_LEGGETT_PLATT
+        )
+        # Non-Leggett beds are never rewritten.
+        assert resolve_explicit_bed_type(BED_TYPE_OCTO, "gen2") == BED_TYPE_OCTO
+        assert resolve_explicit_bed_type(BED_TYPE_LINAK, None) == BED_TYPE_LINAK
 
     @staticmethod
     def _pairable_octo_ids(hass: HomeAssistant) -> list[str]:

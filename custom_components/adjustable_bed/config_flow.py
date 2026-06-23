@@ -48,10 +48,8 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
-    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -100,8 +98,6 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
@@ -115,6 +111,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    resolve_explicit_bed_type,
     supports_passive_position_reconciliation,
 )
 from .detection import (
@@ -428,21 +425,32 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         A legacy ``leggett_platt`` entry stores its real protocol under
         ``protocol_variant``; an EXPLICIT variant resolves to a concrete type
         that the offline-safe set already lists (``leggett_gen2`` /
-        ``leggett_wilinke``), even though the umbrella ``leggett_platt`` is not
-        in the set. Resolving it here mirrors the explicit-variant mapping in
-        ``controller_factory.create_controller`` so such entries aren't wrongly
-        treated as offline-unsafe. ``okin`` resolves to ``leggett_okin`` (not
-        offline-safe — it OS-bonds); ``auto``/unset can't be resolved without a
-        live client, so it stays the umbrella type (unsafe), which is correct.
+        ``leggett_wilinke``), even though the umbrella ``leggett_platt`` is not.
+        Funnel through the shared ``resolve_explicit_bed_type`` so the gate,
+        offline minting, and the pair descriptors all agree (``okin`` ->
+        leggett_okin, still unsafe; ``auto``/unset stays the umbrella type).
         """
-        bed_type = entry.data.get(CONF_BED_TYPE)
-        if bed_type == BED_TYPE_LEGGETT_PLATT:
-            variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-            if variant == LEGGETT_VARIANT_MLRM:
-                return BED_TYPE_LEGGETT_WILINKE
-            if variant == LEGGETT_VARIANT_GEN2:
-                return BED_TYPE_LEGGETT_GEN2
-        return bed_type
+        return resolve_explicit_bed_type(
+            entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
+        )
+
+    def _resolved_pair_side_data(self, entry: ConfigEntry) -> dict[str, Any]:
+        """Merged ``data`` + ``options`` for a pair child, with an explicit legacy
+        variant resolved to its concrete bed type.
+
+        Options (e.g. customized angle limits, which the coordinator reads before
+        data) are merged in so they survive the original being absorbed. The
+        bed_type is normalised through the SAME resolver the offline-safe gate
+        used, so the descriptor that gets stored is the one the gate approved —
+        otherwise the pair would carry the umbrella ``leggett_platt`` and
+        ``async_prime_offline_controller`` would refuse to mint the side the gate
+        just promised was offline-safe.
+        """
+        data = {**entry.data, **dict(entry.options)}
+        data[CONF_BED_TYPE] = resolve_explicit_bed_type(
+            data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
+        )
+        return data
 
     def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` exposes climate/light/select a half-available pair
@@ -1234,8 +1242,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # unique_id) is recorded as provenance so the pair's setup can find
                 # and re-home the original entry's registry rows in place.
                 pair_data = build_pair_entry_data(
-                    {**left.data, **dict(left.options)},
-                    {**right.data, **dict(right.options)},
+                    self._resolved_pair_side_data(left),
+                    self._resolved_pair_side_data(right),
                     name=name,
                     left_octo_snapshot=self._octo_capability_snapshot(left),
                     right_octo_snapshot=self._octo_capability_snapshot(right),

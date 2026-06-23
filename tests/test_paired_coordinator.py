@@ -609,6 +609,24 @@ class TestSequentialCycle:
             (SIDE_RIGHT, "disconnect"),
         ]
 
+    async def test_async_connect_aborts_if_release_fails(self):
+        # If releasing the just-verified side fails, the verify loop must NOT go
+        # on to connect the other side — that would hold two links at once, which
+        # the single-connection profile forbids (the reference app strictly
+        # disconnects-before-connect and aborts on a genuine disconnect error).
+        log: list = []
+        coord, _, _ = self._seq(log, left={"fail_disconnect": True})
+        # Left connected, so setup still succeeds (one side reachable)...
+        assert await coord.async_connect() is True
+        # ...but its failed release stops the loop: right is never connected, so
+        # we never momentarily hold both links.
+        assert log == [
+            (SIDE_LEFT, "connect"),
+            (SIDE_LEFT, "cache_caps"),
+            (SIDE_LEFT, "disconnect"),  # raised -> _safe_disconnect False -> break
+        ]
+        assert (SIDE_RIGHT, "connect") not in log
+
     async def test_stop_mid_cycle_aborts_remaining_side(self):
         log: list = []
         coord, left, right = self._seq(log, left={"block": True})
