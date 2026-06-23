@@ -195,6 +195,12 @@ NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 # gadget (e.g. "ABXM2", #366) is not misidentified as a bed.
 OKIN_CB24_MANUFACTURER_NAME_HINTS: frozenset[str] = frozenset({"okin", "smartbed"})
 
+# Malouf S755 / DewertOkin CB.24.42.28 bases have been observed advertising only
+# Nordic UART plus OKIN's company ID, without the usual Malouf 01000001 family
+# UUID. The name prefix appears to encode the CB.24.42.28 control-box family.
+MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES: frozenset[str] = frozenset({"smartbed428"})
+MALOUF_NEW_OKIN_OKIN_PAYLOAD_PREFIXES: tuple[bytes, ...] = (b"AB\x01\x02",)
+
 
 def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
     """Extract Richmat remote code from device name.
@@ -303,6 +309,28 @@ def _normalize_compact_identifier(value: str | None) -> str:
 def _is_nora_controller_identifier(value: str | None) -> bool:
     """Return True for NORA_CON / NORACON controller identifiers."""
     return _normalize_compact_identifier(value) in NORA_CONTROLLER_NORMALIZED_NAMES
+
+
+def _is_malouf_new_okin_smartbed_signature(
+    device_name: str,
+    service_uuids: list[str],
+    manufacturer_data: dict[int, bytes] | None,
+) -> bool:
+    """Return True for Nordic-only Malouf New Okin Smartbed advertisements."""
+    if RICHMAT_NORDIC_SERVICE_UUID.lower() not in service_uuids:
+        return False
+    if not any(
+        device_name.startswith(prefix) for prefix in MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES
+    ):
+        return False
+    if not manufacturer_data:
+        return False
+
+    okin_payload = manufacturer_data.get(MANUFACTURER_ID_OKIN)
+    return bool(
+        okin_payload
+        and okin_payload.startswith(MALOUF_NEW_OKIN_OKIN_PAYLOAD_PREFIXES)
+    )
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
@@ -1087,6 +1115,29 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_MALOUF_NEW_OKIN, confidence=1.0, signals=signals)
 
+    if _is_malouf_new_okin_smartbed_signature(
+        device_name,
+        service_uuids,
+        service_info.manufacturer_data,
+    ):
+        signals.append("uuid:nordic_uart")
+        signals.append("name:smartbed428")
+        signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
+        signals.append("manufacturer_payload:ab0102")
+        _LOGGER.info(
+            "Detected Malouf NEW_OKIN Smartbed at %s (name: %s) by Nordic UART "
+            "Smartbed428 advertisement",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_MALOUF_NEW_OKIN,
+            confidence=0.85,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_OKIN_CB24],
+            manufacturer_id=MANUFACTURER_ID_OKIN,
+        )
+
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
     if (
@@ -1726,6 +1777,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
         # If OKIN manufacturer ID is also present, this is likely a CB24 device
         # (e.g., SmartBed by Okin / Lucid L600) that also advertises Nordic UART.
+        # Nordic-only Malouf Smartbed428 variants are handled before this branch.
         if (
             service_info.manufacturer_data
             and MANUFACTURER_ID_OKIN in service_info.manufacturer_data

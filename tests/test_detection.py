@@ -698,6 +698,38 @@ class TestDetectBedTypeByManufacturerData:
         assert result.manufacturer_id == MANUFACTURER_ID_OKIN
         assert BED_TYPE_RICHMAT in result.ambiguous_types
 
+    def test_detect_smartbed428_ab010204_as_malouf_new_okin(self):
+        """Smartbed428 Malouf S755 / CB.24.42.28 uses Malouf New Okin packets.
+
+        GitHub issue #393: this device advertises only Nordic UART plus OKIN
+        manufacturer data, so the generic CB24 fallback must not claim it.
+        """
+        service_info = _make_service_info(
+            name="Smartbed428000193",
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],
+            manufacturer_data={MANUFACTURER_ID_OKIN: bytes.fromhex("4142010204")},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_MALOUF_NEW_OKIN
+        assert result.confidence == 0.85
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
+        assert "name:smartbed428" in result.signals
+        assert "manufacturer_payload:ab0102" in result.signals
+        assert result.ambiguous_types == [BED_TYPE_OKIN_CB24]
+
+    def test_cb24_ab_payload_still_detects_cb24(self):
+        """Known CB24AB advertisements must keep the CB24 detection path."""
+        service_info = _make_service_info(
+            name="Smartbed209008942",
+            service_uuids=[RICHMAT_NORDIC_SERVICE_UUID],
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"AB\x08\x01\x02"},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_OKIN_CB24
+        assert result.confidence == 0.7
+        assert result.manufacturer_id == MANUFACTURER_ID_OKIN
+        assert BED_TYPE_RICHMAT in result.ambiguous_types
+
     def test_nordic_uart_without_okin_mfr_still_detects_richmat(self):
         """Ensure Nordic UART without OKIN manufacturer ID still returns Richmat."""
         service_info = _make_service_info(
