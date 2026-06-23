@@ -118,6 +118,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -131,6 +132,7 @@ from .const import (
     POSITION_TOLERANCE,
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
+    VARIANT_AUTO,
     get_richmat_features,
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
@@ -264,6 +266,11 @@ class AdjustableBedCoordinator:
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
+        # Persistence is a property of the resolved controller, but _on_disconnect
+        # clears the controller before the reconnect decision runs. Cache the last
+        # resolved value so connection-lifecycle checks stay correct across the
+        # disconnect (issue #385 review).
+        self._persistent_connection_resolved: bool | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._lock = asyncio.Lock()
@@ -564,6 +571,16 @@ class AdjustableBedCoordinator:
     def last_disconnected(self) -> datetime | None:
         """Return the last disconnection timestamp."""
         return self._last_disconnected
+
+    @property
+    def last_disconnect_reason(self) -> str | None:
+        """Return why the bed last disconnected (for diagnostics/UI).
+
+        Common values: ``idle_timeout``, ``intentional``,
+        ``authentication_failed``, ``unexpected``. Intentional/idle reasons mean
+        the bed is fine and will reconnect on demand on the next command.
+        """
+        return self._last_disconnect_reason
 
     @property
     def connection_source(self) -> str | None:
@@ -939,8 +956,35 @@ class AdjustableBedCoordinator:
             return await self._async_connect_locked()
 
     def _uses_persistent_connection(self) -> bool:
-        """Return True when this controller should stay connected indefinitely."""
-        return self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR
+        """Return True when this controller should stay connected indefinitely.
+
+        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included because
+        its ESP32 controller only accepts a BLE connection while in pairing mode
+        and refuses reconnection afterwards. Idle-disconnecting it leaves the bed
+        unreachable until it is power-cycled / re-paired, so we hold the link open
+        for the lifetime of the entry instead (issue #385). Trade-off: the physical
+        remote cannot be used while Home Assistant is connected.
+
+        Resolution order:
+        1. The live controller's ``requires_persistent_connection`` (authoritative).
+        2. The value cached from the last resolved controller — needed because
+           ``_on_disconnect`` clears the controller *before* the reconnect
+           decision runs, so an Okin/MlRM bed must still be recognised as
+           non-persistent and get its reconnect timer.
+        3. A pre-first-connect bed-type heuristic. Only ``auto``/``gen2``
+           ``leggett_platt`` entries are assumed persistent here; ``okin`` and
+           ``mlrm`` are not (they reconnect normally).
+        """
+        controller = self._controller
+        if controller is not None:
+            return controller.requires_persistent_connection
+        if self._persistent_connection_resolved is not None:
+            return self._persistent_connection_resolved
+        if self._bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_LEGGETT_GEN2):
+            return True
+        if self._bed_type == BED_TYPE_LEGGETT_PLATT:
+            return self._protocol_variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2)
+        return False
 
     def _disconnect_after_operation_enabled(self) -> bool:
         """Return True when commands should disconnect immediately after completion."""
@@ -970,7 +1014,14 @@ class AdjustableBedCoordinator:
                 self._reset_disconnect_timer()
             return True
 
-        _LOGGER.info(
+        # Routine reconnects after an intentional/idle disconnect are expected for
+        # non-persistent beds and shouldn't spam the log. Only the first successful
+        # connection of the entry's lifetime logs the happy path at INFO; subsequent
+        # on-demand reconnects log at DEBUG (still captured with debug logging enabled).
+        # Retries, warnings, and failures keep their levels regardless (see below).
+        connect_log = _LOGGER.info if self._last_connected is None else _LOGGER.debug
+
+        connect_log(
             "Initiating BLE connection to %s (max %d attempts)",
             self._address,
             self._max_retries,
@@ -1107,7 +1158,7 @@ class AdjustableBedCoordinator:
 
                 lookup_elapsed = time.monotonic() - attempt_start
                 attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
-                _LOGGER.info(
+                connect_log(
                     "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
                     self._address,
                     lookup_elapsed,
@@ -1149,7 +1200,7 @@ class AdjustableBedCoordinator:
                 # Using standard BleakClient (not cached) for better compatibility
                 # with devices that have connection stability issues
                 connect_start = time.monotonic()
-                _LOGGER.info(
+                connect_log(
                     "Attempting BLE GATT connection to %s (timeout: %.0fs)...",
                     self._address,
                     self._connection_timeout,
@@ -1384,7 +1435,7 @@ class AdjustableBedCoordinator:
                 attempt_details["connect_elapsed_seconds"] = round(connect_elapsed, 3)
                 attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
                 attempt_details["result"] = "connected"
-                _LOGGER.info(
+                connect_log(
                     "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
                     total_elapsed,
@@ -1616,6 +1667,16 @@ class AdjustableBedCoordinator:
                     self._address,
                     connectable=True,
                 )
+                if advertisement is None or not advertisement.manufacturer_data:
+                    # Fall back to the non-connectable advert: this integration
+                    # supports misclassified ESPHome/proxy advertisements, and the
+                    # manufacturer data (e.g. the Gen2 XP/CP product id) carries
+                    # capability info we'd otherwise lose on that path.
+                    advertisement = bluetooth.async_last_service_info(
+                        self.hass,
+                        self._address,
+                        connectable=False,
+                    )
                 if advertisement and advertisement.manufacturer_data:
                     manufacturer_data = dict(advertisement.manufacturer_data)
                     _LOGGER.debug(
@@ -1640,6 +1701,11 @@ class AdjustableBedCoordinator:
                 )
                 self._controller_state_refresh_retry_count = 0
                 self._controller_state_refresh_completed = False
+                # Remember the resolved persistence so reconnect/idle decisions are
+                # correct even after _on_disconnect clears the controller.
+                self._persistent_connection_resolved = (
+                    self._controller.requires_persistent_connection
+                )
                 _LOGGER.debug("Controller created successfully")
 
                 if self._bed_type == BED_TYPE_SLEEP_NUMBER_MCR:
@@ -1714,6 +1780,10 @@ class AdjustableBedCoordinator:
                     self._connecting = False
                     self._last_connection_error = "Connection dropped during controller startup"
                     self._last_connection_error_type = ConnectionError.__name__
+                    # A failed (re)connect is not an intentional/idle disconnect;
+                    # clear the prior reason so the connectivity sensor doesn't keep
+                    # reporting "idle" after the attempt failed (issue #385 review).
+                    self._last_disconnect_reason = "connect_failed"
                     attempt_details["total_elapsed_seconds"] = round(
                         time.monotonic() - attempt_start, 3
                     )
@@ -1847,6 +1917,13 @@ class AdjustableBedCoordinator:
                 # Delay is handled at the start of the next iteration with progressive backoff
 
         total_elapsed = time.monotonic() - overall_start
+        # All attempts failed: the bed is unreachable, not idle-disconnected, so
+        # ensure the connectivity sensor reports "disconnected" rather than "idle"
+        # (issue #385 review). Notify listeners so the sensor/card re-render now —
+        # the device-not-found retries don't otherwise emit a state change, so a
+        # previously published "idle" would linger until some later event.
+        self._last_disconnect_reason = "connect_failed"
+        self._notify_connection_state_change(False)
         _LOGGER.error(
             "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
             "Troubleshooting:\n"
@@ -2208,7 +2285,12 @@ class AdjustableBedCoordinator:
             self._reconnect_timer.cancel()
             self._reconnect_timer = None
         if self._client is not None:
-            _LOGGER.info("Disconnecting from bed at %s", self._address)
+            # Intentional disconnects (manual, idle timeout, disconnect-after-command)
+            # are routine for non-persistent beds; keep them at DEBUG so normal use
+            # doesn't spam the log. The reason is preserved in _last_disconnect_reason.
+            _LOGGER.debug(
+                "Disconnecting from bed at %s (reason: %s)", self._address, reason
+            )
             # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
             self._intentional_disconnect = True
             # Track disconnect reason for diagnostics (issue #168)
@@ -2299,7 +2381,10 @@ class AdjustableBedCoordinator:
 
     async def _async_idle_disconnect(self) -> None:
         """Disconnect after idle timeout."""
-        _LOGGER.info(
+        # Expected for non-persistent beds: we drop the link so the physical remote
+        # can take over, and reconnect on demand on the next command. Logged at DEBUG
+        # to avoid spamming the log during normal use.
+        _LOGGER.debug(
             "Idle timeout reached (%d seconds), disconnecting from %s",
             self._idle_disconnect_seconds,
             self._address,

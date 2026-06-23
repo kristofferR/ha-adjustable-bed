@@ -97,6 +97,7 @@ from .const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
+    LEGGETT_GEN2_MANUFACTURER_PREFIXES,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
@@ -112,6 +113,7 @@ from .const import (
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_LEGGETT_GEN2,
     MANUFACTURER_ID_LOGICDATA,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
@@ -134,6 +136,7 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W5_SERVICE_UUID,
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
@@ -262,6 +265,14 @@ def _check_manufacturer_data(
     # Source: at.silvermotion app disassembly
     if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
         return BED_TYPE_LOGICDATA, 0.95, MANUFACTURER_ID_LOGICDATA
+
+    # Leggett & Platt Gen2 / LP Comfort Connect (control box 209-M001): advertises
+    # only manufacturer data under company 0x092D with an "XP"/"CP" payload prefix
+    # and NO service UUID. Matches the LP Control app's isGen2Box() check.
+    # Source: com.leggett.android.universal disassembly.
+    lp_payload = manufacturer_data.get(MANUFACTURER_ID_LEGGETT_GEN2)
+    if lp_payload is not None and lp_payload[:2] in LEGGETT_GEN2_MANUFACTURER_PREFIXES:
+        return BED_TYPE_LEGGETT_GEN2, 0.95, MANUFACTURER_ID_LEGGETT_GEN2
 
     # Note: OKIN Automotive (ID 89) is NOT checked here because it should be
     # a fallback after UUID-based detection. See detect_bed_type_detailed().
@@ -1423,6 +1434,21 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
         if wilinke_uuid.lower() in service_uuids:
+            # W5 (E0FF) uses a Telink-style custom base that non-bed devices also
+            # advertise (e.g. a "Nokia-*" headset, issue #382). It is not
+            # bed-unique, so only trust it when a Richmat name corroborates the
+            # match; otherwise keep scanning and let detection fall through.
+            if (
+                wilinke_uuid.lower() == RICHMAT_WILINKE_W5_SERVICE_UUID.lower()
+                and not is_richmat_named
+            ):
+                _LOGGER.debug(
+                    "Ignoring W5 WiLinke UUID for %s (name: %s): shared Telink "
+                    "base with no Richmat name to corroborate",
+                    service_info.address,
+                    service_info.name,
+                )
+                continue
             signals.append("uuid:wilinke")
             # FEE9 is ambiguous - could be Richmat or BedTech
             if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():

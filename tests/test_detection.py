@@ -85,6 +85,7 @@ from custom_components.adjustable_bed.const import (
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W5_SERVICE_UUID,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
     SOLACE_SERVICE_UUID,
@@ -304,6 +305,29 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[LEGGETT_GEN2_SERVICE_UUID],
         )
         assert detect_bed_type(service_info) == BED_TYPE_LEGGETT_GEN2
+
+    def test_detect_leggett_gen2_by_manufacturer_data(self):
+        """LP Comfort Connect advertises no UUID, only mfr data (company 0x092D,
+        'XP'/'CP' payload prefix) — detect it from that (issue #385)."""
+        # Real-device payload from the support bundle: "XP" + 05 00 00 00.
+        service_info = _make_service_info(
+            name="Smart Bed 22D8",
+            service_uuids=[],
+            manufacturer_data={0x092D: bytes.fromhex("585005000000")},
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_LEGGETT_GEN2
+
+        # "CP" prefix is also accepted.
+        cp = _make_service_info(
+            name="Smart Bed", manufacturer_data={0x092D: b"CP\x00\x00"}
+        )
+        assert detect_bed_type(cp) == BED_TYPE_LEGGETT_GEN2
+
+        # Same company id but an unrelated payload must NOT match.
+        other = _make_service_info(
+            name="Smart Bed", manufacturer_data={0x092D: b"ZZ\x00\x00"}
+        )
+        assert detect_bed_type(other) != BED_TYPE_LEGGETT_GEN2
 
     def test_detect_reverie_nightstand_by_uuid(self):
         """Test Reverie Nightstand detection by unique service UUID."""
@@ -1322,6 +1346,60 @@ class TestFEE9UUIDDisambiguation:
         assert result.bed_type == BED_TYPE_RICHMAT
         assert result.confidence == 0.5
         assert result.requires_characteristic_check is True
+
+
+class TestW5WiLinkeNameGuard:
+    """W5 (E0FF) uses a shared Telink base, so it needs a Richmat name (issue #382)."""
+
+    def test_w5_uuid_without_richmat_name_is_not_a_bed(self):
+        """A non-bed device advertising only the W5 UUID must not detect as Richmat.
+
+        Regression for #382: a "Nokia-*" headset advertised the W5 custom-base
+        UUID and was misidentified as a Richmat bed at 80% confidence.
+        """
+        service_info = _make_service_info(
+            name="Nokia-E4-F1",
+            address="E0:1F:2B:7A:E4:F1",
+            service_uuids=[RICHMAT_WILINKE_W5_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type != BED_TYPE_RICHMAT
+        assert "uuid:wilinke" not in result.signals
+
+    def test_w5_uuid_with_richmat_name_still_detects(self):
+        """A genuine W5 bed with a Richmat name pattern still detects as Richmat."""
+        service_info = _make_service_info(
+            name="QRRM141291",
+            service_uuids=[RICHMAT_WILINKE_W5_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert "uuid:wilinke" in result.signals
+
+    def test_w5_uuid_with_dhn_name_still_detects(self):
+        """Germany Motions DHN-* names corroborate a W5 advertisement."""
+        service_info = _make_service_info(
+            name="DHN-1234",
+            service_uuids=[RICHMAT_WILINKE_W5_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_RICHMAT
+
+    def test_w5_uuid_excluded_from_manifest_discovery(self):
+        """W5 must not be a passive bluetooth discovery matcher (avoids false flows)."""
+        import json
+        from pathlib import Path
+
+        manifest_path = (
+            Path(__file__).parents[1]
+            / "custom_components"
+            / "adjustable_bed"
+            / "manifest.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        service_uuids = {
+            entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]
+        }
+        assert RICHMAT_WILINKE_W5_SERVICE_UUID.lower() not in service_uuids
 
 
 class TestNordicUARTDisambiguation:

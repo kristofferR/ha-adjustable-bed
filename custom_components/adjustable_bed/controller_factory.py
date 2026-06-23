@@ -360,7 +360,7 @@ async def create_controller(
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         from .beds.leggett_gen2 import LeggettGen2Controller
 
-        return LeggettGen2Controller(coordinator)
+        return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_LEGGETT_OKIN:
         from .beds.leggett_okin import LeggettOkinController
@@ -642,13 +642,13 @@ async def create_controller(
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
-            return LeggettGen2Controller(coordinator)
+            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
         else:
             # Explicit gen2 variant
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
-            return LeggettGen2Controller(coordinator)
+            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_REVERIE:
         from .beds.reverie import ReverieController

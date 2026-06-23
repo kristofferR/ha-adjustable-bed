@@ -15,6 +15,7 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) | `com.richmat.lp2` |
+| ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) (LP Comfort Connect) | `com.leggett.android.universal` |
 
 ## Features
 
@@ -35,8 +36,20 @@
 Leggett & Platt beds have three protocol variants with different detection methods:
 
 ### Gen2 Variant
-- **Service UUID:** `45e25100-...` (unique to Gen2)
-- Detection: Automatic by service UUID
+- **Service UUID:** `45e25100-...` (unique to Gen2), when advertised
+- **LP Comfort Connect (control box 209-M001, ESP32):** advertises **no service
+  UUID** — only manufacturer data under company ID `0x092D` (2349) whose payload
+  begins with ASCII `XP` or `CP` (e.g. `58 50 05 00 00 00` = `"XP"…`). Detected
+  from that prefix, matching the LP Control app's `isGen2Box()` check.
+- Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
+
+> **Connection note (LP Comfort Connect):** the ESP32 controller only accepts a
+> BLE connection while the bed is **in pairing mode**, and refuses reconnection
+> afterwards. The integration therefore keeps the link open for this bed type
+> (no idle disconnect). If Home Assistant loses the connection (e.g. a restart),
+> put the bed back into pairing mode (pull the remote's batteries / re-enable
+> pairing) before it can reconnect. While Home Assistant is connected the
+> physical remote cannot be used.
 
 ### Okin Variant
 - **Service UUID:** `62741523-...` (shared with Okimat and Nectar)
@@ -76,45 +89,70 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 | Save Sleep | `SMEM 2` |
 | Save Wake Up | `SMEM 3` |
 | Save Relax | `SMEM 4` |
-| Save Anti-Snore | `SNPOS 0` |
 
 ### Motor Commands
 
-Format: `M {up}:{down}:{stop}` where each field is a comma-separated list of motor numbers.
+Format: `M {down}:{up}:{stop}` — three colon-separated fields, each a list of
+motor numbers. For a single press the motor number goes in **exactly one**
+field and the others are empty; there is no trailing stop list. The app
+re-sends the move command every 200 ms while a button is held and sends a
+per-actuator stop on release.
 
 Motor numbers: 0=head, 1=feet, 2=pillow, 3=lumbar
 
 | Command | Text | Description |
 |---------|------|-------------|
-| Head Up | `M 0::123` | Head up, stop feet/pillow/lumbar |
-| Head Down | `M :0:123` | Head down, stop feet/pillow/lumbar |
-| Feet Up | `M 1::023` | Feet up, stop head/pillow/lumbar |
-| Feet Down | `M :1:023` | Feet down, stop head/pillow/lumbar |
-| Pillow Up | `M 2::013` | Pillow up, stop head/feet/lumbar |
-| Pillow Down | `M :2:013` | Pillow down, stop head/feet/lumbar |
-| Lumbar Up | `M 3::012` | Lumbar up, stop head/feet/pillow |
-| Lumbar Down | `M :3:012` | Lumbar down, stop head/feet/pillow |
-| Stop All | `M ::0123` | Stop all motors |
+| Head Up | `M :0:` | Raise head |
+| Head Down | `M 0::` | Lower head |
+| Head Stop | `M ::0` | Stop head |
+| Feet Up | `M :1:` | Raise feet |
+| Feet Down | `M 1::` | Lower feet |
+| Pillow Up | `M :2:` | Raise pillow |
+| Pillow Down | `M 2::` | Lower pillow |
+| Lumbar Up | `M :3:` | Raise lumbar |
+| Lumbar Down | `M 3::` | Lower lumbar |
+| Stop All | `STOP` | Stop all motors |
+
+Combined moves put codes in two fields, e.g. head down + feet up = `M 0:1:`.
 
 ### Massage Commands
 
+Gen2 massage intensity is relative (`VII`); an absolute set (`MVI`) also exists
+and is used to switch everything off. Channel: 0=head, 1=foot, `0123`=all.
+Mode codes: 0=wave, 1=pulse, 2=always-on.
+
 | Command | Text |
 |---------|------|
-| Head Massage (0-10) | `MVI 0:{level}` |
-| Foot Massage (0-10) | `MVI 1:{level}` |
-| Wave On | `MMODE 0:0` |
-| Wave Off | `MMODE 0:2` |
-| Wave Level | `WSP 0:{level}` |
+| Increase intensity | `VII :{channel}` |
+| Decrease intensity | `VII {channel}::` |
+| Set intensity (absolute) | `MVI {channel}:{level}` (level 0-3; 0=off) |
+| Set massage mode | `MMODE 0:{mode}` |
+| Toggle wave | `WVE TOGGLE` |
 
 ### Light Commands
 
-Gen2 beds with RGB lighting expose a **Light** entity with a color picker instead of a simple on/off switch. The default color is white (255, 255, 255).
+Under-bed light (LightID `0`). The toggle is the only on/off primitive.
 
 | Command | Text | Description |
 |---------|------|-------------|
-| Get State | `GET STATE` | Query current bed state |
-| RGB Off | `RGBENABLE 0:0` | Turn off RGB lights |
-| RGB Set | `RGBSET 0:{RRGGBBBB}` | Set RGB color + brightness (hex RRGGBBBB, brightness fixed at FF) |
+| Toggle | `UBL TOGGLE` | Toggle the under-bed light on/off |
+| Set colour | `RGBSET 0:RRGGBBAA` | Set colour (8 hex: red, green, blue, alpha/brightness) |
+| Set brightness | `RGBBRT 0:AA` | Set brightness (2 hex) |
+| Default colour | `RGD 0[,<decimal>]` | Get/set the stored default colour |
+
+Live light state (on/off + colour) is reported in the `45e25103` STATE frame via a
+mode byte (`OperatingMode` `CONSTANT_COLOR`/`OFF`) with RGBA bytes.
+
+### Per-model capabilities
+
+Gen2 beds **do not report their feature set over BLE**. The app ships a bundled
+profile per model (`assets/ID_<productId>.json`) and selects it by a `productId`
+it derives from the advertisement manufacturer data (hex each payload byte after
+the `XP`/`CP` prefix, reverse, take the first four, parse base-16 — e.g.
+`58 50 05 …` → `5`). The profile declares the under-bed light style
+(**none / toggle / single-colour / RGB**), which actuators are present (**pillow
+and lumbar vary by model**), massage, and memory slot count (**typically 3**).
+Unknown product ids fall back to a fully-featured profile.
 
 ## Okin Variant (Binary)
 

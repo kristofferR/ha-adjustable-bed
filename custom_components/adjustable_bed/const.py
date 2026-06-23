@@ -315,13 +315,20 @@ BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
 # W1 is the default fallback when no specific service is found
 RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+# W5 uses a Telink-style custom 128-bit base (the "0xe0ff" is the little-endian
+# encoding of the generic 0xFFE0 short UUID). That base is shared by many non-bed
+# Telink-chip devices (e.g. a "Nokia-*" headset reported in issue #382), so this
+# UUID is NOT bed-unique: detection must require a corroborating Richmat name
+# signal before treating a W5 advertisement as a bed, and it is intentionally
+# left out of manifest.json's passive bluetooth discovery matchers.
+RICHMAT_WILINKE_W5_SERVICE_UUID: Final = "0000e0ff-3c17-d293-8e48-14fe2e4da212"
 RICHMAT_WILINKE_SERVICE_UUIDS: Final = [
     "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7",  # Custom (legacy, index 0)
     "0000fee9-0000-1000-8000-00805f9b34fb",  # W1 (index 1) - default fallback
     "0000fee9-0000-1000-8000-00805f9b34bb",  # W2 (index 2) - note different base UUID suffix
     "0000ffe0-0000-1000-8000-00805f9b34fb",  # W3 (index 3)
     "0000fff0-0000-1000-8000-00805f9b34fb",  # W4 (index 4) - Germany Motions DHN-* beds
-    "0000e0ff-3c17-d293-8e48-14fe2e4da212",  # W5 (index 5) - custom base UUID
+    RICHMAT_WILINKE_W5_SERVICE_UUID,  # W5 (index 5) - shared Telink base, name-guarded
 ]
 RICHMAT_WILINKE_CHAR_UUIDS: Final = [
     # (write_char, notify_char) pairs matching service UUIDs above
@@ -435,10 +442,17 @@ LOGICDATA_CHAR_UUID: Final = "b9934c44-5c91-462b-80a1-30fccc29d758"
 MANUFACTURER_ID_LOGICDATA: Final = 1351  # 0x0547
 
 # Leggett & Platt specific UUIDs
-# Gen2 variant (Richmat-based, ASCII commands)
+# Gen2 variant (a.k.a. LP Comfort Connect, control box 209-M001, ESP32-based;
+# Richmat-derived ASCII commands)
 LEGGETT_GEN2_SERVICE_UUID: Final = "45e25100-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_WRITE_CHAR_UUID: Final = "45e25101-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_READ_CHAR_UUID: Final = "45e25103-3171-4cfc-ae89-1d83cf8d8071"
+# LP Comfort Connect beds advertise NO service UUID — only manufacturer data
+# under company ID 0x092D whose payload begins with ASCII "XP" or "CP". The LP
+# Control app (com.leggett.android.universal) recognizes these beds purely by
+# this prefix (isGen2Box()); the company ID is an additional filter.
+MANUFACTURER_ID_LEGGETT_GEN2: Final = 0x092D  # 2349
+LEGGETT_GEN2_MANUFACTURER_PREFIXES: Final = (b"XP", b"CP")
 
 # Okin variant (requires pairing)
 LEGGETT_OKIN_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"

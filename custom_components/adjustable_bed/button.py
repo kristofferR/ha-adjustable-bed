@@ -507,6 +507,14 @@ def _should_add_button(
     if description.requires_massage and not has_massage:
         return False
 
+    # Hide the manual Disconnect for beds that can't recover from it — e.g. LP
+    # Comfort Connect only accepts a connection while in pairing mode. Beds that
+    # stay connected but CAN reconnect on demand (e.g. Sleep Number MCR) keep it.
+    if description.key == "disconnect" and getattr(
+        controller, "manual_disconnect_strands_connection", False
+    ):
+        return False
+
     if description.key == "toggle_light" and controller is not None:
         if getattr(controller, "supports_discrete_light_control", False) or getattr(
             controller, "supports_light_color_control", False

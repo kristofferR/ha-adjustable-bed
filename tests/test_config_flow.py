@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_MOTOSLEEP,
@@ -73,6 +74,23 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
+
+
+def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
+    """LP Comfort Connect (Gen2) must skip the disconnecting setup probe so its
+    single pairing-window connection is left for setup (issue #385 review)."""
+    from custom_components.adjustable_bed.config_flow import _skips_setup_connection_probe
+
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_GEN2, "auto") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "auto") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "gen2") is True
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, None) is True
+    # MlRM/Okin Leggett beds reconnect normally, so the probe is fine.
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "mlrm") is False
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "okin") is False
+    # Unrelated beds are unaffected.
+    assert _skips_setup_connection_probe(BED_TYPE_KEESON, "auto") is False
+    assert _skips_setup_connection_probe(None, None) is False
 
 
 class TestPairingInstructions:
@@ -1018,6 +1036,169 @@ class TestBluetoothDiscoveryFlow:
         # Should create entry with the disambiguated type
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_OKIN_64BIT
+
+    async def test_bluetooth_confirm_auto_detect_ambiguous_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """In the disambiguate -> show-all -> confirm path, 'Auto-detect' must not
+        silently resolve an ambiguous detection (issue #385, Codex round 3)."""
+        del enable_custom_integrations
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+        from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+        # Sanity: the fixture is an ambiguous detection.
+        assert detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).ambiguous_types
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": "show_all"},
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Auto Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Ambiguous → re-prompt on the confirm form rather than guessing.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_bluetooth_confirm_auto_detect_failure_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_unknown: MagicMock,
+    ):
+        """'Auto-detect' on an unidentifiable device re-shows the form with an error."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_unknown
+        flow._show_full_bed_type_list = True
+
+        result = await flow.async_step_bluetooth_confirm(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Mystery Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_manual_config_auto_detect_failure_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_unknown: MagicMock,
+    ):
+        """'Auto-detect' in the 'Show all BLE devices' manual path re-prompts on
+        failure rather than guessing (issue #385, Codex review)."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_unknown
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Mystery Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_config"
+        assert result["errors"] == {"base": "auto_detect_failed"}
+
+    async def test_manual_config_auto_detect_resolves(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_leggett: MagicMock,
+    ):
+        """'Auto-detect' resolves to the detected type and leaves the manual form."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+        from custom_components.adjustable_bed.detection import detect_bed_type
+
+        assert detect_bed_type(mock_bluetooth_service_info_leggett)  # fixture is detectable
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_leggett
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Leggett Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Resolved to a real type and progressed past manual_config (no error).
+        assert not (
+            result["type"] == FlowResultType.FORM and result["step_id"] == "manual_config"
+        )
+
+    async def test_manual_config_auto_detect_ambiguous_reprompts(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+    ):
+        """Auto-detect must not silently resolve an ambiguous (shared-UUID)
+        detection to a guessed protocol (issue #385, Codex round 2)."""
+        from custom_components.adjustable_bed.config_flow import BED_TYPE_AUTO_DETECT
+        from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+        # Sanity: the fixture is an ambiguous detection.
+        assert detect_bed_type_detailed(mock_bluetooth_service_info_ambiguous_okin).ambiguous_types
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow._discovery_info = mock_bluetooth_service_info_ambiguous_okin
+
+        result = await flow.async_step_manual_config(
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
+                CONF_NAME: "Ambiguous Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_config"
+        assert result["errors"] == {"base": "auto_detect_failed"}
 
     async def test_bluetooth_disambiguate_okin_cst_requires_pairing(
         self,

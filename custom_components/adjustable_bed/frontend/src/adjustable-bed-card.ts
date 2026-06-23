@@ -120,30 +120,37 @@ export class AdjustableBedCard extends LitElement {
   // ---- sections -----------------------------------------------------------
 
   private _header(bed: BedEntities): TemplateResult {
-    const connected = bed.connectivity
-      ? this._state(bed.connectivity)?.state === "on"
-      : undefined;
+    // Three connectivity states. "idle" means the bed intentionally dropped the
+    // BLE link (idle timeout / manual disconnect) and reconnects on demand on the
+    // next command — surfaced via the sensor's `state_detail` attribute (issue
+    // #385) so an expected disconnect doesn't read as a fault.
+    const connSt = bed.connectivity ? this._state(bed.connectivity) : undefined;
+    const conn: "connected" | "idle" | "disconnected" | undefined = !bed.connectivity
+      ? undefined
+      : connSt?.state === "on"
+        ? "connected"
+        : connSt?.attributes?.state_detail === "idle"
+          ? "idle"
+          : "disconnected";
+    const CONN_META = {
+      connected: { cls: "ok", icon: "mdi:bluetooth-connect", key: "status.connected" },
+      idle: { cls: "idle", icon: "mdi:bluetooth", key: "status.idle" },
+      disconnected: { cls: "off", icon: "mdi:bluetooth-off", key: "status.disconnected" },
+    } as const;
     return html`
       <div class="header">
         <ha-icon class="header-icon" icon="mdi:bed-king-outline"></ha-icon>
         <span class="title">${this._title()}</span>
         ${
-          connected === undefined
+          conn === undefined
             ? nothing
             : html`
                 <button
-                  class="conn ${connected ? "ok" : "off"}"
+                  class="conn ${CONN_META[conn].cls}"
                   @click=${() => this._moreInfo(bed.connectivity!)}
-                  title=${localize(
-                    this.hass,
-                    connected ? "status.connected" : "status.disconnected",
-                  )}
+                  title=${localize(this.hass, CONN_META[conn].key)}
                 >
-                  <ha-icon
-                    icon=${connected
-                      ? "mdi:bluetooth-connect"
-                      : "mdi:bluetooth-off"}
-                  ></ha-icon>
+                  <ha-icon icon=${CONN_META[conn].icon}></ha-icon>
                 </button>
               `
         }
@@ -701,6 +708,9 @@ export class AdjustableBedCard extends LitElement {
     }
     .conn.ok {
       color: var(--success-color, var(--state-active-color, #43a047));
+    }
+    .conn.idle {
+      color: var(--info-color, var(--secondary-text-color));
     }
     .conn.off {
       color: var(--secondary-text-color);

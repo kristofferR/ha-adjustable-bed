@@ -158,6 +158,11 @@ class SleepNumberMcrController(BedController):
         return True
 
     @property
+    def requires_persistent_connection(self) -> bool:
+        """MCR beds are kept connected for the entry's lifetime."""
+        return True
+
+    @property
     def supports_motor_control(self) -> bool:
         """This initial implementation exposes presets, not live motor control."""
         return False
