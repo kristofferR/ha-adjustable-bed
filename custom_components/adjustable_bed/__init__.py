@@ -467,18 +467,34 @@ async def _async_rehome_absorbed_singles(
             # Already absorbed (e.g. a reload) or no longer a plain single —
             # nothing to move.
             continue
-        # Re-point the original's entity rows onto the pair first. After this they
-        # are indexed under the pair, not the original, so removing the original
-        # config entry below clears none of them.
-        rehomed = 0
-        for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
-            ent_reg.async_update_entity(
-                reg_entry.entity_id, config_entry_id=entry.entry_id
+        # Best-effort per side: this runs after the live coordinator is already in
+        # hass.data, so a registry error must NOT propagate (it would fail setup
+        # and leak the coordinator's open BLE links) nor abort the other side. A
+        # side left un-absorbed here is retried on the next reload — its single
+        # entry still exists, and its rows are re-pointed before the removal that
+        # would clear them, so a mid-side failure can't orphan/delete anything.
+        try:
+            # Re-point the original's entity rows onto the pair first. After this
+            # they are indexed under the pair, not the original, so removing the
+            # original config entry below clears none of them.
+            rehomed = 0
+            for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
+                ent_reg.async_update_entity(
+                    reg_entry.entity_id, config_entry_id=entry.entry_id
+                )
+                rehomed += 1
+            # Now safe to drop the original entry: its entities are re-homed and
+            # its device still carries the pair's config entry, so HA deletes
+            # neither.
+            await hass.config_entries.async_remove(absorbed_id)
+        except Exception:  # noqa: BLE001 - re-home must not abort paired setup
+            _LOGGER.exception(
+                "Failed to re-home absorbed bed %s onto paired entry %s; "
+                "it will be retried on the next reload",
+                absorbed_id,
+                entry.entry_id,
             )
-            rehomed += 1
-        # Now safe to drop the original entry: its entities are re-homed and its
-        # device still carries the pair's config entry, so HA deletes neither.
-        await hass.config_entries.async_remove(absorbed_id)
+            continue
         _LOGGER.info(
             "Re-homed %d entit%s from absorbed bed %s (%s) onto paired entry %s",
             rehomed,

@@ -775,6 +775,50 @@ class TestPairBedsConversion:
         rows = [e for e in ent_reg.entities.values() if e.unique_id == cover_uid]
         assert len(rows) == 1
 
+    async def test_conversion_rehome_failure_does_not_abort_setup(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A registry error while absorbing a side must not propagate: re-homing
+        runs after the live coordinator is in hass.data, so a raised exception
+        would fail paired setup and leak the coordinator's open BLE links. The
+        pair still loads and the un-absorbed single survives for the next reload."""
+        from unittest.mock import patch
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+        absorbed = {left.entry_id, right.entry_id}
+
+        orig_remove = hass.config_entries.async_remove
+
+        async def _failing_remove(entry_id):
+            if entry_id in absorbed:
+                raise RuntimeError("boom")
+            return await orig_remove(entry_id)
+
+        result = await self._reach_pair_step(hass)
+        with patch.object(hass.config_entries, "async_remove", _failing_remove):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        remaining = {e.entry_id: e for e in hass.config_entries.async_entries(DOMAIN)}
+        paired = [e for e in remaining.values() if is_paired(e.data)]
+        assert len(paired) == 1
+        pair = paired[0]
+        # Setup completed despite the re-home failure (not SETUP_ERROR), and the
+        # coordinator is live in hass.data — not leaked by a propagating exception.
+        assert pair.state == ConfigEntryState.LOADED
+        assert pair.entry_id in hass.data[DOMAIN]
+        # The un-absorbed singles survive to be retried on the next reload.
+        assert left.entry_id in remaining
+        assert right.entry_id in remaining
+
 
 class TestSideServiceRouting:
     """The left/right/both service field routes correctly."""
