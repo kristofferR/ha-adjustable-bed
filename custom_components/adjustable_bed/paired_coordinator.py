@@ -444,28 +444,24 @@ class PairedBedCoordinator:
     async def _safe_disconnect(
         self, side: str, child: AdjustableBedCoordinator
     ) -> bool:
-        """Disconnect one side, swallowing failures. Returns True only if the link
-        is actually DOWN afterwards.
+        """Disconnect one side, swallowing failures. Returns True on success — a
+        disconnect error must not mask the command outcome, but callers that rely
+        on the link actually being down (sequential switching) check the result.
 
-        A disconnect error must not mask the command outcome, but callers that
-        rely on the link being down (sequential switching) check the result — so
-        besides a raised error, a disconnect that returns normally yet leaves the
-        side connected (a swallowed BLE/proxy error) is also reported as a failure
-        here, centrally, so no sequential caller opens a second link onto a live
-        one.
+        NOTE: this can only surface a disconnect that RAISES. The child
+        coordinator's ``_async_disconnect_locked`` deliberately swallows
+        ``BleakError`` and resets ``self._client = None`` on every disconnect
+        outcome (a logical-disconnect guarantee shared by all bed types), so a
+        swallowed BLE error that leaves the *physical* link up cannot be detected
+        here — ``child.is_connected`` is already False. Surfacing that would need a
+        core change to the disconnect path for every bed; deferred to the Octo
+        bench-validation work (#327).
         """
         try:
             await child.async_disconnect("sequential_switch")
         except Exception as err:  # noqa: BLE001 - CancelledError must propagate
             _LOGGER.warning(
                 "Disconnect failed on %s side (%s): %s", side, child.address, err
-            )
-            return False
-        if child.is_connected:
-            _LOGGER.warning(
-                "Disconnect returned on %s side (%s) but the link is still up",
-                side,
-                child.address,
             )
             return False
         return True
@@ -533,14 +529,12 @@ class PairedBedCoordinator:
                     # drops the live controller).
                     child.cache_capability_controller()
                     if not await self._safe_disconnect(side, child):
-                        # Releasing the just-verified side failed (_safe_disconnect
-                        # returns False on a raised error OR a disconnect that left
-                        # the link up). Opening the next side now would hold two
-                        # links at once, which the single-connection profile must
-                        # never do (the reference app strictly disconnects-before-
-                        # connect and aborts on a genuine disconnect error). Stop
-                        # verifying the rest — one side left up beats two — commands
-                        # reconnect on demand.
+                        # Releasing the just-verified side raised: opening the next
+                        # side now could hold two links at once, which the single-
+                        # connection profile must never do (the reference app
+                        # strictly disconnects-before-connect and aborts on a
+                        # genuine disconnect error). Stop verifying the rest — one
+                        # side left up beats two — commands reconnect on demand.
                         _LOGGER.warning(
                             "Could not release %s side after verify; skipping the "
                             "remaining side(s) to keep a single BLE link",

@@ -51,7 +51,6 @@ class RecordingChild:
         block: bool = False,
         block_connect: bool = False,
         fail_disconnect: bool = False,
-        disconnect_silently_fails: bool = False,
     ) -> None:
         self.side = side
         self.address = ADDR[side]
@@ -63,7 +62,6 @@ class RecordingChild:
         self.connect_result = connect_result
         self.connect_raises = connect_raises
         self.fail_disconnect = fail_disconnect
-        self.disconnect_silently_fails = disconnect_silently_fails
         self.connection_cb = None
         # When block=True a command waits on this gate; request_command_cancel /
         # async_stop_command release it (mirrors the real cancel-aware child).
@@ -126,10 +124,6 @@ class RecordingChild:
         if self.fail_disconnect:
             # A failed disconnect leaves the link up (is_connected stays True).
             raise RuntimeError(f"{self.side} disconnect boom")
-        if self.disconnect_silently_fails:
-            # Returns normally (so _safe_disconnect reports success) but the link
-            # is somehow still up — the swallowed-BLE-error case.
-            return
         self._connected = False
 
     async def async_shutdown(self) -> None:
@@ -633,21 +627,6 @@ class TestSequentialCycle:
         ]
         assert (SIDE_RIGHT, "connect") not in log
 
-    async def test_async_connect_aborts_if_release_silently_fails(self):
-        # The harder case: async_disconnect returns NORMALLY (so _safe_disconnect
-        # reports success) but the link is still up. The verify loop must still
-        # refuse to open the next side — it re-checks is_connected, not just the
-        # _safe_disconnect result.
-        log: list = []
-        coord, _, _ = self._seq(log, left={"disconnect_silently_fails": True})
-        assert await coord.async_connect() is True
-        assert log == [
-            (SIDE_LEFT, "connect"),
-            (SIDE_LEFT, "cache_caps"),
-            (SIDE_LEFT, "disconnect"),  # returned ok, but is_connected stayed up
-        ]
-        assert (SIDE_RIGHT, "connect") not in log
-
     async def test_op_and_disconnect_both_fail_surfaces_both(self):
         # If a side's command fails AND its release then also fails, the disconnect
         # failure (link may still be live/moving) must not be dropped — the side
@@ -663,24 +642,6 @@ class TestSequentialCycle:
         assert isinstance(err.__cause__, RuntimeError)  # the original command error
         # The loop broke on left; right is never connected.
         assert (SIDE_RIGHT, "connect") not in log
-
-    async def test_command_aborts_when_other_side_release_silently_fails(self):
-        # A command on LEFT while RIGHT is connected but its release SILENTLY fails
-        # (disconnect returns, link stays up). Because _safe_disconnect now reports
-        # that centrally, _release_other_sides aborts before LEFT is connected — the
-        # one-link invariant holds on the command path, not just in setup.
-        log: list = []
-        coord, _, _ = _pair(
-            log,
-            mode=self.SEQ,
-            left={"connected": False},
-            right={"connected": True, "disconnect_silently_fails": True},
-        )
-        with pytest.raises(PairedSideError) as exc:
-            await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
-        assert SIDE_LEFT in exc.value.side_errors
-        # We refused to open a 2nd link over the still-connected RIGHT.
-        assert (SIDE_LEFT, "connect") not in log
 
     async def test_stop_mid_cycle_aborts_remaining_side(self):
         log: list = []
