@@ -1216,9 +1216,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Two distinct entries for the same MAC would build children with
                 # identical addresses and so collide on {address}_{key} unique IDs.
                 errors["right_entry"] = "same_address"
-            elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
+            elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(
+                right
+            ):
+                # Compare RESOLVED bed types: two legacy leggett_platt entries with
+                # DIFFERENT explicit variants (gen2 vs mlrm) are different concrete
+                # protocols, so they're an incompatible pair even though their raw
+                # umbrella type matches — and would otherwise be stored as mismatched
+                # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
-            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO and (
+            elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
                 self._octo_capability_snapshot(left) is None
                 or self._octo_capability_snapshot(right) is None
             ):

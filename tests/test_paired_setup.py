@@ -677,6 +677,13 @@ class TestPairBedsConversion:
         assert BED_TYPE_LEGGETT_WILINKE in OFFLINE_CAPABILITY_SAFE_BED_TYPES
         assert BED_TYPE_LEGGETT_PLATT not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
 
+        # Two leggett_platt entries with DIFFERENT explicit variants resolve to
+        # different concrete protocols, so the pairing mismatch check (now over
+        # resolved types) rejects them even though their raw umbrella type matches.
+        assert flow._offline_safe_bed_type(
+            _entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2)
+        ) != flow._offline_safe_bed_type(_entry(RIGHT_ADDR, LEGGETT_VARIANT_MLRM))
+
         ent_reg = er.async_get(hass)
 
         # Gen2 entry with a light entity is STILL offline-safe — the resolved type

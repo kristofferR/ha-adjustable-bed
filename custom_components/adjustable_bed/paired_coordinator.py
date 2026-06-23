@@ -409,13 +409,23 @@ class PairedBedCoordinator:
             # so a disconnect failure is fatal: abort rather than connect the next
             # side onto a possibly-still-live/moving link.
             disconnected = await self._safe_disconnect(side, child)
-            if op_error is not None:
-                errors[side] = op_error
-                break
-            if not disconnected:
-                errors[side] = HomeAssistantError(
-                    f"{side} side failed to disconnect — aborting to keep one link"
-                )
+            if op_error is not None or not disconnected:
+                if op_error is not None and not disconnected:
+                    # Both failed: the command erred AND the release that should
+                    # have halted/released the side also failed — surface both, as
+                    # the link may still be live/moving (the more critical fact).
+                    err = HomeAssistantError(
+                        f"{side} side command failed and its release also failed "
+                        f"— the link may still be live"
+                    )
+                    err.__cause__ = op_error
+                    errors[side] = err
+                elif op_error is not None:
+                    errors[side] = op_error
+                else:
+                    errors[side] = HomeAssistantError(
+                        f"{side} side failed to disconnect — aborting to keep one link"
+                    )
                 break
         if errors:
             raise PairedSideError(action, errors)
@@ -508,9 +518,12 @@ class PairedBedCoordinator:
                     # per-side entities still build after this disconnect (which
                     # drops the live controller).
                     child.cache_capability_controller()
-                    if not await self._safe_disconnect(side, child):
-                        # Releasing the just-verified side failed; opening the
-                        # next side now would hold two links at once, which the
+                    released = await self._safe_disconnect(side, child)
+                    if not released or child.is_connected:
+                        # Releasing the just-verified side failed — either it
+                        # raised (_safe_disconnect -> False) or it returned but the
+                        # link is somehow still up (is_connected). Opening the next
+                        # side now would hold two links at once, which the
                         # single-connection profile must never do (the reference
                         # app strictly disconnects-before-connect and aborts on a
                         # genuine disconnect error). Stop verifying the rest — one
