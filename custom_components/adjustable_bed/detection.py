@@ -1134,7 +1134,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             bed_type=BED_TYPE_MALOUF_NEW_OKIN,
             confidence=0.85,
             signals=signals,
-            ambiguous_types=[BED_TYPE_OKIN_CB24],
             manufacturer_id=MANUFACTURER_ID_OKIN,
         )
 
