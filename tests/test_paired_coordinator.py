@@ -659,6 +659,23 @@ class TestSequentialCycle:
         assert (SIDE_LEFT, "stop") in log
         assert (SIDE_RIGHT, "connect") not in log
 
+    async def test_cross_side_cancel_aborts_remaining_side(self):
+        # A both-cycle where, while LEFT is mid-command, a STOP for LEFT ONLY lands.
+        # RIGHT's own cancel counter is untouched, but the cycle is cancelled, so
+        # RIGHT must not connect — checking only the about-to-run side would miss
+        # an earlier targeted side's cancellation and open a second link.
+        log: list = []
+        coord, _, _ = self._seq(log, left={"block": True})
+        cmd = asyncio.ensure_future(
+            coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        )
+        while (SIDE_LEFT, "command") not in log:
+            await asyncio.sleep(0)
+        await coord.async_stop_command(side=SIDE_LEFT)  # left only — not both
+        await cmd
+        assert (SIDE_LEFT, "stop") in log
+        assert (SIDE_RIGHT, "connect") not in log
+
     async def test_releases_other_connected_side_before_connecting(self):
         # A left command while the right side is already connected out-of-band
         # (e.g. its diagnostic Connect button) releases right FIRST. (#390 :370)

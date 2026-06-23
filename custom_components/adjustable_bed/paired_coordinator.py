@@ -361,10 +361,19 @@ class PairedBedCoordinator:
         let side B connect and move.
         """
         errors: dict[str, BaseException] = {}
+
+        def cycle_cancelled() -> bool:
+            # A STOP / newer command for ANY targeted side supersedes the whole
+            # cycle — checking only the side about to run would let a later side
+            # connect after an earlier side of a both-cycle was already cancelled.
+            return any(
+                self._pair_cancel_counter[s] != entry_cancel[s] for s, _ in targets
+            )
+
         for side, child in targets:
-            if self._pair_cancel_counter[side] != entry_cancel[side]:
-                # A STOP / newer command for this side landed mid-cycle — abort
-                # before connecting it (the earlier side already disconnected).
+            if cycle_cancelled():
+                # A STOP / newer command landed mid-cycle — abort before
+                # connecting this side (the earlier side already disconnected).
                 break
 
             # One-link guard: release any OTHER side that is still connected (it
@@ -391,8 +400,14 @@ class PairedBedCoordinator:
             # _stop_children couldn't reach this side then (it wasn't connected
             # yet), so re-check now and bail (releasing the link) instead of
             # starting a motor command after the STOP was accepted.
-            if self._pair_cancel_counter[side] != entry_cancel[side]:
-                await self._safe_disconnect(side, child)
+            if cycle_cancelled():
+                if not await self._safe_disconnect(side, child):
+                    # The post-cancel release raised — surface it; the one-link
+                    # guard may have failed.
+                    errors[side] = HomeAssistantError(
+                        f"{side} side failed to disconnect after cancellation "
+                        "— aborting to keep one link"
+                    )
                 break
 
             op_error: BaseException | None = None
