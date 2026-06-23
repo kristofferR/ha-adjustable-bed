@@ -56,6 +56,11 @@ Malouf beds use two distinct protocols. The integration auto-detects which one y
 **Write Characteristic:** `6e400002-b5a3-f393-e0a9-e50e24dcca9e`
 **Format:** 8 bytes `[0x05, 0x02, (cmd>>24)&0xFF, (cmd>>16)&0xFF, (cmd>>8)&0xFF, cmd&0xFF, 0x00, 0x00]`
 
+Some newer Malouf S755 / DewertOkin `CB.24.42.28` bases advertise only the
+Nordic UART service with a `Smartbed428...` name and OKIN manufacturer payload
+starting `AB 01 02`. Those are still the NEW_OKIN/Malouf 8-byte protocol, not
+the CB24 7-byte protocol.
+
 ### LEGACY_OKIN (FFE5)
 
 **Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
