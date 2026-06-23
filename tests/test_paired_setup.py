@@ -1238,6 +1238,32 @@ class TestOfflineSideEntities:
         await left.async_prime_offline_controller()
         assert left.capability_controller is None
 
+    async def test_leggett_platt_explicit_variant_side_is_offline_minted(
+        self, hass: HomeAssistant
+    ):
+        # Even if a child descriptor still carries the UMBRELLA leggett_platt with
+        # an explicit gen2 variant, the coordinator resolves it before the
+        # mintability check and mints the concrete Gen2 controller offline — so the
+        # side the pairing gate accepted as offline-safe actually gets its
+        # light/select/climate entities without waiting for a reload-while-online.
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_LEGGETT_PLATT
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_LEGGETT_PLATT
+            child[CONF_PROTOCOL_VARIANT] = LEGGETT_VARIANT_GEN2
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="L&P",
+            data=data,
+            unique_id="pair_lp",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is not None
+
     async def test_no_op_bed_type_correction_keeps_offline_controller(
         self, hass: HomeAssistant
     ):

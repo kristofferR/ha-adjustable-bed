@@ -136,6 +136,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    resolve_explicit_bed_type,
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
@@ -632,16 +633,22 @@ class AdjustableBedCoordinator:
         """
         if self._offline_controller is not None or self._controller is not None:
             return
+        # Resolve a legacy umbrella bed type (leggett_platt) with an explicit
+        # variant to its concrete type, so a Gen2/WiLinke side that the pairing
+        # gate accepted as offline-safe is actually minted here (the raw umbrella
+        # type is not in OFFLINE_CAPABILITY_SAFE_BED_TYPES). Idempotent for a
+        # descriptor already normalised at pairing, and for every other bed type.
+        bed_type = resolve_explicit_bed_type(self._bed_type, self._protocol_variant)
         # Octo is not statically offline-safe (it discovers capabilities post
         # connect), but a paired side that captured a capability snapshot AT
         # PAIRING can be minted offline from that snapshot.
         octo_snapshot = (
             octo_snapshot_from_descriptor(self.entry.data)
-            if self._bed_type == BED_TYPE_OCTO
+            if bed_type == BED_TYPE_OCTO
             else None
         )
-        mintable = self._bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES or (
-            self._bed_type == BED_TYPE_OCTO and octo_snapshot is not None
+        mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES or (
+            bed_type == BED_TYPE_OCTO and octo_snapshot is not None
         )
         if not mintable:
             # Only beds whose entity-gating capabilities are fully determined by
@@ -655,7 +662,7 @@ class AdjustableBedCoordinator:
         try:
             self._offline_controller = await create_controller(
                 coordinator=self,
-                bed_type=self._bed_type,
+                bed_type=bed_type,
                 protocol_variant=self._protocol_variant,
                 client=None,
                 device_name=self._name,

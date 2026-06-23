@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import IntFlag
-from typing import Final
+from typing import Final, overload
 
 DOMAIN: Final = "adjustable_bed"
 
@@ -1074,6 +1074,18 @@ LEGGETT_VARIANTS: Final = {
     LEGGETT_VARIANT_OKIN: "Okin (requires BLE pairing)",
     LEGGETT_VARIANT_MLRM: "MlRM (WiLinke protocol, discrete massage control)",
 }
+
+
+@overload
+def resolve_explicit_bed_type(
+    bed_type: str, protocol_variant: str | None
+) -> str: ...
+
+
+@overload
+def resolve_explicit_bed_type(
+    bed_type: None, protocol_variant: str | None
+) -> None: ...
 
 
 def resolve_explicit_bed_type(
