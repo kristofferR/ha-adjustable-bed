@@ -537,7 +537,8 @@ LIMOSS_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 LIMOSS_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 # DewertOkin specific (A H Beard, HankookGallery beds)
-# Uses handle-based writes rather than UUID
+# Legacy handle from older traces. Handles are device/firmware-specific; the
+# controller writes to the stable shared Okin characteristic UUID instead.
 DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 
 # DewertOkin manufacturer data (BLE Company ID)
