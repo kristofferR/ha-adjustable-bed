@@ -20,6 +20,9 @@ from custom_components.adjustable_bed import (
     _shared_child_fields,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
@@ -32,8 +35,12 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     DOMAIN,
+    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_MLRM,
+    LEGGETT_VARIANT_OKIN,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_BOTH,
@@ -614,6 +621,72 @@ class TestPairBedsConversion:
             right_octo_snapshot=snap,
         )
         assert octo_snapshot_from_descriptor(get_child(pair, SIDE_LEFT)) == snap
+
+    async def test_leggett_platt_explicit_variant_is_offline_safe(
+        self, hass: HomeAssistant
+    ):
+        """A legacy leggett_platt entry with an EXPLICIT gen2/mlrm variant resolves
+        to leggett_gen2 / leggett_wilinke (both offline-capability-safe), so the
+        pairing gate must NOT block it even though a Gen2 entry exposes a light
+        entity. okin resolves to leggett_okin (OS-bonds, not offline-safe); auto
+        can't be resolved without a live client. Regression for the gate keying
+        off the umbrella bed_type instead of the resolved variant."""
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedConfigFlow,
+        )
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+
+        def _entry(address: str, variant: str) -> MockConfigEntry:
+            return MockConfigEntry(
+                domain=DOMAIN,
+                data={
+                    CONF_ADDRESS: address,
+                    CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
+                    CONF_PROTOCOL_VARIANT: variant,
+                },
+                unique_id=address,
+                version=4,
+            )
+
+        # Resolver mirrors controller_factory's explicit-variant mapping.
+        assert (
+            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2))
+            == BED_TYPE_LEGGETT_GEN2
+        )
+        assert (
+            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_MLRM))
+            == BED_TYPE_LEGGETT_WILINKE
+        )
+        assert (
+            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_OKIN))
+            == BED_TYPE_LEGGETT_PLATT
+        )
+        assert (
+            flow._offline_safe_bed_type(_entry(LEFT_ADDR, "auto"))
+            == BED_TYPE_LEGGETT_PLATT
+        )
+
+        ent_reg = er.async_get(hass)
+
+        # Gen2 entry with a light entity is STILL offline-safe — the resolved type
+        # short-circuits the registry scan that previously blocked it.
+        gen2 = _entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2)
+        gen2.add_to_hass(hass)
+        ent_reg.async_get_or_create(
+            "light", DOMAIN, f"{LEFT_ADDR}_rgb_light", config_entry=gen2
+        )
+        assert flow._has_unsafe_offline_platforms(gen2) is False
+
+        # okin resolves to a non-offline-safe type, so the same light entity keeps
+        # it blocked.
+        okin = _entry(RIGHT_ADDR, LEGGETT_VARIANT_OKIN)
+        okin.add_to_hass(hass)
+        ent_reg.async_get_or_create(
+            "light", DOMAIN, f"{RIGHT_ADDR}_rgb_light", config_entry=okin
+        )
+        assert flow._has_unsafe_offline_platforms(okin) is True
 
     @staticmethod
     def _pairable_octo_ids(hass: HomeAssistant) -> list[str]:
@@ -1244,3 +1317,39 @@ class TestOctoSnapshotBackfill:
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == snap
         # Right side untouched.
         assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_RIGHT)) is None
+
+    async def test_backfill_preserves_snapshot_on_incomplete_discovery(
+        self, hass: HomeAssistant
+    ):
+        """A later reconnect whose discover_features() times out yields NO snapshot
+        (capability_snapshot() returns None once it gates on the CAP_END sentinel),
+        so backfill must NOT erase the pairing-time capabilities. Regression for a
+        transient timeout's fallback profile overwriting a real descriptor and
+        dropping offline memory/light entities on the next reload."""
+        from types import SimpleNamespace
+
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Octo",
+            data=data,
+            unique_id="pair_octo_bf2",
+            entry_id="pair_octo_bf2",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+
+        real = {"has_lights": True, "memory_count": 4, "has_rgbwi": True}
+        left._controller = SimpleNamespace(capability_snapshot=lambda: dict(real))
+        left._backfill_octo_snapshot()
+        assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real
+
+        # Transient discovery timeout -> capability_snapshot() is None -> no-op,
+        # the real pairing-time snapshot survives.
+        left._controller = SimpleNamespace(capability_snapshot=lambda: None)
+        left._backfill_octo_snapshot()
+        assert octo_snapshot_from_descriptor(get_child(entry.data, SIDE_LEFT)) == real

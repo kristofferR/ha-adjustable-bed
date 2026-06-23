@@ -48,8 +48,10 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -98,6 +100,8 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_MLRM,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
@@ -418,6 +422,28 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         snapshot = snapshot_fn() if callable(snapshot_fn) else None
         return snapshot if isinstance(snapshot, dict) else None
 
+    def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
+        """Resolve ``entry``'s bed type for the offline-capability-safe check.
+
+        A legacy ``leggett_platt`` entry stores its real protocol under
+        ``protocol_variant``; an EXPLICIT variant resolves to a concrete type
+        that the offline-safe set already lists (``leggett_gen2`` /
+        ``leggett_wilinke``), even though the umbrella ``leggett_platt`` is not
+        in the set. Resolving it here mirrors the explicit-variant mapping in
+        ``controller_factory.create_controller`` so such entries aren't wrongly
+        treated as offline-unsafe. ``okin`` resolves to ``leggett_okin`` (not
+        offline-safe — it OS-bonds); ``auto``/unset can't be resolved without a
+        live client, so it stays the umbrella type (unsafe), which is correct.
+        """
+        bed_type = entry.data.get(CONF_BED_TYPE)
+        if bed_type == BED_TYPE_LEGGETT_PLATT:
+            variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+            if variant == LEGGETT_VARIANT_MLRM:
+                return BED_TYPE_LEGGETT_WILINKE
+            if variant == LEGGETT_VARIANT_GEN2:
+                return BED_TYPE_LEGGETT_GEN2
+        return bed_type
+
     def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` exposes climate/light/select a half-available pair
         couldn't recreate.
@@ -431,9 +457,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         Octo is offline-capable ONLY via a captured snapshot, so it is unsafe iff
         it has no snapshot (i.e. wasn't connected at pairing).
         """
-        if entry.data.get(CONF_BED_TYPE) in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
+        bed_type = self._offline_safe_bed_type(entry)
+        if bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
             return False
-        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
+        if bed_type == BED_TYPE_OCTO:
             return self._octo_capability_snapshot(entry) is None
         registry = er.async_get(self.hass)
         platforms = {"climate", "light", "select"}

@@ -805,6 +805,9 @@ class TestCapabilitySnapshot:
         live._has_synchro = True
         live._has_pin = True
         live._pin_locked = False
+        # A real discovery completes by receiving the 0xFFFFFF CAP_END sentinel,
+        # which sets _features_complete; only then is the snapshot real.
+        live._features_complete.set()
 
         snap = live.capability_snapshot()
         assert snap == {
@@ -830,6 +833,35 @@ class TestCapabilitySnapshot:
         # An all-unknown controller yields no snapshot (don't persist over a real
         # one with all-None).
         assert OctoController(self._coord()).capability_snapshot() is None
+
+    def test_no_snapshot_from_timeout_fallback(self):
+        # When discover_features() times out it fills compatibility DEFAULTS
+        # (has_lights=True, memory=0, synchro=False, pin from config) but never
+        # sets _features_complete (no CAP_END sentinel). Those fallback values
+        # must NOT be snapshotted — persisting them would overwrite a side's real
+        # descriptor and mint a reduced offline profile on the next reload.
+        controller = OctoController(self._coord())
+        controller._has_lights = True  # fallback default (assume lights exist)
+        controller._memory_count = 0
+        controller._has_synchro = False
+        controller._has_pin = True
+        controller._pin_locked = True
+        assert controller._features_complete.is_set() is False
+        assert controller.capability_snapshot() is None
+
+        # Once discovery actually completes (sentinel → _features_complete), the
+        # very same fields DO produce a snapshot.
+        controller._features_complete.set()
+        assert controller.capability_snapshot() == {
+            "has_pin": True,
+            "pin_locked": True,
+            "has_lights": True,
+            "has_rgbwi": False,
+            "rgbwi_value_type": None,
+            "memory_count": 0,
+            "discovered_motor_count": None,
+            "has_synchro": False,
+        }
 
 
 class TestMemPosStreaming:

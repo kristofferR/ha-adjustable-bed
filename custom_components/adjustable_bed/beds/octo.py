@@ -169,8 +169,19 @@ class OctoController(BedController):
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return discovered capabilities as a JSON-serialisable snapshot to
-        persist for a paired side, or None if nothing has been discovered yet (so
-        an all-unknown snapshot is never stored over a real one)."""
+        persist for a paired side, or None if feature discovery has not
+        COMPLETED.
+
+        Discovery is only complete once the 0xFFFFFF CAP_END sentinel arrives
+        (``_features_complete`` is set, see ``_on_notification``) or the
+        controller was minted from a prior complete snapshot. The
+        ``discover_features`` timeout path fills compatibility defaults (e.g.
+        ``_has_lights=True``) but deliberately never sets ``_features_complete``
+        — so guarding on it prevents those fallback values from being persisted
+        over a real snapshot (or minting a reduced offline profile on reload).
+        """
+        if not self._features_complete.is_set():
+            return None
         snap = {
             key: getattr(self, f"_{key}") for key in _CAPABILITY_SNAPSHOT_KEYS
         }
