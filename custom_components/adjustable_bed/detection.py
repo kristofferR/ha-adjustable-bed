@@ -319,8 +319,10 @@ def _is_malouf_new_okin_smartbed_signature(
     """Return True for Nordic-only Malouf New Okin Smartbed advertisements."""
     if RICHMAT_NORDIC_SERVICE_UUID.lower() not in service_uuids:
         return False
+    normalized_name = device_name.lower()
     if not any(
-        device_name.startswith(prefix) for prefix in MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES
+        normalized_name.startswith(prefix)
+        for prefix in MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES
     ):
         return False
     if not manufacturer_data:
