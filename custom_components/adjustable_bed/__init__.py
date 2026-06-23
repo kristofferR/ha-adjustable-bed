@@ -475,28 +475,43 @@ async def _async_rehome_absorbed_singles(
             continue
         # Best-effort per side: this runs after the live coordinator is already in
         # hass.data, so a registry error must NOT propagate (it would fail setup
-        # and leak the coordinator's open BLE links) nor abort the other side. A
-        # side left un-absorbed here is retried on the next reload — its single
-        # entry still exists, and its rows are re-pointed before the removal that
-        # would clear them, so a mid-side failure can't orphan/delete anything.
+        # and leak the coordinator's open BLE links) nor abort the other side. On
+        # failure the re-pointing is rolled back so the still-loaded single keeps
+        # owning its rows; the side is then absorbed cleanly on the next reload.
+        rehomed_entity_ids: list[str] = []
         try:
             # Re-point the original's entity rows onto the pair first. After this
             # they are indexed under the pair, not the original, so removing the
             # original config entry below clears none of them.
-            rehomed = 0
             for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
                 ent_reg.async_update_entity(
                     reg_entry.entity_id, config_entry_id=entry.entry_id
                 )
-                rehomed += 1
+                rehomed_entity_ids.append(reg_entry.entity_id)
             # Now safe to drop the original entry: its entities are re-homed and
             # its device still carries the pair's config entry, so HA deletes
             # neither.
             await hass.config_entries.async_remove(absorbed_id)
         except Exception:  # noqa: BLE001 - re-home must not abort paired setup
+            # Roll the rows back onto the still-loaded single. Otherwise it would
+            # own none of its rows while its live entities still hold the
+            # {MAC}_{key} unique_ids, and the paired platforms would adopt the same
+            # rows — duplicate/missing controls. Restoring config_entry_id keeps
+            # the side a consistent single, retried cleanly on the next reload.
+            for entity_id in rehomed_entity_ids:
+                try:
+                    ent_reg.async_update_entity(
+                        entity_id, config_entry_id=absorbed_id
+                    )
+                except Exception:  # noqa: BLE001 - best-effort rollback
+                    _LOGGER.debug(
+                        "Rollback of re-homed row %s to %s failed",
+                        entity_id,
+                        absorbed_id,
+                    )
             _LOGGER.exception(
-                "Failed to re-home absorbed bed %s onto paired entry %s; "
-                "it will be retried on the next reload",
+                "Failed to re-home absorbed bed %s onto paired entry %s; rolled "
+                "back, will retry on the next reload",
                 absorbed_id,
                 entry.entry_id,
             )
@@ -506,8 +521,8 @@ async def _async_rehome_absorbed_singles(
             absorbed_sides.add(side)
         _LOGGER.info(
             "Re-homed %d entit%s from absorbed bed %s (%s) onto paired entry %s",
-            rehomed,
-            "y" if rehomed == 1 else "ies",
+            len(rehomed_entity_ids),
+            "y" if len(rehomed_entity_ids) == 1 else "ies",
             original.title,
             absorbed_id,
             entry.entry_id,

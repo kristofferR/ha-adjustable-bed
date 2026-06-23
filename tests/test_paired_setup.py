@@ -784,13 +784,17 @@ class TestPairBedsConversion:
         """A registry error while absorbing ONE side must not propagate (re-homing
         runs after the live coordinator is in hass.data, so a raised exception would
         fail paired setup and leak its open BLE links) nor abort the OTHER side. The
-        pair still loads, the failing side survives for the next reload, and the
-        healthy side is absorbed normally."""
+        pair still loads, the failing side's rows are rolled back so it survives as a
+        consistent single for the next reload, and the healthy side is absorbed."""
         from unittest.mock import patch
 
         left = await self._setup_single(hass, LEFT_ADDR, "Seng")
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
         failing_id = left.entry_id  # only the left side's removal blows up
+
+        ent_reg = er.async_get(hass)
+        left_cover_id = ent_reg.async_get_entity_id("cover", DOMAIN, f"{LEFT_ADDR}_back")
+        assert left_cover_id is not None
 
         orig_remove = hass.config_entries.async_remove
 
@@ -820,6 +824,11 @@ class TestPairBedsConversion:
         # reload, while the healthy side is absorbed normally.
         assert left.entry_id in remaining
         assert right.entry_id not in remaining
+        # Rollback: the failing side's rows are restored to the still-loaded single
+        # (not left pointing at the pair), so it stays a consistent single.
+        rolled_back = ent_reg.async_get(left_cover_id)
+        assert rolled_back is not None
+        assert rolled_back.config_entry_id == left.entry_id
 
     async def test_conversion_retries_contended_side_after_absorb(
         self,
