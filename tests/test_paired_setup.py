@@ -888,13 +888,19 @@ class TestPairBedsConversion:
         right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
 
         calls: dict[str, int] = {}
+        retry_cancelled = False
 
         async def fake_connect(self):
+            nonlocal retry_cancelled
             calls[self.address] = calls.get(self.address, 0) + 1
             if self.address == LEFT_ADDR:
                 if calls[self.address] == 1:
                     return False  # initial connect fails (contention)
-                await asyncio.sleep(30)  # retry hangs — must be cut off by timeout
+                try:
+                    await asyncio.sleep(1)  # retry hangs — must be cut off by timeout
+                except asyncio.CancelledError:
+                    retry_cancelled = True  # the SETUP_TIMEOUT guard fired
+                    raise
                 return True
             client = MagicMock()
             client.is_connected = True
@@ -913,8 +919,11 @@ class TestPairBedsConversion:
             await hass.async_block_till_done()
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        # The hanging retry was attempted then timed out without blocking setup.
+        # The hanging retry was attempted, then deterministically cancelled by the
+        # SETUP_TIMEOUT guard (not allowed to return after the long sleep), without
+        # blocking setup.
         assert calls.get(LEFT_ADDR, 0) == 2
+        assert retry_cancelled is True
         paired = [
             e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data)
         ]
