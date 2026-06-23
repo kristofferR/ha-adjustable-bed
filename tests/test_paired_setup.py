@@ -1268,8 +1268,22 @@ class TestOfflineSideEntities:
         entry.add_to_hass(hass)
         left = _build_paired_children(hass, entry)[SIDE_LEFT]
 
-        await left.async_prime_offline_controller()
+        from unittest.mock import patch
+
+        from custom_components.adjustable_bed import coordinator as coordinator_mod
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_controller",
+            wraps=coordinator_mod.create_controller,
+        ) as create_controller:
+            await left.async_prime_offline_controller()
         assert left.capability_controller is not None
+        # Minted with the RESOLVED concrete type, not the umbrella leggett_platt —
+        # that is the gate/minting consistency this regression guards.
+        assert create_controller.await_args is not None
+        assert (
+            create_controller.await_args.kwargs["bed_type"] == BED_TYPE_LEGGETT_GEN2
+        )
 
     async def test_no_op_bed_type_correction_keeps_offline_controller(
         self, hass: HomeAssistant
