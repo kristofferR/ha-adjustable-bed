@@ -968,6 +968,48 @@ class TestPairBedsConversion:
         assert rolled_back is not None
         assert rolled_back.config_entry_id == left.entry_id
 
+    async def test_conversion_surfaces_unclean_unload(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        caplog,
+    ):
+        """If an absorbed single's platforms don't unload cleanly, async_remove
+        still removes the entry and returns require_restart (it does not raise) —
+        the rows are already re-homed so the side IS absorbed, but the unclean
+        unload is surfaced (a warning), not silently swallowed."""
+        import logging
+        from unittest.mock import patch
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+
+        orig_remove = hass.config_entries.async_remove
+
+        async def _unclean_remove(entry_id):
+            await orig_remove(entry_id)  # actually removes the entry
+            return {"require_restart": True}  # ...but reports an unclean unload
+
+        result = await self._reach_pair_step(hass)
+        with (
+            patch.object(hass.config_entries, "async_remove", _unclean_remove),
+            caplog.at_level(logging.WARNING),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        ids = {e.entry_id for e in hass.config_entries.async_entries(DOMAIN)}
+        # Both originals absorbed (removed) despite the unclean-unload signal...
+        assert left.entry_id not in ids
+        assert right.entry_id not in ids
+        # ...and the unclean unload was surfaced, not silently ignored.
+        assert "did not unload cleanly" in caplog.text
+
     async def test_conversion_retries_contended_side_after_absorb(
         self,
         hass: HomeAssistant,

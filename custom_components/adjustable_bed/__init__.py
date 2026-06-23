@@ -490,8 +490,18 @@ async def _async_rehome_absorbed_singles(
                 rehomed_entity_ids.append(reg_entry.entity_id)
             # Now safe to drop the original entry: its entities are re-homed and
             # its device still carries the pair's config entry, so HA deletes
-            # neither.
-            await hass.config_entries.async_remove(absorbed_id)
+            # neither. async_remove() removes the entry even on an unclean platform
+            # unload (it returns {"require_restart": True} rather than raising); the
+            # rows are already re-homed so the conversion is structurally complete,
+            # but surface that case — the original's old entities may linger until a
+            # restart (there is nothing to roll back, the entry is already gone).
+            removal = await hass.config_entries.async_remove(absorbed_id)
+            if removal.get("require_restart"):
+                _LOGGER.warning(
+                    "Absorbed bed %s did not unload cleanly (require_restart); its "
+                    "old entities may linger until Home Assistant restarts",
+                    absorbed_id,
+                )
         except Exception:  # noqa: BLE001 - re-home must not abort paired setup
             # Roll the rows back onto the still-loaded single. Otherwise it would
             # own none of its rows while its live entities still hold the
