@@ -2,7 +2,54 @@
 
 from __future__ import annotations
 
-from custom_components.adjustable_bed.unsupported import UnsupportedDeviceInfo
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
+
+from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.unsupported import (
+    UnsupportedDeviceInfo,
+    async_clear_unsupported_device_issues,
+)
+
+
+async def test_clear_unsupported_device_issues(hass: HomeAssistant) -> None:
+    """Cleanup removes obsolete unsupported-device issues, leaving others alone."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        "unsupported_device_abxm2",
+        is_fixable=False,
+        is_persistent=True,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="unsupported_device",
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        "unsupported_device_d1_28_41_53_59_9d",
+        is_fixable=False,
+        is_persistent=True,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="unsupported_device",
+    )
+    # An unrelated issue that must survive the cleanup.
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        "pairing_required_aa_bb_cc_dd_ee_ff",
+        is_fixable=True,
+        is_persistent=True,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key="pairing_required",
+    )
+
+    registry = ir.async_get(hass)
+    assert len(registry.issues) == 3
+
+    async_clear_unsupported_device_issues(hass)
+
+    remaining = {issue_id for (domain, issue_id) in registry.issues if domain == DOMAIN}
+    assert remaining == {"pairing_required_aa_bb_cc_dd_ee_ff"}
 
 
 def test_misidentified_details_rounds_confidence() -> None:

@@ -1857,24 +1857,3 @@ async def detect_bed_type_by_characteristics(
         _LOGGER.debug("Characteristic detection failed (malformed service): %s", err)
 
     return None
-
-
-def determine_unsupported_reason(service_info: BluetoothServiceInfoBleak) -> str:
-    """Determine why a device was not detected as a supported bed."""
-    device_name = (service_info.name or "").lower()
-
-    # Check if it was excluded
-    for pattern in EXCLUDED_DEVICE_PATTERNS:
-        if pattern in device_name:
-            return f"Device name contains excluded pattern '{pattern}' (non-bed device)"
-
-    # Check if it has any service UUIDs at all
-    if not service_info.service_uuids:
-        return "No BLE service UUIDs advertised"
-
-    # Check if it has manufacturer data but unknown protocol
-    if service_info.manufacturer_data:
-        return "Has manufacturer data but no recognized service UUIDs"
-
-    # Generic reason
-    return "No matching service UUIDs or name patterns found"
