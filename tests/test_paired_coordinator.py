@@ -664,6 +664,24 @@ class TestSequentialCycle:
         # The loop broke on left; right is never connected.
         assert (SIDE_RIGHT, "connect") not in log
 
+    async def test_command_aborts_when_other_side_release_silently_fails(self):
+        # A command on LEFT while RIGHT is connected but its release SILENTLY fails
+        # (disconnect returns, link stays up). Because _safe_disconnect now reports
+        # that centrally, _release_other_sides aborts before LEFT is connected — the
+        # one-link invariant holds on the command path, not just in setup.
+        log: list = []
+        coord, _, _ = _pair(
+            log,
+            mode=self.SEQ,
+            left={"connected": False},
+            right={"connected": True, "disconnect_silently_fails": True},
+        )
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
+        assert SIDE_LEFT in exc.value.side_errors
+        # We refused to open a 2nd link over the still-connected RIGHT.
+        assert (SIDE_LEFT, "connect") not in log
+
     async def test_stop_mid_cycle_aborts_remaining_side(self):
         log: list = []
         coord, left, right = self._seq(log, left={"block": True})
