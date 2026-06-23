@@ -1,4 +1,4 @@
-"""Tests for Okin handle-based bed controller."""
+"""Tests for DewertOkin/Okin 6-byte bed controller."""
 
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
-    DEWERTOKIN_WRITE_HANDLE,
     DOMAIN,
+    OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -65,13 +65,11 @@ class TestOkinHandleController:
         mock_okin_handle_config_entry,
         mock_coordinator_connected,
     ):
-        """Test controller reports correct handle-based identifier."""
+        """Test controller reports the stable Okin write characteristic."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
         await coordinator.async_connect()
 
-        # Okin handle uses handle-based writes, so UUID is a handle placeholder
-        expected = f"handle-0x{DEWERTOKIN_WRITE_HANDLE:04x}"
-        assert coordinator.controller.control_characteristic_uuid == expected
+        assert coordinator.controller.control_characteristic_uuid == OKIMAT_WRITE_CHAR_UUID
 
     async def test_write_command(
         self,
@@ -87,9 +85,8 @@ class TestOkinHandleController:
         command = OkinHandleCommands.STOP
         await coordinator.controller.write_command(command)
 
-        # Okin handle uses handle-based writes (integer handle)
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, command, response=True
+            OKIMAT_WRITE_CHAR_UUID, command, response=True
         )
 
     async def test_write_command_with_repeat(
@@ -231,7 +228,7 @@ class TestOkinHandleMovement:
         await coordinator.controller.stop_all()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.STOP, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.STOP, response=True
         )
 
 
@@ -362,7 +359,7 @@ class TestOkinHandleLights:
         await coordinator.controller.lights_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.UNDERLIGHT, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.UNDERLIGHT, response=True
         )
 
     async def test_lights_on(
@@ -379,7 +376,7 @@ class TestOkinHandleLights:
         await coordinator.controller.lights_on()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.UNDERLIGHT, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.UNDERLIGHT, response=True
         )
 
 
@@ -400,7 +397,7 @@ class TestOkinHandleMassage:
         await coordinator.controller.massage_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.WAVE_MASSAGE, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.WAVE_MASSAGE, response=True
         )
 
     async def test_massage_off(
@@ -417,7 +414,7 @@ class TestOkinHandleMassage:
         await coordinator.controller.massage_off()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.MASSAGE_OFF, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.MASSAGE_OFF, response=True
         )
 
     async def test_massage_head_toggle(
@@ -434,7 +431,7 @@ class TestOkinHandleMassage:
         await coordinator.controller.massage_head_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.HEAD_MASSAGE, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.HEAD_MASSAGE, response=True
         )
 
     async def test_massage_foot_toggle(
@@ -451,7 +448,7 @@ class TestOkinHandleMassage:
         await coordinator.controller.massage_foot_toggle()
 
         mock_bleak_client.write_gatt_char.assert_called_with(
-            DEWERTOKIN_WRITE_HANDLE, OkinHandleCommands.FOOT_MASSAGE, response=True
+            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.FOOT_MASSAGE, response=True
         )
 
 
