@@ -868,6 +868,59 @@ class TestPairBedsConversion:
         assert calls.get(LEFT_ADDR, 0) == 2
         assert calls.get(RIGHT_ADDR, 0) == 1
 
+    async def test_conversion_retry_is_bounded_by_timeout(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """The post-absorb retry is bounded by SETUP_TIMEOUT like the initial
+        connect, so a hanging reconnect can't block setup — it falls back to
+        offline-prime and the pair still loads."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+
+        left = await self._setup_single(hass, LEFT_ADDR, "Seng")
+        right = await self._setup_single(hass, RIGHT_ADDR, "Bed 4587")
+
+        calls: dict[str, int] = {}
+
+        async def fake_connect(self):
+            calls[self.address] = calls.get(self.address, 0) + 1
+            if self.address == LEFT_ADDR:
+                if calls[self.address] == 1:
+                    return False  # initial connect fails (contention)
+                await asyncio.sleep(30)  # retry hangs — must be cut off by timeout
+                return True
+            client = MagicMock()
+            client.is_connected = True
+            self._client = client
+            return True
+
+        result = await self._reach_pair_step(hass)
+        with (
+            patch.object(AdjustableBedCoordinator, "async_connect", fake_connect),
+            patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.2),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        # The hanging retry was attempted then timed out without blocking setup.
+        assert calls.get(LEFT_ADDR, 0) == 2
+        paired = [
+            e for e in hass.config_entries.async_entries(DOMAIN) if is_paired(e.data)
+        ]
+        assert len(paired) == 1
+        assert paired[0].state == ConfigEntryState.LOADED
+
 
 class TestSideServiceRouting:
     """The left/right/both service field routes correctly."""

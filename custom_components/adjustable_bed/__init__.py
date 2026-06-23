@@ -592,7 +592,11 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             if child is None or child.is_connected:
                 continue
             try:
-                await child.async_connect()
+                # Bound the retry like the initial connect above: async_connect can
+                # hang, and an unbounded retry would block offline-prime / platform
+                # forwarding indefinitely. A timeout just falls back to offline-prime.
+                async with asyncio.timeout(SETUP_TIMEOUT):
+                    await child.async_connect()
             except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
                 _LOGGER.debug(
                     "Post-absorb reconnect of %s side failed; priming offline", side
