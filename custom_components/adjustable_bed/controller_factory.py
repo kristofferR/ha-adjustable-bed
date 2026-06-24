@@ -265,19 +265,21 @@ async def create_controller(
         return OkinHandleController(coordinator)
 
     if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
+        variant = protocol_variant or "auto"
         if _is_dewertokin_rf_gateway(client, ble_model):
-            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+            from .beds.dewertokin_rf_gateway import DewertOkinUuidRfGatewayController
 
             _LOGGER.info(
-                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s "
+                "using Okin UUID variant %s",
                 coordinator.address,
+                variant,
             )
-            return DewertOkinRfGatewayController(coordinator)
+            return DewertOkinUuidRfGatewayController(coordinator, variant=variant)
 
         from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
-        variant = protocol_variant or "auto"
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
 

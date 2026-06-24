@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.dewertokin_rf_gateway import (
     DewertOkinRfGatewayController,
+    DewertOkinUuidRfGatewayController,
 )
 from custom_components.adjustable_bed.beds.okin_handle import (
     OkinHandleCommands,
@@ -29,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DOMAIN,
+    OKIMAT_VARIANT_93332,
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -129,7 +131,7 @@ async def test_okin_uuid_rf_gateway_selected_from_gatt_pair(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,
 ) -> None:
-    """Test RF-Gateway GATT pair routes Okin UUID entries to RF-Gateway controller."""
+    """Test RF-Gateway GATT pair routes Okin UUID entries to UUID RF-Gateway controller."""
     coordinator = AdjustableBedCoordinator(hass, _make_entry(hass, BED_TYPE_OKIN_UUID))
     mock_bleak_client.services = _rf_gateway_services()
 
@@ -140,7 +142,34 @@ async def test_okin_uuid_rf_gateway_selected_from_gatt_pair(
         mock_bleak_client,
     )
 
-    assert isinstance(controller, DewertOkinRfGatewayController)
+    assert isinstance(controller, DewertOkinUuidRfGatewayController)
+
+
+async def test_okin_uuid_rf_gateway_preserves_configured_variant_commands(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Test RF-Gateway Okimat entries wrap commands from the configured remote variant."""
+    coordinator = AdjustableBedCoordinator(hass, _make_entry(hass, BED_TYPE_OKIN_UUID))
+    coordinator._client = mock_bleak_client
+    mock_bleak_client.services = _rf_gateway_services()
+
+    controller = await create_controller(
+        coordinator,
+        BED_TYPE_OKIN_UUID,
+        OKIMAT_VARIANT_93332,
+        mock_bleak_client,
+    )
+    await controller.move_feet_up()
+
+    assert isinstance(controller, DewertOkinUuidRfGatewayController)
+    assert controller.memory_slot_count == 2
+    first_write = mock_bleak_client.write_gatt_char.call_args_list[0]
+    assert first_write.args == (
+        OKIMAT_WRITE_CHAR_UUID,
+        bytes.fromhex("e5fe1600000040c6"),
+    )
+    assert first_write.kwargs == {"response": True}
 
 
 async def test_dewertokin_without_rf_gateway_signals_keeps_okin_handle(
