@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -58,6 +59,7 @@ from .const import (
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_SIDES,
     RICHMAT_REMOTE_AUTO,
     SIDE_BOTH,
@@ -71,8 +73,10 @@ from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 from .pairing import (
+    KEY_ABSORBED_ENTRY_ID,
     get_child,
     is_paired,
+    iter_children,
     pair_member_addresses,
     with_updated_child,
 )
@@ -141,8 +145,11 @@ PLATFORMS: list[Platform] = [
 PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.CLIMATE,
     Platform.COVER,
+    Platform.LIGHT,
     Platform.NUMBER,
+    Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
 ]
@@ -424,6 +431,154 @@ def _async_ensure_paired_device_registry(
         )
 
 
+async def _async_release_absorbed_singles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Disconnect (but do NOT remove) the original singles a single-connection pair
+    is about to absorb, freeing their one-link BLE before the pair connects.
+
+    Octo holds a single BLE link per bed and keeps it alive via the PIN keepalive,
+    so a still-loaded original NEVER idle-disconnects on its own — and the paired
+    child connects to the SAME MAC, so without this it could never open the link and
+    the pair would hang in setup retry. Concurrent pairs (Linak) don't need this:
+    their originals idle-disconnect and the post-absorb retry self-heals.
+
+    The originals stay LOADED config entries (re-homed + removed only after a
+    successful connect), so a failed pair setup still leaves the user two working
+    singles that reconnect on demand. Best-effort: a failed release just means the
+    pair's connect retries.
+    """
+    for child in iter_children(entry.data):
+        absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
+        if not absorbed_id:
+            continue
+        original = hass.config_entries.async_get_entry(absorbed_id)
+        if original is None or is_paired(original.data):
+            continue
+        original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+        if not isinstance(original_coordinator, AdjustableBedCoordinator):
+            continue
+        try:
+            await original_coordinator.async_disconnect("absorbed_by_pair")
+            _LOGGER.debug(
+                "Released absorbed single %s's BLE link before paired connect",
+                absorbed_id,
+            )
+        except Exception:  # noqa: BLE001 - best-effort; the pair connect retries
+            _LOGGER.debug(
+                "Could not pre-release absorbed single %s", absorbed_id
+            )
+
+
+async def _async_rehome_absorbed_singles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> set[str]:
+    """Re-home absorbed single entries' registry rows onto the pair, then remove them.
+
+    Conversion is ADDITIVE. Instead of deleting each original single entry's
+    registry rows and letting the paired platforms recreate them (which would
+    reset per-side history and customizations), this moves the existing rows onto
+    the pair entry IN PLACE:
+
+    * Each child device already shares the single's ``(DOMAIN, MAC)`` identifier,
+      so ``_async_ensure_paired_device_registry`` (run earlier in setup) merged the
+      pair's config-entry id into the existing device and nested it under the
+      synthetic parent. Removing the original then only drops the original's
+      config-entry id, leaving the SAME device object (id, name_by_user, area)
+      alive.
+    * Each entity row is re-pointed ``config_entry_id`` -> pair BEFORE the original
+      is removed, so clearing the original config entry no longer deletes it (HA
+      deletes entity rows indexed by the removed config entry). The paired platform
+      later adopts the row by unique_id (same ``entity_id``, history, name, area)
+      instead of creating a new one.
+
+    Provenance is each child descriptor's ``absorbed_entry_id`` (recorded by the
+    pairing wizard). Idempotent: on a reload the originals are already gone, so each
+    lookup misses and this is a no-op; pairs created by the old remove-then-create
+    path carry no ``absorbed_entry_id`` and are skipped.
+
+    Returns the set of child sides whose original single was actually absorbed
+    here, so the caller can retry those sides' connect now that their (single-link)
+    BLE has been freed.
+    """
+    ent_reg = er.async_get(hass)
+    absorbed_sides: set[str] = set()
+    for child in iter_children(entry.data):
+        absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
+        if not absorbed_id:
+            continue
+        original = hass.config_entries.async_get_entry(absorbed_id)
+        if original is None or is_paired(original.data):
+            # Already absorbed (e.g. a reload) or no longer a plain single —
+            # nothing to move.
+            continue
+        # Best-effort per side: this runs after the live coordinator is already in
+        # hass.data, so a registry error must NOT propagate (it would fail setup
+        # and leak the coordinator's open BLE links) nor abort the other side. On
+        # failure the re-pointing is rolled back so the still-loaded single keeps
+        # owning its rows; the side is then absorbed cleanly on the next reload.
+        rehomed_entity_ids: list[str] = []
+        try:
+            # Re-point the original's entity rows onto the pair first. After this
+            # they are indexed under the pair, not the original, so removing the
+            # original config entry below clears none of them.
+            for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
+                ent_reg.async_update_entity(
+                    reg_entry.entity_id, config_entry_id=entry.entry_id
+                )
+                rehomed_entity_ids.append(reg_entry.entity_id)
+            # Now safe to drop the original entry: its entities are re-homed and
+            # its device still carries the pair's config entry, so HA deletes
+            # neither. async_remove() removes the entry even on an unclean platform
+            # unload (it returns {"require_restart": True} rather than raising); the
+            # rows are already re-homed so the conversion is structurally complete,
+            # but surface that case — the original's old entities may linger until a
+            # restart (there is nothing to roll back, the entry is already gone).
+            removal = await hass.config_entries.async_remove(absorbed_id)
+            if removal.get("require_restart"):
+                _LOGGER.warning(
+                    "Absorbed bed %s did not unload cleanly (require_restart); its "
+                    "old entities may linger until Home Assistant restarts",
+                    absorbed_id,
+                )
+        except Exception:  # noqa: BLE001 - re-home must not abort paired setup
+            # Roll the rows back onto the still-loaded single. Otherwise it would
+            # own none of its rows while its live entities still hold the
+            # {MAC}_{key} unique_ids, and the paired platforms would adopt the same
+            # rows — duplicate/missing controls. Restoring config_entry_id keeps
+            # the side a consistent single, retried cleanly on the next reload.
+            for entity_id in rehomed_entity_ids:
+                try:
+                    ent_reg.async_update_entity(
+                        entity_id, config_entry_id=absorbed_id
+                    )
+                except Exception:  # noqa: BLE001 - best-effort rollback
+                    _LOGGER.debug(
+                        "Rollback of re-homed row %s to %s failed",
+                        entity_id,
+                        absorbed_id,
+                    )
+            _LOGGER.exception(
+                "Failed to re-home absorbed bed %s onto paired entry %s; rolled "
+                "back, will retry on the next reload",
+                absorbed_id,
+                entry.entry_id,
+            )
+            continue
+        side = child.get(CONF_SIDE)
+        if side:
+            absorbed_sides.add(side)
+        _LOGGER.info(
+            "Re-homed %d entit%s from absorbed bed %s (%s) onto paired entry %s",
+            len(rehomed_entity_ids),
+            "y" if len(rehomed_entity_ids) == 1 else "ies",
+            original.title,
+            absorbed_id,
+            entry.entry_id,
+        )
+    return absorbed_sides
+
+
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
     _LOGGER.info(
@@ -441,6 +596,24 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     coordinator = PairedBedCoordinator(hass, entry, children)
     _async_ensure_paired_device_registry(hass, entry, coordinator)
 
+    async def _pairing_repairs_for_unconnected() -> None:
+        # Surface a per-side pairing repair for any side that needs OS-level BLE
+        # pairing and didn't connect — like a single bed does. Run this BEFORE any
+        # abort (timeout / no-side-connected) so a paired bonding bed (OKIN/Leggett)
+        # whose sides all fail to pair still prompts the user instead of silently
+        # retrying forever.
+        for child in coordinator.children.values():
+            if not child.is_connected:
+                await _maybe_create_pairing_issue_for(hass, child)
+
+    # Single-connection beds (Octo) hold one BLE link per bed and keep it alive via
+    # the PIN keepalive, so a still-loaded original would block the paired child
+    # (same MAC) from ever connecting — release the originals' links first. They
+    # stay loaded config entries, re-homed/removed only after a successful connect,
+    # so a failed setup still leaves two working singles.
+    if coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+        await _async_release_absorbed_singles(hass, entry)
+
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
@@ -448,14 +621,18 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         # The coordinator isn't in hass.data yet, so the unload path won't run —
         # shut it down here or a side that already connected keeps its BLE link
         # alive across SETUP_RETRY.
+        await _pairing_repairs_for_unconnected()
         await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
         ) from None
 
+    # Half-available is fine, but surface pairing repairs for any unconnected side
+    # first — including the all-offline case, which aborts below.
+    await _pairing_repairs_for_unconnected()
     if not connected:
-        # Half-available is fine, but if NO side connected there is nothing to
-        # control yet — retry like a single bed.
+        # If NO side connected there is nothing to control yet — retry like a
+        # single bed.
         await coordinator.async_shutdown()
         raise ConfigEntryNotReady(
             f"No side of paired bed {entry.title} could be connected"
@@ -463,6 +640,47 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # At least one child connected, so the pair can provide controls. ONLY NOW
+    # absorb the original single entries — re-home their entity/device registry
+    # rows onto the pair, then remove them. Deferring this until after a successful
+    # connect keeps the originals (and their live controls) intact on the timeout /
+    # no-side-connected paths above: if the pair can't load, the user keeps two
+    # working beds, and the still-loaded originals idle-disconnect on their own so a
+    # later retry's children can take the single-link BLE. Must run before
+    # forwarding platforms so the originals' live entities are torn down first,
+    # freeing the shared {address}_{key} unique_ids the paired platforms reuse.
+    # No-op on reload (originals already gone).
+    absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
+    # A just-absorbed concurrent side may have failed its initial connect ONLY
+    # because its original single was still holding the (single-link) BLE — which
+    # the absorb above has now freed. Retry such a side once so a non-offline-
+    # mintable side (an auto-detected Richmat/L&P/Keeson variant) gets its live
+    # controller and exposes entities, instead of staying empty until a reload.
+    # Skip in sequential mode (Octo), which deliberately releases each side's link
+    # and mints offline sides from the pairing-time capability snapshot.
+    if absorbed_sides and coordinator.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL:
+        for side in absorbed_sides:
+            child = coordinator.children.get(side)
+            if child is None or child.is_connected:
+                continue
+            try:
+                # Bound the retry like the initial connect above: async_connect can
+                # hang, and an unbounded retry would block offline-prime / platform
+                # forwarding indefinitely. A timeout just falls back to offline-prime.
+                async with asyncio.timeout(SETUP_TIMEOUT):
+                    await child.async_connect()
+            except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                _LOGGER.debug(
+                    "Post-absorb reconnect of %s side failed; priming offline", side
+                )
+    # Prime a client-free capability controller for any side that did NOT connect,
+    # so its per-side entities are still created up-front (with byte-identical
+    # unique_ids); the live controller takes over on reconnect with no reload.
+    # Connected sides already have a live controller and are skipped. Bed types
+    # whose controller needs a live connection (auto-detected variants) stay as
+    # before until they connect.
+    for child in coordinator.children.values():
+        await child.async_prime_offline_controller()
     await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
 
     # Seed each connected child's positions, like the single-bed path does, so
@@ -477,6 +695,56 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
+
+
+async def _maybe_create_pairing_issue_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Surface a pairing-required repair issue for one bed (a single bed or one
+    side of a pair) when it needs OS-level BLE pairing and the failure looks like
+    a pairing problem — not a transient one.
+
+    No-op for beds that don't require pairing, or that are already bonded at the
+    OS level (BlueZ), or where the connection simply failed before pairing could
+    be attempted (HA retries and pairing happens on the next connect).
+    """
+    entry_data = coordinator.entry.data
+    bed_type = entry_data.get(CONF_BED_TYPE)
+    protocol_variant = entry_data.get(CONF_PROTOCOL_VARIANT)
+    if not (bed_type and requires_pairing(bed_type, protocol_variant)):
+        return
+
+    address = entry_data.get(CONF_ADDRESS, "")
+    if address:
+        ble_device = bluetooth.async_ble_device_from_address(
+            hass, address, connectable=True
+        )
+        if ble_device is not None and isinstance(
+            getattr(ble_device, "details", None), dict
+        ):
+            props = ble_device.details.get("props", {})
+            if props.get("Paired") or props.get("Bonded"):
+                _LOGGER.debug(
+                    "Bed %s is already paired/bonded at OS level — skipping "
+                    "pairing repair (connection failure is transient)",
+                    address,
+                )
+                return
+
+    if coordinator.pairing_supported is False:
+        await create_pairing_required_issue(
+            hass,
+            address or "Unknown",
+            entry_data.get("name", coordinator.entry.title),
+            coordinator.entry.entry_id,
+        )
+        return
+
+    _LOGGER.debug(
+        "Bed %s requires pairing but connection failed before pairing could be "
+        "attempted — not creating pairing repair (will retry automatically)",
+        address,
+    )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -504,61 +772,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
 
-    # Helper to create pairing issue — only when there's actual evidence of a pairing
-    # problem. Generic connection failures (timeout, device not found) should NOT
-    # trigger this, since the bed may just be temporarily unreachable after a restart.
-    async def _maybe_create_pairing_issue() -> None:
-        bed_type = entry.data.get(CONF_BED_TYPE)
-        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        if not (bed_type and requires_pairing(bed_type, protocol_variant)):
-            return
-
-        address = entry.data.get(CONF_ADDRESS, "")
-
-        # Check if the device is already paired/bonded at the OS level (BlueZ).
-        # If it is, the connection failure is transient — not a pairing problem.
-        if address:
-            ble_device = bluetooth.async_ble_device_from_address(
-                hass, address, connectable=True
-            )
-            if ble_device is not None and isinstance(
-                getattr(ble_device, "details", None), dict
-            ):
-                props = ble_device.details.get("props", {})
-                if props.get("Paired") or props.get("Bonded"):
-                    _LOGGER.debug(
-                        "Bed %s is already paired/bonded at OS level — "
-                        "connection failure is transient, skipping pairing repair",
-                        address,
-                    )
-                    return
-
-        # Adapter explicitly doesn't support pairing (e.g. old ESPHome proxy)
-        if coordinator.pairing_supported is False:
-            await create_pairing_required_issue(
-                hass,
-                address or "Unknown",
-                entry.data.get("name", entry.title),
-                entry.entry_id,
-            )
-            return
-
-        # Connection failed before pairing was even attempted (device not found,
-        # timeout, etc.). Don't create repair — HA will retry automatically and
-        # pairing will be attempted on the next successful connection.
-        _LOGGER.debug(
-            "Bed %s requires pairing but connection failed before pairing could be "
-            "attempted — not creating pairing repair (will retry automatically)",
-            address,
-        )
-
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
-        await _maybe_create_pairing_issue()
+        await _maybe_create_pairing_issue_for(hass, coordinator)
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
                 hass,
@@ -572,7 +792,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) from None
 
     if not connected:
-        await _maybe_create_pairing_issue()
+        await _maybe_create_pairing_issue_for(hass, coordinator)
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
                 hass,
@@ -816,6 +1036,36 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
         return controller
 
+    async def _validation_controller(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        target: AdjustableBedCoordinator,
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+    ) -> BedController:
+        """Return a controller for capability VALIDATION without opening a BLE link
+        when avoidable.
+
+        Prefer the side's ``capability_controller`` — the live controller, or a
+        client-free one minted from config/snapshot — so we read capabilities
+        without connecting. That matters for single-connection (Octo) pairs: the
+        preflight validates EVERY targeted side before commanding any, and
+        connecting each side to validate would momentarily hold two BLE links,
+        which the sequential profile must never do. Only connect (and track the
+        side in ``preflighted`` for release on failure) when no capability
+        controller exists — a non-offline-mintable bed that is currently
+        disconnected.
+        """
+        controller = target.capability_controller
+        if controller is not None:
+            return controller
+        controller = await _get_controller_for_service(target)
+        preflighted.append((coordinator, target))
+        return controller
+
     def _command_targets(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
     ) -> list[AdjustableBedCoordinator]:
@@ -951,8 +1201,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _get_controller_for_service(target)
-                    preflighted.append((coordinator, target))
+                    controller = await _validation_controller(
+                        coordinator, target, preflighted
+                    )
                     if not getattr(controller, "supports_memory_presets", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support memory presets",
@@ -1020,8 +1271,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _get_controller_for_service(target)
-                    preflighted.append((coordinator, target))
+                    controller = await _validation_controller(
+                        coordinator, target, preflighted
+                    )
                     if not getattr(controller, "supports_memory_programming", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support programming memory presets",

@@ -17,6 +17,8 @@ import {
   SECTION_ORDER,
   bedEntitiesForDevice,
   bedIsEmpty,
+  pairedChildDeviceIds,
+  resolvePairedParentId,
 } from "./discovery";
 import { localize } from "./localize";
 import {
@@ -37,9 +39,12 @@ export class AdjustableBedCard extends LitElement {
   @state() private _config?: AdjustableBedCardConfig;
   // Transient UI state: when true, tapping a memory tile saves the current bed
   // position into that slot instead of recalling it.
-  @state() private _saveMode = false;
+  // Which memory section (by its stable per-section key) is currently in save
+  // mode. Scoped per section so pressing "Save…" on one paired side does NOT flip
+  // the other side's / both-sides' tiles into save actions (which risked saving
+  // over the wrong preset). undefined = no section in save mode.
+  @state() private _saveModeFor?: string;
 
-  private _bed?: BedEntities;
   private _watched: string[] = [];
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -68,6 +73,10 @@ export class AdjustableBedCard extends LitElement {
     if (!changed.has("hass") || !this.hass) return true;
     const old = changed.get("hass") as HomeAssistant | undefined;
     if (!old || old.entities !== this.hass.entities) return true;
+    // Paired detection (pairedChildDeviceIds) reads the device registry, so a
+    // registry change — sides linked/relinked or a device renamed — must
+    // re-render even when no entity or watched state changed.
+    if (old.devices !== this.hass.devices) return true;
     for (const id of this._watched) {
       if (old.states[id] !== this.hass.states[id]) return true;
     }
@@ -78,13 +87,34 @@ export class AdjustableBedCard extends LitElement {
     if (!this.hass || !this._config) return nothing;
     if (!this._config.device_id) return this._notice("card.no_device");
 
+    // A paired "Dual Bed": render the combined "both sides" controls (on the
+    // parent device) plus a per-side section for each child device. The config
+    // may point at the synthetic parent OR at one side's child device — resolve
+    // a side up to its parent so either renders the whole pair. Falls back to
+    // single-device rendering for a non-paired bed.
+    const parentId = resolvePairedParentId(this.hass, this._config.device_id);
+    const childIds = pairedChildDeviceIds(this.hass, parentId);
+    if (parentId && childIds.length) return this._renderPaired(parentId, childIds);
+
     const bed = bedEntitiesForDevice(this.hass, this._config.device_id);
-    this._bed = bed;
     this._watched = this._collectWatched(bed);
 
     if (bedIsEmpty(bed)) return this._notice("card.no_entities");
-    const c = this._config;
 
+    return html`
+      <ha-card>
+        ${this._header(bed)}
+        ${this._renderSections(bed)}
+      </ha-card>
+    `;
+  }
+
+  // The ordered section templates for a single bed (shared by single-device and
+  // each per-side block of a paired bed).
+  private _renderSections(
+    bed: BedEntities,
+  ): (typeof nothing | TemplateResult)[] {
+    const c = this._config!;
     const render: Record<string, () => typeof nothing | TemplateResult> = {
       graphic: () => (c.show_graphic !== false ? this._graphic(bed) : nothing),
       motors: () => (c.show_motors !== false ? this._motors(bed) : nothing),
@@ -97,13 +127,49 @@ export class AdjustableBedCard extends LitElement {
       connection: () =>
         c.show_connection !== false ? this._connection(bed) : nothing,
     };
+    return this._orderedSections().map((k) => render[k]?.() ?? nothing);
+  }
+
+  // Render a paired parent: the combined "both sides" controls (on the parent
+  // device) followed by each side's own section, labelled by the child device
+  // name. _watched tracks the parent plus every side so a state change on any
+  // side re-renders the card.
+  private _renderPaired(parentId: string, childIds: string[]): TemplateResult {
+    const hass = this.hass!;
+    const parentBed = bedEntitiesForDevice(hass, parentId);
+    const sides = childIds.map((id) => ({
+      label: this._deviceLabel(id),
+      bed: bedEntitiesForDevice(hass, id),
+    }));
+    this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
+      this._collectWatched(b),
+    );
+
+    const block = (
+      label: string,
+      bed: BedEntities,
+    ): typeof nothing | TemplateResult =>
+      bedIsEmpty(bed)
+        ? nothing
+        : html`
+            <div class="side">
+              <div class="side-label">${label}</div>
+              ${this._renderSections(bed)}
+            </div>
+          `;
 
     return html`
       <ha-card>
-        ${this._header(bed)}
-        ${this._orderedSections().map((k) => render[k]?.() ?? nothing)}
+        ${this._header(parentBed)}
+        ${block(localize(this.hass, "card.both_sides"), parentBed)}
+        ${sides.map((s) => block(s.label, s.bed))}
       </ha-card>
     `;
+  }
+
+  private _deviceLabel(id: string): string {
+    const d = this.hass?.devices[id];
+    return d?.name_by_user ?? d?.name ?? id;
   }
 
   // Section keys in render order: the configured order first, then any default
@@ -196,7 +262,9 @@ export class AdjustableBedCard extends LitElement {
       ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
       ${
         motors.length
-          ? html`<div class="rows">${motors.map((m) => this._motorRow(m))}</div>`
+          ? html`<div class="rows">
+              ${motors.map((m) => this._motorRow(m, bed.stop))}
+            </div>`
           : nothing
       }
       ${
@@ -225,11 +293,15 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
-  private _motorRow(m: MotorEntity): TemplateResult {
+  // `stopId` is the STOP entity for the bed this row belongs to (a side's own
+  // stop for a paired side, the parent's stop_both for the combined block) —
+  // passed in rather than read from this._bed, which during a paired render
+  // points at the parent for every side.
+  private _motorRow(m: MotorEntity, stopId?: string): TemplateResult {
     const readout = this._readout(m);
     const upId = m.cover ?? m.up;
     const downId = m.cover ?? m.down;
-    const canStop = !!m.cover || !!this._bed?.stop;
+    const canStop = !!m.cover || !!stopId;
     return html`
       <div class="row">
         <div class="row-label">
@@ -248,7 +320,7 @@ export class AdjustableBedCard extends LitElement {
           <button
             class="cg-btn"
             aria-label=${localize(this.hass, "action.stop")}
-            @click=${() => this._motorStop(m)}
+            @click=${() => this._motorStop(m, stopId)}
             ?disabled=${!canStop}
           >
             <ha-icon icon="mdi:stop"></ha-icon>
@@ -286,35 +358,41 @@ export class AdjustableBedCard extends LitElement {
     if (slots.length === 0) return nothing;
     const canSave =
       this._config?.memory_save !== false && slots.some((s) => s.save);
+    // A stable key for THIS memory section (its slots' own entity ids), so save
+    // mode is scoped to the section the user tapped, not shared globally.
+    const sectionKey = slots
+      .map((s) => s.save ?? s.goto ?? String(s.slot))
+      .join("|");
+    const saveMode = this._saveModeFor === sectionKey;
     return html`
       <div class="section-heading heading-row">
         <span>${localize(this.hass, "section.memory")}</span>
         ${
           canSave
             ? html`<button
-                class="set-btn ${this._saveMode ? "active" : ""}"
-                @click=${() => this._toggleSaveMode()}
+                class="set-btn ${saveMode ? "active" : ""}"
+                @click=${() => this._toggleSaveMode(sectionKey)}
               >
                 <ha-icon
-                  icon=${this._saveMode ? "mdi:close" : "mdi:content-save-edit-outline"}
+                  icon=${saveMode ? "mdi:close" : "mdi:content-save-edit-outline"}
                 ></ha-icon>
-                <span>${localize(this.hass, this._saveMode ? "memory.cancel" : "memory.set")}</span>
+                <span>${localize(this.hass, saveMode ? "memory.cancel" : "memory.set")}</span>
               </button>`
             : nothing
         }
       </div>
       ${
-        this._saveMode
+        saveMode
           ? html`<div class="hint">${localize(this.hass, "memory.set_hint")}</div>`
           : nothing
       }
-      <div class="tiles">${slots.map((s) => this._memoryTile(s))}</div>
+      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode))}</div>
     `;
   }
 
-  private _memoryTile(slot: MemorySlot): TemplateResult {
+  private _memoryTile(slot: MemorySlot, saveMode: boolean): TemplateResult {
     const labelId = slot.goto ?? slot.save!;
-    if (this._saveMode) {
+    if (saveMode) {
       const savable = !!slot.save;
       return html`
         <button
@@ -612,20 +690,22 @@ export class AdjustableBedCard extends LitElement {
     }
   }
 
-  private _motorStop(m: MotorEntity): void {
+  private _motorStop(m: MotorEntity, stopId?: string): void {
     if (m.cover) this._cover(m.cover, "stop_cover");
-    else if (this._bed?.stop) this._press(this._bed.stop);
+    else if (stopId) this._press(stopId);
   }
 
-  private _toggleSaveMode(): void {
-    this._saveMode = !this._saveMode;
+  // Toggle save mode for ONE section: entering it on a section cancels any other
+  // section's save mode (only one section is ever savable at a time).
+  private _toggleSaveMode(sectionKey: string): void {
+    this._saveModeFor = this._saveModeFor === sectionKey ? undefined : sectionKey;
   }
 
   // Save the bed's current position into a slot, then leave save mode so a
   // stray second tap can't overwrite another position.
   private _saveMemory(slot: MemorySlot): void {
     if (slot.save) this._press(slot.save);
-    this._saveMode = false;
+    this._saveModeFor = undefined;
   }
 
   // Home Assistant already surfaces service failures to the user via its own
@@ -712,6 +792,16 @@ export class AdjustableBedCard extends LitElement {
       text-transform: uppercase;
       color: var(--secondary-text-color);
       padding: 14px 4px 8px;
+    }
+    .side + .side {
+      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
+      margin-top: 12px;
+    }
+    .side-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--primary-text-color);
+      padding: 12px 4px 2px;
     }
     .heading-row {
       display: flex;

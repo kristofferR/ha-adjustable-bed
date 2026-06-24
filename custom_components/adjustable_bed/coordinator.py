@@ -118,6 +118,8 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    OCTO_VARIANT_STAR2,
+    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -135,6 +137,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    resolve_explicit_bed_type,
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
@@ -145,6 +148,7 @@ from .detection import (
     refine_okin_shared_uuid_protocol_from_gatt,
 )
 from .diagnostic_payloads import new_connection_attempt_details
+from .pairing import octo_snapshot_from_descriptor
 from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
@@ -310,6 +314,12 @@ class AdjustableBedCoordinator:
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
+        # A client-free controller minted from config purely to read this bed's
+        # CAPABILITIES (which entities to expose) when no live controller exists.
+        # Paired children prime this before platform setup so an offline side
+        # still gets its per-side entities up-front. None until primed / for bed
+        # types whose controller needs a live connection (auto-detected variants).
+        self._offline_controller: BedController | None = None
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._lock = asyncio.Lock()
@@ -446,6 +456,12 @@ class AdjustableBedCoordinator:
             )
 
         self._bed_type = corrected_bed_type
+        # The cached offline capability-controller was minted for the OLD type;
+        # drop it ONLY on an actual change, so a no-op correction doesn't discard
+        # the already-primed offline fallback (which capability_controller would
+        # then miss after a later disconnect).
+        if bed_type_changed:
+            self._offline_controller = None
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
@@ -592,6 +608,105 @@ class AdjustableBedCoordinator:
         return self._controller
 
     @property
+    def capability_controller(self) -> BedController | None:
+        """Return the controller to read CAPABILITIES from (which entities to expose).
+
+        The live controller when connected, else a client-free 'offline'
+        controller minted from config. Paired children prime the offline
+        controller before platform setup so an offline side still gets its
+        per-side entities (with byte-identical unique_ids), and the live
+        controller silently takes over on connect with no reload. None when
+        neither exists (e.g. an auto-detected-variant bed that has never
+        connected) — in which case behaviour is exactly as before.
+        """
+        if self._controller is not None:
+            return self._controller
+        return self._offline_controller
+
+    async def async_prime_offline_controller(self) -> None:
+        """Best-effort mint of a client-free controller for capability reads.
+
+        Construction only — never connects or starts notifications. Failures are
+        non-fatal (a bad mint just leaves this side as before). Bed types whose
+        controller needs a live client (auto-detected Richmat/L&P/Keeson
+        variants) raise ConnectionError and are left without an offline
+        controller until they connect.
+        """
+        if self._offline_controller is not None or self._controller is not None:
+            return
+        # Resolve a legacy umbrella bed type (leggett_platt) with an explicit
+        # variant to its concrete type, so a Gen2/WiLinke side that the pairing
+        # gate accepted as offline-safe is actually minted here (the raw umbrella
+        # type is not in OFFLINE_CAPABILITY_SAFE_BED_TYPES). Idempotent for a
+        # descriptor already normalised at pairing, and for every other bed type.
+        bed_type = resolve_explicit_bed_type(self._bed_type, self._protocol_variant)
+        # Octo is not statically offline-safe (it discovers capabilities post
+        # connect), but a paired side that captured a capability snapshot AT
+        # PAIRING can be minted offline from that snapshot.
+        octo_snapshot = (
+            octo_snapshot_from_descriptor(self.entry.data)
+            if bed_type == BED_TYPE_OCTO
+            else None
+        )
+        # Octo Remote Star2 is a different protocol with FIXED capabilities and no
+        # PIN/snapshot, so it IS statically offline-mintable (like Linak) — its
+        # controller builds without a client.
+        is_octo_star2 = (
+            bed_type == BED_TYPE_OCTO
+            and self._protocol_variant == OCTO_VARIANT_STAR2
+        )
+        mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES or (
+            bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2)
+        )
+        if not mintable:
+            # Only beds whose entity-gating capabilities are fully determined by
+            # stored config offline are safe to mint without a live connection.
+            # Others auto-detect their variant from live GATT/advertisement, can
+            # be connect-time corrected to a different bed_type, or mutate
+            # capabilities from a post-connect query — minting offline would
+            # register entities from a WRONG profile. They keep today's behaviour
+            # (no offline entities until the side connects).
+            return
+        try:
+            self._offline_controller = await create_controller(
+                coordinator=self,
+                bed_type=bed_type,
+                protocol_variant=self._protocol_variant,
+                client=None,
+                device_name=self._name,
+                octo_pin=self._octo_pin,
+                richmat_remote=self._richmat_remote,
+                jensen_pin=self._jensen_pin,
+                cb24_bed_selection=self._cb24_bed_selection,
+                capability_snapshot=octo_snapshot,
+            )
+        except ConnectionError:
+            # Auto-detected variant: needs a live client to resolve. Leave the
+            # offline controller unset (this side behaves as today until connect).
+            self._offline_controller = None
+        except Exception:  # noqa: BLE001 - capability priming must never block setup
+            _LOGGER.debug(
+                "Offline capability-controller mint failed for %s",
+                self._name,
+                exc_info=True,
+            )
+            self._offline_controller = None
+
+    def cache_capability_controller(self) -> None:
+        """Retain the current live controller as the client-free offline
+        capability controller, so its discovered capabilities survive a
+        disconnect.
+
+        A sequential pair connects each side at setup then releases it; that
+        disconnect drops the live controller, and a bed that can't be minted
+        offline from config/snapshot would otherwise build no per-side entities.
+        Caching the just-discovered live controller keeps them. No-op if an
+        offline controller is already set or there is no live controller.
+        """
+        if self._offline_controller is None and self._controller is not None:
+            self._offline_controller = self._controller
+
+    @property
     def position_data(self) -> dict[str, float]:
         """Return current position data."""
         return self._position_data
@@ -676,6 +791,33 @@ class AdjustableBedCoordinator:
             if props.get("Paired") or props.get("Bonded"):
                 return True
         return False
+
+    def _backfill_octo_snapshot(self) -> None:
+        """Persist this paired Octo side's freshly-discovered capabilities into its
+        child descriptor, so the OFFLINE side and reloads mint correct entities and
+        a firmware capability change is reflected. No-op for a single bed (not a
+        ``ChildEntryView``) or when nothing was discovered / it is unchanged.
+        """
+        if not isinstance(self.entry, ChildEntryView):
+            return
+        snapshot_fn = getattr(self._controller, "capability_snapshot", None)
+        snapshot = snapshot_fn() if callable(snapshot_fn) else None
+        if not snapshot:
+            return
+        capabilities = dict(self.entry.data.get("capabilities") or {})
+        if capabilities.get("octo") == snapshot:
+            return  # unchanged — avoid a redundant persist
+        capabilities["octo"] = snapshot
+        self._async_persist_config(
+            {**self.entry.data, "capabilities": capabilities}
+        )
+        # The offline controller minted from the pairing-time snapshot is now stale
+        # (cache_capability_controller only fills an EMPTY slot, so it never refreshes
+        # it). Point it at the live controller — the same client-free capability
+        # source — so a later sequential release gates per-side entities off the
+        # freshly discovered capabilities, not the old snapshot, before the next
+        # reload.
+        self._offline_controller = self._controller
 
     def _mark_ble_bond_established(self) -> None:
         """Record that future connections should skip `pair=True`."""
@@ -1728,6 +1870,10 @@ class AdjustableBedCoordinator:
                     # Discover features to detect PIN requirement
                     if hasattr(self._controller, "discover_features"):
                         await cast(Any, self._controller).discover_features()
+                    # Persist this paired side's freshly-discovered capabilities so
+                    # the OFFLINE side / a reload mints correct entities (no-op for
+                    # a single bed or if nothing was discovered).
+                    self._backfill_octo_snapshot()
                     # Send initial PIN and start keep-alive if bed requires it
                     if hasattr(self._controller, "send_pin"):
                         await cast(Any, self._controller).send_pin()

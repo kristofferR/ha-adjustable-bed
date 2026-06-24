@@ -80,7 +80,9 @@ def _binary_sensor_entities_for(
     hass: HomeAssistant, coordinator: AdjustableBedCoordinator
 ) -> list[BinarySensorEntity]:
     """Build binary-sensor entities for a single (child or standalone) coordinator."""
-    controller = coordinator.controller
+    # capability_controller so an offline paired side still exposes bed_presence
+    # (the unconditional ble_connection sensor below is unaffected).
+    controller = coordinator.capability_controller
     entities: list[BinarySensorEntity] = []
     for description in BINARY_SENSOR_DESCRIPTIONS:
         if description.key == "bed_presence":

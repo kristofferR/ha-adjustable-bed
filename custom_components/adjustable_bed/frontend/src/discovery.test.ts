@@ -1,7 +1,12 @@
 // Unit tests for entity discovery across different bed shapes.
 // Run with: bun test
 import { expect, test } from "bun:test";
-import { bedEntitiesForDevice, bedIsEmpty } from "./discovery";
+import {
+  bedEntitiesForDevice,
+  bedIsEmpty,
+  pairedChildDeviceIds,
+  resolvePairedParentId,
+} from "./discovery";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
 function entry(
@@ -193,4 +198,37 @@ test("presence-only device is treated as empty (no presence section)", () => {
 test("empty for unknown device", () => {
   const hass = hassWith([entry("cover.b_back", "back", "dev1")]);
   expect(bedIsEmpty(bedEntitiesForDevice(hass, "nope"))).toBe(true);
+});
+
+test("pairedChildDeviceIds returns sided children ordered by name", () => {
+  const hass = hassWith([]);
+  hass.devices = {
+    parent: { id: "parent", name: "Master Bed" },
+    right: { id: "right", name: "Master Bed Right", via_device_id: "parent" },
+    left: { id: "left", name: "Master Bed Left", via_device_id: "parent" },
+    other: { id: "other", name: "Unrelated" },
+  };
+  // Both sides, ordered Left before Right; unrelated devices excluded.
+  expect(pairedChildDeviceIds(hass, "parent")).toEqual(["left", "right"]);
+  // A single (non-parent) device has no children -> single-device rendering.
+  expect(pairedChildDeviceIds(hass, "left")).toEqual([]);
+  expect(pairedChildDeviceIds(hass, undefined)).toEqual([]);
+});
+
+test("resolvePairedParentId resolves a side device up to its parent", () => {
+  const hass = hassWith([]);
+  hass.devices = {
+    parent: { id: "parent", name: "Master Bed" },
+    left: { id: "left", name: "Master Bed Left", via_device_id: "parent" },
+    right: { id: "right", name: "Master Bed Right", via_device_id: "parent" },
+    single: { id: "single", name: "Guest Bed" },
+    stale: { id: "stale", name: "Orphan", via_device_id: "ghost" },
+  };
+  // A side device resolves to the parent; the parent and a single device stay.
+  expect(resolvePairedParentId(hass, "left")).toBe("parent");
+  expect(resolvePairedParentId(hass, "parent")).toBe("parent");
+  expect(resolvePairedParentId(hass, "single")).toBe("single");
+  expect(resolvePairedParentId(hass, undefined)).toBeUndefined();
+  // A stale via_device_id (parent gone from the registry) stays on the device.
+  expect(resolvePairedParentId(hass, "stale")).toBe("stale");
 });

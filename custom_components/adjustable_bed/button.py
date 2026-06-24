@@ -19,12 +19,11 @@ from .const import (
     SIDE_BOTH,
 )
 from .coordinator import AdjustableBedCoordinator
-from .cover import COVER_DESCRIPTIONS, AdjustableBedCoverEntityDescription
 from .entity import AdjustableBedEntity
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.base import BedController, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -519,7 +518,10 @@ def _button_entities_for(
 ) -> list[ButtonEntity]:
     """Build button entities for a single (child or standalone) coordinator."""
     has_massage = coordinator.has_massage
-    controller = coordinator.controller
+    # capability_controller: an offline paired side still gets its buttons built
+    # from a client-free controller minted from config (see coordinator); stale
+    # cleanup below runs against it too (only when non-None).
+    controller = coordinator.capability_controller
 
     if controller is not None:
         _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)
@@ -544,15 +546,20 @@ def _combined_button_entities_for(
     """
     if not children:
         return []
-    # Build the combined surface only from the sides we can actually read. A pair
-    # is the same protocol, so an OFFLINE side at setup falls back to the
-    # connected side(s) — controls still register (a half-available pair loads),
-    # and press-time fan-out reconnects/fails the offline side. With BOTH online,
-    # require both (intersection): the pair flow only rejects a different
-    # bed_type, so two same-protocol sides can still differ in motor_count /
-    # has_massage / variant, and a capability only one side has must NOT be
-    # exposed as a combined control the other can't honour.
-    eligible = [child for child in children if child.controller is not None] or children
+    # Build the combined surface from each side's capability controller (live when
+    # connected, else a client-free controller minted from config). For client-free
+    # beds (e.g. Linak) an OFFLINE side still participates via its offline
+    # controller, so the combined controls register up-front and survive reconnect.
+    # Require EVERY eligible side to support a capability (intersection): the pair
+    # flow only rejects a different bed_type, so two same-protocol sides can still
+    # differ in motor_count / has_massage / variant, and a capability only one side
+    # has must NOT be exposed as a combined control the other can't honour. A side
+    # with no capability source at all (auto-variant, never connected) is excluded,
+    # falling back to the side(s) we can read.
+    eligible = (
+        [child for child in children if child.capability_controller is not None]
+        or children
+    )
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if description.is_coordinator_action or description.press_fn is None:
@@ -562,7 +569,7 @@ def _combined_button_entities_for(
             # {pair_id}_stop_both unique_id); don't also build a generic one.
             continue
         if not all(
-            _should_add_button(description, child.controller, child.has_massage)
+            _should_add_button(description, child.capability_controller, child.has_massage)
             for child in eligible
         ):
             continue
@@ -580,29 +587,39 @@ def _combined_motor_buttons_for(
     eligible: list[AdjustableBedCoordinator],
 ) -> list[ButtonEntity]:
     """Per-motor 'both sides' up/down buttons for a cover-based paired bed — only
-    the motors EVERY eligible (connected) side exposes."""
-    cover_by_key = {desc.key: desc for desc in COVER_DESCRIPTIONS}
+    the motors EVERY eligible side exposes (read from each side's capability
+    controller, so an offline client-free side still counts).
+
+    Built from each side's own ``MotorControlSpec`` (not generic
+    ``COVER_DESCRIPTIONS``) so a 3/4-motor Octo — whose ``head``/``feet`` map to the
+    extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. All
+    eligible sides are the same bed type, so any side's specs match.
+    """
+    specs_by_key: dict[str, MotorControlSpec] = {}
     common: set[str] | None = None
     for child in eligible:
-        controller = child.controller
+        controller = child.capability_controller
         if (
             controller is None
             or not getattr(controller, "supports_motor_control", False)
             or getattr(controller, "has_discrete_motor_control", False)
         ):
             # Not a cover-based bed (discrete motors get combined buttons above),
-            # or no side connected yet to read the motor layout from.
+            # or no capability source for this side.
             return []
-        keys = {spec.key for spec in controller.motor_control_specs}
+        side_specs = {spec.key: spec for spec in controller.motor_control_specs}
+        if not specs_by_key:
+            specs_by_key = side_specs
+        keys = set(side_specs)
         common = keys if common is None else (common & keys)
 
     entities: list[ButtonEntity] = []
     for key in sorted(common or set()):
-        desc = cover_by_key.get(key)
-        if desc is None:
+        spec = specs_by_key.get(key)
+        if spec is None:
             continue
-        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "up"))
-        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "down"))
+        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "up"))
+        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "down"))
     return entities
 
 
@@ -814,21 +831,22 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def __init__(
         self,
         coordinator: PairedBedCoordinator,
-        cover_description: AdjustableBedCoverEntityDescription,
+        spec: MotorControlSpec,
         direction: str,
     ) -> None:
-        """Initialize the combined motor button (``direction`` is up/down)."""
+        """Initialize the combined motor button (``direction`` is up/down).
+
+        ``spec`` is the side's own ``MotorControlSpec`` for this motor, so its
+        ``open_fn``/``close_fn`` drive the correct per-bed motor (e.g. a 3/4-motor
+        Octo's mapped ``_move_motor3/4``), not the generic head/feet motors.
+        """
         self._coordinator = coordinator
         self._direction = direction
-        self._move_fn = (
-            cover_description.open_fn
-            if direction == "up"
-            else cover_description.close_fn
-        )
-        self._attr_translation_key = f"{cover_description.key}_{direction}"
-        self._attr_unique_id = (
-            f"{coordinator.pair_id}_{cover_description.key}_{direction}_both"
-        )
+        self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
+        # Translation key from spec.translation_key (preserves controller-specific
+        # label overrides); unique_id stays on the stable spec.key.
+        self._attr_translation_key = f"{spec.translation_key}_{direction}"
+        self._attr_unique_id = f"{coordinator.pair_id}_{spec.key}_{direction}_both"
         self._attr_device_info = coordinator.device_info
 
     @property

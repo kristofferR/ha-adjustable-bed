@@ -204,6 +204,44 @@ export function bedEntitiesForDevice(
   return bed;
 }
 
+// Child (per-side) device IDs of a paired "Dual Bed" parent, ordered by display
+// name (so Left precedes Right). The per-side covers/numbers/sensors live on
+// these child devices, linked to the synthetic parent via `via_device_id`; the
+// parent itself only carries the combined "both sides" controls. Empty for a
+// non-paired (single) device, so the card falls back to single-device rendering.
+export function pairedChildDeviceIds(
+  hass: HomeAssistant,
+  parentId: string | undefined,
+): string[] {
+  if (!parentId || !hass?.devices) return [];
+  const name = (id: string): string => {
+    const d = hass.devices[id];
+    return (d?.name_by_user ?? d?.name ?? id).toLowerCase();
+  };
+  return Object.values(hass.devices)
+    .filter((d) => d.via_device_id === parentId)
+    .map((d) => d.id)
+    .sort((a, b) => (name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0));
+}
+
+// If `deviceId` is one side (child) of a paired bed, return the synthetic
+// parent's id so a card pointed at a side still renders the whole pair (the card
+// editor / stub config can easily land on a child device); otherwise return
+// `deviceId` unchanged.
+export function resolvePairedParentId(
+  hass: HomeAssistant,
+  deviceId: string | undefined,
+): string | undefined {
+  if (!deviceId || !hass?.devices) return deviceId;
+  const parentId = hass.devices[deviceId]?.via_device_id;
+  // Only resolve to a parent that still exists in the registry (a stale
+  // via_device_id would otherwise point at a deleted device).
+  if (parentId && hass.devices[parentId] && pairedChildDeviceIds(hass, parentId).length) {
+    return parentId;
+  }
+  return deviceId;
+}
+
 // True when the bed exposes nothing the card renders. Presence sensors are not
 // counted because the card has no presence section (it would otherwise produce a
 // header-only card with no controls).
