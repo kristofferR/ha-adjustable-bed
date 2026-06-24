@@ -127,6 +127,27 @@ async def test_okin_handle_rf_gateway_selected_from_gatt_pair(
     assert isinstance(controller, DewertOkinRfGatewayController)
 
 
+async def test_rf_gateway_gatt_scan_checks_later_duplicate_services(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Test RF-Gateway detection scans duplicate service UUID entries."""
+    coordinator = AdjustableBedCoordinator(hass, _make_entry(hass, BED_TYPE_OKIN_HANDLE))
+    mock_bleak_client.services = [
+        _FakeService(DEWERTOKIN_RF_GATEWAY_SERVICE_UUID, []),
+        *_rf_gateway_services(),
+    ]
+
+    controller = await create_controller(
+        coordinator,
+        BED_TYPE_OKIN_HANDLE,
+        None,
+        mock_bleak_client,
+    )
+
+    assert isinstance(controller, DewertOkinRfGatewayController)
+
+
 async def test_okin_uuid_rf_gateway_selected_from_gatt_pair(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,

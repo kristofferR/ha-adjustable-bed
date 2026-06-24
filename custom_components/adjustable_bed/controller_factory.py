@@ -192,7 +192,8 @@ def _gatt_has_characteristic(
     for service in client.services:
         if str(service.uuid).lower() != service_uuid_lower:
             continue
-        return service.get_characteristic(char_uuid_lower) is not None
+        if service.get_characteristic(char_uuid_lower) is not None:
+            return True
 
     return False
 
