@@ -19,12 +19,11 @@ from .const import (
     SIDE_BOTH,
 )
 from .coordinator import AdjustableBedCoordinator
-from .cover import COVER_DESCRIPTIONS, AdjustableBedCoverEntityDescription
 from .entity import AdjustableBedEntity
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
+    from .beds.base import BedController, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -589,8 +588,14 @@ def _combined_motor_buttons_for(
 ) -> list[ButtonEntity]:
     """Per-motor 'both sides' up/down buttons for a cover-based paired bed — only
     the motors EVERY eligible side exposes (read from each side's capability
-    controller, so an offline client-free side still counts)."""
-    cover_by_key = {desc.key: desc for desc in COVER_DESCRIPTIONS}
+    controller, so an offline client-free side still counts).
+
+    Built from each side's own ``MotorControlSpec`` (not generic
+    ``COVER_DESCRIPTIONS``) so a 3/4-motor Octo — whose ``head``/``feet`` map to the
+    extra ``_move_motor3/4`` functions — drives the RIGHT motor on both sides. All
+    eligible sides are the same bed type, so any side's specs match.
+    """
+    specs_by_key: dict[str, MotorControlSpec] = {}
     common: set[str] | None = None
     for child in eligible:
         controller = child.capability_controller
@@ -602,16 +607,19 @@ def _combined_motor_buttons_for(
             # Not a cover-based bed (discrete motors get combined buttons above),
             # or no capability source for this side.
             return []
-        keys = {spec.key for spec in controller.motor_control_specs}
+        side_specs = {spec.key: spec for spec in controller.motor_control_specs}
+        if not specs_by_key:
+            specs_by_key = side_specs
+        keys = set(side_specs)
         common = keys if common is None else (common & keys)
 
     entities: list[ButtonEntity] = []
     for key in sorted(common or set()):
-        desc = cover_by_key.get(key)
-        if desc is None:
+        spec = specs_by_key.get(key)
+        if spec is None:
             continue
-        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "up"))
-        entities.append(PairedBedCombinedMotorButton(coordinator, desc, "down"))
+        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "up"))
+        entities.append(PairedBedCombinedMotorButton(coordinator, spec, "down"))
     return entities
 
 
@@ -823,21 +831,20 @@ class PairedBedCombinedMotorButton(ButtonEntity):
     def __init__(
         self,
         coordinator: PairedBedCoordinator,
-        cover_description: AdjustableBedCoverEntityDescription,
+        spec: MotorControlSpec,
         direction: str,
     ) -> None:
-        """Initialize the combined motor button (``direction`` is up/down)."""
+        """Initialize the combined motor button (``direction`` is up/down).
+
+        ``spec`` is the side's own ``MotorControlSpec`` for this motor, so its
+        ``open_fn``/``close_fn`` drive the correct per-bed motor (e.g. a 3/4-motor
+        Octo's mapped ``_move_motor3/4``), not the generic head/feet motors.
+        """
         self._coordinator = coordinator
         self._direction = direction
-        self._move_fn = (
-            cover_description.open_fn
-            if direction == "up"
-            else cover_description.close_fn
-        )
-        self._attr_translation_key = f"{cover_description.key}_{direction}"
-        self._attr_unique_id = (
-            f"{coordinator.pair_id}_{cover_description.key}_{direction}_both"
-        )
+        self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
+        self._attr_translation_key = f"{spec.key}_{direction}"
+        self._attr_unique_id = f"{coordinator.pair_id}_{spec.key}_{direction}_both"
         self._attr_device_info = coordinator.device_info
 
     @property

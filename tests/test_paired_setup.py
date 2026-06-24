@@ -1374,6 +1374,57 @@ class TestSideServiceRouting:
                 blocking=True,
             )
 
+    async def test_combined_motor_buttons_use_side_spec_functions(self):
+        """The combined both-sides motor buttons carry each side's OWN
+        MotorControlSpec functions, so a 3/4-motor Octo's head/feet buttons drive
+        the mapped extra motors (_move_motor3/4), not the generic move_head/feet
+        (motors 1/2)."""
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from custom_components.adjustable_bed.beds.base import MotorControlSpec
+        from custom_components.adjustable_bed.button import (
+            PairedBedCombinedMotorButton,
+            _combined_motor_buttons_for,
+        )
+
+        motor3_up = MagicMock(name="motor3_up")
+        head_spec = MotorControlSpec(
+            key="head",
+            translation_key="head",
+            open_fn=motor3_up,
+            close_fn=MagicMock(),
+            stop_fn=MagicMock(),
+        )
+        back_spec = MotorControlSpec(
+            key="back",
+            translation_key="back",
+            open_fn=MagicMock(),
+            close_fn=MagicMock(),
+            stop_fn=MagicMock(),
+        )
+
+        # The button carries the spec's open_fn (the mapped per-side motor) and
+        # keeps the same unique_id as before (no entity churn).
+        coord = MagicMock(pair_id="pair_x", device_info={})
+        btn = PairedBedCombinedMotorButton(coord, head_spec, "up")
+        assert btn._move_fn is motor3_up
+        assert btn._attr_unique_id == "pair_x_head_up_both"
+
+        # The builder intersects each side's specs and builds from THEM, not from
+        # generic COVER_DESCRIPTIONS.
+        controller = SimpleNamespace(
+            supports_motor_control=True,
+            has_discrete_motor_control=False,
+            motor_control_specs=[head_spec, back_spec],
+        )
+        child = SimpleNamespace(capability_controller=controller)
+        buttons = _combined_motor_buttons_for(coord, [child, child])
+        head_up = next(
+            b for b in buttons if b._attr_unique_id == "pair_x_head_up_both"
+        )
+        assert head_up._move_fn is motor3_up
+
 
 class TestOfflineSideEntities:
     """Phase 2.1: a side offline at setup still gets its per-side entities,
