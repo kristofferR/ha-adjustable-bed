@@ -223,6 +223,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Carries the finalized entry across the optional verify_connection step
         self._pending_entry: dict[str, Any] | None = None
         self._pending_title: str | None = None
+        # Octo capability snapshots captured per single-entry as the user connects
+        # each side, so a one-link Octo pair can be captured SEQUENTIALLY across
+        # resubmissions of the pair step (connect left, disconnect, connect right)
+        # — the flow instance persists, so a side captured while live stays
+        # available after it disconnects.
+        self._captured_octo_snapshots: dict[str, dict[str, Any]] = {}
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
@@ -403,12 +409,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         return configured
 
     def _octo_capability_snapshot(self, entry: ConfigEntry) -> dict | None:
-        """Capability snapshot from a single Octo entry's LIVE controller, or None
-        (not an Octo entry / not connected / nothing discovered yet).
+        """Capability snapshot for a single Octo entry — its LIVE controller's, or
+        the one cached earlier this flow, or None (not Octo / never connected).
 
-        Octo discovers its capabilities post-connect, so this is only non-None
-        when the bed is connected at pairing time — which is exactly when a
-        paired Octo's offline side can be minted from the captured snapshot.
+        Octo discovers its capabilities post-connect, and a one-link Octo only ever
+        has ONE side connected at a time, so we cache each side's snapshot the
+        moment it is live and fall back to that cache when it later disconnects.
+        That lets the user capture both sides SEQUENTIALLY (connect left, disconnect,
+        connect right) across resubmissions of the pair step instead of needing both
+        connected at once — which the single-connection profile is designed to avoid.
         """
         if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
             return None
@@ -416,8 +425,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         snapshot_fn = getattr(
             getattr(coordinator, "controller", None), "capability_snapshot", None
         )
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        return snapshot if isinstance(snapshot, dict) else None
+        live = snapshot_fn() if callable(snapshot_fn) else None
+        if isinstance(live, dict):
+            self._captured_octo_snapshots[entry.entry_id] = live
+            return live
+        cached = self._captured_octo_snapshots.get(entry.entry_id)
+        return cached if isinstance(cached, dict) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
         """Resolve ``entry``'s bed type for the offline-capability-safe check.

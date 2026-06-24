@@ -431,6 +431,45 @@ def _async_ensure_paired_device_registry(
         )
 
 
+async def _async_release_absorbed_singles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Disconnect (but do NOT remove) the original singles a single-connection pair
+    is about to absorb, freeing their one-link BLE before the pair connects.
+
+    Octo holds a single BLE link per bed and keeps it alive via the PIN keepalive,
+    so a still-loaded original NEVER idle-disconnects on its own — and the paired
+    child connects to the SAME MAC, so without this it could never open the link and
+    the pair would hang in setup retry. Concurrent pairs (Linak) don't need this:
+    their originals idle-disconnect and the post-absorb retry self-heals.
+
+    The originals stay LOADED config entries (re-homed + removed only after a
+    successful connect), so a failed pair setup still leaves the user two working
+    singles that reconnect on demand. Best-effort: a failed release just means the
+    pair's connect retries.
+    """
+    for child in iter_children(entry.data):
+        absorbed_id = child.get(KEY_ABSORBED_ENTRY_ID)
+        if not absorbed_id:
+            continue
+        original = hass.config_entries.async_get_entry(absorbed_id)
+        if original is None or is_paired(original.data):
+            continue
+        original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+        if not isinstance(original_coordinator, AdjustableBedCoordinator):
+            continue
+        try:
+            await original_coordinator.async_disconnect("absorbed_by_pair")
+            _LOGGER.debug(
+                "Released absorbed single %s's BLE link before paired connect",
+                absorbed_id,
+            )
+        except Exception:  # noqa: BLE001 - best-effort; the pair connect retries
+            _LOGGER.debug(
+                "Could not pre-release absorbed single %s", absorbed_id
+            )
+
+
 async def _async_rehome_absorbed_singles(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> set[str]:
@@ -566,6 +605,14 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         for child in coordinator.children.values():
             if not child.is_connected:
                 await _maybe_create_pairing_issue_for(hass, child)
+
+    # Single-connection beds (Octo) hold one BLE link per bed and keep it alive via
+    # the PIN keepalive, so a still-loaded original would block the paired child
+    # (same MAC) from ever connecting — release the originals' links first. They
+    # stay loaded config entries, re-homed/removed only after a successful connect,
+    # so a failed setup still leaves two working singles.
+    if coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+        await _async_release_absorbed_singles(hass, entry)
 
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):

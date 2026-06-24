@@ -14,6 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed import (
+    _async_release_absorbed_singles,
     _build_paired_children,
     _make_child_persist_cb,
     _maybe_create_pairing_issue_for,
@@ -608,11 +609,18 @@ class TestPairBedsConversion:
 
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
-        # Gate: a snapshot makes Octo offline-safe; without one it stays unsafe.
+        # Gate: a live snapshot makes Octo offline-safe AND is cached on the flow,
+        # so the side stays safe even after it disconnects (sequential capture).
         assert flow._octo_capability_snapshot(entry) == snap
         assert flow._has_unsafe_offline_platforms(entry) is False
         hass.data[DOMAIN].pop(entry.entry_id)
-        assert flow._has_unsafe_offline_platforms(entry) is True
+        assert flow._octo_capability_snapshot(entry) == snap  # cached, survives drop
+        assert flow._has_unsafe_offline_platforms(entry) is False
+        # A FRESH flow that never saw a live snapshot keeps Octo unsafe.
+        fresh = AdjustableBedConfigFlow()
+        fresh.hass = hass
+        assert fresh._octo_capability_snapshot(entry) is None
+        assert fresh._has_unsafe_offline_platforms(entry) is True
         # Capture: the snapshot lands in the built descriptor's capabilities['octo'].
         pair = build_pair_entry_data(
             {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
@@ -622,6 +630,51 @@ class TestPairBedsConversion:
             right_octo_snapshot=snap,
         )
         assert octo_snapshot_from_descriptor(get_child(pair, SIDE_LEFT)) == snap
+
+    async def test_octo_sequential_two_side_capture(self, hass: HomeAssistant):
+        """One-link Octo capture: connect LEFT (captured), disconnect it, connect
+        RIGHT (captured) — both snapshots are available afterwards though only one
+        side was ever live at a time, so the pair gate no longer needs both live."""
+        from types import SimpleNamespace
+
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedConfigFlow,
+        )
+
+        left = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        right = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: RIGHT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=RIGHT_ADDR,
+            version=4,
+        )
+        left.add_to_hass(hass)
+        right.add_to_hass(hass)
+        lsnap = {"has_lights": True, "memory_count": 4}
+        rsnap = {"has_lights": False, "memory_count": 2}
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        store = hass.data.setdefault(DOMAIN, {})
+
+        # Connect LEFT only -> captured.
+        store[left.entry_id] = SimpleNamespace(
+            controller=SimpleNamespace(capability_snapshot=lambda: dict(lsnap))
+        )
+        assert flow._octo_capability_snapshot(left) == lsnap
+
+        # Disconnect LEFT, connect RIGHT -> captured; LEFT served from cache.
+        store.pop(left.entry_id)
+        store[right.entry_id] = SimpleNamespace(
+            controller=SimpleNamespace(capability_snapshot=lambda: dict(rsnap))
+        )
+        assert flow._octo_capability_snapshot(right) == rsnap
+        assert flow._octo_capability_snapshot(left) == lsnap
 
     async def test_leggett_platt_explicit_variant_is_offline_safe(
         self, hass: HomeAssistant
@@ -1009,6 +1062,55 @@ class TestPairBedsConversion:
         assert right.entry_id not in ids
         # ...and the unclean unload was surfaced, not silently ignored.
         assert "did not unload cleanly" in caplog.text
+
+    async def test_release_absorbed_singles_disconnects_originals(
+        self, hass: HomeAssistant
+    ):
+        """A single-connection (Octo) pair must release its absorbed originals' BLE
+        links BEFORE it connects — Octo keeps its one link alive via PIN keepalive,
+        so a still-loaded original would block the paired child (same MAC) and the
+        pair would hang in setup retry. The original entry stays loaded (only its
+        link is dropped)."""
+        from unittest.mock import AsyncMock
+
+        from custom_components.adjustable_bed.coordinator import (
+            AdjustableBedCoordinator,
+        )
+        from custom_components.adjustable_bed.pairing import build_pair_entry_data
+
+        single = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        single.add_to_hass(hass)
+        coord = AdjustableBedCoordinator(hass, single)
+        coord.async_disconnect = AsyncMock()  # type: ignore[method-assign]
+        hass.data.setdefault(DOMAIN, {})[single.entry_id] = coord
+
+        pair_data = build_pair_entry_data(
+            {CONF_ADDRESS: LEFT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            {CONF_ADDRESS: RIGHT_ADDR, CONF_BED_TYPE: BED_TYPE_OCTO},
+            name="Octo pair",
+            left_origin=(single.entry_id, single.unique_id),
+        )
+        pair = MockConfigEntry(
+            domain=DOMAIN,
+            data=pair_data,
+            unique_id=pair_data[CONF_PAIR_ID],
+            version=4,
+        )
+        pair.add_to_hass(hass)
+
+        await _async_release_absorbed_singles(hass, pair)
+
+        # The absorbed original's link was dropped...
+        coord.async_disconnect.assert_awaited_once()
+        # ...but the original entry is still present (released, not removed).
+        assert single.entry_id in {
+            e.entry_id for e in hass.config_entries.async_entries(DOMAIN)
+        }
 
     async def test_conversion_retries_contended_side_after_absorb(
         self,
