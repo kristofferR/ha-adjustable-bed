@@ -43,6 +43,7 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
+    OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_BOTH,
@@ -1602,6 +1603,53 @@ class TestOctoOfflineSnapshot:
         await left.async_prime_offline_controller()
         # No snapshot -> Octo is not offline-mintable (keeps today's behaviour).
         assert left.capability_controller is None
+
+    async def test_octo_star2_side_mints_offline_without_snapshot(
+        self, hass: HomeAssistant
+    ):
+        """Star2 has FIXED caps and no snapshot, but is statically offline-mintable
+        (its controller builds without a client), so a paired Star2 side still gets
+        its entities offline — unlike standard Octo, which needs a snapshot."""
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+            child[CONF_PROTOCOL_VARIANT] = OCTO_VARIANT_STAR2
+        entry = MockConfigEntry(
+            domain=DOMAIN, data=data, unique_id="pair_star2", version=4
+        )
+        entry.add_to_hass(hass)
+        left = _build_paired_children(hass, entry)[SIDE_LEFT]
+        await left.async_prime_offline_controller()
+        assert left.capability_controller is not None
+
+    async def test_octo_star2_pair_offline_safe_without_snapshot(
+        self, hass: HomeAssistant
+    ):
+        """A Star2 entry is offline-safe with NO live snapshot, so the pairing gate
+        must not demand a connection for it."""
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedConfigFlow,
+        )
+
+        star2 = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2,
+            },
+            unique_id=LEFT_ADDR,
+            version=4,
+        )
+        star2.add_to_hass(hass)
+
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        assert flow._is_octo_star2(star2) is True
+        assert flow._octo_capability_snapshot(star2) is None  # no dynamic snapshot
+        # ...yet still offline-safe (standard Octo without a snapshot would be unsafe).
+        assert flow._has_unsafe_offline_platforms(star2) is False
 
 
 class TestOctoSnapshotBackfill:

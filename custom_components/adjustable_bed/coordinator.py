@@ -118,6 +118,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
@@ -647,8 +648,15 @@ class AdjustableBedCoordinator:
             if bed_type == BED_TYPE_OCTO
             else None
         )
+        # Octo Remote Star2 is a different protocol with FIXED capabilities and no
+        # PIN/snapshot, so it IS statically offline-mintable (like Linak) — its
+        # controller builds without a client.
+        is_octo_star2 = (
+            bed_type == BED_TYPE_OCTO
+            and self._protocol_variant == OCTO_VARIANT_STAR2
+        )
         mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES or (
-            bed_type == BED_TYPE_OCTO and octo_snapshot is not None
+            bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2)
         )
         if not mintable:
             # Only beds whose entity-gating capabilities are fully determined by

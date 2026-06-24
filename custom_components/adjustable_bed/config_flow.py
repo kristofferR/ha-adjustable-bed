@@ -98,6 +98,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
+    OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
@@ -465,6 +466,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return data
 
+    def _is_octo_star2(self, entry: ConfigEntry) -> bool:
+        """Whether ``entry`` is an Octo Remote Star2 bed — a different protocol with
+        FIXED capabilities and no PIN/snapshot, so it is statically offline-safe
+        (unlike standard Octo, which needs a live capability snapshot)."""
+        return (
+            entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+            and entry.data.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
+        )
+
     def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` exposes climate/light/select a half-available pair
         couldn't recreate.
@@ -482,6 +492,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
             return False
         if bed_type == BED_TYPE_OCTO:
+            # Star2 has fixed caps -> statically offline-safe; standard Octo needs a
+            # live capability snapshot.
+            if self._is_octo_star2(entry):
+                return False
             return self._octo_capability_snapshot(entry) is None
         registry = er.async_get(self.hass)
         platforms = {"climate", "light", "select"}
@@ -1239,13 +1253,20 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
             elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
-                self._octo_capability_snapshot(left) is None
-                or self._octo_capability_snapshot(right) is None
+                (
+                    not self._is_octo_star2(left)
+                    and self._octo_capability_snapshot(left) is None
+                )
+                or (
+                    not self._is_octo_star2(right)
+                    and self._octo_capability_snapshot(right) is None
+                )
             ):
-                # Octo is paired via the sequential active-connection profile, and
-                # its OFFLINE side mints its light/RGBW/memory/synchro entities from
-                # a capability snapshot captured here from the live bed — so BOTH
-                # Octo beds must be connected at pairing for the snapshot to exist.
+                # Standard Octo is paired via the sequential active-connection
+                # profile, and its OFFLINE side mints its light/RGBW/memory/synchro
+                # entities from a capability snapshot captured here from the live bed
+                # — so each STANDARD Octo bed must be connected at pairing for its
+                # snapshot to exist. Star2 has fixed caps and needs no snapshot.
                 errors["base"] = "octo_pairing_needs_connection"
             elif self._has_unsafe_offline_platforms(
                 left
