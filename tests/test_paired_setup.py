@@ -1269,6 +1269,76 @@ class TestSideServiceRouting:
                 blocking=True,
             )
 
+    async def test_preset_preflight_uses_offline_controller_no_connect(
+        self, hass: HomeAssistant
+    ):
+        """goto_preset on a paired Octo validates EVERY side from its offline
+        capability snapshot WITHOUT connecting — connecting each side to preflight
+        would momentarily hold two BLE links, which the single-connection profile
+        must never do (#390)."""
+        from unittest.mock import AsyncMock
+
+        from custom_components.adjustable_bed import (
+            _async_ensure_paired_device_registry,
+            _async_register_services,
+        )
+        from custom_components.adjustable_bed.paired_coordinator import (
+            PairedBedCoordinator,
+        )
+
+        snap = {
+            "has_pin": False,
+            "pin_locked": False,
+            "has_lights": True,
+            "has_rgbwi": False,
+            "rgbwi_value_type": None,
+            "memory_count": 4,
+            "discovered_motor_count": 2,
+            "has_synchro": False,
+        }
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = BED_TYPE_OCTO
+        for child in data[CONF_PAIR_CHILDREN]:
+            child[CONF_BED_TYPE] = BED_TYPE_OCTO
+            child["capabilities"] = {"octo": snap}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=data,
+            unique_id="pair_octo_svc",
+            entry_id="pair_octo_svc",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for child in children.values():
+            await child.async_prime_offline_controller()
+            assert child.capability_controller is not None
+            # Spy on the preflight's connect path (idle reconnect).
+            child.async_ensure_connected = AsyncMock(return_value=True)  # type: ignore[method-assign]
+        coordinator = PairedBedCoordinator(hass, entry, children)
+        # Skip the real fan-out (Phase 2 execution) — we're asserting on preflight.
+        coordinator.async_execute_controller_command = AsyncMock()  # type: ignore[method-assign]
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+        _async_ensure_paired_device_registry(hass, entry, coordinator)
+        await _async_register_services(hass)
+
+        parent = dr.async_get(hass).async_get_device(
+            identifiers={(DOMAIN, PAIR_ID)}
+        )
+        assert parent is not None
+        await hass.services.async_call(
+            DOMAIN,
+            "goto_preset",
+            {"device_id": [parent.id], "side": "both", "preset": 1},
+            blocking=True,
+        )
+
+        # Preflight validated from the offline snapshot — neither side was connected.
+        for child in children.values():
+            child.async_ensure_connected.assert_not_awaited()
+        # ...and the command still fanned out for execution.
+        coordinator.async_execute_controller_command.assert_awaited()
+
     async def test_unconverted_services_reject_paired_cleanly(
         self,
         hass: HomeAssistant,

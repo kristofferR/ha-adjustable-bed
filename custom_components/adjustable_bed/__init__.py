@@ -1036,6 +1036,36 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
         return controller
 
+    async def _validation_controller(
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
+        target: AdjustableBedCoordinator,
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+    ) -> BedController:
+        """Return a controller for capability VALIDATION without opening a BLE link
+        when avoidable.
+
+        Prefer the side's ``capability_controller`` — the live controller, or a
+        client-free one minted from config/snapshot — so we read capabilities
+        without connecting. That matters for single-connection (Octo) pairs: the
+        preflight validates EVERY targeted side before commanding any, and
+        connecting each side to validate would momentarily hold two BLE links,
+        which the sequential profile must never do. Only connect (and track the
+        side in ``preflighted`` for release on failure) when no capability
+        controller exists — a non-offline-mintable bed that is currently
+        disconnected.
+        """
+        controller = target.capability_controller
+        if controller is not None:
+            return controller
+        controller = await _get_controller_for_service(target)
+        preflighted.append((coordinator, target))
+        return controller
+
     def _command_targets(
         coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
     ) -> list[AdjustableBedCoordinator]:
@@ -1171,8 +1201,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _get_controller_for_service(target)
-                    preflighted.append((coordinator, target))
+                    controller = await _validation_controller(
+                        coordinator, target, preflighted
+                    )
                     if not getattr(controller, "supports_memory_presets", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support memory presets",
@@ -1240,8 +1271,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _get_controller_for_service(target)
-                    preflighted.append((coordinator, target))
+                    controller = await _validation_controller(
+                        coordinator, target, preflighted
+                    )
                     if not getattr(controller, "supports_memory_programming", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support programming memory presets",
