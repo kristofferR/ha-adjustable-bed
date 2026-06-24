@@ -1343,9 +1343,10 @@ class TestSideServiceRouting:
         # save_preset shares the same no-connect preflight (it validates
         # supports_memory_programming). Octo can't program memory, so it raises —
         # but the validation still reads from the offline controller, never
-        # connecting either side.
+        # connecting either side, and never dispatches a command.
         for child in children.values():
             child.async_ensure_connected.reset_mock()
+        coordinator.async_execute_controller_command.reset_mock()
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
@@ -1355,6 +1356,7 @@ class TestSideServiceRouting:
             )
         for child in children.values():
             child.async_ensure_connected.assert_not_awaited()
+        coordinator.async_execute_controller_command.assert_not_awaited()
 
     async def test_unconverted_services_reject_paired_cleanly(
         self,
