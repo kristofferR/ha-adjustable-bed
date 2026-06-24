@@ -83,8 +83,8 @@ from .const import (
     COOLBASE_NAME_PATTERNS,
     DEVICE_INFO_SERVICE_UUID,
     DEWERTOKIN_NAME_PATTERNS,
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     JENSEN_NAME_PATTERNS,
@@ -544,7 +544,7 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
     )
     has_dewertokin_rf_gateway = (
         DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids
-        and DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID.lower() in characteristic_uuids
+        and DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID.lower() in characteristic_uuids
     )
     has_nordic_dfu = NORDIC_DFU_SERVICE_UUID.lower() in service_uuids
 
@@ -554,7 +554,7 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
             confidence=0.9,
             signals=[
                 "gatt_service:dewertokin_rf_gateway",
-                "gatt_char:dewertokin_rf_gateway_write",
+                "gatt_char:dewertokin_rf_gateway_name",
             ],
         )
 

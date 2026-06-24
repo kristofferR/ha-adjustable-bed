@@ -12,7 +12,10 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.dewertokin_rf_gateway import (
     DewertOkinRfGatewayController,
 )
-from custom_components.adjustable_bed.beds.okin_handle import OkinHandleController
+from custom_components.adjustable_bed.beds.okin_handle import (
+    OkinHandleCommands,
+    OkinHandleController,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_OKIN_HANDLE,
@@ -22,10 +25,11 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
     DOMAIN,
+    OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -56,7 +60,7 @@ def _rf_gateway_services() -> list[_FakeService]:
             DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
             [
                 _FakeCharacteristic(
-                    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
+                    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
                     ["read", "write"],
                 )
             ],
@@ -161,7 +165,7 @@ async def test_rf_gateway_back_up_uses_8_byte_rf_packet(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,
 ) -> None:
-    """Test RF-Gateway back-up writes the 8-byte RF command to the RF characteristic."""
+    """Test RF-Gateway back-up writes the RF-wrapped Okin command."""
     coordinator = AdjustableBedCoordinator(hass, _make_entry(hass))
     coordinator._client = mock_bleak_client
     mock_bleak_client.services = _rf_gateway_services()
@@ -177,10 +181,23 @@ async def test_rf_gateway_back_up_uses_8_byte_rf_packet(
 
     first_write = mock_bleak_client.write_gatt_char.call_args_list[0]
     assert first_write.args == (
-        DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
-        bytes.fromhex("e5fe160100000005"),
+        OKIMAT_WRITE_CHAR_UUID,
+        bytes.fromhex("e5fe160000000105"),
     )
     assert first_write.kwargs == {"response": True}
+
+
+def test_rf_gateway_wraps_okin_payload_order_and_checksum() -> None:
+    """Test RF-Gateway framing preserves Okin payload order and checksum."""
+    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
+        OkinHandleCommands.FLAT
+    ) == bytes.fromhex("e5fe1610000000f6")
+    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
+        OkinHandleCommands.UNDERLIGHT
+    ) == bytes.fromhex("e5fe160002000004")
+    assert DewertOkinRfGatewayController._wrap_rf_gateway_frame(
+        OkinHandleCommands.STOP
+    ) == bytes.fromhex("e5fe160000000006")
 
 
 async def test_rf_gateway_keeps_standard_dewertokin_motor_keys(

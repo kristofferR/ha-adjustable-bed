@@ -56,8 +56,8 @@ from custom_components.adjustable_bed.const import (
     BEDTECH_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     DEVICE_INFO_SERVICE_UUID,
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
-    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
     KAIDI_MESH_SERVICE_UUID,
@@ -874,7 +874,7 @@ class TestOkinUUIDDisambiguation:
             SimpleNamespace(
                 uuid=DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
                 characteristics=[
-                    SimpleNamespace(uuid=DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID),
+                    SimpleNamespace(uuid=DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID),
                 ],
             ),
         ]
@@ -883,7 +883,7 @@ class TestOkinUUIDDisambiguation:
 
         assert result.bed_type == BED_TYPE_DEWERTOKIN
         assert result.confidence == 0.9
-        assert "gatt_char:dewertokin_rf_gateway_write" in result.signals
+        assert "gatt_char:dewertokin_rf_gateway_name" in result.signals
 
     def test_okin_rf_eco_bt_gatt_signature_is_detected(self):
         """Connected GATT services should identify the OKIN RF ECO BT profile."""

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from ..const import DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID
-from .base import MotorControlSpec
-from .keeson import KeesonController
+from .okin_handle import OkinHandleController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -15,76 +14,43 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class DewertOkinRfGatewayController(KeesonController):
+class DewertOkinRfGatewayController(OkinHandleController):
     """Controller for DewertOkin Bluetooth RF-Gateway receivers.
 
-    The receiver exposes the normal DewertOkin/Okin UUID service, but motor
-    commands are sent to the RF-Gateway service as Keeson-style 8-byte packets.
+    FurniMove identifies RF-Gateway devices by the gateway name characteristic
+    but still writes commands to the normal Okin write characteristic. The only
+    protocol difference is the 8-byte RF frame around the same Okin payload.
     """
+
+    _RF_GATEWAY_HEADER = bytes((0xE5, 0xFE, 0x16))
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the DewertOkin RF-Gateway controller."""
-        super().__init__(
-            coordinator,
-            variant="base",
-            char_uuid=DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
-        )
+        super().__init__(coordinator)
         _LOGGER.debug("DewertOkinRfGatewayController initialized")
 
-    @property
-    def supports_stop_all(self) -> bool:
-        """Return True because the RF-Gateway protocol has a stop packet."""
-        return True
+    @classmethod
+    def _wrap_rf_gateway_frame(cls, command: bytes) -> bytes:
+        """Wrap a 6-byte Okin command as an RF-Gateway frame."""
+        if len(command) != 6 or command[:2] != b"\x04\x02":
+            raise ValueError("DewertOkin RF-Gateway expects a 6-byte Okin command")
 
-    @property
-    def motor_translation_keys(self) -> dict[str, str] | None:
-        """Use standard DewertOkin motor labels instead of Keeson labels."""
-        return None
+        frame = cls._RF_GATEWAY_HEADER + command[2:]
+        checksum = (~sum(frame)) & 0xFF
+        return frame + bytes((checksum,))
 
-    @property
-    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Return standard DewertOkin motor keys backed by RF-Gateway commands."""
-        specs = [
-            MotorControlSpec(
-                key="back",
-                translation_key="back",
-                open_fn=lambda ctrl: ctrl.move_back_up(),
-                close_fn=lambda ctrl: ctrl.move_back_down(),
-                stop_fn=lambda ctrl: ctrl.move_back_stop(),
-                position_key="back",
-            ),
-            MotorControlSpec(
-                key="legs",
-                translation_key="legs",
-                open_fn=lambda ctrl: ctrl.move_legs_up(),
-                close_fn=lambda ctrl: ctrl.move_legs_down(),
-                stop_fn=lambda ctrl: ctrl.move_legs_stop(),
-                position_key="legs",
-                max_angle=45,
-            ),
-        ]
-
-        if self._coordinator.motor_count >= 3:
-            specs.append(
-                MotorControlSpec(
-                    key="head",
-                    translation_key="head",
-                    open_fn=lambda ctrl: ctrl.move_head_up(),
-                    close_fn=lambda ctrl: ctrl.move_head_down(),
-                    stop_fn=lambda ctrl: ctrl.move_head_stop(),
-                )
-            )
-
-        if self._coordinator.motor_count >= 4:
-            specs.append(
-                MotorControlSpec(
-                    key="feet",
-                    translation_key="feet",
-                    open_fn=lambda ctrl: ctrl.move_feet_up(),
-                    close_fn=lambda ctrl: ctrl.move_feet_down(),
-                    stop_fn=lambda ctrl: ctrl.move_feet_stop(),
-                    max_angle=45,
-                )
-            )
-
-        return tuple(specs)
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Write an Okin command using DewertOkin RF-Gateway framing."""
+        rf_command = self._wrap_rf_gateway_frame(command)
+        await super().write_command(
+            rf_command,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+        )

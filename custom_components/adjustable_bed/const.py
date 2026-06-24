@@ -554,12 +554,14 @@ MANUFACTURER_ID_OKIN: Final = 89  # 0x0059
 # This UUID can uniquely identify DewertOkin beds regardless of device name
 DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"
 
-# DewertOkin RF Gateway command endpoint. Devices with BLE Device Information
-# model "Bluetooth RF-Gateway" expose the shared Okin UUID service above but
-# motor control uses this service with Keeson-style 8-byte RF packets.
+# DewertOkin RF Gateway settings service. Devices with BLE Device Information
+# model "Bluetooth RF-Gateway" expose this name characteristic as the app's
+# signal to wrap normal Okin commands in 8-byte RF frames.
 DEWERTOKIN_RF_GATEWAY_MODEL: Final = "Bluetooth RF-Gateway"
 DEWERTOKIN_RF_GATEWAY_SERVICE_UUID: Final = "92111420-72ab-4564-62ef-2a881286a6b0"
-DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID: Final = "92111422-72ab-4564-62ef-2a881286a6b0"
+DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = (
+    "92111422-72ab-4564-62ef-2a881286a6b0"
+)
 
 # Serta Motion Perfect III specific
 # Uses handle-based writes rather than UUID
