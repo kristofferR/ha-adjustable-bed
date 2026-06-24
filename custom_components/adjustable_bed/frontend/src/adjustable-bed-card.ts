@@ -39,7 +39,11 @@ export class AdjustableBedCard extends LitElement {
   @state() private _config?: AdjustableBedCardConfig;
   // Transient UI state: when true, tapping a memory tile saves the current bed
   // position into that slot instead of recalling it.
-  @state() private _saveMode = false;
+  // Which memory section (by its stable per-section key) is currently in save
+  // mode. Scoped per section so pressing "Save…" on one paired side does NOT flip
+  // the other side's / both-sides' tiles into save actions (which risked saving
+  // over the wrong preset). undefined = no section in save mode.
+  @state() private _saveModeFor?: string;
 
   private _watched: string[] = [];
 
@@ -354,35 +358,41 @@ export class AdjustableBedCard extends LitElement {
     if (slots.length === 0) return nothing;
     const canSave =
       this._config?.memory_save !== false && slots.some((s) => s.save);
+    // A stable key for THIS memory section (its slots' own entity ids), so save
+    // mode is scoped to the section the user tapped, not shared globally.
+    const sectionKey = slots
+      .map((s) => s.save ?? s.goto ?? String(s.slot))
+      .join("|");
+    const saveMode = this._saveModeFor === sectionKey;
     return html`
       <div class="section-heading heading-row">
         <span>${localize(this.hass, "section.memory")}</span>
         ${
           canSave
             ? html`<button
-                class="set-btn ${this._saveMode ? "active" : ""}"
-                @click=${() => this._toggleSaveMode()}
+                class="set-btn ${saveMode ? "active" : ""}"
+                @click=${() => this._toggleSaveMode(sectionKey)}
               >
                 <ha-icon
-                  icon=${this._saveMode ? "mdi:close" : "mdi:content-save-edit-outline"}
+                  icon=${saveMode ? "mdi:close" : "mdi:content-save-edit-outline"}
                 ></ha-icon>
-                <span>${localize(this.hass, this._saveMode ? "memory.cancel" : "memory.set")}</span>
+                <span>${localize(this.hass, saveMode ? "memory.cancel" : "memory.set")}</span>
               </button>`
             : nothing
         }
       </div>
       ${
-        this._saveMode
+        saveMode
           ? html`<div class="hint">${localize(this.hass, "memory.set_hint")}</div>`
           : nothing
       }
-      <div class="tiles">${slots.map((s) => this._memoryTile(s))}</div>
+      <div class="tiles">${slots.map((s) => this._memoryTile(s, saveMode))}</div>
     `;
   }
 
-  private _memoryTile(slot: MemorySlot): TemplateResult {
+  private _memoryTile(slot: MemorySlot, saveMode: boolean): TemplateResult {
     const labelId = slot.goto ?? slot.save!;
-    if (this._saveMode) {
+    if (saveMode) {
       const savable = !!slot.save;
       return html`
         <button
@@ -685,15 +695,17 @@ export class AdjustableBedCard extends LitElement {
     else if (stopId) this._press(stopId);
   }
 
-  private _toggleSaveMode(): void {
-    this._saveMode = !this._saveMode;
+  // Toggle save mode for ONE section: entering it on a section cancels any other
+  // section's save mode (only one section is ever savable at a time).
+  private _toggleSaveMode(sectionKey: string): void {
+    this._saveModeFor = this._saveModeFor === sectionKey ? undefined : sectionKey;
   }
 
   // Save the bed's current position into a slot, then leave save mode so a
   // stray second tap can't overwrite another position.
   private _saveMemory(slot: MemorySlot): void {
     if (slot.save) this._press(slot.save);
-    this._saveMode = false;
+    this._saveModeFor = undefined;
   }
 
   // Home Assistant already surfaces service failures to the user via its own
