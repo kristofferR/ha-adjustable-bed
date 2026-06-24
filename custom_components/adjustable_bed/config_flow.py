@@ -428,10 +428,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         live = snapshot_fn() if callable(snapshot_fn) else None
         if isinstance(live, dict):
-            self._captured_octo_snapshots[entry.entry_id] = live
-            return live
+            # Copy before caching/returning so later controller or builder mutation
+            # can't change the cached sequential snapshot.
+            snapshot = dict(live)
+            self._captured_octo_snapshots[entry.entry_id] = snapshot
+            return dict(snapshot)
         cached = self._captured_octo_snapshots.get(entry.entry_id)
-        return cached if isinstance(cached, dict) else None
+        return dict(cached) if isinstance(cached, dict) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
         """Resolve ``entry``'s bed type for the offline-capability-safe check.
