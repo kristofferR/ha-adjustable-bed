@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.okin_handle import OkinHandleControll
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -120,6 +121,24 @@ async def test_okin_handle_rf_gateway_selected_from_gatt_pair(
     assert isinstance(controller, DewertOkinRfGatewayController)
 
 
+async def test_okin_uuid_rf_gateway_selected_from_gatt_pair(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Test RF-Gateway GATT pair routes Okin UUID entries to RF-Gateway controller."""
+    coordinator = AdjustableBedCoordinator(hass, _make_entry(hass, BED_TYPE_OKIN_UUID))
+    mock_bleak_client.services = _rf_gateway_services()
+
+    controller = await create_controller(
+        coordinator,
+        BED_TYPE_OKIN_UUID,
+        None,
+        mock_bleak_client,
+    )
+
+    assert isinstance(controller, DewertOkinRfGatewayController)
+
+
 async def test_dewertokin_without_rf_gateway_signals_keeps_okin_handle(
     hass: HomeAssistant,
     mock_bleak_client: MagicMock,
@@ -162,3 +181,27 @@ async def test_rf_gateway_back_up_uses_8_byte_rf_packet(
         bytes.fromhex("e5fe160100000005"),
     )
     assert first_write.kwargs == {"response": True}
+
+
+async def test_rf_gateway_keeps_standard_dewertokin_motor_keys(
+    hass: HomeAssistant,
+    mock_bleak_client: MagicMock,
+) -> None:
+    """Test RF-Gateway controller preserves standard DewertOkin motor entity keys."""
+    coordinator = AdjustableBedCoordinator(hass, _make_entry(hass))
+    mock_bleak_client.services = _rf_gateway_services()
+
+    controller = await create_controller(
+        coordinator,
+        BED_TYPE_DEWERTOKIN,
+        None,
+        mock_bleak_client,
+        ble_model=DEWERTOKIN_RF_GATEWAY_MODEL,
+    )
+
+    assert [spec.key for spec in controller.motor_control_specs] == [
+        "back",
+        "legs",
+        "head",
+        "feet",
+    ]

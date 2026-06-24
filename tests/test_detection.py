@@ -56,6 +56,8 @@ from custom_components.adjustable_bed.const import (
     BEDTECH_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     DEVICE_INFO_SERVICE_UUID,
+    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
     KAIDI_MESH_SERVICE_UUID,
@@ -853,6 +855,35 @@ class TestOkinUUIDDisambiguation:
 
         assert result.bed_type is None
         assert result.confidence == 0.0
+
+    def test_dewertokin_rf_gateway_advertised_uuid_is_detected(self):
+        """RF-Gateway advertisements should create DewertOkin discovery flows."""
+        service_info = _make_service_info(
+            name="Schrank",
+            service_uuids=[DEWERTOKIN_RF_GATEWAY_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type == BED_TYPE_DEWERTOKIN
+        assert result.confidence == 0.9
+        assert "uuid:dewertokin_rf_gateway" in result.signals
+
+    def test_dewertokin_rf_gateway_gatt_signature_is_detected(self):
+        """Connected RF-Gateway services should identify DewertOkin."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        result = detect_bed_type_from_gatt_services(gatt_services)
+
+        assert result.bed_type == BED_TYPE_DEWERTOKIN
+        assert result.confidence == 0.9
+        assert "gatt_char:dewertokin_rf_gateway_write" in result.signals
 
     def test_okin_rf_eco_bt_gatt_signature_is_detected(self):
         """Connected GATT services should identify the OKIN RF ECO BT profile."""

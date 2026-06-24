@@ -265,6 +265,15 @@ async def create_controller(
         return OkinHandleController(coordinator)
 
     if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                coordinator.address,
+            )
+            return DewertOkinRfGatewayController(coordinator)
+
         from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
