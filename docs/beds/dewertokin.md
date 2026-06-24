@@ -175,41 +175,12 @@ From app disassembly analysis (FurniMove):
 
 ### RF Gateway Variant
 
-Some DewertOkin devices identify through the Device Information Service as
-manufacturer `DewertOkin GmbH`, model `Bluetooth RF-Gateway`. These receivers
-can expose the normal `62741523-...` / `62741525-...` Okin service plus an
-RF-Gateway settings service:
-
-- **RF-Gateway Settings Service:** `92111420-72ab-4564-62ef-2a881286a6b0`
-- **RF-Gateway Device Name Characteristic:** `92111422-72ab-4564-62ef-2a881286a6b0`
-- **Command Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
-
-`92111422-...` is the gateway's device-name characteristic in FurniMove 2.0.1.
-The app uses its presence to detect RF-Gateway devices and only writes it when
-renaming the gateway. Motor, preset, light, and massage commands still go to the
-normal Okin write characteristic.
-
-The RF-Gateway command format is 8 bytes:
-
-```text
+Some DewertOkin devices use an RF Gateway with an 8-byte protocol:
+```
 [0xE5, 0xFE, 0x16, data0, data1, data2, data3, checksum]
 ```
 
-This wraps the same four big-endian Okin command bytes used by the 6-byte
-protocol. The checksum is the one's complement of the byte sum:
-`(~sum(frame_without_checksum)) & 0xff`.
-
-Example:
-
-```text
-Head Up 6-byte Okin: 04 02 00 00 00 01
-Head Up RF-Gateway:  e5 fe 16 00 00 00 01 05
-```
-
-The command map is the same as the standard DewertOkin/Okin table above; only
-the header and checksum change. The integration auto-selects this path when the
-BLE model is `Bluetooth RF-Gateway` or when the RF-Gateway settings service/name
-characteristic pair is present.
+This variant uses the Keeson-style checksum (one's complement of byte sum).
 
 ## Detection
 

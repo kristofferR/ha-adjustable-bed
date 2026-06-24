@@ -24,7 +24,6 @@ Brand-specific controllers:
 
 from .base import BedController
 from .coolbase import CoolBaseController
-from .dewertokin_rf_gateway import DewertOkinRfGatewayController
 from .jensen import JensenController
 
 # Brand-specific controllers (unchanged)
@@ -70,7 +69,6 @@ __all__ = [
     # Base class
     "BedController",
     # Protocol-based controllers
-    "DewertOkinRfGatewayController",
     "OkinCB24Controller",
     "OkinCB35Controller",
     "OkinCstController",

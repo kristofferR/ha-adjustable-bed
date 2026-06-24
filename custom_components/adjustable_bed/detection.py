@@ -83,8 +83,6 @@ from .const import (
     COOLBASE_NAME_PATTERNS,
     DEVICE_INFO_SERVICE_UUID,
     DEWERTOKIN_NAME_PATTERNS,
-    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
-    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     JENSEN_NAME_PATTERNS,
@@ -542,21 +540,7 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
         OKIN_SMART_REMOTE_CSS_SERVICE_UUID.lower() in service_uuids
         and OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID.lower() in characteristic_uuids
     )
-    has_dewertokin_rf_gateway = (
-        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids
-        and DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID.lower() in characteristic_uuids
-    )
     has_nordic_dfu = NORDIC_DFU_SERVICE_UUID.lower() in service_uuids
-
-    if has_dewertokin_rf_gateway:
-        return DetectionResult(
-            bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.9,
-            signals=[
-                "gatt_service:dewertokin_rf_gateway",
-                "gatt_char:dewertokin_rf_gateway_name",
-            ],
-        )
 
     if has_okin_uuid_write and has_smart_remote_css:
         signals = [
@@ -785,19 +769,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         signals.append("uuid:dewertokin")
         _LOGGER.info(
             "Detected DewertOkin bed at %s (name: %s) by service UUID",
-            service_info.address,
-            service_info.name,
-        )
-        return DetectionResult(
-            bed_type=BED_TYPE_DEWERTOKIN,
-            confidence=0.9,
-            signals=signals,
-        )
-
-    if DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids:
-        signals.append("uuid:dewertokin_rf_gateway")
-        _LOGGER.info(
-            "Detected DewertOkin RF-Gateway bed at %s (name: %s) by service UUID",
             service_info.address,
             service_info.name,
         )
