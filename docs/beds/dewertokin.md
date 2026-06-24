@@ -175,12 +175,22 @@ From app disassembly analysis (FurniMove):
 
 ### RF Gateway Variant
 
-Some DewertOkin devices use an RF Gateway with an 8-byte protocol:
+Some DewertOkin devices identify through the Device Information Service as
+manufacturer `DewertOkin GmbH`, model `Bluetooth RF-Gateway`. These receivers
+can expose the normal `62741523-...` / `62741525-...` Okin service, but motor
+commands use a separate RF-Gateway service instead:
+
+- **Service:** `92111420-72ab-4564-62ef-2a881286a6b0`
+- **Write Characteristic:** `92111422-72ab-4564-62ef-2a881286a6b0`
+
+The RF-Gateway command format is 8 bytes:
 ```
 [0xE5, 0xFE, 0x16, data0, data1, data2, data3, checksum]
 ```
 
 This variant uses the Keeson-style checksum (one's complement of byte sum).
+The integration auto-selects this path when the BLE model is
+`Bluetooth RF-Gateway` or when the RF-Gateway GATT pair is present.
 
 ## Detection
 

@@ -65,6 +65,9 @@ from .const import (
     CB1322_MANUFACTURER_MARKERS,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    DEWERTOKIN_RF_GATEWAY_MODEL,
+    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+    DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -175,6 +178,37 @@ def _auto_detect_cb24_profile_variant(
     return OKIN_CB24_VARIANT_CB24
 
 
+def _gatt_has_characteristic(
+    client: BleakClient | None,
+    service_uuid: str,
+    char_uuid: str,
+) -> bool:
+    """Return True if the connected client exposes a service/characteristic pair."""
+    if client is None or client.services is None:
+        return False
+
+    service_uuid_lower = service_uuid.lower()
+    char_uuid_lower = char_uuid.lower()
+    for service in client.services:
+        if str(service.uuid).lower() != service_uuid_lower:
+            continue
+        return service.get_characteristic(char_uuid_lower) is not None
+
+    return False
+
+
+def _is_dewertokin_rf_gateway(client: BleakClient | None, ble_model: str | None) -> bool:
+    """Return True when a DewertOkin/Okin entry is the RF-Gateway command variant."""
+    if ble_model is not None and ble_model.strip().lower() == DEWERTOKIN_RF_GATEWAY_MODEL.lower():
+        return True
+
+    return _gatt_has_characteristic(
+        client,
+        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+        DEWERTOKIN_RF_GATEWAY_WRITE_CHAR_UUID,
+    )
+
+
 async def create_controller(
     coordinator: AdjustableBedCoordinator,
     bed_type: str,
@@ -186,6 +220,7 @@ async def create_controller(
     jensen_pin: str = "",
     cb24_bed_selection: int = 0x00,
     ble_manufacturer: str | None = None,
+    ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
@@ -204,6 +239,7 @@ async def create_controller(
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
         cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
         ble_manufacturer: Manufacturer name from BLE Device Information Service (0x2A29)
+        ble_model: Model Number from BLE Device Information Service (0x2A24)
         manufacturer_data: Last advertisement manufacturer payloads by Company ID
 
     Returns:
@@ -215,6 +251,15 @@ async def create_controller(
     """
     # Protocol-based bed types (new naming convention)
     if bed_type == BED_TYPE_OKIN_HANDLE:
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                coordinator.address,
+            )
+            return DewertOkinRfGatewayController(coordinator)
+
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
@@ -694,6 +739,15 @@ async def create_controller(
         return LogicdataController(coordinator)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                coordinator.address,
+            )
+            return DewertOkinRfGatewayController(coordinator)
+
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
