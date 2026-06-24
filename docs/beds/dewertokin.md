@@ -184,7 +184,8 @@ commands use a separate RF-Gateway service instead:
 - **Write Characteristic:** `92111422-72ab-4564-62ef-2a881286a6b0`
 
 The RF-Gateway command format is 8 bytes:
-```
+
+```text
 [0xE5, 0xFE, 0x16, data0, data1, data2, data3, checksum]
 ```
 
