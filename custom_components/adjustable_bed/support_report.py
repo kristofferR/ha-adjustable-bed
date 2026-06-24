@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,24 @@ _LOGGER = logging.getLogger(__name__)
 # Maximum number of log entries to include
 MAX_LOG_ENTRIES = 100
 
+# How much of the tail of home-assistant.log to scan (bytes). Debug runs are
+# verbose, so keep enough history to cover a reproduction without reading the
+# whole (potentially multi-MB) file.
+_LOG_TAIL_BYTES = 512 * 1024
+
+# Standard Home Assistant log line:
+#   2026-06-24 13:26:56.557 DEBUG (MainThread) [logger.name] message
+_LOG_LINE_RE = re.compile(
+    r"^(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[.,]\d+) "
+    r"(?P<level>[A-Z]+) "
+    r"\([^)]*\) "
+    r"\[(?P<name>[^\]]+)\] "
+    r"(?P<msg>.*)$"
+)
+
+# Logger-name fragments worth keeping for bed debugging.
+_RELEVANT_LOG_NAMES = (DOMAIN, "bluetooth", "bleak", "habluetooth")
+
 
 async def generate_support_report(
     hass: HomeAssistant,
@@ -76,7 +95,7 @@ async def generate_support_report(
     }
 
     if include_logs:
-        report["recent_logs"] = _get_recent_logs()
+        report["recent_logs"] = await _get_recent_logs(hass)
 
     # Redact sensitive data (partial MAC redaction - keeps OUI for debugging)
     return redact_data(report)  # type: ignore[no-any-return]
@@ -230,47 +249,81 @@ async def _get_bluetooth_info(
     return info
 
 
-def _get_recent_logs() -> list[dict[str, str]]:
-    """Get recent log entries related to the integration."""
-    logs: list[dict[str, str]] = []
+async def _get_recent_logs(hass: HomeAssistant) -> list[dict[str, str]]:
+    """Return recent integration-related entries from the HA log file.
 
+    Home Assistant does not keep an in-memory debug-log buffer we can read, so
+    this tails the on-disk ``home-assistant.log`` (off-loop, in an executor) and
+    keeps only lines emitted by the integration, the Bluetooth stack, or bleak.
+    """
+    log_path = hass.config.path("home-assistant.log")
+    return await hass.async_add_executor_job(_read_log_file, log_path)
+
+
+def _is_relevant_log_name(name: str) -> bool:
+    """Return True if a logger name belongs to the bed/Bluetooth stack."""
+    lowered = name.lower()
+    return any(fragment in lowered for fragment in _RELEVANT_LOG_NAMES)
+
+
+def _tail_text(log_path: str, max_bytes: int) -> str:
+    """Read up to the last ``max_bytes`` of a UTF-8 log file as text."""
+    with open(log_path, "rb") as handle:  # noqa: PTH123 - plain path from HA config
+        handle.seek(0, 2)
+        size = handle.tell()
+        start = max(0, size - max_bytes)
+        handle.seek(start)
+        data = handle.read()
+    # If we seeked into the middle of the file, drop the partial first line.
+    if start > 0:
+        newline = data.find(b"\n")
+        if newline != -1:
+            data = data[newline + 1 :]
+    return data.decode("utf-8", errors="replace")
+
+
+def _read_log_file(log_path: str) -> list[dict[str, str]]:
+    """Parse relevant entries out of the tail of the HA log file.
+
+    Runs in an executor (blocking file I/O). Continuation lines (e.g. traceback
+    bodies) are appended to the entry they belong to so multi-line records stay
+    readable.
+    """
     try:
-        # Access the logging memory handler if available
-        # This is a best-effort approach since HA doesn't expose logs directly
-        root_logger = logging.getLogger()
-        for handler in root_logger.handlers:
-            handler_buffer = getattr(handler, "buffer", None)
-            if handler_buffer is not None:
-                # MemoryHandler or similar
-                for record in list(handler_buffer)[-500:]:
-                    if (
-                        DOMAIN in record.name
-                        or "bluetooth" in record.name.lower()
-                        or "bleak" in record.name.lower()
-                    ):
-                        # Only redact PINs in log messages — MACs/names are needed for debugging
-                        redacted_message = redact_pins_only({"msg": record.getMessage()})["msg"]
-                        logs.append(
-                            {
-                                "timestamp": datetime.fromtimestamp(
-                                    record.created, tz=UTC
-                                ).isoformat(),
-                                "level": record.levelname,
-                                "name": record.name,
-                                "message": redacted_message,
-                            }
-                        )
-    except Exception as err:
-        _LOGGER.debug("Could not retrieve log entries: %s", err)
-        logs.append(
+        raw = _tail_text(log_path, _LOG_TAIL_BYTES)
+    except OSError as err:
+        _LOGGER.debug("Could not read %s: %s", log_path, err)
+        return [
             {
                 "timestamp": datetime.now(UTC).isoformat(),
                 "level": "INFO",
                 "name": DOMAIN,
-                "message": f"Could not retrieve historical logs: {err}. "
-                "Enable debug logging and reproduce the issue to capture logs.",
+                "message": (
+                    f"Could not read {log_path}: {err}. File logging may be "
+                    "disabled; enable it and reproduce the issue to capture logs."
+                ),
             }
-        )
+        ]
 
-    # Limit and return most recent
+    logs: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+    for line in raw.splitlines():
+        match = _LOG_LINE_RE.match(line)
+        if match:
+            if not _is_relevant_log_name(match.group("name")):
+                current = None
+                continue
+            # Only redact PINs — MACs/names are needed for debugging and the
+            # caller applies its own MAC redaction over the whole report.
+            current = {
+                "timestamp": match.group("ts"),
+                "level": match.group("level"),
+                "name": match.group("name"),
+                "message": redact_pins_only({"msg": match.group("msg")})["msg"],
+            }
+            logs.append(current)
+        elif current is not None:
+            # Continuation of the current (relevant) entry, e.g. a traceback.
+            current["message"] += "\n" + redact_pins_only({"msg": line})["msg"]
+
     return logs[-MAX_LOG_ENTRIES:]

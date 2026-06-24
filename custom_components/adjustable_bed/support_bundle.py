@@ -70,6 +70,8 @@ async def generate_support_bundle(
         controller = {"initialized": False, "class": None, "characteristic_uuid": None}
         position_data = {}
 
+    recent_logs = await _get_recent_logs(hass) if include_logs else []
+
     report: dict[str, Any] = {
         "metadata": {
             "report_version": "2.0",
@@ -101,7 +103,7 @@ async def generate_support_bundle(
         "notifications": diagnostics_report.notifications,
         "notification_summary": diagnostics_report.notification_summary,
         "command_trace": diagnostics_report.command_trace if coordinator is not None else [],
-        "recent_logs": _get_recent_logs() if include_logs else [],
+        "recent_logs": recent_logs,
         "supported_bed_types": list(SUPPORTED_BED_TYPES),
         "errors": list(diagnostics_report.errors),
     }
