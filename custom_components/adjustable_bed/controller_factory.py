@@ -785,7 +785,7 @@ async def create_controller(
     if bed_type == BED_TYPE_VIBRADORM:
         from .beds.vibradorm import VibradormController
 
-        return VibradormController(coordinator)
+        return VibradormController(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_RONDURE:
         from .beds.rondure import RondureController

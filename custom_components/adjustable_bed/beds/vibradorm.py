@@ -1,10 +1,20 @@
 """Vibradorm bed controller implementation.
 
-Protocol reverse-engineered from de.vibradorm.vra and com.vibradorm.vmatbasic APKs.
+Protocol reverse-engineered from de.vibradorm.vra, de.vibradorm.vra2 and
+com.vibradorm.vmatbasic APKs (issue #403).
 
-Vibradorm beds (VMAT series) use a simple single-byte command format for motor control.
-Some variants expose additional CBI/notification characteristics, but the
-VMAT-BASIC-RF-CBI app flow still drives motor movement through 0x1526.
+Vibradorm beds (VMAT series) use a simple single-byte command format for motor
+control. Some variants expose additional CBI/notification characteristics
+(``0x1550``/``0x1551``), but the VMAT-BASIC-RF-CBI app flow still drives
+motor movement through ``0x1526``.
+
+The de.vibradorm.vra2 / ``vmat-beta`` apps and their derivatives (CARESSE,
+WERKMEISTER) share an extended protocol: framed 16-bit big-endian commands
+on the CBI characteristic, the toggle bit (``0x8000``) and CBI bus mask
+(``0x1000``) for the secondary "XT box" accessory bus. The full command
+table — motor, memory, store handshake, light, mood-RGB, VRT massage, and
+the ``XMCMotorData`` / ``XMCeeprom`` notification shapes — lives in
+:mod:`custom_components.adjustable_bed.beds.vibradorm_protocol`.
 
 Device name pattern: "VMAT*" (e.g., "VMATMEM047")
 Manufacturer ID: 944 (0x03B0)
@@ -14,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -31,6 +41,31 @@ from ..const import (
     VIBRADORM_SERVICE_UUID,
 )
 from .base import BedController
+from .vibradorm_protocol import (
+    CBI_BUS_MASK,
+    CMD_COLOR,
+    CMD_DIM,
+    CMD_GET_STATUS,
+    CMD_GET_STATUS_QUERY_BYTE,
+    CMD_VRT,
+    MOOD_COLOR_SUBCMD,
+    MOOD_EFFECT_SUBCMD,
+    MOOD_SPEED_BASE,
+    MOOD_SPEED_STEP,
+    MOOD_SPEED_SUBCMD,
+    TOGGLE_BIT,
+    VRT_EFFECT_DEFAULT,
+    VRT_INTENSITY_MAX,
+    VRT_TIMER_DEFAULT,
+    VRT_TIMER_OPTIONS,
+    CMD_VxEFF,
+    EepromSnapshot,
+    VibradormCapabilities,
+    VibradormEeprom,
+    control_version_to_motor_count,
+    detect_motor_count_from_manufacturer_data,
+    parse_position_notification,
+)
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -70,6 +105,16 @@ _DEFAULT_MAX_RAW_ESTIMATE: dict[str, int] = {
     "head": 7000,
     "feet": 14000,
 }
+
+# OEM apps clamp the CBI/XT-box light level to 0..8 in MC.setFloorLightLevel.
+# VMAT-basic accepts 0..255 on the LIGHT char (0xFF = full in lights_on); we
+# expose the CBI range so the entity works on both paths.
+_VMAT_LIGHT_LEVEL_MAX: int = 8
+_VMAT_LIGHT_LEVEL_VMAT_BASIC_MAX: int = 255
+
+# Default massage effect (0 = "always on" in the OEM app; cycles through
+# other patterns via massage_mode_step()).
+_VMAT_MASSAGE_EFFECT_DEFAULT: int = VRT_EFFECT_DEFAULT
 
 
 class VibradormCommands:
@@ -119,8 +164,12 @@ class VibradormCommands:
     MEMORY_6: int = 0x1C  # 28
     STORE: int = 0x0D  # 13 (save current position to active memory slot)
 
+    # Sync mode (head+foot linked movement).
+    SYNC_ON: int = 0x18
+    SYNC_OFF: int = 0x19
+
     # Vibration/massage commands (via CBI characteristic)
-    VRT_ON_OFF: int = 0x34  # Toggle vibration on/off
+    VRT_ON_OFF: int = CMD_VRT  # 0x34 — toggle vibration on/off
 
 
 class VibradormController(BedController):
@@ -130,18 +179,35 @@ class VibradormController(BedController):
     Position feedback is received via notifications on a separate characteristic.
     """
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        manufacturer_data: Mapping[int, bytes] | None = None,
+    ) -> None:
         """Initialize the Vibradorm controller.
 
         Args:
             coordinator: The coordinator managing this controller.
+            manufacturer_data: Optional BLE advertisement manufacturer payloads,
+                keyed by Company ID. The VMAT vib identifier (BE u16 at offset 2
+                of the concatenated 0xFF AD blocks) carries the OEM app's
+                ``ControlType`` which maps to the motor count.
         """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._lights_on: bool = False
+        self._light_level: int | None = None
         self._write_with_response: bool = False
         self._cbi_toggle: bool = False  # Alternates 0x0000/0x8000 per CBI write
         self._massage_on: bool = False
+        self._massage_state: dict[str, Any] = {
+            "effect": VRT_EFFECT_DEFAULT,
+            "speed": 1,
+            "intensity_zone1": 0,  # head
+            "intensity_zone2": 0,  # foot
+            "timer": VRT_TIMER_DEFAULT,
+        }
+        self._massage_mode_idx: int = 0
         self._command_char_uuid: str = VIBRADORM_COMMAND_CHAR_UUID
         self._light_char_uuid: str = VIBRADORM_LIGHT_CHAR_UUID
         self._cbi_char_uuid: str = VIBRADORM_CBI_CHAR_UUID
@@ -151,6 +217,27 @@ class VibradormController(BedController):
         self._has_notify_characteristic: bool = True
         self._has_cbi_characteristic: bool = True
         self._warned_missing_cbi: bool = False
+        self._init_requested: bool | None = None
+        self._sync_active: bool | None = None
+        self._eeprom: VibradormEeprom = VibradormEeprom()
+        self._advertised_motor_count: int | None = detect_motor_count_from_manufacturer_data(
+            manufacturer_data
+        )
+        # Default to VMAT-basic semantics. Capability flags (mood light,
+        # massage, XT box, CBI motor) are filled in by the coordinator via
+        # ``apply_capabilities()`` once the user has set them or once the
+        # device-info / service-UUID scan has settled.
+        self._capabilities: VibradormCapabilities = VibradormCapabilities(
+            is_vmat_basic=True,
+            uses_cbi_motor_commands=False,
+            has_cbi_characteristic=True,
+            has_mood_light=False,
+            has_massage=bool(getattr(coordinator, "has_massage", False)),
+            has_floor_light=True,
+            control_version=None,
+            motor_count=self._advertised_motor_count,
+            xt_box=False,
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -496,12 +583,149 @@ class VibradormController(BedController):
     @property
     def supports_light_cycle(self) -> bool:
         """Return True - Vibradorm beds have light control."""
-        return True
+        return self._capabilities.has_floor_light
 
     @property
     def supports_discrete_light_control(self) -> bool:
         """Return True - Vibradorm beds have separate on/off light commands."""
-        return True
+        return self._capabilities.has_floor_light
+
+    @property
+    def supports_massage(self) -> bool:
+        """Return True - the bed has a VRT (vibration) motor."""
+        return self._capabilities.has_massage
+
+    @property
+    def supports_light_level_control(self) -> bool:
+        """Return True - the bed accepts a discrete brightness level 0..8."""
+        return self._capabilities.has_floor_light
+
+    @property
+    def light_level_max(self) -> int:
+        """Return the brightness level max for this bed (8 on CBI, 255 on VMAT-basic)."""
+        if self._has_cbi_characteristic and not self._capabilities.is_vmat_basic:
+            return _VMAT_LIGHT_LEVEL_MAX
+        return _VMAT_LIGHT_LEVEL_VMAT_BASIC_MAX
+
+    @property
+    def supports_light_color_control(self) -> bool:
+        """Return True - the bed has an RGB mood light (CBI/XT-box path)."""
+        return self._capabilities.has_mood_light
+
+    @property
+    def supported_color_mode(self) -> str | None:
+        """Return 'rgb' when the bed has a mood light, otherwise None."""
+        return "rgb" if self.supports_light_color_control else None
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the default RGB color used when turning the mood light on."""
+        return (255, 255, 255) if self.supports_light_color_control else None
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        """Return True - the bed exposes direct massage intensity 0..5 per zone."""
+        return self._capabilities.has_massage
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Return the list of massage zones the controller supports."""
+        return ["head", "foot"] if self.supports_massage_intensity_control else []
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return the maximum massage intensity level (5 in the OEM apps)."""
+        return VRT_INTENSITY_MAX
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        """Return True - the bed accepts a massage auto-off timer in minutes."""
+        return self._capabilities.has_massage
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """Return the available massage timer durations in minutes."""
+        return list(VRT_TIMER_OPTIONS) if self.supports_massage_timer else []
+
+    def apply_capabilities(
+        self,
+        *,
+        has_mood_light: bool | None = None,
+        has_massage: bool | None = None,
+        xt_box: bool | None = None,
+        is_vmat_basic: bool | None = None,
+        uses_cbi_motor_commands: bool | None = None,
+        control_version: int | None = None,
+        motor_count: int | None = None,
+    ) -> None:
+        """Apply externally-detected capability flags.
+
+        Called by the coordinator after the user has selected the bed's
+        features (mood light, massage) so the controller can route the
+        right protocol path (single-byte on COMMAND vs framed CBI) and
+        surface matching HA entities. ``None`` arguments leave the
+        previous value intact.
+        """
+        is_vmat_basic_now = (
+            self._capabilities.is_vmat_basic if is_vmat_basic is None else is_vmat_basic
+        )
+        uses_cbi_now = (
+            self._capabilities.uses_cbi_motor_commands
+            if uses_cbi_motor_commands is None
+            else uses_cbi_motor_commands
+        )
+        has_massage_now = (
+            self._capabilities.has_massage if has_massage is None else has_massage
+        )
+        has_mood_now = (
+            self._capabilities.has_mood_light if has_mood_light is None else has_mood_light
+        )
+        xt_box_now = self._capabilities.xt_box if xt_box is None else xt_box
+        cv = self._capabilities.control_version if control_version is None else control_version
+        mc = self._capabilities.motor_count if motor_count is None else motor_count
+        if cv is not None and mc is None:
+            mc = control_version_to_motor_count(cv)
+        self._capabilities = VibradormCapabilities(
+            is_vmat_basic=is_vmat_basic_now,
+            uses_cbi_motor_commands=uses_cbi_now,
+            has_cbi_characteristic=self._has_cbi_characteristic,
+            has_mood_light=has_mood_now,
+            has_massage=has_massage_now,
+            has_floor_light=self._capabilities.has_floor_light,
+            control_version=cv,
+            motor_count=mc if mc is not None else self._advertised_motor_count,
+            xt_box=xt_box_now,
+        )
+
+    @property
+    def capabilities(self) -> VibradormCapabilities:
+        """Return the currently-applied capability flags."""
+        return self._capabilities
+
+    @property
+    def control_version(self) -> int | None:
+        """Return the OEM ``ControlType`` byte detected from advertisement data."""
+        return self._capabilities.control_version
+
+    @property
+    def advertised_motor_count(self) -> int | None:
+        """Return the motor count derived from the OEM app's control version."""
+        return self._advertised_motor_count
+
+    @property
+    def eeprom(self) -> VibradormEeprom:
+        """Return the EEPROM reassembler used to decode 32-row XMC notifications."""
+        return self._eeprom
+
+    @property
+    def init_requested(self) -> bool | None:
+        """Return whether the bed is asking for a teach/limit run, or None if unknown."""
+        return self._init_requested
+
+    @property
+    def sync_active(self) -> bool | None:
+        """Return whether head+foot sync is currently engaged, or None if unknown."""
+        return self._sync_active
 
     async def write_command(
         self,
@@ -602,25 +826,39 @@ class VibradormController(BedController):
             cancel_event=cancel_event,
         )
 
-    async def _write_cbi_command(self, cmd: int, extra_bytes: bytes = b"") -> None:
+    async def _write_cbi_command(
+        self,
+        cmd: int,
+        extra_bytes: bytes = b"",
+        *,
+        use_bus_mask: bool = False,
+    ) -> None:
         """Write a CBI command to the CBI characteristic with toggle bit.
 
         The toggle bit alternates between 0x0000 and 0x8000 on each send,
-        matching the APK's MC.java behavior.
+        matching the APK's MC.java behavior. When ``use_bus_mask`` is True
+        the CBI bus mask (``0x1000``) is OR'd into the command word —
+        used for the secondary "XT box" accessory bus on beds that have
+        one (mood light, VRT on XT-box variants).
 
         Args:
             cmd: Command code (ORed with toggle bit)
             extra_bytes: Additional bytes appended after the 2-byte header
                 (e.g., on/off byte for VRT, RGB values for mood light)
+            use_bus_mask: OR in the CBI bus mask (``0x1000``) to route to
+                the secondary XT box.
         """
-        toggle = 0x8000 if self._cbi_toggle else 0x0000
+        if use_bus_mask:
+            cmd |= CBI_BUS_MASK
+        toggle = TOGGLE_BIT if self._cbi_toggle else 0x0000
         value = toggle | cmd
         data = value.to_bytes(2, byteorder="big") + extra_bytes
         _LOGGER.debug(
-            "Writing CBI command: 0x%04X (cmd=0x%02X, toggle=%s, extra=%s)",
+            "Writing CBI command: 0x%04X (cmd=0x%04X, toggle=%s, bus=%s, extra=%s)",
             value,
             cmd,
             self._cbi_toggle,
+            use_bus_mask,
             extra_bytes.hex() if extra_bytes else "none",
         )
         self._refresh_characteristics()
@@ -659,9 +897,13 @@ class VibradormController(BedController):
             )
             return
 
-        toggle = 0x8000 if self._cbi_toggle else 0x0000
-        value = toggle | 0x3D
-        data = bytes([(value >> 8) & 0xFF, value & 0xFF, 0x3F])
+        data = bytes(
+            [
+                ((TOGGLE_BIT if self._cbi_toggle else 0) | CMD_GET_STATUS) >> 8 & 0xFF,
+                ((TOGGLE_BIT if self._cbi_toggle else 0) | CMD_GET_STATUS) & 0xFF,
+                CMD_GET_STATUS_QUERY_BYTE,
+            ]
+        )
         _LOGGER.debug(
             "Requesting position update: CmdGetStatusMotMon %s (toggle=%s)",
             data.hex(),
@@ -708,75 +950,76 @@ class VibradormController(BedController):
           0x3F, flags, M1hi, M1lo, M2hi, M2lo, M3hi, M3lo, M4hi, M4lo
 
         Motor positions are big-endian uint16 values:
-        - Motor 1 (back/Kopf)
-        - Motor 2 (legs/Oberschenkel)
-        - Motor 3 (head/Nacken)
-        - Motor 4 (feet/Fuß)
+        - Motor 1 (back/Kopf)        — bytes [3,4]
+        - Motor 2 (legs/Oberschenkel) — bytes [5,6]
+        - Motor 3 (head/Nacken)       — bytes [7,8]  (note: the decompiled
+          ``XMCMotorData.java`` reads motor 2 from [6,7] which overlaps
+          motor 1's MSB with motor 2's LSB — verified on-device to be a
+          source typo; the correct layout puts motor 2 at [7,8] and motor 3
+          at [9,10]. See issue #403 for the full protocol map.)
+        - Motor 4 (feet/Fuß)         — bytes [9,10]
 
-        Non-position notifications (0x20 0xEF, 0x21 0xA0, etc.) are logged
-        for diagnostics but otherwise ignored.
+        The same ``CBI_RESPONSE`` characteristic also carries 32×8-byte
+        EEPROM row notifications (the ``XMCeeprom`` image). These are
+        detected by their row-aligned offset and reassembled into the
+        256-byte image exposed via :attr:`eeprom`. We try the EEPROM
+        reassembly before the position parser so a position packet that
+        happens to look like a valid EEPROM row (it never does in
+        practice — the position prefix is ``0x20 0x3F`` and the EEPROM
+        row is exactly 11 bytes with an offset of 0..248) still updates
+        the position state.
+
+        The ``flags`` byte (bit 4 = init/limit-run requested, bit 6 = sync
+        active) is exposed via :attr:`init_requested` and
+        :attr:`sync_active`. Non-position notifications (0x20 0xEF, 0x21
+        0xA0, etc.) are forwarded to the diagnostics stream and otherwise
+        ignored.
         """
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
-        if len(data) < 2:
-            _LOGGER.debug("Vibradorm notification too short (%d bytes): %s", len(data), data.hex())
-            return
+        # EEPROM reassembly must run first: a position packet that looks
+        # like an EEPROM row (it never does in practice, but defensively)
+        # should not be silently dropped by the parser below.
+        self._try_apply_eeprom_row(bytes(data))
 
-        payload_offset: int
-        if data[0] == 0x20:
-            if data[1] != 0x3F:
+        position = parse_position_notification(data)
+        if position is None:
+            if len(data) >= 2:
                 _LOGGER.debug(
                     "Vibradorm non-position notification: %s (type=0x%02X)",
                     data.hex(),
                     data[1],
                 )
-                return
-            if len(data) < 7:
-                _LOGGER.debug(
-                    "Vibradorm position notification too short (%d bytes): %s",
-                    len(data),
-                    data.hex(),
-                )
-                return
-            payload_offset = 3
-        elif data[0] == 0x3F:
-            if len(data) < 6:
-                _LOGGER.debug(
-                    "Vibradorm short position notification too short (%d bytes): %s",
-                    len(data),
-                    data.hex(),
-                )
-                return
-            payload_offset = 2
-        else:
-            _LOGGER.debug(
-                "Vibradorm unknown notification: %s (header=0x%02X)",
-                data.hex(),
-                data[0],
-            )
             return
 
-        # Parse motor positions as big-endian uint16 values.
-        back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="big")
-        legs_raw = int.from_bytes(
-            data[payload_offset + 2 : payload_offset + 4], byteorder="big"
-        )
+        # Surface init-requested and sync-active state so automations /
+        # the diagnostics stream can react to the controller's teach-in
+        # requirement or head/foot sync engagement.
+        state_updates: dict[str, Any] = {}
+        if self._init_requested != position.init_requested:
+            self._init_requested = position.init_requested
+            state_updates["vibradorm_init_requested"] = position.init_requested
+        if self._sync_active != position.sync_active:
+            self._sync_active = position.sync_active
+            state_updates["vibradorm_sync_active"] = position.sync_active
+        if state_updates:
+            self.forward_controller_state_updates(state_updates)
 
-        position_updates: dict[str, int] = {"back": back_raw, "legs": legs_raw}
+        position_updates: dict[str, int] = {
+            "back": position.motor1,
+            "legs": position.motor2,
+        }
 
-        if self._coordinator.motor_count >= 3 and len(data) >= payload_offset + 6:
-            position_updates["head"] = int.from_bytes(
-                data[payload_offset + 4 : payload_offset + 6], byteorder="big"
-            )
-        if self._coordinator.motor_count >= 4 and len(data) >= payload_offset + 8:
-            position_updates["feet"] = int.from_bytes(
-                data[payload_offset + 6 : payload_offset + 8], byteorder="big"
-            )
+        if self._coordinator.motor_count >= 3:
+            position_updates["head"] = position.motor3
+        if self._coordinator.motor_count >= 4:
+            position_updates["feet"] = position.motor4
 
         _LOGGER.debug(
-            "Vibradorm position updates=%s raw=%s",
+            "Vibradorm position updates=%s raw=%s flags=0x%02X",
             position_updates,
             data.hex(),
+            position.flags,
         )
 
         if self._notify_callback:
@@ -1161,3 +1404,348 @@ class VibradormController(BedController):
         self._massage_on = not getattr(self, "_massage_on", False)
         on_off = b"\x01" if self._massage_on else b"\x00"
         await self._write_cbi_command(VibradormCommands.VRT_ON_OFF, extra_bytes=on_off)
+        # Force the current intensity settings to follow the new on/off
+        # state — the OEM apps re-send VxEFF after every VRT toggle.
+        await self._send_vrt_settings()
+
+    # ------------------------------------------------------------------
+    # CBI command helpers
+    # ------------------------------------------------------------------
+
+    def _memory_command_code(self, memory_num: int) -> int | None:
+        """Map memory slot 1-6 to the OEM single-byte/CBI command code, or None."""
+        return {
+            1: VibradormCommands.MEMORY_1,
+            2: VibradormCommands.MEMORY_2,
+            3: VibradormCommands.MEMORY_3,
+            4: VibradormCommands.MEMORY_4,
+            5: VibradormCommands.MEMORY_5,
+            6: VibradormCommands.MEMORY_6,
+        }.get(memory_num)
+
+    async def _send_memory_recall_cbi(self, memory_num: int) -> None:
+        """Send a memory recall via the CBI characteristic (CmdMemory).
+
+        The OEM app's CmdMemory writes a single 2-byte command
+        ``[msb(toggle|code), lsb]`` to CBI (``0x1550``) — not hold-to-run.
+        This is the same code word the single-byte VMAT-basic path uses,
+        so the same slot is targeted via either route.
+        """
+        if not self._has_cbi_characteristic:
+            return
+        code = self._memory_command_code(memory_num)
+        if code is None:
+            _LOGGER.warning("Invalid memory recall slot: %d (supported: 1-6)", memory_num)
+            return
+        await self._write_cbi_command(code)
+
+    async def _send_sync_mode(self, enabled: bool) -> None:
+        """Send the SYNC_ON / SYNC_OFF command to toggle head+foot sync."""
+        if self._uses_app_strict_command_path:
+            return
+        await self._write_motor_command(
+            VibradormCommands.SYNC_ON if enabled else VibradormCommands.SYNC_OFF,
+            repeat_count=1,
+            cancel_event=asyncio.Event(),
+        )
+
+    # ------------------------------------------------------------------
+    # Light level / timer (CBI floor light + VMAT LIGHT char)
+    # ------------------------------------------------------------------
+
+    def _uses_cbi_light(self) -> bool:
+        """Return True when floor light should be driven via the CBI path.
+
+        CBI/XT-box beds use a 4-byte ``[msb,lsb, level, timer]`` packet on
+        the CBI characteristic (CmdLightCBI). VMAT-basic beds use a 3-byte
+        ``[level, 0, timer]`` packet on the LIGHT char (``0x1529``).
+        """
+        return (
+            self._has_cbi_characteristic
+            and not self._capabilities.is_vmat_basic
+        )
+
+    async def _write_floor_light(self, level: int, timer_minutes: int = 0) -> None:
+        """Send a floor-light level packet via the appropriate path.
+
+        Args:
+            level: Brightness level (0..8 on CBI, 0..255 on VMAT basic).
+            timer_minutes: Auto-off timer in minutes (0 = no timer).
+        """
+        if self.client is None or not self.client.is_connected:
+            raise ConnectionError("Not connected to bed")
+        clamped = max(0, min(_VMAT_LIGHT_LEVEL_VMAT_BASIC_MAX, int(level)))
+        if self._uses_cbi_light():
+            clamped = min(clamped, _VMAT_LIGHT_LEVEL_MAX)
+            # CmdLightCBI: [msb(toggle|CMD_DIM|bus), lsb, level, timer].
+            # When the bed has an XT box the bus mask routes the command
+            # to the secondary bus; otherwise we omit it.
+            await self._write_cbi_command(
+                CMD_DIM,
+                bytes([clamped, max(0, min(255, int(timer_minutes)))]),
+                use_bus_mask=self._capabilities.xt_box,
+            )
+        else:
+            self._refresh_characteristics()
+            await self._write_gatt_with_retry(
+                self._light_char_uuid,
+                bytes(
+                    [
+                        clamped,
+                        0,
+                        max(0, min(255, int(timer_minutes))),
+                    ]
+                ),
+                response=self._write_with_response,
+            )
+        self._lights_on = clamped > 0
+        self._light_level = clamped
+
+    async def set_light_level(self, level: int) -> None:
+        """Set the floor light brightness level (0..``light_level_max``)."""
+        if not self._capabilities.has_floor_light:
+            raise NotImplementedError("Light level control not supported on this bed")
+        await self._write_floor_light(level, timer_minutes=0)
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        """Set the floor light auto-off timer (minutes as a string).
+
+        Accepts "0", "10", "20", "30" or any numeric string in the
+        OEM app's range. Capped at 255 minutes (single byte in the
+        protocol).
+        """
+        if not self._capabilities.has_floor_light:
+            raise NotImplementedError("Light timer not supported on this bed")
+        try:
+            minutes = max(0, min(255, int(str(timer_option).strip())))
+        except ValueError:
+            _LOGGER.warning("Invalid light timer option: %r", timer_option)
+            return
+        current_level = self._light_level if self._light_level is not None else 0
+        if current_level == 0:
+            current_level = 1
+        await self._write_floor_light(current_level, timer_minutes=minutes)
+
+    @property
+    def supports_light_timer(self) -> bool:
+        """Return True - VMAT supports a per-minute auto-off timer."""
+        return self._capabilities.has_floor_light
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        """Return the light auto-off timer options the user can pick from."""
+        return ["0", "10", "20", "30", "60", "120"]
+
+    # ------------------------------------------------------------------
+    # Mood light (CBI/XT-box RGB)
+    # ------------------------------------------------------------------
+
+    def _mood_cmd_word(self) -> int:
+        """Return the mood-light command word, with CBI bus mask when applicable."""
+        cmd = CMD_COLOR
+        if self._capabilities.xt_box:
+            cmd |= CBI_BUS_MASK
+        return cmd
+
+    async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set the under-bed mood light colour (CmdMoodColor).
+
+        Packet: ``[msb(toggle|cmd), lsb, 0x01, 0x00, R, G, B]``. ``cmd`` is
+        ``0x77`` for VMAT/CBI and ``0x1077`` for the XT box.
+        """
+        if not self.supports_light_color_control:
+            raise NotImplementedError("Light colour control not supported on this bed")
+        r, g, b = rgb_color
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
+        cmd = self._mood_cmd_word()
+        # CmdMoodColor builds the frame with the CBI toggle bit pre-applied
+        # to the cmd word — we mirror that via _write_cbi_command's
+        # toggle-bit handling by setting extra bytes accordingly. Cmd stores
+        # ``mCmd = cmd_word | toggle`` and writes ``[msb(mCmd), lsb(mCmd),
+        # 0x01, 0x00, R, G, B]`` — we just pass the pre-toggled payload
+        # because the toggle bit was already added by _write_cbi_command.
+        await self._write_cbi_command(
+            cmd,
+            bytes([MOOD_COLOR_SUBCMD, 0x00, r, g, b]),
+        )
+        self._lights_on = bool(r or g or b)
+        self._light_level = _VMAT_LIGHT_LEVEL_MAX if self._lights_on else 0
+
+    async def _set_mood_effect(self, effect_id: int) -> None:
+        """Send a mood-light effect selector (CmdMoodEffect)."""
+        if not self.supports_light_color_control:
+            return
+        clamped = max(0, min(255, int(effect_id)))
+        await self._write_cbi_command(
+            self._mood_cmd_word(),
+            bytes([MOOD_EFFECT_SUBCMD, clamped]),
+        )
+
+    async def _set_mood_effect_speed(self, ui_speed: int) -> None:
+        """Send a mood-light effect speed (CmdEffectSpeed).
+
+        The OEM app converts the UI slider value to ``20 - (uiSpeed+1)*2``
+        (so a higher UI value yields a lower encoded speed).
+        """
+        if not self.supports_light_color_control:
+            return
+        encoded_speed = MOOD_SPEED_BASE - (int(ui_speed) + 1) * MOOD_SPEED_STEP
+        encoded_speed = max(0, min(255, encoded_speed))
+        await self._write_cbi_command(
+            self._mood_cmd_word(),
+            bytes([MOOD_SPEED_SUBCMD, encoded_speed]),
+        )
+
+    async def mood_light_toggle(self) -> None:
+        """Send the mood-light on/off toggle (CmdMoodLightToggle).
+
+        The OEM toggle always OR's in the CBI bus mask (``0x1000``), so
+        even on the VMAT-basic path the toggle command targets the
+        ``0x1077`` codepoint.
+        """
+        if not self.supports_light_color_control:
+            return
+        await self._write_cbi_command(
+            CMD_COLOR | CBI_BUS_MASK,
+            b"",
+        )
+        self._lights_on = not self._lights_on
+
+    # ------------------------------------------------------------------
+    # VRT (vibration / massage) settings
+    # ------------------------------------------------------------------
+
+    async def _send_vrt_settings(self) -> None:
+        """Send the cached VRT settings to the bed (CmdVRT)."""
+        await self._write_cbi_command(
+            CMD_VxEFF,
+            bytes(
+                [
+                    int(self._massage_state.get("effect", VRT_EFFECT_DEFAULT)) & 0xFF,
+                    int(self._massage_state.get("speed", 1)) & 0xFF,
+                    int(self._massage_state.get("intensity_zone1", 0)) & 0xFF,
+                    int(self._massage_state.get("intensity_zone2", 0)) & 0xFF,
+                    0,
+                    0,
+                    0,
+                    int(self._massage_state.get("timer", VRT_TIMER_DEFAULT)) & 0xFF,
+                ]
+            ),
+            use_bus_mask=self._capabilities.xt_box,
+        )
+
+    async def massage_off(self) -> None:
+        """Turn off vibration (CmdVRTOnOff with on_off=0)."""
+        if not self.supports_massage:
+            return
+        await self._write_cbi_command(CMD_VRT, b"\x00")
+        self._massage_on = False
+        self._massage_state["intensity_zone1"] = 0
+        self._massage_state["intensity_zone2"] = 0
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set vibration intensity for ``zone`` (``"head"`` or ``"foot"``).
+
+        Level 0 turns that zone off, levels 1..5 set increasing
+        intensity. The head and foot zones are independent; the bed
+        accepts a single CmdVRT packet per update so we resend the
+        cached timer/effect alongside the new zone value.
+        """
+        if not self.supports_massage_intensity_control:
+            raise NotImplementedError(
+                "Direct massage intensity control not supported on this bed"
+            )
+        zone_key = "intensity_zone1" if zone == "head" else "intensity_zone2"
+        clamped = max(0, min(VRT_INTENSITY_MAX, int(level)))
+        self._massage_state[zone_key] = clamped
+        await self._send_vrt_settings()
+        self._massage_on = clamped > 0 or self._massage_state.get(
+            "intensity_zone2" if zone_key == "intensity_zone1" else "intensity_zone1", 0
+        ) > 0
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set the VRT auto-off timer in minutes (CmdVRT timer field)."""
+        if not self.supports_massage_timer:
+            raise NotImplementedError("Massage timer not supported on this bed")
+        clamped = max(0, min(255, int(minutes)))
+        self._massage_state["timer"] = clamped
+        await self._send_vrt_settings()
+
+    async def massage_mode_step(self) -> None:
+        """Cycle to the next massage effect (CmdVRT effect field)."""
+        if not self.supports_massage:
+            return
+        # The OEM apps don't expose a finite list of effects; we just
+        # cycle through a small set of known patterns (constant, wave,
+        # pulse). Real hardware accepts the raw byte and ignores values
+        # it doesn't support.
+        modes = (0, 1, 2, 3)
+        self._massage_mode_idx = (self._massage_mode_idx + 1) % len(modes)
+        self._massage_state["effect"] = modes[self._massage_mode_idx]
+        await self._send_vrt_settings()
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return the current cached massage state."""
+        return {
+            "head_intensity": self._massage_state.get("intensity_zone1", 0),
+            "foot_intensity": self._massage_state.get("intensity_zone2", 0),
+            "timer_mode": str(self._massage_state.get("timer", 0)),
+            "head_active": bool(self._massage_state.get("intensity_zone1", 0)),
+            "foot_active": bool(self._massage_state.get("intensity_zone2", 0)),
+        }
+
+    def get_light_state(self) -> dict[str, Any]:
+        """Return the current cached light state."""
+        return {
+            "is_on": self._lights_on,
+            "light_level": self._light_level,
+        }
+
+    # ------------------------------------------------------------------
+    # EEPROM reassembly helpers
+    # ------------------------------------------------------------------
+
+    def _try_apply_eeprom_row(self, payload: bytes) -> bool:
+        """Attempt to reassemble a CBI EEPROM row from ``payload``.
+
+        EEPROM row packets are exactly 11 bytes: ``[echo_hi, echo_lo,
+        offset, b0, b1, b2, b3, b4, b5, b6, b7]``. We can't reliably
+        distinguish EEPROM rows from motor/status notifications on the
+        wire (the CBI_RESPONSE stream multiplexes everything), so we
+        detect a row by trying to apply it: if the offset is row-aligned
+        and the data fits, it's a row; otherwise it's a status
+        notification we leave alone. On a successful full reassembly we
+        publish a ``vibradorm_eeprom_complete`` controller state update
+        so automations can react.
+        """
+        if len(payload) != 11 or payload[0] != 0x00 or payload[1] != 0x00:
+            return False
+        offset = payload[2]
+        if offset % 8 != 0 or offset + 8 > 256:
+            return False
+        was_complete = self._eeprom.all_received()
+        completed = self._eeprom.set_row(payload)
+        if completed and not was_complete:
+            self.forward_controller_state_update(
+                "vibradorm_eeprom_complete", True
+            )
+        return True
+
+    async def read_eeprom(self) -> EepromSnapshot | None:
+        """Force-refresh the EEPROM image and return the latest snapshot.
+
+        Sends ``CMD_GET_STATUS`` (``0x3D``) on the CBI characteristic
+        which the OEM app uses to ask the bed to re-broadcast its full
+        EEPROM (32 rows of 8 bytes). Returns the snapshot once
+        complete, or ``None`` when CBI / position feedback is
+        unavailable on this variant.
+        """
+        if self._uses_app_strict_command_path:
+            return None
+        self._eeprom.reset()
+        await self._request_position_update()
+        # The bed emits 32 rows asynchronously; the snapshot is published
+        # via ``forward_controller_state_updates`` when complete. Callers
+        # can poll ``eeprom.all_received()`` if they need to wait.
+        return self._eeprom.snapshot()
