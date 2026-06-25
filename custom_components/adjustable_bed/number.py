@@ -192,6 +192,17 @@ LIGHT_LEVEL_DESCRIPTION = NumberEntityDescription(
     mode=NumberMode.SLIDER,
 )
 
+MOOD_LIGHT_SPEED_DESCRIPTION = NumberEntityDescription(
+    key="mood_light_speed",
+    translation_key="mood_light_speed",
+    icon="mdi:speedometer",
+    native_min_value=1,
+    native_max_value=5,
+    native_step=1,
+    mode=NumberMode.SLIDER,
+    entity_registry_enabled_default=False,
+)
+
 SLEEP_NUMBER_SETTING_DESCRIPTION = NumberEntityDescription(
     key="sleep_number_setting",
     translation_key="sleep_number_setting",
@@ -521,6 +532,21 @@ async def async_setup_entry(
         )
         entities.append(AdjustableBedLightLevelNumber(coordinator, light_adjusted))
 
+    # Set up mood light effect-speed number entity (only for beds that support it)
+    if controller is not None and getattr(controller, "supports_mood_light_speed_control", False):
+        max_speed = getattr(controller, "mood_light_speed_max", 5)
+        mood_speed_desc = NumberEntityDescription(
+            key=MOOD_LIGHT_SPEED_DESCRIPTION.key,
+            translation_key=MOOD_LIGHT_SPEED_DESCRIPTION.translation_key,
+            icon=MOOD_LIGHT_SPEED_DESCRIPTION.icon,
+            native_min_value=1,
+            native_max_value=max_speed,
+            native_step=1,
+            mode=NumberMode.SLIDER,
+            entity_registry_enabled_default=False,
+        )
+        entities.append(AdjustableBedMoodLightSpeedNumber(coordinator, mood_speed_desc))
+
     sleep_number_sides = tuple(getattr(controller, "sleep_number_setting_sides", ()))
     if sleep_number_sides:
         _LOGGER.debug(
@@ -787,6 +813,65 @@ class AdjustableBedLightLevelNumber(AdjustableBedEntity, NumberEntity):
             await ctrl.set_light_level(level)
 
         await self._coordinator.async_execute_controller_command(_set_level)
+
+
+class AdjustableBedMoodLightSpeedNumber(AdjustableBedEntity, NumberEntity):
+    """Number entity for RGB mood light effect speed control."""
+
+    entity_description: NumberEntityDescription
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: NumberEntityDescription,
+    ) -> None:
+        """Initialize the mood light speed number entity."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is removed from hass."""
+        if self._unregister_callback:
+            self._unregister_callback()
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Write state when the controller publishes mood-light updates."""
+        if "mood_light_speed" in state:
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current mood light effect speed."""
+        speed = self._coordinator.controller_state.get("mood_light_speed")
+        if speed is None:
+            return None
+        return float(speed)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the mood light effect speed."""
+        speed = round(value)
+
+        _LOGGER.info(
+            "Mood light speed set requested: %d (device: %s)",
+            speed,
+            self._coordinator.name,
+        )
+
+        async def _set_speed(ctrl: BedController) -> None:
+            await ctrl.set_mood_light_speed(speed)  # type: ignore[attr-defined]
+
+        await self._coordinator.async_execute_controller_command(_set_speed)
 
 
 class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):

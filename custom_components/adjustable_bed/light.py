@@ -36,6 +36,13 @@ LIGHT_DESCRIPTION = LightEntityDescription(
     icon="mdi:led-strip-variant",
 )
 
+MOOD_LIGHT_DESCRIPTION = LightEntityDescription(
+    key="mood_light",
+    translation_key="mood_light",
+    icon="mdi:led-strip-variant",
+    entity_registry_enabled_default=False,
+)
+
 
 def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
     """Normalize an RGB-like value to a strict 3-tuple."""
@@ -83,17 +90,20 @@ async def async_setup_entry(
     if getattr(controller, "supports_light_color_control", False):
         _async_remove_stale_switch_entity(hass, coordinator)
         async_add_entities([AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)])
-        return
-
-    if (
+    elif (
         coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
         and getattr(controller, "supports_discrete_light_control", False)
     ):
         _async_remove_stale_switch_entity(hass, coordinator)
         async_add_entities([AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)])
-        return
+    else:
+        _async_remove_stale_light_entity(hass, coordinator)
 
-    _async_remove_stale_light_entity(hass, coordinator)
+    # RGB mood light is a separate, optional light surface (e.g. Vibradorm VMAT
+    # XT-box). Additive to the under-bed light above; disabled by default so beds
+    # without the hardware don't gain a dead entity.
+    if getattr(controller, "supports_mood_light", False):
+        async_add_entities([AdjustableBedMoodLight(coordinator, MOOD_LIGHT_DESCRIPTION)])
 
 
 def _async_remove_stale_light_entity(
@@ -356,5 +366,99 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             lambda ctrl: ctrl.lights_off(),
             cancel_running=False,
         )
+        self._attr_is_on = False
+        self.async_write_ha_state()
+
+
+class AdjustableBedMoodLight(AdjustableBedEntity, RestoreEntity, LightEntity):
+    """RGB mood light entity (e.g. Vibradorm VMAT XT-box mood light)."""
+
+    entity_description: LightEntityDescription
+
+    _attr_assumed_state = True
+    _attr_color_mode = ColorMode.RGB
+    _attr_supported_color_modes = {ColorMode.RGB}
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        description: LightEntityDescription,
+    ) -> None:
+        """Initialize the mood light."""
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        controller = coordinator.controller
+        effects = (
+            getattr(controller, "mood_light_effect_list", []) if controller is not None else []
+        )
+        self._attr_effect_list = effects or None
+        self._attr_is_on = False
+        self._attr_rgb_color = (255, 255, 255)
+        self._attr_effect = effects[0] if effects else None
+        self._unregister_callback: Callable[[], None] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last mood-light state and subscribe to updates."""
+        await super().async_added_to_hass()
+        if (last_state := await self.async_get_last_state()) is not None:
+            self._attr_is_on = last_state.state == STATE_ON
+            restored_rgb = _normalize_rgb_color(last_state.attributes.get(ATTR_RGB_COLOR))
+            if restored_rgb is not None:
+                self._attr_rgb_color = restored_rgb
+            restored_effect = last_state.attributes.get("effect")
+            if isinstance(restored_effect, str) and self._attr_effect_list and restored_effect in self._attr_effect_list:
+                self._attr_effect = restored_effect
+        self._unregister_callback = self._coordinator.register_controller_state_callback(
+            self._handle_controller_state_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up controller-state callback registration."""
+        if self._unregister_callback is not None:
+            self._unregister_callback()
+            self._unregister_callback = None
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+        """Update state from controller mood-light telemetry when available."""
+        if "mood_light_on" in state:
+            self._attr_is_on = bool(state["mood_light_on"])
+        if "mood_light_effect" in state and self._attr_effect_list:
+            effect = state["mood_light_effect"]
+            if isinstance(effect, str) and effect in self._attr_effect_list:
+                self._attr_effect = effect
+        self.async_write_ha_state()
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the mood light on, optionally setting color and/or effect."""
+        requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
+        target_rgb = requested_rgb or self._attr_rgb_color or (255, 255, 255)
+        requested_effect = kwargs.get("effect")
+        target_effect = requested_effect if isinstance(requested_effect, str) else self._attr_effect
+
+        async def _turn_on(ctrl: BedController) -> None:
+            await ctrl.set_mood_light_color(target_rgb)  # type: ignore[attr-defined]
+            if target_effect is not None and self._attr_effect_list:
+                await ctrl.set_mood_light_effect(target_effect)  # type: ignore[attr-defined]
+
+        await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
+        self._attr_is_on = True
+        self._attr_rgb_color = target_rgb
+        if target_effect is not None:
+            self._attr_effect = target_effect
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the mood light off (toggle-based, like the OEM app)."""
+        del kwargs
+        if not self._attr_is_on:
+            return
+
+        async def _turn_off(ctrl: BedController) -> None:
+            await ctrl.mood_light_toggle()  # type: ignore[attr-defined]
+
+        await self._coordinator.async_execute_controller_command(_turn_off, cancel_running=False)
         self._attr_is_on = False
         self.async_write_ha_state()

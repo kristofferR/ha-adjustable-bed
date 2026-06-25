@@ -532,6 +532,9 @@
     "light": {
       "under_bed_lights": {
         "name": "Under Bed Lights"
+      },
+      "mood_light": {
+        "name": "Mood Light"
       }
     },
     "switch": {
@@ -580,6 +583,9 @@
       },
       "light_level": {
         "name": "Light Level"
+      },
+      "mood_light_speed": {
+        "name": "Mood Light Effect Speed"
       },
       "sleep_number_setting": {
         "name": "Sleep Number Setting"

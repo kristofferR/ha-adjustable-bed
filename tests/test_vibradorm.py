@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     VIBRADORM_CBI_CHAR_UUID,
     VIBRADORM_COMMAND_CHAR_UUID,
+    VIBRADORM_LIGHT_CHAR_UUID,
     VIBRADORM_NOTIFY_CHAR_UUID,
     VIBRADORM_SECONDARY_ALT_COMMAND_CHAR_UUID,
     VIBRADORM_SECONDARY_COMMAND_CHAR_UUID,
@@ -1417,3 +1418,480 @@ class TestVibradormPositionFeedback:
         )
 
         assert updates == []
+
+
+class TestVibradormCapabilities:
+    """Test newly exposed capability properties."""
+
+    async def test_light_level_capability(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Floor light level + timer should be advertised."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.supports_light_level_control is True
+        assert controller.light_level_max == 8
+        assert controller.supports_light_timer is True
+        assert controller.light_timer_options == ["Off", "10 min", "20 min", "30 min", "60 min"]
+
+    async def test_synchro_capability(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Sync mode should be advertised."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_synchro is True
+
+    async def test_massage_capabilities(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """VRT massage capabilities should be advertised."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.supports_massage is True
+        assert controller.supports_massage_intensity_control is True
+        assert controller.massage_intensity_zones == ["head", "foot"]
+        assert controller.massage_intensity_max == 5
+        assert controller.supports_massage_timer is True
+        assert controller.massage_timer_options == [10, 20, 30]
+        assert controller.supports_massage_mode_step_control is True
+        assert controller.supports_head_massage_toggle_control is True
+        assert controller.supports_foot_massage_toggle_control is True
+        assert controller.supports_head_massage_intensity_step_control is True
+        assert controller.supports_foot_massage_intensity_step_control is True
+
+    async def test_mood_light_capabilities(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """RGB mood light capabilities should be advertised."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.supports_mood_light is True
+        assert controller.mood_light_effect_list == [
+            "Static",
+            "Effect 1",
+            "Effect 2",
+            "Effect 3",
+            "Effect 4",
+        ]
+        assert controller.mood_light_speed_max == 5
+        assert controller.supports_mood_light_speed_control is True
+
+
+class TestVibradormMassage:
+    """Test VRT massage command framing."""
+
+    async def test_massage_toggle_sends_vrt_on_with_default_zones(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """massage_toggle from off enables both zones at 3 and sends VRT on + settings."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.massage_toggle()
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        # First: VRT_ON_OFF (0x34) on, toggle=0 -> [0x00, 0x34, 0x01]
+        assert sent[0] == bytes([0x00, VibradormCommands.VRT_ON_OFF, 0x01])
+        # Then VRT settings (0x30) with both zones at 3, toggle=1
+        assert sent[1] == bytes(
+            [0x80, VibradormCommands.VRT_SETTINGS, 0, 1, 3, 3, 0, 0, 0, 0]
+        )
+
+    async def test_massage_off_clears_zones(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """massage_off sends VRT off and a settings packet with zeroed zones."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.massage_off()
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        assert sent[0] == bytes([0x00, VibradormCommands.VRT_ON_OFF, 0x00])
+        assert sent[1] == bytes(
+            [0x80, VibradormCommands.VRT_SETTINGS, 0, 1, 0, 0, 0, 0, 0, 0]
+        )
+        assert coordinator.controller.get_massage_state()["head_intensity"] == 0
+
+    async def test_set_massage_intensity_head_sends_settings_packet(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_massage_intensity sends VRT on + a settings packet with the new zone."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_massage_intensity("head", 4)
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        # Turning on a zone from off first sends VRT on.
+        assert sent[0] == bytes([0x00, VibradormCommands.VRT_ON_OFF, 0x01])
+        # Settings: effect=0, speed=1, zone1(head)=4, zone2(foot)=0, timer=0.
+        assert sent[1] == bytes(
+            [0x80, VibradormCommands.VRT_SETTINGS, 0, 1, 4, 0, 0, 0, 0, 0]
+        )
+        state = coordinator.controller.get_massage_state()
+        assert state["head_intensity"] == 4
+        assert state["head_active"] is True
+
+    async def test_set_massage_intensity_clamps_to_max(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Intensity above the max should be clamped to 5."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._massage_on = True  # avoid the extra VRT-on write
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.set_massage_intensity("foot", 99)
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        # zone2(foot) clamped to 5.
+        assert sent[0] == bytes(
+            [0x00, VibradormCommands.VRT_SETTINGS, 0, 1, 0, 5, 0, 0, 0, 0]
+        )
+        assert controller.get_massage_state()["foot_intensity"] == 5
+
+    async def test_set_massage_timer_sends_timer_in_packet(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_massage_timer encodes minutes in the trailing timer byte."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._massage_on = True
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.set_massage_timer(20)
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        assert sent[0] == bytes(
+            [0x00, VibradormCommands.VRT_SETTINGS, 0, 1, 0, 0, 0, 0, 0, 20]
+        )
+
+    async def test_massage_mode_step_cycles_effect(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """massage_mode_step should increment the effect id (wraps at 5)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        controller._massage_on = True
+        controller._massage_effect = 4
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.massage_mode_step()
+
+        sent = [call.args[1] for call in mock_client.write_gatt_char.call_args_list]
+        # effect wraps from 4 -> 0.
+        assert sent[0] == bytes(
+            [0x00, VibradormCommands.VRT_SETTINGS, 0, 1, 0, 0, 0, 0, 0, 0]
+        )
+
+
+class TestVibradormLight:
+    """Test floor light level + timer command framing."""
+
+    async def test_set_light_level_sends_level_to_light_char(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_light_level writes [level, 0, timer] to the LIGHT characteristic."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_level(5)
+
+        calls = mock_client.write_gatt_char.call_args_list
+        char_uuid = str(calls[0].args[0]).lower()
+        assert char_uuid == VIBRADORM_LIGHT_CHAR_UUID
+        assert calls[0].args[1] == bytes([5, 0, 0])
+
+    async def test_set_light_level_clamps_to_8(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Levels above 8 should be clamped to the VMAT maximum."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_light_level(42)
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes([8, 0, 0])
+
+    async def test_set_light_level_zero_turns_off(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Level 0 turns the floor light off."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.set_light_level(0)
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes([0, 0, 0])
+        assert controller.get_light_state()["is_on"] is False
+
+    async def test_set_light_timer_resends_with_timer_byte(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_light_timer stores the timer and re-sends the light command with it."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await controller.set_light_timer("20 min")
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes([0, 0, 20])
+        assert controller.get_light_state()["light_timer_option"] == "20 min"
+
+    async def test_lights_on_defaults_to_full_when_no_level(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """lights_on with no stored level uses full brightness (8)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.lights_on()
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes([8, 0, 0])
+
+
+class TestVibradormSync:
+    """Test sync mode command framing."""
+
+    async def test_set_synchro_on_sends_sync_on(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_synchro(True) sends SYNC_ON (0x18) to the command characteristic."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_synchro(True)
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes(
+            [VibradormCommands.SYNC_ON]
+        )
+
+    async def test_set_synchro_off_sends_sync_off(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_synchro(False) sends SYNC_OFF (0x19)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_synchro(False)
+
+        assert mock_client.write_gatt_char.call_args_list[0].args[1] == bytes(
+            [VibradormCommands.SYNC_OFF]
+        )
+
+
+class TestVibradormMoodLight:
+    """Test RGB mood light command framing."""
+
+    async def test_set_mood_light_color_sends_rgb(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_mood_light_color sends [0x01, 0x00, R, G, B] on CBI cmd 0x77."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_mood_light_color((255, 0, 128))
+
+        sent = mock_client.write_gatt_char.call_args_list[0].args[1]
+        # toggle=0 -> [0x00, 0x77, 0x01, 0x00, 0xFF, 0x00, 0x80]
+        assert sent == bytes([0x00, VibradormCommands.MOOD_COLOR, 0x01, 0x00, 0xFF, 0x00, 0x80])
+
+    async def test_mood_light_toggle_sends_xtbox_bus_code(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """mood_light_toggle uses cmd 0x1077 (always XT-box bus, per APK)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.mood_light_toggle()
+
+        sent = mock_client.write_gatt_char.call_args_list[0].args[1]
+        # toggle=0 -> 0x1077 -> [0x10, 0x77]
+        assert sent == bytes([0x10, 0x77])
+
+    async def test_set_mood_light_speed_sends_wire_value(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+        mock_coordinator_connected,
+    ):
+        """set_mood_light_speed maps UI speed to wire value 20 - speed*2."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        await coordinator.async_connect()
+        mock_client = coordinator._client
+        mock_client.write_gatt_char.reset_mock()
+
+        await coordinator.controller.set_mood_light_speed(3)
+
+        sent = mock_client.write_gatt_char.call_args_list[0].args[1]
+        # speed 3 -> wire 20 - 6 = 14 (0x0E)
+        assert sent == bytes([0x00, VibradormCommands.MOOD_COLOR, 0x09, 0x0E])
+
+
+class TestVibradormNotificationFlags:
+    """Test notification flag + status-byte parsing."""
+
+    def test_init_requested_flag_forwarded(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """The 0x10 flag should surface init_requested in controller state."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+        controller._notify_callback = lambda *_: None
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0x3F, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert coordinator.controller_state.get("init_requested") is True
+
+    def test_sync_active_flag_forwarded(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """The 0x40 flag should surface sync_active in controller state."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+        controller._notify_callback = lambda *_: None
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x3F, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        )
+
+        assert coordinator.controller_state.get("sync_active") is True
+
+    def test_store_completed_status_flag_forwarded(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """A 0x0E byte in a non-position notification surfaces memory_store_completed."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+        controller._notify_callback = lambda *_: None
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0xEF, 0x0E]),
+        )
+
+        assert coordinator.controller_state.get("memory_store_completed") is True
+
+    def test_link_failure_status_flag_forwarded(
+        self,
+        hass: HomeAssistant,
+        mock_vibradorm_config_entry,
+    ) -> None:
+        """A 0x79 byte surfaces link_failure in controller state."""
+        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
+        controller = VibradormController(coordinator)
+        controller._notify_callback = lambda *_: None
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x20, 0xEF, 0x79]),
+        )
+
+        assert coordinator.controller_state.get("link_failure") is True

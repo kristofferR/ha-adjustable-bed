@@ -119,8 +119,42 @@ class VibradormCommands:
     MEMORY_6: int = 0x1C  # 28
     STORE: int = 0x0D  # 13 (save current position to active memory slot)
 
+    # Sync mode (head + foot move together)
+    SYNC_ON: int = 0x18  # 24
+    SYNC_OFF: int = 0x19  # 25
+
+    # CBI framed command codes (16-bit, written to CBI 0x1550 with toggle bit).
+    # VMAT-basic variants use the plain code; XT-box accessories OR in CBI_BUS_MASK.
+    CBI_BUS_MASK: int = 0x1000
+
     # Vibration/massage commands (via CBI characteristic)
-    VRT_ON_OFF: int = 0x34  # Toggle vibration on/off
+    VRT_ON_OFF: int = 0x34  # 52 — CmdVRTOnOff (vmat)
+    VRT_SETTINGS: int = 0x30  # 48 — CmdVRT effect/speed/intensity/timer (vmat)
+
+    # Floor / night light via CBI (vmat code; XT-box adds CBI_BUS_MASK)
+    LIGHT_CBI: int = 0x11  # 17 — CmdLightCBI / CmdMotorVMAT CMD_DIM
+
+    # RGB mood light via CBI (vmat code; XT-box adds CBI_BUS_MASK)
+    MOOD_COLOR: int = 0x77  # 119 — CmdMoodColor / CmdMoodEffect / CmdEffectSpeed
+
+    # Status request (CmdGetStatusMotMon)
+    GET_STATUS: int = 0x3D  # 61
+
+    # Notification status flags (byte-scanned from index 2 on CBI_RESPONSE)
+    STATUS_ED_ACTIVE: int = 0xC9  # 201 — "ED active"
+    STATUS_STORE_COMPLETED: int = 0x0E  # 14 — memory store completed
+    STATUS_LINK_FAILURE: int = 0x79  # 121 — link failure
+
+    # Motor-data notification flags (byte 2 of the position packet)
+    FLAG_INIT_REQUESTED: int = 0x10  # controller needs a teach/limit run
+    FLAG_SYNC_ACTIVE: int = 0x40  # sync mode active
+
+    # Floor light level range (MC.setFloorLightLevel clamps 0-8)
+    FLOOR_LIGHT_LEVEL_MAX: int = 8
+
+    # Massage ranges (MassageSettings)
+    MASSAGE_INTENSITY_MAX: int = 5  # intensity zones 0-5 (0 = zone off)
+    MASSAGE_SPEED_MAX: int = 5  # speed 1-5
 
 
 class VibradormController(BedController):
@@ -151,6 +185,28 @@ class VibradormController(BedController):
         self._has_notify_characteristic: bool = True
         self._has_cbi_characteristic: bool = True
         self._warned_missing_cbi: bool = False
+
+        # Floor light state (CmdLightVMAT path: [level, 0, timerMinutes]).
+        self._light_level: int = 0  # 0-8, 0 = off
+        self._light_timer_minutes: int = 0  # 0 = no auto-off timer
+
+        # VRT massage state (CmdVRT packet: effect, speed, zone1, zone2, timer).
+        # zone1 = head, zone2 = foot; intensity 0-5 (0 = zone off); speed 1-5.
+        self._massage_effect: int = 0
+        self._massage_speed: int = 1
+        self._massage_head_intensity: int = 0
+        self._massage_foot_intensity: int = 0
+        self._massage_timer_minutes: int = 0  # 0 = off
+
+        # RGB mood light state (CmdMoodColor/Effect/EffectSpeed on CBI 0x77).
+        self._mood_light_on: bool = False
+        self._mood_light_rgb: tuple[int, int, int] = (255, 255, 255)
+        self._mood_light_effect: int = 0
+        self._mood_light_speed: int = 3  # internal UI speed 1-5
+
+        # Notification status flags surfaced from CBI_RESPONSE.
+        self._init_requested: bool = False
+        self._sync_active: bool = False
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -503,6 +559,106 @@ class VibradormController(BedController):
         """Return True - Vibradorm beds have separate on/off light commands."""
         return True
 
+    @property
+    def supports_light_level_control(self) -> bool:
+        """Return True - floor light brightness is settable (level 0-8)."""
+        return True
+
+    @property
+    def light_level_max(self) -> int:
+        """Return max floor light level (MC.setFloorLightLevel clamps 0-8)."""
+        return VibradormCommands.FLOOR_LIGHT_LEVEL_MAX
+
+    @property
+    def supports_light_timer(self) -> bool:
+        """Return True - floor light supports an auto-off timer (minutes)."""
+        return True
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        """Return available floor light timer options."""
+        return ["Off", "10 min", "20 min", "30 min", "60 min"]
+
+    @property
+    def supports_synchro(self) -> bool:
+        """Return True - Vibradorm exposes sync on/off (head + foot move together)."""
+        return True
+
+    @property
+    def supports_massage(self) -> bool:
+        """Return True - Vibradorm beds support vibration/massage (VRT) commands."""
+        return True
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        """Return True - VRT intensity is settable per zone (head/foot, 0-5)."""
+        return True
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Return the VRT intensity zones (zone1=head, zone2=foot)."""
+        return ["head", "foot"]
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return max VRT intensity per zone (0-5, 0 = zone off)."""
+        return VibradormCommands.MASSAGE_INTENSITY_MAX
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        """Return True - VRT supports a massage timer (minutes)."""
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """Return available VRT timer durations in minutes."""
+        return [10, 20, 30]
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        """Return True - VRT effect can be cycled via massage_mode_step."""
+        return True
+
+    @property
+    def supports_head_massage_toggle_control(self) -> bool:
+        """Return True - VRT head zone (zone1) can be toggled on/off."""
+        return True
+
+    @property
+    def supports_foot_massage_toggle_control(self) -> bool:
+        """Return True - VRT foot zone (zone2) can be toggled on/off."""
+        return True
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        """Return True - VRT head zone intensity can be stepped up/down."""
+        return True
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        """Return True - VRT foot zone intensity can be stepped up/down."""
+        return True
+
+    @property
+    def supports_mood_light(self) -> bool:
+        """Return True - Vibradorm exposes an RGB mood light (CBI 0x77)."""
+        return True
+
+    @property
+    def mood_light_effect_list(self) -> list[str]:
+        """Return the RGB mood light effect names (selectable via light.effect)."""
+        return ["Static", "Effect 1", "Effect 2", "Effect 3", "Effect 4"]
+
+    @property
+    def mood_light_speed_max(self) -> int:
+        """Return max mood light effect speed (1-5)."""
+        return VibradormCommands.MASSAGE_SPEED_MAX
+
+    @property
+    def supports_mood_light_speed_control(self) -> bool:
+        """Return True - mood light effect speed is settable (1-5)."""
+        return True
+
     async def write_command(
         self,
         command: bytes,
@@ -698,6 +854,51 @@ class VibradormController(BedController):
         max_angle = self._coordinator.get_max_angle(motor)
         return round((percent / 100.0) * max_angle, 1)
 
+    def _handle_motor_data_flags(self, flags: int) -> None:
+        """Process XMCMotorData flags (byte 2 of the position packet)."""
+        init_requested = bool(flags & VibradormCommands.FLAG_INIT_REQUESTED)
+        sync_active = bool(flags & VibradormCommands.FLAG_SYNC_ACTIVE)
+        updates: dict[str, Any] = {}
+
+        if init_requested != self._init_requested:
+            self._init_requested = init_requested
+            updates["init_requested"] = init_requested
+            if init_requested:
+                _LOGGER.warning(
+                    "Vibradorm %s reports init requested (0x10): positions may be "
+                    "unreliable until a teach/limit run completes",
+                    self._coordinator.address,
+                )
+        if sync_active != self._sync_active:
+            self._sync_active = sync_active
+            updates["sync_active"] = sync_active
+        if updates:
+            self.forward_controller_state_updates(updates)
+
+    def _scan_status_flags(self, data: bytearray) -> None:
+        """Scan a non-position notification for known status flag bytes.
+
+        The app byte-scans from index 2 for: 0xC9 (ED active),
+        0x0E (memory store completed), 0x79 (link failure).
+        """
+        for byte in data[2:]:
+            value = byte & 0xFF
+            if value == VibradormCommands.STATUS_STORE_COMPLETED:
+                _LOGGER.info(
+                    "Vibradorm %s: memory store completed (0x0E)", self._coordinator.address
+                )
+                self.forward_controller_state_update("memory_store_completed", True)
+            elif value == VibradormCommands.STATUS_ED_ACTIVE:
+                _LOGGER.info(
+                    "Vibradorm %s: ED active (0xC9)", self._coordinator.address
+                )
+                self.forward_controller_state_update("ed_active", True)
+            elif value == VibradormCommands.STATUS_LINK_FAILURE:
+                _LOGGER.warning(
+                    "Vibradorm %s: link failure (0x79)", self._coordinator.address
+                )
+                self.forward_controller_state_update("link_failure", True)
+
     def _handle_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle BLE notification data.
 
@@ -730,6 +931,7 @@ class VibradormController(BedController):
                     data.hex(),
                     data[1],
                 )
+                self._scan_status_flags(data)
                 return
             if len(data) < 7:
                 _LOGGER.debug(
@@ -754,7 +956,12 @@ class VibradormController(BedController):
                 data.hex(),
                 data[0],
             )
+            self._scan_status_flags(data)
             return
+
+        # Flags byte sits immediately before the motor positions (XMCMotorData).
+        flags = data[payload_offset - 1] & 0xFF
+        self._handle_motor_data_flags(flags)
 
         # Parse motor positions as big-endian uint16 values.
         back_raw = int.from_bytes(data[payload_offset : payload_offset + 2], byteorder="big")
@@ -1103,52 +1310,162 @@ class VibradormController(BedController):
         _LOGGER.info("Saved position to memory slot %d", memory_num)
 
     # Light methods
-    async def lights_on(self) -> None:
-        """Turn on lights."""
-        # Light command format: [level, 0, timer]
-        # level > 0 turns on, level = 0 turns off
+    async def _send_floor_light_command(self, level: int, timer_minutes: int) -> None:
+        """Send a VMAT floor-light command to the LIGHT characteristic.
+
+        CmdLightVMAT format: ``[level, 0x00, timerMinutes]`` written to 0x1529.
+        Level is clamped to 0-8 (MC.setFloorLightLevel); 0 turns the light off.
+        """
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
+        clamped_level = max(
+            0, min(level, VibradormCommands.FLOOR_LIGHT_LEVEL_MAX)
+        )
         self._refresh_characteristics()
-        try:
-            await self._write_gatt_with_retry(
-                self._light_char_uuid,
-                bytes([0xFF, 0x00, 0x00]),  # Full brightness, no timer
-                response=self._write_with_response,
-            )
-            self._lights_on = True
-            _LOGGER.debug("Vibradorm lights turned on")
-        except BleakError as err:
-            _LOGGER.warning("Failed to turn on lights: %s", err)
-            raise
+        await self._write_gatt_with_retry(
+            self._light_char_uuid,
+            bytes([clamped_level, 0x00, timer_minutes & 0xFF]),
+            response=self._write_with_response,
+        )
+
+    async def lights_on(self) -> None:
+        """Turn on the floor light at the last non-zero level (or full)."""
+        level = self._light_level if self._light_level > 0 else VibradormCommands.FLOOR_LIGHT_LEVEL_MAX
+        await self._send_floor_light_command(level, self._light_timer_minutes)
+        self._light_level = level
+        self._lights_on = True
+        self._publish_light_state()
+        _LOGGER.debug("Vibradorm floor light turned on (level=%d)", level)
 
     async def lights_off(self) -> None:
-        """Turn off lights."""
-        if self.client is None or not self.client.is_connected:
-            raise ConnectionError("Not connected to bed")
-
-        self._refresh_characteristics()
-        try:
-            await self._write_gatt_with_retry(
-                self._light_char_uuid,
-                bytes([0x00, 0x00, 0x00]),  # Off
-                response=self._write_with_response,
-            )
-            self._lights_on = False
-            _LOGGER.debug("Vibradorm lights turned off")
-        except BleakError as err:
-            _LOGGER.warning("Failed to turn off lights: %s", err)
-            raise
+        """Turn off the floor light (remember the last level for re-on)."""
+        await self._send_floor_light_command(0, self._light_timer_minutes)
+        self._lights_on = False
+        self._publish_light_state()
+        _LOGGER.debug("Vibradorm floor light turned off")
 
     async def lights_toggle(self) -> None:
-        """Toggle lights."""
+        """Toggle the floor light."""
         if self._lights_on:
             await self.lights_off()
         else:
             await self.lights_on()
 
+    async def set_light_level(self, level: int) -> None:
+        """Set floor light brightness (0-8; 0 turns off).
+
+        Args:
+            level: Brightness level 0 to light_level_max (0 = off)
+        """
+        clamped = max(0, min(level, VibradormCommands.FLOOR_LIGHT_LEVEL_MAX))
+        await self._send_floor_light_command(clamped, self._light_timer_minutes)
+        self._light_level = clamped
+        self._lights_on = clamped > 0
+        self._publish_light_state()
+        _LOGGER.debug("Vibradorm floor light level set to %d", clamped)
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        """Set the floor light auto-off timer.
+
+        Args:
+            timer_option: One of light_timer_options ("Off", "10 min", ...)
+        """
+        minutes = self._parse_timer_option(timer_option)
+        self._light_timer_minutes = minutes
+        # Re-send the current light state so the new timer takes effect.
+        await self._send_floor_light_command(
+            self._light_level if self._lights_on else 0, minutes
+        )
+        self._publish_light_state()
+        _LOGGER.debug("Vibradorm floor light timer set to %d min", minutes)
+
+    @staticmethod
+    def _parse_timer_option(timer_option: str) -> int:
+        """Parse a light_timer_options string into minutes (0 = off)."""
+        if not timer_option or timer_option.lower() == "off":
+            return 0
+        try:
+            return int(timer_option.split()[0])
+        except (ValueError, IndexError):
+            return 0
+
+    def _publish_light_state(self) -> None:
+        """Publish the current floor light state to the coordinator."""
+        self.forward_controller_state_updates(
+            {
+                "light_level": self._light_level,
+                "light_timer_option": self._timer_minutes_to_option(
+                    self._light_timer_minutes
+                ),
+                "under_bed_lights_on": self._lights_on,
+            }
+        )
+
+    @staticmethod
+    def _timer_minutes_to_option(minutes: int) -> str:
+        """Convert a timer in minutes to a light_timer_options string."""
+        if minutes <= 0:
+            return "Off"
+        return f"{minutes} min"
+
+    def get_light_state(self) -> dict[str, Any]:
+        """Return the current floor light state."""
+        return {
+            "is_on": self._lights_on,
+            "light_level": self._light_level,
+            "light_timer_option": self._timer_minutes_to_option(
+                self._light_timer_minutes
+            ),
+            "light_timer_minutes": self._light_timer_minutes,
+        }
+
+    # Sync mode
+    async def set_synchro(self, enabled: bool) -> None:
+        """Enable or disable synchronized head+foot movement (SYNC_ON/OFF)."""
+        cmd = VibradormCommands.SYNC_ON if enabled else VibradormCommands.SYNC_OFF
+        _LOGGER.debug("Setting Vibradorm sync mode: %s (cmd=0x%02X)", enabled, cmd)
+        await self._write_motor_command(
+            cmd,
+            repeat_count=1,
+            cancel_event=asyncio.Event(),
+        )
+        self._sync_active = enabled
+        self.forward_controller_state_updates(
+            {"sync_active": enabled}
+        )
+
     # Massage/vibration methods (via CBI characteristic)
+    async def _send_vrt_settings(self) -> None:
+        """Send the full VRT settings packet (CmdVRT).
+
+        Format: ``[msb(toggle|0x30), lsb, effect, speed, zone1, zone2, 0, 0, 0, timer]``
+        where zone1=head, zone2=foot, intensity 0-5 (0 = zone off), speed 1-5.
+        """
+        payload = bytes(
+            [
+                self._massage_effect & 0xFF,
+                self._massage_speed & 0xFF,
+                self._massage_head_intensity & 0xFF,
+                self._massage_foot_intensity & 0xFF,
+                0,
+                0,
+                0,
+                self._massage_timer_minutes & 0xFF,
+            ]
+        )
+        await self._write_cbi_command(VibradormCommands.VRT_SETTINGS, extra_bytes=payload)
+        self._publish_massage_state()
+
+    def _publish_massage_state(self) -> None:
+        """Publish the current massage state to listening entities."""
+        self.forward_controller_state_updates(
+            {
+                "massage_head_intensity": self._massage_head_intensity,
+                "massage_foot_intensity": self._massage_foot_intensity,
+            }
+        )
+
     async def massage_toggle(self) -> None:
         """Toggle vibration on/off via 3-byte CBI command.
 
@@ -1158,6 +1475,218 @@ class VibradormController(BedController):
         if self.client is None or not self.client.is_connected:
             raise ConnectionError("Not connected to bed")
 
-        self._massage_on = not getattr(self, "_massage_on", False)
+        self._massage_on = not self._massage_on
         on_off = b"\x01" if self._massage_on else b"\x00"
         await self._write_cbi_command(VibradormCommands.VRT_ON_OFF, extra_bytes=on_off)
+        if self._massage_on and self._massage_head_intensity == 0 and self._massage_foot_intensity == 0:
+            # Turning on with both zones off would do nothing; enable both at a
+            # sensible default so the user feels the vibration immediately.
+            self._massage_head_intensity = 3
+            self._massage_foot_intensity = 3
+            await self._send_vrt_settings()
+        self._publish_massage_state()
+
+    async def massage_off(self) -> None:
+        """Turn off all vibration: send VRT off and clear both zones."""
+        if self.client is None or not self.client.is_connected:
+            raise ConnectionError("Not connected to bed")
+
+        self._massage_on = False
+        self._massage_head_intensity = 0
+        self._massage_foot_intensity = 0
+        await self._write_cbi_command(VibradormCommands.VRT_ON_OFF, extra_bytes=b"\x00")
+        await self._send_vrt_settings()
+        self._publish_massage_state()
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set VRT intensity for a zone (head/foot, 0-5; 0 = zone off).
+
+        Args:
+            zone: Massage zone ("head" = zone1, "foot" = zone2)
+            level: Intensity level 0 to massage_intensity_max
+        """
+        clamped = max(0, min(level, VibradormCommands.MASSAGE_INTENSITY_MAX))
+        if zone == "head":
+            self._massage_head_intensity = clamped
+        elif zone == "foot":
+            self._massage_foot_intensity = clamped
+        else:
+            _LOGGER.warning("Unknown VRT zone: %s", zone)
+            return
+
+        # Applying a non-zero intensity implies massage on.
+        if clamped > 0 and not self._massage_on:
+            self._massage_on = True
+            await self._write_cbi_command(
+                VibradormCommands.VRT_ON_OFF, extra_bytes=b"\x01"
+            )
+        await self._send_vrt_settings()
+        if clamped == 0 and self._massage_head_intensity == 0 and self._massage_foot_intensity == 0:
+            self._massage_on = False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Set the VRT massage timer (minutes; 0 = off)."""
+        self._massage_timer_minutes = max(0, int(minutes))
+        await self._send_vrt_settings()
+
+    async def massage_head_toggle(self) -> None:
+        """Toggle the head (zone1) vibration on/off."""
+        if self._massage_head_intensity > 0:
+            self._massage_head_intensity = 0
+        else:
+            self._massage_head_intensity = 3
+        self._massage_on = (
+            self._massage_head_intensity > 0 or self._massage_foot_intensity > 0
+        )
+        await self._write_cbi_command(
+            VibradormCommands.VRT_ON_OFF,
+            extra_bytes=b"\x01" if self._massage_on else b"\x00",
+        )
+        await self._send_vrt_settings()
+
+    async def massage_foot_toggle(self) -> None:
+        """Toggle the foot (zone2) vibration on/off."""
+        if self._massage_foot_intensity > 0:
+            self._massage_foot_intensity = 0
+        else:
+            self._massage_foot_intensity = 3
+        self._massage_on = (
+            self._massage_head_intensity > 0 or self._massage_foot_intensity > 0
+        )
+        await self._write_cbi_command(
+            VibradormCommands.VRT_ON_OFF,
+            extra_bytes=b"\x01" if self._massage_on else b"\x00",
+        )
+        await self._send_vrt_settings()
+
+    async def massage_head_up(self) -> None:
+        """Increase head (zone1) vibration intensity (max 5)."""
+        if self._massage_head_intensity < VibradormCommands.MASSAGE_INTENSITY_MAX:
+            self._massage_head_intensity += 1
+            self._massage_on = True
+            await self._send_vrt_settings()
+
+    async def massage_head_down(self) -> None:
+        """Decrease head (zone1) vibration intensity (min 0)."""
+        if self._massage_head_intensity > 0:
+            self._massage_head_intensity -= 1
+            await self._send_vrt_settings()
+            if self._massage_head_intensity == 0 and self._massage_foot_intensity == 0:
+                self._massage_on = False
+
+    async def massage_foot_up(self) -> None:
+        """Increase foot (zone2) vibration intensity (max 5)."""
+        if self._massage_foot_intensity < VibradormCommands.MASSAGE_INTENSITY_MAX:
+            self._massage_foot_intensity += 1
+            self._massage_on = True
+            await self._send_vrt_settings()
+
+    async def massage_foot_down(self) -> None:
+        """Decrease foot (zone2) vibration intensity (min 0)."""
+        if self._massage_foot_intensity > 0:
+            self._massage_foot_intensity -= 1
+            await self._send_vrt_settings()
+            if self._massage_head_intensity == 0 and self._massage_foot_intensity == 0:
+                self._massage_on = False
+
+    async def massage_mode_step(self) -> None:
+        """Cycle the VRT effect (small effect id range, wraps to 0)."""
+        self._massage_effect = (self._massage_effect + 1) % 5
+        await self._send_vrt_settings()
+
+    def get_massage_state(self) -> dict[str, Any]:
+        """Return the current VRT massage state."""
+        return {
+            "head_intensity": self._massage_head_intensity,
+            "foot_intensity": self._massage_foot_intensity,
+            "head_active": self._massage_head_intensity > 0,
+            "foot_active": self._massage_foot_intensity > 0,
+            "timer_mode": str(self._massage_timer_minutes) if self._massage_timer_minutes else None,
+        }
+
+    # RGB mood light methods (via CBI characteristic, cmd 0x77)
+    async def _send_mood_color(self, rgb: tuple[int, int, int]) -> None:
+        """Send CmdMoodColor: ``[msb(toggle|0x77), lsb, 0x01, 0x00, R, G, B]``."""
+        r, g, b = rgb
+        payload = bytes([0x01, 0x00, r & 0xFF, g & 0xFF, b & 0xFF])
+        await self._write_cbi_command(VibradormCommands.MOOD_COLOR, extra_bytes=payload)
+
+    async def _send_mood_effect(self, effect_id: int) -> None:
+        """Send CmdMoodEffect: ``[msb(toggle|0x77), lsb, 0x08, effect]``."""
+        await self._write_cbi_command(
+            VibradormCommands.MOOD_COLOR, extra_bytes=bytes([0x08, effect_id & 0xFF])
+        )
+
+    async def _send_mood_speed(self, ui_speed: int) -> None:
+        """Send CmdEffectSpeed: ``[msb(toggle|0x77), lsb, 0x09, speed]``.
+
+        APK maps UI speed (1-5) to wire value ``20 - (uiSpeed * 2)``.
+        """
+        wire = 20 - (max(1, min(5, ui_speed)) * 2)
+        await self._write_cbi_command(
+            VibradormCommands.MOOD_COLOR, extra_bytes=bytes([0x09, wire & 0xFF])
+        )
+
+    async def mood_light_toggle(self) -> None:
+        """Toggle the RGB mood light on/off (CmdMoodLightToggle, cmd 0x1077)."""
+        self._mood_light_on = not self._mood_light_on
+        toggle = 0x1077  # APK CmdMoodLightToggle always uses the XT-box bus code.
+        value = toggle | (0x8000 if self._cbi_toggle else 0x0000)
+        data = value.to_bytes(2, byteorder="big")
+        _LOGGER.debug(
+            "Writing mood light toggle: 0x%04X (toggle=%s)", value, self._cbi_toggle
+        )
+        self._refresh_characteristics()
+        await self._write_gatt_with_retry(
+            self._cbi_char_uuid, data, response=self._write_with_response
+        )
+        self._cbi_toggle = not self._cbi_toggle
+        self._publish_mood_light_state()
+
+    async def set_mood_light_color(self, rgb_color: tuple[int, int, int]) -> None:
+        """Set the RGB mood light color (turns it on)."""
+        self._mood_light_rgb = rgb_color
+        self._mood_light_on = True
+        await self._send_mood_color(rgb_color)
+        self._publish_mood_light_state()
+
+    async def set_mood_light_effect(self, effect_name: str) -> None:
+        """Set the RGB mood light effect by name (from mood_light_effect_list)."""
+        effects = self.mood_light_effect_list
+        try:
+            effect_id = effects.index(effect_name)
+        except ValueError:
+            _LOGGER.warning("Unknown mood light effect: %s", effect_name)
+            return
+        self._mood_light_effect = effect_id
+        self._mood_light_on = True
+        await self._send_mood_effect(effect_id)
+        self._publish_mood_light_state()
+
+    async def set_mood_light_speed(self, speed: int) -> None:
+        """Set the RGB mood light effect speed (1-5)."""
+        self._mood_light_speed = max(1, min(5, int(speed)))
+        await self._send_mood_speed(self._mood_light_speed)
+        self._publish_mood_light_state()
+
+    def _publish_mood_light_state(self) -> None:
+        """Publish the current mood light state to listening entities."""
+        self.forward_controller_state_updates(
+            {
+                "mood_light_on": self._mood_light_on,
+                "mood_light_effect": self.mood_light_effect_list[
+                    self._mood_light_effect % len(self.mood_light_effect_list)
+                ],
+                "mood_light_speed": self._mood_light_speed,
+            }
+        )
+
+    def get_mood_light_state(self) -> dict[str, Any]:
+        """Return the current RGB mood light state."""
+        effects = self.mood_light_effect_list
+        return {
+            "is_on": self._mood_light_on,
+            "rgb_color": self._mood_light_rgb,
+            "effect": effects[self._mood_light_effect % len(effects)],
+            "speed": self._mood_light_speed,
+        }
