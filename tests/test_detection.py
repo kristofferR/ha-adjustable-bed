@@ -1039,6 +1039,71 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_RF_ECO_BT
         )
 
+    def test_shared_okin_gatt_refinement_keeps_okimat_bed_with_okimat_model(self):
+        """A full OKIMAT bed (#406) shares the RF ECO BT CSS signature.
+
+        The Device Info model ``OKIMAT 4 IPS/M`` proves it is a multi-motor bed,
+        so it must keep its profile instead of being downgraded to the single
+        actuator stair profile (issue #406).
+        """
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_OKIMAT,
+                gatt_services,
+                ble_model="OKIMAT 4 IPS/M",
+            )
+            == BED_TYPE_OKIMAT
+        )
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_OKIN_UUID,
+                gatt_services,
+                ble_model="OKIMAT 4 IPS/M",
+            )
+            == BED_TYPE_OKIN_UUID
+        )
+
+    def test_shared_okin_gatt_refinement_downgrades_non_okimat_model_to_rf_eco_bt(self):
+        """The ELDA stair (#344, ``MEGAMAT MBZ``) keeps the RF ECO BT downgrade."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_OKIMAT,
+                gatt_services,
+                ble_model="MEGAMAT MBZ",
+            )
+            == BED_TYPE_OKIN_RF_ECO_BT
+        )
+
     def test_shared_okin_gatt_refinement_preserves_explicit_cst_without_dfu(self):
         """A manually selected CST entry should not require DFU to remain CST."""
         gatt_services = [

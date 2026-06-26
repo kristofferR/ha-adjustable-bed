@@ -1579,6 +1579,7 @@ class AdjustableBedCoordinator:
                     corrected_bed_type,
                     self._client.services,
                     self._protocol_variant,
+                    ble_model,
                 )
                 corrected_bed_type = refine_nordic_uart_protocol_from_device_info(
                     corrected_bed_type,
