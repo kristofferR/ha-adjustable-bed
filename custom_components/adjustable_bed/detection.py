@@ -619,6 +619,18 @@ def refine_okin_shared_uuid_protocol_from_gatt(
             # the bare signature is not enough to downgrade to the single-actuator
             # stair profile. The Device Info model proves this is a multi-motor
             # bed (issue #406), so keep its detected profile.
+            if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
+                # Installations that connected with the old logic already
+                # persisted CONF_BED_TYPE as the single-actuator stair profile.
+                # Recover them to a multi-motor OKIN profile now that the model
+                # proves this is an OKIMAT bed, otherwise the entry stays stuck
+                # exposing only the back/stair actuator (issue #406).
+                _LOGGER.info(
+                    "Recovered OKIMAT bed model %r from persisted RF ECO BT profile to %s",
+                    ble_model,
+                    BED_TYPE_OKIN_UUID,
+                )
+                return BED_TYPE_OKIN_UUID
             _LOGGER.debug(
                 "Keeping %s profile for OKIMAT bed model %r despite RF ECO BT GATT signature",
                 bed_type,
