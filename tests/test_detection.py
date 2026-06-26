@@ -1109,6 +1109,64 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_UUID
         )
 
+    def test_shared_okin_gatt_refinement_promotes_incompatible_profile_for_okimat_model(self):
+        """An incompatible shared-UUID guess is promoted when the model is OKIMAT.
+
+        Nectar / OKIN 7-byte / Leggett OKIN drive different frame formats, so an
+        OKIMAT bed saved as one of them must be promoted to okin_uuid rather than
+        left on the wrong controller (#406).
+        """
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        for stale_type in (BED_TYPE_NECTAR, BED_TYPE_OKIN_7BYTE):
+            assert (
+                refine_okin_shared_uuid_protocol_from_gatt(
+                    stale_type,
+                    gatt_services,
+                    ble_model="OKIMAT 4 IPS/M",
+                )
+                == BED_TYPE_OKIN_UUID
+            )
+
+    def test_shared_okin_gatt_refinement_keeps_cst_for_okimat_model(self):
+        """An explicit OKIN CST entry is preserved even with an OKIMAT model."""
+        gatt_services = [
+            SimpleNamespace(
+                uuid=OKIMAT_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIMAT_WRITE_CHAR_UUID),
+                ],
+            ),
+            SimpleNamespace(
+                uuid=OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
+                characteristics=[
+                    SimpleNamespace(uuid=OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID),
+                ],
+            ),
+        ]
+
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_OKIN_CST,
+                gatt_services,
+                ble_model="OKIMAT 4 IPS/M",
+            )
+            == BED_TYPE_OKIN_CST
+        )
+
     def test_shared_okin_gatt_refinement_keeps_persisted_rf_eco_bt_non_okimat(self):
         """A genuine RF ECO BT stair (non-OKIMAT model) stays on its profile."""
         gatt_services = [
