@@ -1141,6 +1141,18 @@ class TestOkinUUIDDisambiguation:
                 == BED_TYPE_OKIN_UUID
             )
 
+        # The legacy Leggett/OKIN variant takes its own entry path into the
+        # refiner and must promote to okin_uuid too.
+        assert (
+            refine_okin_shared_uuid_protocol_from_gatt(
+                BED_TYPE_LEGGETT_PLATT,
+                gatt_services,
+                LEGGETT_VARIANT_OKIN,
+                ble_model="OKIMAT 4 IPS/M",
+            )
+            == BED_TYPE_OKIN_UUID
+        )
+
     def test_shared_okin_gatt_refinement_keeps_cst_for_okimat_model(self):
         """An explicit OKIN CST entry is preserved even with an OKIMAT model."""
         gatt_services = [
