@@ -187,6 +187,18 @@ OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     }
 )
 
+# Shared-UUID profiles that already drive an OKIMAT bed acceptably, so a connected
+# OKIMAT Device Info model must not rewrite them. BED_TYPE_OKIMAT and
+# BED_TYPE_OKIN_UUID resolve to the same controller; BED_TYPE_OKIN_CST is its own
+# deliberately preserved full-bed profile (see refine_okin_shared_uuid_protocol_from_gatt).
+OKIMAT_COMPATIBLE_PROFILES: frozenset[str] = frozenset(
+    {
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIN_CST,
+    }
+)
+
 NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 
 # Manufacturer ID 89 is Nordic Semiconductor's company ID (0x0059), shared by many
@@ -588,10 +600,22 @@ def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
     return bed_type
 
 
+def _is_okimat_bed_model(ble_model: str | None) -> bool:
+    """Return True when Device Info identifies a multi-motor OKIMAT bed actuator.
+
+    OKIMAT bed actuators (e.g. ``OKIMAT 4 IPS/M`` from issue #406) expose the same
+    OKIN write + Smart-Remote-CSS GATT signature as the ELDA single-actuator stair
+    (issue #344, ``MEGAMAT MBZ``). The connected Device Information model is the
+    only reliable way to tell a full bed apart from the niche stair profile.
+    """
+    return "okimat" in (ble_model or "").strip().lower()
+
+
 def refine_okin_shared_uuid_protocol_from_gatt(
     bed_type: str,
     gatt_services: Any,
     protocol_variant: str | None = None,
+    ble_model: str | None = None,
 ) -> str:
     """Correct shared OKIN UUID profiles once connected GATT services are known."""
     is_leggett_okin_variant = (
@@ -602,6 +626,32 @@ def refine_okin_shared_uuid_protocol_from_gatt(
 
     gatt_detection = detect_bed_type_from_gatt_services(gatt_services)
     if gatt_detection.bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT}:
+        if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT and _is_okimat_bed_model(ble_model):
+            # Full OKIMAT beds share the RF ECO BT stair's CSS GATT signature, so
+            # the bare signature is not enough to pick the single-actuator stair
+            # profile. The Device Info model proves this is a multi-motor OKIMAT
+            # bed (issue #406).
+            if bed_type in OKIMAT_COMPATIBLE_PROFILES:
+                # Already on an OKIMAT-compatible controller; keep the saved label
+                # (BED_TYPE_OKIMAT/OKIN_UUID resolve to the same controller, and
+                # OKIN CST is its own deliberately preserved full-bed profile).
+                _LOGGER.debug(
+                    "Keeping %s profile for OKIMAT bed model %r despite RF ECO BT GATT signature",
+                    bed_type,
+                    ble_model,
+                )
+                return bed_type
+            # Any other shared-UUID guess — a persisted RF ECO BT stair entry, or
+            # an incompatible profile such as Nectar / OKIN 7-byte / Leggett OKIN —
+            # is the wrong controller for an OKIMAT bed. Promote it to the
+            # multi-motor OKIN UUID profile so the bed recovers (issue #406).
+            _LOGGER.info(
+                "Promoted %s to %s for OKIMAT bed model %r despite RF ECO BT GATT signature",
+                bed_type,
+                BED_TYPE_OKIN_UUID,
+                ble_model,
+            )
+            return BED_TYPE_OKIN_UUID
         if bed_type == BED_TYPE_OKIN_CST and gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
             return bed_type
         if gatt_detection.bed_type != bed_type:

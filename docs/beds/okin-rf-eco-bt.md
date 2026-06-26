@@ -41,6 +41,14 @@ If the same device also exposes Nordic DFU service
 `00001530-1212-efde-1523-785feabcd123`, it may be a full bed controller using
 [Okin CST](okin-cst.md), not this single-actuator stair profile.
 
+Full OKIMAT beds expose the **same** OKIN write + CSS GATT signature as this
+stair profile (see [issue #406](https://github.com/kristofferR/ha-adjustable-bed/issues/406),
+an OKIMAT 4 IPS/M Lattoflex bed). The GATT signature alone is therefore not
+enough to choose this single-actuator profile. The auto-refinement only
+downgrades to RF ECO BT when the connected Device Information **model** is not a
+multi-motor OKIMAT bed: the ELDA stair reports `MEGAMAT MBZ`, whereas a real bed
+reports e.g. `OKIMAT 4 IPS/M` and keeps its multi-motor profile.
+
 Generic `OKIN-*` devices remain ambiguous because multiple unrelated OKIN
 protocols use that naming pattern.
 

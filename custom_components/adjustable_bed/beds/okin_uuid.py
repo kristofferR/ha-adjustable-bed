@@ -308,6 +308,17 @@ class OkinUuidController(BedController):
         return OKIMAT_WRITE_CHAR_UUID
 
     @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Remove the single-actuator stair cover when recovering an OKIMAT bed.
+
+        Installs misdetected as the RF ECO BT stair profile registered a
+        ``<address>_stair`` cover. When they are promoted back to this
+        multi-motor profile (issue #406), drop that orphaned stair entity so the
+        registry and Lovelace card no longer expose a dead control.
+        """
+        return frozenset({"stair"})
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return True if this remote supports memory presets."""
         # Check if at least memory_1 is available for this remote variant

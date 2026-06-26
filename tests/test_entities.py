@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -189,6 +190,52 @@ class TestCoverEntities:
 
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_head") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_feet") is None
+
+    async def test_okin_uuid_setup_removes_stale_stair_cover(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Recovering an OKIMAT bed removes the orphaned RF ECO BT stair cover (#406)."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Recovered OKIMAT Bed",
+            data={
+                "address": "AA:BB:CC:DD:EE:46",
+                "name": "Recovered OKIMAT Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:46",
+            entry_id="recovered_okimat_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        # Seed the orphaned stair cover left behind by the old RF ECO BT profile.
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:46_stair",
+            config_entry=entry,
+            suggested_object_id="recovered_okimat_bed_stair",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:46_stair") is None
+        for key in ("back", "legs"):
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:46_{key}")
+                is not None
+            )
 
     async def test_box25_cover_entities_use_box25_layout(
         self,
