@@ -1698,6 +1698,7 @@ class AdjustableBedCoordinator:
                     jensen_pin=self._jensen_pin,
                     cb24_bed_selection=self._cb24_bed_selection,
                     ble_manufacturer=ble_manufacturer,
+                    ble_model=ble_model,
                     manufacturer_data=manufacturer_data,
                 )
                 self._controller_state_refresh_retry_count = 0
