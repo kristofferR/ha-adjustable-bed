@@ -3542,5 +3542,164 @@
    "MassagerWave": "0x04000000"
   },
   "desc": "RF-TOUCH/BRW/BK/23/2126"
+ },
+ "90167": {
+  "code": "90167",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF1058",
+  "flat": "0x08000000",
+  "tilt_down": "0x00000002",
+  "tilt_up": "0x00000001",
+  "feet_down": "0x00000008",
+  "feet_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "memory_save_duration_ms": 5000,
+  "memory_save_frequency_ms": 200,
+  "quiet_sleep": "0x00004000",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00001000",
+  "sections": "Head/Feet",
+  "memory": {
+   "1": "0x00003000",
+   "2": "0x00005000",
+   "3": "0x00006000",
+   "4": "0x00007000"
+  },
+  "massage": {
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00000400",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000100",
+   "MassagerWave": "0x10000000"
+  },
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
+ },
+ "91983": {
+  "code": "91983",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF1058 (91983) with CU458-2 (92264) and/or HE200 (90168",
+  "flat": "0x08000000",
+  "tilt_down": "0x00000002",
+  "tilt_up": "0x00000001",
+  "feet_down": "0x00000008",
+  "feet_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "memory_save_duration_ms": 5000,
+  "memory_save_frequency_ms": 200,
+  "anti_snore": "0x00004000",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00001000",
+  "sections": "Head/Feet",
+  "memory": {
+   "1": "0x00002000",
+   "2": "0x00008000",
+   "3": "0x00003000"
+  },
+  "massage": {
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00000400",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000100",
+   "MassagerWave": "0x10000000"
+  },
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
+ },
+ "93558": {
+  "code": "93558",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF1058",
+  "flat": "0x08000000",
+  "tilt_down": "0x00000002",
+  "tilt_up": "0x00000001",
+  "feet_down": "0x00000008",
+  "feet_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "memory_save_duration_ms": 5000,
+  "memory_save_frequency_ms": 200,
+  "anti_snore": "0x00004000",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00001000",
+  "sections": "Head/Feet",
+  "memory": {
+   "1": "0x00002000",
+   "2": "0x00008000",
+   "3": "0x00003000"
+  },
+  "massage": {
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00000400",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000100",
+   "MassagerWave": "0x10000000"
+  },
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
+ },
+ "97450": {
+  "code": "97450",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF34/09/WH/GY/ M2/S/IP20/M/FL/DOT PROTOCOL",
+  "flat": "0x08000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x0001f000",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl": "0x00020000",
+  "sections": "Back/Legs",
+  "memory": {
+   "1": "0x00010000",
+   "2": "0x00040000"
+  },
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
+ },
+ "97544": {
+  "code": "97544",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF34/09/BK/BK/ M2/S/IP20/M/FL/DOT PROTOCOL",
+  "flat": "0x08000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl": "0x00020000",
+  "sections": "Back/Legs",
+  "memory": {
+   "1": "0x00010000",
+   "2": "0x00040000"
+  },
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
+ },
+ "98035": {
+  "code": "98035",
+  "source": "backend",
+  "protocol": "dot",
+  "desc": "RF6707",
+  "flat": "0x08000000",
+  "tilt_down": "0x00000002",
+  "tilt_up": "0x00000001",
+  "back_down": "0x00000008",
+  "back_up": "0x00000004",
+  "ubl": "0x00020000",
+  "sections": "Head/Back",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100
  }
 }

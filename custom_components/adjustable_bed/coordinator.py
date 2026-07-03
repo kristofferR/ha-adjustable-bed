@@ -144,6 +144,7 @@ from .detection import (
     detect_richmat_remote_from_name,
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
+    refine_okin_dot_protocol_from_gatt,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
 from .diagnostic_payloads import new_connection_attempt_details
@@ -1586,6 +1587,10 @@ class AdjustableBedCoordinator:
                     device.name,
                     ble_manufacturer,
                     ble_model,
+                )
+                corrected_bed_type = refine_okin_dot_protocol_from_gatt(
+                    corrected_bed_type,
+                    self._client.services,
                 )
                 bed_type_corrected = self._apply_runtime_bed_type_correction(corrected_bed_type)
                 if (
