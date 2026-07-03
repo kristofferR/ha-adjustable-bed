@@ -1,8 +1,8 @@
 # Okin UUID remote-code table regeneration
 
 This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid_remotes.py`
-(the per-remote-code keycode table) and the `OKIMAT_VARIANTS` dropdown in
-`const.py`.
+(the per-remote-code keycode table) and the `OKIMAT_VARIANTS` /
+`OKIN_DOT_VARIANTS` dropdowns in `const.py`.
 
 ## Source of truth
 
@@ -50,6 +50,11 @@ uv run build_master.py        # -> master.json
   a live code with the identical capability signature (`csv-inherit:<code>`), or
   are rebuilt from the universal keycode map (`csv-reconstruct`) when no sibling
   exists. The `source` field on each entry records which.
-- **Excluded codes.** `build_master.EXCLUDE` drops "DOT PROTOCOL" / RF1058 /
-  RF34 / RF6707 codes (Flat=0x08000000, re-numbered layout) — they reuse the
-  handset backend but are a different, incompatible command protocol.
+- **DOT codes.** `build_master.DOT_CODES` marks the "DOT PROTOCOL" / RF1058 /
+  RF34 / RF6707 codes (90167, 91983, 93558, 97450, 97544, 98035). They reuse
+  the handset backend but their boxes speak CB24-style 7-byte frames over
+  Nordic UART with a positionally re-numbered motor layout and
+  Flat=0x08000000. They are emitted with `protocol: "dot"` (driving the
+  `okin_dot` bed type and `OKIN_DOT_VARIANTS`) and are kept out of the
+  csv-inherit pool so standard codes never inherit DOT keycodes. See
+  `docs/beds/okin-dot.md`.

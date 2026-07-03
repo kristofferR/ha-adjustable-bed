@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -454,6 +455,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
     BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
+    BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
@@ -678,6 +680,54 @@ def refine_okin_shared_uuid_protocol_from_gatt(
                 ", ".join(gatt_detection.signals),
             )
         return gatt_detection.bed_type
+
+    return bed_type
+
+
+def refine_okin_dot_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
+    """Promote Okimat entries connected to DOT PROTOCOL boxes to okin_dot.
+
+    DOT boxes (RF1058/RF34/RF6707 handsets) are CB24-family receivers: they
+    expose the Nordic UART write characteristic and no Okin 62741523 service.
+    An Okimat/Okin UUID entry pointed at such a box can never work over the
+    Okimat transport, so persist the corrected bed type — this also drops the
+    pairing requirement, which DOT boxes don't have (FurniMove flags DOT the
+    same way, by the presence of its CB24_WRITE_CHARACTERISTIC).
+    """
+    if bed_type not in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID) or not gatt_services:
+        return bed_type
+
+    from .const import (
+        BED_TYPE_OKIN_DOT,
+        NORDIC_UART_SERVICE_UUID,
+        NORDIC_UART_WRITE_CHAR_UUID,
+    )
+
+    service_uuids: set[str] = set()
+    characteristic_uuids: set[str] = set()
+    for service in gatt_services:
+        if service_uuid := _uuid_from_gatt_object(service):
+            service_uuids.add(service_uuid)
+        for char in _characteristics_from_gatt_service(service):
+            if char_uuid := _uuid_from_gatt_object(char):
+                characteristic_uuids.add(char_uuid)
+
+    has_okimat_write = (
+        OKIMAT_SERVICE_UUID.lower() in service_uuids
+        and OKIMAT_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+    has_nordic_uart_write = (
+        NORDIC_UART_SERVICE_UUID.lower() in service_uuids
+        and NORDIC_UART_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+    if has_nordic_uart_write and not has_okimat_write:
+        _LOGGER.info(
+            "Promoted %s to %s: connected box exposes Nordic UART and no Okin "
+            "62741523 service (DOT PROTOCOL receiver)",
+            bed_type,
+            BED_TYPE_OKIN_DOT,
+        )
+        return BED_TYPE_OKIN_DOT
 
     return bed_type
 

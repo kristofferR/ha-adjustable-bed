@@ -105,6 +105,11 @@ class OkinUuidRemoteConfig:
     child_lock: int | None = None  # Toggle handset child lock
     zero_gravity: int | None = None  # Zero-gravity preset (rare)
     quiet_sleep: int | None = None  # Quiet-sleep preset (rare)
+    anti_snore: int | None = None  # Anti-snore preset (DOT RF1058 codes)
+    # True for "DOT PROTOCOL" handsets (RF1058/RF34/RF6707): same keycode
+    # space, but the box takes CB24-style 7-byte frames over Nordic UART.
+    # Driven by OkinDotController (okin_dot.py), not this controller.
+    dot: bool = False
     # Massage sub-commands keyed by function name (authoritative backend values).
     # Recognised keys: head_up, head_down, foot_up, foot_down, stop, wave, all,
     # mode1, mode2, mode3, head_toggle, foot_toggle.
@@ -168,6 +173,9 @@ class OkinUuidController(BedController):
             variant,
             self._remote.name,
         )
+
+    # Whether GATT writes request a response (DOT subclass writes without).
+    _write_with_response = True
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -301,11 +309,12 @@ class OkinUuidController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Okin UUID bed (%s): %s (repeat: %d, delay: %dms, response=True)",
-            OKIMAT_WRITE_CHAR_UUID,
+            "Writing command to Okin UUID bed (%s): %s (repeat: %d, delay: %dms, response=%s)",
+            self.control_characteristic_uuid,
             command.hex(),
             repeat_count,
             repeat_delay_ms,
+            self._write_with_response,
         )
 
         for i in range(repeat_count):
@@ -317,7 +326,9 @@ class OkinUuidController(BedController):
                 # Acquire BLE lock to prevent conflicts with concurrent position reads
                 async with self._ble_lock:
                     await self.client.write_gatt_char(
-                        OKIMAT_WRITE_CHAR_UUID, command, response=True
+                        self.control_characteristic_uuid,
+                        command,
+                        response=self._write_with_response,
                     )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
@@ -930,4 +941,44 @@ class OkinUuidController(BedController):
             except (TimeoutError, BleakError):
                 _LOGGER.debug(
                     "Failed to send STOP command during preset_zero_g cleanup", exc_info=True
+                )
+
+    @property
+    def _anti_snore_keycode(self) -> int | None:
+        """Anti-snore preset keycode, falling back to quiet-sleep.
+
+        RF1058 handsets carry the same 0x4000 preset slot as either "Snore"
+        (91983/93558) or "QuietSleep" (90167); both are a sleep-position
+        preset, so a quiet-sleep-only remote drives the anti-snore button.
+        """
+        if self._remote.anti_snore is not None:
+            return self._remote.anti_snore
+        return self._remote.quiet_sleep
+
+    @property
+    def supports_preset_anti_snore(self) -> bool:
+        """Return True if the remote exposes an anti-snore/quiet-sleep preset."""
+        return self._anti_snore_keycode is not None
+
+    async def preset_anti_snore(self) -> None:
+        """Go to the anti-snore (or quiet-sleep) preset."""
+        keycode = self._anti_snore_keycode
+        if keycode is None:
+            _LOGGER.debug("Anti-snore not available on remote %s", self._variant)
+            return
+        try:
+            await self.write_command(
+                self._build_command(keycode),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except (TimeoutError, BleakError):
+                _LOGGER.debug(
+                    "Failed to send STOP command during preset_anti_snore cleanup", exc_info=True
                 )
