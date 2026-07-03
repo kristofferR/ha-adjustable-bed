@@ -161,35 +161,58 @@ OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
     "84563": "84563 - RF-ECO (Back/Legs)",
     "84564": "84564 - RF-ECO (Head/Back/Legs)",
     "84582": "84582 - RF-ECO (Head/Back)",
+    "84762": "84762 - HS-IPROXX (Back/Legs)",
     "84931": "84931 - RF-TOPLINE/07/AL/BK/L (Back/Legs)",
     "84963": "84963 - RF-TOPLINE/07/BK/BK/L (Back/Legs)",
     "85057": "85057 - RF-TOPLINE/11/AL/BK/L (Head/Back/Legs/Feet, 4 Mem)",
     "85058": "85058 - RF-TOPLINE/11/AL/BK/L (Back/Legs, 2 Mem)",
     "85124": "85124 - RF-LITE/06/BK/BK (Back/Legs)",
     "85126": "85126 - SET (Back/Legs)",
+    "85281": "85281 - RF-FREE-ELEC (Head/Back/Legs/Feet, 4 Mem)",
+    "86432": "86432 - RF-STYLE (Back/Legs, 2 Mem)",
     "88875": "88875 - RF-LITELINE/07/ (Back/Legs)",
     "88877": "88877 - RF-LITELINE/07/ (Back/Legs)",
     "89137": "89137 - RF-LITELINE/07/ (Back/Legs)",
     "89138": "89138 - RF-LITELINE/07/ (Back/Legs)",
     "89139": "89139 - RF-LITELINE/07/ (Back/Legs)",
+    "89424": "89424 - RF (Back/Legs)",
+    "89441": "89441 - RF-FREE-ELEC (Back/Legs, 4 Mem)",
+    "89448": "89448 - RF-FREE-ELEC (Back/Legs/Feet, 4 Mem)",
     "89476": "89476 - RF-TOPLINE/11/AL/BK (Head/Back/Legs/Feet, 4 Mem)",
+    "89545": "89545 - RF-TOPLINE/11/AL/BK (Back/Legs, 2 Mem)",
+    "89746": "89746 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem)",
+    "89803": "89803 - LITELINE-7-SL-2M (Back/Legs)",
+    "89837": "89837 - RF-TOUCH/18/WH/BK/KL/L (Back/Legs, 3 Mem, Massage)",
+    "90199": "90199 - TOPLINE-11-SL-3M/4M (Back/Legs, 2 Mem)",
     "90269": "90269 - RF-STYLE/07/WH/WH (Back/Legs, 4 Mem)",
     "90354": "90354 - RF-STYLE/07/WH/WH (Head/Back/Legs, 2 Mem)",
+    "90392": "90392 - HS-IPROXX (Back/Legs)",
     "90658": "90658 - RF-TOUCHLINE/15/BK/BK/KL (Head/Back, 4 Mem)",
     "90675": "90675 - RF-TOUCHLINE/15/AL/BK/KL (Head/Back, 4 Mem)",
     "90678": "90678 - RF-TOUCHLINE/19/AL/BK/KL (Head/Back/Legs/Feet, 4 Mem)",
     "90679": "90679 - RF-TOUCHLINE/19/BK/BK/KL (Head/Back/Legs/Feet, 4 Mem)",
+    "90882": "90882 - TOPLINE-11-BK-2M (Back/Legs, 2 Mem)",
     "90916": "90916 - RF-TOUCHLINE/21/AL/BK/KL (Head/Back/Legs/Feet, 2 Mem, Massage)",
     "90918": "90918 - RF-TOUCHLINE/21/AL/BK/KL (Back/Legs, 3 Mem, Massage)",
+    "90926": "90926 - RF-ECO (Back/Feet)",
+    "90928": "90928 - TOPLINE-11-SL-3M/4M (Back/Legs, 2 Mem, Massage)",
+    "91050": "91050 - RF-TOUCHLINE/21/AL/BK/KL (Back/Legs, 3 Mem, Massage)",
     "91244": "91244 - RF-FLASHLINE/07/WH/GY (Back/Legs)",
     "91246": "91246 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
+    "91334": "91334 - TOPLINE-11-BK-2M (Back/Legs, 2 Mem)",
+    "91616": "91616 - HS-IPROXX (Back/Legs)",
+    "91751": "91751 - LITELINE-7-BK-2M (Back/Legs)",
     "91914": "91914 - RF-TOUCH/23/WH/BK/KL (Head/Back/Legs/Feet, 3 Mem, Massage)",
+    "92063": "92063 - LITELINE-7-GR-2M (Back/Legs)",
     "92113": "92113 - RF-STYLE/BK/BK/14/2009 (Back/Legs, 4 Mem)",
+    "92129": "92129 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem, Massage)",
+    "92428": "92428 - RF (Back/Legs, 2 Mem)",
     "92461": "92461 - \n  RF-TOPLINE\n  SI (Back/Legs)",
     "92471": "92471 - RF (Back/Legs, 2 Mem)",
     "92535": "92535 - RF-LITELINE/07/ (Back/Legs)",
     "92591": "92591 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
     "93025": "93025 - RF-STYLE/07/WH/WH (Back/Legs)",
+    "93055": "93055 - RF-TOPLINE/15/WH/BK (Back/Legs, 2 Mem)",
     "93300": "93300 - RF-STYLE/07/WH/WH (Back/Legs, 4 Mem)",
     "93305": "93305 - RF-TOPLINE (Back/Legs)",
     "93306": "93306 - RF-TOPLINE (Back/Legs, 2 Mem)",
@@ -221,7 +244,7 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "63338": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # csv-inherit:80599
     "63365": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # csv-reconstruct
     "65418": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # csv-reconstruct
-    "65433": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # csv-reconstruct
+    "65433": {"name": "RF", "flat": 0x10000000, "back_up": 0x4, "back_down": 0x8, "legs_up": 0x10, "legs_down": 0x20, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # csv-inherit:89441
     "65567": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # csv-reconstruct
     "68036": {"name": "RF-SYSTEM/SW/6/1476/2400MHZ", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # csv-inherit:80599
     "71852": {"name": "SET", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # csv-inherit:80599
@@ -352,35 +375,58 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "84563": {"name": "RF-ECO", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "84564": {"name": "RF-ECO", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "toggle_lights": 0x20000},  # backend
     "84582": {"name": "RF-ECO", "flat": 0x100000aa, "head_up": 0x10, "head_down": 0x20, "toggle_lights": 0x20000},  # backend
+    "84762": {"name": "HS-IPROXX", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "84931": {"name": "RF-TOPLINE/07/AL/BK/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "84963": {"name": "RF-TOPLINE/07/BK/BK/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "85057": {"name": "RF-TOPLINE/11/AL/BK/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
     "85058": {"name": "RF-TOPLINE/11/AL/BK/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "85124": {"name": "RF-LITE/06/BK/BK", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "85126": {"name": "SET", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
+    "85281": {"name": "RF-FREE-ELEC", "flat": 0x10000000, "back_up": 0x4, "back_down": 0x8, "legs_up": 0x10, "legs_down": 0x20, "head_up": 0x1, "head_down": 0x2, "feet_up": 0x40, "feet_down": 0x80, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
+    "86432": {"name": "RF-STYLE", "flat": 0xa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "zero_gravity": 0x4000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "88875": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "88877": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "89137": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "89138": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "89139": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
+    "89424": {"name": "RF", "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
+    "89441": {"name": "RF-FREE-ELEC", "flat": 0x10000000, "back_up": 0x4, "back_down": 0x8, "legs_up": 0x10, "legs_down": 0x20, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
+    "89448": {"name": "RF-FREE-ELEC", "flat": 0x10000000, "back_up": 0x4, "back_down": 0x8, "legs_up": 0x10, "legs_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000},  # backend
     "89476": {"name": "RF-TOPLINE/11/AL/BK", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
+    "89545": {"name": "RF-TOPLINE/11/AL/BK", "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
+    "89746": {"name": "TOPLINE-11-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000},  # backend
+    "89803": {"name": "LITELINE-7-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": 0x20000},  # backend
+    "89837": {"name": "RF-TOUCH/18/WH/BK/KL/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
+    "90199": {"name": "TOPLINE-11-SL-3M/4M", "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "90269": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
     "90354": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "sync": 0x100, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
+    "90392": {"name": "HS-IPROXX", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "90658": {"name": "RF-TOUCHLINE/15/BK/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "head_up": 0x10, "head_down": 0x20, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
     "90675": {"name": "RF-TOUCHLINE/15/AL/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "head_up": 0x10, "head_down": 0x20, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
     "90678": {"name": "RF-TOUCHLINE/19/AL/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # backend
     "90679": {"name": "RF-TOUCHLINE/19/BK/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
+    "90882": {"name": "TOPLINE-11-BK-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "90916": {"name": "RF-TOUCHLINE/21/AL/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
     "90918": {"name": "RF-TOUCHLINE/21/AL/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400, "wave": 0x4000000}},  # backend
+    "90926": {"name": "RF-ECO", "back_up": 0x1, "back_down": 0x2, "feet_up": 0x40, "feet_down": 0x20, "toggle_lights": 0x20000},  # backend
+    "90928": {"name": "TOPLINE-11-SL-3M/4M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "stop": 0x400}},  # backend
+    "91050": {"name": "RF-TOUCHLINE/21/AL/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
     "91244": {"name": "RF-FLASHLINE/07/WH/GY", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "91246": {"name": "RF-FLASHLINE/09/WH/GY", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
+    "91334": {"name": "TOPLINE-11-BK-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
+    "91616": {"name": "HS-IPROXX", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
+    "91751": {"name": "LITELINE-7-BK-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": 0x20000},  # backend
     "91914": {"name": "RF-TOUCH/23/WH/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "sync": 0x100, "child_lock": 0x8000000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
+    "92063": {"name": "LITELINE-7-GR-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": 0x20000},  # backend
     "92113": {"name": "RF-STYLE/BK/BK/14/2009", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # backend
+    "92129": {"name": "TOPLINE-11-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400, "wave": 0x4000000}},  # backend
+    "92428": {"name": "RF", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "92461": {"name": "\n  RF-TOPLINE\n  SI", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "92471": {"name": "RF", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "92535": {"name": "RF-LITELINE/07/", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "92591": {"name": "RF-FLASHLINE/09/WH/GY", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "93025": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
+    "93055": {"name": "RF-TOPLINE/15/WH/BK", "flat": 0xa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "zero_gravity": 0x4000, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
     "93300": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # backend
     "93305": {"name": "RF-TOPLINE", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": 0x20000},  # backend
     "93306": {"name": "RF-TOPLINE", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend

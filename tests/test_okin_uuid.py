@@ -853,6 +853,29 @@ class TestOkinUuidExtras:
             for call in mock_bleak_client.write_gatt_char.call_args_list
         )
 
+    async def test_remote_without_flat_button(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """A basic RF-ECO remote (89424) with no flat button hides the preset."""
+        coordinator = self._controller(hass, "89424")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_preset_flat is False
+        await coordinator.controller.preset_flat()
+        mock_bleak_client.write_gatt_char.assert_not_called()
+
+    async def test_shifted_bit_remote_keeps_backend_keycodes(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """RF-FREE-ELEC (85281) uses its own bit assignment, not the default."""
+        coordinator = self._controller(hass, "85281")
+        await coordinator.async_connect()
+
+        # This remote's back motor is 0x04 (not the usual 0x01).
+        await coordinator.controller.move_back_up()
+        expected = coordinator.controller._build_command(0x04)
+        assert mock_bleak_client.write_gatt_char.call_args_list[0][0][1] == expected
+
     async def test_basic_remote_has_no_extras(
         self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
     ):

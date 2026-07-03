@@ -674,6 +674,17 @@
   "ubl": "0x00020000",
   "desc": "RF-ECO+/05/AL/BK/L"
  },
+ "84762": {
+  "code": "84762",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "desc": "HS-IPROXX 2/09/GY/GY/SMP/H"
+ },
  "84931": {
   "code": "84931",
   "source": "backend",
@@ -756,6 +767,46 @@
   "ubl": "0x00020000",
   "desc": "SET RF-LITE/06/BK/BK/M2/S/IP20"
  },
+ "85281": {
+  "code": "85281",
+  "source": "backend",
+  "flat": "0x10000000",
+  "tilt_down": "0x00000002",
+  "tilt_up": "0x00000001",
+  "back_down": "0x00000008",
+  "back_up": "0x00000004",
+  "legs_down": "0x00000020",
+  "legs_up": "0x00000010",
+  "feet_down": "0x00000080",
+  "feet_up": "0x00000040",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000",
+   "3": "0x00003000",
+   "4": "0x00004000"
+  },
+  "desc": "RF-FREE-ELEC PLUS/16/GY/GY/KL"
+ },
+ "86432": {
+  "code": "86432",
+  "source": "backend",
+  "flat": "0x0000000a",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "sync": "0x00000100",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "RF-STYLE"
+ },
  "88875": {
   "code": "88875",
   "source": "backend",
@@ -811,6 +862,53 @@
   "ubl": "0x00020000",
   "desc": "RF-LITELINE/07/"
  },
+ "89424": {
+  "code": "89424",
+  "source": "backend",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "desc": "RF ECO"
+ },
+ "89441": {
+  "code": "89441",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000008",
+  "back_up": "0x00000004",
+  "legs_down": "0x00000020",
+  "legs_up": "0x00000010",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000",
+   "3": "0x00003000",
+   "4": "0x00004000"
+  },
+  "desc": "RF-FREE-ELEC PLUS/12/GY/GY/KL"
+ },
+ "89448": {
+  "code": "89448",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000008",
+  "back_up": "0x00000004",
+  "legs_down": "0x00000020",
+  "legs_up": "0x00000010",
+  "feet_down": "0x00000080",
+  "feet_up": "0x00000040",
+  "memory_save": "0x00010000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000",
+   "3": "0x00003000",
+   "4": "0x00004000"
+  },
+  "desc": "RF-FREE-ELEC PLUS/14/GY/GY/KL"
+ },
  "89476": {
   "code": "89476",
   "source": "backend",
@@ -832,6 +930,96 @@
    "4": "0x00004000"
   },
   "desc": "RF-TOPLINE/11/AL/BK"
+ },
+ "89545": {
+  "code": "89545",
+  "source": "backend",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "RF-TOPLINE/11/AL/BK"
+ },
+ "89746": {
+  "code": "89746",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "zero_gravity": "0x00004000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "TOPLINE-11-SL-2M"
+ },
+ "89803": {
+  "code": "89803",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "desc": "LITELINE-7-SL-2M"
+ },
+ "89837": {
+  "code": "89837",
+  "source": "backend",
+  "child_lock": "0x08000000",
+  "flat": "0x100000aa",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "sync": "0x00000100",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000",
+   "3": "0x00003000"
+  },
+  "massage": {
+   "MassageAll": "0x00200000",
+   "Massager1": "0x20000000",
+   "Massager2": "0x40000000",
+   "Massager3": "0x80000000",
+   "MassagerFeet": "0x00100000",
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00400000",
+   "MassagerHead": "0x00080000",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000400"
+  },
+  "desc": "RF-TOUCH/18/WH/BK/KL/L"
+ },
+ "90199": {
+  "code": "90199",
+  "source": "backend",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "TOPLINE-11-SL-3M/4M"
  },
  "90269": {
   "code": "90269",
@@ -870,6 +1058,17 @@
    "2": "0x00002000"
   },
   "desc": "RF-STYLE/07/WH/WH"
+ },
+ "90392": {
+  "code": "90392",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "desc": "HS-IPROXX 2/09/GY/GY/SMP/H"
  },
  "90658": {
   "code": "90658",
@@ -959,6 +1158,23 @@
   },
   "desc": "RF-TOUCHLINE/19/BK/BK/KL"
  },
+ "90882": {
+  "code": "90882",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "TOPLINE-11-BK-2M"
+ },
  "90916": {
   "code": "90916",
   "source": "backend",
@@ -1027,6 +1243,68 @@
   },
   "desc": "RF-TOUCHLINE/21/AL/BK/KL"
  },
+ "90926": {
+  "code": "90926",
+  "source": "backend",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "feet_down": "0x00000020",
+  "feet_up": "0x00000040",
+  "ubl": "0x00020000",
+  "desc": "RF-ECO+/04/AL/BK"
+ },
+ "90928": {
+  "code": "90928",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "massage": {
+   "MassageAll": "0x00200000",
+   "MassagerStop": "0x00000400"
+  },
+  "desc": "TOPLINE-11-SL-3M/4M"
+ },
+ "91050": {
+  "code": "91050",
+  "source": "backend",
+  "child_lock": "0x08000000",
+  "flat": "0x100000aa",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "sync": "0x00000100",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000",
+   "3": "0x00003000"
+  },
+  "massage": {
+   "MassageAll": "0x00200000",
+   "Massager1": "0x20000000",
+   "Massager2": "0x40000000",
+   "Massager3": "0x80000000",
+   "MassagerFeet": "0x00100000",
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00400000",
+   "MassagerHead": "0x00080000",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000400"
+  },
+  "desc": "RF-TOUCHLINE/21/AL/BK/KL"
+ },
  "91244": {
   "code": "91244",
   "source": "backend",
@@ -1053,6 +1331,45 @@
    "2": "0x00002000"
   },
   "desc": "RF-FLASHLINE/09/WH/GY"
+ },
+ "91334": {
+  "code": "91334",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "TOPLINE-11-BK-2M"
+ },
+ "91616": {
+  "code": "91616",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "desc": "HS-IPROXX 2/09/GY/GY/SMP/H/L"
+ },
+ "91751": {
+  "code": "91751",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "desc": "LITELINE-7-BK-2M"
  },
  "91914": {
   "code": "91914",
@@ -1090,6 +1407,18 @@
   },
   "desc": "RF-TOUCH/23/WH/BK/KL"
  },
+ "92063": {
+  "code": "92063",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "desc": "LITELINE-7-GR-2M"
+ },
  "92113": {
   "code": "92113",
   "source": "backend",
@@ -1108,6 +1437,52 @@
    "4": "0x00008000"
   },
   "desc": "RF-STYLE/BK/BK/14/2009"
+ },
+ "92129": {
+  "code": "92129",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "massage": {
+   "MassageAll": "0x00200000",
+   "Massager1": "0x20000000",
+   "Massager2": "0x40000000",
+   "Massager3": "0x80000000",
+   "MassagerFeet": "0x00100000",
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00400000",
+   "MassagerHead": "0x00080000",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000400",
+   "MassagerWave": "0x04000000"
+  },
+  "desc": "TOPLINE-11-SL-2M"
+ },
+ "92428": {
+  "code": "92428",
+  "source": "backend",
+  "flat": "0x10000000",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "RF Topline"
  },
  "92461": {
   "code": "92461",
@@ -1173,6 +1548,24 @@
   "legs_up": "0x00000004",
   "ubl": "0x00020000",
   "desc": "RF-STYLE/07/WH/WH"
+ },
+ "93055": {
+  "code": "93055",
+  "source": "backend",
+  "flat": "0x0000000a",
+  "back_down": "0x00000002",
+  "back_up": "0x00000001",
+  "legs_down": "0x00000008",
+  "legs_up": "0x00000004",
+  "memory_save": "0x00010000",
+  "sync": "0x00000100",
+  "ubl": "0x00020000",
+  "zero_gravity": "0x00004000",
+  "memory": {
+   "1": "0x00001000",
+   "2": "0x00002000"
+  },
+  "desc": "RF-TOPLINE/15/WH/BK M2/S/ST/IP20/BLI/FL/LED/M/EXCL"
  },
  "93300": {
   "code": "93300",
@@ -1633,22 +2026,22 @@
   "source": "csv-reconstruct"
  },
  "65433": {
-  "back_up": "0x00000001",
-  "back_down": "0x00000002",
-  "legs_up": "0x00000004",
-  "legs_down": "0x00000008",
+  "code": "65433",
+  "source": "csv-inherit:89441",
+  "flat": "0x10000000",
+  "back_down": "0x00000008",
+  "back_up": "0x00000004",
+  "legs_down": "0x00000020",
+  "legs_up": "0x00000010",
+  "memory_save": "0x00010000",
+  "ubl": "0x00020000",
   "memory": {
    "1": "0x00001000",
    "2": "0x00002000",
-   "3": "0x00004000",
-   "4": "0x00008000"
+   "3": "0x00003000",
+   "4": "0x00004000"
   },
-  "memory_save": "0x00010000",
-  "ubl": "0x00020000",
-  "flat": "0x100000aa",
-  "code": "65433",
-  "desc": "RF HS-Elegance N silver - black, 13 Button",
-  "source": "csv-reconstruct"
+  "desc": "RF HS-Elegance N silver - black, 13 Button"
  },
  "65567": {
   "back_up": "0x00000001",

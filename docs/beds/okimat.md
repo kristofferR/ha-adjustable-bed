@@ -84,9 +84,11 @@ Detection priority:
 
 ## Supported Remote Codes
 
-The integration ships **187 remote codes** covering the full DewertOkin RF
-handset range (RFS-ELLIPSE, RF-TOPLINE, RF-LITELINE, RF-FLASHLINE, RF-TOUCH,
-RF-TOUCHLINE and their memory/massage variants). The remote code is printed on
+The integration ships **210 remote codes** covering the full DewertOkin RF
+handset range (RFS-ELLIPSE, RF-TOPLINE, RF-LITELINE, RF-FLASHLINE, RF-FREE-ELEC,
+RF-TOUCH, RF-TOUCHLINE, RF-STYLE, RF-ECO and their memory/massage variants). The
+entire 5-digit code space was swept against the backend, so the list is
+complete. The remote code is printed on
 the back of the handset; select it under **Protocol variant** in the
 integration options. If your exact code is not offered, pick any code with the
 same button layout — the motor keycodes are shared across the family.
@@ -108,23 +110,24 @@ than lumping codes into shared family profiles. This corrected several Flat
 values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
 
 > [!NOTE]
-> Five codes that share the handset backend but use a different, incompatible
-> command layout ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 93558, 97450,
-> 97544, 98035) are intentionally **excluded** — they are not the standard Okin
-> 6-byte protocol.
+> Six codes that share the handset backend but use a different, incompatible
+> command layout ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 91983, 93558,
+> 97450, 97544, 98035) are intentionally **excluded** — they are not the standard
+> Okin 6-byte protocol.
 
 ### Capability coverage
 
 | Capability | Codes | Notes |
 |------------|-------|-------|
-| Back + Legs motors | 187 | Universal (`0x01/0x02`, `0x04/0x08`) |
-| Head/tilt motor | 58 | `0x10/0x20` |
-| Feet motor | 35 | `0x40/0x80` (a few use `0x20` for feet-down) |
-| Memory presets | 84 | 1–4 slots depending on code |
-| Under-bed light | 187 | Single-press toggle (`0x20000`) |
-| Sync both sides | 65 | Split-base re-sync (`0x100`, long hold) |
-| Child lock | 51 | Handset lock toggle (`0x08000000`, long hold) |
-| Massage | 7 | Head/foot intensity, wave, modes, stop |
+| Back + Legs motors | 210 | Usually `0x01/0x02`, `0x04/0x08` (RF-FREE-ELEC shifts the bit assignment; each code stores its own) |
+| Head/tilt motor | 59 | `0x10/0x20` |
+| Feet motor | 38 | `0x40/0x80` (a few use `0x20` for feet-down) |
+| Memory presets | 99 | 1–4 slots depending on code |
+| Flat preset | 206 | A few basic RF-ECO remotes have no flat button |
+| Under-bed light | 210 | Single-press toggle (`0x20000`) |
+| Sync both sides | 69 | Split-base re-sync (`0x100`, long hold) |
+| Child lock | 53 | Handset lock toggle (`0x08000000`, long hold) |
+| Massage | 11 | Head/foot intensity, wave, modes, stop |
 | Zero-gravity | 1 | Dedicated preset (code 94500) |
 
 ## Commands (32-bit Values)

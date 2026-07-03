@@ -136,7 +136,7 @@ def reconstruct(sig, desc):
 # Codes that reuse the handset backend but are a DIFFERENT protocol
 # (Flat=0x08000000, re-numbered layout, "DOT PROTOCOL" / RF1058 / RF34 / RF6707).
 # They are NOT the standard Okin 6-byte protocol and must be excluded.
-EXCLUDE = {"90167", "93558", "97450", "97544", "98035"}
+EXCLUDE = {"90167", "93558", "97450", "97544", "98035", "91983"}
 
 
 def main():

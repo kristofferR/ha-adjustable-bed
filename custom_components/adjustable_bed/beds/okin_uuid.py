@@ -82,7 +82,7 @@ class OkinUuidRemoteConfig:
     """Configuration for a specific remote model."""
 
     name: str
-    flat: int
+    flat: int | None = None  # Some basic RF-ECO remotes have no flat/home button
     back_up: int = 0x1
     back_down: int = 0x2
     legs_up: int = 0x4
@@ -524,11 +524,20 @@ class OkinUuidController(BedController):
         )
 
     # Preset methods
+    @property
+    def supports_preset_flat(self) -> bool:
+        """Return True only when this remote defines a flat/home command."""
+        return self._remote.flat is not None
+
     async def preset_flat(self) -> None:
         """Go to flat position."""
+        flat = self._remote.flat
+        if flat is None:
+            _LOGGER.debug("Flat preset not available on remote %s", self._variant)
+            return
         try:
             await self.write_command(
-                self._build_command(self._remote.flat),
+                self._build_command(flat),
                 repeat_count=100,
                 repeat_delay_ms=300,
             )
