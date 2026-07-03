@@ -1246,19 +1246,20 @@ class TestSleepysBox25Controller:
         assert controller._motor_initialized is False
         mock_client.write_gatt_char.assert_not_called()
 
-    async def test_preset_arms_then_commits_with_stop(
+    async def test_preset_arms_then_commits_with_starcode_terminator(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 presets are armed by repeating the key, then committed by STOP.
+        """Star presets arm with the StarCode key ×3, then the 0x0F terminator.
 
-        Regression test for #372: the decompiled Adjustable Comfort M1X12 app
-        sends every preset as the preset key ×3 followed by the all-zero
-        MOTOR_STOP that *commits* it. Sending the key without the trailing STOP
-        leaves the bed armed but stationary until the user manually presses Stop
-        All — exactly the reported symptom.
+        Regression test for #372. These beds (Star252201…, app
+        com.starcode.adjustablem1x12) use StarCode framing (5A 01 03 10 30 KK A5):
+        flat()/callMemory() enqueue the preset key ×3 then the StarCode terminator
+        0x0F to commit. The bed arms while it receives the key and only drives to
+        the target once the terminator arrives. The earlier CB25 (05 02 …) preset
+        bytes never committed on real hardware — the user had to manually Stop All.
         """
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
@@ -1266,15 +1267,55 @@ class TestSleepysBox25Controller:
 
         with (
             patch.object(controller, "write_command", AsyncMock()) as mock_write,
-            patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
             patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.preset_flat()
 
-        mock_write.assert_awaited_once_with(
-            Box25Commands.PRESET_FLAT, repeat_count=3, repeat_delay_ms=100
+        assert mock_write.await_count == 2
+        # 1) StarCode flat key, repeated to arm the preset.
+        arm_call = mock_write.call_args_list[0]
+        assert arm_call.args[0] == Box25Commands.STAR_PRESET_FLAT
+        assert arm_call.kwargs == {"repeat_count": 3, "repeat_delay_ms": 100}
+        # 2) StarCode terminator commits it, with a fresh cancel event so a
+        #    pending Stop All can't suppress the commit packet.
+        commit_call = mock_write.call_args_list[1]
+        assert commit_call.args[0] == Box25Commands.STAR_PRESET_TERMINATOR
+        assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
+
+    async def test_named_presets_use_starcode_frames(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Each named preset sends its StarCode arm frame, then the terminator."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        cases = (
+            (controller.preset_flat, Box25Commands.STAR_PRESET_FLAT),
+            (controller.preset_zero_g, Box25Commands.STAR_PRESET_ZERO_GRAVITY),
+            (controller.preset_anti_snore, Box25Commands.STAR_PRESET_ANTI_SNORE),
+            (controller.preset_lounge, Box25Commands.STAR_PRESET_LOUNGE),
         )
-        mock_stop.assert_awaited_once()
+        for method, arm_frame in cases:
+            # StarCode framing: 5A 01 … A5, 7 bytes.
+            assert arm_frame[0:2] == bytes([0x5A, 0x01])
+            assert arm_frame[-1] == 0xA5
+            assert len(arm_frame) == 7
+
+            with (
+                patch.object(controller, "write_command", AsyncMock()) as mock_write,
+                patch(
+                    "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+                    AsyncMock(),
+                ),
+            ):
+                await method()
+
+            assert mock_write.call_args_list[0].args[0] == arm_frame
+            assert mock_write.call_args_list[1].args[0] == Box25Commands.STAR_PRESET_TERMINATOR
 
     async def test_program_memory_arms_then_commits_with_stop(
         self,
@@ -1282,22 +1323,28 @@ class TestSleepysBox25Controller:
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25 memory store uses the same arm-then-commit sequence (#372)."""
+        """Memory store still uses the legacy CB25 key + CB25 MOTOR_STOP (#372 follow-up).
+
+        The correct StarCode memory keys aren't pinned down yet, so the memory
+        path is intentionally left on the unverified CB25 framing.
+        """
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
         with (
             patch.object(controller, "write_command", AsyncMock()) as mock_write,
-            patch.object(controller, "_send_stop", AsyncMock()) as mock_stop,
             patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.program_memory(1)
 
-        mock_write.assert_awaited_once_with(
-            Box25Commands.MEMORY_STORE[0], repeat_count=3, repeat_delay_ms=100
-        )
-        mock_stop.assert_awaited_once()
+        assert mock_write.await_count == 2
+        arm_call = mock_write.call_args_list[0]
+        assert arm_call.args[0] == Box25Commands.MEMORY_STORE[0]
+        assert arm_call.kwargs == {"repeat_count": 3, "repeat_delay_ms": 100}
+        commit_call = mock_write.call_args_list[1]
+        assert commit_call.args[0] == Box25Commands.MOTOR_STOP
+        assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
 
     async def test_set_motor_position_supports_lumbar(
         self,

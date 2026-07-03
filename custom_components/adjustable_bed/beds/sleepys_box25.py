@@ -99,6 +99,21 @@ class Box25Commands:
         MEMORY_STORE_4,
     )
 
+    # ─── StarCode presets (5A 01 03 10 30 KK A5, 7 bytes) ────────────────
+    # Star* devices (the "is StarCode" device flag is set) drive presets with
+    # StarCode framing, NOT the CB25 "05 02 …" framing above. Verified against
+    # com.starcode.adjustablem1x12 — the app for these beds (Star252201… /
+    # Ashley/Nectar M1X1232): flat()/callMemory() enqueue the preset key ×3 then
+    # the StarCode terminator 0x0F (NOT the 0x1F motor-interrupt) to commit.
+    # The bed accepts CB25 framing for motors/lights/massage (kept above), but the
+    # CB25 preset bytes never committed on real hardware (#372); these do.
+    # key = 0x03103000 | idx  →  big-endian bytes 03 10 30 <idx>.
+    STAR_PRESET_FLAT = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x10, 0xA5])
+    STAR_PRESET_ZERO_GRAVITY = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x13, 0xA5])
+    STAR_PRESET_ANTI_SNORE = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x16, 0xA5])
+    STAR_PRESET_LOUNGE = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x17, 0xA5])  # app "reading"
+    STAR_PRESET_TERMINATOR = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x0F, 0xA5])
+
     # ─── Lighting (04 E0 prefix, 6 bytes) ────────────────────────────────
     LIGHT_OFF = bytes([0x04, 0xE0, 0x01, 0x00, 0x00, 0x00])
     LIGHT_ON_WHITE = bytes([0x04, 0xE0, 0x01, 0x01, 0x00, 0x00])
@@ -117,10 +132,12 @@ _WAKE_DELAY = 0.15
 _INIT_DELAY = 0.08
 
 # Preset send tuning, mirroring the decompiled "Adjustable Comfort M1X12" app
-# (StarCode/DewertOkin CB25 protocol). The app enqueues every preset/memory
-# recall as four packets drained 100 ms apart by its periodic BLE sender: the
-# preset key ×3, then the all-zero STOP/idle packet (05 02 00 00 00 00 00). The
-# trailing STOP is what *commits* the preset — see _send_preset (#372).
+# (StarCode/DewertOkin CB25 protocol). The app enqueues every preset as four
+# packets drained 100 ms apart by its periodic BLE sender: the preset key ×3,
+# then a terminator that *commits* the preset — the bed arms while it keeps
+# receiving the key and only drives to the target once the terminator arrives.
+# For Star* devices the terminator is the StarCode 0x0F packet; the legacy CB25
+# memory path still uses the 05 02 00…00 STOP. See _send_preset (#372).
 _PRESET_REPEAT_COUNT = 3
 _PRESET_REPEAT_DELAY_MS = 100
 _PRESET_COMMIT_DELAY = 0.1
@@ -565,20 +582,24 @@ class SleepysBox25Controller(BedController):
 
     # ─── Presets ─────────────────────────────────────────────────────────
 
-    async def _send_preset(self, preset_cmd: bytes) -> None:
-        """Send a BOX25/CB25 preset or memory recall, then commit it with STOP.
+    async def _send_preset(self, preset_cmd: bytes, terminator: bytes) -> None:
+        """Send a preset (key ×3 at 100 ms), then commit it with `terminator`.
 
         The decompiled "Adjustable Comfort M1X12" app (StarCode/DewertOkin CB25
         protocol, e.g. Star252201 / Ashley/Nectar M1X1232) sends every preset as
-        the preset key ×3 at 100 ms followed by the all-zero STOP/idle packet
-        (MOTOR_STOP, 05 02 00 00 00 00 00). The trailing STOP is what *commits*
-        the preset: the bed arms while it keeps receiving the key and only drives
-        to the target once the STOP arrives.
+        the preset key ×3 at 100 ms followed by a terminator packet. The trailing
+        terminator is what *commits* the preset: the bed arms while it keeps
+        receiving the key and only drives to the target once the terminator
+        arrives.
 
-        Without the STOP the bed stays armed but never moves until the user
-        manually presses Stop All or disconnects (#372). Conversely a STOP sent
-        too soon (the old 50 ms confirm) lands before the bed arms and cancels
-        the preset — hence the key is repeated first to hold it long enough.
+        Without it the bed stays armed but never moves until the user manually
+        presses Stop All or disconnects (#372). Conversely a terminator sent too
+        soon (the old 50 ms confirm) lands before the bed arms and cancels the
+        preset — hence the key is repeated first to hold it long enough.
+
+        Star* devices use StarCode framing (5A 01 03 10 30 KK A5) and the 0x0F
+        StarCode terminator; the legacy CB25 memory path passes the 05 02 00…00
+        MOTOR_STOP. The terminator's framing must match its preset key's framing.
         """
         try:
             await self.write_command(
@@ -589,39 +610,56 @@ class SleepysBox25Controller(BedController):
             await asyncio.sleep(_PRESET_COMMIT_DELAY)
         finally:
             try:
-                await self._send_stop()
+                # Fresh cancel event so a pending Stop All can't suppress the
+                # commit packet — without it the preset never executes.
+                await self.write_command(terminator, cancel_event=asyncio.Event())
             except (BleakError, ConnectionError):
                 _LOGGER.debug(
-                    "Failed to send committing STOP after BOX25 preset",
+                    "Failed to send committing terminator after preset",
                     exc_info=True,
                 )
 
     async def preset_flat(self) -> None:
-        await self._send_preset(Box25Commands.PRESET_FLAT)
+        await self._send_preset(
+            Box25Commands.STAR_PRESET_FLAT, Box25Commands.STAR_PRESET_TERMINATOR
+        )
 
     async def preset_zero_g(self) -> None:
-        await self._send_preset(Box25Commands.PRESET_ZERO_GRAVITY)
+        await self._send_preset(
+            Box25Commands.STAR_PRESET_ZERO_GRAVITY, Box25Commands.STAR_PRESET_TERMINATOR
+        )
 
     async def preset_anti_snore(self) -> None:
-        await self._send_preset(Box25Commands.PRESET_ANTI_SNORE)
+        await self._send_preset(
+            Box25Commands.STAR_PRESET_ANTI_SNORE, Box25Commands.STAR_PRESET_TERMINATOR
+        )
 
     async def preset_lounge(self) -> None:
         """Move bed to lounge or relax position."""
-        await self._send_preset(Box25Commands.PRESET_LOUNGE)
+        await self._send_preset(
+            Box25Commands.STAR_PRESET_LOUNGE, Box25Commands.STAR_PRESET_TERMINATOR
+        )
 
     async def preset_memory(self, memory_num: int) -> None:
         if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_RECALL):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
-        await self._send_preset(Box25Commands.MEMORY_RECALL[memory_num - 1])
+        # Memory recall/store still use the unverified CB25 keys + CB25 STOP
+        # terminator (#372 follow-up): the correct StarCode memory keys aren't
+        # pinned down yet, so this path is unchanged from the legacy behaviour.
+        await self._send_preset(
+            Box25Commands.MEMORY_RECALL[memory_num - 1], Box25Commands.MOTOR_STOP
+        )
 
     async def program_memory(self, memory_num: int) -> None:
         if memory_num < 1 or memory_num > len(Box25Commands.MEMORY_STORE):
             _LOGGER.warning("Invalid memory slot %d (valid: 1-4)", memory_num)
             return
         # Memory store uses the same arm-then-commit sequence as recall; see
-        # _send_preset for why a trailing STOP is required.
-        await self._send_preset(Box25Commands.MEMORY_STORE[memory_num - 1])
+        # _send_preset for why a trailing terminator is required.
+        await self._send_preset(
+            Box25Commands.MEMORY_STORE[memory_num - 1], Box25Commands.MOTOR_STOP
+        )
 
     # ─── Lights ──────────────────────────────────────────────────────────
 
