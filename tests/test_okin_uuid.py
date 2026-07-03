@@ -23,18 +23,23 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    OKIMAT_VARIANT_80608,
-    OKIMAT_VARIANT_82417,
-    OKIMAT_VARIANT_82418,
-    OKIMAT_VARIANT_88875,
-    OKIMAT_VARIANT_89138,
-    OKIMAT_VARIANT_93329,
-    OKIMAT_VARIANT_93332,
-    OKIMAT_VARIANT_94238,
     OKIMAT_WRITE_CHAR_UUID,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+# Remote codes are plain strings now that the table is generated from the
+# DewertOkin handset backend; keep readable aliases for the tests.
+OKIMAT_VARIANT_80608 = "80608"
+OKIMAT_VARIANT_82417 = "82417"
+OKIMAT_VARIANT_82418 = "82418"
+OKIMAT_VARIANT_88875 = "88875"
+OKIMAT_VARIANT_89138 = "89138"
+OKIMAT_VARIANT_93329 = "93329"
+OKIMAT_VARIANT_93332 = "93332"
+OKIMAT_VARIANT_94238 = "94238"
+# A remote whose handset exposes massage (authoritative backend data).
+OKIMAT_VARIANT_MASSAGE = "83126"
 
 
 @pytest.fixture
@@ -130,6 +135,29 @@ def mock_okin_uuid_94238_config_entry(
     return entry
 
 
+@pytest.fixture
+def mock_okin_uuid_massage_config_entry(hass: HomeAssistant) -> MockConfigEntry:
+    """Return a mock config entry for a massage-capable Okin UUID remote (83126)."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Okin UUID Massage Test Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+            CONF_NAME: "Okin UUID Massage Test Bed",
+            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_PROTOCOL_VARIANT: OKIMAT_VARIANT_MASSAGE,
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        },
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="okimat_massage_test_entry",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
 class TestOkinUuidController:
     """Test Okin UUID controller."""
 
@@ -196,44 +224,46 @@ class TestOkinUuidController:
         assert coordinator.controller._variant == OKIMAT_VARIANT_82417
 
     def test_rf_liteline_89138_uses_apk_profile(self):
-        """Test FurniMove remote 89138 uses the RF-LITELINE/07 profile."""
+        """Remote 89138 (RF-LITELINE) keeps the standard two-motor keycodes."""
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_89138]
-        reference = OKIN_UUID_REMOTES[OKIMAT_VARIANT_88875]
 
-        assert remote.name == "RF-LITELINE/07"
-        assert remote.flat == reference.flat == 0x100000AA
-        assert remote.back_up == reference.back_up == 0x1
-        assert remote.back_down == reference.back_down == 0x2
-        assert remote.legs_up == reference.legs_up == 0x4
-        assert remote.legs_down == reference.legs_down == 0x8
+        assert remote.flat == 0x100000AA
+        assert remote.back_up == 0x1
+        assert remote.back_down == 0x2
+        assert remote.legs_up == 0x4
+        assert remote.legs_down == 0x8
 
+    # Authoritative per-code values from the DewertOkin handset backend
+    # (GET /mobile-data/button/{code}). Flat is a per-code property, so codes in
+    # the same model family can differ - these values replace the old
+    # cross-referenced "alias" assumptions.
     @pytest.mark.parametrize(
-        ("variant", "reference"),
+        ("variant", "flat", "memory_1", "memory_2"),
         [
-            ("76688", OKIMAT_VARIANT_80608),
-            ("78375", OKIMAT_VARIANT_80608),
-            ("80599", OKIMAT_VARIANT_80608),
-            ("82620", OKIMAT_VARIANT_82417),
-            ("83489", OKIMAT_VARIANT_82417),
-            ("92461", OKIMAT_VARIANT_82417),
-            ("85058", OKIMAT_VARIANT_82418),
-            ("93306", OKIMAT_VARIANT_82418),
-            ("91246", OKIMAT_VARIANT_94238),
-            ("92591", OKIMAT_VARIANT_94238),
+            ("82417", 0x000000AA, None, None),
+            ("82620", 0x100000AA, None, None),
+            ("83489", 0x100000AA, None, None),
+            ("92461", 0x100000AA, None, None),
+            ("82418", 0x000000AA, 0x1000, 0x2000),
+            ("85058", 0x100000AA, 0x1000, 0x2000),
+            ("93306", 0x100000AA, 0x1000, 0x2000),
+            ("91246", 0x100000AA, 0x1000, 0x2000),
+            ("92591", 0x100000AA, 0x1000, 0x2000),
+            ("94238", 0x10000000, 0x1000, 0x2000),
         ],
     )
-    def test_apk_csv_aliases_use_known_command_profiles(self, variant, reference):
-        """Test FurniMove CSV aliases map to the matching supported command profile."""
+    def test_backend_remote_keycodes(self, variant, flat, memory_1, memory_2):
+        """Each remote uses its authoritative backend Flat and memory keycodes."""
         remote = OKIN_UUID_REMOTES[variant]
-        reference_remote = OKIN_UUID_REMOTES[reference]
 
-        assert remote.flat == reference_remote.flat
-        assert remote.back_up == reference_remote.back_up
-        assert remote.back_down == reference_remote.back_down
-        assert remote.legs_up == reference_remote.legs_up
-        assert remote.legs_down == reference_remote.legs_down
-        assert remote.memory_1 == reference_remote.memory_1
-        assert remote.memory_2 == reference_remote.memory_2
+        assert remote.flat == flat
+        # Standard back/legs motor keycodes are universal across the family.
+        assert remote.back_up == 0x1
+        assert remote.back_down == 0x2
+        assert remote.legs_up == 0x4
+        assert remote.legs_down == 0x8
+        assert remote.memory_1 == memory_1
+        assert remote.memory_2 == memory_2
 
     async def test_write_command(
         self,
@@ -571,31 +601,50 @@ class TestOkinUuidPresets:
 
         assert "Memory save not available" in caplog.text
 
-    async def test_program_memory_complex_command(
+    async def test_program_memory_94238_plain_command(
         self,
         hass: HomeAssistant,
         mock_okin_uuid_94238_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test program memory with complex command (94238 remote)."""
+        """94238 memory_save is a plain keycode (authoritative backend value)."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.program_memory(1)
 
-        # 94238 has complex command: data=0x10000, count=25, wait_time=200
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
-        assert isinstance(remote.memory_save, OkinUuidComplexCommand)
+        assert remote.memory_save == 0x10000
 
-        # Command should use the data field from complex command
-        expected_cmd = coordinator.controller._build_command(remote.memory_save.data)
+        expected_cmd = coordinator.controller._build_command(remote.memory_save)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
+        # Plain keycodes use the default program-memory repeat count (10).
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 10
 
-        # Should send count (25) commands
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) == 25
+    async def test_execute_command_honours_complex_timing(
+        self,
+        hass: HomeAssistant,
+        mock_okin_uuid_config_entry,
+        mock_coordinator_connected,
+    ):
+        """The OkinUuidComplexCommand mechanism passes its own count/delay."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
+        await coordinator.async_connect()
+
+        complex_cmd = OkinUuidComplexCommand(data=0x10000, count=25, wait_time=200)
+        with patch.object(
+            coordinator.controller, "write_command", new_callable=AsyncMock
+        ) as mock_write:
+            await coordinator.controller._execute_command(
+                complex_cmd, default_count=10, default_delay_ms=100
+            )
+
+            mock_write.assert_called_once()
+            _, kwargs = mock_write.call_args
+            assert kwargs.get("repeat_count") == 25
+            assert kwargs.get("repeat_delay_ms") == 200
 
 
 class TestOkinUuidLights:
@@ -620,72 +669,63 @@ class TestOkinUuidLights:
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
-    async def test_lights_toggle_complex_command(
+    async def test_lights_toggle_94238_single_press(
         self,
         hass: HomeAssistant,
         mock_okin_uuid_94238_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test lights toggle with complex command (94238 remote)."""
+        """94238 under-bed light is a plain single-press toggle keycode."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_toggle()
 
-        # 94238 has complex command: data=0x20000, count=50, wait_time=100
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
-        assert isinstance(remote.toggle_lights, OkinUuidComplexCommand)
+        assert remote.toggle_lights == 0x20000
 
-        # Command should use the data field from complex command
-        expected_cmd = coordinator.controller._build_command(remote.toggle_lights.data)
+        expected_cmd = coordinator.controller._build_command(remote.toggle_lights)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
-
-        # Should send count (50) commands
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) == 50
-
-    async def test_lights_toggle_complex_command_timing(
-        self,
-        hass: HomeAssistant,
-        mock_okin_uuid_94238_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test lights toggle uses correct timing from complex command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
-        await coordinator.async_connect()
-
-        with patch.object(
-            coordinator.controller, "write_command", new_callable=AsyncMock
-        ) as mock_write:
-            await coordinator.controller.lights_toggle()
-
-            mock_write.assert_called_once()
-            _, kwargs = mock_write.call_args
-            # Verify wait_time (100) from complex command is passed as repeat_delay_ms
-            assert kwargs.get("repeat_delay_ms") == 100
-            # Verify count (50) from complex command is passed as repeat_count
-            assert kwargs.get("repeat_count") == 50
+        # Under-bed light toggles once (repeating it flashes the light).
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 1
 
 
 class TestOkinUuidMassage:
     """Test Okin UUID massage commands."""
 
-    async def test_massage_toggle(
+    async def test_massage_not_advertised_without_config(
         self,
         hass: HomeAssistant,
         mock_okin_uuid_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage toggle command."""
+        """A remote whose handset has no massage keys exposes no massage."""
         coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
         await coordinator.async_connect()
 
+        assert coordinator.controller.supports_massage is False
+        # Massage calls are no-ops (no keycode to send) rather than wrong bytes.
+        await coordinator.controller.massage_toggle()
+        mock_bleak_client.write_gatt_char.assert_not_called()
+
+    async def test_massage_toggle(
+        self,
+        hass: HomeAssistant,
+        mock_okin_uuid_massage_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Massage start/toggle sends the authoritative all-zones keycode."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_massage_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_massage is True
         await coordinator.controller.massage_toggle()
 
-        expected_cmd = coordinator.controller._build_command(0x100)
+        expected_cmd = coordinator.controller._build_command(0x200000)
         mock_bleak_client.write_gatt_char.assert_called_with(
             OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
@@ -693,12 +733,12 @@ class TestOkinUuidMassage:
     async def test_massage_head_up(
         self,
         hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
+        mock_okin_uuid_massage_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test head massage intensity up."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
+        """Test head massage intensity up (authoritative keycode)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_massage_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_head_up()
@@ -711,12 +751,12 @@ class TestOkinUuidMassage:
     async def test_massage_foot_down(
         self,
         hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
+        mock_okin_uuid_massage_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test foot massage intensity down."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
+        """Test foot massage intensity down (authoritative keycode)."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_massage_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_foot_down()
@@ -729,20 +769,104 @@ class TestOkinUuidMassage:
     async def test_massage_mode_step(
         self,
         hass: HomeAssistant,
-        mock_okin_uuid_config_entry,
+        mock_okin_uuid_massage_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Test massage timer step."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
+        """Massage mode-step sends the wave keycode when present."""
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_massage_config_entry)
         await coordinator.async_connect()
 
         await coordinator.controller.massage_mode_step()
 
-        expected_cmd = coordinator.controller._build_command(0x200)
+        expected_cmd = coordinator.controller._build_command(0x4000000)
         mock_bleak_client.write_gatt_char.assert_called_with(
             OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
         )
+
+
+class TestOkinUuidExtras:
+    """Sync / child-lock / zero-gravity capabilities driven by the remote table."""
+
+    def _controller(self, hass, variant):
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"Okin UUID {variant}",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+                CONF_NAME: f"Okin UUID {variant}",
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_PROTOCOL_VARIANT: variant,
+                CONF_MOTOR_COUNT: 2,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id=f"okimat_{variant}_extras",
+        )
+        entry.add_to_hass(hass)
+        return AdjustableBedCoordinator(hass, entry)
+
+    async def test_sync_capability_and_command(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """A sync-capable remote (93332) advertises and sends the sync keycode."""
+        coordinator = self._controller(hass, "93332")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_sync is True
+        await coordinator.controller.sync_positions()
+
+        expected_cmd = coordinator.controller._build_command(0x100)
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
+        )
+
+    async def test_child_lock_capability_and_command(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """A child-lock-capable remote (90658) advertises and sends the keycode."""
+        coordinator = self._controller(hass, "90658")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_child_lock is True
+        await coordinator.controller.child_lock_toggle()
+
+        expected_cmd = coordinator.controller._build_command(0x08000000)
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
+        )
+
+    async def test_zero_gravity_preset(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """The single zero-gravity remote (94500) exposes the preset."""
+        coordinator = self._controller(hass, "94500")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_preset_zero_g is True
+        await coordinator.controller.preset_zero_g()
+
+        expected_cmd = coordinator.controller._build_command(0x4000)
+        assert any(
+            call[0][1] == expected_cmd
+            for call in mock_bleak_client.write_gatt_char.call_args_list
+        )
+
+    async def test_basic_remote_has_no_extras(
+        self, hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client: MagicMock
+    ):
+        """The default basic remote (82417) exposes no sync/child-lock/zero-g."""
+        coordinator = self._controller(hass, "82417")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_sync is False
+        assert coordinator.controller.supports_child_lock is False
+        assert coordinator.controller.supports_preset_zero_g is False
+        # Calling them is a safe no-op.
+        await coordinator.controller.sync_positions()
+        await coordinator.controller.child_lock_toggle()
+        mock_bleak_client.write_gatt_char.assert_not_called()
 
 
 class TestOkinUuidPositionNotifications:

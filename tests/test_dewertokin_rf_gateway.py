@@ -30,11 +30,14 @@ from custom_components.adjustable_bed.const import (
     DEWERTOKIN_RF_GATEWAY_MODEL,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DOMAIN,
-    OKIMAT_VARIANT_93332,
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+# Okin UUID remote codes are plain strings (table generated from the handset
+# backend); this test only needs the four-motor 93332 profile.
+OKIMAT_VARIANT_93332 = "93332"
 
 
 @dataclass

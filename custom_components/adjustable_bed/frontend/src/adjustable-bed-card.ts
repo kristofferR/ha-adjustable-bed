@@ -93,6 +93,7 @@ export class AdjustableBedCard extends LitElement {
       memory: () => (c.show_memory !== false ? this._memory(bed) : nothing),
       lighting: () => (c.show_lighting !== false ? this._lighting(bed) : nothing),
       massage: () => (c.show_massage !== false ? this._massage(bed) : nothing),
+      utility: () => (c.show_utility !== false ? this._utility(bed) : nothing),
       climate: () => (c.show_climate !== false ? this._climate(bed) : nothing),
       connection: () =>
         c.show_connection !== false ? this._connection(bed) : nothing,
@@ -279,6 +280,16 @@ export class AdjustableBedCard extends LitElement {
       ${this._heading("section.presets")}
       <div class="tiles">
         ${bed.presets.map((id) => this._tile(id, () => this._press(id)))}
+      </div>
+    `;
+  }
+
+  private _utility(bed: BedEntities): typeof nothing | TemplateResult {
+    if (bed.utility.length === 0) return nothing;
+    return html`
+      ${this._heading("section.utility")}
+      <div class="tiles">
+        ${bed.utility.map((id) => this._tile(id, () => this._press(id)))}
       </div>
     `;
   }

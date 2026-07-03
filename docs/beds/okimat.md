@@ -84,18 +84,48 @@ Detection priority:
 
 ## Supported Remote Codes
 
-Different Okimat remotes have varying capabilities. The remote code is typically printed on the remote or controller.
+The integration ships **187 remote codes** covering the full DewertOkin RF
+handset range (RFS-ELLIPSE, RF-TOPLINE, RF-LITELINE, RF-FLASHLINE, RF-TOUCH,
+RF-TOUCHLINE and their memory/massage variants). The remote code is printed on
+the back of the handset; select it under **Protocol variant** in the
+integration options. If your exact code is not offered, pick any code with the
+same button layout — the motor keycodes are shared across the family.
 
-| Remote Code(s) | Model | Motors | Memory Slots |
-|----------------|-------|--------|--------------|
-| 76688, 78375, 78378, 78386, 80599, 80602, 80608, 80616 | RFS-ELLIPSE/06 | Back, Legs | None |
-| 82417, 82620, 82757, 82760, 82764, 82767, 82770, 83358, 83462, 83489, 84931, 84963, 92461, 93305 | RF-TOPLINE basic | Back, Legs | None |
-| 82418, 85058, 92471, 93306 | RF-TOPLINE/11 | Back, Legs | 2 |
-| 88875, 88877, 89137, 89138, 89139, 92535 | RF-LITELINE/07 | Back, Legs | None |
-| 91244 | RF-FLASHLINE/07 | Back, Legs | None |
-| 91246, 92591, 94238 | RF-FLASHLINE/09 | Back, Legs | 2 |
-| 93329 | RF TOPLINE | Head, Back, Legs | 4 |
-| 93332 | RF TOPLINE | Head, Back, Legs, Feet | 2 |
+### Source of truth (important)
+
+The remote table is **generated from the DewertOkin FurniMove handset backend**
+(`GET /mobile-data/button/{code}`), which returns authoritative 32-bit keycodes
+(and timing) per remote code. For codes the backend no longer serves, keycodes
+are taken from the bundled `handsetlist.csv` capability flags by matching each
+pruned code to a live code with the identical capability signature. See
+`beds/okin_uuid_remotes.py` for the generated table (each entry is tagged
+`backend`, `csv-inherit:<code>`, or `csv-reconstruct`) and
+`tools/okin_remotes/` for the regeneration pipeline.
+
+Because **Flat is a per-code property** (two codes in the same model family can
+use different Flat values), the table stores each code's exact values rather
+than lumping codes into shared family profiles. This corrected several Flat
+values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
+
+> [!NOTE]
+> Five codes that share the handset backend but use a different, incompatible
+> command layout ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 93558, 97450,
+> 97544, 98035) are intentionally **excluded** — they are not the standard Okin
+> 6-byte protocol.
+
+### Capability coverage
+
+| Capability | Codes | Notes |
+|------------|-------|-------|
+| Back + Legs motors | 187 | Universal (`0x01/0x02`, `0x04/0x08`) |
+| Head/tilt motor | 58 | `0x10/0x20` |
+| Feet motor | 35 | `0x40/0x80` (a few use `0x20` for feet-down) |
+| Memory presets | 84 | 1–4 slots depending on code |
+| Under-bed light | 187 | Single-press toggle (`0x20000`) |
+| Sync both sides | 65 | Split-base re-sync (`0x100`, long hold) |
+| Child lock | 51 | Handset lock toggle (`0x08000000`, long hold) |
+| Massage | 7 | Head/foot intensity, wave, modes, stop |
+| Zero-gravity | 1 | Dedicated preset (code 94500) |
 
 ## Commands (32-bit Values)
 

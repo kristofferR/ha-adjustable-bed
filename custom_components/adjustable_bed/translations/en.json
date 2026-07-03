@@ -314,6 +314,12 @@
       "preset_zero_g": {
         "name": "Zero Gravity"
       },
+      "sync_positions": {
+        "name": "Sync Both Sides"
+      },
+      "child_lock_toggle": {
+        "name": "Child Lock"
+      },
       "preset_anti_snore": {
         "name": "Anti-Snore"
       },

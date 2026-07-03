@@ -40,44 +40,6 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
-    OKIMAT_VARIANT_76688,
-    OKIMAT_VARIANT_78375,
-    OKIMAT_VARIANT_78378,
-    OKIMAT_VARIANT_78386,
-    OKIMAT_VARIANT_80599,
-    OKIMAT_VARIANT_80602,
-    OKIMAT_VARIANT_80608,
-    OKIMAT_VARIANT_80616,
-    OKIMAT_VARIANT_82417,
-    OKIMAT_VARIANT_82418,
-    OKIMAT_VARIANT_82620,
-    OKIMAT_VARIANT_82757,
-    OKIMAT_VARIANT_82760,
-    OKIMAT_VARIANT_82764,
-    OKIMAT_VARIANT_82767,
-    OKIMAT_VARIANT_82770,
-    OKIMAT_VARIANT_83358,
-    OKIMAT_VARIANT_83462,
-    OKIMAT_VARIANT_83489,
-    OKIMAT_VARIANT_84931,
-    OKIMAT_VARIANT_84963,
-    OKIMAT_VARIANT_85058,
-    OKIMAT_VARIANT_88875,
-    OKIMAT_VARIANT_88877,
-    OKIMAT_VARIANT_89137,
-    OKIMAT_VARIANT_89138,
-    OKIMAT_VARIANT_89139,
-    OKIMAT_VARIANT_91244,
-    OKIMAT_VARIANT_91246,
-    OKIMAT_VARIANT_92461,
-    OKIMAT_VARIANT_92471,
-    OKIMAT_VARIANT_92535,
-    OKIMAT_VARIANT_92591,
-    OKIMAT_VARIANT_93305,
-    OKIMAT_VARIANT_93306,
-    OKIMAT_VARIANT_93329,
-    OKIMAT_VARIANT_93332,
-    OKIMAT_VARIANT_94238,
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_FOOT_MAX_RAW,
@@ -88,6 +50,10 @@ from ..const import (
 )
 from .base import BedController
 from .okin_protocol import build_okin_command
+from .okin_uuid_remotes import (
+    DEFAULT_OKIN_UUID_REMOTE,
+    OKIN_UUID_REMOTE_DATA,
+)
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -131,140 +97,25 @@ class OkinUuidRemoteConfig:
     memory_4: int | None = None
     memory_save: int | OkinUuidComplexCommand | None = None
     toggle_lights: int | OkinUuidComplexCommand = 0x20000  # UBL (under-bed lights)
+    sync: int | None = None  # Re-sync both sides of a split base
+    child_lock: int | None = None  # Toggle handset child lock
+    zero_gravity: int | None = None  # Zero-gravity preset (rare)
+    quiet_sleep: int | None = None  # Quiet-sleep preset (rare)
+    # Massage sub-commands keyed by function name (authoritative backend values).
+    # Recognised keys: head_up, head_down, foot_up, foot_down, stop, wave, all,
+    # mode1, mode2, mode3, head_toggle, foot_toggle.
+    massage: dict[str, int] | None = None
 
 
-def _rfs_ellipse_06_config() -> OkinUuidRemoteConfig:
-    """Return the RFS-ELLIPSE/06 two-motor command profile."""
-    return OkinUuidRemoteConfig(
-        name="RFS-ELLIPSE/06",
-        flat=0x100000AA,
-    )
-
-
-def _rf_topline_basic_config() -> OkinUuidRemoteConfig:
-    """Return the RF-TOPLINE two-motor no-memory command profile."""
-    return OkinUuidRemoteConfig(
-        name="RF-TOPLINE basic",
-        flat=0x000000AA,
-    )
-
-
-def _rf_topline_11_config() -> OkinUuidRemoteConfig:
-    """Return the RF-TOPLINE/11 two-motor memory command profile."""
-    return OkinUuidRemoteConfig(
-        name="RF-TOPLINE/11",
-        flat=0x000000AA,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=0x10000,
-    )
-
-
-def _rf_liteline_07_config() -> OkinUuidRemoteConfig:
-    """Return the RF-LITELINE/07 two-motor command profile."""
-    return OkinUuidRemoteConfig(
-        name="RF-LITELINE/07",
-        flat=0x100000AA,
-    )
-
-
-def _rf_flashline_09_config() -> OkinUuidRemoteConfig:
-    """Return the RF-FLASHLINE/09 two-motor memory command profile."""
-    return OkinUuidRemoteConfig(
-        name="RF-FLASHLINE/09",
-        flat=0x10000000,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=OkinUuidComplexCommand(data=0x10000, count=25, wait_time=200),
-        toggle_lights=OkinUuidComplexCommand(data=0x20000, count=50, wait_time=100),
-    )
-
-
-_RFS_ELLIPSE_06_VARIANTS = (
-    OKIMAT_VARIANT_76688,
-    OKIMAT_VARIANT_78375,
-    OKIMAT_VARIANT_78378,
-    OKIMAT_VARIANT_78386,
-    OKIMAT_VARIANT_80599,
-    OKIMAT_VARIANT_80602,
-    OKIMAT_VARIANT_80608,
-    OKIMAT_VARIANT_80616,
-)
-_RF_TOPLINE_BASIC_VARIANTS = (
-    OKIMAT_VARIANT_82417,
-    OKIMAT_VARIANT_82620,
-    OKIMAT_VARIANT_82757,
-    OKIMAT_VARIANT_82760,
-    OKIMAT_VARIANT_82764,
-    OKIMAT_VARIANT_82767,
-    OKIMAT_VARIANT_82770,
-    OKIMAT_VARIANT_83358,
-    OKIMAT_VARIANT_83462,
-    OKIMAT_VARIANT_83489,
-    OKIMAT_VARIANT_84931,
-    OKIMAT_VARIANT_84963,
-    OKIMAT_VARIANT_92461,
-    OKIMAT_VARIANT_93305,
-)
-_RF_TOPLINE_11_VARIANTS = (
-    OKIMAT_VARIANT_82418,
-    OKIMAT_VARIANT_85058,
-    OKIMAT_VARIANT_92471,
-    OKIMAT_VARIANT_93306,
-)
-_RF_LITELINE_07_VARIANTS = (
-    OKIMAT_VARIANT_88875,
-    OKIMAT_VARIANT_88877,
-    OKIMAT_VARIANT_89137,
-    OKIMAT_VARIANT_89138,
-    OKIMAT_VARIANT_89139,
-    OKIMAT_VARIANT_92535,
-)
-_RF_FLASHLINE_09_VARIANTS = (
-    OKIMAT_VARIANT_91246,
-    OKIMAT_VARIANT_92591,
-    OKIMAT_VARIANT_94238,
-)
-
-
-# Remote configurations based on smartbed-mqtt supportedRemotes.ts
-# Additional aliases come from the FurniMove 2.0.1 handsetlist.csv capability matrix.
+# The remote table is generated from the DewertOkin handset backend + the
+# bundled handsetlist.csv capability flags. See okin_uuid_remotes.py for
+# provenance and the tools/okin_remotes/ regeneration pipeline.
 OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
-    **{variant: _rfs_ellipse_06_config() for variant in _RFS_ELLIPSE_06_VARIANTS},
-    **{variant: _rf_topline_basic_config() for variant in _RF_TOPLINE_BASIC_VARIANTS},
-    **{variant: _rf_topline_11_config() for variant in _RF_TOPLINE_11_VARIANTS},
-    **{variant: _rf_liteline_07_config() for variant in _RF_LITELINE_07_VARIANTS},
-    OKIMAT_VARIANT_91244: OkinUuidRemoteConfig(
-        name="RF-FLASHLINE/07",
-        flat=0x100000AA,
-    ),
-    **{variant: _rf_flashline_09_config() for variant in _RF_FLASHLINE_09_VARIANTS},
-    OKIMAT_VARIANT_93329: OkinUuidRemoteConfig(
-        name="RF TOPLINE",
-        flat=0x0000002A,
-        head_up=0x10,
-        head_down=0x20,
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_3=0x4000,
-        memory_4=0x8000,
-        memory_save=0x10000,
-    ),
-    OKIMAT_VARIANT_93332: OkinUuidRemoteConfig(
-        name="RF TOPLINE",
-        flat=0x000000AA,
-        head_up=0x10,
-        head_down=0x20,
-        feet_up=0x40,
-        feet_down=0x20,  # Note: shares value with head_down per smartbed-mqtt
-        memory_1=0x1000,
-        memory_2=0x2000,
-        memory_save=0x10000,
-    ),
+    code: OkinUuidRemoteConfig(**kwargs) for code, kwargs in OKIN_UUID_REMOTE_DATA.items()
 }
 
 # Default remote for auto-detect (most common/basic)
-DEFAULT_REMOTE = OKIMAT_VARIANT_82417
+DEFAULT_REMOTE = DEFAULT_OKIN_UUID_REMOTE
 
 
 class OkinUuidController(BedController):
@@ -782,27 +633,152 @@ class OkinUuidController(BedController):
             default_delay_ms=100,
         )
 
-    # Massage methods (may not work on all remotes - inherited from Keeson)
+    # ------------------------------------------------------------------
+    # Massage (config-driven; keycodes come from the per-remote table, not
+    # from the Keeson protocol). Only remotes whose handset actually exposes
+    # massage keys advertise these capabilities.
+    # ------------------------------------------------------------------
+    @property
+    def _massage(self) -> dict[str, int]:
+        return self._remote.massage or {}
+
+    @property
+    def supports_massage(self) -> bool:
+        """Return True only when this remote's handset exposes massage."""
+        return bool(self._remote.massage)
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        """Massage start/toggle maps to the "all zones" key."""
+        return "all" in self._massage
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return "stop" in self._massage
+
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return "head_up" in self._massage and "head_down" in self._massage
+
+    @property
+    def supports_foot_massage_intensity_step_control(self) -> bool:
+        return "foot_up" in self._massage and "foot_down" in self._massage
+
+    @property
+    def supports_head_massage_toggle_control(self) -> bool:
+        return "head_toggle" in self._massage
+
+    @property
+    def supports_foot_massage_toggle_control(self) -> bool:
+        return "foot_toggle" in self._massage
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return "wave" in self._massage or "mode1" in self._massage
+
+    async def _massage_press(self, key: str) -> None:
+        """Send a single massage command if the remote defines it."""
+        code = self._massage.get(key)
+        if code is None:
+            _LOGGER.debug("Massage function %s not available on remote %s", key, self._variant)
+            return
+        await self.write_command(self._build_command(code))
+
     async def massage_toggle(self) -> None:
-        """Toggle massage."""
-        await self.write_command(self._build_command(0x100))
+        """Start/toggle massage (all zones)."""
+        await self._massage_press("all")
+
+    async def massage_off(self) -> None:
+        """Stop massage."""
+        await self._massage_press("stop")
+
+    async def massage_head_toggle(self) -> None:
+        """Toggle head-zone massage."""
+        await self._massage_press("head_toggle")
+
+    async def massage_foot_toggle(self) -> None:
+        """Toggle foot-zone massage."""
+        await self._massage_press("foot_toggle")
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity."""
-        await self.write_command(self._build_command(0x800))
+        await self._massage_press("head_up")
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
-        await self.write_command(self._build_command(0x800000))
+        await self._massage_press("head_down")
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
-        await self.write_command(self._build_command(0x400))
+        await self._massage_press("foot_up")
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
-        await self.write_command(self._build_command(0x1000000))
+        await self._massage_press("foot_down")
 
     async def massage_mode_step(self) -> None:
-        """Step through massage modes/timer."""
-        await self.write_command(self._build_command(0x200))
+        """Step massage mode (wave, or first program if no wave key)."""
+        await self._massage_press("wave" if "wave" in self._massage else "mode1")
+
+    # ------------------------------------------------------------------
+    # Sync / child lock / zero-gravity (config-driven extras)
+    # ------------------------------------------------------------------
+    @property
+    def supports_sync(self) -> bool:
+        """Return True if the remote can re-sync both sides of a split base."""
+        return self._remote.sync is not None
+
+    async def sync_positions(self) -> None:
+        """Re-synchronise both sides of a split base (held command)."""
+        if self._remote.sync is None:
+            _LOGGER.debug("Sync not available on remote %s", self._variant)
+            return
+        # The handset streams this for ~6s; mirror that as a long hold.
+        await self.write_command(
+            self._build_command(self._remote.sync),
+            repeat_count=60,
+            repeat_delay_ms=100,
+        )
+
+    @property
+    def supports_child_lock(self) -> bool:
+        """Return True if the remote can toggle the handset child lock."""
+        return self._remote.child_lock is not None
+
+    async def child_lock_toggle(self) -> None:
+        """Toggle the handset child lock (held command)."""
+        if self._remote.child_lock is None:
+            _LOGGER.debug("Child lock not available on remote %s", self._variant)
+            return
+        await self.write_command(
+            self._build_command(self._remote.child_lock),
+            repeat_count=60,
+            repeat_delay_ms=100,
+        )
+
+    @property
+    def supports_preset_zero_g(self) -> bool:
+        """Return True if the remote exposes a dedicated zero-gravity preset."""
+        return self._remote.zero_gravity is not None
+
+    async def preset_zero_g(self) -> None:
+        """Go to the zero-gravity preset."""
+        if self._remote.zero_gravity is None:
+            _LOGGER.debug("Zero-gravity not available on remote %s", self._variant)
+            return
+        try:
+            await self.write_command(
+                self._build_command(self._remote.zero_gravity),
+                repeat_count=100,
+                repeat_delay_ms=300,
+            )
+        finally:
+            try:
+                await self.write_command(
+                    self._build_command(0),
+                    cancel_event=asyncio.Event(),
+                )
+            except (TimeoutError, BleakError):
+                _LOGGER.debug(
+                    "Failed to send STOP command during preset_zero_g cleanup", exc_info=True
+                )

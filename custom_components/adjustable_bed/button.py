@@ -440,6 +440,21 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.therapy_mode_three(),
         required_capability="supports_therapy_modes",
     ),
+    # Utility buttons (Okin split-base sync / handset child lock)
+    AdjustableBedButtonEntityDescription(
+        key="sync_positions",
+        translation_key="sync_positions",
+        icon="mdi:sync",
+        press_fn=lambda ctrl: cast(Any, ctrl).sync_positions(),
+        required_capability="supports_sync",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="child_lock_toggle",
+        translation_key="child_lock_toggle",
+        icon="mdi:lock",
+        press_fn=lambda ctrl: cast(Any, ctrl).child_lock_toggle(),
+        required_capability="supports_child_lock",
+    ),
     # Motor movement buttons (for discrete motor control beds)
     AdjustableBedButtonEntityDescription(
         key="head_up",

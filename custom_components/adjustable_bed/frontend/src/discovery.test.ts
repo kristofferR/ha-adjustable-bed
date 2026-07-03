@@ -60,6 +60,28 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("Okin utility buttons (sync / child lock) bucket into utility", () => {
+  const hass = hassWith([
+    entry("cover.seng_back", "back"),
+    entry("button.seng_sync", "sync_positions"),
+    entry("button.seng_lock", "child_lock_toggle"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.utility).toEqual(["button.seng_sync", "button.seng_lock"]);
+  // Utility buttons must not leak into presets or massage.
+  expect(bed.presets).toHaveLength(0);
+  expect(bed.massage.buttons).toHaveLength(0);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("bed with only utility buttons is not empty", () => {
+  const hass = hassWith([entry("button.b_sync", "sync_positions")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.b_sync"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("memory asymmetry: goto for some slots, save for all", () => {
   const hass = hassWith([
     entry("button.b_save1", "program_memory_1"),
