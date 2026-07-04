@@ -7,10 +7,19 @@ serves. Regenerate with ``tools/okin_remotes/gen_module.py`` (see the README
 there for the full pipeline).
 
 Each entry is keyword arguments for ``OkinUuidRemoteConfig`` (see
-``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the controller
-wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save`` and
-``toggle_lights`` may be ``(keycode, count, delay_ms)`` hold tuples when the
-backend specifies hold timing for that handset.
+``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the standard
+controller wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save``
+and ``toggle_lights`` may be ``(keycode, count, delay_ms)`` hold tuples when
+the backend specifies hold timing for that handset.
+
+Entries with ``"dot": True`` are "DOT PROTOCOL" handsets (RF1058/RF34/RF6707).
+Their boxes expose Nordic UART instead of the Okin 62741523 service and take
+CB24-style 7-byte frames ``[0x05, 0x02, <4-byte big-endian>, 0x00]`` — they are
+driven by ``OkinDotController`` and listed in ``OKIN_DOT_VARIANT_LABELS``, not
+in the Okimat dropdown. Their motor keycodes are renumbered per handset
+(whichever channels exist start at 0x1/0x2) but keep their section meaning —
+the table maps them to the standard section fields (RF1058 = head+feet,
+RF6707 = head+back).
 
 ``source`` comment legend:
   backend         -> authoritative keycodes from the live handset backend
@@ -25,6 +34,10 @@ from __future__ import annotations
 
 # Default remote when variant is auto/unknown (most common basic RF-TOPLINE).
 DEFAULT_OKIN_UUID_REMOTE = "82417"
+
+# Default DOT remote (plain RF34 layout; flat/light keycodes are identical
+# across all DOT codes, only motor sections and memory/massage extras differ).
+DEFAULT_OKIN_DOT_REMOTE = "97450"
 
 # code -> dropdown label
 OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
@@ -240,6 +253,16 @@ OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
     "97135": "97135 - RF-TOPLINE/15/AL/BK/L (Head/Back/Legs/Feet, 2 Mem)",
 }
 
+# DOT-protocol code -> dropdown label (okin_dot bed type)
+OKIN_DOT_VARIANT_LABELS: dict[str, str] = {
+    "90167": "90167 - RF1058 (Head/Feet, 4 Mem, Massage)",
+    "91983": "91983 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "93558": "93558 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "97450": "97450 - RF34/09/WH/GY/ (Back/Legs, 2 Mem)",
+    "97544": "97544 - RF34/09/BK/BK/ (Back/Legs, 2 Mem)",
+    "98035": "98035 - RF6707 (Head/Back)",
+}
+
 # code -> OkinUuidRemoteConfig kwargs
 OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "62211": {"name": "RF", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "memory_save": 0x10000, "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # csv-reconstruct
@@ -401,6 +424,7 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "89746": {"name": "TOPLINE-11-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000},  # backend
     "89803": {"name": "LITELINE-7-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "89837": {"name": "RF-TOUCH/18/WH/BK/KL/L", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "child_lock": 0x8000000, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "toggle_lights": 0x20000, "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
+    "90167": {"name": "RF1058", "dot": True, "flat": 0x8000000, "head_up": 0x1, "head_down": 0x2, "feet_up": 0x4, "feet_down": 0x8, "zero_gravity": 0x1000, "quiet_sleep": 0x4000, "memory_save": (0x10000, 25, 200), "memory_1": 0x3000, "memory_2": 0x5000, "memory_3": 0x6000, "memory_4": 0x7000, "toggle_lights": (0x20000, 50, 100), "massage": {"foot_down": 0x1000000, "foot_up": 0x400, "head_down": 0x800000, "head_up": 0x800, "stop": 0x100, "wave": 0x10000000}},  # backend
     "90199": {"name": "TOPLINE-11-SL-3M/4M", "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "90269": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x3000, "memory_4": 0x4000, "toggle_lights": 0x20000},  # backend
     "90354": {"name": "RF-STYLE/07/WH/WH", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": 0x20000},  # backend
@@ -421,6 +445,7 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "91616": {"name": "HS-IPROXX", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": (0x20000, 50, 100)},  # backend
     "91751": {"name": "LITELINE-7-BK-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "91914": {"name": "RF-TOUCH/23/WH/BK/KL", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x80, "sync": 0x100, "child_lock": 0x8000000, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "toggle_lights": (0x20000, 50, 100), "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
+    "91983": {"name": "RF1058", "dot": True, "flat": 0x8000000, "head_up": 0x1, "head_down": 0x2, "feet_up": 0x4, "feet_down": 0x8, "zero_gravity": 0x1000, "anti_snore": 0x4000, "memory_save": (0x10000, 25, 200), "memory_1": 0x2000, "memory_2": 0x8000, "memory_3": 0x3000, "toggle_lights": (0x20000, 50, 100), "massage": {"foot_down": 0x1000000, "foot_up": 0x400, "head_down": 0x800000, "head_up": 0x800, "stop": 0x100, "wave": 0x10000000}},  # backend
     "92063": {"name": "LITELINE-7-GR-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "zero_gravity": 0x4000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "92113": {"name": "RF-STYLE/BK/BK/14/2009", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": 0x20000},  # backend
     "92129": {"name": "TOPLINE-11-SL-2M", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100), "massage": {"all": 0x200000, "foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400, "wave": 0x4000000}},  # backend
@@ -437,6 +462,7 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "93329": {"name": "RF-TOPLINE/15/AL/BK/M3/S/ST/IP20/BLI/FL/LED/M", "flat": 0x2a, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "memory_3": 0x4000, "memory_4": 0x8000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "93332": {"name": "RF-TOPLINE/15/AL/BK/M4/S/ST/IP20/BLI/FL/LED/M", "flat": 0xaa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x20, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "93339": {"name": "RF-TOPLINE/15/AL/BK", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100), "massage": {"foot_down": 0x1000000, "foot_toggle": 0x100000, "foot_up": 0x400000, "head_down": 0x800000, "head_toggle": 0x80000, "head_up": 0x800, "mode1": 0x20000000, "mode2": 0x40000000, "mode3": 0x80000000, "stop": 0x400}},  # backend
+    "93558": {"name": "RF1058", "dot": True, "flat": 0x8000000, "head_up": 0x1, "head_down": 0x2, "feet_up": 0x4, "feet_down": 0x8, "zero_gravity": 0x1000, "anti_snore": 0x4000, "memory_save": (0x10000, 25, 200), "memory_1": 0x2000, "memory_2": 0x8000, "memory_3": 0x3000, "toggle_lights": (0x20000, 50, 100), "massage": {"foot_down": 0x1000000, "foot_up": 0x400, "head_down": 0x800000, "head_up": 0x800, "stop": 0x100, "wave": 0x10000000}},  # backend
     "94186": {"name": "RF-TOPLINE", "flat": 0x100000aa, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "sync": 0x100, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "94238": {"name": "RF", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x10000, 25, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "94239": {"name": "RF", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": (0x20000, 50, 100)},  # backend
@@ -452,4 +478,7 @@ OKIN_UUID_REMOTE_DATA: dict[str, dict] = {
     "96315": {"name": "RF28/07/WH/GY", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "toggle_lights": (0x20000, 50, 100)},  # backend
     "97134": {"name": "RF-TOPLINE/11/AL/BK/L", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
     "97135": {"name": "RF-TOPLINE/15/AL/BK/L", "flat": 0x10000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "head_up": 0x10, "head_down": 0x20, "feet_up": 0x40, "feet_down": 0x20, "memory_save": (0x10000, 10, 200), "memory_1": 0x1000, "memory_2": 0x2000, "toggle_lights": (0x20000, 50, 100)},  # backend
+    "97450": {"name": "RF34/09/WH/GY/", "dot": True, "flat": 0x8000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x1f000, 10, 200), "memory_1": 0x10000, "memory_2": 0x40000, "toggle_lights": (0x20000, 50, 100)},  # backend
+    "97544": {"name": "RF34/09/BK/BK/", "dot": True, "flat": 0x8000000, "back_up": 0x1, "back_down": 0x2, "legs_up": 0x4, "legs_down": 0x8, "memory_save": (0x10000, 10, 200), "memory_1": 0x10000, "memory_2": 0x40000, "toggle_lights": (0x20000, 50, 100)},  # backend
+    "98035": {"name": "RF6707", "dot": True, "flat": 0x8000000, "back_up": 0x4, "back_down": 0x8, "head_up": 0x1, "head_down": 0x2, "toggle_lights": (0x20000, 50, 100)},  # backend
 }

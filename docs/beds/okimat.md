@@ -110,10 +110,11 @@ than lumping codes into shared family profiles. This corrected several Flat
 values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
 
 > [!NOTE]
-> Six codes that share the handset backend but use a different, incompatible
+> Six codes that share the handset backend use a different transport and
 > command layout ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 91983, 93558,
-> 97450, 97544, 98035) are intentionally **excluded** — they are not the standard
-> Okin 6-byte protocol.
+> 97450, 97544, 98035). They are supported by the separate
+> [**Okin DOT**](okin-dot.md) bed type — if that number is printed on your
+> remote, select "Okin DOT" instead of Okimat during setup.
 
 ### Capability coverage
 

@@ -102,6 +102,7 @@ BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairin
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
+BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
@@ -176,6 +177,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -1660,6 +1662,23 @@ OKIMAT_VARIANTS: Final = {
     "97135": "97135 - RF-TOPLINE/15/AL/BK/L (Head/Back/Legs/Feet, 2 Mem)",
 }
 
+# DewertOkin "DOT PROTOCOL" remote codes (generated together with
+# OKIMAT_VARIANTS; regenerate via tools/okin_remotes/). These handsets
+# (RF1058/RF34/RF6707) resolve through the same FurniMove backend but their
+# boxes expose Nordic UART and take CB24-style 7-byte frames — see
+# beds/okin_dot.py. Motor keycodes are renumbered per handset (whichever
+# channels exist start at 0x1/0x2) but keep their section meaning; the table
+# maps them to the standard section fields, so labels match the exposed axes.
+OKIN_DOT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (RF34 layout, try 97450 first)",
+    "90167": "90167 - RF1058 (Head/Feet, 4 Mem, Massage)",
+    "91983": "91983 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "93558": "93558 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "97450": "97450 - RF34/09/WH/GY/ (Back/Legs, 2 Mem)",
+    "97544": "97544 - RF34/09/BK/BK/ (Back/Legs, 2 Mem)",
+    "98035": "98035 - RF6707 (Head/Back)",
+}
+
 # OKIN 64-bit protocol variants (10-byte commands with 64-bit bitmasks)
 OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
 OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
@@ -1706,6 +1725,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
     *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
+    *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
     # SBI/Q-Plus variants
@@ -1899,6 +1919,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
     BED_TYPE_OKIN_CB24: (3, 300),
+    # OKIN DOT: FurniMove resends the held keycode ~every 100ms
+    # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
+    BED_TYPE_OKIN_DOT: (10, 100),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),

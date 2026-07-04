@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
@@ -85,7 +86,11 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
+    NORDIC_UART_SERVICE_UUID,
+    NORDIC_UART_WRITE_CHAR_UUID,
     OCTO_VARIANT_STAR2,
+    OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
     OKIN_CB24_VARIANT_CB27,
@@ -198,6 +203,19 @@ def _gatt_has_characteristic(
     return False
 
 
+def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:
+    """Return True when a connected Okin box is a DOT PROTOCOL receiver.
+
+    FurniMove flags a connection as DOT when it exposes the Nordic UART write
+    characteristic; a DOT box has no Okin 62741523 service, so require both
+    signals to avoid demoting a standard Okimat box that happens to also
+    expose Nordic UART.
+    """
+    return _gatt_has_characteristic(
+        client, NORDIC_UART_SERVICE_UUID, NORDIC_UART_WRITE_CHAR_UUID
+    ) and not _gatt_has_characteristic(client, OKIMAT_SERVICE_UUID, OKIMAT_WRITE_CHAR_UUID)
+
+
 def _is_dewertokin_rf_gateway(client: BleakClient | None, ble_model: str | None) -> bool:
     """Return True when a DewertOkin/Okin entry is the RF-Gateway command variant."""
     if ble_model is not None and ble_model.strip().lower() == DEWERTOKIN_RF_GATEWAY_MODEL.lower():
@@ -265,6 +283,13 @@ async def create_controller(
 
         return OkinHandleController(coordinator)
 
+    if bed_type == BED_TYPE_OKIN_DOT:
+        from .beds.okin_dot import OkinDotController
+
+        variant = protocol_variant or VARIANT_AUTO
+        _LOGGER.debug("Using Okin DOT variant: %s", variant)
+        return OkinDotController(coordinator, variant=variant)
+
     if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
         variant = protocol_variant or "auto"
         if _is_dewertokin_rf_gateway(client, ble_model):
@@ -277,6 +302,17 @@ async def create_controller(
                 variant,
             )
             return DewertOkinUuidRfGatewayController(coordinator, variant=variant)
+
+        if _is_dewertokin_dot_box(client):
+            from .beds.okin_dot import OkinDotController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin DOT PROTOCOL box for %s "
+                "(Nordic UART, no Okin 62741523 service); using variant %s",
+                coordinator.address,
+                variant,
+            )
+            return OkinDotController(coordinator, variant=variant)
 
         from .beds.okin_uuid import OkinUuidController
 

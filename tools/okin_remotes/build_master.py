@@ -80,15 +80,18 @@ def load_live():
             rec["memory"] = {k: memory[k] for k in sorted(memory)}
         if massage:
             rec["massage"] = massage
-        # description
-        ob = f"{CACHE}/{rid}_object.json"
-        try:
-            od = json.load(open(ob))["body"]
-            rec["desc"] = json.loads(od)[0].get("description", "") if od.startswith("[") else ""
-        except Exception:
-            rec["desc"] = ""
+        rec["desc"] = live_desc(rid)
         live[rid] = rec
     return live
+
+
+def live_desc(rid):
+    """Read a code's handset description from the cached object response."""
+    try:
+        od = json.load(open(f"{CACHE}/{rid}_object.json"))["body"]
+        return json.loads(od)[0].get("description", "") if od.startswith("[") else ""
+    except Exception:
+        return ""
 
 
 def signature(rec):
@@ -185,16 +188,81 @@ def apply_csv_ubl(rec, row):
 
 
 # Codes that reuse the handset backend but are a DIFFERENT protocol
-# (Flat=0x08000000, re-numbered layout, "DOT PROTOCOL" / RF1058 / RF34 / RF6707).
-# They are NOT the standard Okin 6-byte protocol and must be excluded.
-EXCLUDE = {"90167", "93558", "97450", "97544", "98035", "91983"}
+# ("DOT PROTOCOL" / RF1058 / RF34 / RF6707). These boxes speak the CB24-style
+# 7-byte frame [0x05, 0x02, <keycode BE>, 0x00] over Nordic UART instead of
+# the standard Okin 6-byte [0x04, 0x02, <keycode BE>] frame, and renumber the
+# motor bits per handset (whichever channels exist start at 0x1/0x2) with
+# Flat=0x08000000. They are emitted with protocol="dot" and kept out of the
+# csv-inherit pool so standard codes never inherit DOT keycodes.
+# Source: com.okin.okinsmartcomfort HexValueConverter.toByteArray(isDOTProtocol)
+# + BluetoothLeService.setCharacteristics (CB24_WRITE_CHARACTERISTIC 6E400002).
+DOT_CODES = {"90167", "93558", "97450", "97544", "98035", "91983"}
+
+# FurniMove UI names for the motor channels (OkinMoveTypeConverters):
+# M1=Head, M2=Back, M3=Legs, M4=Feet. Head maps to the tilt_* master fields
+# (emitted as head_up/head_down config kwargs by the generators).
+_M_FIELD = {"M1": "tilt", "M2": "back", "M3": "legs", "M4": "feet"}
+_M_SECTION = {"M1": "Head", "M2": "Back", "M3": "Legs", "M4": "Feet"}
+
+
+def dot_record(rid, arr, desc):
+    """Build a DOT-protocol master record from a backend button array.
+
+    DOT motor bits are renumbered per handset (the keycodes always start at
+    0x1/0x2 for whichever channels exist), but each channel keeps its section
+    meaning — map M-numbers to the standard section fields so the exposed HA
+    controls carry the right names (RF1058 = Head+Feet, RF6707 = Head+Back).
+    """
+    rec = {"code": rid, "source": "backend", "protocol": "dot", "desc": desc}
+    sections = []
+    memory = {}
+    massage = {}
+    for x in sorted(arr, key=lambda x: x["action"]):
+        a, kc = x["action"], x["keycode"].lower()
+        if a[:2] in _M_FIELD and a[2:] in ("Out", "In"):
+            field = _M_FIELD[a[:2]]
+            rec[f"{field}_{'up' if a[2:] == 'Out' else 'down'}"] = kc
+            if _M_SECTION[a[:2]] not in sections:
+                sections.append(_M_SECTION[a[:2]])
+        elif a.startswith("Memo") and a[4:].isdigit():
+            memory[int(a[4:])] = kc
+        elif a == "MemoSave":
+            rec["memory_save"] = kc
+            if x.get("duration") and x.get("frequency"):
+                rec["memory_save_duration_ms"] = x["duration"]
+                rec["memory_save_frequency_ms"] = x["frequency"]
+        elif a in MASSAGE_ACTS:
+            massage[a] = kc
+        elif a == "Flat":
+            rec["flat"] = kc
+        elif a == "UBL":
+            rec["ubl"] = kc
+            if x.get("duration") and x.get("frequency"):
+                rec["ubl_duration_ms"] = x["duration"]
+                rec["ubl_frequency_ms"] = x["frequency"]
+        elif a == "ZeroGravity":
+            rec["zero_gravity"] = kc
+        elif a == "QuietSleep":
+            rec["quiet_sleep"] = kc
+        elif a == "Snore":
+            rec["anti_snore"] = kc
+    rec["sections"] = "/".join(sections)
+    if memory:
+        rec["memory"] = {k: memory[k] for k in sorted(memory)}
+    if massage:
+        rec["massage"] = massage
+    return rec
 
 
 def main():
     live = load_live()
-    for c in EXCLUDE:
-        live.pop(c, None)
-    # index live by signature
+    dot = {}
+    for c in DOT_CODES:
+        if live.pop(c, None) is None:
+            continue
+        raw = json.load(open(f"{CACHE}/{c}_button.json"))["body"]
+        dot[c] = dot_record(c, json.loads(raw), live_desc(c))
+    # index live by signature (DOT codes removed: never an inherit source)
     by_sig = collections.defaultdict(list)
     for rid, rec in live.items():
         by_sig[signature(rec)].append(rid)
@@ -211,11 +279,14 @@ def main():
     for rid, rec in live.items():
         master[rid] = rec
         stats["backend"] += 1
+    for rid, rec in dot.items():
+        master[rid] = rec
+        stats["backend-dot"] += 1
 
     modal_massage, modal_zerog = modal_extras(live)
 
     for rid, row in rows.items():
-        if rid in master or rid in EXCLUDE:
+        if rid in master:
             continue
         sig = csv_signature(row)
         desc = row.get("Description", "")
