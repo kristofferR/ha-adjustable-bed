@@ -34,7 +34,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -111,11 +111,21 @@ class OkinUuidRemoteConfig:
     massage: dict[str, int] | None = None
 
 
+def _remote_config(kwargs: dict) -> OkinUuidRemoteConfig:
+    """Build a remote config, expanding generated (keycode, count, delay) holds."""
+    expanded: dict[str, Any] = dict(kwargs)
+    for key in ("memory_save", "toggle_lights"):
+        value = expanded.get(key)
+        if isinstance(value, tuple):
+            expanded[key] = OkinUuidComplexCommand(*value)
+    return OkinUuidRemoteConfig(**expanded)
+
+
 # The remote table is generated from the DewertOkin handset backend + the
 # bundled handsetlist.csv capability flags. See okin_uuid_remotes.py for
 # provenance and the tools/okin_remotes/ regeneration pipeline.
 OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
-    code: OkinUuidRemoteConfig(**kwargs) for code, kwargs in OKIN_UUID_REMOTE_DATA.items()
+    code: _remote_config(kwargs) for code, kwargs in OKIN_UUID_REMOTE_DATA.items()
 }
 
 # Default remote for auto-detect (most common/basic)
@@ -144,6 +154,8 @@ class OkinUuidController(BedController):
         # This allows combining multiple motor commands simultaneously
         # Reference: https://github.com/richardhopton/smartbed-mqtt/pull/66
         self._motor_state: dict[str, int] = {}
+        # Cycles the discrete massage programs for handsets without a wave key.
+        self._massage_mode_index = 0
 
         # Resolve variant to remote config
         if variant == VARIANT_AUTO or variant not in OKIN_UUID_REMOTES:
@@ -817,8 +829,22 @@ class OkinUuidController(BedController):
         await self._massage_press("foot_down")
 
     async def massage_mode_step(self) -> None:
-        """Step massage mode (wave, or first program if no wave key)."""
-        await self._massage_press("wave" if "wave" in self._massage else "mode1")
+        """Step massage mode.
+
+        Handsets with a wave key step modes through it; handsets with only the
+        discrete program keys (mode1/mode2/mode3) have no step key, so cycle
+        through the programs on consecutive presses.
+        """
+        if "wave" in self._massage:
+            await self._massage_press("wave")
+            return
+        modes = [key for key in ("mode1", "mode2", "mode3") if key in self._massage]
+        if not modes:
+            _LOGGER.debug("No massage modes available on remote %s", self._variant)
+            return
+        mode = modes[self._massage_mode_index % len(modes)]
+        self._massage_mode_index += 1
+        await self._massage_press(mode)
 
     # ------------------------------------------------------------------
     # Sync / child lock / zero-gravity (config-driven extras)

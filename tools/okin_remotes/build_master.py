@@ -15,7 +15,7 @@ import sys
 import collections
 
 CACHE = "cache"
-CSV_PATH = "handset_raw/handsetlist.csv"
+CSV_PATH = "handsetlist.csv"
 
 # Universal keycode map (fallback reconstruction), from backend modal values.
 UNIV = {
@@ -63,6 +63,14 @@ def load_live():
             kc = x["keycode"].lower()
             if a in ACT:
                 m[ACT[a]] = kc
+                # Hold timing (authoritative): MemoSave is hold-to-save on all
+                # handsets; a subset of handsets also hold the UBL key.
+                if a == "MemoSave" and x.get("duration") and x.get("frequency"):
+                    rec["memory_save_duration_ms"] = x["duration"]
+                    rec["memory_save_frequency_ms"] = x["frequency"]
+                elif a == "UBL" and x.get("duration") and x.get("frequency"):
+                    rec["ubl_duration_ms"] = x["duration"]
+                    rec["ubl_frequency_ms"] = x["frequency"]
             elif a.startswith("Memo") and a[4:].isdigit():
                 memory[int(a[4:])] = kc
             elif a in MASSAGE_ACTS:
@@ -113,7 +121,28 @@ def csv_signature(row):
     )
 
 
-def reconstruct(sig, desc):
+def modal_extras(live):
+    """Modal massage/zero-gravity keycodes across live handsets.
+
+    The massage keycodes are identical on every live massage handset and
+    zero-gravity is a single value, so pruned CSV codes flagged with those
+    capabilities can be reconstructed from the modal maps.
+    """
+    massage = collections.defaultdict(collections.Counter)
+    zerog = collections.Counter()
+    for rec in live.values():
+        for act, kc in (rec.get("massage") or {}).items():
+            massage[act][kc] += 1
+        if "zero_gravity" in rec:
+            zerog[rec["zero_gravity"]] += 1
+    modal_massage = {act: c.most_common(1)[0][0] for act, c in massage.items()}
+    # Wave only exists on a minority of handsets; don't guess it for
+    # reconstructed codes.
+    modal_massage.pop("MassagerWave", None)
+    return modal_massage, zerog.most_common(1)[0][0] if zerog else None
+
+
+def reconstruct(sig, has_ubl, modal_massage, modal_zerog):
     motors, memc, msave, sync, clock, massage, zerog, quiet = sig
     rec = {}
     for mk in motors:
@@ -128,8 +157,30 @@ def reconstruct(sig, desc):
         rec["sync"] = UNIV["sync"]
     if clock:
         rec["child_lock"] = UNIV["child_lock"]
-    rec["ubl"] = UNIV["ubl"]
+    if massage and modal_massage:
+        rec["massage"] = dict(modal_massage)
+    if zerog and modal_zerog:
+        rec["zero_gravity"] = modal_zerog
+    # No live handset exposes QuietSleep, so `quiet` cannot be reconstructed.
+    if has_ubl:
+        rec["ubl"] = UNIV["ubl"]
     rec["flat"] = UNIV["flat"]
+    return rec
+
+
+def apply_csv_ubl(rec, row):
+    """Honor the CSV UBL flag on CSV-sourced records.
+
+    The capability signature doesn't include UBL, so an inherited sibling may
+    disagree with the pruned code's own CSV row — the row is authoritative
+    for which buttons the handset has.
+    """
+    has_ubl = row.get("UBL", "").strip().lower() == "y"
+    if not has_ubl:
+        for key in ("ubl", "ubl_duration_ms", "ubl_frequency_ms"):
+            rec.pop(key, None)
+    elif "ubl" not in rec:
+        rec["ubl"] = UNIV["ubl"]
     return rec
 
 
@@ -161,6 +212,8 @@ def main():
         master[rid] = rec
         stats["backend"] += 1
 
+    modal_massage, modal_zerog = modal_extras(live)
+
     for rid, row in rows.items():
         if rid in master or rid in EXCLUDE:
             continue
@@ -176,10 +229,11 @@ def main():
             rec["code"] = rid
             rec["desc"] = desc
             rec["source"] = f"csv-inherit:{src}"
-            master[rid] = rec
+            master[rid] = apply_csv_ubl(rec, row)
             stats["csv-inherit"] += 1
         else:
-            rec = reconstruct(sig, desc)
+            has_ubl = row.get("UBL", "").strip().lower() == "y"
+            rec = reconstruct(sig, has_ubl, modal_massage, modal_zerog)
             rec["code"] = rid
             rec["desc"] = desc
             rec["source"] = "csv-reconstruct"

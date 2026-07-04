@@ -13,6 +13,8 @@
  "80601": {
   "code": "80601",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -39,6 +41,8 @@
  "80603": {
   "code": "80603",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -54,6 +58,8 @@
  "80604": {
   "code": "80604",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -175,6 +181,8 @@
  "82292": {
   "code": "82292",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -193,6 +201,8 @@
  "82295": {
   "code": "82295",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -227,6 +237,8 @@
  "82418": {
   "code": "82418",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x000000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -468,6 +480,8 @@
  "83060": {
   "code": "83060",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -486,6 +500,8 @@
  "83126": {
   "code": "83126",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -519,6 +535,8 @@
  "83219": {
   "code": "83219",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -677,6 +695,8 @@
  "84762": {
   "code": "84762",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -710,6 +730,8 @@
  "85057": {
   "code": "85057",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -732,6 +754,8 @@
  "85058": {
   "code": "85058",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -770,6 +794,10 @@
  "85281": {
   "code": "85281",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "tilt_down": "0x00000002",
   "tilt_up": "0x00000001",
@@ -792,6 +820,10 @@
  "86432": {
   "code": "86432",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x0000000a",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -865,6 +897,8 @@
  "89424": {
   "code": "89424",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "back_down": "0x00000002",
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
@@ -875,6 +909,10 @@
  "89441": {
   "code": "89441",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000008",
   "back_up": "0x00000004",
@@ -893,6 +931,8 @@
  "89448": {
   "code": "89448",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x10000000",
   "back_down": "0x00000008",
   "back_up": "0x00000004",
@@ -912,6 +952,8 @@
  "89476": {
   "code": "89476",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -934,6 +976,10 @@
  "89545": {
   "code": "89545",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "back_down": "0x00000002",
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
@@ -949,6 +995,8 @@
  "89746": {
   "code": "89746",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -965,6 +1013,8 @@
  "89803": {
   "code": "89803",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -977,6 +1027,8 @@
  "89837": {
   "code": "89837",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -1009,6 +1061,10 @@
  "90199": {
   "code": "90199",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "back_down": "0x00000002",
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
@@ -1024,6 +1080,8 @@
  "90269": {
   "code": "90269",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1043,6 +1101,8 @@
  "90354": {
   "code": "90354",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1062,6 +1122,8 @@
  "90392": {
   "code": "90392",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1073,6 +1135,8 @@
  "90658": {
   "code": "90658",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1093,6 +1157,8 @@
  "90675": {
   "code": "90675",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1113,6 +1179,8 @@
  "90678": {
   "code": "90678",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1137,6 +1205,8 @@
  "90679": {
   "code": "90679",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1161,6 +1231,10 @@
  "90882": {
   "code": "90882",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1178,6 +1252,8 @@
  "90916": {
   "code": "90916",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1213,6 +1289,8 @@
  "90918": {
   "code": "90918",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -1246,6 +1324,8 @@
  "90926": {
   "code": "90926",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "back_down": "0x00000002",
   "back_up": "0x00000001",
   "feet_down": "0x00000020",
@@ -1256,6 +1336,10 @@
  "90928": {
   "code": "90928",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1276,6 +1360,8 @@
  "91050": {
   "code": "91050",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -1319,6 +1405,8 @@
  "91246": {
   "code": "91246",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1335,6 +1423,10 @@
  "91334": {
   "code": "91334",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1351,6 +1443,8 @@
  "91616": {
   "code": "91616",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1362,6 +1456,8 @@
  "91751": {
   "code": "91751",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1374,6 +1470,10 @@
  "91914": {
   "code": "91914",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -1410,6 +1510,8 @@
  "92063": {
   "code": "92063",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1422,6 +1524,8 @@
  "92113": {
   "code": "92113",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1441,6 +1545,10 @@
  "92129": {
   "code": "92129",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1471,6 +1579,10 @@
  "92428": {
   "code": "92428",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1498,6 +1610,10 @@
  "92471": {
   "code": "92471",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1525,6 +1641,8 @@
  "92591": {
   "code": "92591",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1552,6 +1670,10 @@
  "93055": {
   "code": "93055",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x0000000a",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1570,6 +1692,8 @@
  "93300": {
   "code": "93300",
   "source": "backend",
+  "memory_save_duration_ms": 8000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1600,6 +1724,8 @@
  "93306": {
   "code": "93306",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1616,6 +1742,10 @@
  "93329": {
   "code": "93329",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x0000002a",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1637,6 +1767,10 @@
  "93332": {
   "code": "93332",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x000000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1658,6 +1792,10 @@
  "93339": {
   "code": "93339",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1687,6 +1825,10 @@
  "94186": {
   "code": "94186",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1704,6 +1846,10 @@
  "94238": {
   "code": "94238",
   "source": "backend",
+  "memory_save_duration_ms": 5000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1720,6 +1866,8 @@
  "94239": {
   "code": "94239",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1731,6 +1879,10 @@
  "94369": {
   "code": "94369",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "child_lock": "0x08000000",
   "flat": "0x10000000",
   "tilt_down": "0x00000020",
@@ -1755,6 +1907,10 @@
  "94428": {
   "code": "94428",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "child_lock": "0x08000000",
   "flat": "0x000000aa",
   "tilt_down": "0x00000020",
@@ -1779,6 +1935,10 @@
  "94429": {
   "code": "94429",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x000000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1800,6 +1960,10 @@
  "94430": {
   "code": "94430",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x000000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1827,6 +1991,10 @@
  "94500": {
   "code": "94500",
   "source": "backend",
+  "memory_save_duration_ms": 5000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x000000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1844,6 +2012,8 @@
  "96312": {
   "code": "96312",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1855,6 +2025,8 @@
  "96313": {
   "code": "96313",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1866,6 +2038,8 @@
  "96314": {
   "code": "96314",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1877,6 +2051,8 @@
  "96315": {
   "code": "96315",
   "source": "backend",
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1888,6 +2064,10 @@
  "97134": {
   "code": "97134",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -1904,6 +2084,10 @@
  "97135": {
   "code": "97135",
   "source": "backend",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1944,6 +2128,8 @@
  "62612": {
   "code": "62612",
   "source": "csv-inherit:85057",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
@@ -1971,7 +2157,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF HS-Classic N, 6 Button, black"
  },
  "63338": {
@@ -2028,6 +2213,10 @@
  "65433": {
   "code": "65433",
   "source": "csv-inherit:89441",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
+  "ubl_duration_ms": 5000,
+  "ubl_frequency_ms": 100,
   "flat": "0x10000000",
   "back_down": "0x00000008",
   "back_up": "0x00000004",
@@ -2059,6 +2248,19 @@
    "4": "0x00008000"
   },
   "memory_save": "0x00010000",
+  "massage": {
+   "MassageAll": "0x00200000",
+   "Massager1": "0x20000000",
+   "Massager2": "0x40000000",
+   "Massager3": "0x80000000",
+   "MassagerFeet": "0x00100000",
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00400000",
+   "MassagerHead": "0x00080000",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000400"
+  },
   "ubl": "0x00020000",
   "flat": "0x100000aa",
   "code": "65567",
@@ -2073,7 +2275,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF-SYSTEM/SW/6/1476/2400MHZ"
  },
  "71852": {
@@ -2084,7 +2285,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG SENDER ..."
  },
  "71853": {
@@ -2095,7 +2295,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "73591": {
@@ -2106,7 +2305,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "73593": {
@@ -2117,7 +2315,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "74130": {
@@ -2126,7 +2323,6 @@
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 1MOTORIG"
  },
  "74131": {
@@ -2135,7 +2331,6 @@
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 1MOTORIG"
  },
  "75225": {
@@ -2146,7 +2341,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF-SYSTEM/SW/ST/6/1476/2400MHZ"
  },
  "75267": {
@@ -2157,7 +2351,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "75268": {
@@ -2168,7 +2361,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG SENDER ..."
  },
  "76208": {
@@ -2183,6 +2375,19 @@
    "4": "0x00008000"
   },
   "memory_save": "0x00010000",
+  "massage": {
+   "MassageAll": "0x00200000",
+   "Massager1": "0x20000000",
+   "Massager2": "0x40000000",
+   "Massager3": "0x80000000",
+   "MassagerFeet": "0x00100000",
+   "MassagerFeetMinus": "0x01000000",
+   "MassagerFeetPlus": "0x00400000",
+   "MassagerHead": "0x00080000",
+   "MassagerHeadMinus": "0x00800000",
+   "MassagerHeadPlus": "0x00000800",
+   "MassagerStop": "0x00000400"
+  },
   "ubl": "0x00020000",
   "flat": "0x100000aa",
   "code": "76208",
@@ -2197,12 +2402,13 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RFS-ELLIPSE/SW-SW-06-1844/-/-/-/02 GR/---/--/2 ..."
  },
  "76691": {
   "code": "76691",
   "source": "csv-inherit:80601",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -2223,7 +2429,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF eco black Soft Touch, single packed (w/o Receiver)"
  },
  "77010": {
@@ -2234,7 +2439,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF eco black, single packed (w/o Receiver)"
  },
  "77011": {
@@ -2245,7 +2449,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RF eco silver, single packed (w/o Receiver)"
  },
  "77560": {
@@ -2256,7 +2459,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "77561": {
@@ -2267,7 +2469,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "77839": {
@@ -2313,6 +2514,8 @@
  "77994": {
   "code": "77994",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2386,7 +2589,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78033": {
@@ -2397,7 +2599,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78080": {
@@ -2465,6 +2666,8 @@
  "78103": {
   "code": "78103",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2553,6 +2756,8 @@
  "78111": {
   "code": "78111",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2582,7 +2787,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78238": {
@@ -2593,7 +2797,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78281": {
@@ -2604,7 +2807,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78283": {
@@ -2615,7 +2817,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "78375": {
@@ -2626,7 +2827,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RFS-ELLIPSE/WS-SW-06-1844/-/-/-/02 GR/---/--/2 ..."
  },
  "78378": {
@@ -2637,12 +2837,13 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RFS-ELLIPSE/WA-SW-06-1844/-/-/-/02 SW/---/--/2 ..."
  },
  "78379": {
   "code": "78379",
   "source": "csv-inherit:80601",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -2658,6 +2859,8 @@
  "78381": {
   "code": "78381",
   "source": "csv-inherit:80601",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "flat": "0x100000aa",
   "back_down": "0x00000002",
   "back_up": "0x00000001",
@@ -2678,7 +2881,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "RFS-ELLIPSE/WA-SW-06-1902/-/-/-/02 SW/---/--/2 ..."
  },
  "78737": {
@@ -2696,7 +2898,6 @@
   },
   "memory_save": "0x00010000",
   "child_lock": "0x08000000",
-  "ubl": "0x00020000",
   "flat": "0x100000aa",
   "code": "78737",
   "desc": "RF-TOUCH/BRW/BK/21/1899/L",
@@ -2705,6 +2906,8 @@
  "78773": {
   "code": "78773",
   "source": "csv-inherit:82295",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2728,6 +2931,8 @@
  "78785": {
   "code": "78785",
   "source": "csv-inherit:82295",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2751,6 +2956,8 @@
  "78791": {
   "code": "78791",
   "source": "csv-inherit:82295",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2774,6 +2981,8 @@
  "78847": {
   "code": "78847",
   "source": "csv-inherit:82292",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -2792,6 +3001,8 @@
  "78854": {
   "code": "78854",
   "source": "csv-inherit:82292",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -2810,6 +3021,8 @@
  "78860": {
   "code": "78860",
   "source": "csv-inherit:82292",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -2828,6 +3041,8 @@
  "80027": {
   "code": "80027",
   "source": "csv-inherit:82292",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -2846,6 +3061,8 @@
  "80035": {
   "code": "80035",
   "source": "csv-inherit:82295",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -2895,7 +3112,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "80355": {
@@ -2906,7 +3122,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "80358": {
@@ -2915,7 +3130,6 @@
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 1MOTORIG"
  },
  "80360": {
@@ -2924,7 +3138,6 @@
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
   "tilt_up": "0x00000010",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 1MOTORIG"
  },
  "80593": {
@@ -2968,7 +3181,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "80716": {
@@ -2979,12 +3191,13 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "80903": {
   "code": "80903",
   "source": "csv-inherit:82292",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "back_down": "0x00000002",
@@ -3067,6 +3280,8 @@
  "81191": {
   "code": "81191",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -3166,6 +3381,8 @@
  "81197": {
   "code": "81197",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -3234,6 +3451,8 @@
  "81205": {
   "code": "81205",
   "source": "csv-inherit:90678",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",
@@ -3263,7 +3482,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "81613": {
@@ -3274,7 +3492,6 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET REMOTE CONTROL 2,4GHz ECO 2MOTORIG"
  },
  "83603": {
@@ -3285,12 +3502,13 @@
   "back_up": "0x00000001",
   "legs_down": "0x00000008",
   "legs_up": "0x00000004",
-  "ubl": "0x00020000",
   "desc": "SET HS-TOPLINE/D/BK/BK/BK/06 M2"
  },
  "84173": {
   "code": "84173",
   "source": "csv-inherit:83219",
+  "memory_save_duration_ms": 2000,
+  "memory_save_frequency_ms": 200,
   "child_lock": "0x08000000",
   "flat": "0x100000aa",
   "tilt_down": "0x00000020",

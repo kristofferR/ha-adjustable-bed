@@ -125,11 +125,12 @@ values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
 | Feet motor | 38 | `0x40/0x80` (a few use `0x20` for feet-down) |
 | Memory presets | 99 | 1–4 slots depending on code |
 | Flat preset | 206 | A few basic RF-ECO remotes have no flat button |
-| Under-bed light | 208 | Single-press toggle (`0x20000`); two codes have no light key |
+| Under-bed light | 172 | `0x20000`; single press on most handsets, a 5s hold (50×100ms) on 39; codes whose handset has no light key get no light entity |
+| Memory save | 99 | Hold-to-save; per-code backend hold timing (2s/5s/8s @ 200ms) where the backend specifies it |
 | Sync both sides | 69 | Split-base re-sync (`0x100`, long hold released with STOP) |
 | Child lock | 53 | Handset lock toggle (`0x08000000`, long hold released with STOP) |
-| Massage | 11 | Head/foot intensity, wave, modes, stop |
-| Zero-gravity | 1 | Dedicated preset (code 94500) |
+| Massage | 13 | Head/foot intensity, wave or program cycling, stop |
+| Zero-gravity | 8 | Dedicated preset (`0x4000`) |
 
 The exposed HA controls follow each code's handset layout: only motors the
 handset actually drives get covers (head controls drive the dedicated

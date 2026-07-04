@@ -27,8 +27,8 @@ The captured data is committed as `master.json` so the table can be regenerated
 
 ```bash
 cd tools/okin_remotes
-uv run gen_module.py          # -> okin_uuid_remotes.py (copy into beds/)
-uv run codegen.py             # -> gen_okimat_variants.py (OKIMAT_VARIANTS body)
+uv run gen_module.py   # -> okin_uuid_remotes.py (copy into beds/)
+                       #    + gen_okimat_variants.py (OKIMAT_VARIANTS body for const.py)
 ```
 
 To refresh `master.json` from the network (rarely needed):
