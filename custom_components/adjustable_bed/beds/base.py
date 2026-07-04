@@ -949,6 +949,16 @@ class BedController(ABC):
         return True
 
     @property
+    def supports_sync(self) -> bool:
+        """Return True if the bed can re-sync both sides of a split base."""
+        return False
+
+    @property
+    def supports_child_lock(self) -> bool:
+        """Return True if the bed can toggle a handset child lock."""
+        return False
+
+    @property
     def has_discrete_motor_control(self) -> bool:
         """Return True if bed uses discrete (button-press) motor control.
 
