@@ -788,7 +788,7 @@ class TestOkinUuidMassage:
 class TestOkinUuidExtras:
     """Sync / child-lock / zero-gravity capabilities driven by the remote table."""
 
-    def _controller(self, hass, variant):
+    def _controller(self, hass, variant, motor_count=2):
         entry = MockConfigEntry(
             domain=DOMAIN,
             title=f"Okin UUID {variant}",
@@ -797,12 +797,12 @@ class TestOkinUuidExtras:
                 CONF_NAME: f"Okin UUID {variant}",
                 CONF_BED_TYPE: BED_TYPE_OKIMAT,
                 CONF_PROTOCOL_VARIANT: variant,
-                CONF_MOTOR_COUNT: 2,
+                CONF_MOTOR_COUNT: motor_count,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
             unique_id="AA:BB:CC:DD:EE:FF",
-            entry_id=f"okimat_{variant}_extras",
+            entry_id=f"okimat_{variant}_extras_{motor_count}",
         )
         entry.add_to_hass(hass)
         return AdjustableBedCoordinator(hass, entry)
@@ -817,9 +817,13 @@ class TestOkinUuidExtras:
         assert coordinator.controller.supports_sync is True
         await coordinator.controller.sync_positions()
 
+        calls = mock_bleak_client.write_gatt_char.call_args_list
         expected_cmd = coordinator.controller._build_command(0x100)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
+        assert calls[0][0] == (OKIMAT_WRITE_CHAR_UUID, expected_cmd)
+        # The held sync key is released with STOP, like the handset does.
+        assert calls[-1][0] == (
+            OKIMAT_WRITE_CHAR_UUID,
+            coordinator.controller._build_command(0),
         )
 
     async def test_child_lock_capability_and_command(
@@ -832,9 +836,13 @@ class TestOkinUuidExtras:
         assert coordinator.controller.supports_child_lock is True
         await coordinator.controller.child_lock_toggle()
 
+        calls = mock_bleak_client.write_gatt_char.call_args_list
         expected_cmd = coordinator.controller._build_command(0x08000000)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, expected_cmd, response=True
+        assert calls[0][0] == (OKIMAT_WRITE_CHAR_UUID, expected_cmd)
+        # The held child-lock key is released with STOP, like the handset does.
+        assert calls[-1][0] == (
+            OKIMAT_WRITE_CHAR_UUID,
+            coordinator.controller._build_command(0),
         )
 
     async def test_zero_gravity_preset(
@@ -924,3 +932,142 @@ class TestOkinUuidPositionNotifications:
 
         # Should complete without error
         await coordinator.controller.read_positions()
+
+
+class TestOkinUuidMotorLayout:
+    """Motor exposure and routing derived from each remote's handset layout."""
+
+    def _controller(self, hass, variant, motor_count=2):
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=f"Okin UUID {variant}",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
+                CONF_NAME: f"Okin UUID {variant}",
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_PROTOCOL_VARIANT: variant,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:FF",
+            entry_id=f"okimat_{variant}_layout_{motor_count}",
+        )
+        entry.add_to_hass(hass)
+        return AdjustableBedCoordinator(hass, entry)
+
+    @pytest.mark.parametrize(
+        ("variant", "motor_count", "expected_keys"),
+        [
+            # Standard 2-motor remote.
+            ("82417", 2, ["back", "legs"]),
+            # 4-motor remote exposes all axes when configured for 4 motors...
+            ("93332", 4, ["back", "legs", "head", "feet"]),
+            # ...and is still capped by the configured motor count.
+            ("93332", 2, ["back", "legs"]),
+            # Head/Back handset (no legs motor): no Legs cover with default
+            # keycodes leaking in.
+            ("90658", 2, ["back", "head"]),
+            # Head-only handset exposes exactly its single axis.
+            ("84582", 2, ["head"]),
+        ],
+    )
+    async def test_motor_specs_match_handset_layout(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        variant,
+        motor_count,
+        expected_keys,
+    ):
+        """Motor covers are derived from the remote's keycodes, capped by motor count."""
+        coordinator = self._controller(hass, variant, motor_count)
+        await coordinator.async_connect()
+
+        assert [spec.key for spec in coordinator.controller.motor_control_specs] == expected_keys
+
+    async def test_head_control_drives_head_keycodes(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """On remotes with a head/tilt motor, the head control sends the M1 keycodes."""
+        coordinator = self._controller(hass, "93329", motor_count=3)
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_head_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == coordinator.controller._build_command(0x10)
+        assert calls[-1][0][1] == coordinator.controller._build_command(0)
+
+    async def test_head_control_falls_back_to_back_on_two_motor(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """On 2-motor remotes without a head motor, head stays a back synonym."""
+        coordinator = self._controller(hass, "82417")
+        await coordinator.async_connect()
+
+        await coordinator.controller.move_head_up()
+
+        calls = mock_bleak_client.write_gatt_char.call_args_list
+        assert calls[0][0][1] == coordinator.controller._build_command(0x1)
+
+    async def test_absent_legs_axis_sends_nothing(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A Head/Back handset never sends the (unadvertised) legs keycodes."""
+        coordinator = self._controller(hass, "90658")
+        await coordinator.async_connect()
+        writes_before = len(mock_bleak_client.write_gatt_char.call_args_list)
+
+        await coordinator.controller.move_legs_up()
+        await coordinator.controller.move_legs_down()
+
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == writes_before
+
+    async def test_lights_gated_on_handset_ubl_key(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Remotes without a UBL key advertise no light and send nothing."""
+        coordinator = self._controller(hass, "89448")
+        await coordinator.async_connect()
+        writes_before = len(mock_bleak_client.write_gatt_char.call_args_list)
+
+        assert coordinator.controller.supports_lights is False
+        await coordinator.controller.lights_toggle()
+
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == writes_before
+
+    async def test_lights_advertised_with_ubl_key(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Remotes with a UBL key keep the light toggle."""
+        coordinator = self._controller(hass, "82417")
+        await coordinator.async_connect()
+
+        assert coordinator.controller.supports_lights is True
+
+    async def test_stale_keys_cover_absent_axes(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """All motor keys are stale candidates; active axes are skipped by cleanup."""
+        coordinator = self._controller(hass, "90658")
+        await coordinator.async_connect()
+
+        stale = coordinator.controller.stale_motor_entity_keys
+        assert {"stair", "back", "legs", "head", "feet"} <= stale

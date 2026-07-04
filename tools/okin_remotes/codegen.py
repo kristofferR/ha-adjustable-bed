@@ -36,7 +36,8 @@ def features_of(r):
     motors = []
     if "tilt_up" in r:
         motors.append("Head")
-    motors.append("Back")
+    if "back_up" in r:
+        motors.append("Back")
     if "legs_up" in r:
         motors.append("Legs")
     if "feet_up" in r:

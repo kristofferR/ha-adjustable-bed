@@ -119,16 +119,23 @@ values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
 
 | Capability | Codes | Notes |
 |------------|-------|-------|
-| Back + Legs motors | 210 | Usually `0x01/0x02`, `0x04/0x08` (RF-FREE-ELEC shifts the bit assignment; each code stores its own) |
-| Head/tilt motor | 59 | `0x10/0x20` |
+| Back motor | 203 | Usually `0x01/0x02` (RF-FREE-ELEC shifts the bit assignment; each code stores its own) |
+| Legs motor | 199 | Usually `0x04/0x08` |
+| Head/tilt motor | 59 | `0x10/0x20` (7 codes are head-only handsets) |
 | Feet motor | 38 | `0x40/0x80` (a few use `0x20` for feet-down) |
 | Memory presets | 99 | 1–4 slots depending on code |
 | Flat preset | 206 | A few basic RF-ECO remotes have no flat button |
-| Under-bed light | 210 | Single-press toggle (`0x20000`) |
-| Sync both sides | 69 | Split-base re-sync (`0x100`, long hold) |
-| Child lock | 53 | Handset lock toggle (`0x08000000`, long hold) |
+| Under-bed light | 208 | Single-press toggle (`0x20000`); two codes have no light key |
+| Sync both sides | 69 | Split-base re-sync (`0x100`, long hold released with STOP) |
+| Child lock | 53 | Handset lock toggle (`0x08000000`, long hold released with STOP) |
 | Massage | 11 | Head/foot intensity, wave, modes, stop |
 | Zero-gravity | 1 | Dedicated preset (code 94500) |
+
+The exposed HA controls follow each code's handset layout: only motors the
+handset actually drives get covers (head controls drive the dedicated
+head/tilt motor when the remote has one, and stay a back synonym on 2-motor
+remotes), and the light toggle only appears for codes with a light key. The
+configured motor count still caps how many axes are shown.
 
 ## Commands (32-bit Values)
 

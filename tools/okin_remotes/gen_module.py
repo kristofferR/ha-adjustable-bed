@@ -33,7 +33,8 @@ def features_of(r):
     motors = []
     if "tilt_up" in r:
         motors.append("Head")
-    motors.append("Back")
+    if "back_up" in r:
+        motors.append("Back")
     if "legs_up" in r:
         motors.append("Legs")
     if "feet_up" in r:
@@ -86,7 +87,7 @@ DEFAULT_OKIN_UUID_REMOTE = "82417"
 # code -> dropdown label
 OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
 '''
-lines = [hdr]
+lines = [hdr.rstrip("\n")]
 for c in codes:
     lab = f"{c} - {model_of(master[c].get('desc',''))} ({features_of(master[c])})".replace('"', "'")
     lines.append(f'    "{c}": "{lab}",')
