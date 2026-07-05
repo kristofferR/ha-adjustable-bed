@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, Any, cast
@@ -98,9 +99,11 @@ MAX_CAPTURE_DURATION = 300
 MIN_TIMED_MOVE_DURATION_MS = 100
 MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
 
-# Timeout for initial connection at startup
-# Must be long enough to cover at least one full connection attempt (30s) with margin
-SETUP_TIMEOUT = 45.0
+# Timeout for initial connection at startup.
+# Must cover a full connection retry cycle: up to 3 attempts of ~30s each plus
+# backoff between them. Beds that are slow to wake (e.g. just repowered) often
+# only connect on the second or third attempt; 45s cut the cycle short.
+SETUP_TIMEOUT = 120.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -359,6 +362,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
+        with contextlib.suppress(Exception):
+            await coordinator.async_disconnect(reason="setup timeout cleanup")
         await _maybe_create_pairing_issue()
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
