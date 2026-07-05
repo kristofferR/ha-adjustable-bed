@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -104,6 +105,36 @@ class TestIntegrationSetup:
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
+
+    async def test_setup_entry_timeout_disconnects_cleanly(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_async_ble_device_from_address,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A setup timeout must tear down the half-open connection."""
+
+        async def _hangs(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        with (
+            patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.1),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+                new=_hangs,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_disconnect",
+                new_callable=AsyncMock,
+            ) as mock_disconnect,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
 
     async def test_setup_entry_connection_failed(
         self,
