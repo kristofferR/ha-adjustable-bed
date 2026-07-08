@@ -210,7 +210,7 @@ under `custom_components/adjustable_bed/frontend/`.
   ```bash
   cd custom_components/adjustable_bed/frontend
   bun install
-  bun run check   # tsgo typecheck + esbuild bundle
+  bun run check   # tsc (TypeScript 7) typecheck + esbuild bundle
   bun test        # discovery unit tests
   ```
   The bundle is written to `frontend/dist/adjustable-bed-card.js` and is
