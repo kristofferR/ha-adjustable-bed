@@ -1093,12 +1093,8 @@ class TestSleepysProtocolDifferences:
         box24_coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box24_config_entry)
         await box24_coordinator.async_connect()
 
-        box15_cmd = box15_coordinator.controller._build_motor_command(
-            SleepysBox15Commands.HEAD_UP
-        )
-        box24_cmd = box24_coordinator.controller._build_command(
-            SleepysBox24Commands.HEAD_UP
-        )
+        box15_cmd = box15_coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
+        box24_cmd = box24_coordinator.controller._build_command(SleepysBox24Commands.HEAD_UP)
         assert len(box15_cmd) == 9
         assert len(box24_cmd) == 7
 
@@ -1116,17 +1112,13 @@ class TestSleepysProtocolDifferences:
         box24_coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box24_config_entry)
         await box24_coordinator.async_connect()
 
-        box15_cmd = box15_coordinator.controller._build_motor_command(
-            SleepysBox15Commands.HEAD_UP
-        )
+        box15_cmd = box15_coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
         # BOX15 checksum is in last byte
         expected_checksum = _calculate_box15_checksum(box15_cmd[0:8])
         assert box15_cmd[8] == expected_checksum
 
         # BOX24 has no checksum - last byte is the command itself
-        box24_cmd = box24_coordinator.controller._build_command(
-            SleepysBox24Commands.HEAD_UP
-        )
+        box24_cmd = box24_coordinator.controller._build_command(SleepysBox24Commands.HEAD_UP)
         assert box24_cmd[6] == SleepysBox24Commands.HEAD_UP
 
     async def test_different_characteristic_uuids(
@@ -1144,8 +1136,7 @@ class TestSleepysProtocolDifferences:
         await box24_coordinator.async_connect()
 
         assert (
-            box15_coordinator.controller.control_characteristic_uuid
-            == KEESON_BASE_WRITE_CHAR_UUID
+            box15_coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
         )
         assert (
             box24_coordinator.controller.control_characteristic_uuid
@@ -1282,13 +1273,13 @@ class TestSleepysBox25Controller:
         assert commit_call.args[0] == Box25Commands.STAR_PRESET_TERMINATOR
         assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
 
-    async def test_named_presets_use_starcode_frames(
+    async def test_named_and_memory_presets_use_starcode_frames(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Each named preset sends its StarCode arm frame, then the terminator."""
+        """Every M1X12 preset sends its StarCode arm frame, then the terminator."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -1298,6 +1289,8 @@ class TestSleepysBox25Controller:
             (controller.preset_zero_g, Box25Commands.STAR_PRESET_ZERO_GRAVITY),
             (controller.preset_anti_snore, Box25Commands.STAR_PRESET_ANTI_SNORE),
             (controller.preset_lounge, Box25Commands.STAR_PRESET_LOUNGE),
+            (lambda: controller.preset_memory(1), Box25Commands.STAR_PRESET_MEMORY_1),
+            (lambda: controller.preset_memory(2), Box25Commands.STAR_PRESET_MEMORY_2),
         )
         for method, arm_frame in cases:
             # StarCode framing: 5A 01 … A5, 7 bytes.
@@ -1317,34 +1310,47 @@ class TestSleepysBox25Controller:
             assert mock_write.call_args_list[0].args[0] == arm_frame
             assert mock_write.call_args_list[1].args[0] == Box25Commands.STAR_PRESET_TERMINATOR
 
-    async def test_program_memory_arms_then_commits_with_stop(
+    async def test_program_memory_uses_starcode_long_press_sequence(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Memory store still uses the legacy CB25 key + CB25 MOTOR_STOP (#372 follow-up).
-
-        The correct StarCode memory keys aren't pinned down yet, so the memory
-        path is intentionally left on the unverified CB25 framing.
-        """
+        """Memory store repeats the StarCode save key like the M1X12 app."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
 
-        with (
-            patch.object(controller, "write_command", AsyncMock()) as mock_write,
-            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
+        for slot, command in (
+            (1, Box25Commands.STAR_STORE_MEMORY_1),
+            (2, Box25Commands.STAR_STORE_MEMORY_2),
         ):
-            await controller.program_memory(1)
+            with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+                await controller.program_memory(slot)
 
-        assert mock_write.await_count == 2
-        arm_call = mock_write.call_args_list[0]
-        assert arm_call.args[0] == Box25Commands.MEMORY_STORE[0]
-        assert arm_call.kwargs == {"repeat_count": 3, "repeat_delay_ms": 100}
-        commit_call = mock_write.call_args_list[1]
-        assert commit_call.args[0] == Box25Commands.MOTOR_STOP
-        assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
+            mock_write.assert_awaited_once_with(
+                command,
+                repeat_count=110,
+                repeat_delay_ms=100,
+            )
+
+    async def test_box25_exposes_only_the_two_app_memory_slots(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """M1X12 has Memory 1/2; stale guessed slots 3/4 must stay hidden."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.memory_slot_count == 2
+
+        with patch.object(coordinator.controller, "write_command", AsyncMock()) as mock_write:
+            await coordinator.controller.preset_memory(3)
+            await coordinator.controller.program_memory(3)
+
+        mock_write.assert_not_awaited()
 
     async def test_set_motor_position_supports_lumbar(
         self,
