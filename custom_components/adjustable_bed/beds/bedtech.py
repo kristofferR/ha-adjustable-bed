@@ -88,25 +88,25 @@ class BedTechCommands:
     MASSAGE_TIMER_20 = "c"  # 0x63
     MASSAGE_TIMER_30 = "a"  # 0x61
 
-    # Light control
-    LIGHT_GO = "."  # 0x2E
-    LIGHT_SAVE = "+"  # 0x2B
+    # Memory slots. The OEM APK names these memory.one and memory.two.
+    MEMORY_1_GO = "."  # 0x2E
+    MEMORY_1_SAVE = "+"  # 0x2B
+    MEMORY_2_GO = "/"  # 0x2F
+    MEMORY_2_SAVE = ","  # 0x2C
+
+    # Light control. The OEM app exposes OFF and TOGGLE, but no discrete ON.
     LIGHT_OFF = "u"  # 0x75
     LIGHT_TOGGLE = "<"  # 0x3C
 
-    # Light2 (dual base)
-    LIGHT2_GO = "_."
-    LIGHT2_SAVE = "_+"
+    # Secondary-base light control
     LIGHT2_OFF = "_u"
     LIGHT2_TOGGLE = "_<"
 
-    # Memory
-    MEMORY_GO = "/"  # 0x2F
-    MEMORY_SAVE = ","  # 0x2C
-
-    # Memory2 (dual base)
-    MEMORY2_GO = "_/"
-    MEMORY2_SAVE = "_,"
+    # Secondary-base memory slots
+    MEMORY2_1_GO = "_."
+    MEMORY2_1_SAVE = "_+"
+    MEMORY2_2_GO = "_/"
+    MEMORY2_2_SAVE = "_,"
 
 
 def build_bedtech_command(cmd_char: str) -> bytes:
@@ -192,8 +192,8 @@ class BedTechController(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True - BedTech supports discrete on/off control."""
-        return True
+        """Return False because the BedTech app has no discrete ON command."""
+        return False
 
     @property
     def has_pillow_support(self) -> bool:
@@ -348,8 +348,8 @@ class BedTechController(BedController):
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         commands = {
-            1: BedTechCommands.MEMORY_GO,
-            2: BedTechCommands.MEMORY2_GO if self._is_dual_base else BedTechCommands.MEMORY_GO,
+            1: BedTechCommands.MEMORY_1_GO,
+            2: BedTechCommands.MEMORY_2_GO,
         }
         if cmd_char := commands.get(memory_num):
             await self.write_command(self._build_command(cmd_char))
@@ -359,8 +359,8 @@ class BedTechController(BedController):
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory."""
         commands = {
-            1: BedTechCommands.MEMORY_SAVE,
-            2: BedTechCommands.MEMORY2_SAVE if self._is_dual_base else BedTechCommands.MEMORY_SAVE,
+            1: BedTechCommands.MEMORY_1_SAVE,
+            2: BedTechCommands.MEMORY_2_SAVE,
         }
         if cmd_char := commands.get(memory_num):
             await self.write_command(self._build_command(cmd_char))
@@ -385,8 +385,12 @@ class BedTechController(BedController):
 
     # Light methods
     async def lights_on(self) -> None:
-        """Turn on under-bed lights."""
-        await self.write_command(self._build_command(BedTechCommands.LIGHT_GO))
+        """Toggle under-bed lights, matching the OEM app's light button.
+
+        The protocol has a discrete OFF command but no discrete ON command.
+        Command `.` was previously used here but is memory-slot-1 recall.
+        """
+        await self.lights_toggle()
 
     async def lights_off(self) -> None:
         """Turn off under-bed lights."""

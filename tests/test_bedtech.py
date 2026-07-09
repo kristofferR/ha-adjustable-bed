@@ -104,14 +104,15 @@ class TestBedTechCommands:
 
     def test_light_commands(self):
         """Light commands should be defined."""
-        assert BedTechCommands.LIGHT_GO == "."
         assert BedTechCommands.LIGHT_OFF == "u"
         assert BedTechCommands.LIGHT_TOGGLE == "<"
 
     def test_memory_commands(self):
         """Memory commands should be defined."""
-        assert BedTechCommands.MEMORY_GO == "/"
-        assert BedTechCommands.MEMORY_SAVE == ","
+        assert BedTechCommands.MEMORY_1_GO == "."
+        assert BedTechCommands.MEMORY_1_SAVE == "+"
+        assert BedTechCommands.MEMORY_2_GO == "/"
+        assert BedTechCommands.MEMORY_2_SAVE == ","
 
 
 # -----------------------------------------------------------------------------
@@ -277,11 +278,12 @@ class TestBedTechController:
         mock_bedtech_config_entry,
         mock_coordinator_connected,
     ):
-        """BedTech should support discrete light control."""
+        """BedTech should be toggle-only because it has no explicit ON command."""
         coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_discrete_light_control is True
+        assert coordinator.controller.supports_discrete_light_control is False
+        assert coordinator.controller.supports_light_toggle_control is True
 
     async def test_has_pillow_support(
         self,
@@ -419,6 +421,54 @@ class TestBedTechPresets:
         call_data = calls[0][0][1]
         assert call_data[3] == ord(BedTechCommands.PRESET_ANTI_SNORE)
 
+    @pytest.mark.parametrize(
+        ("memory_num", "expected_command"),
+        [
+            (1, BedTechCommands.MEMORY_1_GO),
+            (2, BedTechCommands.MEMORY_2_GO),
+        ],
+    )
+    async def test_memory_recall_uses_oem_slot_commands(
+        self,
+        hass: HomeAssistant,
+        mock_bedtech_config_entry,
+        mock_coordinator_connected,
+        memory_num: int,
+        expected_command: str,
+    ):
+        """Memory recall should use `.` for slot 1 and `/` for slot 2."""
+        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.preset_memory(memory_num)
+
+        call_data = coordinator._client.write_gatt_char.call_args_list[0][0][1]
+        assert call_data[3] == ord(expected_command)
+
+    @pytest.mark.parametrize(
+        ("memory_num", "expected_command"),
+        [
+            (1, BedTechCommands.MEMORY_1_SAVE),
+            (2, BedTechCommands.MEMORY_2_SAVE),
+        ],
+    )
+    async def test_memory_programming_uses_oem_slot_commands(
+        self,
+        hass: HomeAssistant,
+        mock_bedtech_config_entry,
+        mock_coordinator_connected,
+        memory_num: int,
+        expected_command: str,
+    ):
+        """Memory save should use `+` for slot 1 and `,` for slot 2."""
+        coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
+        await coordinator.async_connect()
+
+        await coordinator.controller.program_memory(memory_num)
+
+        call_data = coordinator._client.write_gatt_char.call_args_list[0][0][1]
+        assert call_data[3] == ord(expected_command)
+
 
 class TestBedTechLights:
     """Test BedTech light commands."""
@@ -429,7 +479,7 @@ class TestBedTechLights:
         mock_bedtech_config_entry,
         mock_coordinator_connected,
     ):
-        """lights_on should send LIGHT_GO command."""
+        """lights_on should use TOGGLE because the APK has no discrete ON command."""
         coordinator = AdjustableBedCoordinator(hass, mock_bedtech_config_entry)
         await coordinator.async_connect()
         mock_client = coordinator._client
@@ -438,7 +488,7 @@ class TestBedTechLights:
 
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
-        assert call_data[3] == ord(BedTechCommands.LIGHT_GO)
+        assert call_data[3] == ord(BedTechCommands.LIGHT_TOGGLE)
 
     async def test_lights_off_sends_correct_command(
         self,

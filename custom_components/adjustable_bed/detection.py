@@ -76,6 +76,7 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     # Detection constants
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
@@ -1490,8 +1491,37 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             requires_characteristic_check=True,
         )
 
-    # Check for BedTech - name-based detection (before Richmat WiLinke since same UUID)
-    # BedTech shares FEE9 service UUID with Richmat WiLinke
+    # Check for BedTech before Richmat WiLinke since they share FEE9 and QRRM
+    # names. Confirmed BedTech QRRM controllers advertise their MAC suffix under
+    # manufacturer ID 0x4C57; confirmed Casper/Richmat QRRM RGB controllers do not.
+    has_bedtech_manufacturer = (
+        BEDTECH_MANUFACTURER_ID in (service_info.manufacturer_data or {})
+        and (
+            device_name.startswith("qrrm")
+            or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
+        )
+    )
+    if has_bedtech_manufacturer and BEDTECH_SERVICE_UUID.lower() in service_uuids:
+        signals.extend(
+            [
+                f"uuid:{BEDTECH_SERVICE_UUID.lower()}",
+                f"manufacturer_id:{BEDTECH_MANUFACTURER_ID}",
+            ]
+        )
+        _LOGGER.info(
+            "Detected BedTech bed at %s (name: %s) by FEE9 UUID + manufacturer ID 0x%04X",
+            service_info.address,
+            service_info.name,
+            BEDTECH_MANUFACTURER_ID,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_BEDTECH,
+            confidence=0.95,
+            signals=signals,
+            manufacturer_id=BEDTECH_MANUFACTURER_ID,
+        )
+
+    # BedTech-branded names remain a strong signal even without manufacturer data.
     if any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS):
         if BEDTECH_SERVICE_UUID.lower() in service_uuids:
             signals.append(f"uuid:{BEDTECH_SERVICE_UUID.lower()}")
