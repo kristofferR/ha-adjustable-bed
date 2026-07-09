@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -49,12 +50,10 @@ from .const import (
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
-    RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
     requires_pairing,
 )
 from .coordinator import AdjustableBedCoordinator
-from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .unsupported import (
     async_clear_unsupported_device_issues,
@@ -290,7 +289,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     await _async_register_services(hass)
 
-    await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
+    await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
 
     _LOGGER.info(
@@ -399,18 +398,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
 
-async def _async_maybe_reclassify_legacy_bedtech_entry(
+async def _async_maybe_reclassify_bedtech_qrrm_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> None:
-    """Correct legacy BedTech entries that were created for Richmat QRRM beds.
+    """Correct BedTech QRRM entries previously persisted as Richmat.
 
-    BedTech and Richmat WiLinke share the FEE9 service, and older versions of
-    the integration could persist QRRM devices as `bedtech`. That leaves the
-    entry sending BedTech preset/light bytes to a Richmat controller, which is
-    why issue #243 reported lounge and light commands either doing nothing or
-    triggering the wrong behavior.
+    QRRM is used by both BedTech white-light controllers and Richmat/Casper RGB
+    controllers. Older releases treated every QRRM name as Richmat. Confirmed
+    BedTech controllers additionally advertise manufacturer ID 0x4C57, so only
+    that positive signal is used for this one-way correction. Keeping the
+    correction one-way avoids oscillating if a later advertisement omits data.
     """
-    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_BEDTECH:
+    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_RICHMAT:
         return
 
     address = entry.data.get(CONF_ADDRESS)
@@ -428,26 +427,28 @@ async def _async_maybe_reclassify_legacy_bedtech_entry(
         return
 
     device_name = getattr(service_info, "name", None)
-    detected_remote = detect_richmat_remote_from_name(device_name)
-    if not detected_remote:
+    if not isinstance(device_name, str) or not device_name.lower().startswith("qrrm"):
+        return
+
+    manufacturer_data = getattr(service_info, "manufacturer_data", None) or {}
+    if BEDTECH_MANUFACTURER_ID not in manufacturer_data:
         return
 
     new_data = {
         **entry.data,
-        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_BED_TYPE: BED_TYPE_BEDTECH,
         CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
     }
-    if entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO) == RICHMAT_REMOTE_AUTO:
-        new_data[CONF_RICHMAT_REMOTE] = detected_remote
+    new_data.pop(CONF_RICHMAT_REMOTE, None)
 
     hass.config_entries.async_update_entry(entry, data=new_data)
     _LOGGER.warning(
-        "Corrected config entry %s (%s) from BedTech to Richmat because BLE name %r "
-        "matches Richmat remote %r on the shared FEE9 service",
+        "Corrected config entry %s (%s) from Richmat to BedTech because BLE name %r "
+        "uses the shared FEE9 service and advertises BedTech manufacturer ID 0x%04X",
         entry.title,
         entry.entry_id,
         device_name,
-        detected_remote,
+        BEDTECH_MANUFACTURER_ID,
     )
 
 

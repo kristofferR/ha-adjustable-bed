@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -189,7 +190,7 @@ class TestIntegrationSetup:
         devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
         assert len(devices) == 1
 
-    async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
+    async def test_setup_entry_reclassifies_bedtech_qrrm_richmat_entry(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
@@ -197,30 +198,34 @@ class TestIntegrationSetup:
         mock_async_ble_device_from_address: MagicMock,
         enable_custom_integrations,
     ):
-        """Legacy BedTech entries should be corrected to Richmat for QRRM devices."""
+        """A BedTech manufacturer advert should correct a persisted Richmat QRRM entry."""
         entry = MockConfigEntry(
             domain=DOMAIN,
-            title="Legacy BedTech QRRM",
+            title="QRRM157738",
             data={
-                CONF_ADDRESS: "57:4C:54:30:77:FA",
-                CONF_NAME: "Legacy Bed",
-                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
-            unique_id="57:4C:54:30:77:FA",
-            entry_id="legacy_bedtech_qrrm",
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_qrrm_as_richmat",
         )
         entry.add_to_hass(hass)
 
         service_info = MagicMock()
-        service_info.name = "QRRM138330"
-        service_info.address = "57:4C:54:30:77:FA"
+        service_info.name = "QRRM157738"
+        service_info.address = "57:4C:54:30:76:51"
         service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {
+            BEDTECH_MANUFACTURER_ID: bytes.fromhex("54307651")
+        }
 
-        mock_async_ble_device_from_address.return_value.name = "QRRM138330"
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
 
         with (
             patch(
@@ -236,10 +241,60 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert entry.state == ConfigEntryState.LOADED
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
-        assert entry.data[CONF_RICHMAT_REMOTE] == "qrrm"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
         coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator._bed_type == BED_TYPE_RICHMAT
+        assert coordinator._bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+
+    async def test_setup_entry_keeps_casper_qrrm_as_richmat_without_bedtech_manufacturer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A QRRM entry without the BedTech field should retain Casper RGB behavior."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper Adjustable Base Max",
+            data={
+                CONF_ADDRESS: "57:4C:62:C3:39:05",
+                CONF_NAME: "Casper Adjustable Base Max",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="casper_qrrm",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM105550"
+        service_info.address = "57:4C:62:C3:39:05"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+        mock_async_ble_device_from_address.return_value.name = "QRRM105550"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller.__class__.__name__ == "RichmatController"
 
 

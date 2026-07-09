@@ -72,6 +72,10 @@ Brands using Richmat actuators:
 **Format:** 5 bytes `[0x6E, 0x01, 0x00, command, checksum]`
 **Checksum:** `(command + 111) & 0xFF`
 
+FEE9/QRRM advertisements are shared with BedTech. A confirmed BedTech-specific
+manufacturer field (`0x4C57`) selects the BedTech protocol; QRRM devices without
+that field retain Richmat behavior, including the confirmed Casper RGB-light model.
+
 ### Prefix55 Variant
 **Format:** 5 bytes `[0x55, 0x01, 0x00, command, checksum]`
 **Checksum:** `(command + 0x56) & 0xFF`

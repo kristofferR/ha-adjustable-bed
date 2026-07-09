@@ -308,9 +308,13 @@ RICHMAT_NORDIC_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
 RICHMAT_NORDIC_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
 
 # BedTech specific UUIDs (FEE9 service with d44bc439 characteristic)
-# Note: Shares FEE9 service with Richmat WiLinke but uses different packet format
+# Note: Shares FEE9 service with Richmat WiLinke but uses different packet format.
+# Confirmed BedTech QRRM advertisements expose the controller MAC as manufacturer
+# data under company ID 0x4C57 (the little-endian form of the 57:4C MAC prefix).
+# Richmat/Casper QRRM captures using the RGB-strip protocol omit this field.
 BEDTECH_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
+BEDTECH_MANUFACTURER_ID: Final = 0x4C57
 
 # WiLinke variants (5-byte commands with checksum)
 # Source: com.desarketing.gmmotor (Germany Motions) APK blutter decompilation

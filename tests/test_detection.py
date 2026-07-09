@@ -53,6 +53,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     DEVICE_INFO_SERVICE_UUID,
@@ -1582,6 +1583,19 @@ class TestFEE9UUIDDisambiguation:
         assert result.bed_type == BED_TYPE_RICHMAT
         assert result.confidence == 0.9
         assert result.detected_remote == "qrrm"
+
+    def test_fee9_qrrm_with_bedtech_manufacturer_prefers_bedtech(self):
+        """BedTech's manufacturer field disambiguates QRRM from Casper RGB beds."""
+        service_info = _make_service_info(
+            name="QRRM157738",
+            service_uuids=[BEDTECH_SERVICE_UUID],
+            manufacturer_data={BEDTECH_MANUFACTURER_ID: bytes.fromhex("54307651")},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_BEDTECH
+        assert result.confidence == 0.95
+        assert result.manufacturer_id == BEDTECH_MANUFACTURER_ID
+        assert f"manufacturer_id:{BEDTECH_MANUFACTURER_ID}" in result.signals
 
     def test_fee9_with_mlrm_name(self):
         """Test Leggett WiLinke detection with FEE9 UUID + MlRM prefix."""

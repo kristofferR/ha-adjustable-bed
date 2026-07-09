@@ -35,7 +35,10 @@
 > [!NOTE]
 > BedTech shares the FEE9 service UUID and characteristic with Richmat WiLinke.
 > Both use a similar 5-byte command format with `0x6E` prefix.
-> Manual bed type selection may be required if auto-detection selects the wrong type.
+> QRRM controllers that advertise manufacturer ID `0x4C57` are identified as
+> BedTech; QRRM controllers without that field remain Richmat (including the
+> confirmed Casper RGB-light controller). Manual selection may still be required
+> if an advertisement omits the manufacturer field.
 
 ### Packet Format
 
@@ -80,8 +83,10 @@ Commands use ASCII character codes. The last byte is a simple checksum.
 
 | Command | Char | Hex | Description |
 |---------|------|-----|-------------|
-| Memory Go | `/` | `0x2F` | Go to memory position |
-| Memory Save | `,` | `0x2C` | Save current position |
+| Memory 1 Go | `.` | `0x2E` | Go to memory position 1 |
+| Memory 1 Save | `+` | `0x2B` | Save memory position 1 |
+| Memory 2 Go | `/` | `0x2F` | Go to memory position 2 |
+| Memory 2 Save | `,` | `0x2C` | Save memory position 2 |
 
 ### Massage
 
@@ -117,10 +122,11 @@ Commands use ASCII character codes. The last byte is a simple checksum.
 
 | Command | Char | Hex | Description |
 |---------|------|-----|-------------|
-| Light On | `.` | `0x2E` | Turn light on |
-| Light Save | `+` | `0x2B` | Save light setting |
 | Light Off | `u` | `0x75` | Turn light off |
 | Light Toggle | `<` | `0x3C` | Toggle light |
+
+The official app exposes the light as a toggle button. There is no discrete
+light-on command; `.` and `+` belong to memory slot 1.
 
 ## Dual Base Commands
 
