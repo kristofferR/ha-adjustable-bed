@@ -43,7 +43,7 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 | Neck Tilt Motor | ❌ | ❌ | ✅ |
 | Position Feedback | ❌ | ❌ | ✅ (0-100%) |
 | Direct Position Control | ❌ | ❌ | ✅ (protocol: head/feet/lumbar) |
-| Memory Presets | ❌ | ❌ | ✅ (4 slots) |
+| Memory Presets | ❌ | ❌ | ✅ (2 slots) |
 | Memory Programming | ❌ | ❌ | ✅ |
 | Flat Preset | ✅ | ✅ | ✅ |
 | Zero-G Preset | ✅ | ✅ | ✅ |
@@ -149,7 +149,7 @@ A5 5A 00 00 00 40 02
 
 **Notify Characteristic (RX):** `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`
 
-**BLE Device Name:** Starts with `Star` (e.g., `Star1234`)
+**BLE Device Name:** Starts with `Star25` (e.g., `Star252201154718`)
 
 **Integration motor surface:** `head`, `feet`, `lumbar`, `tilt`
 
@@ -165,10 +165,9 @@ The BOX25 Star uses a multi-subsystem protocol with a two-track initialization:
 
 ```text
 [0-1]  Header: 05 02
-[2]    Flags (preset/exit)
+[2]    Flags
 [3]    Motor bitmask (directional)
-[4]    Preset/Memory store bitmask
-[5]    Memory recall bitmask
+[4-5]  Reserved for motor commands
 [6]    Reserved: 0x00
 ```
 
@@ -185,30 +184,30 @@ The BOX25 Star uses a multi-subsystem protocol with a two-track initialization:
 | 0x40 | Neck Tilt | Up |
 | 0x80 | Neck Tilt | Down |
 
-**Preset Commands (byte 2 or byte 4):**
+#### Preset and Memory Recall Commands (StarCode, 7 bytes)
 
-| Preset | Byte 2 | Byte 4 |
-|--------|--------|--------|
-| Flat | 0x08 | — |
-| Zero Gravity | — | 0x10 |
-| Lounge/Relax | — | 0x20 |
-| Ascent | — | 0x40 |
-| Anti-Snore | — | 0x80 |
+The Adjustable Comfort M1X12 app uses StarCode framing for presets:
 
-Presets require a confirmation: send the preset command, then send `MOTOR_STOP` (`05 02 00 00 00 00 00`).
+```text
+5A 01 03 10 30 [command] A5
+```
 
-**Memory Commands:**
+| Preset | Command |
+|--------|---------|
+| Flat | 0x10 |
+| Zero Gravity | 0x13 |
+| Anti-Snore | 0x16 |
+| Lounge/Reading | 0x17 |
+| Memory 1 | 0x1A |
+| Memory 2 | 0x1B |
 
-| Action | Slot | Byte 4 (store) | Byte 5 (recall) |
-|--------|------|-----------------|------------------|
-| Store | 1 | 0x01 | — |
-| Store | 2 | 0x02 | — |
-| Store | 3 | 0x04 | — |
-| Store | 4 | 0x08 | — |
-| Recall | 1 | — | 0x01 |
-| Recall | 2 | — | 0x02 |
-| Recall | 3 | — | 0x04 |
-| Recall | 4 | — | 0x08 |
+Each preset frame is sent three times at 100 ms intervals, followed 100 ms
+later by the StarCode commit frame `5A 01 03 10 30 0F A5`. Without that final
+frame the bed remains armed until STOP or BLE disconnect (issue #372).
+
+Saving Memory 1/2 uses command `0x94`/`0x95`, respectively. The app models this
+as a long press: it repeats the save frame 110 times at 100 ms intervals and
+does not append the preset commit frame.
 
 #### Position Commands (5 bytes, `03 F0` prefix)
 

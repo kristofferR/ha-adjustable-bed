@@ -104,6 +104,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     detect_bed_type_from_gatt_services,
     detect_richmat_remote_from_name,
+    refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
     refine_okin_shared_uuid_protocol_from_gatt,
@@ -381,6 +382,46 @@ class TestDetectBedTypeByServiceUUID:
         assert "uuid:nordic_uart" in result.signals
         assert "star_digits:25" in result.signals
         assert not result.ambiguous_types
+
+    def test_runtime_refinement_keeps_star25_on_box25(self):
+        """A Star25 name remains BOX25 even though Device Info may say STAR (#413)."""
+        assert (
+            refine_dewertokin_star_protocol_from_name(
+                BED_TYPE_SLEEPYS_BOX25,
+                "Star252201053516",
+            )
+            == BED_TYPE_SLEEPYS_BOX25
+        )
+
+    def test_runtime_refinement_repairs_stale_star25_cb35_entry(self):
+        """A config entry poisoned by the former 2A29 override recovers to BOX25."""
+        assert (
+            refine_dewertokin_star_protocol_from_name(
+                BED_TYPE_OKIN_CB35,
+                "Star252201154718",
+            )
+            == BED_TYPE_SLEEPYS_BOX25
+        )
+
+    def test_runtime_refinement_repairs_star35_box25_entry(self):
+        """The name-based correction works in both directions."""
+        assert (
+            refine_dewertokin_star_protocol_from_name(
+                BED_TYPE_SLEEPYS_BOX25,
+                "Star352201011800",
+            )
+            == BED_TYPE_OKIN_CB35
+        )
+
+    def test_runtime_refinement_does_not_guess_from_ambiguous_star_name(self):
+        """Unknown Star digits preserve the user's selected protocol."""
+        assert (
+            refine_dewertokin_star_protocol_from_name(
+                BED_TYPE_SLEEPYS_BOX25,
+                "Star991234567890",
+            )
+            == BED_TYPE_SLEEPYS_BOX25
+        )
 
     def test_detect_star_unknown_digits_is_ambiguous(self):
         """Star with unknown digits plus Nordic UART should be ambiguous."""

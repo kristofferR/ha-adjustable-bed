@@ -733,6 +733,29 @@ def refine_okin_dot_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str
     return bed_type
 
 
+def refine_dewertokin_star_protocol_from_name(
+    bed_type: str,
+    device_name: str | None,
+) -> str:
+    """Correct CB35/BOX25 entries from the protocol digits in a Star name.
+
+    ``Star35...`` identifies CB35 while ``Star25...`` identifies BOX25.  Both
+    families can report ``STAR`` in Device Information characteristic 0x2A29;
+    the M1X12 app uses that value to select StarCode framing, not to distinguish
+    CB35 from BOX25.  Treating it as a CB35 discriminator caused a correctly
+    discovered Star25 entry to be overwritten on every connection (issue #413).
+    """
+    if bed_type not in {BED_TYPE_OKIN_CB35, BED_TYPE_SLEEPYS_BOX25}:
+        return bed_type
+
+    normalized_name = (device_name or "").strip().lower()
+    if normalized_name.startswith("star25"):
+        return BED_TYPE_SLEEPYS_BOX25
+    if normalized_name.startswith("star35"):
+        return BED_TYPE_OKIN_CB35
+    return bed_type
+
+
 def refine_nordic_uart_protocol_from_device_info(
     bed_type: str,
     device_name: str | None,
