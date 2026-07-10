@@ -1736,6 +1736,17 @@ class TestW4WiLinkeNameGuard:
         assert result.bed_type != BED_TYPE_RICHMAT
         assert "uuid:wilinke" not in result.signals
 
+    def test_w4_uuid_fixd_obd_tool_is_not_a_bed(self):
+        """A FIXD car OBD scanner advertising FFF0 must not detect as Richmat (issue #415)."""
+        service_info = _make_service_info(
+            name="FIXD",
+            address="66:1B:11:72:F5:8C",
+            service_uuids=[RICHMAT_WILINKE_W4_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type != BED_TYPE_RICHMAT
+        assert "uuid:wilinke" not in result.signals
+
     def test_w4_uuid_with_dhn_name_still_detects(self):
         """A genuine Germany Motions DHN-* bed still detects as Richmat (issue #163)."""
         service_info = _make_service_info(
