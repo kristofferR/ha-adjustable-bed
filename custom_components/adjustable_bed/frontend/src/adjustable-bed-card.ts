@@ -145,6 +145,11 @@ export class AdjustableBedCard extends LitElement {
       this._collectWatched(b),
     );
 
+    // Preserve the single-bed fallback: if neither the parent nor any side
+    // exposes renderable entities, show the notice instead of a header-only card.
+    if (bedIsEmpty(parentBed) && sides.every((s) => bedIsEmpty(s.bed)))
+      return this._notice("card.no_entities");
+
     const block = (
       label: string,
       bed: BedEntities,

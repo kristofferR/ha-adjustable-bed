@@ -1255,6 +1255,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # umbrella type matches — and would otherwise be stored as mismatched
                 # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
+            elif self._offline_safe_bed_type(
+                left
+            ) == BED_TYPE_OCTO and self._is_octo_star2(left) != self._is_octo_star2(
+                right
+            ):
+                # Standard Octo and Octo Star2 both resolve to BED_TYPE_OCTO but are
+                # DIFFERENT protocols (Star2 has fixed caps / no PIN / no snapshot),
+                # so a standard+Star2 pair is a mismatch the resolved-type check above
+                # can't see.
+                errors["base"] = "mismatched_bed_types"
             elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
                 (
                     not self._is_octo_star2(left)
