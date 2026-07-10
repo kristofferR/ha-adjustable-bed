@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
+    CONF_MALOUF_LAYOUT,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -50,6 +51,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    MALOUF_LAYOUT_HILO,
     OKIN_HEAD_MAX_ANGLE,
 )
 
@@ -1188,6 +1190,7 @@ class TestServices:
                 CONF_NAME: "Malouf Timed Move Bed",
                 CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
                 CONF_MOTOR_COUNT: 4,
+                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
