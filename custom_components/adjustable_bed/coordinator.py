@@ -117,6 +117,7 @@ from .const import (
     DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
     LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_OKIN,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -139,6 +140,7 @@ from .const import (
 )
 from .controller_factory import create_controller
 from .detection import (
+    OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     detect_richmat_remote_from_name,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
@@ -945,6 +947,22 @@ class AdjustableBedCoordinator:
         }
         return normalized not in chipset_manufacturers
 
+    def _bed_type_needs_ble_model(self) -> bool:
+        """Whether the current protocol refinement depends on the DIS model value.
+
+        Shared-UUID OKIN profiles use the Device Information model to tell a
+        multi-motor OKIMAT bed apart from a single-actuator RF ECO BT stair that
+        exposes the same GATT signature (issue #406). If that model read times
+        out transiently we must not latch a partial read as complete, or the
+        bed would be misrouted to the stair profile on every future reconnect.
+        """
+        if self._bed_type in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
+            return True
+        return (
+            self._bed_type == BED_TYPE_LEGGETT_PLATT
+            and self._protocol_variant == LEGGETT_VARIANT_OKIN
+        )
+
     def _store_ble_device_info(
         self,
         manufacturer: str | None,
@@ -954,21 +972,46 @@ class AdjustableBedCoordinator:
         self._ble_manufacturer = manufacturer
         self._ble_model = model
 
-        has_useful_value = self._is_useful_ble_value(
-            manufacturer
-        ) or self._is_useful_ble_value(model)
+        manufacturer_useful = self._is_useful_ble_value(manufacturer)
+        model_useful = self._is_useful_ble_value(model)
+        has_useful_value = manufacturer_useful or model_useful
+
+        # A protocol whose per-reconnect refinement needs the DIS model must not
+        # cache a read where the model timed out (manufacturer answered, model
+        # did not). Latching that partial read would freeze model=None forever
+        # and demote an OKIMAT bed to the single-actuator RF ECO BT profile on
+        # every reconnect. Require the model before we stop retrying; a genuinely
+        # model-less bed re-reads cheaply (an absent characteristic errors fast,
+        # only a transient timeout costs the read budget, which is what we want
+        # to retry). OKIN CST is exempted below via the negative cache.
+        required_fields_present = (
+            not self._bed_type_needs_ble_model() or model_useful
+        )
+
         # Certain OKIN CST receivers consistently never answer DIS reads. Their
         # protocol is already explicit and does not depend on Device Information,
         # so a negative session cache is safe and avoids 10s on every reconnect.
         negative_cache_is_safe = self._bed_type == BED_TYPE_OKIN_CST
-        self._device_info_read_done = has_useful_value or negative_cache_is_safe
+        self._device_info_read_done = (
+            has_useful_value and required_fields_present
+        ) or negative_cache_is_safe
 
         if not self._device_info_read_done:
-            _LOGGER.debug(
-                "Device Information read for %s returned no useful values; "
-                "retrying on the next connection.",
-                self._address,
-            )
+            if has_useful_value and not required_fields_present:
+                _LOGGER.debug(
+                    "Device Information read for %s is missing the model this "
+                    "protocol needs (manufacturer=%r, model=%r); retrying on the "
+                    "next connection.",
+                    self._address,
+                    manufacturer,
+                    model,
+                )
+            else:
+                _LOGGER.debug(
+                    "Device Information read for %s returned no useful values; "
+                    "retrying on the next connection.",
+                    self._address,
+                )
 
     def remember_cb24_continuous_presets(self) -> None:
         """Persist the learned CB24 continuous preset mode across reconnects."""

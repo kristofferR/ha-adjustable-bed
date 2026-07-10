@@ -2900,6 +2900,74 @@ class TestDeviceInfoCache:
         assert coordinator._ble_manufacturer == "OKIN"
         assert coordinator._ble_model == "OKIMAT 4 IPS/M"
 
+    def test_partial_device_info_does_not_latch_for_model_dependent_bed(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A model that timed out must not freeze an OKIMAT bed's identity.
+
+        An OKIMAT bed shares the RF ECO BT GATT signature, so its Device Info
+        model is what keeps it from being demoted to the single-actuator stair
+        profile. If the manufacturer read succeeds but the model times out, the
+        cache must not latch complete, or model=None would persist across every
+        reconnect and misroute the bed (issue #430 follow-up).
+        """
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_partial_device_info_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        # Manufacturer answered, model timed out (returned None).
+        coordinator._store_ble_device_info("OKIN", None)
+        assert coordinator._device_info_read_done is False
+
+        # A later reconnect recovers the model and stops retrying.
+        coordinator._store_ble_device_info("OKIN", "OKIMAT 4 IPS/M")
+        assert coordinator._device_info_read_done is True
+        assert coordinator._ble_model == "OKIMAT 4 IPS/M"
+
+    def test_partial_device_info_latches_for_model_independent_bed(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A protocol that never consults the DIS model still caches partial reads."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="keeson_partial_device_info_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        # Manufacturer alone is enough for a bed whose protocol never needs model.
+        coordinator._store_ble_device_info("Keeson", None)
+        assert coordinator._device_info_read_done is True
+
     async def test_deferred_device_info_read_once_across_reconnects(
         self,
         hass: HomeAssistant,
