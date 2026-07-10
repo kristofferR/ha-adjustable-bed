@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Comman
 from custom_components.adjustable_bed.beds.richmat import RichmatCommands
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_BEDTECH,
     BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -1690,6 +1691,70 @@ class TestLightEntities:
         assert (
             registry.async_get_entity_id("select", DOMAIN, "57:4C:62:B0:EF:3D_light_timer")
             is None
+        )
+
+    async def test_bedtech_setup_removes_stale_light_switch_and_timer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BedTech setup should drop the stale discrete-light switch and light timer (#410).
+
+        Older releases created switch.under_bed_lights (BedTech used to report
+        discrete light control) and, for entries reclassified from Richmat QRRM,
+        left the Richmat light-timer select behind. Both are dead controls the
+        card would still surface.
+        """
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="BedTech QRRM",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "BedTech QRRM",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_stale_light_entities_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "57:4C:54:30:76:51_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="bedtech_qrrm_under_bed_lights",
+        )
+        registry.async_get_or_create(
+            "select",
+            DOMAIN,
+            "57:4C:54:30:76:51_light_timer",
+            config_entry=entry,
+            suggested_object_id="bedtech_qrrm_light_timer",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "57:4C:54:30:76:51_under_bed_lights")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:54:30:76:51_light_timer")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:54:30:76:51_toggle_light")
+            is not None
         )
 
     async def test_richmat_qrrm_light_turn_on_and_off(

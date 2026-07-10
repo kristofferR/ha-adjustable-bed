@@ -22,10 +22,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -2355,6 +2357,51 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.bed_type == BED_TYPE_OKIN_RF_ECO_BT
         assert coordinator.disable_angle_sensing is True
         assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+
+    async def test_correction_to_box25_repairs_stored_default_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """A stale CB35 entry repaired to BOX25 should regain position feedback (#413).
+
+        BOX25 reports percentage positions (BEDS_WITH_POSITION_FEEDBACK) without
+        being in BEDS_WITH_ANGLE_SENSING, so the correction must key on the same
+        set the config flow uses for the disable_angle_sensing default.
+        """
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            bed_type=BED_TYPE_OKIN_CB35,
+        )
+
+        assert coordinator.disable_angle_sensing is True
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_SLEEPYS_BOX25)
+
+        assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_correction_to_box25_preserves_enabled_position_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Enabled position feedback must survive a correction to BOX25."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: False},
+            bed_type=BED_TYPE_OKIN_CB35,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_SLEEPYS_BOX25)
+
+        assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
 
     async def test_correction_updates_richmat_to_okin_64bit(
         self,

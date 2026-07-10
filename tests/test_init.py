@@ -297,6 +297,114 @@ class TestIntegrationSetup:
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller.__class__.__name__ == "RichmatController"
 
+    async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Legacy BedTech entries without the manufacturer field become Richmat."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Legacy BedTech QRRM",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:77:FA",
+                CONF_NAME: "Legacy Bed",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:77:FA",
+            entry_id="legacy_bedtech_qrrm",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM138330"
+        service_info.address = "57:4C:54:30:77:FA"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+
+        mock_async_ble_device_from_address.return_value.name = "QRRM138330"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        assert entry.data[CONF_RICHMAT_REMOTE] == "qrrm"
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator._bed_type == BED_TYPE_RICHMAT
+        assert coordinator.controller.__class__.__name__ == "RichmatController"
+
+    async def test_setup_entry_keeps_bedtech_qrrm_entry_with_bedtech_manufacturer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A BedTech entry whose advert carries the manufacturer field stays BedTech."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM157738",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_qrrm_confirmed",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM157738"
+        service_info.address = "57:4C:54:30:76:51"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {
+            BEDTECH_MANUFACTURER_ID: bytes.fromhex("54307651")
+        }
+
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+
 
 class TestIntegrationUnload:
     """Test integration unload."""

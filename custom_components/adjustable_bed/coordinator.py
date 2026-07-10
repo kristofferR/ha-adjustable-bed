@@ -78,7 +78,6 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_VIBRADORM,
-    BEDS_WITH_ANGLE_SENSING,
     BEDS_WITH_POSITION_FEEDBACK,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
@@ -404,22 +403,26 @@ class AdjustableBedCoordinator:
                 or previous_bed_type == BED_TYPE_OKIN_CST
             )
         )
+        # Config flow defaults disable_angle_sensing from BEDS_WITH_POSITION_FEEDBACK,
+        # so the correction must use the same set: a repaired entry (e.g. CB35 ->
+        # BOX25, #419) should get position feedback re-enabled even when the
+        # corrected type reports percentages rather than angles.
         if (
-            corrected_bed_type in BEDS_WITH_ANGLE_SENSING
+            corrected_bed_type in BEDS_WITH_POSITION_FEEDBACK
             and angle_sensing_defaulted
             and self._disable_angle_sensing
         ):
             self._disable_angle_sensing = False
             entry_data[CONF_DISABLE_ANGLE_SENSING] = False
             _LOGGER.info(
-                "Enabled angle sensing for corrected %s protocol on %s: "
+                "Enabled position feedback for corrected %s protocol on %s: "
                 "the previous entry used the legacy default",
                 corrected_bed_type,
                 self._address,
             )
         elif (
             bed_type_changed
-            and corrected_bed_type not in BEDS_WITH_ANGLE_SENSING
+            and corrected_bed_type not in BEDS_WITH_POSITION_FEEDBACK
             and not self._disable_angle_sensing
         ):
             self._disable_angle_sensing = True
