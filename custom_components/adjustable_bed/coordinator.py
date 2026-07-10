@@ -1917,7 +1917,21 @@ class AdjustableBedCoordinator:
                     # Authentication can first fail during controller startup,
                     # after a slow DIS probe was treated as inconclusive. Clear
                     # the stale marker here so the next retry requests pairing.
-                    await self._async_handle_ble_authentication_error(err, holding_lock=True)
+                    # Keep this best-effort: the handler disconnects the client,
+                    # and disconnect cleanup can itself raise. Letting that escape
+                    # would replace the original authentication error and abort
+                    # the remaining retries. CancelledError is a BaseException, so
+                    # cancellation still propagates.
+                    try:
+                        await self._async_handle_ble_authentication_error(
+                            err, holding_lock=True
+                        )
+                    except Exception:
+                        _LOGGER.debug(
+                            "Authentication recovery cleanup failed for %s",
+                            self._address,
+                            exc_info=True,
+                        )
                 attempt_elapsed = time.monotonic() - attempt_start
                 attempt_details["total_elapsed_seconds"] = round(attempt_elapsed, 3)
                 attempt_details["result"] = "failed"

@@ -1867,6 +1867,98 @@ class TestCoordinatorWriteCommand:
             hass, TEST_ADDRESS, TEST_NAME, "okimat_startup_auth_failure_test"
         )
 
+    async def test_startup_auth_recovery_survives_failing_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_adapters,
+    ):
+        """A disconnect that raises during auth recovery must not abort the retry path."""
+        del mock_bluetooth_adapters
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_startup_auth_failing_disconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+            "handle=19 error=5 description=Insufficient authentication"
+        )
+        # Disconnect cleanup raises a non-BleakError so it escapes the disconnect
+        # helper's own guard and would otherwise replace the auth error.
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect = AsyncMock(side_effect=OSError("cleanup boom"))
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=("OKIN", "Model X"),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                side_effect=auth_error,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as mock_create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+            # Must not raise the OSError from the failing disconnect.
+            result = await coordinator.async_connect()
+
+        assert result is False
+        # The recovery still ran despite the failing disconnect.
+        assert coordinator._ble_bond_established is False
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        mock_create_issue.assert_awaited_once_with(
+            hass, TEST_ADDRESS, TEST_NAME, "okimat_startup_auth_failing_disconnect_test"
+        )
+
     async def test_failed_pairing_does_not_persist_bond_marker(
         self,
         hass: HomeAssistant,
