@@ -992,3 +992,225 @@ class TestKeesonPositionNotifications:
         await coordinator.controller.start_notify(callback)
 
         assert coordinator.controller._notify_callback is callback
+
+
+class TestKsbt03cMotorLayout:
+    """Test KSBT03C (Ergomotion RIO 5.0) motor layout handling (issue #408)."""
+
+    def test_is_ksbt03c_name(self):
+        """Test KSBT03C name detection."""
+        from custom_components.adjustable_bed.beds.keeson import is_ksbt03c_name
+
+        assert is_ksbt03c_name("KSBT03C300039050")
+        assert is_ksbt03c_name("ksbt03c123")
+        assert not is_ksbt03c_name("KSBT03CR12345")
+        assert not is_ksbt03c_name("KSBT04C300039050")
+        assert not is_ksbt03c_name("KSBT123456")
+        assert not is_ksbt03c_name(None)
+        assert not is_ksbt03c_name("")
+
+    async def test_ksbt03c_three_motors_third_is_lumbar(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test KSBT03C with 3 motors exposes lumbar (not tilt) as third motor."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator._motor_count = 3
+
+        controller = KeesonController(
+            coordinator, variant="ksbt", device_name="KSBT03C300039050"
+        )
+
+        assert not controller.has_tilt_support
+        keys = [spec.key for spec in controller.motor_control_specs]
+        assert keys == ["head", "feet", "lumbar"]
+
+    async def test_ksbt03c_four_motors_has_no_phantom_tilt(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test KSBT03C with 4 configured motors still has no tilt motor."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator._motor_count = 4
+
+        controller = KeesonController(
+            coordinator, variant="ksbt", device_name="KSBT03C300039050"
+        )
+
+        keys = [spec.key for spec in controller.motor_control_specs]
+        assert keys == ["head", "feet", "lumbar"]
+
+    async def test_ksbt03c_detected_from_configured_name(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """Test KSBT03C layout falls back to the configured name."""
+        mock_keeson_config_entry_data[CONF_NAME] = "KSBT03C300039050"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="KSBT03C300039050",
+            data=mock_keeson_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:F0",
+            entry_id="keeson_ksbt03c_entry",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant="ksbt")
+
+        assert not controller.has_tilt_support
+
+    async def test_standard_keeson_motor_layout_unchanged(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test non-KSBT03C beds keep tilt as third and lumbar as fourth motor."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert controller.has_tilt_support
+
+        coordinator._motor_count = 3
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "tilt",
+        ]
+
+        coordinator._motor_count = 4
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "tilt",
+            "lumbar",
+        ]
+
+    async def test_stale_motor_entity_keys(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test stale keys cover the optional tilt/lumbar motors."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        assert coordinator.controller.stale_motor_entity_keys == frozenset(
+            {"tilt", "lumbar"}
+        )
+
+
+class TestKeesonMassageOffGating:
+    """Test massage-off capability gating (issue #408)."""
+
+    @pytest.mark.parametrize("variant", ["base", "ksbt", "ksbt04c", "ergomotion"])
+    async def test_non_sino_variants_hide_massage_off(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        variant: str,
+    ):
+        """Test variants without a real off command don't expose the button."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant=variant)
+
+        assert not controller.supports_massage_off_control
+
+    async def test_sino_variant_supports_massage_off(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test the Sino variant keeps its working massage-off control."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant="sino")
+
+        assert controller.supports_massage_off_control
+
+
+class TestKsbtMemoryPresets:
+    """Test KSBT memory presets from Ergomotion Sync APK (issue #408)."""
+
+    @pytest.mark.parametrize("variant,slots", [("ksbt", 3), ("ksbt04c", 3), ("ksbt_cr", 2)])
+    async def test_memory_slot_count(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        variant: str,
+        slots: int,
+    ):
+        """Test KSBT variants expose the remotes' three preset buttons."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(coordinator, variant=variant)
+
+        assert controller.memory_slot_count == slots
+
+    @pytest.mark.parametrize(
+        "memory_num,expected_value",
+        [
+            (1, KeesonCommands.PRESET_MEMORY_1),  # Read button (0x2000)
+            (2, KeesonCommands.PRESET_MEMORY_2),  # TV button (0x4000)
+            (3, KeesonCommands.PRESET_MEMORY_4),  # M button (0x10000)
+        ],
+    )
+    async def test_ksbt_preset_memory_mapping(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        memory_num: int,
+        expected_value: int,
+    ):
+        """Test KSBT memory slots map to the Read/TV/M remote buttons."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(coordinator, variant="ksbt")
+        coordinator._controller = controller
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await controller.preset_memory(memory_num)
+
+        expected_cmd = controller._build_command(expected_value)
+        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_call[0][1] == expected_cmd
+
+    async def test_ksbt_preset_memory_invalid_slot_warns(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        caplog,
+    ):
+        """Test out-of-range KSBT memory slot warns and sends nothing."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(coordinator, variant="ksbt")
+        coordinator._controller = controller
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await controller.preset_memory(4)
+
+        assert "KSBT memory 4 not supported" in caplog.text
+        mock_bleak_client.write_gatt_char.assert_not_called()

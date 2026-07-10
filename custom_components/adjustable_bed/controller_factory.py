@@ -631,13 +631,13 @@ async def create_controller(
             return KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
         if keeson_variant == KEESON_VARIANT_KSBT:
             _LOGGER.debug("Using KSBT Keeson variant (configured)")
-            return KeesonController(coordinator, variant="ksbt")
+            return KeesonController(coordinator, variant="ksbt", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT_CR:
             _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
-            return KeesonController(coordinator, variant="ksbt_cr")
+            return KeesonController(coordinator, variant="ksbt_cr", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT04C:
             _LOGGER.debug("Using KSBT04C Keeson variant (7-byte with checksum)")
-            return KeesonController(coordinator, variant="ksbt04c")
+            return KeesonController(coordinator, variant="ksbt04c", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
