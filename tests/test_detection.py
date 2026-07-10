@@ -88,6 +88,7 @@ from custom_components.adjustable_bed.const import (
     REVERIE_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W4_SERVICE_UUID,
     RICHMAT_WILINKE_W5_SERVICE_UUID,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
@@ -1710,6 +1711,51 @@ class TestW5WiLinkeNameGuard:
             entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]
         }
         assert RICHMAT_WILINKE_W5_SERVICE_UUID.lower() not in service_uuids
+
+
+class TestW4WiLinkeNameGuard:
+    """W4 (FFF0) is a generic short UUID, so it needs a Richmat name (issue #418)."""
+
+    def test_w4_uuid_without_richmat_name_is_not_a_bed(self):
+        """A non-bed device advertising only the generic FFF0 UUID must not detect as Richmat.
+
+        Regression for #418: a "NO_DVR-*" camera system advertised FFF0 and was
+        misidentified as a Richmat bed at 80% confidence.
+        """
+        service_info = _make_service_info(
+            name="NO_DVR-FTD4-8",
+            address="50:E4:78:14:28:EE",
+            service_uuids=[RICHMAT_WILINKE_W4_SERVICE_UUID],
+            manufacturer_data={
+                0x3035: bytes.fromhex(
+                    "453437383134323845455f4652433334335253503838445f30"
+                )
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type != BED_TYPE_RICHMAT
+        assert "uuid:wilinke" not in result.signals
+
+    def test_w4_uuid_with_dhn_name_still_detects(self):
+        """A genuine Germany Motions DHN-* bed still detects as Richmat (issue #163)."""
+        service_info = _make_service_info(
+            name="DHN-FC9E27",
+            service_uuids=[RICHMAT_WILINKE_W4_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert result.confidence == 0.8
+        assert "uuid:wilinke" in result.signals
+
+    def test_w4_uuid_with_richmat_remote_code_name_still_detects(self):
+        """A Richmat remote-code name corroborates a W4 advertisement."""
+        service_info = _make_service_info(
+            name="QRRM141291",
+            service_uuids=[RICHMAT_WILINKE_W4_SERVICE_UUID],
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_RICHMAT
+        assert "uuid:wilinke" in result.signals
 
 
 class TestNordicUARTDisambiguation:

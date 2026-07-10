@@ -263,6 +263,15 @@ The app tries BLE services in this order:
 > bed (issue #382). W5 is therefore **not** used for passive discovery and only
 > detects as a bed when the device name also matches a Richmat pattern.
 
+> **W4 (`0000FFF0-...`) caveat:** FFF0 is a fully generic short UUID that many
+> non-bed devices advertise — a "NO_DVR-*" camera system was misdetected as a
+> Richmat bed (issue #418). All known W4 beds are Germany Motions units named
+> `DHN-*` (the GM Bed Control app scans unfiltered and identifies beds by
+> name/remote code, never by bare FFF0), so W4 likewise only detects as a bed
+> when the device name also matches a Richmat pattern. FFF0 stays in
+> `manifest.json` for passive discovery because SUTA and the Keeson Sino
+> fallback also rely on it (both name-guarded as well).
+
 ## Device Detection
 
 | Device Name Prefix | Features |

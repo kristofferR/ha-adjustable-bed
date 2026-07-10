@@ -140,6 +140,7 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W4_SERVICE_UUID,
     RICHMAT_WILINKE_W5_SERVICE_UUID,
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
@@ -1679,6 +1680,21 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 _LOGGER.debug(
                     "Ignoring W5 WiLinke UUID for %s (name: %s): shared Telink "
                     "base with no Richmat name to corroborate",
+                    service_info.address,
+                    service_info.name,
+                )
+                continue
+            # W4 (FFF0) is a fully generic short UUID advertised by countless
+            # non-bed devices (e.g. a "NO_DVR-*" camera system, issue #418).
+            # All known W4 beds are Germany Motions "DHN-*" units, so require
+            # a Richmat name to corroborate; otherwise keep scanning.
+            if (
+                wilinke_uuid.lower() == RICHMAT_WILINKE_W4_SERVICE_UUID.lower()
+                and not is_richmat_named
+            ):
+                _LOGGER.debug(
+                    "Ignoring W4 WiLinke UUID for %s (name: %s): generic FFF0 "
+                    "service with no Richmat name to corroborate",
                     service_info.address,
                     service_info.name,
                 )
