@@ -431,6 +431,13 @@ async def _async_maybe_reclassify_bedtech_qrrm_entry(
 
     service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
     if service_info is None:
+        _LOGGER.debug(
+            "Skipping BedTech/Richmat QRRM reclassification for %s (%s): no "
+            "advertisement seen yet for %s",
+            entry.title,
+            entry.entry_id,
+            address,
+        )
         return
 
     service_uuids = {
@@ -447,6 +454,14 @@ async def _async_maybe_reclassify_bedtech_qrrm_entry(
         if not isinstance(device_name, str) or not device_name.lower().startswith("qrrm"):
             return
         if not has_bedtech_manufacturer:
+            _LOGGER.info(
+                "QRRM entry %s (%s) stays Richmat: advertisement carries no BedTech "
+                "manufacturer ID 0x%04X (manufacturer IDs seen: %s)",
+                entry.title,
+                entry.entry_id,
+                BEDTECH_MANUFACTURER_ID,
+                sorted(manufacturer_data) or "none",
+            )
             return
 
         new_data = {
