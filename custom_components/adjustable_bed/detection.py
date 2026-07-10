@@ -140,6 +140,7 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W4_SERVICE_UUID,
     RICHMAT_WILINKE_W5_SERVICE_UUID,
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
@@ -177,6 +178,17 @@ RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[a-z0-9]{2})", re.IGNOR
 KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
 )
+
+# WiLinke service UUIDs that non-bed devices also advertise, mapped to the
+# reason they are not bed-unique. These only detect as Richmat when a Richmat
+# name corroborates the match (see const.py for the full rationale).
+NAME_GUARDED_WILINKE_UUIDS: dict[str, str] = {
+    # W4: fully generic FFF0 short UUID - a "NO_DVR-*" camera system (#418)
+    # and a FIXD OBD scanner (#415); all known W4 beds are "DHN-*" units.
+    RICHMAT_WILINKE_W4_SERVICE_UUID.lower(): "generic FFF0 service",
+    # W5: Telink-style custom base - a "Nokia-*" headset (#382).
+    RICHMAT_WILINKE_W5_SERVICE_UUID.lower(): "shared Telink base",
+}
 
 OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     {
@@ -1668,19 +1680,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
         if wilinke_uuid.lower() in service_uuids:
-            # W5 (E0FF) uses a Telink-style custom base that non-bed devices also
-            # advertise (e.g. a "Nokia-*" headset, issue #382). It is not
-            # bed-unique, so only trust it when a Richmat name corroborates the
-            # match; otherwise keep scanning and let detection fall through.
-            if (
-                wilinke_uuid.lower() == RICHMAT_WILINKE_W5_SERVICE_UUID.lower()
-                and not is_richmat_named
-            ):
+            # Some WiLinke UUIDs are shared with non-bed devices, so they are
+            # only trusted when a Richmat name corroborates the match;
+            # otherwise keep scanning and let detection fall through.
+            guard_reason = NAME_GUARDED_WILINKE_UUIDS.get(wilinke_uuid.lower())
+            if guard_reason and not is_richmat_named:
                 _LOGGER.debug(
-                    "Ignoring W5 WiLinke UUID for %s (name: %s): shared Telink "
-                    "base with no Richmat name to corroborate",
+                    "Ignoring WiLinke UUID %s for %s (name: %s): %s with no "
+                    "Richmat name to corroborate",
+                    wilinke_uuid,
                     service_info.address,
                     service_info.name,
+                    guard_reason,
                 )
                 continue
             signals.append("uuid:wilinke")

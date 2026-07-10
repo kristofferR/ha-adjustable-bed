@@ -321,6 +321,15 @@ BEDTECH_MANUFACTURER_ID: Final = 0x4C57
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
 # W1 is the default fallback when no specific service is found
 RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+# W4 uses the generic FFF0 short UUID, which countless non-bed BLE devices also
+# advertise (a "NO_DVR-*" camera system in issue #418, plus LED strips, scales,
+# etc.), so it is NOT bed-unique. All known W4 beds are Germany Motions units
+# named "DHN-*" (issue #163; confirmed against the GM Bed Control 4.6.0 APK,
+# whose scan is unfiltered and which identifies beds by name/remote code), so
+# detection must require a corroborating Richmat name signal before treating a
+# W4 advertisement as a bed. FFF0 stays in manifest.json because SUTA and the
+# Keeson Sino fallback also discover via it (both name-guarded too).
+RICHMAT_WILINKE_W4_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
 # W5 uses a Telink-style custom 128-bit base (the "0xe0ff" is the little-endian
 # encoding of the generic 0xFFE0 short UUID). That base is shared by many non-bed
 # Telink-chip devices (e.g. a "Nokia-*" headset reported in issue #382), so this
@@ -333,7 +342,7 @@ RICHMAT_WILINKE_SERVICE_UUIDS: Final = [
     "0000fee9-0000-1000-8000-00805f9b34fb",  # W1 (index 1) - default fallback
     "0000fee9-0000-1000-8000-00805f9b34bb",  # W2 (index 2) - note different base UUID suffix
     "0000ffe0-0000-1000-8000-00805f9b34fb",  # W3 (index 3)
-    "0000fff0-0000-1000-8000-00805f9b34fb",  # W4 (index 4) - Germany Motions DHN-* beds
+    RICHMAT_WILINKE_W4_SERVICE_UUID,  # W4 (index 4) - Germany Motions DHN-*, name-guarded
     RICHMAT_WILINKE_W5_SERVICE_UUID,  # W5 (index 5) - shared Telink base, name-guarded
 ]
 RICHMAT_WILINKE_CHAR_UUIDS: Final = [
