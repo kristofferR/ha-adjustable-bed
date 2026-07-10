@@ -1117,7 +1117,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for SUTA Smart Home (AT command protocol over FFF0).
+    # Check for SUTA Smart Home bed frames (AT command protocol over FFF0).
     # Excludes known accessory-only subtypes that use a separate binary protocol.
     if any(device_name.startswith(pattern) for pattern in SUTA_NAME_PATTERNS):
         if any(device_name.startswith(prefix) for prefix in SUTA_UNSUPPORTED_NAME_PREFIXES):

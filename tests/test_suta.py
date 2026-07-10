@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -19,12 +19,50 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
     SUTA_DEFAULT_WRITE_CHAR_UUID,
+    SUTA_NOTIFY_CHAR_UUID,
+    SUTA_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
 def _to_packet(command: str) -> bytes:
     return f"{command}\r\n".encode()
+
+
+def _configure_wlt8016_gatt(client: MagicMock, events: list[str]) -> AsyncMock:
+    """Configure the FFF0/FFF1/FFF2 GATT shape reported by WLT8016_S106."""
+    notify_char = MagicMock()
+    notify_char.uuid = SUTA_NOTIFY_CHAR_UUID
+    notify_char.properties = ["notify"]
+
+    write_char = MagicMock()
+    write_char.uuid = SUTA_DEFAULT_WRITE_CHAR_UUID
+    write_char.properties = ["write-without-response"]
+
+    service = MagicMock()
+    service.uuid = SUTA_SERVICE_UUID
+    service.characteristics = [notify_char, write_char]
+    client.services.get_service.side_effect = lambda uuid: (
+        service if str(uuid).lower() == SUTA_SERVICE_UUID else None
+    )
+    client.services.__iter__ = lambda _: iter([service])
+    client.services.__len__ = lambda _: 1
+
+    async def _start_notify(char_uuid: str, callback: object) -> None:
+        del callback
+        assert char_uuid == SUTA_NOTIFY_CHAR_UUID
+        events.append("notify")
+
+    async def _acquire_mtu() -> None:
+        events.append("mtu")
+
+    client.start_notify = AsyncMock(side_effect=_start_notify)
+    backend = MagicMock()
+    acquire_mtu = AsyncMock(side_effect=_acquire_mtu)
+    backend._acquire_mtu = acquire_mtu
+    client._backend = backend
+    client.mtu_size = 250
+    return acquire_mtu
 
 
 @pytest.fixture
@@ -73,6 +111,38 @@ class TestSutaController:
         )
 
         assert coordinator.controller.control_characteristic_uuid == SUTA_DEFAULT_WRITE_CHAR_UUID
+
+    async def test_wlt8016_initializes_notify_and_mtu_before_no_response_write(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """WLT8016 must subscribe FFF1 and acquire MTU before writing FFF2."""
+        events: list[str] = []
+        acquire_mtu = _configure_wlt8016_gatt(mock_bleak_client, events)
+
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:B2",
+            name="SUTA-B202B",
+            entry_id="suta_wlt8016_entry",
+        )
+
+        assert coordinator.controller.requires_notification_channel is True
+        assert events == ["notify", "mtu"]
+        mock_bleak_client.start_notify.assert_awaited_once()
+        acquire_mtu.assert_awaited_once()
+
+        # Diagnostics may ask to start notifications again on an already-connected
+        # controller; the subscription must remain idempotent.
+        await coordinator.async_start_notify_for_diagnostics()
+        mock_bleak_client.start_notify.assert_awaited_once()
+
+        await coordinator.controller.move_back_down()
+
+        first_write = mock_bleak_client.write_gatt_char.call_args_list[0]
+        assert first_write.args[0] == SUTA_DEFAULT_WRITE_CHAR_UUID
+        assert first_write.args[1] == _to_packet(SutaCommands.BACK_DOWN)
+        assert first_write.kwargs["response"] is False
 
     async def test_move_back_up_sends_back_and_stop(
         self,
