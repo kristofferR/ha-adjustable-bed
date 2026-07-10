@@ -696,6 +696,10 @@ class AdjustableBedCoordinator:
             self._address,
             err,
         )
+        # A definitive authentication failure invalidates any earlier decision
+        # to skip a probe that timed out. The next paired connection should
+        # verify the fresh bond again.
+        self._bond_probe_timed_out = False
         self._clear_ble_bond_established()
 
         try:
@@ -760,13 +764,25 @@ class AdjustableBedCoordinator:
             )
             return True
         except (TimeoutError, OSError) as err:
-            self._bond_probe_timed_out = True
-            _LOGGER.debug(
-                "Bond verification read for %s failed (%s); proceeding and "
-                "skipping future probes for this session.",
-                self._address,
-                err,
-            )
+            # The field-proven OKIN CST receiver never answers this DIS read,
+            # so repeated probes only add latency. Other pairing-required beds
+            # can time out transiently while waking and must retry on a later
+            # connection so stale bond state can still be detected.
+            self._bond_probe_timed_out = self._bed_type == BED_TYPE_OKIN_CST
+            if self._bond_probe_timed_out:
+                _LOGGER.debug(
+                    "Bond verification read for OKIN CST %s failed (%s); "
+                    "skipping future probes for this session.",
+                    self._address,
+                    err,
+                )
+            else:
+                _LOGGER.debug(
+                    "Bond verification read for %s failed (%s); proceeding and "
+                    "retrying on the next connection.",
+                    self._address,
+                    err,
+                )
             return True
 
         # Read succeeded → the encrypted link works → we are bonded.
@@ -928,6 +944,31 @@ class AdjustableBedCoordinator:
             "stmicroelectronics",
         }
         return normalized not in chipset_manufacturers
+
+    def _store_ble_device_info(
+        self,
+        manufacturer: str | None,
+        model: str | None,
+    ) -> None:
+        """Store Device Information and decide whether reconnects should retry it."""
+        self._ble_manufacturer = manufacturer
+        self._ble_model = model
+
+        has_useful_value = self._is_useful_ble_value(
+            manufacturer
+        ) or self._is_useful_ble_value(model)
+        # Certain OKIN CST receivers consistently never answer DIS reads. Their
+        # protocol is already explicit and does not depend on Device Information,
+        # so a negative session cache is safe and avoids 10s on every reconnect.
+        negative_cache_is_safe = self._bed_type == BED_TYPE_OKIN_CST
+        self._device_info_read_done = has_useful_value or negative_cache_is_safe
+
+        if not self._device_info_read_done:
+            _LOGGER.debug(
+                "Device Information read for %s returned no useful values; "
+                "retrying on the next connection.",
+                self._address,
+            )
 
     def remember_cb24_continuous_presets(self) -> None:
         """Persist the learned CB24 continuous preset mode across reconnects."""
@@ -1595,9 +1636,7 @@ class AdjustableBedCoordinator:
                         ble_manufacturer, ble_model = await read_ble_device_info(
                             self._client, self._address
                         )
-                        self._ble_manufacturer = ble_manufacturer
-                        self._ble_model = ble_model
-                        self._device_info_read_done = True
+                        self._store_ble_device_info(ble_manufacturer, ble_model)
 
                 previous_bed_type = self._bed_type
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
@@ -1784,9 +1823,7 @@ class AdjustableBedCoordinator:
                         ble_manufacturer, ble_model = await read_ble_device_info(
                             self._client, self._address
                         )
-                        self._ble_manufacturer = ble_manufacturer
-                        self._ble_model = ble_model
-                        self._device_info_read_done = True
+                        self._store_ble_device_info(ble_manufacturer, ble_model)
 
                 if (
                     self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
@@ -1833,6 +1870,11 @@ class AdjustableBedCoordinator:
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
+                if isinstance(err, BleakError) and _is_ble_authentication_error(err):
+                    # Authentication can first fail during controller startup,
+                    # after a slow DIS probe was treated as inconclusive. Clear
+                    # the stale marker here so the next retry requests pairing.
+                    await self._async_handle_ble_authentication_error(err, holding_lock=True)
                 attempt_elapsed = time.monotonic() - attempt_start
                 attempt_details["total_elapsed_seconds"] = round(attempt_elapsed, 3)
                 attempt_details["result"] = "failed"
