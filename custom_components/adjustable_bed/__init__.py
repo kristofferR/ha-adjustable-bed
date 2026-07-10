@@ -308,6 +308,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
 
+    # Beds that ignore connection requests from unbonded peers (LP Comfort
+    # Connect / Leggett & Platt Gen2) can only ever connect through the guided
+    # pairing repair, so plain retry messaging would mislead (issue #385).
+    bond_gated_unbonded = connection_gated_by_bond(
+        entry.data.get(CONF_BED_TYPE, ""), entry.data.get(CONF_PROTOCOL_VARIANT)
+    ) and not entry.data.get(CONF_BLE_BOND_ESTABLISHED)
+
     # Helper to create pairing issue — only when there's actual evidence of a pairing
     # problem. Generic connection failures (timeout, device not found) should NOT
     # trigger this, since the bed may just be temporarily unreachable after a restart.
@@ -353,9 +360,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # requests outside its pairing window, so waiting on HA's setup
         # retries can never succeed. Guide the user through the repair flow
         # (power-cycle into pairing mode, then pair) instead (issue #385).
-        if connection_gated_by_bond(bed_type, protocol_variant) and not entry.data.get(
-            CONF_BLE_BOND_ESTABLISHED
-        ):
+        if bond_gated_unbonded:
             await create_pairing_required_issue(
                 hass,
                 address or "Unknown",
@@ -373,17 +378,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             address,
         )
 
-    # Beds that ignore connection requests from unbonded peers (LP Comfort
-    # Connect / Leggett & Platt Gen2) can only ever connect through the guided
-    # pairing repair, so plain retry messaging would mislead (issue #385).
-    _bond_gated_unbonded = connection_gated_by_bond(
-        entry.data.get(CONF_BED_TYPE, ""), entry.data.get(CONF_PROTOCOL_VARIANT)
-    ) and not entry.data.get(CONF_BLE_BOND_ESTABLISHED)
-    _bond_gated_hint = (
+    bond_gated_hint = (
         " This bed only accepts Bluetooth connections from devices it has "
         "paired with. Open Settings → Repairs and follow the pairing steps "
         "(power-cycle the bed to enter its ~2 minute pairing mode)."
-        if _bond_gated_unbonded
+        if bond_gated_unbonded
         else " The integration will retry automatically."
     )
 
@@ -403,7 +402,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         raise ConfigEntryNotReady(
             f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
-            f"{SETUP_TIMEOUT:.0f}s.{_bond_gated_hint}"
+            f"{SETUP_TIMEOUT:.0f}s.{bond_gated_hint}"
         ) from None
 
     if not connected:
@@ -415,10 +414,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 coordinator,
                 reason="device was not reachable during initial setup",
             )
-        if _bond_gated_unbonded:
+        if bond_gated_unbonded:
             raise ConfigEntryNotReady(
                 f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
-                f"{_bond_gated_hint}"
+                f"{bond_gated_hint}"
             )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
