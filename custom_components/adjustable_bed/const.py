@@ -1773,11 +1773,10 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_LOGICDATA,
     # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): the LP Control app
     # calls createBond() after service discovery ("Bond Needed...Bonding" in
-    # BLEConnectionViewModel), and the ESP32 box only accepts connections from
-    # bonded peers outside its ~2-minute pairing window (fresh power-up or the
-    # "PAIR ENABLE" serial command). Without a bond every reconnect is refused
-    # at the link layer (CONNECT_IND ignored -> TimeoutError) even though the
-    # box keeps advertising (issue #385).
+    # BLEConnectionViewModel). Issue #385 shows the corresponding hardware
+    # symptom outside its ~2-minute pairing window: unbonded reconnects time out
+    # while the box keeps advertising. The app can re-open that window with its
+    # "PAIR ENABLE" serial command.
     BED_TYPE_LEGGETT_GEN2,
 }
 
@@ -1810,13 +1809,14 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
 
 
 def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
-    """Return True when a bed refuses *connections* from unbonded peers.
+    """Return True for the observed bond-gated connection-failure signature.
 
     Most pairing-required beds accept the BLE connection and only gate GATT
-    access on the bond. LP Comfort Connect (Leggett & Platt Gen2) instead
-    ignores connection requests from unbonded peers entirely outside its
-    pairing window, so a plain connect timeout on an unbonded entry is itself
-    evidence of a pairing problem (issue #385).
+    access on the bond. With LP Comfort Connect (Leggett & Platt Gen2), issue
+    #385 shows that an unbonded peer times out while the box keeps advertising
+    outside its pairing window. Treat that observed signature as the pairing
+    symptom; the controller firmware's exact link-layer filtering is not
+    visible in the Android APK.
     """
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         return True

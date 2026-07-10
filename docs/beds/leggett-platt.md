@@ -44,11 +44,15 @@ Leggett & Platt beds have three protocol variants with different detection metho
 - Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
 
 > **Connection & bonding (LP Comfort Connect):** the ESP32 controller requires a
-> **BLE bond** (issue #385). Outside its pairing window it ignores connection
-> requests from unbonded peers entirely — connects time out while the box keeps
-> advertising. The LP Control app bonds after service discovery
+> **BLE bond** (issue #385). Outside its pairing window, the reported unbonded
+> connection attempts time out while the box keeps advertising. The LP Control
+> app bonds after service discovery
 > (`BLEConnectionViewModel`: bond state `BOND_NONE` + Gen2 → `createBond()`),
 > which is why the app can reconnect at any time.
+>
+> The APK proves that the app requires a bond; the controller firmware is not
+> present in the APK, so the exact link-layer filtering mechanism is inferred
+> from the observed timeout-while-advertising behavior.
 >
 > The integration therefore pairs (`pair=True`) on the first connection, which
 > must happen during the pairing window:
@@ -58,7 +62,9 @@ Leggett & Platt beds have three protocol variants with different detection metho
 >   and a pulsing blue light shows under the bed. The window lasts ~2 minutes.
 >   A connected client can also re-open the window with the `PAIR ENABLE`
 >   serial command (the app's "pair another phone" feature).
-> - Factory reset (`DWIPE`) clears the box's stored Bluetooth pairings.
+> - `DWIPE` is the app's Gen2 factory-reset command. Whether it specifically
+>   clears the controller's bond table is firmware behavior and is not required
+>   by this integration flow.
 >
 > Once bonded, reconnects are accepted outside the pairing window. The
 > integration still holds the link open for this bed type (no idle disconnect).

@@ -156,9 +156,7 @@ class TestIntegrationSetup:
         mock_bluetooth_adapters,
         enable_custom_integrations,
     ):
-        """An unbonded LP Comfort Connect (Gen2) that cannot connect gets the
-        guided pairing repair — the box ignores connection requests from
-        unbonded peers, so waiting on setup retries can never succeed (#385)."""
+        """An unbonded Gen2 timeout gets the guided pairing repair from #385."""
         from homeassistant.helpers import issue_registry as ir
 
         entry = MockConfigEntry(
@@ -230,6 +228,61 @@ class TestIntegrationSetup:
         issue_registry = ir.async_get(hass)
         assert (
             issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_7f") is None
+        )
+
+    async def test_setup_gen2_failure_after_bond_skips_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A bond established during this setup attempt must be observed dynamically."""
+        from homeassistant.helpers import issue_registry as ir
+
+        address = "08:3A:F2:1E:4B:80"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: address,
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=address,
+            entry_id="leggett_gen2_bonded_during_setup_entry",
+        )
+        entry.add_to_hass(hass)
+
+        async def _connect_then_fail(_coordinator) -> bool:
+            hass.config_entries.async_update_entry(
+                entry,
+                data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
+            )
+            return False
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.AdjustableBedCoordinator.async_connect",
+                autospec=True,
+                side_effect=_connect_then_fail,
+            ),
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_ble_device_from_address",
+                return_value=None,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_80") is None
         )
 
     async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(

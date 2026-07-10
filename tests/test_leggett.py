@@ -254,9 +254,7 @@ class TestLeggettGen2Connection:
     async def test_gen2_requires_pairing(
         self, bed_type: str, variant: str | None, expected: bool
     ):
-        """LP Comfort Connect requires a BLE bond: the LP Control app calls
-        createBond() after service discovery, and the box refuses connections
-        from unbonded peers outside its pairing window (issue #385)."""
+        """LP Control calls createBond() for Gen2 after service discovery."""
         assert requires_pairing(bed_type, variant) is expected
 
     @pytest.mark.parametrize(
@@ -274,7 +272,7 @@ class TestLeggettGen2Connection:
     async def test_connection_gated_by_bond(
         self, bed_type: str, variant: str | None, expected: bool
     ):
-        """Only Gen2 refuses *connections* from unbonded peers."""
+        """Only Gen2 showed the bond-gated timeout signature in issue #385."""
         assert connection_gated_by_bond(bed_type, variant) is expected
 
     async def test_gen2_unexpected_disconnect_schedules_auto_reconnect(
@@ -283,9 +281,7 @@ class TestLeggettGen2Connection:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """A persistent-connection Gen2 bed must repair unexpected drops itself:
-        the bonded link is what keeps the box reachable, and a drop often means
-        the bed was power-cycled, so reconnect promptly (issue #385)."""
+        """A persistent Gen2 bed should promptly repair an unexpected drop."""
         del mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -392,7 +388,7 @@ class TestLeggettGen2Capabilities:
     async def test_manual_disconnect_strands_connection(
         self, hass: HomeAssistant, mock_leggett_gen2_config_entry
     ):
-        # Gen2 can only reconnect in pairing mode -> manual disconnect strands it.
+        # Keep this hidden until bonded reconnects are confirmed on hardware.
         assert self._controller(
             hass, mock_leggett_gen2_config_entry, 5
         ).manual_disconnect_strands_connection is True

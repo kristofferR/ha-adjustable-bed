@@ -182,13 +182,11 @@ _PROBE_TIMEOUT_SECONDS = 15.0
 
 
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
-    """Return True for beds whose single connection must not be spent on the probe.
+    """Return True when setup should avoid a redundant Gen2 connection cycle.
 
-    The setup verify probe connects read-only and always disconnects afterwards.
-    LP Comfort Connect (Leggett & Platt Gen2) only accepts a BLE connection while
-    in pairing mode and refuses reconnection afterwards, so probing would consume
-    the pairing-window connection and leave ``async_setup_entry`` unable to
-    reconnect (issue #385). Skip the probe and create the entry directly for those.
+    LP Comfort Connect must establish its first bond during the short pairing
+    window. After the explicit pairing attempt, skip the optional read-only probe
+    and let ``async_setup_entry`` make the meaningful bonded connection directly.
     """
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         return True
