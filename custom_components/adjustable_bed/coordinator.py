@@ -976,12 +976,11 @@ class AdjustableBedCoordinator:
     def _uses_persistent_connection(self) -> bool:
         """Return True when this controller should stay connected indefinitely.
 
-        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included because
-        its ESP32 controller only accepts a BLE connection while in pairing mode
-        and refuses reconnection afterwards. Idle-disconnecting it leaves the bed
-        unreachable until it is power-cycled / re-paired, so we hold the link open
-        for the lifetime of the entry instead (issue #385). Trade-off: the physical
-        remote cannot be used while Home Assistant is connected.
+        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included
+        conservatively until bonded reconnects are confirmed on hardware. We hold
+        the link open for the lifetime of the entry in the meantime (issue #385).
+        Trade-off: the physical remote cannot be used while Home Assistant is
+        connected.
 
         Resolution order:
         1. The live controller's ``requires_persistent_connection`` (authoritative).
@@ -1017,8 +1016,22 @@ class AdjustableBedCoordinator:
         # few reconnect cycles enter a protection mode where they stop advertising
         # entirely until power-cycled (#369). The next user command reconnects on
         # demand, so no reconnect timer is needed for these beds.
+        #
         if self._disconnect_after_operation_enabled():
             return False
+
+        # LP Comfort Connect is kept connected conservatively, and the new bond
+        # makes an unexpected drop recoverable. Reconnect promptly while leaving
+        # the established lifecycle behavior of other persistent protocols (such
+        # as Sleep Number MCR) unchanged by this Gen2-specific fix.
+        if self._bed_type == BED_TYPE_LEGGETT_GEN2:
+            return True
+        if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
+            VARIANT_AUTO,
+            LEGGETT_VARIANT_GEN2,
+        ):
+            return self._uses_persistent_connection()
+
         return not self._uses_persistent_connection()
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
@@ -2030,7 +2043,8 @@ class AdjustableBedCoordinator:
         if not self._auto_reconnect_enabled():
             _LOGGER.debug(
                 "Skipping auto-reconnect timer for %s (persistent connection or "
-                "disconnect_after_command); next command reconnects on demand",
+                "disconnect_after_command); "
+                "next command reconnects on demand",
                 self._bed_type,
             )
             if self._reconnect_timer is not None:

@@ -1778,13 +1778,20 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
+    # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): the LP Control app
+    # calls createBond() after service discovery ("Bond Needed...Bonding" in
+    # BLEConnectionViewModel). Issue #385 shows the corresponding hardware
+    # symptom outside its ~2-minute pairing window: unbonded reconnects time out
+    # while the box keeps advertising. The app can re-open that window with its
+    # "PAIR ENABLE" serial command.
+    BED_TYPE_LEGGETT_GEN2,
 }
 
 # Bed type + variant combinations that require BLE pairing
 # Maps bed type to set of variants that require pairing for that specific bed type
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
-    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN},
+    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
 }
 
 
@@ -1806,6 +1813,21 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
+
+def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
+    """Return True for the observed bond-gated connection-failure signature.
+
+    Most pairing-required beds accept the BLE connection and only gate GATT
+    access on the bond. With LP Comfort Connect (Leggett & Platt Gen2), issue
+    #385 shows that an unbonded peer times out while the box keeps advertising
+    outside its pairing window. Treat that observed signature as the pairing
+    symptom; the controller firmware's exact link-layer filtering is not
+    visible in the Android APK.
+    """
+    if bed_type == BED_TYPE_LEGGETT_GEN2:
+        return True
+    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(

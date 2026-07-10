@@ -1512,7 +1512,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Sleep Number MCR should not schedule timer-based auto-reconnect."""
+        """The Gen2 fix must not change Sleep Number MCR reconnect behavior."""
         del mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
