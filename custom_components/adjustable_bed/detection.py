@@ -873,9 +873,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
     # The bed advertises FFC0 UUID, name "Mouselet", AND manufacturer data with
-    # Company ID 0xFFFF / marker 0xC0FF. Manufacturer data alone is sufficient
-    # for detection (matches the OEM app's discovery), but the other signals
-    # boost confidence when present.
+    # Company ID 0xFFFF / marker 0xC0FF.
+    #
+    # The 0xFFFF/0xC0FF blob is the PairLink mesh SDK transport
+    # (com.pairlink.mesh_lib in the OEM APKs), which non-bed products - notably
+    # BLE mesh LED controllers - also emit. An ESPHome ESP32-C6 LED controller
+    # advertising a structurally valid PairLink payload was misdetected as a
+    # Kaidi bed at 90% confidence (issue #417); even the OEM app's own scan
+    # validation accepts that exact payload (length, sofaType 0x82 = product ID
+    # 130, sane seat counts) and relies on mesh room-ID membership to filter,
+    # which we cannot replicate. So the payload alone is not sufficient: require
+    # a Kaidi-specific signal (Mouselet name, FFC0/mesh UUID, or Kaidi MAC OUI)
+    # to corroborate before detecting.
     has_kaidi_uuid = (
         KAIDI_DISCOVERY_SERVICE_UUID.lower() in service_uuids
         or KAIDI_MESH_SERVICE_UUID.lower() in service_uuids
@@ -884,7 +893,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     has_kaidi_mac = any(
         service_info.address.upper().startswith(prefix) for prefix in KAIDI_MAC_PREFIXES
     )
-    if kaidi_adv:
+    if kaidi_adv and not (has_kaidi_uuid or has_kaidi_name or has_kaidi_mac):
+        _LOGGER.debug(
+            "Ignoring PairLink-format manufacturer data for %s (name: %s): "
+            "no Kaidi name, UUID, or MAC OUI to corroborate",
+            service_info.address,
+            service_info.name,
+        )
+    elif kaidi_adv:
         signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
         if has_kaidi_uuid:
             signals.append("uuid:kaidi")

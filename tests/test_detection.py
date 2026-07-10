@@ -190,10 +190,44 @@ class TestDetectBedTypeByServiceUUID:
             == "Sleep Number 360 / i8 FlexFit (BAM/MCR)"
         )
 
-    def test_detect_kaidi_by_manufacturer_data_only(self):
-        """Test Kaidi detection by manufacturer data alone (no UUID/name needed)."""
+    def test_kaidi_manufacturer_data_alone_is_not_sufficient(self):
+        """A bare PairLink payload with no Kaidi name/UUID/OUI must not detect as Kaidi.
+
+        The 0xFFFF/0xC0FF blob is the generic PairLink mesh SDK transport that
+        non-bed products also emit (issue #417).
+        """
         service_info = _make_service_info(
             name="Unknown",
+            service_uuids=[],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type != BED_TYPE_KAIDI
+
+    def test_kaidi_esphome_led_controller_is_not_a_bed(self):
+        """Regression for #417: an ESPHome ESP32-C6 LED controller was misdetected.
+
+        Its PairLink-format payload is structurally valid (even the OEM app's
+        scan validation accepts it), so only corroborating Kaidi signals may
+        promote it to a detection.
+        """
+        service_info = _make_service_info(
+            name="EC:C5:7F:6A:67:11",
+            address="EC:C5:7F:6A:67:11",
+            service_uuids=[],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff011e27000082020211676a7fc5ec")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type is None
+
+    def test_detect_kaidi_by_manufacturer_data_with_mouselet_name(self):
+        """A Mouselet-named device with a PairLink payload detects as Kaidi."""
+        service_info = _make_service_info(
+            name="Mouselet",
             service_uuids=[],
             manufacturer_data={
                 0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
@@ -203,6 +237,22 @@ class TestDetectBedTypeByServiceUUID:
         assert result.bed_type == BED_TYPE_KAIDI
         assert result.confidence == 0.9
         assert "manufacturer_payload:kaidi_type_2" in result.signals
+        assert "name:kaidi" in result.signals
+
+    def test_detect_kaidi_by_manufacturer_data_with_kaidi_oui(self):
+        """A device with a known Kaidi MAC OUI and a PairLink payload detects as Kaidi."""
+        service_info = _make_service_info(
+            name="Unknown",
+            address="F0:AC:D7:12:34:56",
+            service_uuids=[],
+            manufacturer_data={
+                0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
+            },
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_KAIDI
+        assert result.confidence == 0.9
+        assert "mac:kaidi_oui" in result.signals
 
     def test_detect_kaidi_with_ffc0_uuid(self):
         """Test Kaidi detection with FFC0 UUID gives higher confidence."""
