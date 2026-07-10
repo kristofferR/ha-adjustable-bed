@@ -111,6 +111,9 @@ Both protocols use the same command values (32-bit integers):
 
 ### Memory Programming (hold-to-save)
 
+> ⚠️ Verified against app decompilation only; not yet confirmed on physical
+> hardware.
+
 The app saves the current position by emulating a held memory button: it
 streams the save command at the protocol's repeat interval for the full
 repeat window (85×150ms legacy, 55×100ms new OKIN). The APK then calls
@@ -160,6 +163,14 @@ integration today.
 The app's L600 model definition: manual controls HEAD/FOOT only, presets
 Zero-G / Anti-Snore / Lounge / TV-Read, **1 memory position**, massage
 (head/foot/type/timer), light, alarm. No tilt, lumbar, or Hi-Lo hardware.
+
+Note: this describes what the vendor app exposes for the L600 model only. The
+integration's `MaloufLegacyOkinController` applies the generic LEGACY_OKIN
+capability set to every LEGACY_OKIN device (2 memory slots, plus tilt, lumbar,
+and bed-height controls), which is a superset of what an L600 physically has.
+Extra entities on an L600 are harmless (the hardware ignores unsupported
+commands); gating capabilities per model would require model detection the
+protocol does not currently provide.
 
 ## Command Timing
 
