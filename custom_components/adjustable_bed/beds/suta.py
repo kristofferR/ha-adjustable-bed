@@ -13,13 +13,22 @@ Characteristic UUIDs are discovered dynamically based on GATT properties.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from ..const import SUTA_DEFAULT_WRITE_CHAR_UUID, SUTA_SERVICE_UUID
+from bleak.exc import BleakError
+
+from ..const import (
+    SUTA_DEFAULT_NOTIFY_CHAR_UUID,
+    SUTA_DEFAULT_WRITE_CHAR_UUID,
+    SUTA_SERVICE_UUID,
+)
 from .base import BedController
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,14 +91,30 @@ class SutaController(BedController):
         """Initialize the SUTA controller."""
         super().__init__(coordinator)
         self._write_char_uuid = SUTA_DEFAULT_WRITE_CHAR_UUID
-        self._write_with_response = True
-        self._write_mode_initialized = False
+        self._notify_char_uuid = SUTA_DEFAULT_NOTIFY_CHAR_UUID
+        self._write_with_response = False
+        self._chars_initialized = False
+        self._notify_started = False
         self._light_state = False
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the command characteristic UUID."""
         return self._write_char_uuid
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Return True - SUTA firmware needs an active notify subscription.
+
+        The SUTA app enables notifications on the FFF0 notify characteristic
+        (FFF1) immediately after connecting, before it sends any command. On
+        some transparent-UART controllers (e.g. the WLT8016 module in the
+        Dreams Sleepmotion / SUTA-B202B, issue #345) the bed connects and beeps
+        but silently ignores motor commands until that subscription is active,
+        so the coordinator must call start_notify() even when angle sensing is
+        disabled.
+        """
+        return True
 
     # Capability properties
     @property
@@ -137,9 +162,16 @@ class SutaController(BedController):
         """Build a CRLF-terminated AT command packet."""
         return f"{command}\r\n".encode()
 
-    def _refresh_write_characteristic(self) -> None:
-        """Resolve write characteristic and write mode from discovered services."""
-        if self._write_mode_initialized:
+    def _refresh_characteristics(self) -> None:
+        """Resolve write and notify characteristics from discovered services.
+
+        SUTA devices expose their command and notify characteristics
+        dynamically under SUTA_SERVICE_UUID, so we mirror the app: pick the
+        first char with WRITE/WRITE_NO_RESPONSE as the command channel (FFF2)
+        and the first char with NOTIFY/INDICATE as the notify channel (FFF1),
+        instead of matching fixed UUIDs.
+        """
+        if self._chars_initialized:
             return
 
         client = self.client
@@ -149,38 +181,92 @@ class SutaController(BedController):
         service = client.services.get_service(SUTA_SERVICE_UUID)
         if service is None:
             _LOGGER.debug(
-                "SUTA service %s not found, using fallback characteristic %s",
+                "SUTA service %s not found, using fallback write=%s notify=%s",
                 SUTA_SERVICE_UUID,
                 self._write_char_uuid,
+                self._notify_char_uuid,
             )
-            self._write_mode_initialized = True
+            self._chars_initialized = True
             return
 
-        # SUTA devices expose writable characteristics dynamically under
-        # SUTA_SERVICE_UUID, so we intentionally select the first writable char
-        # we find and store it in _write_char_uuid instead of matching a fixed UUID.
+        write_found = False
+        notify_found = False
         for char in service.characteristics:
             props = {prop.lower() for prop in char.properties}
-            if "write" in props or "write-without-response" in props:
+            if not write_found and ("write" in props or "write-without-response" in props):
                 self._write_char_uuid = str(char.uuid)
                 # Prefer write-with-response when available for acknowledgements;
                 # otherwise fall back to write-without-response.
                 self._write_with_response = "write" in props
-                self._write_mode_initialized = True
-                _LOGGER.debug(
-                    "SUTA write characteristic resolved to %s (response=%s, props=%s)",
-                    self._write_char_uuid,
-                    self._write_with_response,
-                    char.properties,
-                )
-                return
+                write_found = True
+            if not notify_found and ("notify" in props or "indicate" in props):
+                self._notify_char_uuid = str(char.uuid)
+                notify_found = True
 
+        if not write_found:
+            _LOGGER.debug(
+                "No writable characteristic found in SUTA service %s, using fallback %s",
+                SUTA_SERVICE_UUID,
+                self._write_char_uuid,
+            )
+        self._chars_initialized = True
         _LOGGER.debug(
-            "No writable characteristic found in SUTA service %s, using fallback %s",
-            SUTA_SERVICE_UUID,
+            "SUTA characteristics resolved: write=%s (response=%s) notify=%s",
             self._write_char_uuid,
+            self._write_with_response,
+            self._notify_char_uuid,
         )
-        self._write_mode_initialized = True
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Subscribe to the FFF0 notify characteristic (FFF1).
+
+        SUTA firmware requires an active notify subscription before it accepts
+        commands (see requires_notification_channel). The position callback is
+        unused - SUTA reports no motor angle - but the subscription itself is
+        what unblocks command handling on the WLT8016 and similar modules.
+        """
+        self._notify_callback = callback
+
+        client = self.client
+        if client is None or not client.is_connected:
+            _LOGGER.warning("Cannot start SUTA notifications: not connected")
+            return
+
+        self._refresh_characteristics()
+        if self._notify_started:
+            return
+
+        try:
+            async with self._ble_lock:
+                await client.start_notify(self._notify_char_uuid, self._handle_notification)
+            self._notify_started = True
+            _LOGGER.debug(
+                "Started SUTA notifications on %s for %s",
+                self._notify_char_uuid,
+                self._coordinator.address,
+            )
+        except BleakError as err:
+            _LOGGER.warning("Failed to start SUTA notifications: %s", err)
+            self.log_discovered_services(level=logging.INFO)
+
+    async def stop_notify(self) -> None:
+        """Unsubscribe from the FFF0 notify characteristic."""
+        self._notify_callback = None
+        client = self.client
+        if client is not None and client.is_connected and self._notify_started:
+            with contextlib.suppress(BleakError):
+                async with self._ble_lock:
+                    await client.stop_notify(self._notify_char_uuid)
+        self._notify_started = False
+
+    def _handle_notification(self, _sender: Any, data: bytearray) -> None:
+        """Forward raw SUTA notifications for diagnostics capture.
+
+        SUTA exposes no motor-position feedback, so there is nothing to parse
+        into an angle - the notification channel exists only to unblock command
+        handling and to surface +OK/+ERR responses in diagnostic captures.
+        """
+        self.forward_raw_notification(self._notify_char_uuid, bytes(data))
 
     async def write_command(
         self,
@@ -190,7 +276,7 @@ class SutaController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a SUTA command packet."""
-        self._refresh_write_characteristic()
+        self._refresh_characteristics()
         await self._write_gatt_with_retry(
             self._write_char_uuid,
             command,

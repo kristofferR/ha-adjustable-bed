@@ -8,6 +8,9 @@
 
 - SUTA bed-frame controllers with names like `SUTA-B*`, `SUTA-M*`, `SUTA-S*`
 - Confirmed app model families include B803/B804/B805, B207/B202, and M-series variants
+- Rebranded frames using the same protocol, e.g. **Dreams Sleepmotion** (`SUTA-B202B`,
+  WLT8016 module). The app maps by the first 9 chars of the BLE name, so `SUTA-B202B`
+  is handled as `SUTA-B202`.
 
 ## Apps
 
@@ -31,8 +34,27 @@
 ## Protocol Details
 
 **Service UUID:** `0000fff0-0000-1000-8000-00805f9b34fb`  
-**Write Characteristic:** Dynamic discovery by GATT properties (fallback: `0000fff1-0000-1000-8000-00805f9b34fb`)  
+**Write Characteristic:** Dynamic discovery by GATT properties — the `WRITE`/`WRITE_NO_RESPONSE` char under FFF0 (fallback: `0000fff2-0000-1000-8000-00805f9b34fb`)  
+**Notify Characteristic:** Dynamic discovery by GATT properties — the `NOTIFY`/`INDICATE` char under FFF0 (fallback: `0000fff1-0000-1000-8000-00805f9b34fb`)  
 **Format:** ASCII AT commands terminated with `\r\n` (no checksum)
+
+### Notification channel is required before commands work
+
+The SUTA app enables notifications on the FFF0 notify characteristic (FFF1)
+**immediately after connecting, before it sends any command**. On some
+transparent-UART controllers — notably the **WLT8016** module used in the Dreams
+Sleepmotion / `SUTA-B202B` (issue #345) — the bed connects and beeps but silently
+ignores motor commands until that subscription is active. The controller
+therefore sets `requires_notification_channel = True` so the coordinator opens
+the notify subscription even when angle sensing is disabled. SUTA reports no
+motor position, so the subscription carries no position data; it exists purely to
+unblock command handling (and to surface `+OK`/`+ERR` responses in diagnostics).
+
+The app also requests an MTU of 250 on connect. Commands such as
+`AT+CTRL=BOTH BACK UP\r\n` are 22 bytes, which exceeds the 20-byte default ATT
+payload, so a full-size MTU is needed for the command to arrive intact. Home
+Assistant's BlueZ/ESPHome transport negotiates a large MTU automatically, but a
+proxy stuck at the 23-byte default can truncate longer commands.
 
 ## Detection
 

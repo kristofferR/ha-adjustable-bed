@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
+    SUTA_DEFAULT_NOTIFY_CHAR_UUID,
     SUTA_DEFAULT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -168,6 +169,59 @@ class TestSutaController:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) == 1
         assert calls[0][0][1] == _to_packet(SutaCommands.PRESET_TV)
+
+
+class TestSutaNotifications:
+    """Test SUTA notification-channel behavior (issue #345)."""
+
+    async def test_requires_notification_channel(self, suta_coordinator) -> None:
+        """SUTA must declare it needs the notify channel active for commands."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:0A",
+            name="SUTA-B202B",
+            entry_id="suta_test_entry_notify",
+        )
+
+        assert coordinator.controller.requires_notification_channel is True
+
+    async def test_connect_subscribes_to_notify_char(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Connecting subscribes to FFF1 even with angle sensing disabled.
+
+        The SUTA app enables notifications before any command works; without an
+        active subscription the WLT8016 firmware connects but ignores motor
+        commands (issue #345).
+        """
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:0B",
+            name="SUTA-B202B",
+            entry_id="suta_test_entry_notify_2",
+        )
+
+        chars = [c.args[0] for c in mock_bleak_client.start_notify.call_args_list]
+        assert SUTA_DEFAULT_NOTIFY_CHAR_UUID in chars
+        assert coordinator.controller._notify_started is True
+
+    async def test_stop_notify_unsubscribes(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """stop_notify unsubscribes from the notify characteristic."""
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:0C",
+            name="SUTA-B202B",
+            entry_id="suta_test_entry_notify_3",
+        )
+
+        await coordinator.controller.stop_notify()
+
+        stopped = [c.args[0] for c in mock_bleak_client.stop_notify.call_args_list]
+        assert SUTA_DEFAULT_NOTIFY_CHAR_UUID in stopped
+        assert coordinator.controller._notify_started is False
 
 
 class TestSutaSync:

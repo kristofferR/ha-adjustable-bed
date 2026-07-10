@@ -424,10 +424,13 @@ MOTOSLEEP_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 # SUTA Smart Home specific UUIDs (AT command protocol)
-# The app discovers writable/notifiable characteristics dynamically by properties.
-# FFF1 is used as a fallback write characteristic when dynamic discovery is unavailable.
+# The app discovers writable/notifiable characteristics dynamically by properties
+# under FFF0: it picks the char with WRITE/WRITE_NO_RESPONSE as the command channel
+# (FFF2) and the char with NOTIFY/INDICATE as the notify channel (FFF1). These
+# constants are only fallbacks used when dynamic discovery is unavailable.
 SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
-SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
+SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff2-0000-1000-8000-00805f9b34fb"
+SUTA_DEFAULT_NOTIFY_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
 
 # TiMOTION AHF protocol UUIDs (Nordic UART Service)
 TIMOTION_AHF_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
