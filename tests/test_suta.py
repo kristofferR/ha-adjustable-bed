@@ -165,6 +165,24 @@ class TestSutaController:
         assert first_payload == _to_packet(SutaCommands.BACK_UP)
         assert last_payload == _to_packet(SutaCommands.STOP_ALL)
 
+    async def test_wlt8016_stop_notify_unsubscribes_once(
+        self,
+        suta_coordinator,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Stopping WLT8016 notifications should unsubscribe idempotently."""
+        _configure_wlt8016_gatt(mock_bleak_client, [])
+        coordinator = await suta_coordinator(
+            address="AA:BB:CC:DD:EE:B3",
+            name="SUTA-B202B",
+            entry_id="suta_wlt8016_stop_entry",
+        )
+
+        await coordinator.controller.stop_notify()
+        await coordinator.controller.stop_notify()
+
+        mock_bleak_client.stop_notify.assert_awaited_once_with(SUTA_NOTIFY_CHAR_UUID)
+
     async def test_lights_on_and_off(
         self,
         suta_coordinator,

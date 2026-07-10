@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -254,7 +254,7 @@ class SutaController(BedController):
         if callable(acquire_mtu):
             try:
                 async with self._ble_lock:
-                    await acquire_mtu()
+                    await cast(Callable[[], Awaitable[object]], acquire_mtu)()
             except (AssertionError, BleakError, OSError, TimeoutError) as err:
                 _LOGGER.warning(
                     "Could not acquire SUTA command MTU (OEM app requests %d): %s",
