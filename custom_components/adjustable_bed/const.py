@@ -265,6 +265,11 @@ LEGACY_BED_TYPE_MAPPING: Final = {
     # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
 }
 
+# Some controllers (e.g. certain OKIN CST boards) accept a GATT read on a
+# Device Information characteristic but never answer it. Time-box these
+# reads so a silent characteristic cannot stall connection setup.
+DEVICE_INFO_READ_TIMEOUT: Final = 5.0
+
 # Standard BLE Device Information Service UUIDs
 DEVICE_INFO_SERVICE_UUID: Final = "0000180a-0000-1000-8000-00805f9b34fb"
 DEVICE_INFO_CHARS: Final = {

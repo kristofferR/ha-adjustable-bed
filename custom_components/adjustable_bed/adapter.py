@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 
@@ -12,7 +13,12 @@ from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant
 
-from .const import ADAPTER_AUTO, DEVICE_INFO_CHARS, DEVICE_INFO_SERVICE_UUID
+from .const import (
+    ADAPTER_AUTO,
+    DEVICE_INFO_CHARS,
+    DEVICE_INFO_READ_TIMEOUT,
+    DEVICE_INFO_SERVICE_UUID,
+)
 
 # Sentinel value indicating RSSI is unavailable
 RSSI_UNAVAILABLE = -999
@@ -451,25 +457,29 @@ async def read_ble_device_info(client: BleakClient, address: str) -> tuple[str |
     # Read manufacturer name
     try:
         manufacturer_uuid = DEVICE_INFO_CHARS["manufacturer_name"]
-        value = await client.read_gatt_char(manufacturer_uuid)
+        value = await asyncio.wait_for(
+            client.read_gatt_char(manufacturer_uuid), DEVICE_INFO_READ_TIMEOUT
+        )
         try:
             manufacturer = value.decode("utf-8").rstrip("\x00")
             _LOGGER.debug("BLE manufacturer: %s", manufacturer)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode manufacturer name as UTF-8")
-    except (BleakError, TimeoutError) as err:
+    except (BleakError, TimeoutError, OSError) as err:
         _LOGGER.debug("Could not read manufacturer name: %s", err)
 
     # Read model number
     try:
         model_uuid = DEVICE_INFO_CHARS["model_number"]
-        value = await client.read_gatt_char(model_uuid)
+        value = await asyncio.wait_for(
+            client.read_gatt_char(model_uuid), DEVICE_INFO_READ_TIMEOUT
+        )
         try:
             model = value.decode("utf-8").rstrip("\x00")
             _LOGGER.debug("BLE model: %s", model)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode model number as UTF-8")
-    except (BleakError, TimeoutError) as err:
+    except (BleakError, TimeoutError, OSError) as err:
         _LOGGER.debug("Could not read model number: %s", err)
 
     return manufacturer, model

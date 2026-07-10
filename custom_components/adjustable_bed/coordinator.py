@@ -114,6 +114,7 @@ from .const import (
     DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
+    DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
     LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
@@ -307,6 +308,8 @@ class AdjustableBedCoordinator:
         # BLE Device Information Service data
         self._ble_manufacturer: str | None = None
         self._ble_model: str | None = None
+        self._device_info_read_done: bool = False
+        self._bond_probe_timed_out: bool = False
 
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
@@ -731,9 +734,19 @@ class AdjustableBedCoordinator:
         if client is None or not client.is_connected:
             return True
 
+        if self._bond_probe_timed_out:
+            _LOGGER.debug(
+                "Bond verification read previously timed out on %s; "
+                "skipping the probe for this session.",
+                self._address,
+            )
+            return True
+
         probe_uuid = DEVICE_INFO_CHARS["model_number"]
         try:
-            await client.read_gatt_char(probe_uuid)
+            await asyncio.wait_for(
+                client.read_gatt_char(probe_uuid), DEVICE_INFO_READ_TIMEOUT
+            )
         except BleakError as err:
             if _is_ble_authentication_error(err):
                 # We run inside _async_connect_locked, which holds self._lock —
@@ -747,8 +760,10 @@ class AdjustableBedCoordinator:
             )
             return True
         except (TimeoutError, OSError) as err:
+            self._bond_probe_timed_out = True
             _LOGGER.debug(
-                "Bond verification read for %s failed (%s); proceeding.",
+                "Bond verification read for %s failed (%s); proceeding and "
+                "skipping future probes for this session.",
                 self._address,
                 err,
             )
@@ -1567,11 +1582,22 @@ class AdjustableBedCoordinator:
                 ble_model: str | None = None
 
                 if not _defer_device_info:
-                    ble_manufacturer, ble_model = await read_ble_device_info(
-                        self._client, self._address
-                    )
-                    self._ble_manufacturer = ble_manufacturer
-                    self._ble_model = ble_model
+                    if self._device_info_read_done:
+                        ble_manufacturer = self._ble_manufacturer
+                        ble_model = self._ble_model
+                        _LOGGER.debug(
+                            "Reusing cached device info for %s (manufacturer=%s, model=%s)",
+                            self._address,
+                            ble_manufacturer,
+                            ble_model,
+                        )
+                    else:
+                        ble_manufacturer, ble_model = await read_ble_device_info(
+                            self._client, self._address
+                        )
+                        self._ble_manufacturer = ble_manufacturer
+                        self._ble_model = ble_model
+                        self._device_info_read_done = True
 
                 previous_bed_type = self._bed_type
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
@@ -1745,11 +1771,22 @@ class AdjustableBedCoordinator:
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
                 if _defer_device_info and self._client is not None and self._client.is_connected:
-                    ble_manufacturer, ble_model = await read_ble_device_info(
-                        self._client, self._address
-                    )
-                    self._ble_manufacturer = ble_manufacturer
-                    self._ble_model = ble_model
+                    if self._device_info_read_done:
+                        ble_manufacturer = self._ble_manufacturer
+                        ble_model = self._ble_model
+                        _LOGGER.debug(
+                            "Reusing cached device info for %s (manufacturer=%s, model=%s)",
+                            self._address,
+                            ble_manufacturer,
+                            ble_model,
+                        )
+                    else:
+                        ble_manufacturer, ble_model = await read_ble_device_info(
+                            self._client, self._address
+                        )
+                        self._ble_manufacturer = ble_manufacturer
+                        self._ble_model = ble_model
+                        self._device_info_read_done = True
 
                 if (
                     self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
