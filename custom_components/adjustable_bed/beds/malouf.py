@@ -1,6 +1,8 @@
 """Malouf bed controller implementations.
 
-Reverse-engineered from Malouf Base app v2.4.3.
+Reverse-engineered from Malouf Base app v2.4.3; verified against a fresh
+decompile of Lucid Base v1.3.3 (com.lucid.bedbase, shared
+com.malouf.adjustablebasebluetooth library) on 2026-07-10.
 
 Malouf beds use two distinct protocols:
 - NEW_OKIN: 8-byte commands via Nordic UART, advertises unique service UUID
@@ -57,6 +59,15 @@ class MaloufCommands:
     TV_READ = 0x4000
     MEMORY_1 = 0x10000
     MEMORY_2 = 0x40000
+
+    # Memory programming (hold-to-save). The app emulates holding the
+    # remote's memory button: it streams the save command at the protocol's
+    # repeat interval for the full repeat window. Slot 1 reuses the recall
+    # value (the sustained stream is what signals "save"); beds named
+    # "Smartbed238" use a dedicated value with the save bit set.
+    SAVE_MEMORY_1 = 0x10000
+    SAVE_MEMORY_1_SMARTBED238 = 0x80010000
+    SAVE_MEMORY_2 = 0x80040000
 
     # Lights & Massage
     LIGHT_SWITCH = 0x20000
@@ -116,6 +127,25 @@ def _malouf_hilo_motor_control_specs() -> tuple[MotorControlSpec, ...]:
             stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
         ),
     )
+
+
+def _save_memory_command(memory_num: int, device_name: str | None) -> int | None:
+    """Return the hold-to-save command value for a memory slot.
+
+    Matches the app's setMemory1/setMemory2 handling: slot 1 uses the recall
+    value (or the save-bit variant on beds named "Smartbed238"), slot 2 always
+    carries the save bit.
+    """
+    smartbed238 = bool(device_name) and "smartbed238" in device_name.lower()
+    if memory_num == 1:
+        return (
+            MaloufCommands.SAVE_MEMORY_1_SMARTBED238
+            if smartbed238
+            else MaloufCommands.SAVE_MEMORY_1
+        )
+    if memory_num == 2:
+        return MaloufCommands.SAVE_MEMORY_2
+    return None
 
 
 class MaloufNewOkinController(BedController):
@@ -190,8 +220,8 @@ class MaloufNewOkinController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Malouf beds don't support programming memory positions."""
-        return False
+        """Return True - saving is a sustained hold-to-save command stream."""
+        return True
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -383,9 +413,19 @@ class MaloufNewOkinController(BedController):
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning(
-            "Malouf beds don't support programming memory presets (requested: %d)", memory_num
+        """Program current position to memory.
+
+        The app emulates holding the remote's memory button: it streams the
+        save command every 100ms for 55 repeats (NEW_OKIN timing). The APK then
+        calls the unhandled command name ``stopCommand``, which performs no BLE
+        write, so saving completes by ending the command stream.
+        """
+        command_value = _save_memory_command(memory_num, self._coordinator.name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
+        await self.write_command(
+            self._build_command(command_value), repeat_count=55, repeat_delay_ms=100
         )
 
     # Light control
@@ -507,8 +547,8 @@ class MaloufLegacyOkinController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Malouf beds don't support programming memory positions."""
-        return False
+        """Return True - saving is a sustained hold-to-save command stream."""
+        return True
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -703,9 +743,19 @@ class MaloufLegacyOkinController(BedController):
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning(
-            "Malouf beds don't support programming memory presets (requested: %d)", memory_num
+        """Program current position to memory.
+
+        The app emulates holding the remote's memory button: it streams the
+        save command every 150ms for 85 repeats (LEGACY_OKIN timing). The APK
+        then calls the unhandled command name ``stopCommand``, which performs
+        no BLE write, so saving completes by ending the command stream.
+        """
+        command_value = _save_memory_command(memory_num, self._coordinator.name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
+        await self.write_command(
+            self._build_command(command_value), repeat_count=85, repeat_delay_ms=150
         )
 
     # Light control

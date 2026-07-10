@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.malouf import (
     MaloufCommands,
+    _save_memory_command,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -549,17 +550,86 @@ class TestMaloufCapabilities:
         assert specs[2].translation_key == "head_end_tilt"
         assert specs[3].translation_key == "foot_end_tilt"
 
-    async def test_does_not_support_memory_programming(
+    async def test_supports_memory_programming(
         self,
         hass: HomeAssistant,
         mock_malouf_new_config_entry,
         mock_coordinator_connected,
     ):
-        """Test Malouf does not support programming memory positions."""
+        """Test Malouf supports programming memory positions (hold-to-save)."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.supports_memory_programming is False
+        assert coordinator.controller.supports_memory_programming is True
+
+
+class TestMaloufMemoryProgramming:
+    """Test Malouf hold-to-save memory programming."""
+
+    async def test_new_okin_program_memory_streams_save(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_new_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test NEW_OKIN programming streams the save command at 55x100ms."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
+            await controller.program_memory(1)
+
+        mock_write.assert_called_once()
+        save_call = mock_write.call_args
+        assert save_call.args[0] == controller._build_command(MaloufCommands.SAVE_MEMORY_1)
+        assert save_call.kwargs["repeat_count"] == 55
+        assert save_call.kwargs["repeat_delay_ms"] == 100
+
+    async def test_legacy_okin_program_memory_streams_save(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_legacy_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test LEGACY_OKIN programming streams the save command at 85x150ms."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
+            await controller.program_memory(2)
+
+        mock_write.assert_called_once()
+        save_call = mock_write.call_args
+        assert save_call.args[0] == controller._build_command(MaloufCommands.SAVE_MEMORY_2)
+        assert save_call.kwargs["repeat_count"] == 85
+        assert save_call.kwargs["repeat_delay_ms"] == 150
+
+    async def test_program_memory_invalid_slot_writes_nothing(
+        self,
+        hass: HomeAssistant,
+        mock_malouf_legacy_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test invalid memory slots are rejected without any BLE writes."""
+        coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
+            await controller.program_memory(3)
+
+        mock_write.assert_not_called()
+
+    def test_save_memory_command_values(self):
+        """Test save values match the app (slot 1 recall value, slot 2 save bit)."""
+        assert _save_memory_command(1, "OKIN-BLE00017786") == 0x10000
+        assert _save_memory_command(1, "Smartbed238-0042") == 0x80010000
+        assert _save_memory_command(2, "OKIN-BLE00017786") == 0x80040000
+        assert _save_memory_command(2, "Smartbed238-0042") == 0x80040000
+        assert _save_memory_command(3, "OKIN-BLE00017786") is None
+        assert _save_memory_command(1, None) == 0x10000
 
 
 class TestMaloufLumbarAndTilt:
