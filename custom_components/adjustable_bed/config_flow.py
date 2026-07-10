@@ -19,6 +19,7 @@ from homeassistant.config_entries import (
     OptionsFlowWithConfigEntry,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
@@ -28,6 +29,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
 )
 from homeassistant.helpers.translation import async_get_translations
+from homeassistant.loader import IntegrationNotFound, async_get_integration
 
 from .actuator_groups import (
     ACTUATOR_GROUPS,
@@ -950,11 +952,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # detections can be fixed. Built from the live (un-redacted) discovery
         # data because the user explicitly chooses whether to open the link.
         report_device_info = capture_device_info(self._discovery_info)
+        try:
+            integration = await async_get_integration(self.hass, DOMAIN)
+            integration_version = str(integration.version) if integration.version else None
+        except IntegrationNotFound:
+            integration_version = None
         report_url = build_misidentified_issue_url(
             report_device_info,
             detected_bed_type,
             detection_result.confidence,
             detection_result.signals,
+            integration_version=integration_version,
+            ha_version=HA_VERSION,
         )
         description_placeholders["report_note"] = (
             f"Wrong device, or not a bed? [Report a misidentified device]({report_url})"

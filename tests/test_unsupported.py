@@ -65,7 +65,30 @@ def test_misidentified_details_rounds_confidence() -> None:
         detected_bed_type="richmat",
         confidence=0.956,
         signals=["name matched QRRM"],
+        integration_version="3.1.0",
+        ha_version="2026.7.1",
     )
 
     assert "confidence 96%" in details
     assert "| Confidence | 96% |" in details
+    assert "| Integration version | `3.1.0` |" in details
+    assert "| Home Assistant | `2026.7.1` |" in details
+
+
+def test_misidentified_details_without_versions() -> None:
+    """Version rows fall back to "unknown" when versions are not provided."""
+    device_info = UnsupportedDeviceInfo(
+        address="AA:BB:CC:DD:EE:FF",
+        name=None,
+        service_uuids=[],
+        manufacturer_data={},
+    )
+
+    details = device_info.to_misidentified_details(
+        detected_bed_type="richmat",
+        confidence=0.8,
+        signals=[],
+    )
+
+    assert "| Integration version | `unknown` |" in details
+    assert "| Home Assistant | `unknown` |" in details

@@ -50,6 +50,8 @@ class UnsupportedDeviceInfo:
         detected_bed_type: str | None,
         confidence: float,
         signals: list[str],
+        integration_version: str | None = None,
+        ha_version: str | None = None,
     ) -> str:
         """Format GitHub issue details for a device wrongly auto-detected as a bed."""
         if self.manufacturer_data:
@@ -80,6 +82,8 @@ all, or it is a different brand/model.
 | Address | `{self.address}` |
 | Name | `{self.name or "Unknown"}` |
 | RSSI | {self.rssi or "N/A"} |
+| Integration version | `{integration_version or "unknown"}` |
+| Home Assistant | `{ha_version or "unknown"}` |
 
 ### Detection signals
 {signal_str}
@@ -122,6 +126,8 @@ def build_misidentified_issue_url(
     detected_bed_type: str | None,
     confidence: float,
     signals: list[str],
+    integration_version: str | None = None,
+    ha_version: str | None = None,
 ) -> str:
     """Generate a pre-filled GitHub issue URL for a misidentified (false-positive) device.
 
@@ -129,7 +135,13 @@ def build_misidentified_issue_url(
     textarea (field id) with the captured detection data.
     """
     title = f"[Misidentified] {device_info.name or device_info.address}"
-    details = device_info.to_misidentified_details(detected_bed_type, confidence, signals)
+    details = device_info.to_misidentified_details(
+        detected_bed_type,
+        confidence,
+        signals,
+        integration_version=integration_version,
+        ha_version=ha_version,
+    )
     params = (
         f"?template=misidentified-bed.yml&title={quote(title)}&details={quote(details)}"
     )
