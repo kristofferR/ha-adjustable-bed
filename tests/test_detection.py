@@ -1768,6 +1768,27 @@ class TestW4WiLinkeNameGuard:
         assert result.bed_type == BED_TYPE_RICHMAT
         assert "uuid:wilinke" in result.signals
 
+    def test_w4_uuid_kept_in_manifest_discovery(self):
+        """FFF0 must stay a passive discovery matcher (unlike W5).
+
+        SUTA and the Keeson Sino fallback also discover via FFF0; non-bed
+        FFF0 devices abort silently now that detection is name-guarded.
+        """
+        import json
+        from pathlib import Path
+
+        manifest_path = (
+            Path(__file__).parents[1]
+            / "custom_components"
+            / "adjustable_bed"
+            / "manifest.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        service_uuids = {
+            entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]
+        }
+        assert RICHMAT_WILINKE_W4_SERVICE_UUID.lower() in service_uuids
+
 
 class TestNordicUARTDisambiguation:
     """Test disambiguation of beds sharing Nordic UART service UUID."""
