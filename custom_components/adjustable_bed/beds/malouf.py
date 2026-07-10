@@ -62,9 +62,9 @@ class MaloufCommands:
 
     # Memory programming (hold-to-save). The app emulates holding the
     # remote's memory button: it streams the save command at the protocol's
-    # repeat interval for the full repeat window, then sends STOP. Slot 1
-    # reuses the recall value (the sustained stream is what signals "save");
-    # beds named "Smartbed238" use a dedicated value with the save bit set.
+    # repeat interval for the full repeat window. Slot 1 reuses the recall
+    # value (the sustained stream is what signals "save"); beds named
+    # "Smartbed238" use a dedicated value with the save bit set.
     SAVE_MEMORY_1 = 0x10000
     SAVE_MEMORY_1_SMARTBED238 = 0x80010000
     SAVE_MEMORY_2 = 0x80040000
@@ -416,25 +416,17 @@ class MaloufNewOkinController(BedController):
         """Program current position to memory.
 
         The app emulates holding the remote's memory button: it streams the
-        save command every 100ms for up to 55 repeats (NEW_OKIN timing), then
-        sends STOP.
+        save command every 100ms for 55 repeats (NEW_OKIN timing). The APK then
+        calls the unhandled command name ``stopCommand``, which performs no BLE
+        write, so saving completes by ending the command stream.
         """
         command_value = _save_memory_command(memory_num, self._coordinator.name)
         if command_value is None:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
             return
-        try:
-            await self.write_command(
-                self._build_command(command_value), repeat_count=55, repeat_delay_ms=100
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(MaloufCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP after memory programming", exc_info=True)
+        await self.write_command(
+            self._build_command(command_value), repeat_count=55, repeat_delay_ms=100
+        )
 
     # Light control
     async def lights_toggle(self) -> None:
@@ -754,25 +746,17 @@ class MaloufLegacyOkinController(BedController):
         """Program current position to memory.
 
         The app emulates holding the remote's memory button: it streams the
-        save command every 150ms for up to 85 repeats (LEGACY_OKIN timing),
-        then sends STOP.
+        save command every 150ms for 85 repeats (LEGACY_OKIN timing). The APK
+        then calls the unhandled command name ``stopCommand``, which performs
+        no BLE write, so saving completes by ending the command stream.
         """
         command_value = _save_memory_command(memory_num, self._coordinator.name)
         if command_value is None:
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
             return
-        try:
-            await self.write_command(
-                self._build_command(command_value), repeat_count=85, repeat_delay_ms=150
-            )
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(MaloufCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send STOP after memory programming", exc_info=True)
+        await self.write_command(
+            self._build_command(command_value), repeat_count=85, repeat_delay_ms=150
+        )
 
     # Light control
     async def lights_toggle(self) -> None:

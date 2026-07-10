@@ -113,7 +113,9 @@ Both protocols use the same command values (32-bit integers):
 
 The app saves the current position by emulating a held memory button: it
 streams the save command at the protocol's repeat interval for the full
-repeat window (85×150ms legacy, 55×100ms new OKIN), then sends STOP.
+repeat window (85×150ms legacy, 55×100ms new OKIN). The APK then calls
+`stopCommand`, but `OkinConnection.sendCommand()` does not handle that name,
+so no final BLE packet is written; saving completes when the stream ends.
 
 | Command | Value |
 |---------|-------|

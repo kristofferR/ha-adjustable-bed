@@ -566,13 +566,13 @@ class TestMaloufCapabilities:
 class TestMaloufMemoryProgramming:
     """Test Malouf hold-to-save memory programming."""
 
-    async def test_new_okin_program_memory_streams_save_then_stop(
+    async def test_new_okin_program_memory_streams_save(
         self,
         hass: HomeAssistant,
         mock_malouf_new_config_entry,
         mock_coordinator_connected,
     ):
-        """Test NEW_OKIN programming streams the save command at 55x100ms, then STOP."""
+        """Test NEW_OKIN programming streams the save command at 55x100ms."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_new_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -580,21 +580,19 @@ class TestMaloufMemoryProgramming:
         with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
             await controller.program_memory(1)
 
-        assert mock_write.call_count == 2
-        save_call = mock_write.call_args_list[0]
+        mock_write.assert_called_once()
+        save_call = mock_write.call_args
         assert save_call.args[0] == controller._build_command(MaloufCommands.SAVE_MEMORY_1)
         assert save_call.kwargs["repeat_count"] == 55
         assert save_call.kwargs["repeat_delay_ms"] == 100
-        stop_call = mock_write.call_args_list[1]
-        assert stop_call.args[0] == controller._build_command(MaloufCommands.STOP)
 
-    async def test_legacy_okin_program_memory_streams_save_then_stop(
+    async def test_legacy_okin_program_memory_streams_save(
         self,
         hass: HomeAssistant,
         mock_malouf_legacy_config_entry,
         mock_coordinator_connected,
     ):
-        """Test LEGACY_OKIN programming streams the save command at 85x150ms, then STOP."""
+        """Test LEGACY_OKIN programming streams the save command at 85x150ms."""
         coordinator = AdjustableBedCoordinator(hass, mock_malouf_legacy_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -602,13 +600,11 @@ class TestMaloufMemoryProgramming:
         with patch.object(controller, "write_command", new=AsyncMock()) as mock_write:
             await controller.program_memory(2)
 
-        assert mock_write.call_count == 2
-        save_call = mock_write.call_args_list[0]
+        mock_write.assert_called_once()
+        save_call = mock_write.call_args
         assert save_call.args[0] == controller._build_command(MaloufCommands.SAVE_MEMORY_2)
         assert save_call.kwargs["repeat_count"] == 85
         assert save_call.kwargs["repeat_delay_ms"] == 150
-        stop_call = mock_write.call_args_list[1]
-        assert stop_call.args[0] == controller._build_command(MaloufCommands.STOP)
 
     async def test_program_memory_invalid_slot_writes_nothing(
         self,
