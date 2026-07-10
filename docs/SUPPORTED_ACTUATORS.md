@@ -21,7 +21,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
-| [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
+| [Malouf/Lucid](beds/malouf.md) | ✅ Supported | Configurable 2/3/4-motor or Hi-Lo layout, 1-2 memory positions, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
 | [Sleep Number](beds/sleep_number.md) | 🧪 Needs Testing | Newer Fuzion: direct position, side selection, presence, climate. Older BAM/MCR: split firmness, foundation presets, under-bed lights |
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
@@ -49,6 +49,11 @@ For detailed configuration options including motor pulse settings, protocol vari
 ---
 
 ## Okin Protocol Family
+
+Retail brands and model numbers can appear in more than one row. Lucid L600,
+for example, is confirmed with both OKIN CB24 7-byte controllers and legacy
+Malouf/OKIN 9-byte controllers. Select or auto-detect the actuator protocol from
+BLE evidence; never select a protocol from the retail model alone.
 
 Several bed brands use Okin-based BLE controllers. While they share common roots, each uses a different command format or write method:
 

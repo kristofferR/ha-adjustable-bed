@@ -127,6 +127,8 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | Option | Description | Default |
 |--------|-------------|---------|
 | `motor_count` | 2, 3, or 4 motors | 2 |
+| `malouf_layout` | Malouf/Lucid physical actuator layout, independent of protocol | auto |
+| `malouf_memory_slots` | Malouf/Lucid remote memory capacity (auto, 1, or 2) | auto |
 | `has_massage` | Enable massage entities | false |
 | `protocol_variant` | Protocol variant (bed-specific) | auto |
 | `disable_angle_sensing` | Disable position feedback | true |

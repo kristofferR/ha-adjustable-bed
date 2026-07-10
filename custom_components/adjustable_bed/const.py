@@ -46,10 +46,13 @@ class ConnectionProfileSettings:
     connection_timeout: float
     post_connect_delay: float
 
+
 # Configuration keys
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_MALOUF_LAYOUT: Final = "malouf_layout"
+CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
 CONF_HAS_MASSAGE: Final = "has_massage"
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
@@ -95,6 +98,30 @@ CONNECTION_PROFILE_RELIABLE: Final = "reliable"
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
 
+# Malouf/Lucid retail models are sold with several unrelated BLE protocols and
+# actuator arrangements. Keep the physical layout separate from protocol
+# detection so a retail name such as "L600" never implies command framing.
+MALOUF_LAYOUT_AUTO: Final = "auto"
+MALOUF_LAYOUT_TWO_MOTOR: Final = "two_motor"
+MALOUF_LAYOUT_HEAD_TILT: Final = "head_tilt"
+MALOUF_LAYOUT_LUMBAR: Final = "lumbar"
+MALOUF_LAYOUT_FOUR_MOTOR: Final = "four_motor"
+MALOUF_LAYOUT_HILO: Final = "hilo"
+MALOUF_LAYOUTS: Final = {
+    MALOUF_LAYOUT_AUTO: "Auto (motor count; select Hi-Lo explicitly)",
+    MALOUF_LAYOUT_TWO_MOTOR: "Back and legs (2 motor, including Lucid L600)",
+    MALOUF_LAYOUT_HEAD_TILT: "Back, legs, and head tilt",
+    MALOUF_LAYOUT_LUMBAR: "Back, legs, and lumbar",
+    MALOUF_LAYOUT_FOUR_MOTOR: "Back, legs, head tilt, and lumbar",
+    MALOUF_LAYOUT_HILO: "Hi-Lo (back, legs, two lift columns, and bed height)",
+}
+MALOUF_MEMORY_SLOTS_AUTO: Final = 0
+MALOUF_MEMORY_SLOT_OPTIONS: Final = {
+    MALOUF_MEMORY_SLOTS_AUTO: "Auto (1 for 2-motor layout, otherwise 2)",
+    1: "1 memory position",
+    2: "2 memory positions",
+}
+
 # Bed types - Protocol-based naming (new)
 # These are the canonical names organized by protocol characteristics
 BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
@@ -130,6 +157,8 @@ def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
 def passive_position_reconciliation_default_enabled(bed_type: str | None) -> bool:
     """Return whether passive position reconciliation should default to enabled."""
     return supports_passive_position_reconciliation(bed_type)
+
+
 BED_TYPE_REVERIE: Final = "reverie"
 BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
 BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
@@ -153,13 +182,17 @@ BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzi
 BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
-BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
+BED_TYPE_SLEEPYS_BOX15: Final = (
+    "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
+)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
-BED_TYPE_REMACRO: Final = "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+BED_TYPE_REMACRO: Final = (
+    "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+)
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
@@ -402,10 +435,12 @@ KEESON_FALLBACK_GATT_PAIRS: Final = [
 ]
 
 # BetterLiving-style OKIN-BLE beds advertise both fallback service UUIDs
-KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset({
-    "0000fff0-0000-1000-8000-00805f9b34fb",
-    "0000ffb0-0000-1000-8000-00805f9b34fb",
-})
+KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset(
+    {
+        "0000fff0-0000-1000-8000-00805f9b34fb",
+        "0000ffb0-0000-1000-8000-00805f9b34fb",
+    }
+)
 
 # CB1322 sub-variant manufacturer name markers (lowercase for comparison)
 CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
@@ -579,9 +614,7 @@ DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"
 # signal to wrap normal Okin commands in 8-byte RF frames.
 DEWERTOKIN_RF_GATEWAY_MODEL: Final = "Bluetooth RF-Gateway"
 DEWERTOKIN_RF_GATEWAY_SERVICE_UUID: Final = "92111420-72ab-4564-62ef-2a881286a6b0"
-DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = (
-    "92111422-72ab-4564-62ef-2a881286a6b0"
-)
+DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = "92111422-72ab-4564-62ef-2a881286a6b0"
 
 # Serta Motion Perfect III specific
 # Uses handle-based writes rather than UUID
@@ -998,7 +1031,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
     KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
-    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base"
+    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base",
 }
 
 # Leggett & Platt variants
@@ -1089,9 +1122,7 @@ RICHMAT_REMOTE_BT6500: Final = "BT6500"
 # Richmat WiLinke stop-byte compatibility.
 # Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
 # movement: QRRM remotes and BedTech BT6500 beds (issue #194).
-RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset(
-    {"qrrm", "bt6500"}
-)
+RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset({"qrrm", "bt6500"})
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
@@ -1374,9 +1405,7 @@ def resolve_richmat_remote_code(
         return normalized
 
     haystack = " ".join(
-        part.lower()
-        for part in (entry_title, configured_name, device_name)
-        if part
+        part.lower() for part in (entry_title, configured_name, device_name) if part
     )
     if not haystack:
         return normalized or RICHMAT_REMOTE_AUTO
@@ -1804,6 +1833,7 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(
