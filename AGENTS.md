@@ -12,6 +12,7 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 
 - Never post GitHub comments (issues, pull requests, discussions, releases, etc.) without explicit and specific user approval for that exact comment action.
 - If approval is missing or ambiguous, ask before posting.
+- Never use em dashes (—) in drafted/suggested GitHub replies. Rephrase with commas, colons, parentheses, or separate sentences instead.
 
 ## Architecture
 
