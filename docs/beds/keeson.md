@@ -104,9 +104,11 @@ The integration treats `0000a00a` as a distinct Keeson variant and uses the shar
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
 
-**Ergomotion Sync remotes (from `cn.com.mancini` APK):** the app has three remote layouts — A and C target `KSBT04C` devices, B targets `KSBT03C` (e.g. Rio 5.0). All three share the same preset buttons: Read = `0x2000`, TV = `0x4000`, M = `0x10000`, Zero-G = `0x1000`, Flat = `0x8000000`, Anti-Snore = `0x8000` (B/C only), light toggle = `0x20000`, and massage steps head `0x800` / foot `0x400` / timer `0x200` (no all-off command). The integration exposes Read/TV/M as memory slots 1-3 on KSBT variants.
+**Ergomotion Sync remotes (from `cn.com.mancini` APK):** the app has three remote layouts — A and C target `KSBT04C` devices, B targets `KSBT03C` (e.g. Rio 5.0). All three share the same preset buttons: Read = `0x2000`, TV = `0x4000`, M = `0x10000`, Zero-G = `0x1000`, Flat = `0x8000000`, light toggle = `0x20000`, and massage steps head `0x800` / foot `0x400` / timer `0x200` (no all-off command). The Anti-Snore button (`0x8000`) appears on layouts B/C only; that describes the remote UIs, not command support — the integration exposes anti-snore on all KSBT variants. Read/TV/M are exposed as memory slots 1-3 on KSBT variants.
 
 **KSBT03C motor layout:** the KSBT03C remote (layout B) drives only three motors — head/back (`0x1`/`0x2`), feet/legs (`0x4`/`0x8`) and lumbar (`0x40`/`0x80`). There are no head-tilt (`0x10`/`0x20`) buttons, so KSBT03C beds have no tilt motor and the integration maps the third configured motor to lumbar. KSBT04C remotes (layouts A/C) additionally have the head-tilt buttons.
+
+**Status:** the KSBT03C command values and 3-motor layout are APK-derived (Ergomotion Sync 1.0.2) and not yet confirmed on hardware; the Rio 5.0 report in issue #408 confirms the lumbar motor responds to `0x40`/`0x80` and that no tilt motor exists.
 
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
 - `6e400020-b5a3-f393-e0a9-e50e24dcca9e` (characteristic: `6e400021`) - Extended Nordic UART, used by some Ergomotion/SFD beds

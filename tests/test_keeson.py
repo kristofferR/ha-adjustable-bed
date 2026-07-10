@@ -1052,7 +1052,10 @@ class TestKsbt03cMotorLayout:
         mock_keeson_config_entry_data: dict,
         mock_coordinator_connected,
     ):
-        """Test KSBT03C layout falls back to the configured name."""
+        """Test KSBT03C layout falls back to the configured name via the factory."""
+        from custom_components.adjustable_bed.const import KEESON_VARIANT_KSBT
+        from custom_components.adjustable_bed.controller_factory import create_controller
+
         mock_keeson_config_entry_data[CONF_NAME] = "KSBT03C300039050"
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1064,10 +1067,79 @@ class TestKsbt03cMotorLayout:
         entry.add_to_hass(hass)
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
+        coordinator._motor_count = 3
 
-        controller = KeesonController(coordinator, variant="ksbt")
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_KEESON,
+            protocol_variant=KEESON_VARIANT_KSBT,
+            client=coordinator.client,
+            device_name=None,
+        )
 
+        assert isinstance(controller, KeesonController)
+        assert controller._variant == "ksbt"
         assert not controller.has_tilt_support
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "lumbar",
+        ]
+
+    async def test_ksbt03c_detected_from_ble_name_via_factory(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test the factory auto-detects the ksbt variant and KSBT03C layout from the BLE name."""
+        from custom_components.adjustable_bed.controller_factory import create_controller
+
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator._motor_count = 3
+
+        controller = await create_controller(
+            coordinator=coordinator,
+            bed_type=BED_TYPE_KEESON,
+            protocol_variant="auto",
+            client=coordinator.client,
+            device_name="KSBT03C300039050",
+        )
+
+        assert isinstance(controller, KeesonController)
+        assert controller._variant == "ksbt"
+        assert not controller.has_tilt_support
+        assert [spec.key for spec in controller.motor_control_specs] == [
+            "head",
+            "feet",
+            "lumbar",
+        ]
+
+    async def test_present_device_name_overrides_configured_name(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry_data: dict,
+        mock_coordinator_connected,
+    ):
+        """Test a non-KSBT03C raw BLE name wins over a stale KSBT03C configured name."""
+        mock_keeson_config_entry_data[CONF_NAME] = "KSBT03C300039050"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="KSBT03C300039050",
+            data=mock_keeson_config_entry_data,
+            unique_id="AA:BB:CC:DD:EE:F1",
+            entry_id="keeson_stale_name_entry",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(
+            coordinator, variant="ksbt_cr", device_name="KSBT03CR12345"
+        )
+
+        assert controller.has_tilt_support
 
     async def test_standard_keeson_motor_layout_unchanged(
         self,
@@ -1165,12 +1237,15 @@ class TestKsbtMemoryPresets:
 
         assert controller.memory_slot_count == slots
 
+    @pytest.mark.parametrize("variant", ["ksbt", "ksbt04c"])
     @pytest.mark.parametrize(
         "memory_num,expected_value",
         [
-            (1, KeesonCommands.PRESET_MEMORY_1),  # Read button (0x2000)
-            (2, KeesonCommands.PRESET_MEMORY_2),  # TV button (0x4000)
-            (3, KeesonCommands.PRESET_MEMORY_4),  # M button (0x10000)
+            # Literal protocol values from the Ergomotion Sync APK, pinned so a
+            # bad edit to the KeesonCommands constants cannot self-verify.
+            (1, 0x2000),  # Read button
+            (2, 0x4000),  # TV button
+            (3, 0x10000),  # M button
         ],
     )
     async def test_ksbt_preset_memory_mapping(
@@ -1179,13 +1254,14 @@ class TestKsbtMemoryPresets:
         mock_keeson_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        variant: str,
         memory_num: int,
         expected_value: int,
     ):
-        """Test KSBT memory slots map to the Read/TV/M remote buttons."""
+        """Test KSBT/KSBT04C memory slots map to the Read/TV/M remote buttons."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
-        controller = KeesonController(coordinator, variant="ksbt")
+        controller = KeesonController(coordinator, variant=variant)
         coordinator._controller = controller
         mock_bleak_client.write_gatt_char.reset_mock()
 

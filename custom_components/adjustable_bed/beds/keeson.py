@@ -205,11 +205,14 @@ class KeesonController(BedController):
         self._betterliving_presets = betterliving_presets
         self._cb1322_presets = cb1322_presets
         # KSBT03C control boxes have no head-tilt motor; their third motor is
-        # lumbar. Fall back to the configured name (defaults to the BLE name)
-        # when the raw device name is unavailable on this connection.
-        self._is_ksbt03c = is_ksbt03c_name(device_name) or is_ksbt03c_name(
-            getattr(coordinator, "name", None)
-        )
+        # lumbar. The raw BLE name is authoritative when present; only fall
+        # back to the configured name (defaults to the BLE name) when this
+        # connection didn't surface a device name, so a stale or user-edited
+        # configured name can never override the real hardware name.
+        if device_name:
+            self._is_ksbt03c = is_ksbt03c_name(device_name)
+        else:
+            self._is_ksbt03c = is_ksbt03c_name(getattr(coordinator, "name", None))
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
         self._write_with_response = True
@@ -1252,7 +1255,7 @@ class KeesonController(BedController):
             await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
+        """Go to lounge position (KSBT 'Read' button / Memory 1, Lounge on Purple)."""
         if (
             not self._is_ksbt
             and not self._is_json_variant
