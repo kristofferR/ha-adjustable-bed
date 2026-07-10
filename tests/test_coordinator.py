@@ -2636,6 +2636,48 @@ class TestDeviceInfoCache:
             assert coordinator._ble_manufacturer == "OKIN"
             assert coordinator._ble_model == "Model X"
 
+    async def test_deferred_device_info_read_once_across_reconnects(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Timing-sensitive protocols also reuse DIS data after the handshake."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: "64:DB:A0:07:DD:02",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="deferred_device_info_cache_test",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("Sleep Number", "MCR"),
+        ) as mock_read_device_info:
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 1
+
+            await coordinator.async_disconnect()
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 1
+            assert coordinator._ble_manufacturer == "Sleep Number"
+            assert coordinator._ble_model == "MCR"
+
 
 class TestMultiMotorConfiguration:
     """Test multi-motor configuration."""

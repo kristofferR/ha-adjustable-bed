@@ -1793,11 +1793,22 @@ class AdjustableBedCoordinator:
                 # Read deferred BLE Device Information now that the
                 # notification channel and protocol handshake are done.
                 if _defer_device_info and self._client is not None and self._client.is_connected:
-                    ble_manufacturer, ble_model = await read_ble_device_info(
-                        self._client, self._address
-                    )
-                    self._ble_manufacturer = ble_manufacturer
-                    self._ble_model = ble_model
+                    if self._device_info_read_done:
+                        ble_manufacturer = self._ble_manufacturer
+                        ble_model = self._ble_model
+                        _LOGGER.debug(
+                            "Reusing cached device info for %s (manufacturer=%s, model=%s)",
+                            self._address,
+                            ble_manufacturer,
+                            ble_model,
+                        )
+                    else:
+                        ble_manufacturer, ble_model = await read_ble_device_info(
+                            self._client, self._address
+                        )
+                        self._ble_manufacturer = ble_manufacturer
+                        self._ble_model = ble_model
+                        self._device_info_read_done = True
 
                 if (
                     self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR

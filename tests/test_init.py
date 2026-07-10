@@ -136,6 +136,39 @@ class TestIntegrationSetup:
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
 
+    async def test_setup_entry_timeout_bounds_disconnect_cleanup(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_async_ble_device_from_address,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A stalled cleanup disconnect must not block the setup retry."""
+
+        async def _hangs(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        with (
+            patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.05),
+            patch("custom_components.adjustable_bed.SETUP_CLEANUP_TIMEOUT", 0.05),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+                new=_hangs,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_disconnect",
+                new_callable=AsyncMock,
+                side_effect=_hangs,
+            ) as mock_disconnect,
+        ):
+            async with asyncio.timeout(5):
+                await hass.config_entries.async_setup(mock_config_entry.entry_id)
+                await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+
     async def test_setup_entry_connection_failed(
         self,
         hass: HomeAssistant,

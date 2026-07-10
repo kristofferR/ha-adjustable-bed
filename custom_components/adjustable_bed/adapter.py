@@ -465,7 +465,7 @@ async def read_ble_device_info(client: BleakClient, address: str) -> tuple[str |
             _LOGGER.debug("BLE manufacturer: %s", manufacturer)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode manufacturer name as UTF-8")
-    except (BleakError, TimeoutError) as err:
+    except (BleakError, TimeoutError, OSError) as err:
         _LOGGER.debug("Could not read manufacturer name: %s", err)
 
     # Read model number
@@ -479,7 +479,7 @@ async def read_ble_device_info(client: BleakClient, address: str) -> tuple[str |
             _LOGGER.debug("BLE model: %s", model)
         except UnicodeDecodeError:
             _LOGGER.debug("Could not decode model number as UTF-8")
-    except (BleakError, TimeoutError) as err:
+    except (BleakError, TimeoutError, OSError) as err:
         _LOGGER.debug("Could not read model number: %s", err)
 
     return manufacturer, model

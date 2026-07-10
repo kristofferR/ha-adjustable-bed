@@ -105,3 +105,20 @@ class TestReadBleDeviceInfo:
         assert model is None
         # Both characteristic reads were attempted and timed out.
         assert client.read_gatt_char.await_count == 2
+
+    async def test_oserror_reads_degrade_to_missing_values(self) -> None:
+        """Raw backend I/O errors must not abort the connection attempt."""
+        device_info_service = MagicMock()
+        device_info_service.uuid = DEVICE_INFO_SERVICE_UUID
+
+        client = MagicMock()
+        client.services = [device_info_service]
+        client.read_gatt_char = AsyncMock(side_effect=OSError("GATT I/O failed"))
+
+        manufacturer, model = await read_ble_device_info(
+            client, "AA:BB:CC:DD:EE:FF"
+        )
+
+        assert manufacturer is None
+        assert model is None
+        assert client.read_gatt_char.await_count == 2
