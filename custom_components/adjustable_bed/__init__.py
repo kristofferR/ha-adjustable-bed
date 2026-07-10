@@ -34,6 +34,7 @@ from .const import (
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -52,6 +53,7 @@ from .const import (
     OKIN_CST_POSITION_AXES,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
+    connection_gated_by_bond,
     requires_pairing,
 )
 from .coordinator import AdjustableBedCoordinator
@@ -345,6 +347,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             return
 
+        # Beds that refuse *connections* from unbonded peers (LP Comfort
+        # Connect / Leggett & Platt Gen2): a connect timeout on an unbonded
+        # entry is itself the pairing symptom — the box ignores connection
+        # requests outside its pairing window, so waiting on HA's setup
+        # retries can never succeed. Guide the user through the repair flow
+        # (power-cycle into pairing mode, then pair) instead (issue #385).
+        if connection_gated_by_bond(bed_type, protocol_variant) and not entry.data.get(
+            CONF_BLE_BOND_ESTABLISHED
+        ):
+            await create_pairing_required_issue(
+                hass,
+                address or "Unknown",
+                entry.data.get("name", entry.title),
+                entry.entry_id,
+            )
+            return
+
         # Connection failed before pairing was even attempted (device not found,
         # timeout, etc.). Don't create repair — HA will retry automatically and
         # pairing will be attempted on the next successful connection.
@@ -353,6 +372,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "attempted — not creating pairing repair (will retry automatically)",
             address,
         )
+
+    # Beds that ignore connection requests from unbonded peers (LP Comfort
+    # Connect / Leggett & Platt Gen2) can only ever connect through the guided
+    # pairing repair, so plain retry messaging would mislead (issue #385).
+    _bond_gated_unbonded = connection_gated_by_bond(
+        entry.data.get(CONF_BED_TYPE, ""), entry.data.get(CONF_PROTOCOL_VARIANT)
+    ) and not entry.data.get(CONF_BLE_BOND_ESTABLISHED)
+    _bond_gated_hint = (
+        " This bed only accepts Bluetooth connections from devices it has "
+        "paired with. Open Settings → Repairs and follow the pairing steps "
+        "(power-cycle the bed to enter its ~2 minute pairing mode)."
+        if _bond_gated_unbonded
+        else " The integration will retry automatically."
+    )
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
@@ -369,8 +402,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 reason=f"initial connection timed out after {SETUP_TIMEOUT:.0f}s",
             )
         raise ConfigEntryNotReady(
-            f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after {SETUP_TIMEOUT:.0f}s. "
-            "The integration will retry automatically."
+            f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
+            f"{SETUP_TIMEOUT:.0f}s.{_bond_gated_hint}"
         ) from None
 
     if not connected:
@@ -381,6 +414,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry,
                 coordinator,
                 reason="device was not reachable during initial setup",
+            )
+        if _bond_gated_unbonded:
+            raise ConfigEntryNotReady(
+                f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
+                f"{_bond_gated_hint}"
             )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "

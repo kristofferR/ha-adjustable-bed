@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.beds.leggett_okin import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_OKIMAT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -32,6 +33,8 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     VARIANT_AUTO,
+    connection_gated_by_bond,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -236,6 +239,81 @@ class TestLeggettGen2Connection:
         # Resolved to a persistent (Gen2) controller, then cleared.
         coordinator._persistent_connection_resolved = True
         assert coordinator._uses_persistent_connection() is True
+
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, True),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
+        ],
+    )
+    async def test_gen2_requires_pairing(
+        self, bed_type: str, variant: str | None, expected: bool
+    ):
+        """LP Comfort Connect requires a BLE bond: the LP Control app calls
+        createBond() after service discovery, and the box refuses connections
+        from unbonded peers outside its pairing window (issue #385)."""
+        assert requires_pairing(bed_type, variant) is expected
+
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            # Okin-style pairing beds accept the connection and only gate GATT
+            # access, so a connect timeout there is not a pairing symptom.
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_OKIMAT, None, False),
+        ],
+    )
+    async def test_connection_gated_by_bond(
+        self, bed_type: str, variant: str | None, expected: bool
+    ):
+        """Only Gen2 refuses *connections* from unbonded peers."""
+        assert connection_gated_by_bond(bed_type, variant) is expected
+
+    async def test_gen2_unexpected_disconnect_schedules_auto_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A persistent-connection Gen2 bed must repair unexpected drops itself:
+        the bonded link is what keeps the box reachable, and a drop often means
+        the bed was power-cycled, so reconnect promptly (issue #385)."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="LP Comfort Connect Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:85",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:85",
+            entry_id="leggett_gen2_auto_reconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        assert coordinator._auto_reconnect_enabled() is True
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = False
+
+        coordinator._on_disconnect(mock_bleak_client)
+
+        assert coordinator._reconnect_timer is not None
+        coordinator._reconnect_timer.cancel()
+        coordinator._reconnect_timer = None
 
 
 class TestLeggettGen2Capabilities:

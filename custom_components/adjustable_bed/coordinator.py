@@ -1002,9 +1002,15 @@ class AdjustableBedCoordinator:
         # few reconnect cycles enter a protection mode where they stop advertising
         # entirely until power-cycled (#369). The next user command reconnects on
         # demand, so no reconnect timer is needed for these beds.
-        if self._disconnect_after_operation_enabled():
-            return False
-        return not self._uses_persistent_connection()
+        #
+        # Persistent-connection beds are the opposite: they are supposed to stay
+        # connected indefinitely, so an unexpected drop should be repaired
+        # immediately rather than waiting for the next command. For LP Comfort
+        # Connect (Leggett & Platt Gen2) the bonded link is what makes the box
+        # reachable at all, and a drop often means the bed was power-cycled —
+        # reconnecting promptly re-establishes the link while it is accepting
+        # connections (issue #385).
+        return not self._disconnect_after_operation_enabled()
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Connect to the bed (must hold lock)."""
@@ -1992,8 +1998,8 @@ class AdjustableBedCoordinator:
 
         if not self._auto_reconnect_enabled():
             _LOGGER.debug(
-                "Skipping auto-reconnect timer for %s (persistent connection or "
-                "disconnect_after_command); next command reconnects on demand",
+                "Skipping auto-reconnect timer for %s (disconnect_after_command); "
+                "next command reconnects on demand",
                 self._bed_type,
             )
             if self._reconnect_timer is not None:

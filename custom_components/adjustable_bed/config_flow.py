@@ -282,13 +282,27 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return translations.get(f"component.{DOMAIN}.config.{key}", default)
 
-    async def _get_pairing_instructions(self, bed_type: str | None) -> str:
+    async def _get_pairing_instructions(
+        self, bed_type: str | None, protocol_variant: str | None = None
+    ) -> str:
         """Return pairing instructions tailored to the selected bed type."""
         if bed_type == BED_TYPE_SLEEP_NUMBER:
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_sleep_number",
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
                 "2. Click 'Pair Now'",
+            )
+        if bed_type == BED_TYPE_LEGGETT_GEN2 or (
+            bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+        ):
+            # LP Comfort Connect pairing steps, from the LP Control app's
+            # pairing_mode_instructions_gen2 / settings_pair_another_phone_msg.
+            return await self._get_config_translation(
+                "step.bluetooth_pairing.data_description.pairing_instructions_leggett_gen2",
+                "1. Unplug your bed's power cord and remove any batteries from the power supply.\n"
+                "2. Plug the bed back in. You'll hear a small chime and see a pulsing blue light "
+                "under the bed - the bed stays in pairing mode for about 2 minutes.\n"
+                "3. While the light is pulsing, click 'Pair Now'.",
             )
         if bed_type in {
             BED_TYPE_OKIMAT,
@@ -1837,7 +1851,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
             "pairing_instructions": await self._get_pairing_instructions(
-                self._manual_data.get(CONF_BED_TYPE)
+                self._manual_data.get(CONF_BED_TYPE),
+                self._manual_data.get(CONF_PROTOCOL_VARIANT),
             ),
         }
 
@@ -1903,7 +1918,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         description_placeholders = {
             "name": self._manual_data.get(CONF_NAME, "Unknown"),
             "pairing_instructions": await self._get_pairing_instructions(
-                self._manual_data.get(CONF_BED_TYPE)
+                self._manual_data.get(CONF_BED_TYPE),
+                self._manual_data.get(CONF_PROTOCOL_VARIANT),
             ),
         }
 

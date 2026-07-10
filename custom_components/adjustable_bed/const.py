@@ -1771,13 +1771,21 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
+    # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): the LP Control app
+    # calls createBond() after service discovery ("Bond Needed...Bonding" in
+    # BLEConnectionViewModel), and the ESP32 box only accepts connections from
+    # bonded peers outside its ~2-minute pairing window (fresh power-up or the
+    # "PAIR ENABLE" serial command). Without a bond every reconnect is refused
+    # at the link layer (CONNECT_IND ignored -> TimeoutError) even though the
+    # box keeps advertising (issue #385).
+    BED_TYPE_LEGGETT_GEN2,
 }
 
 # Bed type + variant combinations that require BLE pairing
 # Maps bed type to set of variants that require pairing for that specific bed type
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
-    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN},
+    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
 }
 
 
@@ -1799,6 +1807,20 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
+
+def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
+    """Return True when a bed refuses *connections* from unbonded peers.
+
+    Most pairing-required beds accept the BLE connection and only gate GATT
+    access on the bond. LP Comfort Connect (Leggett & Platt Gen2) instead
+    ignores connection requests from unbonded peers entirely outside its
+    pairing window, so a plain connect timeout on an unbonded entry is itself
+    evidence of a pairing problem (issue #385).
+    """
+    if bed_type == BED_TYPE_LEGGETT_GEN2:
+        return True
+    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(

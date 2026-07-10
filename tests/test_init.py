@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_KAIDI,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_OKIN_CST,
@@ -36,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     BEDTECH_SERVICE_UUID,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
@@ -147,6 +149,128 @@ class TestIntegrationSetup:
         devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
         assert len(devices) == 1
         assert devices[0].name == mock_config_entry.title
+
+    async def test_setup_gen2_connect_failure_creates_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """An unbonded LP Comfort Connect (Gen2) that cannot connect gets the
+        guided pairing repair — the box ignores connection requests from
+        unbonded peers, so waiting on setup retries can never succeed (#385)."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: "08:3A:F2:1E:4B:7E",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="08:3A:F2:1E:4B:7E",
+            entry_id="leggett_gen2_pairing_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        issue = issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_7e")
+        assert issue is not None
+        assert issue.translation_key == "pairing_required"
+
+    async def test_setup_gen2_connect_failure_with_bond_skips_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A bonded Gen2 entry that cannot connect is a transient failure, not
+        a pairing problem — no repair issue."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: "08:3A:F2:1E:4B:7F",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id="08:3A:F2:1E:4B:7F",
+            entry_id="leggett_gen2_bonded_no_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_7f") is None
+        )
+
+    async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """Ordinary pairing-required beds (e.g. Okin CST) keep the existing
+        behaviour: a plain connect failure before pairing creates no repair."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Okin CST Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:20",
+                CONF_NAME: "Okin CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:20",
+            entry_id="okin_cst_no_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_aa_bb_cc_dd_ee_20") is None
+        )
 
     async def test_setup_entry_loads_diagnostic_device_without_connection(
         self,

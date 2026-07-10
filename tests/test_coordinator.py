@@ -1506,13 +1506,15 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         coordinator.async_disconnect.assert_not_awaited()
         assert coordinator._disconnect_timer is None
 
-    async def test_sleep_number_mcr_unexpected_disconnect_skips_auto_reconnect(
+    async def test_sleep_number_mcr_unexpected_disconnect_schedules_auto_reconnect(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Sleep Number MCR should not schedule timer-based auto-reconnect."""
+        """Persistent-connection beds repair unexpected drops via the reconnect
+        timer — they are supposed to stay connected indefinitely, so waiting for
+        the next user command would leave them offline (issue #385)."""
         del mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1537,9 +1539,11 @@ class TestSleepNumberMcrCoordinatorLifecycle:
 
         coordinator._on_disconnect(mock_bleak_client)
 
-        assert coordinator._reconnect_timer is None
+        assert coordinator._reconnect_timer is not None
         assert coordinator.client is None
         assert coordinator.controller is None
+        coordinator._reconnect_timer.cancel()
+        coordinator._reconnect_timer = None
 
     async def test_disconnect_after_command_skips_auto_reconnect(
         self,
