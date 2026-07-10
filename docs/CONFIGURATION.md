@@ -53,6 +53,26 @@ To adjust settings after setup:
 
 **Tip:** Count the distinct moving sections when using your physical remote to determine the correct setting.
 
+### Malouf/Lucid Layout and Memory
+
+Malouf and Lucid entries have two additional settings because BLE command
+framing does not reveal the physical remote layout:
+
+| Setting | Options | Default | Description |
+|---------|---------|---------|-------------|
+| **Malouf/Lucid actuator layout** | Back + legs; add head tilt; add lumbar; four motor; Hi-Lo | Auto | Controls which motor entities are exposed |
+| **Malouf/Lucid memory positions** | Auto, 1, 2 | Auto | Must match the memory buttons on the physical remote |
+
+Auto uses back + legs for a two-motor entry, head tilt for a three-motor entry,
+and the standard head-tilt + lumbar layout for a four-motor entry. Hi-Lo must be
+selected explicitly because neither Legacy nor New OKIN framing proves the
+physical actuator arrangement. A two-motor layout defaults to one memory
+position; other layouts default to two.
+
+These settings are intentionally independent of protocol detection. **Lucid
+L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
+7-byte and legacy Malouf/OKIN 9-byte controllers.
+
 ---
 
 ## Advanced Settings

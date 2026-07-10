@@ -11,6 +11,7 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
 )
 from homeassistant.config_entries import (
+    SOURCE_IGNORE,
     ConfigEntry,
     ConfigEntryState,
     ConfigFlow,
@@ -52,6 +53,8 @@ from .const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
@@ -72,6 +75,8 @@ from .const import (
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
+    CONF_MALOUF_LAYOUT,
+    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -100,6 +105,10 @@ from .const import (
     DOMAIN,
     KEESON_VARIANT_ERGOMOTION,
     LEGGETT_VARIANT_GEN2,
+    MALOUF_LAYOUT_AUTO,
+    MALOUF_LAYOUTS,
+    MALOUF_MEMORY_SLOT_OPTIONS,
+    MALOUF_MEMORY_SLOTS_AUTO,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -171,10 +180,34 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
         return result.bed_type
     return None
 
+
 CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
     CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
     CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
 }
+
+MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
+
+
+def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
+    """Add physical-layout fields, kept deliberately separate from protocol."""
+    schema[vol.Optional(CONF_MALOUF_LAYOUT, default=MALOUF_LAYOUT_AUTO)] = vol.In(MALOUF_LAYOUTS)
+    schema[vol.Optional(CONF_MALOUF_MEMORY_SLOTS, default=MALOUF_MEMORY_SLOTS_AUTO)] = vol.All(
+        vol.Coerce(int), vol.In(MALOUF_MEMORY_SLOT_OPTIONS)
+    )
+
+
+def _add_malouf_entry_data(
+    entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
+) -> None:
+    """Persist Malouf physical capabilities without deriving them from a model name."""
+    if bed_type not in MALOUF_BED_TYPES:
+        return
+    entry_data[CONF_MALOUF_LAYOUT] = user_input.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
+    entry_data[CONF_MALOUF_MEMORY_SLOTS] = int(
+        user_input.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
+    )
+
 
 # Short, single-attempt timeout for the optional setup-time connection probe.
 # Keep this small so a failing probe (e.g. the phone app holding the bed's single
@@ -226,6 +259,42 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             **entry_data,
             CONF_BLE_BOND_ESTABLISHED: True,
         }
+
+    @staticmethod
+    def _needs_malouf_step(bed_type: str | None, user_input: dict[str, Any]) -> bool:
+        """Return True when the Malouf layout/memory fields still need collecting.
+
+        The layout and memory-slot fields are only shown inline when the form was
+        built already knowing the bed is Malouf (pre-selected brand or a confident
+        detection). When the user instead picks a Malouf protocol from the bed-type
+        dropdown, the inline fields were never rendered, so ``user_input`` lacks
+        them and we must collect them in a dedicated follow-up step. Otherwise the
+        entry silently persists the default layout, dropping Hi-Lo / four-motor
+        controls until the user discovers the options flow.
+        """
+        return bed_type in MALOUF_BED_TYPES and CONF_MALOUF_LAYOUT not in user_input
+
+    async def _async_malouf_step(
+        self, step_id: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields, then finish setup."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            _add_malouf_entry_data(
+                self._manual_data, user_input, self._manual_data.get(CONF_BED_TYPE)
+            )
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+            )
+
+        schema_dict: dict[vol.Marker, Any] = {}
+        _add_malouf_schema_fields(schema_dict)
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(schema_dict),
+        )
 
     @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
@@ -426,9 +495,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     def _configured_entries_by_address(self) -> dict[str, ConfigEntry]:
-        """Return configured entries keyed by normalized Bluetooth address."""
+        """Return active entries keyed by normalized Bluetooth address.
+
+        Ignored discovery placeholders must remain selectable in a user-started
+        flow. Home Assistant replaces the ignored entry when that flow creates
+        the real entry; treating it as configured here made the bed disappear
+        from both device pickers and led users to an unhelpful duplicate error.
+        """
         configured: dict[str, ConfigEntry] = {}
         for entry in self.hass.config_entries.async_entries(DOMAIN):
+            if entry.source == SOURCE_IGNORE:
+                continue
             candidate = entry.unique_id or entry.data.get(CONF_ADDRESS)
             if isinstance(candidate, str):
                 configured[candidate.upper()] = entry
@@ -658,9 +735,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # otherwise re-show the form with a clear error instead of committing
             # to a low-confidence/ambiguous guess.
             if selected_bed_type == BED_TYPE_AUTO_DETECT:
-                resolved = self._disambiguated_bed_type or _confident_auto_detect(
-                    detection_result
-                )
+                resolved = self._disambiguated_bed_type or _confident_auto_detect(detection_result)
                 if resolved:
                     _LOGGER.info(
                         "Auto-detect resolved bed type to %s for %s",
@@ -697,7 +772,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             if pulse_count_input is not None and pulse_count_input != "":
                 try:
                     motor_pulse_count = int(pulse_count_input)
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     errors[CONF_MOTOR_PULSE_COUNT] = "invalid_number"
                     motor_pulse_count = pulse_defaults[0]
             else:
@@ -707,7 +782,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             if pulse_delay_input is not None and pulse_delay_input != "":
                 try:
                     motor_pulse_delay_ms = int(pulse_delay_input)
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     errors[CONF_MOTOR_PULSE_DELAY_MS] = "invalid_number"
                     motor_pulse_delay_ms = pulse_defaults[1]
             else:
@@ -747,6 +822,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
+                # Malouf layout/memory fields weren't shown inline (user overrode the
+                # detected type to Malouf), so collect them in a follow-up step.
+                if self._needs_malouf_step(selected_bed_type, user_input):
+                    self._manual_data = entry_data
+                    return await self.async_step_bluetooth_malouf()
                 # Handle bed-type-specific configuration when user overrides detected type
                 # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
                 if selected_bed_type == BED_TYPE_OCTO and detected_bed_type != BED_TYPE_OCTO:
@@ -881,6 +962,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         schema_dict[vol.Optional(CONF_PROTOCOL_VARIANT, default=VARIANT_AUTO)] = vol.In(
             ALL_PROTOCOL_VARIANTS
         )
+
+        if bed_type in MALOUF_BED_TYPES:
+            _add_malouf_schema_fields(schema_dict)
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
@@ -1334,13 +1418,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # otherwise it re-shows the form with a clear error instead of silently
             # configuring a guessed protocol (issue #385).
             if bed_type == BED_TYPE_AUTO_DETECT:
-                resolved = _confident_auto_detect(
-                    detect_bed_type_detailed(self._discovery_info)
-                )
+                resolved = _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
                 if resolved:
-                    _LOGGER.info(
-                        "Auto-detect resolved bed type to %s for %s", resolved, address
-                    )
+                    _LOGGER.info("Auto-detect resolved bed type to %s for %s", resolved, address)
                     bed_type = resolved
                 else:
                     errors["base"] = "auto_detect_failed"
@@ -1365,7 +1445,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 motor_pulse_delay_ms = int(
                     user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1]
                 )
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 errors["base"] = "invalid_number"
 
             if not errors:
@@ -1403,6 +1483,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                     ),
                 }
+                _add_malouf_entry_data(entry_data, user_input, bed_type)
+                # Malouf layout/memory fields weren't shown inline (bed type was
+                # chosen from the dropdown), so collect them in a follow-up step.
+                if self._needs_malouf_step(bed_type, user_input):
+                    self._manual_data = entry_data
+                    return await self.async_step_manual_malouf()
                 # For Octo beds, collect PIN in a separate step
                 if bed_type == BED_TYPE_OCTO:
                     self._manual_data = entry_data
@@ -1439,9 +1525,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         detected_bed_type = detect_bed_type(self._discovery_info)
         # Only a high-confidence, unambiguous detection becomes the Auto-detect
         # default; ambiguous/low-confidence guesses keep "Auto-detect" selected.
-        confident_bed_type = _confident_auto_detect(
-            detect_bed_type_detailed(self._discovery_info)
-        )
+        confident_bed_type = _confident_auto_detect(detect_bed_type_detailed(self._discovery_info))
 
         # Build base schema with bed type selector (alphabetically sorted)
         if preselected_bed_type:
@@ -1538,6 +1622,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
+        if defaults_bed_type in MALOUF_BED_TYPES:
+            _add_malouf_schema_fields(schema_dict)
 
         return self.async_show_form(
             step_id="manual_config",
@@ -1584,12 +1670,15 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     motor_pulse_delay_ms = int(
                         user_input.get(CONF_MOTOR_PULSE_DELAY_MS) or pulse_defaults[1]
                     )
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     errors["base"] = "invalid_number"
 
                 if not errors:
                     retrying_entry = self._configured_entries_by_address().get(address)
-                    if retrying_entry is not None and retrying_entry.state == ConfigEntryState.SETUP_RETRY:
+                    if (
+                        retrying_entry is not None
+                        and retrying_entry.state == ConfigEntryState.SETUP_RETRY
+                    ):
                         self._retrying_devices[address] = (retrying_entry, None)
                         return self._async_abort_retrying_entry(address)
 
@@ -1630,6 +1719,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
                         ),
                     }
+                    _add_malouf_entry_data(entry_data, user_input, bed_type)
+                    # Malouf layout/memory fields weren't shown inline (bed type was
+                    # chosen from the dropdown), so collect them in a follow-up step.
+                    if self._needs_malouf_step(bed_type, user_input):
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_malouf()
                     # For Octo beds, collect PIN in a separate step
                     if bed_type == BED_TYPE_OCTO:
                         self._manual_data = entry_data
@@ -1727,6 +1822,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
             }
         )
+        if preselected_bed_type in MALOUF_BED_TYPES:
+            _add_malouf_schema_fields(schema_dict)
 
         return self.async_show_form(
             step_id="manual_entry",
@@ -1791,6 +1888,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
+    async def async_step_manual_malouf(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields for the manual-entry paths."""
+        return await self._async_malouf_step("manual_malouf", user_input)
+
     async def async_step_bluetooth_octo(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1847,6 +1950,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
         )
+
+    async def async_step_bluetooth_malouf(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields after a Bluetooth-discovery override."""
+        return await self._async_malouf_step("bluetooth_malouf", user_input)
 
     async def async_step_bluetooth_pairing(
         self, user_input: dict[str, Any] | None = None
@@ -2077,9 +2186,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         except Exception:  # noqa: BLE001 - absence of scanners must not break setup
             return False
 
-    async def _finish_with_verify(
-        self, entry_data: dict[str, Any], title: str
-    ) -> ConfigFlowResult:
+    async def _finish_with_verify(self, entry_data: dict[str, Any], title: str) -> ConfigFlowResult:
         """Stash the finalized entry and route through the verify_connection step.
 
         Skips the verify step (creating the entry directly) when no connectable
@@ -2117,10 +2224,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # mirror the same special-case the confirm step uses for angle sensing.
         has_position_feedback = bool(bed_type) and (
             bed_type in BEDS_WITH_POSITION_FEEDBACK
-            or (
-                bed_type == BED_TYPE_KEESON
-                and protocol_variant == KEESON_VARIANT_ERGOMOTION
-            )
+            or (bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION)
         )
         report = CapabilityReport(position_feedback=has_position_feedback)
 
@@ -2156,10 +2260,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             writable = 0
             for service in services:
                 for char in service.characteristics:
-                    if (
-                        "write" in char.properties
-                        or "write-without-response" in char.properties
-                    ):
+                    if "write" in char.properties or "write-without-response" in char.properties:
                         writable += 1
             report.writable_count = writable
             report.manufacturer, report.model = await read_ble_device_info(client, address)
@@ -2182,9 +2283,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if not report.device_found:
             lines.append("❌ Device not found - it may be out of range or not advertising.")
-            lines.append(
-                "You can still finish setup; the integration will keep trying to connect."
-            )
+            lines.append("You can still finish setup; the integration will keep trying to connect.")
             return "\n".join(lines)
 
         lines.append("✅ Device found via Bluetooth")
@@ -2261,8 +2360,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             return self.async_create_entry(
-                title=self._pending_title
-                or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
                 data=self._pending_entry,
             )
 
@@ -2277,8 +2375,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="verify_connection",
             data_schema=vol.Schema({}),
             description_placeholders={
-                "name": self._pending_entry.get(CONF_NAME)
-                or self._pending_entry[CONF_ADDRESS],
+                "name": self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
                 "capabilities": self._format_capabilities(report),
             },
         )
@@ -2523,6 +2620,20 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 )
             ] = vol.In(RICHMAT_REMOTES)
 
+        if bed_type in MALOUF_BED_TYPES:
+            schema_dict[
+                vol.Optional(
+                    CONF_MALOUF_LAYOUT,
+                    default=current_data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO),
+                )
+            ] = vol.In(MALOUF_LAYOUTS)
+            schema_dict[
+                vol.Optional(
+                    CONF_MALOUF_MEMORY_SLOTS,
+                    default=current_data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO),
+                )
+            ] = vol.All(vol.Coerce(int), vol.In(MALOUF_MEMORY_SLOT_OPTIONS))
+
         # Add angle limit fields for beds that use angle-based positions
         # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
         # Only show for beds that actually support position feedback
@@ -2579,7 +2690,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     user_input[CONF_MOTOR_PULSE_DELAY_MS] = int(
                         user_input[CONF_MOTOR_PULSE_DELAY_MS] or pulse_defaults[1]
                     )
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 return self.async_show_form(
                     step_id="init",
                     data_schema=vol.Schema(schema_dict),
@@ -2596,7 +2707,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                             errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_BACK_MAX_ANGLE] = value
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     return self.async_show_form(
                         step_id="init",
                         data_schema=vol.Schema(schema_dict),
@@ -2612,7 +2723,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                             errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_LEGS_MAX_ANGLE] = value
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     return self.async_show_form(
                         step_id="init",
                         data_schema=vol.Schema(schema_dict),

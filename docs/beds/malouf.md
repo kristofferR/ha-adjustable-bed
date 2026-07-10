@@ -14,6 +14,17 @@
 - Lucid
 - Structures
 
+These are retail brands, not protocol identifiers. **Lucid L600 is not one
+protocol.** Confirmed L600 devices include:
+
+| Advertising/GATT evidence | Integration protocol | Packet format |
+|---------------------------|----------------------|---------------|
+| `Smartbed237...`, Nordic UART, OKIN manufacturer ID 89 / `DOT` payload | OKIN CB24 | 7 bytes |
+| `OKIN-BLE...`, `BTCB` payload, connected FFE5/FFE9 | Malouf Legacy OKIN | 9 bytes |
+
+The integration uses those BLE signals and connected services. It does not map
+the string `L600` to either protocol.
+
 ## Apps
 
 | Analyzed | App | Package ID |
@@ -27,17 +38,35 @@
 |---------|-----------|
 | Motor Control | ✅ |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (2 slots, save + recall) |
+| Memory Presets | ✅ (save + recall; 1 or 2 slots, configurable) |
+| Save Memory Position | ✅ |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
 | Zero-G / Anti-Snore / TV / Lounge | ✅ |
-| Lumbar | ✅ |
-| Head Tilt | ✅ |
+| Lumbar | Optional, layout-dependent |
+| Head Tilt | Optional, layout-dependent |
+| Hi-Lo / Bed Height | Optional, layout-dependent |
+
+## Physical Layout
+
+Protocol and physical actuators are separate settings. Choose the layout that
+matches the buttons on the physical remote:
+
+- Back + legs (the confirmed two-motor L600 app profile)
+- Back + legs + head tilt
+- Back + legs + lumbar
+- Back + legs + head tilt + lumbar
+- Hi-Lo
+
+The memory-position setting is separate too. The Lucid Base 1.3.3 L600 model
+defines one memory position, while other models in the same command family use
+two. Auto selects one slot for the two-motor layout and two otherwise; both can
+be overridden in integration options.
 
 ## Hi-Lo Layout
 
-Some OKIN/Malouf-protocol beds use a Hi-Lo actuator layout instead of the usual
-`back/legs/head/feet` ladder. For those beds, the integration exposes:
+Some OKIN/Malouf-protocol beds use a Hi-Lo actuator layout. Only entries set to
+the Hi-Lo layout expose:
 
 - Back
 - Legs
@@ -51,7 +80,8 @@ independently for lengthwise tilt.
 
 ## Protocol Variants
 
-Malouf beds use two distinct protocols. The integration auto-detects which one your bed uses.
+The Malouf/Lucid controller family implemented here uses two distinct protocols.
+The integration auto-detects framing from BLE evidence, not from retail model.
 
 ### NEW_OKIN (Nordic UART)
 
@@ -138,6 +168,14 @@ so no final BLE packet is written; saving completes when the stream ends.
 | Massage Timer | `0x200` |
 | Massage Off | `0x2000000` |
 
+### Save Memory Commands
+
+| Action | Value |
+|--------|-------|
+| Save Memory 1 | `0x10000` |
+| Save Memory 1 (`Smartbed238...` exception) | `0x80010000` |
+| Save Memory 2 | `0x80040000` |
+
 ### Observed But Not Implemented
 
 Additional commands found in the app (fresh Lucid Base 1.3.3 decompile,
@@ -164,25 +202,27 @@ The app's L600 model definition: manual controls HEAD/FOOT only, presets
 Zero-G / Anti-Snore / Lounge / TV-Read, **1 memory position**, massage
 (head/foot/type/timer), light, alarm. No tilt, lumbar, or Hi-Lo hardware.
 
-Note: this describes what the vendor app exposes for the L600 model only. The
-integration's `MaloufLegacyOkinController` applies the generic LEGACY_OKIN
-capability set to every LEGACY_OKIN device (2 memory slots, plus tilt, lumbar,
-and bed-height controls), which is a superset of what an L600 physically has.
-Extra entities on an L600 are harmless (the hardware ignores unsupported
-commands); gating capabilities per model would require model detection the
-protocol does not currently provide.
+Note: this describes the vendor app's L600 model definition. The
+integration maps it through the physical-layout option above: the default
+two-motor layout (auto for two motors, including the L600) exposes back and
+legs with a single memory slot, while the other layouts opt into tilt,
+lumbar, bed-height, and a second memory slot.
 
 ## Command Timing
 
 From app disassembly analysis (Malouf Base / Lucid Base):
 
-| Protocol | Repeat Interval | Max Repeats |
-|----------|----------------|-------------|
-| Legacy OKIN (FFE5) | 150ms | 85 |
-| New OKIN (Nordic) | 100ms | 55 |
+| Operation | Legacy OKIN | New OKIN |
+|-----------|-------------|----------|
+| Held motor command | Every 150ms | Every 150ms in the app UI |
+| Preset recall | 3 queued acknowledged writes, no STOP | 1 write followed by STOP |
+| Save memory | 85 writes at 150ms | 55 writes at 100ms |
 
-The app supports multiple protocols with automatic detection:
-1. **Legacy OKIN (FFE5/FFE9)** - 9-byte packets
-2. **Custom OKIN (62741523)** - 10-byte packets
-3. **New OKIN (Nordic UART)** - 8-byte packets
-4. **Richmat WiLinke (FEE9)** - 5-byte packets
+The APK schedules the first save-memory write after one interval. At the end it
+calls the literal string `stopCommand`, but the dispatcher only recognizes
+`stopDriver`; therefore the official app does **not** transmit a final STOP for
+memory saving. The integration intentionally matches that observed behavior.
+
+Lucid Base 1.3.3's shared SDK also recognizes Custom OKIN and Richmat hardware,
+but those are separate integration protocols. Their presence in the same app
+does not make them Malouf Legacy/New OKIN packet variants.

@@ -90,6 +90,8 @@ from .const import (
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
     CONF_LEGS_MAX_ANGLE,
+    CONF_MALOUF_LAYOUT,
+    CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -118,6 +120,8 @@ from .const import (
     DOMAIN,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_OKIN,
+    MALOUF_LAYOUT_AUTO,
+    MALOUF_MEMORY_SLOTS_AUTO,
     OKIMAT_SERVICE_UUID,
     OKIN_CST_POSITION_AXES,
     OKIN_FOOT_MAX_ANGLE,
@@ -197,6 +201,14 @@ class AdjustableBedCoordinator:
             CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
         )
         self._name: str = entry.data.get(CONF_NAME, "Adjustable Bed")
+        # Keep the advertised BLE name separate from the editable entry name.
+        # Malouf's APK has one command exception keyed to Smartbed238, so using
+        # a user-facing rename here would silently select the wrong command.
+        self._ble_device_name: str = self._name
+        self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
+        self._malouf_memory_slots: int = int(
+            entry.data.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
+        )
         self._richmat_remote: str = entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO)
         if self._bed_type == BED_TYPE_RICHMAT:
             self._richmat_remote = resolve_richmat_remote_code(
@@ -457,6 +469,21 @@ class AdjustableBedCoordinator:
     def name(self) -> str:
         """Return the bed name."""
         return self._name
+
+    @property
+    def ble_device_name(self) -> str:
+        """Return the most recently observed BLE advertising name."""
+        return self._ble_device_name
+
+    @property
+    def malouf_layout(self) -> str:
+        """Return the configured Malouf actuator layout."""
+        return self._malouf_layout
+
+    @property
+    def malouf_memory_slots(self) -> int:
+        """Return the configured Malouf memory-slot override (0 means auto)."""
+        return self._malouf_memory_slots
 
     @property
     def bed_type(self) -> str:
@@ -1293,6 +1320,8 @@ class AdjustableBedCoordinator:
                     device.name,
                     getattr(device, "details", "N/A"),
                 )
+                if device.name:
+                    self._ble_device_name = device.name
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if device_source == self._preferred_adapter:
@@ -1363,6 +1392,8 @@ class AdjustableBedCoordinator:
                             continue
                         svc_source = getattr(svc_info, "source", None)
                         if selected_source is None or svc_source == selected_source:
+                            if svc_info.device.name:
+                                self._ble_device_name = svc_info.device.name
                             _LOGGER.debug(
                                 "ble_device_callback returning device from %s (RSSI: %s, connectable=%s)",
                                 svc_source or "unknown",
@@ -1385,6 +1416,8 @@ class AdjustableBedCoordinator:
                     )
                     if fallback is None:
                         raise BleakError(f"Device {self._address} not found")
+                    if fallback.name:
+                        self._ble_device_name = fallback.name
                     if connectable is False:
                         _LOGGER.debug(
                             "ble_device_callback falling back to non-connectable record for %s",
@@ -2423,9 +2456,7 @@ class AdjustableBedCoordinator:
             # Intentional disconnects (manual, idle timeout, disconnect-after-command)
             # are routine for non-persistent beds; keep them at DEBUG so normal use
             # doesn't spam the log. The reason is preserved in _last_disconnect_reason.
-            _LOGGER.debug(
-                "Disconnecting from bed at %s (reason: %s)", self._address, reason
-            )
+            _LOGGER.debug("Disconnecting from bed at %s (reason: %s)", self._address, reason)
             # Mark as intentional so _on_disconnect doesn't trigger auto-reconnect
             self._intentional_disconnect = True
             # Track disconnect reason for diagnostics (issue #168)

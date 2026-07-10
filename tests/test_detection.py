@@ -218,9 +218,7 @@ class TestDetectBedTypeByServiceUUID:
             name="EC:C5:7F:6A:67:11",
             address="EC:C5:7F:6A:67:11",
             service_uuids=[],
-            manufacturer_data={
-                0xFFFF: bytes.fromhex("c0ff011e27000082020211676a7fc5ec")
-            },
+            manufacturer_data={0xFFFF: bytes.fromhex("c0ff011e27000082020211676a7fc5ec")},
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type is None
@@ -353,6 +351,22 @@ class TestDetectBedTypeByServiceUUID:
         assert "manufacturer_payload:btcb" in result.signals
         assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN]
 
+    def test_lucid_l600_retail_model_does_not_collapse_protocols(self):
+        """Two confirmed L600 signatures must continue to select different framing."""
+        legacy = _make_service_info(
+            name="OKIN-BLE00017786",
+            service_uuids=[MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID],
+            manufacturer_data={3: b"BTCB.03"},
+        )
+        cb24 = _make_service_info(
+            name="Smartbed237004683",
+            service_uuids=[NORDIC_UART_SERVICE_UUID],
+            manufacturer_data={MANUFACTURER_ID_OKIN: b"DOT\x00\x02"},
+        )
+
+        assert detect_bed_type(legacy) == BED_TYPE_MALOUF_LEGACY_OKIN
+        assert detect_bed_type(cb24) == BED_TYPE_OKIN_CB24
+
     def test_detect_leggett_gen2_by_uuid(self):
         """Test Leggett Gen2 detection by unique service UUID."""
         service_info = _make_service_info(
@@ -373,15 +387,11 @@ class TestDetectBedTypeByServiceUUID:
         assert detect_bed_type(service_info) == BED_TYPE_LEGGETT_GEN2
 
         # "CP" prefix is also accepted.
-        cp = _make_service_info(
-            name="Smart Bed", manufacturer_data={0x092D: b"CP\x00\x00"}
-        )
+        cp = _make_service_info(name="Smart Bed", manufacturer_data={0x092D: b"CP\x00\x00"})
         assert detect_bed_type(cp) == BED_TYPE_LEGGETT_GEN2
 
         # Same company id but an unrelated payload must NOT match.
-        other = _make_service_info(
-            name="Smart Bed", manufacturer_data={0x092D: b"ZZ\x00\x00"}
-        )
+        other = _make_service_info(name="Smart Bed", manufacturer_data={0x092D: b"ZZ\x00\x00"})
         assert detect_bed_type(other) != BED_TYPE_LEGGETT_GEN2
 
     def test_detect_reverie_nightstand_by_uuid(self):
@@ -1752,15 +1762,10 @@ class TestW5WiLinkeNameGuard:
         from pathlib import Path
 
         manifest_path = (
-            Path(__file__).parents[1]
-            / "custom_components"
-            / "adjustable_bed"
-            / "manifest.json"
+            Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
         )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        service_uuids = {
-            entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]
-        }
+        service_uuids = {entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]}
         assert RICHMAT_WILINKE_W5_SERVICE_UUID.lower() not in service_uuids
 
 
@@ -1778,9 +1783,7 @@ class TestW4WiLinkeNameGuard:
             address="50:E4:78:14:28:EE",
             service_uuids=[RICHMAT_WILINKE_W4_SERVICE_UUID],
             manufacturer_data={
-                0x3035: bytes.fromhex(
-                    "453437383134323845455f4652433334335253503838445f30"
-                )
+                0x3035: bytes.fromhex("453437383134323845455f4652433334335253503838445f30")
             },
         )
         result = detect_bed_type_detailed(service_info)
@@ -1829,15 +1832,10 @@ class TestW4WiLinkeNameGuard:
         from pathlib import Path
 
         manifest_path = (
-            Path(__file__).parents[1]
-            / "custom_components"
-            / "adjustable_bed"
-            / "manifest.json"
+            Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
         )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        service_uuids = {
-            entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]
-        }
+        service_uuids = {entry.get("service_uuid", "").lower() for entry in manifest["bluetooth"]}
         assert RICHMAT_WILINKE_W4_SERVICE_UUID.lower() in service_uuids
 
 
