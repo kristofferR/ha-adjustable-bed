@@ -16,9 +16,9 @@ Protocol details:
         "M {down}:{up}:{stop}").
 
 Connection note:
-    The ESP32 controller only accepts a BLE connection while the bed is in
-    pairing mode and refuses reconnection afterwards, so this bed type uses a
-    persistent connection (it is never idle-disconnected). See
+    The ESP32 controller requires an OS-level BLE bond. This bed type continues
+    to use a persistent connection (it is never idle-disconnected) until bonded
+    reconnect behavior is confirmed on hardware. See
     coordinator._uses_persistent_connection().
 
 Features (gated per model by the bundled capability profile — see
@@ -199,13 +199,12 @@ class LeggettGen2Controller(BedController):
 
     @property
     def requires_persistent_connection(self) -> bool:
-        """LP Comfort Connect's ESP32 only accepts a connection while in pairing
-        mode and refuses reconnection afterwards, so the link must be held open."""
+        """Keep the Gen2 link open pending hardware confirmation of reconnects."""
         return True
 
     @property
     def manual_disconnect_strands_connection(self) -> bool:
-        """A manual disconnect can't be recovered without re-entering pairing mode."""
+        """Hide manual disconnect until bonded reconnects are hardware-confirmed."""
         return True
 
     @property

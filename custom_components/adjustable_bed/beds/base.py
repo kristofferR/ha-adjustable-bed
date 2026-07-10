@@ -150,12 +150,12 @@ class BedController(ABC):
     def requires_persistent_connection(self) -> bool:
         """Return True if the BLE link must be held open for the entry's lifetime.
 
-        Controllers whose hardware refuses reconnection once disconnected (e.g.
-        Leggett & Platt Gen2 / LP Comfort Connect, which only accepts a connection
-        while in pairing mode) override this to return True so the coordinator
-        never idle-disconnects them. Because this is a property of the resolved
-        controller, it is authoritative even when the bed type/variant resolves to
-        different protocols at connect time.
+        Controllers that must or should conservatively retain the link (e.g.
+        Leggett & Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
+        confirmation) override this to return True so the coordinator never
+        idle-disconnects them. Because this is a property of the resolved controller,
+        it is authoritative even when the bed type/variant resolves to different
+        protocols at connect time.
         """
         return False
 

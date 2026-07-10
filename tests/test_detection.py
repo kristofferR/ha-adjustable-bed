@@ -504,6 +504,7 @@ class TestDetectBedTypeByServiceUUID:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_SUTA
         assert result.confidence == 0.9
+        assert "uuid:suta_fff0" in result.signals
 
     def test_detect_comfort_motion_lierda3_by_uuid(self):
         """Test Comfort Motion detection by Lierda3 FE60 service UUID."""

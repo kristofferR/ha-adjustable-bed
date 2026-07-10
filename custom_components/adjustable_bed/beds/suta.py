@@ -4,25 +4,40 @@ Protocol reverse-engineered from com.shuta.smart_home.
 
 Bed-frame controllers use an ASCII AT command protocol over BLE:
 - Service UUID: 0000fff0-0000-1000-8000-00805f9b34fb
+- Notify characteristic: 0000fff1-0000-1000-8000-00805f9b34fb
+- Write characteristic: 0000fff2-0000-1000-8000-00805f9b34fb
 - Command format: b"AT+...\\r\\n" (UTF-8, CRLF-terminated)
 - No checksum
 
-Characteristic UUIDs are discovered dynamically based on GATT properties.
+The official app subscribes to notifications and requests MTU 250 before sending
+commands.  Several motor commands exceed the default 20-byte ATT payload.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, cast
 
-from ..const import SUTA_DEFAULT_WRITE_CHAR_UUID, SUTA_SERVICE_UUID
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.exc import BleakError
+
+from ..const import (
+    SUTA_DEFAULT_WRITE_CHAR_UUID,
+    SUTA_NOTIFY_CHAR_UUID,
+    SUTA_SERVICE_UUID,
+)
 from .base import BedController
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+_SUTA_APP_REQUESTED_MTU = 250
+# The longest currently implemented B202 command is 24 bytes including CRLF.
+_SUTA_MIN_COMMAND_MTU = 27
 
 
 class SutaCommands:
@@ -82,14 +97,21 @@ class SutaController(BedController):
         """Initialize the SUTA controller."""
         super().__init__(coordinator)
         self._write_char_uuid = SUTA_DEFAULT_WRITE_CHAR_UUID
-        self._write_with_response = True
-        self._write_mode_initialized = False
+        self._notify_char_uuid = SUTA_NOTIFY_CHAR_UUID
+        self._write_with_response = False
+        self._gatt_characteristics_initialized = False
+        self._notifications_started = False
         self._light_state = False
 
     @property
     def control_characteristic_uuid(self) -> str:
         """Return the command characteristic UUID."""
         return self._write_char_uuid
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Return True because the OEM app enables notifications before commands."""
+        return True
 
     # Capability properties
     @property
@@ -137,9 +159,9 @@ class SutaController(BedController):
         """Build a CRLF-terminated AT command packet."""
         return f"{command}\r\n".encode()
 
-    def _refresh_write_characteristic(self) -> None:
-        """Resolve write characteristic and write mode from discovered services."""
-        if self._write_mode_initialized:
+    def _refresh_gatt_characteristics(self) -> None:
+        """Resolve the bed-frame write/notify characteristics from FFF0."""
+        if self._gatt_characteristics_initialized:
             return
 
         client = self.client
@@ -149,38 +171,159 @@ class SutaController(BedController):
         service = client.services.get_service(SUTA_SERVICE_UUID)
         if service is None:
             _LOGGER.debug(
-                "SUTA service %s not found, using fallback characteristic %s",
+                "SUTA bed-frame service %s not found; using fallback chars write=%s notify=%s",
                 SUTA_SERVICE_UUID,
                 self._write_char_uuid,
+                self._notify_char_uuid,
             )
-            self._write_mode_initialized = True
+            self._gatt_characteristics_initialized = True
             return
 
-        # SUTA devices expose writable characteristics dynamically under
-        # SUTA_SERVICE_UUID, so we intentionally select the first writable char
-        # we find and store it in _write_char_uuid instead of matching a fixed UUID.
+        write_candidate = None
+        notify_candidate = None
         for char in service.characteristics:
             props = {prop.lower() for prop in char.properties}
             if "write" in props or "write-without-response" in props:
-                self._write_char_uuid = str(char.uuid)
-                # Prefer write-with-response when available for acknowledgements;
-                # otherwise fall back to write-without-response.
-                self._write_with_response = "write" in props
-                self._write_mode_initialized = True
-                _LOGGER.debug(
-                    "SUTA write characteristic resolved to %s (response=%s, props=%s)",
-                    self._write_char_uuid,
-                    self._write_with_response,
-                    char.properties,
-                )
-                return
+                if (
+                    write_candidate is None
+                    or str(char.uuid).lower() == SUTA_DEFAULT_WRITE_CHAR_UUID
+                ):
+                    write_candidate = char
+            if "notify" in props or "indicate" in props:
+                if notify_candidate is None or str(char.uuid).lower() == SUTA_NOTIFY_CHAR_UUID:
+                    notify_candidate = char
 
+        if write_candidate is not None:
+            write_props = {prop.lower() for prop in write_candidate.properties}
+            self._write_char_uuid = str(write_candidate.uuid)
+            # Android uses the characteristic's advertised default write type.
+            self._write_with_response = "write" in write_props
+        else:
+            _LOGGER.warning(
+                "No writable characteristic found in SUTA service %s; using fallback %s",
+                SUTA_SERVICE_UUID,
+                self._write_char_uuid,
+            )
+
+        if notify_candidate is not None:
+            self._notify_char_uuid = str(notify_candidate.uuid)
+        else:
+            _LOGGER.warning(
+                "No notifiable characteristic found in SUTA service %s; using fallback %s",
+                SUTA_SERVICE_UUID,
+                self._notify_char_uuid,
+            )
+
+        self._gatt_characteristics_initialized = True
         _LOGGER.debug(
-            "No writable characteristic found in SUTA service %s, using fallback %s",
+            "SUTA GATT resolved: service=%s write=%s response=%s notify=%s",
             SUTA_SERVICE_UUID,
             self._write_char_uuid,
+            self._write_with_response,
+            self._notify_char_uuid,
         )
-        self._write_mode_initialized = True
+
+    def _handle_notification(
+        self,
+        characteristic: BleakGATTCharacteristic,
+        data: bytearray,
+    ) -> None:
+        """Forward and log SUTA AT responses received on FFF1."""
+        payload = bytes(data)
+        characteristic_uuid = str(getattr(characteristic, "uuid", characteristic))
+        self.forward_raw_notification(characteristic_uuid, payload)
+        _LOGGER.debug(
+            "SUTA response on %s: %r",
+            characteristic_uuid,
+            payload.decode("utf-8", errors="replace"),
+        )
+
+    async def _acquire_command_mtu(self) -> None:
+        """Acquire the negotiated MTU on backends that require an explicit request.
+
+        Android requests MTU 250 after subscribing.  Bleak's BlueZ backend exposes
+        MTU negotiation through a guarded private coroutine; other backends usually
+        negotiate automatically and report their MTU through ``mtu_size``.
+        """
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+
+        backend = getattr(client, "_backend", None)
+        acquire_mtu = getattr(backend, "_acquire_mtu", None)
+        if callable(acquire_mtu):
+            try:
+                async with self._ble_lock:
+                    await cast(Callable[[], Awaitable[object]], acquire_mtu)()
+            except (AssertionError, BleakError, OSError, TimeoutError) as err:
+                _LOGGER.warning(
+                    "Could not acquire SUTA command MTU (OEM app requests %d): %s",
+                    _SUTA_APP_REQUESTED_MTU,
+                    err,
+                )
+
+        mtu_size = getattr(client, "mtu_size", 23)
+        if isinstance(mtu_size, int) and mtu_size < _SUTA_MIN_COMMAND_MTU:
+            _LOGGER.warning(
+                "SUTA negotiated MTU is %d; motor commands need at least %d. "
+                "Writes longer than %d bytes may fail on this Bluetooth backend.",
+                mtu_size,
+                _SUTA_MIN_COMMAND_MTU,
+                mtu_size - 3,
+            )
+        else:
+            _LOGGER.debug(
+                "SUTA command MTU ready: %s (OEM app requests %d)",
+                mtu_size,
+                _SUTA_APP_REQUESTED_MTU,
+            )
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Enable the FFF1 response channel and negotiate MTU before commands."""
+        self._notify_callback = callback
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Cannot start SUTA notifications: not connected")
+
+        self._refresh_gatt_characteristics()
+        if self._notifications_started:
+            return
+
+        try:
+            async with self._ble_lock:
+                await client.start_notify(self._notify_char_uuid, self._handle_notification)
+        except BleakError:
+            _LOGGER.warning(
+                "Failed to enable required SUTA notification characteristic %s",
+                self._notify_char_uuid,
+                exc_info=True,
+            )
+            self.log_discovered_services(level=logging.INFO)
+            raise
+
+        self._notifications_started = True
+        _LOGGER.debug("Enabled required SUTA notifications on %s", self._notify_char_uuid)
+        await self._acquire_command_mtu()
+
+    async def stop_notify(self) -> None:
+        """Stop the SUTA response notification channel."""
+        client = self.client
+        if client is None or not client.is_connected:
+            self._notifications_started = False
+            self._notify_callback = None
+            return
+        if not self._notifications_started:
+            self._notify_callback = None
+            return
+
+        try:
+            async with self._ble_lock:
+                await client.stop_notify(self._notify_char_uuid)
+        except BleakError:
+            _LOGGER.debug("Failed to stop SUTA notifications", exc_info=True)
+        finally:
+            self._notifications_started = False
+            self._notify_callback = None
 
     async def write_command(
         self,
@@ -190,7 +333,7 @@ class SutaController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a SUTA command packet."""
-        self._refresh_write_characteristic()
+        self._refresh_gatt_characteristics()
         await self._write_gatt_with_retry(
             self._write_char_uuid,
             command,

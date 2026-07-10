@@ -1,7 +1,8 @@
 """Malouf bed controller implementations.
 
-Reverse-engineered from the shared Malouf/Lucid Android SDK, including Lucid
-Base 1.3.3.
+Reverse-engineered from Malouf Base app v2.4.3; verified against a fresh
+decompile of Lucid Base v1.3.3 (com.lucid.bedbase, shared
+com.malouf.adjustablebasebluetooth library) on 2026-07-10.
 
 Malouf beds use two distinct protocols:
 - NEW_OKIN: 8-byte commands via Nordic UART, advertises unique service UUID
@@ -65,8 +66,15 @@ class MaloufCommands:
     TV_READ = 0x4000
     MEMORY_1 = 0x10000
     MEMORY_2 = 0x40000
-    SET_MEMORY_1_SMARTBED238 = 0x80010000
-    SET_MEMORY_2 = 0x80040000
+
+    # Memory programming (hold-to-save). The app emulates holding the
+    # remote's memory button: it streams the save command at the protocol's
+    # repeat interval for the full repeat window. Slot 1 reuses the recall
+    # value (the sustained stream is what signals "save"); beds named
+    # "Smartbed238" use a dedicated value with the save bit set.
+    SAVE_MEMORY_1 = 0x10000
+    SAVE_MEMORY_1_SMARTBED238 = 0x80010000
+    SAVE_MEMORY_2 = 0x80040000
 
     # Lights & Massage
     LIGHT_SWITCH = 0x20000
@@ -174,6 +182,25 @@ def _resolve_malouf_memory_slots(coordinator: AdjustableBedCoordinator, layout: 
     if configured != MALOUF_MEMORY_SLOTS_AUTO:
         return configured
     return 1 if layout == MALOUF_LAYOUT_TWO_MOTOR else 2
+
+
+def _save_memory_command(memory_num: int, device_name: str | None) -> int | None:
+    """Return the hold-to-save command value for a memory slot.
+
+    Matches the app's setMemory1/setMemory2 handling: slot 1 uses the recall
+    value (or the save-bit variant on beds named "Smartbed238"), slot 2 always
+    carries the save bit.
+    """
+    smartbed238 = bool(device_name) and "smartbed238" in device_name.lower()
+    if memory_num == 1:
+        return (
+            MaloufCommands.SAVE_MEMORY_1_SMARTBED238
+            if smartbed238
+            else MaloufCommands.SAVE_MEMORY_1
+        )
+    if memory_num == 2:
+        return MaloufCommands.SAVE_MEMORY_2
+    return None
 
 
 class MaloufNewOkinController(BedController):
@@ -460,13 +487,10 @@ class MaloufNewOkinController(BedController):
         if memory_num < 1 or memory_num > self.memory_slot_count:
             _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
             return
-        command_value = (
-            MaloufCommands.SET_MEMORY_1_SMARTBED238
-            if memory_num == 1 and "smartbed238" in self._coordinator.ble_device_name.lower()
-            else MaloufCommands.MEMORY_1
-            if memory_num == 1
-            else MaloufCommands.SET_MEMORY_2
-        )
+        command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
         # The APK schedules the first write after one interval, then performs
         # exactly 55 acknowledged writes. Its final "stopCommand" string is not
         # recognized by the dispatcher, so no STOP packet is actually emitted.
@@ -807,13 +831,10 @@ class MaloufLegacyOkinController(BedController):
         if memory_num < 1 or memory_num > self.memory_slot_count:
             _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
             return
-        command_value = (
-            MaloufCommands.SET_MEMORY_1_SMARTBED238
-            if memory_num == 1 and "smartbed238" in self._coordinator.ble_device_name.lower()
-            else MaloufCommands.MEMORY_1
-            if memory_num == 1
-            else MaloufCommands.SET_MEMORY_2
-        )
+        command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
         # Match the APK's delayed first write and exact repeat count. The APK's
         # trailing "stopCommand" is a dead string, not a STOP transmission.
         await asyncio.sleep(0.15)

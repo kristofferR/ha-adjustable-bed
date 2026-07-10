@@ -119,6 +119,7 @@ from .const import (
     DEVICE_INFO_READ_TIMEOUT,
     DOMAIN,
     LEGGETT_VARIANT_GEN2,
+    LEGGETT_VARIANT_OKIN,
     MALOUF_LAYOUT_AUTO,
     MALOUF_MEMORY_SLOTS_AUTO,
     OKIMAT_SERVICE_UUID,
@@ -143,6 +144,7 @@ from .const import (
 )
 from .controller_factory import create_controller
 from .detection import (
+    OKIN_SHARED_UUID_GATT_REFINABLE_TYPES,
     detect_richmat_remote_from_name,
     refine_dewertokin_star_protocol_from_name,
     refine_malouf_protocol_from_gatt,
@@ -723,6 +725,10 @@ class AdjustableBedCoordinator:
             self._address,
             err,
         )
+        # A definitive authentication failure invalidates any earlier decision
+        # to skip a probe that timed out. The next paired connection should
+        # verify the fresh bond again.
+        self._bond_probe_timed_out = False
         self._clear_ble_bond_established()
 
         try:
@@ -787,13 +793,25 @@ class AdjustableBedCoordinator:
             )
             return True
         except (TimeoutError, OSError) as err:
-            self._bond_probe_timed_out = True
-            _LOGGER.debug(
-                "Bond verification read for %s failed (%s); proceeding and "
-                "skipping future probes for this session.",
-                self._address,
-                err,
-            )
+            # The field-proven OKIN CST receiver never answers this DIS read,
+            # so repeated probes only add latency. Other pairing-required beds
+            # can time out transiently while waking and must retry on a later
+            # connection so stale bond state can still be detected.
+            self._bond_probe_timed_out = self._bed_type == BED_TYPE_OKIN_CST
+            if self._bond_probe_timed_out:
+                _LOGGER.debug(
+                    "Bond verification read for OKIN CST %s failed (%s); "
+                    "skipping future probes for this session.",
+                    self._address,
+                    err,
+                )
+            else:
+                _LOGGER.debug(
+                    "Bond verification read for %s failed (%s); proceeding and "
+                    "retrying on the next connection.",
+                    self._address,
+                    err,
+                )
             return True
 
         # Read succeeded → the encrypted link works → we are bonded.
@@ -956,6 +974,72 @@ class AdjustableBedCoordinator:
         }
         return normalized not in chipset_manufacturers
 
+    def _bed_type_needs_ble_model(self) -> bool:
+        """Whether the current protocol refinement depends on the DIS model value.
+
+        Shared-UUID OKIN profiles use the Device Information model to tell a
+        multi-motor OKIMAT bed apart from a single-actuator RF ECO BT stair that
+        exposes the same GATT signature (issue #406). If that model read times
+        out transiently we must not latch a partial read as complete, or the
+        bed would be misrouted to the stair profile on every future reconnect.
+        """
+        if self._bed_type in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
+            return True
+        return (
+            self._bed_type == BED_TYPE_LEGGETT_PLATT
+            and self._protocol_variant == LEGGETT_VARIANT_OKIN
+        )
+
+    def _store_ble_device_info(
+        self,
+        manufacturer: str | None,
+        model: str | None,
+    ) -> None:
+        """Store Device Information and decide whether reconnects should retry it."""
+        self._ble_manufacturer = manufacturer
+        self._ble_model = model
+
+        manufacturer_useful = self._is_useful_ble_value(manufacturer)
+        model_useful = self._is_useful_ble_value(model)
+        has_useful_value = manufacturer_useful or model_useful
+
+        # A protocol whose per-reconnect refinement needs the DIS model must not
+        # cache a read where the model timed out (manufacturer answered, model
+        # did not). Latching that partial read would freeze model=None forever
+        # and demote an OKIMAT bed to the single-actuator RF ECO BT profile on
+        # every reconnect. Require the model before we stop retrying; a genuinely
+        # model-less bed re-reads cheaply (an absent characteristic errors fast,
+        # only a transient timeout costs the read budget, which is what we want
+        # to retry). OKIN CST is exempted below via the negative cache.
+        required_fields_present = (
+            not self._bed_type_needs_ble_model() or model_useful
+        )
+
+        # Certain OKIN CST receivers consistently never answer DIS reads. Their
+        # protocol is already explicit and does not depend on Device Information,
+        # so a negative session cache is safe and avoids 10s on every reconnect.
+        negative_cache_is_safe = self._bed_type == BED_TYPE_OKIN_CST
+        self._device_info_read_done = (
+            has_useful_value and required_fields_present
+        ) or negative_cache_is_safe
+
+        if not self._device_info_read_done:
+            if has_useful_value and not required_fields_present:
+                _LOGGER.debug(
+                    "Device Information read for %s is missing the model this "
+                    "protocol needs (manufacturer=%r, model=%r); retrying on the "
+                    "next connection.",
+                    self._address,
+                    manufacturer,
+                    model,
+                )
+            else:
+                _LOGGER.debug(
+                    "Device Information read for %s returned no useful values; "
+                    "retrying on the next connection.",
+                    self._address,
+                )
+
     def remember_cb24_continuous_presets(self) -> None:
         """Persist the learned CB24 continuous preset mode across reconnects."""
         if self._cb24_continuous_presets_learned:
@@ -1003,12 +1087,11 @@ class AdjustableBedCoordinator:
     def _uses_persistent_connection(self) -> bool:
         """Return True when this controller should stay connected indefinitely.
 
-        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included because
-        its ESP32 controller only accepts a BLE connection while in pairing mode
-        and refuses reconnection afterwards. Idle-disconnecting it leaves the bed
-        unreachable until it is power-cycled / re-paired, so we hold the link open
-        for the lifetime of the entry instead (issue #385). Trade-off: the physical
-        remote cannot be used while Home Assistant is connected.
+        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included
+        conservatively until bonded reconnects are confirmed on hardware. We hold
+        the link open for the lifetime of the entry in the meantime (issue #385).
+        Trade-off: the physical remote cannot be used while Home Assistant is
+        connected.
 
         Resolution order:
         1. The live controller's ``requires_persistent_connection`` (authoritative).
@@ -1044,8 +1127,22 @@ class AdjustableBedCoordinator:
         # few reconnect cycles enter a protection mode where they stop advertising
         # entirely until power-cycled (#369). The next user command reconnects on
         # demand, so no reconnect timer is needed for these beds.
+        #
         if self._disconnect_after_operation_enabled():
             return False
+
+        # LP Comfort Connect is kept connected conservatively, and the new bond
+        # makes an unexpected drop recoverable. Reconnect promptly while leaving
+        # the established lifecycle behavior of other persistent protocols (such
+        # as Sleep Number MCR) unchanged by this Gen2-specific fix.
+        if self._bed_type == BED_TYPE_LEGGETT_GEN2:
+            return True
+        if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
+            VARIANT_AUTO,
+            LEGGETT_VARIANT_GEN2,
+        ):
+            return self._uses_persistent_connection()
+
         return not self._uses_persistent_connection()
 
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
@@ -1628,9 +1725,7 @@ class AdjustableBedCoordinator:
                         ble_manufacturer, ble_model = await read_ble_device_info(
                             self._client, self._address
                         )
-                        self._ble_manufacturer = ble_manufacturer
-                        self._ble_model = ble_model
-                        self._device_info_read_done = True
+                        self._store_ble_device_info(ble_manufacturer, ble_model)
 
                 previous_bed_type = self._bed_type
                 corrected_bed_type = refine_malouf_protocol_from_gatt(
@@ -1817,9 +1912,7 @@ class AdjustableBedCoordinator:
                         ble_manufacturer, ble_model = await read_ble_device_info(
                             self._client, self._address
                         )
-                        self._ble_manufacturer = ble_manufacturer
-                        self._ble_model = ble_model
-                        self._device_info_read_done = True
+                        self._store_ble_device_info(ble_manufacturer, ble_model)
 
                 if (
                     self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR
@@ -1866,6 +1959,25 @@ class AdjustableBedCoordinator:
                 return True
 
             except (BleakError, TimeoutError, OSError) as err:
+                if isinstance(err, BleakError) and _is_ble_authentication_error(err):
+                    # Authentication can first fail during controller startup,
+                    # after a slow DIS probe was treated as inconclusive. Clear
+                    # the stale marker here so the next retry requests pairing.
+                    # Keep this best-effort: the handler disconnects the client,
+                    # and disconnect cleanup can itself raise. Letting that escape
+                    # would replace the original authentication error and abort
+                    # the remaining retries. CancelledError is a BaseException, so
+                    # cancellation still propagates.
+                    try:
+                        await self._async_handle_ble_authentication_error(
+                            err, holding_lock=True
+                        )
+                    except Exception:
+                        _LOGGER.debug(
+                            "Authentication recovery cleanup failed for %s",
+                            self._address,
+                            exc_info=True,
+                        )
                 attempt_elapsed = time.monotonic() - attempt_start
                 attempt_details["total_elapsed_seconds"] = round(attempt_elapsed, 3)
                 attempt_details["result"] = "failed"
@@ -2063,7 +2175,8 @@ class AdjustableBedCoordinator:
         if not self._auto_reconnect_enabled():
             _LOGGER.debug(
                 "Skipping auto-reconnect timer for %s (persistent connection or "
-                "disconnect_after_command); next command reconnects on demand",
+                "disconnect_after_command); "
+                "next command reconnects on demand",
                 self._bed_type,
             )
             if self._reconnect_timer is not None:

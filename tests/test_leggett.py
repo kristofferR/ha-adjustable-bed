@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.beds.leggett_okin import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_OKIMAT,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -32,6 +33,8 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     VARIANT_AUTO,
+    connection_gated_by_bond,
+    requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -237,6 +240,77 @@ class TestLeggettGen2Connection:
         coordinator._persistent_connection_resolved = True
         assert coordinator._uses_persistent_connection() is True
 
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, True),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
+        ],
+    )
+    async def test_gen2_requires_pairing(
+        self, bed_type: str, variant: str | None, expected: bool
+    ):
+        """LP Control calls createBond() for Gen2 after service discovery."""
+        assert requires_pairing(bed_type, variant) is expected
+
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            # Okin-style pairing beds accept the connection and only gate GATT
+            # access, so a connect timeout there is not a pairing symptom.
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_OKIMAT, None, False),
+        ],
+    )
+    async def test_connection_gated_by_bond(
+        self, bed_type: str, variant: str | None, expected: bool
+    ):
+        """Only Gen2 showed the bond-gated timeout signature in issue #385."""
+        assert connection_gated_by_bond(bed_type, variant) is expected
+
+    async def test_gen2_unexpected_disconnect_schedules_auto_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A persistent Gen2 bed should promptly repair an unexpected drop."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="LP Comfort Connect Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:85",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:85",
+            entry_id="leggett_gen2_auto_reconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        assert coordinator._auto_reconnect_enabled() is True
+        await coordinator.async_connect()
+        mock_bleak_client.is_connected = False
+
+        coordinator._on_disconnect(mock_bleak_client)
+
+        assert coordinator._reconnect_timer is not None
+        coordinator._reconnect_timer.cancel()
+        coordinator._reconnect_timer = None
+
 
 class TestLeggettGen2Capabilities:
     """Gen2 capabilities are gated per model by the bundled product profile."""
@@ -314,7 +388,7 @@ class TestLeggettGen2Capabilities:
     async def test_manual_disconnect_strands_connection(
         self, hass: HomeAssistant, mock_leggett_gen2_config_entry
     ):
-        # Gen2 can only reconnect in pairing mode -> manual disconnect strands it.
+        # Keep this hidden until bonded reconnects are confirmed on hardware.
         assert self._controller(
             hass, mock_leggett_gen2_config_entry, 5
         ).manual_disconnect_strands_connection is True

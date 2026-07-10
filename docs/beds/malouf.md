@@ -2,6 +2,10 @@
 
 **Status:** ✅ Tested
 
+> Protocol re-verified 2026-07-10 against a fresh jadx decompile of Lucid Base
+> v1.3.3 (`com.lucid.bedbase`): frame formats, checksum, command values,
+> preset repeat behaviour, and timing all match the shipped controllers.
+
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
@@ -34,7 +38,7 @@ the string `L600` to either protocol.
 |---------|-----------|
 | Motor Control | ✅ |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (1 or 2 slots, configurable) |
+| Memory Presets | ✅ (save + recall; 1 or 2 slots, configurable) |
 | Save Memory Position | ✅ |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
@@ -135,6 +139,23 @@ Both protocols use the same command values (32-bit integers):
 | Memory 1 | `0x10000` |
 | Memory 2 | `0x40000` |
 
+### Memory Programming (hold-to-save)
+
+> ⚠️ Verified against app decompilation only; not yet confirmed on physical
+> hardware.
+
+The app saves the current position by emulating a held memory button: it
+streams the save command at the protocol's repeat interval for the full
+repeat window (85×150ms legacy, 55×100ms new OKIN). The APK then calls
+`stopCommand`, but `OkinConnection.sendCommand()` does not handle that name,
+so no final BLE packet is written; saving completes when the stream ends.
+
+| Command | Value |
+|---------|-------|
+| Save Memory 1 | `0x10000` (same as recall; the sustained stream signals "save") |
+| Save Memory 1 (`Smartbed238` names) | `0x80010000` |
+| Save Memory 2 | `0x80040000` |
+
 ### Other Commands
 
 | Command | Value |
@@ -154,6 +175,38 @@ Both protocols use the same command values (32-bit integers):
 | Save Memory 1 | `0x10000` |
 | Save Memory 1 (`Smartbed238...` exception) | `0x80010000` |
 | Save Memory 2 | `0x80040000` |
+
+### Observed But Not Implemented
+
+Additional commands found in the app (fresh Lucid Base 1.3.3 decompile,
+2026-07-10) that the integration does not currently expose:
+
+| App command | Value | Notes |
+|-------------|-------|-------|
+| `massageAllOnOff` | `0x4000000` | Toggle all massage on/off |
+| `massageAll` (+) | `0x100` | Step all-massage intensity |
+| `massageWave` | `0x10000000` | Massage wave/type (also sent for `massageWaistMinus`) |
+| `massageWaist` | `0x400000` | Waist massage + |
+| `intensityOne/Two/Three` | `0x80000` / `0x100000` / `0x200000` | Direct intensity levels |
+| Set alarm | 16-byte frame `ED 80 03 hh mm repeats type … ~sum` (legacy/custom) | Sent 3× on legacy |
+| Set current time | 10-byte frame `E7 80 01 yy mm dd hh mm ss ~sum` (legacy/custom) | Sent 3× on legacy |
+| Status query | `[0x00, 0xB0]` | New OKIN only; light/massage status |
+
+Legacy beds also push status notifications on FFE4 (frame lengths 10/16/20)
+carrying massage time remaining and under-bed light state — unparsed by the
+integration today.
+
+### L600 Model Notes
+
+The app's L600 model definition: manual controls HEAD/FOOT only, presets
+Zero-G / Anti-Snore / Lounge / TV-Read, **1 memory position**, massage
+(head/foot/type/timer), light, alarm. No tilt, lumbar, or Hi-Lo hardware.
+
+Note: this describes the vendor app's L600 model definition. The
+integration maps it through the physical-layout option above: the default
+two-motor layout (auto for two motors, including the L600) exposes back and
+legs with a single memory slot, while the other layouts opt into tilt,
+lumbar, bed-height, and a second memory slot.
 
 ## Command Timing
 
