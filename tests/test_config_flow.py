@@ -1419,6 +1419,62 @@ class TestManualFlow:
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
         assert result["data"][CONF_MOTOR_COUNT] == 3
 
+    async def test_manual_entry_malouf_collects_layout(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ):
+        """Picking a Malouf protocol from the dropdown collects layout/memory slots.
+
+        The manual-MAC form is built without a pre-selected bed type, so the Malouf
+        layout/memory fields aren't shown inline. Selecting a Malouf protocol must
+        route to a follow-up step that collects them instead of silently persisting
+        the default layout (regression: Hi-Lo / four-motor users lost those controls).
+        """
+        with patch(
+            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+            return_value=[],
+        ):
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+            )
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_ADDRESS: "manual"},
+            )
+
+        # Submit the manual-entry form with a Malouf protocol but no layout fields
+        # (they were never rendered because the bed type wasn't pre-selected).
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_ADDRESS: "11:22:33:44:55:66",
+                CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
+                CONF_NAME: "Malouf Bed",
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # Should route to the follow-up Malouf step, not create the entry yet.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "manual_malouf"
+
+        with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
+                    CONF_MALOUF_MEMORY_SLOTS: 2,
+                },
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_MALOUF_LEGACY_OKIN
+        assert result["data"][CONF_MALOUF_LAYOUT] == MALOUF_LAYOUT_HILO
+        assert result["data"][CONF_MALOUF_MEMORY_SLOTS] == 2
+
     async def test_manual_entry_caches_kaidi_metadata(
         self, hass: HomeAssistant, enable_custom_integrations
     ):

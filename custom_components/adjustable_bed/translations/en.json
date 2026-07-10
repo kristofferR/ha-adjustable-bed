@@ -169,6 +169,18 @@
           "richmat_remote": "Use 'auto' unless you know your remote code."
         }
       },
+      "manual_malouf": {
+        "title": "Malouf/Lucid Actuator Configuration",
+        "description": "Select the physical controls on your Malouf/Lucid remote.",
+        "data": {
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions"
+        },
+        "data_description": {
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
+        }
+      },
       "bluetooth_octo": {
         "title": "Octo PIN Configuration",
         "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
@@ -187,6 +199,18 @@
         },
         "data_description": {
           "richmat_remote": "Use 'auto' unless you know your remote code."
+        }
+      },
+      "bluetooth_malouf": {
+        "title": "Malouf/Lucid Actuator Configuration",
+        "description": "Select the physical controls on your Malouf/Lucid remote.",
+        "data": {
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions"
+        },
+        "data_description": {
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
         }
       },
       "bluetooth_pairing": {

@@ -263,6 +263,42 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
     @staticmethod
+    def _needs_malouf_step(bed_type: str | None, user_input: dict[str, Any]) -> bool:
+        """Return True when the Malouf layout/memory fields still need collecting.
+
+        The layout and memory-slot fields are only shown inline when the form was
+        built already knowing the bed is Malouf (pre-selected brand or a confident
+        detection). When the user instead picks a Malouf protocol from the bed-type
+        dropdown, the inline fields were never rendered, so ``user_input`` lacks
+        them and we must collect them in a dedicated follow-up step. Otherwise the
+        entry silently persists the default layout, dropping Hi-Lo / four-motor
+        controls until the user discovers the options flow.
+        """
+        return bed_type in MALOUF_BED_TYPES and CONF_MALOUF_LAYOUT not in user_input
+
+    async def _async_malouf_step(
+        self, step_id: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields, then finish setup."""
+        assert self._manual_data is not None
+
+        if user_input is not None:
+            _add_malouf_entry_data(
+                self._manual_data, user_input, self._manual_data.get(CONF_BED_TYPE)
+            )
+            return await self._finish_with_verify(
+                self._manual_data,
+                self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+            )
+
+        schema_dict: dict[vol.Marker, Any] = {}
+        _add_malouf_schema_fields(schema_dict)
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(schema_dict),
+        )
+
+    @staticmethod
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Get the options flow for this handler."""
         return AdjustableBedOptionsFlow(config_entry)
@@ -775,6 +811,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
+                # Malouf layout/memory fields weren't shown inline (user overrode the
+                # detected type to Malouf), so collect them in a follow-up step.
+                if self._needs_malouf_step(selected_bed_type, user_input):
+                    self._manual_data = entry_data
+                    return await self.async_step_bluetooth_malouf()
                 # Handle bed-type-specific configuration when user overrides detected type
                 # If user selected Octo but detection wasn't Octo, collect PIN in follow-up step
                 if selected_bed_type == BED_TYPE_OCTO and detected_bed_type != BED_TYPE_OCTO:
@@ -1431,6 +1472,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
+                # Malouf layout/memory fields weren't shown inline (bed type was
+                # chosen from the dropdown), so collect them in a follow-up step.
+                if self._needs_malouf_step(bed_type, user_input):
+                    self._manual_data = entry_data
+                    return await self.async_step_manual_malouf()
                 # For Octo beds, collect PIN in a separate step
                 if bed_type == BED_TYPE_OCTO:
                     self._manual_data = entry_data
@@ -1662,6 +1708,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         ),
                     }
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
+                    # Malouf layout/memory fields weren't shown inline (bed type was
+                    # chosen from the dropdown), so collect them in a follow-up step.
+                    if self._needs_malouf_step(bed_type, user_input):
+                        self._manual_data = entry_data
+                        return await self.async_step_manual_malouf()
                     # For Octo beds, collect PIN in a separate step
                     if bed_type == BED_TYPE_OCTO:
                         self._manual_data = entry_data
@@ -1825,6 +1876,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
+    async def async_step_manual_malouf(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields for the manual-entry paths."""
+        return await self._async_malouf_step("manual_malouf", user_input)
+
     async def async_step_bluetooth_octo(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -1881,6 +1938,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
         )
+
+    async def async_step_bluetooth_malouf(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect Malouf layout/memory fields after a Bluetooth-discovery override."""
+        return await self._async_malouf_step("bluetooth_malouf", user_input)
 
     async def async_step_bluetooth_pairing(
         self, user_input: dict[str, Any] | None = None
