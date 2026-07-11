@@ -36,9 +36,10 @@
 > BedTech shares the FEE9 service UUID and characteristic with Richmat WiLinke.
 > Both use a similar 5-byte command format with `0x6E` prefix.
 > QRRM controllers that advertise manufacturer ID `0x4C57` are identified as
-> BedTech; QRRM controllers without that field remain Richmat (including the
-> confirmed Casper RGB-light controller). Manual selection may still be required
-> if an advertisement omits the manufacturer field.
+> BedTech. Because ESPHome proxy snapshots can omit that field, the integration
+> also checks the connected controller's vendor model: the confirmed BedTech
+> BT3000 reports `WLT825X_H35`, while the confirmed Casper/Richmat HJC27 reports
+> `WLT825X_H35_S`. Unknown QRRM models are left unchanged rather than guessed.
 
 ### Packet Format
 
@@ -52,10 +53,9 @@ Commands use ASCII character codes. The last byte is a simple checksum.
 The official app (react-native-ble-manager) uses **write-with-response**
 (`BleManager.write`) for every command; its `writeWithoutResponse` wrapper is
 never called. An earlier claim that the app used write-without-response (and
-that write-with-response made lights/lounge fail) traced back to issue #243,
-whose device turned out to be a misclassified Richmat QRRM — it never applied
-to real BedTech hardware. Verified against BedTech 7.1.3 Hermes bytecode
-(2026-07-10, issue #410).
+that write-with-response made lights/lounge fail) came from an experiment for
+issue #243, not from the official app's implementation. Verified against
+BedTech 7.1.3 Hermes bytecode (2026-07-10, issue #410).
 
 ### Command Repeats
 

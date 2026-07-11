@@ -482,4 +482,41 @@ async def read_ble_device_info(client: BleakClient, address: str) -> tuple[str |
     except (BleakError, TimeoutError, OSError) as err:
         _LOGGER.debug("Could not read model number: %s", err)
 
+    # WLT QRRM controllers do not expose the standard Model Number
+    # characteristic. Instead, they expose two Software Revision (0x2A28)
+    # characteristics: a firmware version followed by a vendor model such as
+    # ``WLT825X_H35``. Reading 0x2A28 by UUID only returns the first instance,
+    # so inspect the characteristic objects to recover the model from the
+    # duplicate instance. This model distinguishes otherwise identical BedTech
+    # and Richmat/Casper QRRM controllers (issues #410 and #300).
+    if model is None and (manufacturer or "").strip().casefold() == "wlt":
+        software_revision_uuid = DEVICE_INFO_CHARS["software_revision"]
+        software_revision_chars = [
+            characteristic
+            for service in client.services
+            if service.uuid.lower() == DEVICE_INFO_SERVICE_UUID
+            for characteristic in service.characteristics
+            if characteristic.uuid.lower() == software_revision_uuid
+        ]
+        if len(software_revision_chars) > 1:
+            for characteristic in software_revision_chars:
+                try:
+                    value = await asyncio.wait_for(
+                        client.read_gatt_char(characteristic),
+                        DEVICE_INFO_READ_TIMEOUT,
+                    )
+                    candidate = value.decode("utf-8").rstrip("\x00")
+                except (BleakError, TimeoutError, OSError, UnicodeDecodeError) as err:
+                    _LOGGER.debug(
+                        "Could not read WLT vendor model from handle %s: %s",
+                        getattr(characteristic, "handle", "unknown"),
+                        err,
+                    )
+                    continue
+
+                if candidate.upper().startswith("WLT"):
+                    model = candidate
+                    _LOGGER.debug("BLE vendor model: %s", model)
+                    break
+
     return manufacturer, model

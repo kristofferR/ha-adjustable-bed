@@ -109,6 +109,7 @@ from custom_components.adjustable_bed.detection import (
     refine_malouf_protocol_from_gatt,
     refine_nordic_uart_protocol_from_device_info,
     refine_okin_shared_uuid_protocol_from_gatt,
+    refine_qrrm_protocol_from_device_info,
 )
 
 
@@ -1458,6 +1459,39 @@ class TestOkinUUIDDisambiguation:
                 "Unknown Nordic",
                 "Unknown",
                 "Unknown",
+            )
+            == BED_TYPE_RICHMAT
+        )
+
+    def test_qrrm_device_info_refinement_corrects_bt3000_to_bedtech(self) -> None:
+        """The issue #410 BT3000 model must use BedTech five-byte commands."""
+        assert (
+            refine_qrrm_protocol_from_device_info(
+                BED_TYPE_RICHMAT,
+                "QRRM157738",
+                "WLT825X_H35",
+            )
+            == BED_TYPE_BEDTECH
+        )
+
+    def test_qrrm_device_info_refinement_keeps_casper_hjc27_as_richmat(self) -> None:
+        """The issue #300 Casper model must retain Richmat RGB commands."""
+        assert (
+            refine_qrrm_protocol_from_device_info(
+                BED_TYPE_BEDTECH,
+                "QRRM105550",
+                "WLT825X_H35_S",
+            )
+            == BED_TYPE_RICHMAT
+        )
+
+    def test_qrrm_device_info_refinement_leaves_unknown_model_unchanged(self) -> None:
+        """Do not extrapolate a protocol for unverified QRRM model strings."""
+        assert (
+            refine_qrrm_protocol_from_device_info(
+                BED_TYPE_RICHMAT,
+                "QRRM999999",
+                "WLT999X_UNKNOWN",
             )
             == BED_TYPE_RICHMAT
         )

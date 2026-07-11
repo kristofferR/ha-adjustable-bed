@@ -802,6 +802,41 @@ def refine_nordic_uart_protocol_from_device_info(
     return BED_TYPE_OKIN_64BIT
 
 
+def refine_qrrm_protocol_from_device_info(
+    bed_type: str,
+    device_name: str | None,
+    ble_model: str | None,
+) -> str:
+    """Disambiguate QRRM BedTech and Richmat controllers by exact WLT model.
+
+    The confirmed BedTech BT3000 from issue #410 and Casper/Richmat HJC27 from
+    issue #300 share the QRRM name family, FEE9 GATT layout, and WLT
+    manufacturer. Their vendor models differ by the Richmat controller's ``_S``
+    suffix, so only these observed exact models are safe correction signals.
+    """
+    if bed_type not in {BED_TYPE_BEDTECH, BED_TYPE_RICHMAT}:
+        return bed_type
+    if not (device_name or "").strip().casefold().startswith("qrrm"):
+        return bed_type
+
+    normalized_model = (ble_model or "").strip().casefold()
+    corrected_bed_type = {
+        "wlt825x_h35": BED_TYPE_BEDTECH,
+        "wlt825x_h35_s": BED_TYPE_RICHMAT,
+    }.get(normalized_model)
+    if corrected_bed_type is None:
+        return bed_type
+
+    if corrected_bed_type != bed_type:
+        _LOGGER.info(
+            "Refined QRRM protocol from %s to %s using Device Info model %s",
+            bed_type,
+            corrected_bed_type,
+            ble_model,
+        )
+    return corrected_bed_type
+
+
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
     """Detect bed type from service info.
 

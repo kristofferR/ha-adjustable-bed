@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_BEDTECH,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
@@ -2702,6 +2703,47 @@ class TestRuntimeBedTypeCorrection:
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_64BIT)
 
         assert coordinator.bed_type == BED_TYPE_OKIN_64BIT
+
+    async def test_qrrm_bt3000_model_correction_selects_bedtech_controller(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected: None,
+        mock_async_ble_device_from_address: MagicMock,
+    ) -> None:
+        """Issue #410's connected model must replace the persisted Richmat fallback."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM157738",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="test_entry_qrrm_bt3000_runtime_correction",
+        )
+        entry.add_to_hass(hass)
+        mock_async_ble_device_from_address.return_value.address = "57:4C:54:30:76:51"
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("WLT", "WLT825X_H35"),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert coordinator.bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
 
     async def test_correction_to_pairing_required_type_reconnects_before_controller_startup(
         self,
