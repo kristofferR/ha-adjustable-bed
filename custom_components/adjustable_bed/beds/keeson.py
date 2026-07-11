@@ -999,6 +999,11 @@ class KeesonController(BedController):
         if configured != BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_KEESON]:
             return configured
 
+        if self._betterliving_presets:
+            if self._coordinator.motor_count == 3:
+                return _THREE_MOTOR_BETTERLIVING_PULSES
+            return _APP_MOTOR_PULSE_DEFAULTS[KEESON_VARIANT_SINO]
+
         if self._variant in {KEESON_VARIANT_OKIN, KEESON_VARIANT_SINO}:
             if self._coordinator.motor_count == 3:
                 return _THREE_MOTOR_BETTERLIVING_PULSES

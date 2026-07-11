@@ -212,6 +212,9 @@ For existing Keeson entries, the integration translates only the stored generic
 `10 x 100ms` values to the matching app profile. Any pulse count or delay that a
 user customized remains authoritative. Dedicated Ergomotion, Serta, and OKIN FFE
 bed types already store their own app-derived defaults and are left unchanged.
+BetterLiving devices use the BetterLiving cadence whenever that app profile is
+detected, even if a future factory path pairs the profile flag with a different
+base Keeson variant.
 
 Release behavior also varies. Ergomotion and Purple send an explicit zero frame;
 standard KSBT and Member's Mark merely cancel their repeat timer; Sleep Harmony

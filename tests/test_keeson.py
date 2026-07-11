@@ -1200,6 +1200,29 @@ class TestKsbt03cMotorLayout:
 
         assert controller._motor_pulse_settings() == expected
 
+    @pytest.mark.parametrize(
+        ("motor_count", "expected"),
+        [
+            (2, (10, 100)),
+            (3, (5, 200)),
+        ],
+    )
+    def test_betterliving_flag_uses_betterliving_motor_cadence(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        motor_count: int,
+        expected: tuple[int, int],
+    ):
+        """Test BetterLiving cadence follows the explicit preset flag."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        coordinator._motor_count = motor_count
+        controller = KeesonController(
+            coordinator, variant="base", betterliving_presets=True
+        )
+
+        assert controller._motor_pulse_settings() == expected
+
     async def test_custom_motor_cadence_is_preserved(
         self,
         hass: HomeAssistant,
