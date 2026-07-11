@@ -44,6 +44,7 @@ from .ble_auth import is_ble_authentication_error
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DEWERTOKIN,
     BED_TYPE_DIAGNOSTIC,
@@ -151,6 +152,7 @@ from .detection import (
     refine_nordic_uart_protocol_from_device_info,
     refine_okin_dot_protocol_from_gatt,
     refine_okin_shared_uuid_protocol_from_gatt,
+    refine_qrrm_protocol_from_device_info,
 )
 from .diagnostic_payloads import new_connection_attempt_details
 from .unsupported import (
@@ -413,6 +415,8 @@ class AdjustableBedCoordinator:
 
         entry_data = dict(self.entry.data)
         entry_data[CONF_BED_TYPE] = corrected_bed_type
+        if corrected_bed_type == BED_TYPE_BEDTECH:
+            entry_data.pop(CONF_RICHMAT_REMOTE, None)
         angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
             self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
             and (
@@ -1746,6 +1750,11 @@ class AdjustableBedCoordinator:
                     corrected_bed_type,
                     device.name,
                     ble_manufacturer,
+                    ble_model,
+                )
+                corrected_bed_type = refine_qrrm_protocol_from_device_info(
+                    corrected_bed_type,
+                    device.name,
                     ble_model,
                 )
                 corrected_bed_type = refine_okin_dot_protocol_from_gatt(

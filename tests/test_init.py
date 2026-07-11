@@ -540,7 +540,7 @@ class TestIntegrationSetup:
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller.__class__.__name__ == "RichmatController"
 
-    async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
+    async def test_setup_entry_keeps_bedtech_qrrm_when_advertisement_data_is_missing(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
@@ -548,7 +548,7 @@ class TestIntegrationSetup:
         mock_async_ble_device_from_address: MagicMock,
         enable_custom_integrations,
     ):
-        """Legacy BedTech entries without the manufacturer field become Richmat."""
+        """A missing manufacturer field is inconclusive and must not downgrade BedTech."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Legacy BedTech QRRM",
@@ -588,11 +588,11 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert entry.state == ConfigEntryState.LOADED
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
-        assert entry.data[CONF_RICHMAT_REMOTE] == "qrrm"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
         coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator._bed_type == BED_TYPE_RICHMAT
-        assert coordinator.controller.__class__.__name__ == "RichmatController"
+        assert coordinator._bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
 
     async def test_setup_entry_keeps_bedtech_qrrm_entry_with_bedtech_manufacturer(
         self,
