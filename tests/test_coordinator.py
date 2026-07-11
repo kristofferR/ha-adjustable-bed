@@ -2745,6 +2745,47 @@ class TestRuntimeBedTypeCorrection:
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
         assert CONF_RICHMAT_REMOTE not in entry.data
 
+    async def test_qrrm_hjc27_model_correction_selects_richmat_controller(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected: None,
+        mock_async_ble_device_from_address: MagicMock,
+    ) -> None:
+        """A persisted BedTech fallback must correct Casper/HJC27 back to Richmat."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM141291",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:52",
+                CONF_NAME: "QRRM141291",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:52",
+            entry_id="test_entry_qrrm_hjc27_runtime_correction",
+        )
+        entry.add_to_hass(hass)
+        mock_async_ble_device_from_address.return_value.address = "57:4C:54:30:76:52"
+        mock_async_ble_device_from_address.return_value.name = "QRRM141291"
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("WLT", "WLT825X_H35_S"),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert coordinator.bed_type == BED_TYPE_RICHMAT
+        assert coordinator.controller.__class__.__name__ == "RichmatController"
+        assert coordinator.controller._remote_code == "qrrm"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        assert CONF_RICHMAT_REMOTE not in entry.data
+
     async def test_correction_to_pairing_required_type_reconnects_before_controller_startup(
         self,
         hass: HomeAssistant,

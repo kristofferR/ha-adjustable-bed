@@ -489,7 +489,7 @@ async def read_ble_device_info(client: BleakClient, address: str) -> tuple[str |
     # so inspect the characteristic objects to recover the model from the
     # duplicate instance. This model distinguishes otherwise identical BedTech
     # and Richmat/Casper QRRM controllers (issues #410 and #300).
-    if model is None and (manufacturer or "").strip().casefold() == "wlt":
+    if not (model or "").strip() and (manufacturer or "").strip().casefold() == "wlt":
         software_revision_uuid = DEVICE_INFO_CHARS["software_revision"]
         software_revision_chars = [
             characteristic

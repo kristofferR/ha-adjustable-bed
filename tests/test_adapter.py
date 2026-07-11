@@ -164,3 +164,41 @@ class TestReadBleDeviceInfo:
 
         assert manufacturer == "WLT"
         assert model == "WLT825X_H35"
+
+    async def test_recovers_wlt_model_when_standard_model_is_blank(self) -> None:
+        """Blank standard model data should not block WLT vendor model recovery."""
+        firmware_char = MagicMock(
+            uuid=DEVICE_INFO_CHARS["software_revision"],
+            handle=36,
+        )
+        model_char = MagicMock(
+            uuid=DEVICE_INFO_CHARS["software_revision"],
+            handle=42,
+        )
+        device_info_service = MagicMock(
+            uuid=DEVICE_INFO_SERVICE_UUID,
+            characteristics=[firmware_char, model_char],
+        )
+        client = MagicMock()
+        client.is_connected = True
+        client.services = [device_info_service]
+
+        async def read_gatt_char(characteristic: object) -> bytes:
+            if characteristic == DEVICE_INFO_CHARS["manufacturer_name"]:
+                return b"WLT"
+            if characteristic == DEVICE_INFO_CHARS["model_number"]:
+                return b"\x00\x00"
+            if characteristic is firmware_char:
+                return b"V216.17.8"
+            if characteristic is model_char:
+                return b"WLT825X_H35"
+            raise AssertionError(f"Unexpected characteristic: {characteristic}")
+
+        client.read_gatt_char = AsyncMock(side_effect=read_gatt_char)
+
+        manufacturer, model = await read_ble_device_info(
+            client, "57:4C:54:30:76:51"
+        )
+
+        assert manufacturer == "WLT"
+        assert model == "WLT825X_H35"
