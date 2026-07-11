@@ -187,16 +187,37 @@ Position data includes:
 
 ## Command Timing
 
-From app disassembly analysis:
+Fresh decompilation of each relevant OEM app found that cadence belongs to the
+app/protocol family, not to the shared 32-bit command values:
 
-| App | Motor Command Interval | Source |
-|-----|------------------------|--------|
-| Ergomotion | 100ms | `handler.postDelayed(this, 100)` |
-| Ergomotion 4.0 | 100ms | Same as Ergomotion |
-| Tempur Zero G | 100ms | Same as Ergomotion |
-| Member's Mark | 400ms | `scheduleWithFixedDelay(..., 400L, TimeUnit.MILLISECONDS)` |
+| Integration variant | OEM app evidence | App hold behavior | Effective default burst |
+|---------------------|------------------|-------------------|-------------------------|
+| BaseI4/BaseI5 | Member's Mark | 400ms fixed-delay scheduler | 3 writes, 400ms apart |
+| JSON/A00A | Juna / Linx | Requests every 5ms / 3ms, but drops requests while a write-with-response is pending | Existing safe 10 writes, 100ms apart |
+| KSBT | Ergomotion Sync / Adjustable Lite | 300ms `Timer.schedule` | 4 writes, 300ms apart |
+| KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
+| KSBT04C | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
+| Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
+| Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
+| Sino / BetterLiving OKIN | BetterLiving | 100ms on the two-motor screen, 200ms on the three-motor screen | 10 x 100ms or 5 x 200ms |
+| Purple | Purple Smart Base | 100ms fixed-delay scheduler | 10 writes, 100ms apart |
 
-Motor commands are sent repeatedly while the button is held. A stop command (`0x00000000`) is sent on button release.
+The JSON apps do not provide a fixed on-air cadence: their 3/5ms scheduler only
+requests a write, and the BLE layer permits one outstanding acknowledged write.
+Copying 3/5ms as a BLE delay would therefore be misleading and could shorten an
+HA movement burst substantially. The integration retains its established safe
+JSON burst until an on-air capture provides a device-independent interval.
+
+For existing Keeson entries, the integration translates only the stored generic
+`10 x 100ms` values to the matching app profile. Any pulse count or delay that a
+user customized remains authoritative. Dedicated Ergomotion, Serta, and OKIN FFE
+bed types already store their own app-derived defaults and are left unchanged.
+
+Release behavior also varies. Ergomotion and Purple send an explicit zero frame;
+standard KSBT and Member's Mark merely cancel their repeat timer; Sleep Harmony
+sends two delayed zero frames. The integration intentionally sends an immediate
+zero frame after every movement for hardware safety. One-shot commands are sent
+once on KSBT and KSBT03CR, while Sleep Harmony's KSBT04C variant sends them twice.
 
 ## Split-Bed Support (Member's Mark)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -1167,6 +1167,81 @@ class TestKsbt03cMotorLayout:
             "tilt",
             "lumbar",
         ]
+
+    @pytest.mark.parametrize(
+        ("variant", "motor_count", "expected"),
+        [
+            ("base", 2, (3, 400)),
+            ("json", 2, (10, 100)),
+            ("ksbt", 2, (4, 300)),
+            ("ksbt_cr", 2, (4, 300)),
+            ("ksbt04c", 2, (4, 300)),
+            ("ergomotion", 2, (10, 100)),
+            ("okin", 2, (10, 100)),
+            ("okin", 3, (5, 200)),
+            ("serta", 2, (10, 100)),
+            ("sino", 2, (10, 100)),
+            ("sino", 3, (5, 200)),
+            ("purple", 2, (10, 100)),
+        ],
+    )
+    def test_variant_uses_oem_motor_cadence_for_generic_defaults(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        variant: str,
+        motor_count: int,
+        expected: tuple[int, int],
+    ):
+        """Test generic Keeson defaults are translated to each OEM app cadence."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        coordinator._motor_count = motor_count
+        controller = KeesonController(coordinator, variant=variant)
+
+        assert controller._motor_pulse_settings() == expected
+
+    async def test_custom_motor_cadence_is_preserved(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test per-device pulse tuning overrides the OEM app default."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator._motor_pulse_count = 6
+        coordinator._motor_pulse_delay_ms = 250
+        controller = KeesonController(
+            coordinator, variant="ksbt", device_name="KSBT03C300039050"
+        )
+        controller.write_command = AsyncMock()
+
+        await controller.move_head_up()
+
+        first_call = controller.write_command.await_args_list[0]
+        assert first_call.kwargs["repeat_count"] == 6
+        assert first_call.kwargs["repeat_delay_ms"] == 250
+
+    @pytest.mark.parametrize(
+        ("variant", "expected"),
+        [
+            ("ksbt", 1),
+            ("ksbt_cr", 1),
+            ("ksbt04c", 2),
+        ],
+    )
+    def test_ksbt_single_shot_count_matches_oem_app(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        variant: str,
+        expected: int,
+    ):
+        """Test only Sleep Harmony's KSBT04C one-shots are duplicated."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        controller = KeesonController(coordinator, variant=variant)
+
+        assert controller._single_shot_count == expected
 
     async def test_stale_motor_entity_keys(
         self,
