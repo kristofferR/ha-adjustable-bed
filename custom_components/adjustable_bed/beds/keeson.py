@@ -25,6 +25,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_KEESON,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -35,12 +37,15 @@ from ..const import (
     KEESON_KSBT_CHAR_UUID,
     KEESON_KSBT_FALLBACK_GATT_PAIRS,
     KEESON_KSBT_SERVICE_UUID,
+    KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
+    KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
 )
 from .base import BedController, MotorControlSpec
@@ -50,6 +55,25 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# OEM app hold cadences, normalized to an approximately one-second HA movement
+# command. JSON/A00A remains at the generic setting: Juna and Linx request writes
+# every 5/3 ms respectively, but their BLE service drops requests while a
+# write-with-response is outstanding, so there is no fixed on-air interval to copy.
+_APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
+    KEESON_VARIANT_BASE: (3, 400),
+    KEESON_VARIANT_JSON: (10, 100),
+    KEESON_VARIANT_KSBT: (4, 300),
+    KEESON_VARIANT_KSBT_CR: (4, 300),
+    KEESON_VARIANT_KSBT04C: (4, 300),
+    KEESON_VARIANT_ERGOMOTION: (10, 100),
+    KEESON_VARIANT_OKIN: (10, 100),
+    KEESON_VARIANT_SERTA: (10, 100),
+    KEESON_VARIANT_SINO: (10, 100),
+    KEESON_VARIANT_PURPLE: (10, 100),
+}
+
+_THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
 
 
 def is_ksbt03c_name(name: str | None) -> bool:
@@ -406,10 +430,10 @@ class KeesonController(BedController):
     def _single_shot_count(self) -> int:
         """Repeat count for single-shot commands (massage, presets, lights).
 
-        KSBT variants require sending twice per the Sleep Harmony app's singleSend().
-        The bed firmware uses the first send as wake/sync.
+        Sleep Harmony sends KSBT04C one-shot commands twice. Ergomotion Sync,
+        Adjustable Lite, and SomosBeds send their KSBT/KSBT03CR one-shots once.
         """
-        return 2 if self._is_ksbt else 1
+        return 2 if self._variant == KEESON_VARIANT_KSBT04C else 1
 
     # Capability properties
     @property
@@ -958,24 +982,53 @@ class KeesonController(BedController):
             command += KeesonCommands.MOTOR_LUMBAR_DOWN
         return command
 
+    def _motor_pulse_settings(self) -> tuple[int, int]:
+        """Return the effective movement cadence for this controller.
+
+        Keeson app families use different hold intervals even when their packet
+        payloads share the same 32-bit command values. Translate only the stored
+        generic Keeson default so an explicitly customized cadence remains
+        authoritative. BetterLiving chooses 100 ms for its two-motor screen and
+        200 ms for its three-motor screen; the other app families have a fixed
+        variant-level interval.
+        """
+        configured = (
+            self._coordinator.motor_pulse_count,
+            self._coordinator.motor_pulse_delay_ms,
+        )
+        if configured != BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_KEESON]:
+            return configured
+
+        if self._betterliving_presets:
+            if self._coordinator.motor_count == 3:
+                return _THREE_MOTOR_BETTERLIVING_PULSES
+            return _APP_MOTOR_PULSE_DEFAULTS[KEESON_VARIANT_SINO]
+
+        if self._variant in {KEESON_VARIANT_OKIN, KEESON_VARIANT_SINO}:
+            if self._coordinator.motor_count == 3:
+                return _THREE_MOTOR_BETTERLIVING_PULSES
+
+        return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
+
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         """Move a motor in a direction or stop it, always sending STOP at the end."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
+        repeat_count, repeat_delay_ms = self._motor_pulse_settings()
 
         try:
             if command:
                 if self._is_json_variant:
                     await self._write_json_motion_command(
                         command,
-                        repeat_count=self._coordinator.motor_pulse_count,
-                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=repeat_delay_ms,
                     )
                 else:
                     await self.write_command(
                         self._build_command(command),
-                        repeat_count=self._coordinator.motor_pulse_count,
-                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=repeat_delay_ms,
                     )
         finally:
             # Always send stop with a fresh event so it's not affected by cancellation
