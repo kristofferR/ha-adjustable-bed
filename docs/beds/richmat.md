@@ -72,6 +72,10 @@ Brands using Richmat actuators:
 **Format:** 5 bytes `[0x6E, 0x01, 0x00, command, checksum]`
 **Checksum:** `(command + 111) & 0xFF`
 
+FEE9/QRRM advertisements are shared with BedTech. A confirmed BedTech-specific
+manufacturer field (`0x4C57`) selects the BedTech protocol; QRRM devices without
+that field retain Richmat behavior, including the confirmed Casper RGB-light model.
+
 ### Prefix55 Variant
 **Format:** 5 bytes `[0x55, 0x01, 0x00, command, checksum]`
 **Checksum:** `(command + 0x56) & 0xFF`
@@ -251,6 +255,22 @@ The app tries BLE services in this order:
 3. **Nordic UART**: `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
 4. **FFF0**: `0000FFF0-0000-1000-8000-00805F9B34FB`
 5. **FFE0**: `0000FFE0-0000-1000-8000-00805F9B34FB`
+
+> **W5 (`0000E0FF-3C17-D293-8E48-14FE2E4DA212`) caveat:** the Germany Motions app
+> also lists a sixth "W5" service on a Telink-style custom 128-bit base (`0xE0FF`
+> is just the little-endian form of the generic `0xFFE0`). That base is shared by
+> non-bed Telink-chip devices, so a "Nokia-*" headset was misdetected as a Richmat
+> bed (issue #382). W5 is therefore **not** used for passive discovery and only
+> detects as a bed when the device name also matches a Richmat pattern.
+
+> **W4 (`0000FFF0-...`) caveat:** FFF0 is a fully generic short UUID that many
+> non-bed devices advertise — a "NO_DVR-*" camera system was misdetected as a
+> Richmat bed (issue #418). All known W4 beds are Germany Motions units named
+> `DHN-*` (the GM Bed Control app scans unfiltered and identifies beds by
+> name/remote code, never by bare FFF0), so W4 likewise only detects as a bed
+> when the device name also matches a Richmat pattern. FFF0 stays in
+> `manifest.json` for passive discovery because SUTA and the Keeson Sino
+> fallback also rely on it (both name-guarded as well).
 
 ## Device Detection
 

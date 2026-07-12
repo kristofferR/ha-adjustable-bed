@@ -1,6 +1,8 @@
 """Malouf bed controller implementations.
 
-Reverse-engineered from Malouf Base app v2.4.3.
+Reverse-engineered from Malouf Base app v2.4.3; verified against a fresh
+decompile of Lucid Base v1.3.3 (com.lucid.bedbase, shared
+com.malouf.adjustablebasebluetooth library) on 2026-07-10.
 
 Malouf beds use two distinct protocols:
 - NEW_OKIN: 8-byte commands via Nordic UART, advertises unique service UUID
@@ -18,7 +20,14 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..const import (
+    MALOUF_LAYOUT_AUTO,
+    MALOUF_LAYOUT_FOUR_MOTOR,
+    MALOUF_LAYOUT_HEAD_TILT,
+    MALOUF_LAYOUT_HILO,
+    MALOUF_LAYOUT_LUMBAR,
+    MALOUF_LAYOUT_TWO_MOTOR,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
+    MALOUF_MEMORY_SLOTS_AUTO,
     MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
 )
 from .base import BedController, MotorControlSpec
@@ -58,6 +67,15 @@ class MaloufCommands:
     MEMORY_1 = 0x10000
     MEMORY_2 = 0x40000
 
+    # Memory programming (hold-to-save). The app emulates holding the
+    # remote's memory button: it streams the save command at the protocol's
+    # repeat interval for the full repeat window. Slot 1 reuses the recall
+    # value (the sustained stream is what signals "save"); beds named
+    # "Smartbed238" use a dedicated value with the save bit set.
+    SAVE_MEMORY_1 = 0x10000
+    SAVE_MEMORY_1_SMARTBED238 = 0x80010000
+    SAVE_MEMORY_2 = 0x80040000
+
     # Lights & Massage
     LIGHT_SWITCH = 0x20000
     MASSAGE_HEAD = 0x800
@@ -74,9 +92,9 @@ class MaloufCommands:
     BED_HEIGHT_DOWN = HEAD_TILT_DOWN | LUMBAR_DOWN
 
 
-def _malouf_hilo_motor_control_specs() -> tuple[MotorControlSpec, ...]:
-    """Return the Hi-Lo motor layout exposed by Malouf/OKIN protocol beds."""
-    return (
+def _malouf_motor_control_specs(layout: str) -> tuple[MotorControlSpec, ...]:
+    """Return entities for the configured physical actuator layout."""
+    specs = [
         MotorControlSpec(
             key="back",
             translation_key="back",
@@ -92,30 +110,97 @@ def _malouf_hilo_motor_control_specs() -> tuple[MotorControlSpec, ...]:
             stop_fn=lambda ctrl: ctrl.move_legs_stop(),
             max_angle=45,
         ),
-        MotorControlSpec(
-            key="tilt",
-            translation_key="head_end_tilt",
-            open_fn=lambda ctrl: ctrl.move_tilt_up(),
-            close_fn=lambda ctrl: ctrl.move_tilt_down(),
-            stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
-            max_angle=45,
-        ),
-        MotorControlSpec(
-            key="lumbar",
-            translation_key="foot_end_tilt",
-            open_fn=lambda ctrl: ctrl.move_lumbar_up(),
-            close_fn=lambda ctrl: ctrl.move_lumbar_down(),
-            stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
-            max_angle=30,
-        ),
-        MotorControlSpec(
-            key="bed_height",
-            translation_key="bed_height",
-            open_fn=lambda ctrl: ctrl.move_bed_height_up(),
-            close_fn=lambda ctrl: ctrl.move_bed_height_down(),
-            stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
-        ),
-    )
+    ]
+    if layout in {MALOUF_LAYOUT_HEAD_TILT, MALOUF_LAYOUT_FOUR_MOTOR}:
+        specs.append(
+            MotorControlSpec(
+                key="tilt",
+                translation_key="tilt",
+                open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                max_angle=45,
+            )
+        )
+    if layout in {MALOUF_LAYOUT_LUMBAR, MALOUF_LAYOUT_FOUR_MOTOR}:
+        specs.append(
+            MotorControlSpec(
+                key="lumbar",
+                translation_key="lumbar",
+                open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                max_angle=30,
+            )
+        )
+    if layout == MALOUF_LAYOUT_HILO:
+        specs.extend(
+            (
+                MotorControlSpec(
+                    key="tilt",
+                    translation_key="head_end_tilt",
+                    open_fn=lambda ctrl: ctrl.move_tilt_up(),
+                    close_fn=lambda ctrl: ctrl.move_tilt_down(),
+                    stop_fn=lambda ctrl: ctrl.move_tilt_stop(),
+                    max_angle=45,
+                ),
+                MotorControlSpec(
+                    key="lumbar",
+                    translation_key="foot_end_tilt",
+                    open_fn=lambda ctrl: ctrl.move_lumbar_up(),
+                    close_fn=lambda ctrl: ctrl.move_lumbar_down(),
+                    stop_fn=lambda ctrl: ctrl.move_lumbar_stop(),
+                    max_angle=30,
+                ),
+                MotorControlSpec(
+                    key="bed_height",
+                    translation_key="bed_height",
+                    open_fn=lambda ctrl: ctrl.move_bed_height_up(),
+                    close_fn=lambda ctrl: ctrl.move_bed_height_down(),
+                    stop_fn=lambda ctrl: ctrl.move_bed_height_stop(),
+                ),
+            )
+        )
+    return tuple(specs)
+
+
+def _resolve_malouf_layout(coordinator: AdjustableBedCoordinator) -> str:
+    """Resolve an actuator layout without using a retail model as a protocol."""
+    configured = coordinator.malouf_layout
+    if configured != MALOUF_LAYOUT_AUTO:
+        return configured
+    if coordinator.motor_count <= 2:
+        return MALOUF_LAYOUT_TWO_MOTOR
+    if coordinator.motor_count == 3:
+        return MALOUF_LAYOUT_HEAD_TILT
+    return MALOUF_LAYOUT_FOUR_MOTOR
+
+
+def _resolve_malouf_memory_slots(coordinator: AdjustableBedCoordinator, layout: str) -> int:
+    """Resolve memory capacity independently from command protocol."""
+    configured = coordinator.malouf_memory_slots
+    if configured != MALOUF_MEMORY_SLOTS_AUTO:
+        return configured
+    return 1 if layout == MALOUF_LAYOUT_TWO_MOTOR else 2
+
+
+def _save_memory_command(memory_num: int, device_name: str | None) -> int | None:
+    """Return the hold-to-save command value for a memory slot.
+
+    Matches the app's setMemory1/setMemory2 handling: slot 1 uses the recall
+    value (or the save-bit variant on beds named "Smartbed238"), slot 2 always
+    carries the save bit.
+    """
+    smartbed238 = bool(device_name) and "smartbed238" in device_name.lower()
+    if memory_num == 1:
+        return (
+            MaloufCommands.SAVE_MEMORY_1_SMARTBED238
+            if smartbed238
+            else MaloufCommands.SAVE_MEMORY_1
+        )
+    if memory_num == 2:
+        return MaloufCommands.SAVE_MEMORY_2
+    return None
 
 
 class MaloufNewOkinController(BedController):
@@ -158,15 +243,19 @@ class MaloufNewOkinController(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
-        return True
+        return self._layout in {MALOUF_LAYOUT_LUMBAR, MALOUF_LAYOUT_FOUR_MOTOR, MALOUF_LAYOUT_HILO}
 
     @property
     def has_tilt_support(self) -> bool:
-        return True
+        return self._layout in {
+            MALOUF_LAYOUT_HEAD_TILT,
+            MALOUF_LAYOUT_FOUR_MOTOR,
+            MALOUF_LAYOUT_HILO,
+        }
 
     @property
     def has_bed_height_support(self) -> bool:
-        return True
+        return self._layout == MALOUF_LAYOUT_HILO
 
     @property
     def supports_lights(self) -> bool:
@@ -180,44 +269,52 @@ class MaloufNewOkinController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Malouf beds support memory presets (slots 1-2)."""
-        return True
+        """Return whether at least one memory position is configured."""
+        return self.memory_slot_count > 0
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - Malouf beds support memory slots 1-2."""
-        return 2
+        """Return the configured physical remote's memory capacity."""
+        return _resolve_malouf_memory_slots(self._coordinator, self._layout)
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Malouf beds don't support programming memory positions."""
-        return False
+        """Return True; the official app programs memory by a timed long press."""
+        return self.memory_slot_count > 0
+
+    @property
+    def _layout(self) -> str:
+        """Return the resolved physical actuator layout."""
+        return _resolve_malouf_layout(self._coordinator)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Return the exposed Hi-Lo motor layout."""
-        return _malouf_hilo_motor_control_specs()
+        """Return controls for the selected physical actuator layout."""
+        return _malouf_motor_control_specs(self._layout)
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove duplicate legacy aliases that should no longer be exposed."""
-        return frozenset({"head", "feet"})
+        """Remove legacy aliases and controls absent from the selected layout."""
+        active = {spec.key for spec in self.motor_control_specs}
+        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     def _build_command(self, command_value: int) -> bytes:
         """Build an 8-byte NEW_OKIN command.
 
         Format: [0x05, 0x02, (cmd>>24)&0xFF, (cmd>>16)&0xFF, (cmd>>8)&0xFF, cmd&0xFF, 0x00, 0x00]
         """
-        return bytes([
-            0x05,
-            0x02,
-            (command_value >> 24) & 0xFF,
-            (command_value >> 16) & 0xFF,
-            (command_value >> 8) & 0xFF,
-            command_value & 0xFF,
-            0x00,
-            0x00,
-        ])
+        return bytes(
+            [
+                0x05,
+                0x02,
+                (command_value >> 24) & 0xFF,
+                (command_value >> 16) & 0xFF,
+                (command_value >> 8) & 0xFF,
+                command_value & 0xFF,
+                0x00,
+                0x00,
+            ]
+        )
 
     async def _move_with_stop(self, command_value: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
@@ -232,7 +329,7 @@ class MaloufNewOkinController(BedController):
                     self._build_command(MaloufCommands.STOP),
                     cancel_event=asyncio.Event(),
                 )
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
@@ -348,7 +445,7 @@ class MaloufNewOkinController(BedController):
                 self._build_command(MaloufCommands.STOP),
                 cancel_event=asyncio.Event(),
             )
-        except (BleakError, ConnectionError):
+        except BleakError, ConnectionError:
             _LOGGER.debug("Failed to send STOP after preset", exc_info=True)
 
     async def preset_flat(self) -> None:
@@ -373,6 +470,9 @@ class MaloufNewOkinController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
+        if memory_num < 1 or memory_num > self.memory_slot_count:
+            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
+            return
         commands = {
             1: MaloufCommands.MEMORY_1,
             2: MaloufCommands.MEMORY_2,
@@ -383,9 +483,20 @@ class MaloufNewOkinController(BedController):
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning(
-            "Malouf beds don't support programming memory presets (requested: %d)", memory_num
+        """Program memory using the official app's 55 x 100 ms hold sequence."""
+        if memory_num < 1 or memory_num > self.memory_slot_count:
+            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
+            return
+        command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
+        # The APK schedules the first write after one interval, then performs
+        # exactly 55 acknowledged writes. Its final "stopCommand" string is not
+        # recognized by the dispatcher, so no STOP packet is actually emitted.
+        await asyncio.sleep(0.1)
+        await self.write_command(
+            self._build_command(command_value), repeat_count=55, repeat_delay_ms=100
         )
 
     # Light control
@@ -475,15 +586,19 @@ class MaloufLegacyOkinController(BedController):
 
     @property
     def has_lumbar_support(self) -> bool:
-        return True
+        return self._layout in {MALOUF_LAYOUT_LUMBAR, MALOUF_LAYOUT_FOUR_MOTOR, MALOUF_LAYOUT_HILO}
 
     @property
     def has_tilt_support(self) -> bool:
-        return True
+        return self._layout in {
+            MALOUF_LAYOUT_HEAD_TILT,
+            MALOUF_LAYOUT_FOUR_MOTOR,
+            MALOUF_LAYOUT_HILO,
+        }
 
     @property
     def has_bed_height_support(self) -> bool:
-        return True
+        return self._layout == MALOUF_LAYOUT_HILO
 
     @property
     def supports_lights(self) -> bool:
@@ -497,28 +612,34 @@ class MaloufLegacyOkinController(BedController):
 
     @property
     def supports_memory_presets(self) -> bool:
-        """Return True - Malouf beds support memory presets (slots 1-2)."""
-        return True
+        """Return whether at least one memory position is configured."""
+        return self.memory_slot_count > 0
 
     @property
     def memory_slot_count(self) -> int:
-        """Return 2 - Malouf beds support memory slots 1-2."""
-        return 2
+        """Return the configured physical remote's memory capacity."""
+        return _resolve_malouf_memory_slots(self._coordinator, self._layout)
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - Malouf beds don't support programming memory positions."""
-        return False
+        """Return True; the official app programs memory by a timed long press."""
+        return self.memory_slot_count > 0
+
+    @property
+    def _layout(self) -> str:
+        """Return the resolved physical actuator layout."""
+        return _resolve_malouf_layout(self._coordinator)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Return the exposed Hi-Lo motor layout."""
-        return _malouf_hilo_motor_control_specs()
+        """Return controls for the selected physical actuator layout."""
+        return _malouf_motor_control_specs(self._layout)
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove duplicate legacy aliases that should no longer be exposed."""
-        return frozenset({"head", "feet"})
+        """Remove legacy aliases and controls absent from the selected layout."""
+        active = {spec.key for spec in self.motor_control_specs}
+        return frozenset({"head", "feet", "tilt", "lumbar", "bed_height"} - active)
 
     def _build_command(self, command_value: int) -> bytes:
         """Build a 9-byte LEGACY_OKIN command with checksum.
@@ -553,7 +674,7 @@ class MaloufLegacyOkinController(BedController):
                     self._build_command(MaloufCommands.STOP),
                     cancel_event=asyncio.Event(),
                 )
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send STOP command during cleanup", exc_info=True)
 
     # Motor control methods
@@ -662,13 +783,13 @@ class MaloufLegacyOkinController(BedController):
 
     # Preset methods
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command 3x with 200ms delays.
+        """Queue the same preset command three times.
 
         LEGACY_OKIN requires triple-send for reliable preset reception.
         No STOP is sent after presets (APK sets shouldSendStopAfterPreset=false).
         """
         await self.write_command(
-            self._build_command(command_value), repeat_count=3, repeat_delay_ms=200
+            self._build_command(command_value), repeat_count=3, repeat_delay_ms=0
         )
 
     async def preset_flat(self) -> None:
@@ -693,6 +814,9 @@ class MaloufLegacyOkinController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
+        if memory_num < 1 or memory_num > self.memory_slot_count:
+            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
+            return
         commands = {
             1: MaloufCommands.MEMORY_1,
             2: MaloufCommands.MEMORY_2,
@@ -703,9 +827,19 @@ class MaloufLegacyOkinController(BedController):
             _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
 
     async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        _LOGGER.warning(
-            "Malouf beds don't support programming memory presets (requested: %d)", memory_num
+        """Program memory using the official app's 85 x 150 ms hold sequence."""
+        if memory_num < 1 or memory_num > self.memory_slot_count:
+            _LOGGER.warning("Memory slot %d not supported on this Malouf layout", memory_num)
+            return
+        command_value = _save_memory_command(memory_num, self._coordinator.ble_device_name)
+        if command_value is None:
+            _LOGGER.warning("Memory slot %d not supported on Malouf beds", memory_num)
+            return
+        # Match the APK's delayed first write and exact repeat count. The APK's
+        # trailing "stopCommand" is a dead string, not a STOP transmission.
+        await asyncio.sleep(0.15)
+        await self.write_command(
+            self._build_command(command_value), repeat_count=85, repeat_delay_ms=150
         )
 
     # Light control

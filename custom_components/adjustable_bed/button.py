@@ -442,6 +442,25 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.therapy_mode_three(),
         required_capability="supports_therapy_modes",
     ),
+    # Utility buttons (Okin split-base sync / handset child lock). Both are
+    # long holds, so cancel any running motor command like the other
+    # long-running buttons.
+    AdjustableBedButtonEntityDescription(
+        key="sync_positions",
+        translation_key="sync_positions",
+        icon="mdi:sync",
+        press_fn=lambda ctrl: cast(Any, ctrl).sync_positions(),
+        cancel_movement=True,
+        required_capability="supports_sync",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="child_lock_toggle",
+        translation_key="child_lock_toggle",
+        icon="mdi:lock",
+        press_fn=lambda ctrl: cast(Any, ctrl).child_lock_toggle(),
+        cancel_movement=True,
+        required_capability="supports_child_lock",
+    ),
     # Motor movement buttons (for discrete motor control beds)
     AdjustableBedButtonEntityDescription(
         key="head_up",
@@ -613,6 +632,14 @@ def _should_add_button(
 ) -> bool:
     """Return whether the button should be exposed for the current controller."""
     if description.requires_massage and not has_massage:
+        return False
+
+    # Hide the manual Disconnect for beds that can't recover from it — e.g. LP
+    # Comfort Connect only accepts a connection while in pairing mode. Beds that
+    # stay connected but CAN reconnect on demand (e.g. Sleep Number MCR) keep it.
+    if description.key == "disconnect" and getattr(
+        controller, "manual_disconnect_strands_connection", False
+    ):
         return False
 
     if description.key == "toggle_light" and controller is not None:

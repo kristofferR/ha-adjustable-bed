@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,6 +26,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_KAIDI,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_OKIN_CST,
@@ -33,12 +35,15 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
+    CONF_MALOUF_LAYOUT,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -47,6 +52,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    MALOUF_LAYOUT_HILO,
     OKIN_HEAD_MAX_ANGLE,
 )
 from custom_components.adjustable_bed.pairing import is_paired
@@ -107,6 +113,69 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
+    async def test_setup_entry_timeout_disconnects_cleanly(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_async_ble_device_from_address,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A setup timeout must tear down the half-open connection."""
+
+        async def _hangs(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        with (
+            patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.1),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+                new=_hangs,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_disconnect",
+                new_callable=AsyncMock,
+            ) as mock_disconnect,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+
+    async def test_setup_entry_timeout_bounds_disconnect_cleanup(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_async_ble_device_from_address,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A stalled cleanup disconnect must not block the setup retry."""
+
+        async def _hangs(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        with (
+            patch("custom_components.adjustable_bed.SETUP_TIMEOUT", 0.05),
+            patch("custom_components.adjustable_bed.SETUP_CLEANUP_TIMEOUT", 0.05),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+                new=_hangs,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_disconnect",
+                new_callable=AsyncMock,
+                side_effect=_hangs,
+            ) as mock_disconnect,
+        ):
+            async with asyncio.timeout(5):
+                await hass.config_entries.async_setup(mock_config_entry.entry_id)
+                await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+
     async def test_setup_entry_connection_failed(
         self,
         hass: HomeAssistant,
@@ -148,6 +217,181 @@ class TestIntegrationSetup:
         devices = dr.async_entries_for_config_entry(device_registry, mock_config_entry.entry_id)
         assert len(devices) == 1
         assert devices[0].name == mock_config_entry.title
+
+    async def test_setup_gen2_connect_failure_creates_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """An unbonded Gen2 timeout gets the guided pairing repair from #385."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: "08:3A:F2:1E:4B:7E",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="08:3A:F2:1E:4B:7E",
+            entry_id="leggett_gen2_pairing_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        issue = issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_7e")
+        assert issue is not None
+        assert issue.translation_key == "pairing_required"
+
+    async def test_setup_gen2_connect_failure_with_bond_skips_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A bonded Gen2 entry that cannot connect is a transient failure, not
+        a pairing problem — no repair issue."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: "08:3A:F2:1E:4B:7F",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id="08:3A:F2:1E:4B:7F",
+            entry_id="leggett_gen2_bonded_no_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_7f") is None
+        )
+
+    async def test_setup_gen2_failure_after_bond_skips_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """A bond established during this setup attempt must be observed dynamically."""
+        from homeassistant.helpers import issue_registry as ir
+
+        address = "08:3A:F2:1E:4B:80"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: address,
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=address,
+            entry_id="leggett_gen2_bonded_during_setup_entry",
+        )
+        entry.add_to_hass(hass)
+
+        async def _connect_then_fail(_coordinator) -> bool:
+            hass.config_entries.async_update_entry(
+                entry,
+                data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
+            )
+            return False
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.AdjustableBedCoordinator.async_connect",
+                autospec=True,
+                side_effect=_connect_then_fail,
+            ),
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_ble_device_from_address",
+                return_value=None,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_08_3a_f2_1e_4b_80") is None
+        )
+
+    async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        enable_custom_integrations,
+    ):
+        """Ordinary pairing-required beds (e.g. Okin CST) keep the existing
+        behaviour: a plain connect failure before pairing creates no repair."""
+        from homeassistant.helpers import issue_registry as ir
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Okin CST Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:20",
+                CONF_NAME: "Okin CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:20",
+            entry_id="okin_cst_no_repair_entry",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=None,
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.SETUP_RETRY
+        issue_registry = ir.async_get(hass)
+        assert (
+            issue_registry.async_get_issue(DOMAIN, "pairing_required_aa_bb_cc_dd_ee_20") is None
+        )
 
     async def test_setup_entry_loads_diagnostic_device_without_connection(
         self,
@@ -191,7 +435,7 @@ class TestIntegrationSetup:
         devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
         assert len(devices) == 1
 
-    async def test_setup_entry_reclassifies_legacy_bedtech_qrrm_entry(
+    async def test_setup_entry_reclassifies_bedtech_qrrm_richmat_entry(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
@@ -199,7 +443,114 @@ class TestIntegrationSetup:
         mock_async_ble_device_from_address: MagicMock,
         enable_custom_integrations,
     ):
-        """Legacy BedTech entries should be corrected to Richmat for QRRM devices."""
+        """A BedTech manufacturer advert should correct a persisted Richmat QRRM entry."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM157738",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_qrrm_as_richmat",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM157738"
+        service_info.address = "57:4C:54:30:76:51"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {
+            BEDTECH_MANUFACTURER_ID: bytes.fromhex("54307651")
+        }
+
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator._bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+
+    async def test_setup_entry_keeps_casper_qrrm_as_richmat_without_bedtech_manufacturer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A QRRM entry without the BedTech field should retain Casper RGB behavior."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Casper Adjustable Base Max",
+            data={
+                CONF_ADDRESS: "57:4C:62:C3:39:05",
+                CONF_NAME: "Casper Adjustable Base Max",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:62:C3:39:05",
+            entry_id="casper_qrrm",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM105550"
+        service_info.address = "57:4C:62:C3:39:05"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {}
+        mock_async_ble_device_from_address.return_value.name = "QRRM105550"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller.__class__.__name__ == "RichmatController"
+
+    async def test_setup_entry_keeps_bedtech_qrrm_when_advertisement_data_is_missing(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A missing manufacturer field is inconclusive and must not downgrade BedTech."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Legacy BedTech QRRM",
@@ -221,6 +572,7 @@ class TestIntegrationSetup:
         service_info.name = "QRRM138330"
         service_info.address = "57:4C:54:30:77:FA"
         service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {}
 
         mock_async_ble_device_from_address.return_value.name = "QRRM138330"
 
@@ -238,11 +590,65 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert entry.state == ConfigEntryState.LOADED
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
-        assert entry.data[CONF_RICHMAT_REMOTE] == "qrrm"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
         coordinator = hass.data[DOMAIN][entry.entry_id]
-        assert coordinator._bed_type == BED_TYPE_RICHMAT
-        assert coordinator.controller.__class__.__name__ == "RichmatController"
+        assert coordinator._bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+
+    async def test_setup_entry_keeps_bedtech_qrrm_entry_with_bedtech_manufacturer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mock_async_ble_device_from_address: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A BedTech entry whose advert carries the manufacturer field stays BedTech."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM157738",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_qrrm_confirmed",
+        )
+        entry.add_to_hass(hass)
+
+        service_info = MagicMock()
+        service_info.name = "QRRM157738"
+        service_info.address = "57:4C:54:30:76:51"
+        service_info.service_uuids = [BEDTECH_SERVICE_UUID]
+        service_info.manufacturer_data = {
+            BEDTECH_MANUFACTURER_ID: bytes.fromhex("54307651")
+        }
+
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_last_service_info",
+                return_value=service_info,
+            ),
+        ):
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state == ConfigEntryState.LOADED
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
 
 
 class TestIntegrationUnload:
@@ -849,6 +1255,7 @@ class TestServices:
                 CONF_NAME: "Malouf Timed Move Bed",
                 CONF_BED_TYPE: BED_TYPE_MALOUF_LEGACY_OKIN,
                 CONF_MOTOR_COUNT: 4,
+                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",

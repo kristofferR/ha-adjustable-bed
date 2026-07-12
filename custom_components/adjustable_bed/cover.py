@@ -213,12 +213,16 @@ def _cover_entities_for(
         _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
         return []
 
-    # Skip motor cover entities if bed doesn't support motor control
+    # Skip motor cover entities if bed doesn't support motor control. Still run
+    # stale cleanup first, so covers left over from an older config (e.g. a Gen2
+    # entry that resolved to a no-actuator profile) are removed rather than left
+    # registered and unavailable.
     if not controller.supports_motor_control:
         _LOGGER.debug(
             "Skipping motor covers for %s - bed only supports presets",
             coordinator.name,
         )
+        _async_remove_stale_cover_entities(hass, coordinator, controller)
         return []
 
     # Skip motor cover entities if bed uses discrete motor control (buttons instead)

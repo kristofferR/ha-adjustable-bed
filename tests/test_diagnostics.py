@@ -113,6 +113,7 @@ class TestDiagnosticsOutput:
         assert "entry" in result
         assert "config" in result
         assert "coordinator" in result
+        assert "pairing" in result
         assert "ble" in result
         assert "controller" in result
         assert "position_data" in result
@@ -155,6 +156,14 @@ class TestDiagnosticsOutput:
 
         # Check BLE info
         assert "connected" in result["ble"]
+
+        # Pairing diagnostics distinguish integration decisions from backend state.
+        assert result["pairing"]["required"] is False
+        assert result["pairing"]["persisted_bond_marker"] is False
+        assert result["pairing"]["last_bond_verification"]["status"] == "not_attempted"
+        assert result["pairing"]["connection_attempts"][0]["pairing"]["decision"] == (
+            "not_required"
+        )
 
         # Check controller info
         assert "initialized" in result["controller"]

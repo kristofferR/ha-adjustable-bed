@@ -21,7 +21,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Serta](beds/serta.md) | ✅ Supported | Massage intensity control, Zero-G/TV/Lounge |
 | [Mattress Firm 900](beds/mattressfirm.md) | ✅ Supported | Older iFlex/Nordic UART bases, lumbar control, built-in presets |
 | [Nectar](beds/nectar.md) | ✅ Supported | Lumbar control, massage, lights, Zero-G/Anti-Snore/Lounge |
-| [Malouf](beds/malouf.md) | ✅ Supported | 2 memory presets, lumbar, head tilt, massage, lights |
+| [Malouf/Lucid](beds/malouf.md) | ✅ Supported | Configurable 2/3/4-motor or Hi-Lo layout, 1-2 memory positions, massage, lights |
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
 | [Sleep Number](beds/sleep_number.md) | 🧪 Needs Testing | Newer Fuzion: direct position, side selection, presence, climate. Older BAM/MCR: split firmness, foundation presets, under-bed lights |
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
@@ -50,6 +50,11 @@ For detailed configuration options including motor pulse settings, protocol vari
 
 ## Okin Protocol Family
 
+Retail brands and model numbers can appear in more than one row. Lucid L600,
+for example, is confirmed with both OKIN CB24 7-byte controllers and legacy
+Malouf/OKIN 9-byte controllers. Select or auto-detect the actuator protocol from
+BLE evidence; never select a protocol from the retail model alone.
+
 Several bed brands use Okin-based BLE controllers. While they share common roots, each uses a different command format or write method:
 
 | Bed Type | Command Format | Write Method | Pairing Required | Detection |
@@ -58,7 +63,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Okin 64-bit](beds/okin-64bit.md) | 10-byte (64-bit cmd) | Nordic UART or UUID | ❌ No | `NORA_CON` / `NORACON`, manual selection |
 | [Leggett & Platt Okin](beds/leggett-platt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ✅ Yes | Name patterns |
 | [Nectar](beds/nectar.md) | 7-byte (32-bit cmd) | UUID `62741525-...` without response | ❌ No | Name contains "nectar" or generic `OKIN-*` disambiguation |
-| [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | Handle `0x0013` | ❌ No | Name patterns |
+| [DewertOkin](beds/dewertokin.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | ❌ No | Name patterns |
 | [Mattress Firm 900](beds/mattressfirm.md) | 7-byte (32-bit cmd) | Nordic UART | ❌ No | Name starts with "iflex" |
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
@@ -69,7 +74,8 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 **Key differences:**
 - **6-byte vs 7-byte vs 8-byte vs 10-byte vs 14-byte**: Different command structures - not interchangeable
 - **32-bit vs 64-bit commands**: Okin 64-bit uses 8-byte command values instead of 4-byte
-- **UUID vs Handle**: DewertOkin writes to a BLE handle instead of a characteristic UUID
+- **Characteristic handles vary**: Okin-family beds share stable UUIDs, but numeric
+  handles differ by device/firmware and must not be hardcoded
 - **Nordic UART**: Many newer beds use the Nordic UART service
 
 **If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type.

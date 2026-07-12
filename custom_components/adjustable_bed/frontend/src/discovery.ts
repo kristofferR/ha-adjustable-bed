@@ -22,6 +22,7 @@ export const SECTION_ORDER = [
   "memory",
   "lighting",
   "massage",
+  "utility",
   "climate",
   "connection",
 ];
@@ -70,6 +71,7 @@ function emptyBed(): BedEntities {
     lights: {},
     massage: { buttons: [], numbers: [] },
     climate: { entities: [], selects: [] },
+    utility: [],
   };
 }
 
@@ -145,6 +147,8 @@ export function bedEntitiesForDevice(
           bed.lights.toggle = id;
         } else if (key === "light_cycle") {
           bed.lights.cycle = id;
+        } else if (key === "sync_positions" || key === "child_lock_toggle") {
+          bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);
         } else if ((match = key.match(/^(.+)_(up|down)$/))) {
@@ -229,6 +233,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.massage.numbers.length === 0 &&
     !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
-    bed.climate.selects.length === 0
+    bed.climate.selects.length === 0 &&
+    bed.utility.length === 0
   );
 }

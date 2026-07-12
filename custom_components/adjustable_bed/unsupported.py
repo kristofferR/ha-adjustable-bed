@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import quote
@@ -28,9 +27,12 @@ _LOGGER = logging.getLogger(__name__)
 GITHUB_REPO = "kristofferR/ha-adjustable-bed"
 GITHUB_NEW_ISSUE_URL = f"https://github.com/{GITHUB_REPO}/issues/new"
 
-# In-memory set of issue_ids already processed this session.
-# Prevents repeated registry lookups and log spam from BLE advertisements.
-_notified_devices: set[str] = set()
+# Prefix for the legacy "unsupported BLE device" Repairs issues. These were
+# created automatically on discovery, but proved to be noise (the integration's
+# Bluetooth matchers are broad, so most matches are unrelated BLE devices). We no
+# longer create them and clear any stragglers on setup; see
+# ``async_clear_unsupported_device_issues``.
+_UNSUPPORTED_ISSUE_PREFIX = "unsupported_device_"
 
 
 @dataclass
@@ -43,74 +45,13 @@ class UnsupportedDeviceInfo:
     manufacturer_data: dict[int, bytes]
     rssi: int | None = None
 
-    def to_log_string(self) -> str:
-        """Format device info for logging."""
-        lines = [
-            f"Address: {self.address}",
-            f"Name: {self.name or 'Unknown'}",
-            f"RSSI: {self.rssi or 'N/A'}",
-            f"Service UUIDs: {self.service_uuids or 'None'}",
-        ]
-        if self.manufacturer_data:
-            mfr_lines = [f"  {hex(k)}: {v.hex()}" for k, v in self.manufacturer_data.items()]
-            lines.append("Manufacturer data:")
-            lines.extend(mfr_lines)
-        else:
-            lines.append("Manufacturer data: None")
-        return "\n".join(lines)
-
-    def to_issue_body(self, reason: str) -> str:
-        """Format device info for GitHub issue body."""
-        mfr_str = ""
-        if self.manufacturer_data:
-            mfr_items = [f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()]
-            mfr_str = "\n".join(mfr_items)
-        else:
-            mfr_str = "  None"
-
-        uuid_str = ""
-        if self.service_uuids:
-            uuid_items = [f"  - `{uuid}`" for uuid in self.service_uuids]
-            uuid_str = "\n".join(uuid_items)
-        else:
-            uuid_str = "  None"
-
-        return f"""## Device Information
-
-**Reason for non-detection:** {reason}
-
-| Property | Value |
-|----------|-------|
-| Address | `{self.address}` |
-| Name | `{self.name or "Unknown"}` |
-| RSSI | {self.rssi or "N/A"} |
-
-### Service UUIDs
-{uuid_str}
-
-### Manufacturer Data
-{mfr_str}
-
-## Bed Information
-
-Please provide the following information about your bed:
-
-- **Bed manufacturer/brand:**
-- **Bed model name:**
-- **Remote control model (if visible):**
-- **App used to control the bed (if any):**
-
-## Additional Context
-
-<!-- Add any other context about your bed here -->
-
-"""
-
     def to_misidentified_details(
         self,
         detected_bed_type: str | None,
         confidence: float,
         signals: list[str],
+        integration_version: str | None = None,
+        ha_version: str | None = None,
     ) -> str:
         """Format GitHub issue details for a device wrongly auto-detected as a bed."""
         if self.manufacturer_data:
@@ -141,6 +82,8 @@ all, or it is a different brand/model.
 | Address | `{self.address}` |
 | Name | `{self.name or "Unknown"}` |
 | RSSI | {self.rssi or "N/A"} |
+| Integration version | `{integration_version or "unknown"}` |
+| Home Assistant | `{ha_version or "unknown"}` |
 
 ### Detection signals
 {signal_str}
@@ -178,35 +121,13 @@ def capture_device_info(
     )
 
 
-def log_unsupported_device(device_info: UnsupportedDeviceInfo, reason: str) -> None:
-    """Log detailed information about an unsupported device."""
-    _LOGGER.warning(
-        "Unsupported BLE device detected during discovery:\n"
-        "Reason: %s\n"
-        "%s\n"
-        "If this is an adjustable bed, please report it at:\n"
-        "%s",
-        reason,
-        device_info.to_log_string(),
-        _generate_github_url(device_info, reason),
-    )
-
-
-def _generate_github_url(device_info: UnsupportedDeviceInfo, reason: str) -> str:
-    """Generate a pre-filled GitHub issue URL."""
-    title = f"Support request: {device_info.name or 'Unknown device'}"
-    body = device_info.to_issue_body(reason)
-
-    # URL encode the parameters
-    params = f"?template=new-bed-support.yml&title={quote(title)}&body={quote(body)}"
-    return f"{GITHUB_NEW_ISSUE_URL}{params}"
-
-
 def build_misidentified_issue_url(
     device_info: UnsupportedDeviceInfo,
     detected_bed_type: str | None,
     confidence: float,
     signals: list[str],
+    integration_version: str | None = None,
+    ha_version: str | None = None,
 ) -> str:
     """Generate a pre-filled GitHub issue URL for a misidentified (false-positive) device.
 
@@ -214,77 +135,41 @@ def build_misidentified_issue_url(
     textarea (field id) with the captured detection data.
     """
     title = f"[Misidentified] {device_info.name or device_info.address}"
-    details = device_info.to_misidentified_details(detected_bed_type, confidence, signals)
+    details = device_info.to_misidentified_details(
+        detected_bed_type,
+        confidence,
+        signals,
+        integration_version=integration_version,
+        ha_version=ha_version,
+    )
     params = (
         f"?template=misidentified-bed.yml&title={quote(title)}&details={quote(details)}"
     )
     return f"{GITHUB_NEW_ISSUE_URL}{params}"
 
 
-def _make_unsupported_issue_id(device_info: UnsupportedDeviceInfo) -> str:
-    """Generate a stable issue ID, preferring device name over MAC address.
+def async_clear_unsupported_device_issues(hass: HomeAssistant) -> None:
+    """Delete any leftover "unsupported BLE device" Repairs issues.
 
-    BLE devices may use randomized MAC addresses, so keying by name prevents
-    duplicate Repairs entries for the same device across address changes.
+    Earlier versions raised a persistent Repairs issue for every discovered BLE
+    device that wasn't recognised as a bed. Because the integration's Bluetooth
+    matchers are intentionally broad, this nagged users about unrelated devices,
+    so the feature was removed. Issues created by those versions linger in the
+    registry, so we clear them on setup to make the upgrade self-cleaning.
     """
-    if device_info.name:
-        sanitized = re.sub(r"[^a-z0-9]", "_", device_info.name.lower()).strip("_")
-        if sanitized:
-            return f"unsupported_device_{sanitized}"
-    # Fallback to MAC for unnamed devices
-    return f"unsupported_device_{device_info.address.replace(':', '_').lower()}"
-
-
-async def create_unsupported_device_issue(
-    hass: HomeAssistant,
-    device_info: UnsupportedDeviceInfo,
-    reason: str,
-) -> bool:
-    """Create a persistent issue in the Repairs dashboard for an unsupported device.
-
-    Returns True if the issue was newly created, False if it already existed.
-    Deduplicates by device name (or MAC for unnamed devices) to handle BLE
-    address randomization and prevent repeated repairs after dismissal.
-    """
-    issue_id = _make_unsupported_issue_id(device_info)
-
-    # Fast path: already processed this session
-    if issue_id in _notified_devices:
-        return False
-
-    # Check if issue already exists in registry (respects dismissed state across restarts)
     registry = async_get_issue_registry(hass)
-    if registry.async_get_issue(DOMAIN, issue_id) is not None:
-        _notified_devices.add(issue_id)
-        return False
-
-    github_url = _generate_github_url(device_info, reason)
-
-    async_create_issue(
-        hass,
-        DOMAIN,
-        issue_id,
-        is_fixable=False,
-        is_persistent=True,
-        severity=IssueSeverity.WARNING,
-        translation_key="unsupported_device",
-        translation_placeholders={
-            "name": device_info.name or "Unknown device",
-            "address": device_info.address,
-            "reason": reason,
-            "github_url": github_url,
-        },
-    )
-
-    _notified_devices.add(issue_id)
-
-    _LOGGER.debug(
-        "Created Repairs issue for unsupported device %s (%s)",
-        device_info.name or "Unknown",
-        device_info.address,
-    )
-
-    return True
+    stale_ids = [
+        issue_id
+        for (domain, issue_id) in list(registry.issues)
+        if domain == DOMAIN and issue_id.startswith(_UNSUPPORTED_ISSUE_PREFIX)
+    ]
+    for issue_id in stale_ids:
+        async_delete_issue(hass, DOMAIN, issue_id)
+    if stale_ids:
+        _LOGGER.debug(
+            "Cleared %d obsolete unsupported-device Repairs issue(s)",
+            len(stale_ids),
+        )
 
 
 def _pairing_required_issue_id(address: str) -> str:

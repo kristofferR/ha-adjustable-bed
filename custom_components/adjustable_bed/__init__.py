@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -59,15 +60,14 @@ from .const import (
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
     PAIR_SIDES,
-    RICHMAT_REMOTE_AUTO,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
     VARIANT_AUTO,
+    connection_gated_by_bond,
     requires_pairing,
 )
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
-from .detection import detect_richmat_remote_from_name
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 from .pairing import (
@@ -76,7 +76,10 @@ from .pairing import (
     pair_member_addresses,
     with_updated_child,
 )
-from .unsupported import create_pairing_required_issue
+from .unsupported import (
+    async_clear_unsupported_device_issues,
+    create_pairing_required_issue,
+)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -116,9 +119,12 @@ MAX_CAPTURE_DURATION = 300
 MIN_TIMED_MOVE_DURATION_MS = 100
 MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
 
-# Timeout for initial connection at startup
-# Must be long enough to cover at least one full connection attempt (30s) with margin
-SETUP_TIMEOUT = 45.0
+# Timeout for initial connection at startup.
+# Must cover a full connection retry cycle: up to 3 attempts of ~30s each plus
+# backoff between them. Beds that are slow to wake (e.g. just repowered) often
+# only connect on the second or third attempt; 45s cut the cycle short.
+SETUP_TIMEOUT = 120.0
+SETUP_CLEANUP_TIMEOUT = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -151,6 +157,10 @@ PAIRED_PLATFORMS: list[Platform] = [
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Adjustable Bed integration domain."""
     hass.data.setdefault(DOMAIN, {})
+
+    # Clear obsolete "unsupported BLE device" Repairs issues from older versions
+    # that nagged about every discovered non-bed device (feature removed).
+    async_clear_unsupported_device_issues(hass)
 
     from .download import SupportBundleDownloadView
 
@@ -489,7 +499,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if is_paired(entry.data):
         return await _async_setup_paired_entry(hass, entry)
 
-    await _async_maybe_reclassify_legacy_bedtech_entry(hass, entry)
+    await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
     _maybe_cache_kaidi_metadata(hass, entry)
 
     _LOGGER.info(
@@ -503,6 +513,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = AdjustableBedCoordinator(hass, entry)
     _async_ensure_device_registry_entry(hass, entry, coordinator)
+
+    def _bond_gated_unbonded() -> bool:
+        """Return whether this entry still needs the bond-gated repair path.
+
+        Evaluate this after each connection attempt rather than caching it at
+        setup start: the coordinator can establish and persist the bond before
+        a later setup step fails for an unrelated reason.
+        """
+        return connection_gated_by_bond(
+            entry.data.get(CONF_BED_TYPE, ""), entry.data.get(CONF_PROTOCOL_VARIANT)
+        ) and not entry.data.get(CONF_BLE_BOND_ESTABLISHED)
 
     # Helper to create pairing issue — only when there's actual evidence of a pairing
     # problem. Generic connection failures (timeout, device not found) should NOT
@@ -543,6 +564,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             return
 
+        # LP Comfort Connect / Leggett & Platt Gen2 shows a distinct unbonded
+        # failure signature in issue #385: reconnects time out outside the
+        # pairing window while advertisements continue. Guide the user through
+        # the repair flow (power-cycle into pairing mode, then pair) instead of
+        # leaving the entry on retries that cannot establish the required bond.
+        if _bond_gated_unbonded():
+            await create_pairing_required_issue(
+                hass,
+                address or "Unknown",
+                entry.data.get("name", entry.title),
+                entry.entry_id,
+            )
+            return
+
         # Connection failed before pairing was even attempted (device not found,
         # timeout, etc.). Don't create repair — HA will retry automatically and
         # pairing will be attempted on the next successful connection.
@@ -552,12 +587,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             address,
         )
 
+    def _connection_failure_hint() -> str:
+        """Return pairing guidance only while the entry remains unbonded."""
+        if _bond_gated_unbonded():
+            return (
+                " This bed requires a Bluetooth bond. Open Settings → Repairs and "
+                "follow the pairing steps (power-cycle the bed to enter its ~2 minute "
+                "pairing mode)."
+            )
+        return " The integration will retry automatically."
+
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
     try:
         async with asyncio.timeout(SETUP_TIMEOUT):
             connected = await coordinator.async_connect()
     except TimeoutError:
+        try:
+            async with asyncio.timeout(SETUP_CLEANUP_TIMEOUT):
+                await coordinator.async_disconnect(reason="setup timeout cleanup")
+        except TimeoutError:
+            _LOGGER.warning(
+                "Timed out while disconnecting %s after setup timeout",
+                entry.title,
+            )
+        except Exception as err:  # Best-effort cleanup must not block setup retry
+            _LOGGER.warning(
+                "Failed to disconnect %s after setup timeout: %s",
+                entry.title,
+                err,
+            )
         await _maybe_create_pairing_issue()
         if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
             return await _async_setup_offline_diagnostic_entry(
@@ -567,8 +626,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 reason=f"initial connection timed out after {SETUP_TIMEOUT:.0f}s",
             )
         raise ConfigEntryNotReady(
-            f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after {SETUP_TIMEOUT:.0f}s. "
-            "The integration will retry automatically."
+            f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
+            f"{SETUP_TIMEOUT:.0f}s.{_connection_failure_hint()}"
         ) from None
 
     if not connected:
@@ -579,6 +638,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry,
                 coordinator,
                 reason="device was not reachable during initial setup",
+            )
+        if _bond_gated_unbonded():
+            raise ConfigEntryNotReady(
+                f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
+                f"{_connection_failure_hint()}"
             )
         raise ConfigEntryNotReady(
             f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
@@ -598,18 +662,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
 
-async def _async_maybe_reclassify_legacy_bedtech_entry(
+async def _async_maybe_reclassify_bedtech_qrrm_entry(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> None:
-    """Correct legacy BedTech entries that were created for Richmat QRRM beds.
+    """Correct a persisted Richmat QRRM entry from advertisement evidence.
 
-    BedTech and Richmat WiLinke share the FEE9 service, and older versions of
-    the integration could persist QRRM devices as `bedtech`. That leaves the
-    entry sending BedTech preset/light bytes to a Richmat controller, which is
-    why issue #243 reported lounge and light commands either doing nothing or
-    triggering the wrong behavior.
+    QRRM is used by both BedTech white-light controllers and Richmat/Casper RGB
+    controllers, and both use the shared FEE9 service. A present manufacturer
+    ID 0x4C57 is positive BedTech evidence, but its absence is inconclusive:
+    ESPHome proxy snapshots can omit manufacturer data for the same device.
+    Connected Device Information provides a second, model-specific correction
+    path in the coordinator (issue #410).
     """
-    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_BEDTECH:
+    bed_type = entry.data.get(CONF_BED_TYPE)
+    if bed_type != BED_TYPE_RICHMAT:
         return
 
     address = entry.data.get(CONF_ADDRESS)
@@ -618,6 +684,13 @@ async def _async_maybe_reclassify_legacy_bedtech_entry(
 
     service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
     if service_info is None:
+        _LOGGER.debug(
+            "Skipping BedTech/Richmat QRRM reclassification for %s (%s): no "
+            "advertisement seen yet for %s",
+            entry.title,
+            entry.entry_id,
+            address,
+        )
         return
 
     service_uuids = {
@@ -627,26 +700,38 @@ async def _async_maybe_reclassify_legacy_bedtech_entry(
         return
 
     device_name = getattr(service_info, "name", None)
-    detected_remote = detect_richmat_remote_from_name(device_name)
-    if not detected_remote:
+    manufacturer_data = getattr(service_info, "manufacturer_data", None) or {}
+    has_bedtech_manufacturer = BEDTECH_MANUFACTURER_ID in manufacturer_data
+
+    if not isinstance(device_name, str) or not device_name.lower().startswith("qrrm"):
+        return
+    if not has_bedtech_manufacturer:
+        _LOGGER.info(
+            "QRRM entry %s (%s) has no protocol-specific advertisement evidence: "
+            "manufacturer ID 0x%04X is absent (manufacturer IDs seen: %s); "
+            "connected Device Information will be checked",
+            entry.title,
+            entry.entry_id,
+            BEDTECH_MANUFACTURER_ID,
+            sorted(manufacturer_data) or "none",
+        )
         return
 
     new_data = {
         **entry.data,
-        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_BED_TYPE: BED_TYPE_BEDTECH,
         CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
     }
-    if entry.data.get(CONF_RICHMAT_REMOTE, RICHMAT_REMOTE_AUTO) == RICHMAT_REMOTE_AUTO:
-        new_data[CONF_RICHMAT_REMOTE] = detected_remote
+    new_data.pop(CONF_RICHMAT_REMOTE, None)
 
     hass.config_entries.async_update_entry(entry, data=new_data)
     _LOGGER.warning(
-        "Corrected config entry %s (%s) from BedTech to Richmat because BLE name %r "
-        "matches Richmat remote %r on the shared FEE9 service",
+        "Corrected config entry %s (%s) from Richmat to BedTech because BLE name %r "
+        "uses the shared FEE9 service and advertises BedTech manufacturer ID 0x%04X",
         entry.title,
         entry.entry_id,
         device_name,
-        detected_remote,
+        BEDTECH_MANUFACTURER_ID,
     )
 
 

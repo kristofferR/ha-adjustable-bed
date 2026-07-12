@@ -37,6 +37,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     # Protocol-based bed types (new)
     BED_TYPE_OKIN_HANDLE,
@@ -65,6 +66,9 @@ from .const import (
     CB1322_MANUFACTURER_MARKERS,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_SOFA_ACU_NO,
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
+    DEWERTOKIN_RF_GATEWAY_MODEL,
+    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     KEESON_BETTERLIVING_SERVICE_UUIDS,
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
@@ -82,7 +86,11 @@ from .const import (
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
+    NORDIC_UART_SERVICE_UUID,
+    NORDIC_UART_WRITE_CHAR_UUID,
     OCTO_VARIANT_STAR2,
+    OKIMAT_SERVICE_UUID,
+    OKIMAT_WRITE_CHAR_UUID,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
     OKIN_CB24_VARIANT_CB27,
@@ -175,6 +183,51 @@ def _auto_detect_cb24_profile_variant(
     return OKIN_CB24_VARIANT_CB24
 
 
+def _gatt_has_characteristic(
+    client: BleakClient | None,
+    service_uuid: str,
+    char_uuid: str,
+) -> bool:
+    """Return True if the connected client exposes a service/characteristic pair."""
+    if client is None or client.services is None:
+        return False
+
+    service_uuid_lower = service_uuid.lower()
+    char_uuid_lower = char_uuid.lower()
+    for service in client.services:
+        if str(service.uuid).lower() != service_uuid_lower:
+            continue
+        if service.get_characteristic(char_uuid_lower) is not None:
+            return True
+
+    return False
+
+
+def _is_dewertokin_dot_box(client: BleakClient | None) -> bool:
+    """Return True when a connected Okin box is a DOT PROTOCOL receiver.
+
+    FurniMove flags a connection as DOT when it exposes the Nordic UART write
+    characteristic; a DOT box has no Okin 62741523 service, so require both
+    signals to avoid demoting a standard Okimat box that happens to also
+    expose Nordic UART.
+    """
+    return _gatt_has_characteristic(
+        client, NORDIC_UART_SERVICE_UUID, NORDIC_UART_WRITE_CHAR_UUID
+    ) and not _gatt_has_characteristic(client, OKIMAT_SERVICE_UUID, OKIMAT_WRITE_CHAR_UUID)
+
+
+def _is_dewertokin_rf_gateway(client: BleakClient | None, ble_model: str | None) -> bool:
+    """Return True when a DewertOkin/Okin entry is the RF-Gateway command variant."""
+    if ble_model is not None and ble_model.strip().lower() == DEWERTOKIN_RF_GATEWAY_MODEL.lower():
+        return True
+
+    return _gatt_has_characteristic(
+        client,
+        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+        DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
+    )
+
+
 async def create_controller(
     coordinator: AdjustableBedCoordinator,
     bed_type: str,
@@ -186,6 +239,7 @@ async def create_controller(
     jensen_pin: str = "",
     cb24_bed_selection: int = 0x00,
     ble_manufacturer: str | None = None,
+    ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
@@ -204,6 +258,7 @@ async def create_controller(
         jensen_pin: PIN for Jensen beds (default: empty string, uses "3060")
         cb24_bed_selection: Bed selection for CB24 split beds (0x00=default, 0xAA=A, 0xBB=B)
         ble_manufacturer: Manufacturer name from BLE Device Information Service (0x2A29)
+        ble_model: Model Number from BLE Device Information Service (0x2A24)
         manufacturer_data: Last advertisement manufacturer payloads by Company ID
 
     Returns:
@@ -215,15 +270,53 @@ async def create_controller(
     """
     # Protocol-based bed types (new naming convention)
     if bed_type == BED_TYPE_OKIN_HANDLE:
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                coordinator.address,
+            )
+            return DewertOkinRfGatewayController(coordinator)
+
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)
 
+    if bed_type == BED_TYPE_OKIN_DOT:
+        from .beds.okin_dot import OkinDotController
+
+        variant = protocol_variant or VARIANT_AUTO
+        _LOGGER.debug("Using Okin DOT variant: %s", variant)
+        return OkinDotController(coordinator, variant=variant)
+
     if bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT):
+        variant = protocol_variant or "auto"
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinUuidRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s "
+                "using Okin UUID variant %s",
+                coordinator.address,
+                variant,
+            )
+            return DewertOkinUuidRfGatewayController(coordinator, variant=variant)
+
+        if _is_dewertokin_dot_box(client):
+            from .beds.okin_dot import OkinDotController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin DOT PROTOCOL box for %s "
+                "(Nordic UART, no Okin 62741523 service); using variant %s",
+                coordinator.address,
+                variant,
+            )
+            return OkinDotController(coordinator, variant=variant)
+
         from .beds.okin_uuid import OkinUuidController
 
         # Pass the configured variant (remote code) to the controller
-        variant = protocol_variant or "auto"
         _LOGGER.debug("Using Okin UUID variant: %s", variant)
         return OkinUuidController(coordinator, variant=variant)
 
@@ -360,7 +453,7 @@ async def create_controller(
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         from .beds.leggett_gen2 import LeggettGen2Controller
 
-        return LeggettGen2Controller(coordinator)
+        return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_LEGGETT_OKIN:
         from .beds.leggett_okin import LeggettOkinController
@@ -538,13 +631,13 @@ async def create_controller(
             return KeesonController(coordinator, variant=KEESON_VARIANT_JSON)
         if keeson_variant == KEESON_VARIANT_KSBT:
             _LOGGER.debug("Using KSBT Keeson variant (configured)")
-            return KeesonController(coordinator, variant="ksbt")
+            return KeesonController(coordinator, variant="ksbt", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT_CR:
             _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
-            return KeesonController(coordinator, variant="ksbt_cr")
+            return KeesonController(coordinator, variant="ksbt_cr", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT04C:
             _LOGGER.debug("Using KSBT04C Keeson variant (7-byte with checksum)")
-            return KeesonController(coordinator, variant="ksbt04c")
+            return KeesonController(coordinator, variant="ksbt04c", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
@@ -642,13 +735,13 @@ async def create_controller(
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (no WiLinke UUID found)")
-            return LeggettGen2Controller(coordinator)
+            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
         else:
             # Explicit gen2 variant
             from .beds.leggett_gen2 import LeggettGen2Controller
 
             _LOGGER.debug("Using Gen2 Leggett & Platt variant (configured)")
-            return LeggettGen2Controller(coordinator)
+            return LeggettGen2Controller(coordinator, manufacturer_data=manufacturer_data)
 
     if bed_type == BED_TYPE_REVERIE:
         from .beds.reverie import ReverieController
@@ -694,6 +787,15 @@ async def create_controller(
         return LogicdataController(coordinator)
 
     if bed_type == BED_TYPE_DEWERTOKIN:
+        if _is_dewertokin_rf_gateway(client, ble_model):
+            from .beds.dewertokin_rf_gateway import DewertOkinRfGatewayController
+
+            _LOGGER.info(
+                "Auto-detected DewertOkin RF-Gateway command endpoint for %s",
+                coordinator.address,
+            )
+            return DewertOkinRfGatewayController(coordinator)
+
         from .beds.okin_handle import OkinHandleController
 
         return OkinHandleController(coordinator)

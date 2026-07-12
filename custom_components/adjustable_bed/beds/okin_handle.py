@@ -1,13 +1,14 @@
-"""Okin handle-based bed controller implementation.
+"""DewertOkin/Okin 6-byte bed controller implementation.
 
 Reverse engineering by Richard Hopton (smartbed-mqtt).
 
-This controller handles beds that use the Okin 6-byte protocol via BLE handle writes.
+This controller handles beds that use the Okin 6-byte protocol via the shared Okin
+write characteristic.
 Known brands using this protocol:
 - DewertOkin (A H Beard, HankookGallery)
 
 Protocol details:
-    Write handle: 0x0013 (not UUID-based)
+    Write characteristic: 62741525-52f9-8864-b1ab-3b3a8d65950b
     Address type: Random
     Command format: 6-byte Okin frame [0x04, 0x02, <4-byte-command-big-endian>]
     See okin_protocol.py for shared frame building functions.
@@ -39,7 +40,7 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
-from ..const import DEWERTOKIN_WRITE_HANDLE
+from ..const import OKIMAT_WRITE_CHAR_UUID
 from .base import BedController
 
 if TYPE_CHECKING:
@@ -49,7 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class OkinHandleCommands:
-    """Okin handle-based command constants (6-byte arrays)."""
+    """Okin 6-byte command constants."""
 
     # Presets
     FLAT = bytes.fromhex("040210000000")
@@ -79,9 +80,11 @@ class OkinHandleCommands:
 
 
 class OkinHandleController(BedController):
-    """Controller for beds using Okin handle-based protocol.
+    """Controller for beds using the DewertOkin/Okin 6-byte protocol.
 
-    These beds use handle-based writes to handle 0x0013.
+    Older notes described these beds as handle-based, but handles vary by device
+    and firmware. Use the stable Okin write characteristic UUID so Bleak resolves
+    the current handle from live GATT services.
     They support motor control, presets, massage, and under-bed lighting.
     """
 
@@ -92,8 +95,8 @@ class OkinHandleController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        """Return placeholder - this controller uses handle-based writes."""
-        return f"handle-0x{DEWERTOKIN_WRITE_HANDLE:04x}"
+        """Return the Okin write characteristic UUID."""
+        return OKIMAT_WRITE_CHAR_UUID
 
     # Capability properties
     @property
@@ -140,7 +143,7 @@ class OkinHandleController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a command to the bed using handle 0x0013."""
+        """Write a command to the bed using the live Okin write characteristic."""
         if self.client is None or not self.client.is_connected:
             _LOGGER.error("Cannot write command: BLE client not connected")
             raise ConnectionError("Not connected to bed")
@@ -148,8 +151,9 @@ class OkinHandleController(BedController):
         effective_cancel = cancel_event or self._coordinator.cancel_command
 
         _LOGGER.debug(
-            "Writing command to Okin handle bed (handle 0x%04x): %s (repeat: %d, delay: %dms, response=True)",
-            DEWERTOKIN_WRITE_HANDLE,
+            "Writing command to DewertOkin/Okin characteristic %s: %s "
+            "(repeat: %d, delay: %dms, response=True)",
+            OKIMAT_WRITE_CHAR_UUID,
             command.hex(),
             repeat_count,
             repeat_delay_ms,
@@ -161,9 +165,12 @@ class OkinHandleController(BedController):
                 return
 
             try:
-                # Write to handle directly (Bleak supports integer handles)
                 async with self._ble_lock:
-                    await self.client.write_gatt_char(DEWERTOKIN_WRITE_HANDLE, command, response=True)
+                    await self.client.write_gatt_char(
+                        OKIMAT_WRITE_CHAR_UUID,
+                        command,
+                        response=True,
+                    )
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

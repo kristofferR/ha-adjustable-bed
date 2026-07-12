@@ -147,6 +147,31 @@ class BedController(ABC):
         return False
 
     @property
+    def requires_persistent_connection(self) -> bool:
+        """Return True if the BLE link must be held open for the entry's lifetime.
+
+        Controllers that must or should conservatively retain the link (e.g.
+        Leggett & Platt Gen2 / LP Comfort Connect pending bonded-reconnect hardware
+        confirmation) override this to return True so the coordinator never
+        idle-disconnects them. Because this is a property of the resolved controller,
+        it is authoritative even when the bed type/variant resolves to different
+        protocols at connect time.
+        """
+        return False
+
+    @property
+    def manual_disconnect_strands_connection(self) -> bool:
+        """Return True if a manual disconnect would leave the bed unrecoverable.
+
+        Distinct from ``requires_persistent_connection``: persistent beds that can
+        still reconnect on demand (e.g. Sleep Number MCR) keep the Disconnect
+        control as a way to release the single BLE connection. Beds that can only
+        reconnect in pairing mode (LP Comfort Connect) override this to True so the
+        Disconnect button is hidden — pressing it would strand the integration.
+        """
+        return False
+
+    @property
     def reverses_position_seek_on_overshoot(self) -> bool:
         """Return True if position seeking should reverse after overshooting.
 
@@ -922,6 +947,16 @@ class BedController(ABC):
         individual motor movement commands.
         """
         return True
+
+    @property
+    def supports_sync(self) -> bool:
+        """Return True if the bed can re-sync both sides of a split base."""
+        return False
+
+    @property
+    def supports_child_lock(self) -> bool:
+        """Return True if the bed can toggle a handset child lock."""
+        return False
 
     @property
     def has_discrete_motor_control(self) -> bool:

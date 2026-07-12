@@ -4,6 +4,7 @@ This module exports all bed controllers. Controllers are organized by protocol:
 
 Protocol-based controllers:
 - OkinCB24Controller: CB24 7-byte via Nordic UART (SmartBed by Okin)
+- OkinDotController: DOT PROTOCOL, CB24-style frames with FurniMove remote keycodes
 - OkinHandleController: Okin 6-byte via BLE handle
 - OkinUuidController: Okin 6-byte via UUID, requires pairing
 - Okin7ByteController: 7-byte via Okin service UUID
@@ -24,6 +25,10 @@ Brand-specific controllers:
 
 from .base import BedController
 from .coolbase import CoolBaseController
+from .dewertokin_rf_gateway import (
+    DewertOkinRfGatewayController,
+    DewertOkinUuidRfGatewayController,
+)
 from .jensen import JensenController
 
 # Brand-specific controllers (unchanged)
@@ -44,6 +49,7 @@ from .okin_7byte import Okin7ByteController
 from .okin_cb24 import OkinCB24Controller
 from .okin_cb35 import OkinCB35Controller
 from .okin_cst import OkinCstController
+from .okin_dot import OkinDotController
 from .okin_handle import OkinHandleController
 from .okin_nordic import OkinNordicController
 from .okin_ore import OkinOreController
@@ -69,9 +75,12 @@ __all__ = [
     # Base class
     "BedController",
     # Protocol-based controllers
+    "DewertOkinRfGatewayController",
+    "DewertOkinUuidRfGatewayController",
     "OkinCB24Controller",
     "OkinCB35Controller",
     "OkinCstController",
+    "OkinDotController",
     "OkinHandleController",
     "OkinOreController",
     "OkinRfEcoBtController",
