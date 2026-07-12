@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bleak.exc import BleakError
@@ -35,7 +36,12 @@ from custom_components.adjustable_bed.const import (
     SOLACE_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.support_bundle import generate_support_bundle
+from custom_components.adjustable_bed.support_bundle import (
+    _build_evidence_summary,
+    _build_pairing_assessment,
+    _build_scanner_status,
+    generate_support_bundle,
+)
 
 
 class _FakeServices:
@@ -687,6 +693,147 @@ class TestBleDiagnosticsRunner:
         coordinator.set_raw_notify_callback.assert_called_with(None)
         client2.disconnect.assert_not_awaited()
 
+    async def test_run_diagnostics_initially_connects_through_coordinator(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Configured diagnostics should use pairing and adapter logic from the coordinator."""
+        service_info = _build_unknown_service_info(
+            source="proxy_1",
+            connectable=True,
+            rssi=-58,
+        )
+        client = _build_diagnostic_client(_FakeServices([]))
+        coordinator = MagicMock()
+        coordinator.client = None
+        coordinator.is_connected = False
+        coordinator.connection_source = None
+        coordinator.connection_rssi = None
+        coordinator.disable_angle_sensing = True
+        coordinator.adapter_details = {}
+        coordinator.connection_history = {}
+        coordinator.connection_attempt_details = []
+        coordinator.command_trace = []
+        coordinator.controller = MagicMock(requires_notification_channel=True)
+        coordinator.async_start_notify_for_diagnostics = AsyncMock()
+
+        async def _connect_through_coordinator(*, reset_timer):
+            assert reset_timer is False
+            coordinator.client = client
+            coordinator.is_connected = True
+            coordinator.connection_source = "proxy_1"
+            coordinator.connection_rssi = -58
+            return True
+
+        coordinator.async_ensure_connected = AsyncMock(
+            side_effect=_connect_through_coordinator
+        )
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.get_service_info_snapshots_by_address",
+                return_value=[(service_info, True)],
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
+                return_value=1,
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.select_adapter"
+            ) as select_adapter,
+        ):
+            report = await BLEDiagnosticRunner(
+                hass,
+                service_info.address,
+                capture_duration=0,
+                coordinator=coordinator,
+            ).run_diagnostics()
+
+        coordinator.async_ensure_connected.assert_awaited_once_with(reset_timer=False)
+        select_adapter.assert_not_called()
+        assert report.device["connection_path"] == "coordinator_connected_for_diagnostics"
+        assert report.device["actual_source"] == "proxy_1"
+        coordinator.pause_disconnect_timer.assert_called_once()
+        coordinator.resume_disconnect_timer.assert_called_once()
+        coordinator.async_start_notify_for_diagnostics.assert_not_called()
+        coordinator.controller.stop_notify.assert_not_called()
+        client.disconnect.assert_not_awaited()
+
+    async def test_coordinator_attempts_are_retained_before_standalone_fallback(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A successful raw fallback must not hide the configured connection failure."""
+        service_info = _build_unknown_service_info(
+            source="proxy_1",
+            connectable=True,
+            rssi=-61,
+        )
+        client = _build_diagnostic_client(_FakeServices([]))
+        coordinator = MagicMock()
+        coordinator.client = None
+        coordinator.is_connected = False
+        coordinator.entry.data = {CONF_PREFERRED_ADAPTER: "proxy_1"}
+        coordinator.adapter_details = {}
+        coordinator.connection_history = {}
+        coordinator.connection_attempt_details = [
+            {
+                "attempt": 1,
+                "result": "failed",
+                "error_category": "PAIRING FAILED",
+            }
+        ]
+        coordinator.command_trace = []
+        coordinator.async_ensure_connected = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.get_service_info_snapshots_by_address",
+                return_value=[(service_info, True)],
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.select_adapter",
+                new=AsyncMock(
+                    return_value=AdapterSelectionResult(
+                        device=service_info.device,
+                        source="proxy_1",
+                        rssi=-61,
+                        connectable=True,
+                        available_sources=["proxy_1 (RSSI: -61)"],
+                    )
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.establish_connection",
+                new=AsyncMock(return_value=client),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
+                return_value=1,
+            ),
+        ):
+            report = await BLEDiagnosticRunner(
+                hass,
+                service_info.address,
+                capture_duration=0,
+                coordinator=coordinator,
+            ).run_diagnostics()
+
+        assert len(report.connection_attempt_details) == 2
+        configured_attempt, fallback_attempt = report.connection_attempt_details
+        assert configured_attempt["error_category"] == "PAIRING FAILED"
+        assert (
+            configured_attempt["diagnostic_connection_path"]
+            == "configured_coordinator"
+        )
+        assert fallback_attempt["result"] == "connected"
+        assert (
+            fallback_attempt["diagnostic_connection_path"]
+            == "standalone_after_coordinator_failure"
+        )
+
 
 class TestSupportBundle:
     """Test support bundle orchestration."""
@@ -896,6 +1043,192 @@ class TestSupportBundle:
         assert pairing["diagnostic_backend"]["paired"] is False
         assert pairing["diagnostic_backend"]["bonded"] is False
 
+    async def test_scanner_status_includes_esphome_proxy_runtime_and_slots(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Proxy rows should expose firmware, API, availability, and BLE slot health."""
+        runtime = SimpleNamespace(
+            available=True,
+            api_version=SimpleNamespace(major=1, minor=12),
+            device_info=SimpleNamespace(
+                name="bed_proxy",
+                friendly_name="Bed Proxy",
+                model="ESP32-C3",
+                manufacturer="Espressif",
+                esphome_version="2026.7.1",
+                compilation_time="2026-07-10 12:00:00",
+                project_name="esphome.bluetooth-proxy",
+                project_version="1.0",
+                bluetooth_mac_address="11:22:33:44:55:66",
+                bluetooth_proxy_feature_flags=0x0F,
+            ),
+            bluetooth_device=SimpleNamespace(
+                available=True,
+                ble_connections_free=2,
+                ble_connections_limit=3,
+            ),
+        )
+        proxy_entry = MockConfigEntry(
+            domain="esphome",
+            title="Bed Proxy",
+            data={},
+            entry_id="esphome_proxy_entry",
+        )
+        proxy_entry.runtime_data = runtime
+        proxy_entry.add_to_hass(hass)
+        bluetooth_entry = MockConfigEntry(
+            domain="bluetooth",
+            title="Bed Proxy Bluetooth",
+            data={
+                "source": "11:22:33:44:55:66",
+                "source_domain": "esphome",
+                "source_model": "ESP32-C3",
+                "source_config_entry_id": proxy_entry.entry_id,
+                "source_device_id": "proxy-device-id",
+            },
+            unique_id="11:22:33:44:55:66",
+        )
+        bluetooth_entry.add_to_hass(hass)
+
+        scanner = MagicMock()
+        scanner.source = "11:22:33:44:55:66"
+        scanner.name = "bed-proxy"
+        scanner.scanning = True
+        scanner.connectable = True
+        scanner.connector = MagicMock()
+        scanner.current_mode = "active"
+        scanner.requested_mode = "active"
+        scanner.connecting_count = 1
+        scanner.connections_in_progress = 1
+        scanner.connection_failures = 0
+        scanner.details = {"source": scanner.source, "type": "ESPHomeScanner"}
+        scanner.async_diagnostics = AsyncMock(
+            return_value={
+                "scanner_state": "running",
+                "discovered_devices_and_advertisement_data": {"omitted": True},
+            }
+        )
+
+        with patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[scanner],
+        ):
+            rows = await _build_scanner_status(
+                hass,
+                [
+                    {
+                        "source": scanner.source,
+                        "rssi": -71,
+                        "connectable": True,
+                        "selected_for_connection": True,
+                    }
+                ],
+            )
+
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["scanner_type"] == "esphome_proxy"
+        assert row["target_visible"] is True
+        assert row["target_rssi"] == -71
+        assert row["diagnostics"] == {"scanner_state": "running"}
+        proxy = row["esphome_proxy"]
+        assert proxy["available"] is True
+        assert proxy["api_version"] == {"major": 1, "minor": 12}
+        assert proxy["device"]["esphome_version"] == "2026.7.1"
+        assert proxy["device"]["pairing_supported"] is True
+        assert proxy["bluetooth"]["connections_free"] == 2
+        assert proxy["bluetooth"]["connections_limit"] == 3
+
+    def test_pairing_and_evidence_call_out_stale_bond_and_missing_reproduction(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ):
+        """Bundles should explain contradictory bond state and missing evidence."""
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_PREFERRED_ADAPTER: "proxy_1",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+        )
+        diagnostics = {
+            "detection": {"bed_type": BED_TYPE_OKIN_CST},
+            "device": {
+                "selected_source": "proxy_1",
+                "actual_source": "proxy_1",
+                "pairing": {"paired": None, "bonded": None},
+            },
+            "gatt_services": [
+                {
+                    "uuid": "0000180a-0000-1000-8000-00805f9b34fb",
+                    "characteristics": [
+                        {
+                            "uuid": DEVICE_INFO_CHARS["model_number"],
+                            "handle": 24,
+                            "read_result": None,
+                            "read_error": (
+                                "Bluetooth GATT Error handle=24 error=5 "
+                                "description=Insufficient authentication"
+                            ),
+                        }
+                    ],
+                }
+            ],
+            "command_trace": [{"command_origin": "query_config"}],
+            "notification_summary": {"total_notifications": 0},
+        }
+        pairing = _build_pairing_assessment(
+            diagnostics,
+            entry=mock_config_entry,
+            coordinator=SimpleNamespace(pairing_supported=True),
+        )
+
+        evidence = _build_evidence_summary(
+            capture_duration=120,
+            include_logs=True,
+            recent_logs=[
+                {
+                    "timestamp": "2026-07-12T00:00:00+00:00",
+                    "level": "INFO",
+                    "name": "adjustable_bed",
+                    "message": "Could not read /config/home-assistant.log: missing",
+                }
+            ],
+            diagnostic_report=diagnostics,
+            reproduction_command_trace=[],
+            pairing=pairing,
+            bluetooth_info={"scanners": []},
+            configured=True,
+            controller={"initialized": False},
+        )
+
+        assert pairing["status"] == "authentication_failed"
+        assert pairing["configured_bond_conflicts_with_capture"] is True
+        assert pairing["source"]["matches_preference"] is True
+        assert evidence["command_trace_count"] == 1
+        assert evidence["reproduction_command_trace_count"] == 0
+        assert evidence["non_reproduction_command_trace_count"] == 1
+        assert evidence["notification_count"] == 0
+        assert evidence["log_capture_status"] == "unavailable"
+        assert evidence["complete"] is False
+        assert any("saved bond marker" in warning for warning in evidence["warnings"])
+        assert any("No user command reproduction" in warning for warning in evidence["warnings"])
+
+        raw_auth_failure = _build_pairing_assessment(
+            {
+                **diagnostics,
+                "detection": {"bed_type": "linak"},
+            },
+            entry=None,
+            coordinator=None,
+        )
+        assert raw_auth_failure["required"] is False
+        assert raw_auth_failure["status"] == "authentication_failed"
+
     async def test_coordinator_records_command_trace(
         self,
         hass: HomeAssistant,
@@ -917,3 +1250,10 @@ class TestSupportBundle:
         assert trace[-1]["payload"]["hex"] == "0102"
         assert trace[-1]["repeat_count"] == 2
         assert trace[-1]["repeat_delay_ms"] == 25
+        assert trace[-1]["operation_name"] is None
+
+        async def _user_command(active_controller):
+            await active_controller.write_command(b"\x03\x04")
+
+        await coordinator.async_execute_controller_command(_user_command)
+        assert coordinator.command_trace[-1]["operation_name"] == "command"

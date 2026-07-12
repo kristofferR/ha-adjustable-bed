@@ -1212,11 +1212,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             download_url = register_download(hass, filepath)
             notification_count = len(report.get("notifications", []))
+            evidence_warnings = report.get("evidence", {}).get("warnings", [])
+            warning_summary = ""
+            if evidence_warnings:
+                warning_summary = "\n\n**Capture warnings:**\n" + "\n".join(
+                    f"- {warning}" for warning in evidence_warnings
+                )
             async_create(
                 hass,
                 f"[**Download support bundle**]({download_url})\n\n"
                 f"Captured {notification_count} notifications over "
-                f"{capture_duration} seconds.\n\n"
+                f"{capture_duration} seconds."
+                f"{warning_summary}\n\n"
                 "Attach this JSON file when reporting unsupported or broken beds.\n\n"
                 f"File path: `{filepath}`",
                 title="Adjustable Bed Support Bundle Ready",
