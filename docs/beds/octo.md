@@ -66,9 +66,13 @@ not mean both bed sides.
 The June 16, 2026 `OCTO Smart Control` 1.03.01 XAPK (version code 10301) was
 freshly decompiled and traced from its React UI through the Cordova BLE plugin.
 The relevant connection, movement, memory, STOP, and PIN paths match 1.03.00.
-They were also cross-checked against the older 1.1.57 build; that build has the
-same one-target disconnect/close switching and 350 ms movement/memory streaming
-model, but predates the newer PIN-lock handling.
+The `1.1.57` label is not a separate app or a SemVer successor: it uses the same
+package ID and signing certificate, and its Android version code is 10157 versus
+10300 and 10301 for the two current builds. The numbering is consistent with
+an older `1.01.57`-style build whose display label omitted zero padding. Its
+source map contains the same Octo control, pairing, and packet modules. It uses
+the same one-target disconnect/close switching and 350 ms movement/memory
+streaming model, but predates the newer PIN-lock handling.
 The current app confirms these lifecycle details:
 
 - It has one `connectedDevice` and sends every write to that device address.
