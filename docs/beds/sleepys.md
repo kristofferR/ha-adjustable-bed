@@ -24,7 +24,7 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 |---------|-------------|----------|--------|------|--------|---------|-----------|--------------|
 | BOX15 | 9 bytes | Yes | ✅ | ❌ | ❌ | ❌ | ❌ | FFE5 |
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
-| BOX25 Star | 5-10 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
+| BOX25 Star | 4/7/20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
 **Protocol Selection:**
 
@@ -141,7 +141,7 @@ E6 FE 2C 02 00 00 00 00 [checksum]
 A5 5A 00 00 00 40 02
 ```
 
-### BOX25 Star Protocol (multi-subsystem, Nordic UART)
+### BOX25 Star Protocol (StarCode, Nordic UART)
 
 **Service UUID:** `6E400001-B5A3-F393-E0A9-E50E24DCCA9E` (Nordic UART)
 
@@ -155,34 +155,32 @@ A5 5A 00 00 00 40 02
 
 **Integration direct-position surface:** `head` and `feet` sliders/services. The protocol also reports lumbar position and accepts direct lumbar position commands, but neck tilt does not currently have a protocol-backed position zone.
 
-The BOX25 Star uses a multi-subsystem protocol with a two-track initialization:
-
-1. **Wake:** Send `5A 0B 00 A5`, wait 150ms
-2. **Motor init:** Send `00 D0`, wait 80ms (required before motor/preset commands)
-3. **Massage/Light init:** Send `00 B0`, wait 80ms (required before massage/light commands)
-
-#### Motor Commands (7 bytes, `05 02` prefix)
+The Sleepy's app classifies `Star252201...` devices as `BOX25_STAR`. This is
+important because the app also contains a different legacy `BOX25` protocol.
+`BOX25_STAR` uses StarCode for every motor, preset, light, and massage action:
 
 ```text
-[0-1]  Header: 05 02
-[2]    Flags
-[3]    Motor bitmask (directional)
-[4-5]  Reserved for motor commands
-[6]    Reserved: 0x00
+5A 01 03 10 [category] [command] A5
 ```
 
-**Motor Bitmask (byte 3):**
+Commands are written to Nordic UART without response. The integration sends the
+proven `5A 0B 00 A5` wake frame once before the first command. The legacy
+`00 D0` / `00 B0` subsystem initializers and `05 02`, `08 02`, and `04 E0`
+command families do not apply to `BOX25_STAR`.
 
-| Bit | Motor | Direction |
-|-----|-------|-----------|
-| 0x01 | Head | Up |
-| 0x02 | Head | Down |
-| 0x04 | Foot | Up |
-| 0x08 | Foot | Down |
-| 0x10 | Lumbar | Up |
-| 0x20 | Lumbar | Down |
-| 0x40 | Neck Tilt | Up |
-| 0x80 | Neck Tilt | Down |
+#### Motor Commands (category `0x30`)
+
+| Command | Action |
+|---------|--------|
+| `0x00` | Head up |
+| `0x01` | Head down |
+| `0x02` | Foot up |
+| `0x03` | Foot down |
+| `0x06` | Lumbar up |
+| `0x07` | Lumbar down |
+| `0x0A` | Neck tilt up |
+| `0x0B` | Neck tilt down |
+| `0x0F` | Stop |
 
 #### Preset and Memory Recall Commands (StarCode, 7 bytes)
 
@@ -209,63 +207,43 @@ Saving Memory 1/2 uses command `0x94`/`0x95`, respectively. The app models this
 as a long press: it repeats the save frame 110 times at 100 ms intervals and
 does not append the preset commit frame.
 
-#### Position Commands (5 bytes, `03 F0` prefix)
+#### Position Commands
 
 ```text
-[0-1]  Header: 03 F0
-[2]    Zone (0x00=head, 0x01=foot, 0x02=lumbar, 0x07=sync)
-[3]    Position (0-100)
-[4]    Reserved: 0x00
+5A F0 03 [zone] [position 0-100] 00 A5
 ```
 
-#### Lighting Commands (6 bytes, `04 E0` prefix)
+Zones are `0x00` for head, `0x01` for foot, and `0x02` for lumbar. The status
+query is `5A B0 00 A5`.
 
-```text
-Color:      04 E0 01 [color 0-7] 00 00
-Brightness: 04 E0 00 [level 1-6] 00 00
-```
+#### Lighting Commands (category `0x30`)
 
-| Color | Value |
-|-------|-------|
-| Off | 0x00 |
-| White | 0x01 |
-| Red | 0x02 |
-| Orange | 0x03 |
-| Yellow | 0x04 |
-| Green | 0x05 |
-| Blue | 0x06 |
-| Purple | 0x07 |
+| Command | Action |
+|---------|--------|
+| `0x71` | Toggle under-bed light |
+| `0x73` | Turn under-bed light on |
+| `0x74` | Turn under-bed light off |
 
-#### Vibration Commands (6 bytes, `04 E0 06` prefix)
+#### Massage Commands
 
-```text
-04 E0 06 [head 0-8] [foot 0-8] 00
-```
-
-#### Massage Commands (10 bytes, `08 02` prefix)
-
-```text
-[0-1]  Header: 08 02
-[2]    Head intensity add (0x01 = step up)
-[3]    Head intensity reduce (0x01 = step down)
-[4]    Foot intensity add
-[5]    Foot intensity reduce
-[6]    All flags (0x01 = all add, 0x02 = all reduce)
-[7]    Mode (0x08 = wave1, 0x10 = wave2, 0x20 = wave3)
-[8]    Timer
-[9]    Reserved: 0x00
-```
+| Category | Command | Action |
+|----------|---------|--------|
+| `0x30` | `0x52` / `0x53` / `0x54` | Massage modes 1-3 |
+| `0x30` | `0x6F` | Massage off |
+| `0x30` | `0x60` / `0x61` | Head strength up/down |
+| `0x30` | `0x62` / `0x63` | Foot strength up/down |
+| `0x40` | `0x60` / `0x61` | Overall strength up/down |
 
 #### Notification Parsing
 
-The bed pushes status via Nordic UART RX notifications:
+The `BOX25_STAR` bed pushes a 20-byte status packet via Nordic UART RX:
 
-| Prefix | Length | Content |
-|--------|--------|---------|
-| `05` | 7+ bytes | Motor/movement status (bytes 2-6 non-zero = moving) |
-| `03` | 4+ bytes | Position report: byte 1 = zone, byte 2 = position (0-100) |
-| `04` | 6+ bytes | Light/vibration status |
-| `08` | 10 bytes | Massage status (byte 7 = active mode, 0 = off) |
+```text
+A5 0D ... [head at byte 4] ... [foot at byte 6] ... [lumbar at byte 8] ...
+```
+
+Each motor position is clamped to the app's 0-100 range. Issue #372's captured
+notification `A5 0D 11 01 16 00 00 ...` therefore reports head position 22.
 
 ## Checksum Calculation (BOX15 only)
 
@@ -282,8 +260,8 @@ From app disassembly:
 - **Repeat Interval:** Continuous while button held
 - **Pattern:** Send command repeatedly with ~100ms delay
 - **Stop Required:** Yes, explicit stop after motor release
-- **BOX25 wake delay:** 150ms after wake command
-- **BOX25 init delay:** 80ms after subsystem init
+- **BOX25 Star write mode:** write without response
+- **BOX25 Star wake delay:** 150ms after the one-time wake command
 
 ## Detection
 

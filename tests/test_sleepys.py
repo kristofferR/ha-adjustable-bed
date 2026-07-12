@@ -1194,13 +1194,13 @@ class TestSleepysBox25Controller:
         assert controller.motor_control_specs[3].translation_key == "head_end_tilt"
         assert controller.stale_motor_entity_keys == {"back", "legs"}
 
-    async def test_lumbar_notifications_propagate(
+    async def test_star_status_notifications_propagate_motor_positions(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """Lumbar position notifications should reach coordinator callbacks."""
+        """BOX25_STAR A5 0D status bytes should update head, feet, and lumbar."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -1210,9 +1210,12 @@ class TestSleepysBox25Controller:
 
         characteristic = MagicMock()
         characteristic.uuid = "test-char"
-        controller._on_notification(characteristic, bytearray([0x03, 0x02, 55, 0x00]))
+        controller._on_notification(
+            characteristic,
+            bytearray.fromhex("A5 0D 11 01 16 00 21 00 37 00 00 00 70 01 01 00 00 00 00 00"),
+        )
 
-        assert updates == [("lumbar", 55.0)]
+        assert updates == [("head", 22.0), ("feet", 33.0), ("lumbar", 55.0)]
 
     async def test_cancelled_write_command_does_not_mark_init_complete(
         self,
@@ -1234,8 +1237,99 @@ class TestSleepysBox25Controller:
         ):
             await controller.write_command(Box25Commands.HEAD_UP, cancel_event=cancel_event)
 
-        assert controller._motor_initialized is False
+        assert controller._initialized is False
         mock_client.write_gatt_char.assert_not_called()
+
+    async def test_all_controls_use_oem_box25_star_frames(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Motors, lights, and massage must use BOX25_STAR, not legacy BOX25."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        commands = (
+            (controller.move_head_up, "5A0103103000A5"),
+            (controller.move_head_down, "5A0103103001A5"),
+            (controller.move_feet_up, "5A0103103002A5"),
+            (controller.move_feet_down, "5A0103103003A5"),
+            (controller.move_lumbar_up, "5A0103103006A5"),
+            (controller.move_lumbar_down, "5A0103103007A5"),
+            (controller.move_tilt_up, "5A010310300AA5"),
+            (controller.move_tilt_down, "5A010310300BA5"),
+            (controller.lights_on, "5A0103103073A5"),
+            (controller.lights_off, "5A0103103074A5"),
+            (controller.lights_toggle, "5A0103103071A5"),
+            (controller.massage_off, "5A010310306FA5"),
+            (controller.massage_intensity_up, "5A0103104060A5"),
+            (controller.massage_intensity_down, "5A0103104061A5"),
+            (controller.massage_head_up, "5A0103103060A5"),
+            (controller.massage_head_down, "5A0103103061A5"),
+            (controller.massage_foot_up, "5A0103103062A5"),
+            (controller.massage_foot_down, "5A0103103063A5"),
+        )
+        for method, expected_hex in commands:
+            with (
+                patch.object(controller, "write_command", AsyncMock()) as mock_write,
+                patch.object(controller, "_move_with_stop", AsyncMock()) as mock_move,
+            ):
+                await method()
+
+            expected = bytes.fromhex(expected_hex)
+            if mock_move.await_count:
+                mock_move.assert_awaited_once_with(expected)
+            else:
+                mock_write.assert_awaited_once_with(expected, cancel_event=None)
+
+    async def test_star_wake_and_commands_use_write_without_response(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """The Sleepy's app writes BOX25_STAR packets without response."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with (
+            patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as mock_write,
+            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
+        ):
+            await controller.write_command(Box25Commands.HEAD_UP)
+
+        assert mock_write.await_count == 2
+        assert mock_write.call_args_list[0].args[1] == Box25Commands.WAKE
+        assert mock_write.call_args_list[0].kwargs["response"] is False
+        assert mock_write.call_args_list[1].args[1] == Box25Commands.HEAD_UP
+        assert mock_write.call_args_list[1].kwargs["response"] is False
+
+    async def test_massage_toggle_and_mode_cycle_use_star_frames(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Massage state changes should retain the OEM BOX25_STAR framing."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await controller.massage_toggle()
+            await controller.massage_mode_step()
+            await controller.massage_mode_step()
+            await controller.massage_toggle()
+
+        assert [call.args[0] for call in mock_write.await_args_list] == [
+            Box25Commands.MASSAGE_WAVE1,
+            Box25Commands.MASSAGE_WAVE2,
+            Box25Commands.MASSAGE_WAVE3,
+            Box25Commands.MASSAGE_EXIT,
+        ]
 
     async def test_preset_arms_then_commits_with_starcode_terminator(
         self,
@@ -1366,4 +1460,20 @@ class TestSleepysBox25Controller:
         with patch.object(controller, "_write_motor_command", AsyncMock()) as mock_write:
             await controller.set_motor_position("lumbar", 57)
 
-        mock_write.assert_awaited_once_with(bytes([0x03, 0xF0, 0x02, 57, 0x00]))
+        mock_write.assert_awaited_once_with(bytes([0x5A, 0xF0, 0x03, 0x02, 57, 0x00, 0xA5]))
+
+    async def test_read_positions_sends_star_status_query(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Position refresh should request the A5 0D status notification."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await controller.read_positions()
+
+        mock_write.assert_awaited_once_with(Box25Commands.QUERY_STATUS)
