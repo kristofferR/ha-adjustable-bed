@@ -373,13 +373,20 @@
         "data": {
           "confirm": "Split this paired bed"
         }
-      }
-    },
-    "pair_sides": {
-      "title": "Enable paired-side controls",
-      "description": "Expose Left, Right, and Both controls for this bed while keeping its existing Bluetooth address and config entry. This is reversible. Existing standalone behavior is restored if you revert it later.",
-      "data": {
-        "confirm": "Enable Left / Right / Both controls"
+      },
+      "pair_sides": {
+        "title": "Enable paired-side controls",
+        "description": "Expose Left, Right, and Both controls for this bed while keeping its existing Bluetooth address and config entry. This is reversible. Existing standalone behavior is restored if you revert it later.",
+        "data": {
+          "confirm": "Enable Left / Right / Both controls"
+        }
+      },
+      "revert_sides": {
+        "title": "Restore standalone controls",
+        "description": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+        "data": {
+          "confirm": "Restore standalone controls"
+        }
       }
     },
     "error": {
@@ -1612,28 +1619,6 @@
       },
       "footwarming_climate_both": {
         "name": "Both sides: Footwarming"
-      }
-    },
-    "revert_sides": {
-      "title": "Restore standalone controls",
-      "description": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
-      "data": {
-        "confirm": "Restore standalone controls"
-      },
-      "title_left": "Restore standalone controls",
-      "title_right": "Restore standalone controls",
-      "title_both": "Restore standalone controls",
-      "description_left": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
-      "description_right": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
-      "description_both": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
-      "data_left": {
-        "confirm": "Restore standalone controls"
-      },
-      "data_right": {
-        "confirm": "Restore standalone controls"
-      },
-      "data_both": {
-        "confirm": "Restore standalone controls"
       }
     }
   },
