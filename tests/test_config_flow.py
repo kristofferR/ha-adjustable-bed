@@ -197,8 +197,9 @@ class TestPairingInstructions:
 class TestPairingPersistence:
     """Test that successful pairing is persisted on the created entry."""
 
-    async def test_bluetooth_pairing_marks_bond_as_established(self, hass: HomeAssistant) -> None:
-        """Pair Now should persist that the bed is already bonded."""
+    @staticmethod
+    def _new_pairing_flow(hass: HomeAssistant) -> AdjustableBedConfigFlow:
+        """Create a pairing flow with representative entry data."""
         flow = AdjustableBedConfigFlow()
         flow.hass = hass
         flow._manual_data = {
@@ -211,9 +212,36 @@ class TestPairingPersistence:
             CONF_PREFERRED_ADAPTER: "auto",
         }
         flow.context = {"source": SOURCE_USER}
+        return flow
+
+    async def test_bluetooth_pairing_marks_bond_as_established(self, hass: HomeAssistant) -> None:
+        """Pair Now should persist that the bed is already bonded."""
+        flow = self._new_pairing_flow(hass)
 
         with patch.object(flow, "_attempt_pairing", new=AsyncMock(return_value=True)):
             result = await flow.async_step_bluetooth_pairing({"action": "pair_now"})
+
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
+
+    async def test_bluetooth_skip_marks_existing_bond_as_established(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Skip already paired should prevent a redundant setup-time pairing attempt."""
+        flow = self._new_pairing_flow(hass)
+
+        result = await flow.async_step_bluetooth_pairing({"action": "skip_pairing"})
+
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
+
+    async def test_manual_skip_marks_existing_bond_as_established(
+        self, hass: HomeAssistant
+    ) -> None:
+        """The manual flow should persist the same already-paired assertion."""
+        flow = self._new_pairing_flow(hass)
+
+        result = await flow.async_step_manual_pairing({"action": "skip_pairing"})
 
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True

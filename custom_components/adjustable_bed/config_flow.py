@@ -260,6 +260,19 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_BLE_BOND_ESTABLISHED: True,
         }
 
+    def _create_entry_for_existing_bond(self) -> ConfigFlowResult:
+        """Create an entry after the user confirms the adapter is already bonded."""
+        assert self._manual_data is not None
+        _LOGGER.info(
+            "User confirmed an existing BLE bond for %s via adapter %s",
+            self._manual_data.get(CONF_ADDRESS),
+            self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+        )
+        return self.async_create_entry(
+            title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
+            data=self._mark_ble_bond_established(self._manual_data),
+        )
+
     @staticmethod
     def _needs_malouf_step(bed_type: str | None, user_input: dict[str, Any]) -> bool:
         """Return True when the Malouf layout/memory fields still need collecting.
@@ -1997,11 +2010,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "pairing_failed"
 
             elif action == "skip_pairing":
-                # User wants to try without pairing (maybe already paired manually)
-                return self.async_create_entry(
-                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
-                )
+                return self._create_entry_for_existing_bond()
 
         return self.async_show_form(
             step_id="bluetooth_pairing",
@@ -2064,11 +2073,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "pairing_failed"
 
             elif action == "skip_pairing":
-                # User wants to try without pairing (maybe already paired manually)
-                return self.async_create_entry(
-                    title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
-                )
+                return self._create_entry_for_existing_bond()
 
         return self.async_show_form(
             step_id="manual_pairing",
