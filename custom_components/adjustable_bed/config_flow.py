@@ -1997,10 +1997,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "pairing_failed"
 
             elif action == "skip_pairing":
-                # User wants to try without pairing (maybe already paired manually)
+                # The user confirmed that this adapter already holds the bond.
+                # Persist that state so setup does not immediately try to pair
+                # again and fail after the device's pairing window has closed.
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                    data=self._mark_ble_bond_established(self._manual_data),
                 )
 
         return self.async_show_form(
@@ -2064,10 +2066,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "pairing_failed"
 
             elif action == "skip_pairing":
-                # User wants to try without pairing (maybe already paired manually)
+                # The user confirmed that this adapter already holds the bond.
+                # Persist that state so setup does not immediately try to pair
+                # again and fail after the device's pairing window has closed.
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._manual_data,
+                    data=self._mark_ble_bond_established(self._manual_data),
                 )
 
         return self.async_show_form(
