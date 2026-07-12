@@ -357,6 +357,7 @@ class AdjustableBedCoordinator:
         # Command timing tracking for diagnostics (issue #168)
         self._last_command_start: datetime | None = None
         self._last_command_end: datetime | None = None
+        self._active_operation_name: str | None = None
         self._last_notify_received: datetime | None = None
 
         # Adapter selection details for diagnostics (issue #168)
@@ -1176,6 +1177,7 @@ class AdjustableBedCoordinator:
                 "repeat_count": repeat_count,
                 "repeat_delay_ms": repeat_delay_ms,
                 "command_origin": command_origin,
+                "operation_name": self._active_operation_name,
             }
         )
 
@@ -3007,6 +3009,7 @@ class AdjustableBedCoordinator:
                     if raise_on_lock_cancel:
                         raise asyncio.CancelledError
                     return None
+                self._active_operation_name = operation_name
                 self._last_command_start = datetime.now(UTC)
 
                 poll_stop: asyncio.Event | None = None
@@ -3030,6 +3033,7 @@ class AdjustableBedCoordinator:
                     )
                 finally:
                     self._last_command_end = datetime.now(UTC)
+                    self._active_operation_name = None
                     if poll_stop is not None:
                         poll_stop.set()
                     if poll_task is not None:

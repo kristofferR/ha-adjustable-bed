@@ -715,6 +715,8 @@ class TestBleDiagnosticsRunner:
         coordinator.connection_history = {}
         coordinator.connection_attempt_details = []
         coordinator.command_trace = []
+        coordinator.controller = MagicMock(requires_notification_channel=True)
+        coordinator.async_start_notify_for_diagnostics = AsyncMock()
 
         async def _connect_through_coordinator(*, reset_timer):
             assert reset_timer is False
@@ -754,7 +756,83 @@ class TestBleDiagnosticsRunner:
         assert report.device["actual_source"] == "proxy_1"
         coordinator.pause_disconnect_timer.assert_called_once()
         coordinator.resume_disconnect_timer.assert_called_once()
+        coordinator.async_start_notify_for_diagnostics.assert_not_called()
+        coordinator.controller.stop_notify.assert_not_called()
         client.disconnect.assert_not_awaited()
+
+    async def test_coordinator_attempts_are_retained_before_standalone_fallback(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A successful raw fallback must not hide the configured connection failure."""
+        service_info = _build_unknown_service_info(
+            source="proxy_1",
+            connectable=True,
+            rssi=-61,
+        )
+        client = _build_diagnostic_client(_FakeServices([]))
+        coordinator = MagicMock()
+        coordinator.client = None
+        coordinator.is_connected = False
+        coordinator.entry.data = {CONF_PREFERRED_ADAPTER: "proxy_1"}
+        coordinator.adapter_details = {}
+        coordinator.connection_history = {}
+        coordinator.connection_attempt_details = [
+            {
+                "attempt": 1,
+                "result": "failed",
+                "error_category": "PAIRING FAILED",
+            }
+        ]
+        coordinator.command_trace = []
+        coordinator.async_ensure_connected = AsyncMock(return_value=False)
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.get_service_info_snapshots_by_address",
+                return_value=[(service_info, True)],
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.select_adapter",
+                new=AsyncMock(
+                    return_value=AdapterSelectionResult(
+                        device=service_info.device,
+                        source="proxy_1",
+                        rssi=-61,
+                        connectable=True,
+                        available_sources=["proxy_1 (RSSI: -61)"],
+                    )
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.establish_connection",
+                new=AsyncMock(return_value=client),
+            ),
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
+                return_value=1,
+            ),
+        ):
+            report = await BLEDiagnosticRunner(
+                hass,
+                service_info.address,
+                capture_duration=0,
+                coordinator=coordinator,
+            ).run_diagnostics()
+
+        assert len(report.connection_attempt_details) == 2
+        configured_attempt, fallback_attempt = report.connection_attempt_details
+        assert configured_attempt["error_category"] == "PAIRING FAILED"
+        assert (
+            configured_attempt["diagnostic_connection_path"]
+            == "configured_coordinator"
+        )
+        assert fallback_attempt["result"] == "connected"
+        assert (
+            fallback_attempt["diagnostic_connection_path"]
+            == "standalone_after_coordinator_failure"
+        )
 
 
 class TestSupportBundle:
@@ -1100,7 +1178,7 @@ class TestSupportBundle:
                     ],
                 }
             ],
-            "command_trace": [],
+            "command_trace": [{"command_origin": "query_config"}],
             "notification_summary": {"total_notifications": 0},
         }
         pairing = _build_pairing_assessment(
@@ -1121,6 +1199,7 @@ class TestSupportBundle:
                 }
             ],
             diagnostic_report=diagnostics,
+            reproduction_command_trace=[],
             pairing=pairing,
             bluetooth_info={"scanners": []},
             configured=True,
@@ -1130,11 +1209,25 @@ class TestSupportBundle:
         assert pairing["status"] == "authentication_failed"
         assert pairing["configured_bond_conflicts_with_capture"] is True
         assert pairing["source"]["matches_preference"] is True
-        assert evidence["command_trace_count"] == 0
+        assert evidence["command_trace_count"] == 1
+        assert evidence["reproduction_command_trace_count"] == 0
+        assert evidence["non_reproduction_command_trace_count"] == 1
         assert evidence["notification_count"] == 0
         assert evidence["log_capture_status"] == "unavailable"
         assert evidence["complete"] is False
         assert any("saved bond marker" in warning for warning in evidence["warnings"])
+        assert any("No user command reproduction" in warning for warning in evidence["warnings"])
+
+        raw_auth_failure = _build_pairing_assessment(
+            {
+                **diagnostics,
+                "detection": {"bed_type": "linak"},
+            },
+            entry=None,
+            coordinator=None,
+        )
+        assert raw_auth_failure["required"] is False
+        assert raw_auth_failure["status"] == "authentication_failed"
 
     async def test_coordinator_records_command_trace(
         self,
@@ -1157,3 +1250,10 @@ class TestSupportBundle:
         assert trace[-1]["payload"]["hex"] == "0102"
         assert trace[-1]["repeat_count"] == 2
         assert trace[-1]["repeat_delay_ms"] == 25
+        assert trace[-1]["operation_name"] is None
+
+        async def _user_command(active_controller):
+            await active_controller.write_command(b"\x03\x04")
+
+        await coordinator.async_execute_controller_command(_user_command)
+        assert coordinator.command_trace[-1]["operation_name"] == "command"

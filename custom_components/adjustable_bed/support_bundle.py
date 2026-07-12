@@ -73,6 +73,14 @@ async def generate_support_bundle(
     timestamp = datetime.now(UTC)
     integration = await async_get_integration(hass, DOMAIN)
     integration_version = str(integration.version) if integration.version is not None else "unknown"
+    pre_capture_command_trace = (
+        list(coordinator.command_trace) if coordinator is not None else []
+    )
+    reproduction_command_trace = [
+        trace
+        for trace in pre_capture_command_trace
+        if trace.get("operation_name") == "command"
+    ]
 
     diagnostics_report = await BLEDiagnosticRunner(
         hass,
@@ -113,6 +121,7 @@ async def generate_support_bundle(
         include_logs=include_logs,
         recent_logs=recent_logs,
         diagnostic_report=diagnostic_dict,
+        reproduction_command_trace=reproduction_command_trace,
         pairing=pairing,
         bluetooth_info=bluetooth_info,
         configured=entry is not None,
@@ -424,10 +433,10 @@ def _build_pairing_assessment(
             if uuid in probe_uuids and characteristic.get("read_result") is not None:
                 successful_probes.append(characteristic.get("uuid"))
 
-    if not pairing_required:
-        status = "not_required"
-    elif authentication_errors:
+    if authentication_errors:
         status = "authentication_failed"
+    elif not pairing_required:
+        status = "not_required"
     elif successful_probes:
         status = "verified"
     else:
@@ -463,7 +472,7 @@ def _build_pairing_assessment(
         "protocol_variant": protocol_variant,
         "configured_bond_marker": saved_bond,
         "configured_bond_conflicts_with_capture": bool(
-            pairing_required and saved_bond is True and authentication_errors
+            saved_bond is True and authentication_errors
         ),
         "coordinator_pairing_supported": pairing_supported,
         "backend_flags": device.get("pairing", {}),
@@ -489,6 +498,7 @@ def _build_evidence_summary(
     include_logs: bool,
     recent_logs: list[dict[str, str]],
     diagnostic_report: dict[str, Any],
+    reproduction_command_trace: list[dict[str, Any]],
     pairing: dict[str, Any],
     bluetooth_info: dict[str, Any],
     configured: bool,
@@ -496,6 +506,7 @@ def _build_evidence_summary(
 ) -> dict[str, Any]:
     """Summarize whether the bundle contains enough evidence to act on."""
     command_count = len(diagnostic_report.get("command_trace", []))
+    reproduction_command_count = len(reproduction_command_trace)
     notification_count = diagnostic_report.get("notification_summary", {}).get(
         "total_notifications", 0
     )
@@ -517,10 +528,10 @@ def _build_evidence_summary(
         log_status = "empty"
 
     warnings: list[str] = []
-    if configured and command_count == 0:
+    if configured and reproduction_command_count == 0:
         warnings.append(
-            "No integration-issued command was captured. Reproduce at least one "
-            "failed command before generating the bundle."
+            "No user command reproduction was captured. Retry at least one failed "
+            "Home Assistant command before generating the bundle."
         )
     if capture_duration > 0 and not notification_count:
         warnings.append(
@@ -559,6 +570,10 @@ def _build_evidence_summary(
 
     return {
         "command_trace_count": command_count,
+        "reproduction_command_trace_count": reproduction_command_count,
+        "non_reproduction_command_trace_count": max(
+            0, command_count - reproduction_command_count
+        ),
         "notification_count": notification_count,
         "log_capture_status": log_status,
         "recent_log_entry_count": len(recent_logs),
