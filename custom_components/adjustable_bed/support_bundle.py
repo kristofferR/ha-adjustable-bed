@@ -21,6 +21,7 @@ from .support_report import (
     _get_connection_info,
     _get_controller_info,
     _get_integration_info,
+    _get_pairing_info,
     _get_recent_logs,
     _get_system_info,
 )
@@ -74,7 +75,7 @@ async def generate_support_bundle(
 
     report: dict[str, Any] = {
         "metadata": {
-            "report_version": "2.0",
+            "report_version": "2.1",
             "generated_at": timestamp.isoformat(),
             "capture_duration_seconds": capture_duration,
             "integration_domain": DOMAIN,
@@ -93,6 +94,11 @@ async def generate_support_bundle(
         "connection": connection,
         "connection_history": connection_history,
         "connection_attempt_details": diagnostics_report.connection_attempt_details,
+        "pairing": _get_pairing_info(
+            entry,
+            coordinator,
+            diagnostic_backend=diagnostics_report.device.get("pairing", {}),
+        ),
         "adapter": adapter,
         "bluetooth": bluetooth_info,
         "gatt_services": diagnostics_report.gatt_services,

@@ -2000,6 +2000,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # The user confirmed that this adapter already holds the bond.
                 # Persist that state so setup does not immediately try to pair
                 # again and fail after the device's pairing window has closed.
+                _LOGGER.info(
+                    "User confirmed an existing BLE bond for %s via adapter %s",
+                    self._manual_data.get(CONF_ADDRESS),
+                    self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+                )
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                     data=self._mark_ble_bond_established(self._manual_data),
@@ -2069,6 +2074,11 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # The user confirmed that this adapter already holds the bond.
                 # Persist that state so setup does not immediately try to pair
                 # again and fail after the device's pairing window has closed.
+                _LOGGER.info(
+                    "User confirmed an existing BLE bond for %s via adapter %s",
+                    self._manual_data.get(CONF_ADDRESS),
+                    self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+                )
                 return self.async_create_entry(
                     title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
                     data=self._mark_ble_bond_established(self._manual_data),

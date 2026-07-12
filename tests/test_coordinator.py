@@ -272,6 +272,14 @@ class TestCoordinatorConnection:
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        pairing = coordinator.pairing_diagnostics
+        assert pairing["required"] is True
+        assert pairing["runtime_bond_established"] is True
+        assert pairing["connection_attempts"][0]["pairing"]["decision"] == (
+            "existing_os_bond_detected"
+        )
+        assert pairing["connection_attempts"][0]["pairing"]["os_bond_reported"] is True
+        assert pairing["connection_attempts"][0]["pairing"]["requested"] is False
 
     async def test_initial_position_read_prepares_controller_before_hydration(
         self,
@@ -818,6 +826,12 @@ class TestCoordinatorPositionSeek:
 
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
+        pairing_attempt = coordinator.pairing_diagnostics["connection_attempts"][0][
+            "pairing"
+        ]
+        assert pairing_attempt["decision"] == "bond_marker_present"
+        assert pairing_attempt["bond_marker_before_attempt"] is True
+        assert pairing_attempt["requested"] is False
 
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_connect_richmat_auto_remote_uses_ble_name_detection(
@@ -2027,6 +2041,21 @@ class TestCoordinatorWriteCommand:
         ]
         assert True in pair_kwargs
         assert False in pair_kwargs
+        pairing_attempts = [
+            attempt["pairing"]
+            for attempt in coordinator.pairing_diagnostics["connection_attempts"]
+        ]
+        assert any(
+            attempt["requested"] is True
+            and attempt["connection_result"] == "pairing_connection_failed"
+            and attempt["error_type"] == "BleakError"
+            for attempt in pairing_attempts
+        )
+        assert any(
+            attempt["decision"] == "retry_without_pairing"
+            and attempt["requested"] is False
+            for attempt in pairing_attempts
+        )
 
     async def test_verify_bonded_detects_unbonded_link_and_repairs(
         self,
@@ -2077,6 +2106,10 @@ class TestCoordinatorWriteCommand:
         assert bonded is False
         assert coordinator._ble_bond_established is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        assert (
+            coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+            == "failed_authentication"
+        )
         mock_create_issue.assert_awaited_once_with(
             hass, TEST_ADDRESS, TEST_NAME, "okimat_verify_bonded_test"
         )
@@ -2123,6 +2156,10 @@ class TestCoordinatorWriteCommand:
         assert coordinator._ble_bond_established is True
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
         assert coordinator._skip_pair_next_attempt is False
+        assert (
+            coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+            == "succeeded"
+        )
         mock_delete_issue.assert_awaited_once_with(hass, TEST_ADDRESS)
 
 
@@ -2168,6 +2205,10 @@ class TestCoordinatorWriteCommand:
             assert bonded is True
             assert coordinator._bond_probe_timed_out is False
             assert client.read_gatt_char.await_count == 1
+            assert (
+                coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+                == "timed_out"
+            )
 
             async with asyncio.timeout(5):
                 bonded = await coordinator._async_verify_bonded()

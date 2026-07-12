@@ -137,6 +137,7 @@ from .const import (
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
     VARIANT_AUTO,
+    connection_gated_by_bond,
     get_richmat_features,
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
@@ -330,6 +331,12 @@ class AdjustableBedCoordinator:
         # Track if pairing is supported by the Bluetooth adapter (None = unknown)
         self._pairing_supported: bool | None = None
         self._ble_bond_established: bool = bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
+        self._last_bond_verification: dict[str, Any] = {
+            "status": "not_attempted",
+            "timestamp": None,
+            "error": None,
+            "error_type": None,
+        }
         # Transient (in-memory only) flag: a pairing attempt just failed, so the
         # single next connection attempt should skip pair=True (some stacks fail
         # to re-pair on top of an existing bond). Unlike the persisted bond
@@ -646,6 +653,13 @@ class AdjustableBedCoordinator:
 
     def _device_reports_existing_bond(self, device: BLEDevice | None = None) -> bool:
         """Return True when HA/BlueZ reports this bed as already paired or bonded."""
+        return any(
+            state.get("paired") is True or state.get("bonded") is True
+            for state in self._device_pairing_states(device)
+        )
+
+    def _device_pairing_states(self, device: BLEDevice | None = None) -> list[dict[str, Any]]:
+        """Return adapter-reported pairing flags for the available BLE device."""
         candidates: list[BLEDevice] = []
         if device is not None:
             candidates.append(device)
@@ -666,16 +680,46 @@ class AdjustableBedCoordinator:
         if current_device is not None and current_device not in candidates:
             candidates.append(current_device)
 
+        states: list[dict[str, Any]] = []
         for candidate in candidates:
-            details = getattr(candidate, "details", None)
-            if not isinstance(details, dict):
+            raw_details = getattr(candidate, "details", None)
+            if not isinstance(raw_details, dict):
                 continue
-            props = details.get("props")
-            if not isinstance(props, dict):
-                continue
-            if props.get("Paired") or props.get("Bonded"):
-                return True
-        return False
+            details: dict[str, Any] = raw_details
+            raw_props = details.get("props")
+            props: dict[str, Any] = raw_props if isinstance(raw_props, dict) else {}
+
+            states.append(
+                {
+                    "source": details.get("source"),
+                    "paired": props.get("Paired", details.get("paired")),
+                    "bonded": props.get("Bonded", details.get("bonded")),
+                    "trusted": props.get("Trusted", details.get("trusted")),
+                    "address_type": props.get(
+                        "AddressType", details.get("address_type")
+                    ),
+                }
+            )
+        return states
+
+    def _record_bond_verification(
+        self,
+        status: str,
+        error: BaseException | None = None,
+        attempt_details: dict[str, Any] | None = None,
+    ) -> None:
+        """Record the latest auth-gated bond probe outcome for diagnostics."""
+        result = {
+            "status": status,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "error": str(error) if error is not None else None,
+            "error_type": type(error).__name__ if error is not None else None,
+        }
+        self._last_bond_verification = result
+        if attempt_details is not None:
+            pairing = attempt_details.get("pairing")
+            if isinstance(pairing, dict):
+                pairing["bond_verification"] = dict(result)
 
     def _mark_ble_bond_established(self) -> None:
         """Record that future connections should skip `pair=True`."""
@@ -729,6 +773,7 @@ class AdjustableBedCoordinator:
             self._address,
             err,
         )
+        self._record_bond_verification("authentication_failed", err)
         # A definitive authentication failure invalidates any earlier decision
         # to skip a probe that timed out. The next paired connection should
         # verify the fresh bond again.
@@ -752,7 +797,9 @@ class AdjustableBedCoordinator:
             else:
                 await self.async_disconnect(reason="authentication_failed")
 
-    async def _async_verify_bonded(self) -> bool:
+    async def _async_verify_bonded(
+        self, attempt_details: dict[str, Any] | None = None
+    ) -> bool:
         """Probe an auth-gated characteristic to confirm the BLE bond is live.
 
         For beds that require pairing, a connection — even one made with
@@ -769,6 +816,9 @@ class AdjustableBedCoordinator:
         """
         client = self._client
         if client is None or not client.is_connected:
+            self._record_bond_verification(
+                "skipped_not_connected", attempt_details=attempt_details
+            )
             return True
 
         if self._bond_probe_timed_out:
@@ -776,6 +826,9 @@ class AdjustableBedCoordinator:
                 "Bond verification read previously timed out on %s; "
                 "skipping the probe for this session.",
                 self._address,
+            )
+            self._record_bond_verification(
+                "skipped_cached_timeout", attempt_details=attempt_details
             )
             return True
 
@@ -789,12 +842,16 @@ class AdjustableBedCoordinator:
                 # We run inside _async_connect_locked, which holds self._lock —
                 # disconnect via the lock-free path to avoid a deadlock.
                 await self._async_handle_ble_authentication_error(err, holding_lock=True)
+                self._record_bond_verification(
+                    "failed_authentication", err, attempt_details
+                )
                 return False
             _LOGGER.debug(
                 "Bond verification read for %s was inconclusive (%s); proceeding.",
                 self._address,
                 err,
             )
+            self._record_bond_verification("inconclusive_error", err, attempt_details)
             return True
         except (TimeoutError, OSError) as err:
             # The field-proven OKIN CST receiver never answers this DIS read,
@@ -816,12 +873,14 @@ class AdjustableBedCoordinator:
                     self._address,
                     err,
                 )
+            self._record_bond_verification("timed_out", err, attempt_details)
             return True
 
         # Read succeeded → the encrypted link works → we are bonded.
         self._skip_pair_next_attempt = False
         self._mark_ble_bond_established()
         await delete_pairing_required_issue(self.hass, self._address)
+        self._record_bond_verification("succeeded", attempt_details=attempt_details)
         _LOGGER.debug("Bond verification succeeded for %s", self._address)
         return True
 
@@ -842,6 +901,37 @@ class AdjustableBedCoordinator:
             "last_error": self._last_connection_error,
             "last_error_type": self._last_connection_error_type,
             "last_disconnect_reason": self._last_disconnect_reason,
+        }
+
+    @property
+    def pairing_diagnostics(self) -> dict[str, Any]:
+        """Return pairing and bond state for diagnostics and support bundles."""
+        pairing_attempts = [
+            {
+                "attempt": attempt.get("attempt"),
+                "started_at": attempt.get("started_at"),
+                "result": attempt.get("result"),
+                "pairing": dict(pairing),
+            }
+            for attempt in self._connection_attempt_details
+            if isinstance((pairing := attempt.get("pairing")), dict)
+            and pairing.get("required") is not None
+        ]
+        return {
+            "required": requires_pairing(self._bed_type, self._protocol_variant),
+            "connection_gated_by_bond": connection_gated_by_bond(
+                self._bed_type, self._protocol_variant
+            ),
+            "persisted_bond_marker": bool(
+                self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)
+            ),
+            "runtime_bond_established": self._ble_bond_established,
+            "adapter_pairing_supported": self._pairing_supported,
+            "transient_skip_next_attempt": self._skip_pair_next_attempt,
+            "bond_probe_timed_out": self._bond_probe_timed_out,
+            "last_bond_verification": dict(self._last_bond_verification),
+            "backend_reports": self._device_pairing_states(),
+            "connection_attempts": pairing_attempts,
         }
 
     @property
@@ -1439,10 +1529,16 @@ class AdjustableBedCoordinator:
                 # leave the proxy stuck in ESTABLISHED state when asked to re-pair
                 # an already-bonded device.
                 bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+                pairing_details = attempt_details["pairing"]
+                bond_marker_before_attempt = self._ble_bond_established
+                transient_skip_was_set = self._skip_pair_next_attempt
+                os_bond_reported = (
+                    bed_requires_pairing and self._device_reports_existing_bond(device)
+                )
                 if (
                     bed_requires_pairing
                     and not self._ble_bond_established
-                    and self._device_reports_existing_bond(device)
+                    and os_bond_reported
                 ):
                     _LOGGER.info(
                         "Existing BLE bond detected for %s; skipping pair=True",
@@ -1455,6 +1551,30 @@ class AdjustableBedCoordinator:
                     and not self._ble_bond_established
                     and not self._skip_pair_next_attempt
                     and self._pairing_supported is not False
+                )
+                if not bed_requires_pairing:
+                    pairing_decision = "not_required"
+                elif os_bond_reported and not bond_marker_before_attempt:
+                    pairing_decision = "existing_os_bond_detected"
+                elif self._ble_bond_established:
+                    pairing_decision = "bond_marker_present"
+                elif transient_skip_was_set:
+                    pairing_decision = "retry_without_pairing"
+                elif self._pairing_supported is False:
+                    pairing_decision = "adapter_pairing_unsupported"
+                else:
+                    pairing_decision = "pairing_requested"
+                pairing_details.update(
+                    {
+                        "required": bed_requires_pairing,
+                        "requested": use_pairing,
+                        "decision": pairing_decision,
+                        "adapter_pairing_supported": self._pairing_supported,
+                        "bond_marker_before_attempt": bond_marker_before_attempt,
+                        "bond_marker_after_detection": self._ble_bond_established,
+                        "os_bond_reported": os_bond_reported,
+                        "transient_skip_was_set": transient_skip_was_set,
+                    }
                 )
                 # Consume the transient skip flag: it only suppresses pairing for
                 # the single attempt immediately following a failed pair, so we
@@ -1507,6 +1627,10 @@ class AdjustableBedCoordinator:
                         if use_pairing:
                             self._pairing_supported = True
                             self._mark_ble_bond_established()
+                            pairing_details["adapter_pairing_supported"] = True
+                            pairing_details["connection_result"] = "pairing_connection_succeeded"
+                        else:
+                            pairing_details["connection_result"] = "connected_without_pairing"
                     except (NotImplementedError, TypeError) as pair_err:
                         # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
                         # TypeError: older bleak-retry-connector doesn't have pair kwarg
@@ -1519,6 +1643,12 @@ class AdjustableBedCoordinator:
                             )
                             # Remember that pairing isn't supported to avoid repeated warnings
                             self._pairing_supported = False
+                            pairing_details["adapter_pairing_supported"] = False
+                            pairing_details["connection_result"] = (
+                                "pairing_unsupported_retry_without_pairing"
+                            )
+                            pairing_details["error"] = str(pair_err)
+                            pairing_details["error_type"] = type(pair_err).__name__
                             # Retry without pairing but still disable cache since
                             # this bed type requires pairing and may have stale data
                             self._client = await establish_connection(
@@ -1530,6 +1660,9 @@ class AdjustableBedCoordinator:
                                 timeout=self._connection_timeout,
                                 ble_device_callback=ble_device_callback,
                                 use_services_cache=False,
+                            )
+                            pairing_details["connection_result"] = (
+                                "pairing_unsupported_connected_without_pairing"
                             )
                         else:
                             raise
@@ -1555,6 +1688,10 @@ class AdjustableBedCoordinator:
                             )
                             self._pairing_supported = True
                             self._skip_pair_next_attempt = True
+                            pairing_details["adapter_pairing_supported"] = True
+                            pairing_details["connection_result"] = "pairing_connection_failed"
+                            pairing_details["error"] = str(pair_err)
+                            pairing_details["error_type"] = type(pair_err).__name__
                             raise
                         raise
                 finally:
@@ -1688,7 +1825,7 @@ class AdjustableBedCoordinator:
                         BED_TYPE_SLEEP_NUMBER_MCR,
                         BED_TYPE_JENSEN,
                     )
-                    and not await self._async_verify_bonded()
+                    and not await self._async_verify_bonded(attempt_details)
                 ):
                     # _async_verify_bonded cleared the bond marker, raised the
                     # repair issue, and disconnected. Retry — the next attempt

@@ -18,6 +18,7 @@ from homeassistant.loader import async_get_integration
 from .adapter import find_service_info_by_address
 from .const import (
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
@@ -32,6 +33,8 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SUPPORTED_BED_TYPES,
+    connection_gated_by_bond,
+    requires_pairing,
 )
 from .diagnostics_utils import get_gatt_summary
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
@@ -79,12 +82,13 @@ async def generate_support_report(
     integration_version = str(integration.version) if integration.version is not None else "unknown"
 
     report: dict[str, Any] = {
-        "report_version": "1.1",
+        "report_version": "1.2",
         "generated_at": timestamp.isoformat(),
         "system": _get_system_info(hass, integration_version),
         "integration": _get_integration_info(entry),
         "connection": _get_connection_info(coordinator),
         "connection_history": coordinator.connection_history,
+        "pairing": _get_pairing_info(entry, coordinator),
         "adapter": coordinator.adapter_details,
         "command_timing": coordinator.command_timing,
         "bluetooth": await _get_bluetooth_info(hass, coordinator),
@@ -157,6 +161,44 @@ def _get_connection_info(coordinator: AdjustableBedCoordinator) -> dict[str, Any
         if client.services:
             info["service_uuids"] = [str(service.uuid) for service in client.services]
 
+    return info
+
+
+def _get_pairing_info(
+    entry: ConfigEntry | None,
+    coordinator: AdjustableBedCoordinator | None = None,
+    *,
+    diagnostic_backend: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Consolidate integration and Bluetooth-backend pairing diagnostics."""
+    if coordinator is not None:
+        info = coordinator.pairing_diagnostics
+    else:
+        bed_type = entry.data.get(CONF_BED_TYPE) if entry is not None else None
+        protocol_variant = (
+            entry.data.get(CONF_PROTOCOL_VARIANT) if entry is not None else None
+        )
+        info = {
+            "required": requires_pairing(bed_type, protocol_variant) if bed_type else None,
+            "connection_gated_by_bond": (
+                connection_gated_by_bond(bed_type, protocol_variant) if bed_type else None
+            ),
+            "persisted_bond_marker": (
+                bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
+                if entry is not None
+                else None
+            ),
+            "runtime_bond_established": None,
+            "adapter_pairing_supported": None,
+            "transient_skip_next_attempt": None,
+            "bond_probe_timed_out": None,
+            "last_bond_verification": None,
+            "backend_reports": [],
+            "connection_attempts": [],
+        }
+
+    if diagnostic_backend is not None:
+        info["diagnostic_backend"] = dict(diagnostic_backend)
     return info
 
 
