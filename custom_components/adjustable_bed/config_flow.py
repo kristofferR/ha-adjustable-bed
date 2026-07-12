@@ -568,9 +568,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
             return None
         coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-        snapshot_fn = getattr(
-            getattr(coordinator, "controller", None), "capability_snapshot", None
-        )
+        snapshot_fn = getattr(getattr(coordinator, "controller", None), "capability_snapshot", None)
         live = snapshot_fn() if callable(snapshot_fn) else None
         if isinstance(live, dict):
             # Copy before caching/returning so later controller or builder mutation
@@ -622,6 +620,39 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry.data.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
         )
+
+    async def _pair_layout_snapshot(self, entry: ConfigEntry) -> dict[str, Any] | None:
+        """Capture the side's generic motor layout from its capability controller.
+
+        Prefer the loaded controller, otherwise mint the protocol's supported
+        client-free capability controller. If neither is available, the layout is
+        unknown and pairing is blocked rather than inferred from another protocol.
+        The persisted snapshot keeps the decision auditable after absorption.
+        """
+        from .coordinator import AdjustableBedCoordinator
+
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        controller = getattr(coordinator, "capability_controller", None)
+        if controller is None and not isinstance(coordinator, AdjustableBedCoordinator):
+            coordinator = AdjustableBedCoordinator(self.hass, entry)
+        if coordinator.capability_controller is None:
+            await coordinator.async_prime_offline_controller()
+        controller = coordinator.capability_controller
+        if controller is None:
+            return None
+        specs = list(getattr(controller, "motor_control_specs", ()))
+        configured_motor_count = entry.options.get(
+            CONF_MOTOR_COUNT,
+            entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+        )
+        return {
+            "motor_count": int(configured_motor_count),
+            "motor_keys": sorted(spec.key for spec in specs),
+            "discrete_motor_control": bool(
+                getattr(controller, "has_discrete_motor_control", False)
+            ),
+            "supports_motor_control": bool(getattr(controller, "supports_motor_control", False)),
+        }
 
     def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` exposes climate/light/select a half-available pair
@@ -1427,6 +1458,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             left = by_id.get(user_input["left_entry"])
             right = by_id.get(user_input["right_entry"])
+            left_layout = await self._pair_layout_snapshot(left) if left is not None else None
+            right_layout = await self._pair_layout_snapshot(right) if right is not None else None
             if left is None or right is None:
                 errors["base"] = "unknown"
             elif left.entry_id == right.entry_id:
@@ -1437,33 +1470,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Two distinct entries for the same MAC would build children with
                 # identical addresses and so collide on {address}_{key} unique IDs.
                 errors["right_entry"] = "same_address"
-            elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(
-                right
-            ):
+            elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(right):
                 # Compare RESOLVED bed types: two legacy leggett_platt entries with
                 # DIFFERENT explicit variants (gen2 vs mlrm) are different concrete
                 # protocols, so they're an incompatible pair even though their raw
                 # umbrella type matches — and would otherwise be stored as mismatched
                 # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
-            elif self._offline_safe_bed_type(
-                left
-            ) == BED_TYPE_OCTO and self._is_octo_star2(left) != self._is_octo_star2(
-                right
-            ):
-                # Standard Octo and Octo Star2 both resolve to BED_TYPE_OCTO but are
-                # DIFFERENT protocols (Star2 has fixed caps / no PIN / no snapshot),
-                # so a standard+Star2 pair is a mismatch the resolved-type check above
-                # can't see.
-                errors["base"] = "mismatched_bed_types"
             elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
-                (
-                    not self._is_octo_star2(left)
-                    and self._octo_capability_snapshot(left) is None
-                )
+                (not self._is_octo_star2(left) and self._octo_capability_snapshot(left) is None)
                 or (
-                    not self._is_octo_star2(right)
-                    and self._octo_capability_snapshot(right) is None
+                    not self._is_octo_star2(right) and self._octo_capability_snapshot(right) is None
                 )
             ):
                 # Standard Octo is paired via the sequential active-connection
@@ -1472,13 +1489,17 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # — so each STANDARD Octo bed must be connected at pairing for its
                 # snapshot to exist. Star2 has fixed caps and needs no snapshot.
                 errors["base"] = "octo_pairing_needs_connection"
-            elif self._has_unsafe_offline_platforms(
-                left
-            ) or self._has_unsafe_offline_platforms(right):
+            elif self._has_unsafe_offline_platforms(left) or self._has_unsafe_offline_platforms(
+                right
+            ):
                 # climate/light/select are forwarded per-side now, but a
                 # non-offline-capability-safe bed can't rebuild them when a side
                 # is offline, so a half-available pair would lose them.
                 errors["base"] = "pairing_unsupported_entities"
+            elif left_layout is None or right_layout is None:
+                errors["base"] = "pairing_needs_capabilities"
+            elif left_layout != right_layout:
+                errors["base"] = "mismatched_motor_layouts"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
                 # Merge each side's options (e.g. customized angle limits, which the
@@ -1492,8 +1513,18 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     name=name,
                     left_octo_snapshot=self._octo_capability_snapshot(left),
                     right_octo_snapshot=self._octo_capability_snapshot(right),
+                    left_layout_snapshot=left_layout,
+                    right_layout_snapshot=right_layout,
                     left_origin=(left.entry_id, left.unique_id),
                     right_origin=(right.entry_id, right.unique_id),
+                    left_origin_title=left.title,
+                    right_origin_title=right.title,
+                    left_origin_source=left.source,
+                    right_origin_source=right.source,
+                    left_origin_data=left.data,
+                    right_origin_data=right.data,
+                    left_origin_options=left.options,
+                    right_origin_options=right.options,
                 )
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
@@ -2821,6 +2852,50 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
+        if is_paired(self.config_entry.data) and user_input is None:
+            return self.async_show_menu(step_id="init", menu_options=["settings", "unpair"])
+        return await self._async_options_form(user_input, step_id="init")
+
+    async def async_step_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage settings for a paired bed."""
+        return await self._async_options_form(user_input, step_id="init")
+
+    async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Confirm splitting a paired bed back into two entries."""
+        if user_input is not None and user_input.get("confirm"):
+            entry_id = self.config_entry.entry_id
+
+            async def finish_unpair() -> None:
+                from . import async_unpair_entry
+
+                entry = self.hass.config_entries.async_get_entry(entry_id)
+                if entry is None:
+                    return
+                try:
+                    await async_unpair_entry(self.hass, entry)
+                except Exception:  # noqa: BLE001 - task must report transaction failure
+                    _LOGGER.exception("Could not unpair config entry %s", entry_id)
+
+            # The options flow belongs to the entry being removed. Schedule the
+            # transaction after returning the flow result so HA never tears down
+            # an entry while its own options flow is still executing.
+            self.hass.async_create_task(finish_unpair(), f"adjustable_bed_unpair_{entry_id}")
+            return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="unpair",
+            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+        )
+
+    async def _async_options_form(
+        self,
+        user_input: dict[str, Any] | None,
+        *,
+        step_id: str,
+    ) -> ConfigFlowResult:
+        """Show and save the normal options form."""
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         if is_paired(current_data):
@@ -2999,7 +3074,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_OCTO_PIN: "invalid_pin"},
                     )
@@ -3024,7 +3099,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     )
             except ValueError, TypeError:
                 return self.async_show_form(
-                    step_id="init",
+                    step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
                 )
@@ -3034,14 +3109,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
-                            step_id="init",
+                            step_id=step_id,
                             data_schema=vol.Schema(schema_dict),
                             errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_BACK_MAX_ANGLE] = value
                 except ValueError, TypeError:
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                     )
@@ -3050,14 +3125,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
-                            step_id="init",
+                            step_id=step_id,
                             data_schema=vol.Schema(schema_dict),
                             errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_LEGS_MAX_ANGLE] = value
                 except ValueError, TypeError:
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
@@ -3109,6 +3184,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(
-            step_id="init",
+            step_id=step_id,
             data_schema=vol.Schema(schema_dict),
         )

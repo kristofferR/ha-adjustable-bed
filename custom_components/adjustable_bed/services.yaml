@@ -126,6 +126,19 @@ set_position:
           min: 0
           max: 100
           mode: slider
+    side:
+      name: Side
+      description: Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target.
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
 
 timed_move:
   name: Timed Move
@@ -183,6 +196,19 @@ timed_move:
           step: 100
           unit_of_measurement: ms
           mode: box
+    side:
+      name: Side
+      description: Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target.
+      required: false
+      selector:
+        select:
+          options:
+            - value: both
+              label: Both sides
+            - value: left
+              label: Left
+            - value: right
+              label: Right
 
 generate_support_bundle:
   name: Generate Support Bundle

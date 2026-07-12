@@ -223,6 +223,19 @@ class PairedBedCoordinator:
 
         await self._run("seek", side, op)
 
+    async def async_run_child_operation(
+        self,
+        action: str,
+        operation: Callable[
+            [AdjustableBedCoordinator], Coroutine[Any, Any, None]
+        ],
+        *,
+        side: str = SIDE_BOTH,
+        cancel_running: bool = True,
+    ) -> None:
+        """Run a child-specific operation with the paired failure contract."""
+        await self._run(action, side, operation, cancel_running=cancel_running)
+
     async def _run(
         self,
         action: str,
@@ -463,23 +476,18 @@ class PairedBedCoordinator:
         disconnect error must not mask the command outcome, but callers that rely
         on the link actually being down (sequential switching) check the result.
 
-        NOTE: this can only surface a disconnect that RAISES. The child
-        coordinator's ``_async_disconnect_locked`` deliberately swallows
-        ``BleakError`` and resets ``self._client = None`` on every disconnect
-        outcome (a logical-disconnect guarantee shared by all bed types), so a
-        swallowed BLE error that leaves the *physical* link up cannot be detected
-        here — ``child.is_connected`` is already False. Surfacing that would need a
-        core change to the disconnect path for every bed; deferred to the Octo
-        bench-validation work (#327).
+        The child returns False when Bleak reports that the physical link remains
+        active after a failed disconnect. Older test doubles return None, which is
+        treated as success for backward compatibility.
         """
         try:
-            await child.async_disconnect("sequential_switch")
+            disconnected = await child.async_disconnect("sequential_switch")
         except Exception as err:  # noqa: BLE001 - CancelledError must propagate
             _LOGGER.warning(
                 "Disconnect failed on %s side (%s): %s", side, child.address, err
             )
             return False
-        return True
+        return disconnected is not False and not child.is_connected
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""

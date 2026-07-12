@@ -20,7 +20,10 @@ from custom_components.adjustable_bed.pairing import (
     iter_children,
     make_pair_id,
     octo_snapshot_from_descriptor,
+    pair_layout_from_descriptor,
     pair_member_addresses,
+    single_data_from_child,
+    single_options_from_child,
     with_updated_child,
 )
 
@@ -42,9 +45,7 @@ def _paired_data() -> dict:
 
 class TestMakePairId:
     def test_deterministic_and_order_independent(self):
-        assert make_pair_id([LEFT_ADDR, RIGHT_ADDR]) == make_pair_id(
-            [RIGHT_ADDR, LEFT_ADDR]
-        )
+        assert make_pair_id([LEFT_ADDR, RIGHT_ADDR]) == make_pair_id([RIGHT_ADDR, LEFT_ADDR])
 
     def test_case_insensitive(self):
         assert make_pair_id([LEFT_ADDR.lower(), RIGHT_ADDR]) == make_pair_id(
@@ -148,6 +149,27 @@ class TestBuildPairEntryData:
         right = {"address": RIGHT_ADDR, "bed_type": "linak"}
         data = build_pair_entry_data(left, right, name="x")
         assert CONF_PAIR_ID not in get_child(data, SIDE_LEFT)
+
+    def test_provenance_restores_exact_data_options_and_layout(self):
+        original_data = {
+            "address": LEFT_ADDR,
+            "name": "Left",
+            "bed_type": "legacy-original",
+        }
+        original_options = {"motor_count": 3, "back_max_angle": 55.0}
+        layout = {"motor_count": 3, "motor_keys": ["back", "head", "legs"]}
+        data = build_pair_entry_data(
+            {**original_data, **original_options, "bed_type": "resolved-type"},
+            {"address": RIGHT_ADDR, "bed_type": "resolved-type"},
+            name="Master",
+            left_layout_snapshot=layout,
+            left_origin_data=original_data,
+            left_origin_options=original_options,
+        )
+        child = get_child(data, SIDE_LEFT)
+        assert single_data_from_child(child) == original_data
+        assert single_options_from_child(child) == original_options
+        assert pair_layout_from_descriptor(child) == layout
 
 
 class TestWithUpdatedChild:

@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator, Callable, Coroutine, Mapping
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -13,10 +14,14 @@ if TYPE_CHECKING:
 
 import voluptuous as vol
 from homeassistant.components import bluetooth
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    HomeAssistantError,
+    ServiceValidationError,
+)
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -71,13 +76,18 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
+from .paired_coordinator import PairedBedCoordinator
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
+    KEY_ORIGIN_SOURCE,
+    KEY_ORIGIN_TITLE,
+    KEY_ORIGIN_UNIQUE_ID,
     get_child,
     is_paired,
     iter_children,
     pair_member_addresses,
+    single_data_from_child,
+    single_options_from_child,
     with_updated_child,
 )
 from .unsupported import (
@@ -356,9 +366,7 @@ _PAIR_ONLY_KEYS = frozenset(
 
 def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
     """Parent-level config inherited by every child (each descriptor overrides)."""
-    return {
-        key: value for key, value in parent_data.items() if key not in _PAIR_ONLY_KEYS
-    }
+    return {key: value for key, value in parent_data.items() if key not in _PAIR_ONLY_KEYS}
 
 
 def _make_child_persist_cb(
@@ -403,9 +411,7 @@ def _build_paired_children(
         if descriptor is None:
             continue
         child_data: dict[str, Any] = {**shared, **descriptor}
-        view = ChildEntryView(
-            entry, child_data, _make_child_persist_cb(hass, entry, side)
-        )
+        view = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
         # The view duck-types a ConfigEntry for the coordinator's purposes.
         children[side] = AdjustableBedCoordinator(hass, cast("ConfigEntry", view))
     return children
@@ -441,9 +447,7 @@ def _async_ensure_paired_device_registry(
         )
 
 
-async def _async_release_absorbed_singles(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> None:
+async def _async_release_absorbed_singles(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Disconnect (but do NOT remove) the original singles a single-connection pair
     is about to absorb, freeing their one-link BLE before the pair connects.
 
@@ -475,14 +479,10 @@ async def _async_release_absorbed_singles(
                 absorbed_id,
             )
         except Exception:  # noqa: BLE001 - best-effort; the pair connect retries
-            _LOGGER.debug(
-                "Could not pre-release absorbed single %s", absorbed_id
-            )
+            _LOGGER.debug("Could not pre-release absorbed single %s", absorbed_id)
 
 
-async def _async_rehome_absorbed_singles(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> set[str]:
+async def _async_rehome_absorbed_singles(hass: HomeAssistant, entry: ConfigEntry) -> set[str]:
     """Re-home absorbed single entries' registry rows onto the pair, then remove them.
 
     Conversion is ADDITIVE. Instead of deleting each original single entry's
@@ -533,9 +533,7 @@ async def _async_rehome_absorbed_singles(
             # they are indexed under the pair, not the original, so removing the
             # original config entry below clears none of them.
             for reg_entry in er.async_entries_for_config_entry(ent_reg, absorbed_id):
-                ent_reg.async_update_entity(
-                    reg_entry.entity_id, config_entry_id=entry.entry_id
-                )
+                ent_reg.async_update_entity(reg_entry.entity_id, config_entry_id=entry.entry_id)
                 rehomed_entity_ids.append(reg_entry.entity_id)
             # Now safe to drop the original entry: its entities are re-homed and
             # its device still carries the pair's config entry, so HA deletes
@@ -559,9 +557,7 @@ async def _async_rehome_absorbed_singles(
             # the side a consistent single, retried cleanly on the next reload.
             for entity_id in rehomed_entity_ids:
                 try:
-                    ent_reg.async_update_entity(
-                        entity_id, config_entry_id=absorbed_id
-                    )
+                    ent_reg.async_update_entity(entity_id, config_entry_id=absorbed_id)
                 except Exception:  # noqa: BLE001 - best-effort rollback
                     _LOGGER.debug(
                         "Rollback of re-homed row %s to %s failed",
@@ -587,6 +583,143 @@ async def _async_rehome_absorbed_singles(
             entry.entry_id,
         )
     return absorbed_sides
+
+
+async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[ConfigEntry]:
+    """Split a paired entry into standalone children without recreating entities.
+
+    The pair is unloaded first, each per-side entity row is re-pointed to the
+    future standalone entry, and each existing child device is detached from the
+    synthetic parent. The original config-entry ids and unique ids are reused
+    when provenance is available. Combined parent entities remain owned by the
+    pair and are deleted when the pair entry is removed.
+
+    If any standalone entry cannot be added, registry ownership is restored to
+    the pair, partially-added singles are removed, and the pair is reloaded.
+    """
+    if not is_paired(entry.data):
+        raise HomeAssistantError("Cannot unpair a standalone bed")
+
+    children = iter_children(entry.data)
+    if len(children) != 2:
+        raise HomeAssistantError("Paired bed must contain exactly two sides")
+
+    existing_entries = hass.config_entries.async_entries(DOMAIN)
+    occupied_entry_ids = {
+        candidate.entry_id for candidate in existing_entries if candidate is not entry
+    }
+    occupied_unique_ids = {
+        candidate.unique_id
+        for candidate in existing_entries
+        if candidate is not entry and candidate.unique_id is not None
+    }
+    singles: list[tuple[ConfigEntry, str]] = []
+    for child in children:
+        address = child.get(CONF_ADDRESS)
+        if not isinstance(address, str) or not address:
+            raise HomeAssistantError("Paired child is missing its Bluetooth address")
+        unique_id = child.get(KEY_ORIGIN_UNIQUE_ID) or address
+        if unique_id in occupied_unique_ids:
+            raise HomeAssistantError(
+                f"Cannot unpair because standalone id {unique_id} already exists"
+            )
+        origin_entry_id = child.get(KEY_ABSORBED_ENTRY_ID)
+        if origin_entry_id in occupied_entry_ids:
+            raise HomeAssistantError(
+                f"Cannot restore original config entry {origin_entry_id}: id is in use"
+            )
+        title = child.get(KEY_ORIGIN_TITLE) or child.get("name") or address
+        source = child.get(KEY_ORIGIN_SOURCE) or SOURCE_IMPORT
+        single = ConfigEntry(
+            data=single_data_from_child(child),
+            discovery_keys=MappingProxyType({}),
+            domain=DOMAIN,
+            entry_id=origin_entry_id,
+            minor_version=1,
+            options=single_options_from_child(child),
+            source=source,
+            subentries_data=(),
+            title=title,
+            unique_id=unique_id,
+            version=entry.version,
+        )
+        singles.append((single, address))
+        occupied_entry_ids.add(single.entry_id)
+        occupied_unique_ids.add(unique_id)
+
+    ent_reg = er.async_get(hass)
+    dev_reg = dr.async_get(hass)
+    parent = dev_reg.async_get_device(identifiers={(DOMAIN, entry.data[CONF_PAIR_ID])})
+    child_devices: dict[str, dr.DeviceEntry] = {}
+    for single, address in singles:
+        device = dev_reg.async_get_device(identifiers={(DOMAIN, address)})
+        if device is not None:
+            child_devices[single.entry_id] = device
+
+    pair_rows = list(er.async_entries_for_config_entry(ent_reg, entry.entry_id))
+    row_owners: dict[str, str] = {}
+    for row in pair_rows:
+        for single, address in singles:
+            device = child_devices.get(single.entry_id)
+            if row.device_id == getattr(device, "id", None) or row.unique_id.upper().startswith(
+                address.upper()
+            ):
+                row_owners[row.entity_id] = single.entry_id
+                break
+
+    unloaded = await hass.config_entries.async_unload(entry.entry_id)
+    if not unloaded:
+        raise HomeAssistantError("Could not unload the paired bed before unpairing")
+
+    try:
+        for single, _address in singles:
+            device = child_devices.get(single.entry_id)
+            await hass.config_entries.async_add(single)
+            if device is not None:
+                dev_reg.async_update_device(device.id, via_device_id=None)
+
+        # Entity-registry validation only permits ownership by config entries
+        # already known to HA. Add both singles first, then explicitly re-home
+        # every per-side row (platform setup normally adopts them by unique_id;
+        # this makes the ownership transition deterministic).
+        for entity_id, owner_entry_id in row_owners.items():
+            ent_reg.async_update_entity(entity_id, config_entry_id=owner_entry_id)
+
+        removal = await hass.config_entries.async_remove(entry.entry_id)
+        if removal.get("require_restart"):
+            _LOGGER.warning(
+                "Paired bed %s required a restart while completing unpair",
+                entry.entry_id,
+            )
+    except Exception:
+        for entity_id in row_owners:
+            if ent_reg.async_get(entity_id) is not None:
+                ent_reg.async_update_entity(entity_id, config_entry_id=entry.entry_id)
+        for single, _address in reversed(singles):
+            if hass.config_entries.async_get_entry(single.entry_id) is not None:
+                with contextlib.suppress(Exception):
+                    await hass.config_entries.async_remove(single.entry_id)
+        for single, _address in singles:
+            device = child_devices.get(single.entry_id)
+            if device is not None:
+                dev_reg.async_update_device(
+                    device.id,
+                    add_config_entry_id=entry.entry_id,
+                    remove_config_entry_id=single.entry_id,
+                    via_device_id=parent.id if parent is not None else None,
+                )
+        if hass.config_entries.async_get_entry(entry.entry_id) is not None:
+            with contextlib.suppress(Exception):
+                await hass.config_entries.async_setup(entry.entry_id)
+        _LOGGER.exception("Failed to unpair %s; restored paired registry ownership", entry.title)
+        raise
+
+    _LOGGER.info(
+        "Unpaired %s into standalone entries %s",
+        entry.title,
+        ", ".join(single.entry_id for single, _ in singles),
+    )
+    return [single for single, _ in singles]
 
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -644,9 +777,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         # If NO side connected there is nothing to control yet — retry like a
         # single bed.
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            f"No side of paired bed {entry.title} could be connected"
-        )
+        raise ConfigEntryNotReady(f"No side of paired bed {entry.title} could be connected")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -680,9 +811,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 async with asyncio.timeout(SETUP_TIMEOUT):
                     await child.async_connect()
             except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
-                _LOGGER.debug(
-                    "Post-absorb reconnect of %s side failed; priming offline", side
-                )
+                _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
     # Prime a client-free capability controller for any side that did NOT connect,
     # so its per-side entities are still created up-front (with byte-identical
     # unique_ids); the live controller takes over on reconnect with no reload.
@@ -745,12 +874,8 @@ async def _maybe_create_pairing_issue_for(
 
     address = entry_data.get(CONF_ADDRESS, "")
     if address:
-        ble_device = bluetooth.async_ble_device_from_address(
-            hass, address, connectable=True
-        )
-        if ble_device is not None and isinstance(
-            getattr(ble_device, "details", None), dict
-        ):
+        ble_device = bluetooth.async_ble_device_from_address(hass, address, connectable=True)
+        if ble_device is not None and isinstance(getattr(ble_device, "details", None), dict):
             props = ble_device.details.get("props", {})
             if props.get("Paired") or props.get("Bonded"):
                 _LOGGER.debug(
@@ -910,9 +1035,7 @@ async def _async_maybe_reclassify_bedtech_qrrm_entry(
         )
         return
 
-    service_uuids = {
-        uuid.lower() for uuid in (getattr(service_info, "service_uuids", None) or [])
-    }
+    service_uuids = {uuid.lower() for uuid in (getattr(service_info, "service_uuids", None) or [])}
     if BEDTECH_SERVICE_UUID.lower() not in service_uuids:
         return
 
@@ -980,9 +1103,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             return None
         inferred_side: str | None = None
         if isinstance(coordinator, PairedBedCoordinator):
-            macs = {
-                ident[1].upper() for ident in device.identifiers if ident[0] == DOMAIN
-            }
+            macs = {ident[1].upper() for ident in device.identifiers if ident[0] == DOMAIN}
             for side, child in coordinator.children.items():
                 if child.address.upper() in macs:
                     inferred_side = side
@@ -1058,9 +1179,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 # the bundle can still capture BLE/GATT for that side by address.
                 members = pair_member_addresses(entry.data)
                 device_macs = {
-                    ident[1].upper()
-                    for ident in device.identifiers
-                    if ident[0] == DOMAIN
+                    ident[1].upper() for ident in device.identifiers if ident[0] == DOMAIN
                 }
                 address = next((m for m in members if m in device_macs), None)
                 if address is None and members:
@@ -1173,8 +1292,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         if side != SIDE_BOTH:
             raise ServiceValidationError(
-                "This is a single bed; the Left/Right/Both option only applies to "
-                "paired beds.",
+                "This is a single bed; the Left/Right/Both option only applies to paired beds.",
                 translation_domain=DOMAIN,
                 translation_key="side_not_supported",
             )
@@ -1219,50 +1337,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 with contextlib.suppress(Exception):
                     await target.async_ensure_connected(reset_timer=True)
 
-    def _single_bed_for_service(
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator,
-        inferred_side: str | None,
-        service: str,
-    ) -> AdjustableBedCoordinator:
-        """Resolve a per-motor service target to one coordinator.
-
-        These services drive a single bed's motors directly (controller/motor
-        specs), so for a paired bed a call that targets one side's child device
-        routes to that child; targeting the paired parent (no side) is rejected
-        with guidance to pick a side. Avoids a raw AttributeError on
-        PairedBedCoordinator and keeps the services usable after pairing.
-        """
-        if isinstance(coordinator, PairedBedCoordinator):
-            if inferred_side is not None:
-                child = coordinator.child_for_side(inferred_side)
-                if child is not None:
-                    # Wrap so the per-motor service routes writes through the
-                    # parent (pair lock) yet reads the child's entry/controller.
-                    return cast(
-                        "AdjustableBedCoordinator",
-                        PairedSideProxy(coordinator, child, inferred_side),
-                    )
-            raise ServiceValidationError(
-                f"{coordinator.name} is a paired bed; target one side's device "
-                f"for {service}.",
-                translation_domain=DOMAIN,
-                translation_key="service_needs_side_for_paired",
-                translation_placeholders={
-                    "device_name": coordinator.name,
-                    "service": service,
-                },
-            )
-        return coordinator
-
     async def handle_goto_preset(call: ServiceCall) -> None:
         """Handle goto_preset service call."""
         preset = call.data[ATTR_PRESET]
         device_ids = call.data.get(CONF_DEVICE_ID, [])
         explicit_side = call.data.get(ATTR_SIDE)
 
-        _LOGGER.info(
-            "Service goto_preset called: preset=%d (side=%s)", preset, explicit_side
-        )
+        _LOGGER.info("Service goto_preset called: preset=%d (side=%s)", preset, explicit_side)
 
         targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
         if missing:
@@ -1283,9 +1364,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _validation_controller(
-                        coordinator, target, preflighted
-                    )
+                    controller = await _validation_controller(coordinator, target, preflighted)
                     if not getattr(controller, "supports_memory_presets", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support memory presets",
@@ -1330,9 +1409,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         device_ids = call.data.get(CONF_DEVICE_ID, [])
         explicit_side = call.data.get(ATTR_SIDE)
 
-        _LOGGER.info(
-            "Service save_preset called: preset=%d (side=%s)", preset, explicit_side
-        )
+        _LOGGER.info("Service save_preset called: preset=%d (side=%s)", preset, explicit_side)
 
         targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
         if missing:
@@ -1353,9 +1430,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    controller = await _validation_controller(
-                        coordinator, target, preflighted
-                    )
+                    controller = await _validation_controller(coordinator, target, preflighted)
                     if not getattr(controller, "supports_memory_programming", False):
                         raise ServiceValidationError(
                             f"Device '{target.name}' does not support programming memory presets",
@@ -1401,9 +1476,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-        targets, missing_device_ids = _resolve_sided_targets(
-            hass, device_ids, explicit_side
-        )
+        targets, missing_device_ids = _resolve_sided_targets(hass, device_ids, explicit_side)
 
         async def _stop_one(
             coordinator: AdjustableBedCoordinator | PairedBedCoordinator, side: str
@@ -1438,9 +1511,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     # Optional left/right/both target (paired beds). No default: when omitted, a
     # call that targets one side's child device acts on just that side, otherwise
     # it falls back to 'both' — so single-bed automations are unchanged.
-    side_field = {
-        vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
-    }
+    side_field = {vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])}
 
     hass.services.async_register(
         DOMAIN,
@@ -1497,32 +1568,22 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     await coordinator.async_ensure_connected(reset_timer=True)
             raise
 
-    async def handle_set_position(call: ServiceCall) -> None:
-        """Handle set_position service call."""
-        device_ids = call.data.get(CONF_DEVICE_ID, [])
-        motor = call.data[ATTR_MOTOR]
-        position = call.data[ATTR_POSITION]
-
-        _LOGGER.info(
-            "Service set_position called: motor=%s, position=%.1f%%",
-            motor,
-            position,
-        )
-
-        for device_id in device_ids:
-            resolved = _resolve_sided_target(hass, device_id)
-            if resolved is None:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-            coordinator = _single_bed_for_service(
-                resolved[0], resolved[1], "set_position"
-            )
+    async def _set_position_plan(
+        parent: AdjustableBedCoordinator | PairedBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+        motor: str,
+        position: float,
+    ) -> dict[str, Any]:
+        """Validate one physical side and return its seek configuration."""
+        async with contextlib.AsyncExitStack():  # noqa: SIM117 - preserves plan scope
             async with _release_idle_on_validation_failure(coordinator):
-                controller = await _get_controller_for_service(coordinator)
+                controller = await _validation_controller(parent, coordinator, preflighted)
 
                 # Bed type / motor count come from the coordinator's own entry (the
                 # child's ChildEntryView for a paired-side target — children aren't in
@@ -1538,8 +1599,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 # Validate bed supports position feedback
                 # Special case: BED_TYPE_KEESON only supports position feedback with ergomotion variant
                 has_position_feedback = bed_type in BEDS_WITH_POSITION_FEEDBACK or (
-                    bed_type == BED_TYPE_KEESON
-                    and protocol_variant == KEESON_VARIANT_ERGOMOTION
+                    bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
                 )
                 if not has_position_feedback and not supports_direct_position_control:
                     raise ServiceValidationError(
@@ -1684,7 +1744,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     }
                     # Filter to valid motors based on motor_count
                     valid_motors = {
-                        m for m, cfg in motor_configs.items() if motor_count >= cfg.get("min_motors", 2)
+                        m
+                        for m, cfg in motor_configs.items()
+                        if motor_count >= cfg.get("min_motors", 2)
                     }
 
                 # Validate motor is valid for this bed
@@ -1720,14 +1782,66 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         },
                     )
 
-                # Call async_seek_position
-                await coordinator.async_seek_position(
-                    position_key=cast(str, config["position_key"]),
-                    target_angle=position,
-                    move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
-                    move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
-                    move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
-                )
+                return config
+
+    async def handle_set_position(call: ServiceCall) -> None:
+        """Handle set_position service call with sided all-target preflight."""
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        motor = call.data[ATTR_MOTOR]
+        position = call.data[ATTR_POSITION]
+        explicit_side = call.data.get(ATTR_SIDE)
+
+        _LOGGER.info(
+            "Service set_position called: motor=%s, position=%.1f%% (side=%s)",
+            motor,
+            position,
+            explicit_side,
+        )
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        plans: dict[int, dict[str, Any]] = {}
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    plans[id(target)] = await _set_position_plan(
+                        coordinator, target, preflighted, motor, position
+                    )
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
+
+        async def seek(target: AdjustableBedCoordinator) -> None:
+            config = plans[id(target)]
+            await target.async_seek_position(
+                position_key=cast(str, config["position_key"]),
+                target_angle=position,
+                move_up_fn=config["move_up_fn"],  # type: ignore[arg-type]
+                move_down_fn=config["move_down_fn"],  # type: ignore[arg-type]
+                move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
+            )
+
+        try:
+            for coordinator, side in targets:
+                if isinstance(coordinator, PairedBedCoordinator):
+                    await coordinator.async_run_child_operation("set position", seek, side=side)
+                else:
+                    await seek(coordinator)
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     hass.services.async_register(
         DOMAIN,
@@ -1739,40 +1853,30 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_MOTOR): vol.In(["back", "legs", "head", "feet"]),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
+                **side_field,
             }
         ),
     )
 
-    async def handle_timed_move(call: ServiceCall) -> None:
-        """Handle timed_move service call."""
-        device_ids = call.data.get(CONF_DEVICE_ID, [])
-        motor = call.data[ATTR_MOTOR]
-        direction = call.data[ATTR_DIRECTION]
-        duration_ms = call.data[ATTR_DURATION_MS]
-
-        _LOGGER.info(
-            "Service timed_move called: motor=%s, direction=%s, duration_ms=%d",
-            motor,
-            direction,
-            duration_ms,
-        )
-
-        for device_id in device_ids:
-            resolved = _resolve_sided_target(hass, device_id)
-            if resolved is None:
-                raise ServiceValidationError(
-                    f"Could not find Adjustable Bed device with ID {device_id}",
-                    translation_domain=DOMAIN,
-                    translation_key="device_not_found",
-                    translation_placeholders={"device_id": device_id},
-                )
-            coordinator = _single_bed_for_service(
-                resolved[0], resolved[1], "timed_move"
-            )
+    async def _timed_move_plan(
+        parent: AdjustableBedCoordinator | PairedBedCoordinator,
+        coordinator: AdjustableBedCoordinator,
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ],
+        motor: str,
+        direction: str,
+        duration_ms: int,
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        """Validate one physical side and build its timed command."""
+        async with contextlib.AsyncExitStack():
             # Create a narrowed reference for use in closures (mypy doesn't narrow across closures)
             coordinator_: AdjustableBedCoordinator = coordinator
             async with _release_idle_on_validation_failure(coordinator):
-                controller = await _get_controller_for_service(coordinator)
+                controller = await _validation_controller(parent, coordinator, preflighted)
                 motor_configs = {
                     spec.key: {
                         "move_up_fn": spec.open_fn,
@@ -1816,7 +1920,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     )
                     pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
                 # Round up to honor requested duration as minimum
-                calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
+                calculated_repeat_count = max(
+                    1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms
+                )
 
                 _LOGGER.debug(
                     "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
@@ -1853,7 +1959,66 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                         # Always send stop command
                         await asyncio.shield(_stop_fn(ctrl))
 
-                await coordinator.async_execute_controller_command(timed_movement)
+                return timed_movement
+
+    async def handle_timed_move(call: ServiceCall) -> None:
+        """Handle timed_move service call with sided all-target preflight."""
+        device_ids = call.data.get(CONF_DEVICE_ID, [])
+        motor = call.data[ATTR_MOTOR]
+        direction = call.data[ATTR_DIRECTION]
+        duration_ms = call.data[ATTR_DURATION_MS]
+        explicit_side = call.data.get(ATTR_SIDE)
+
+        _LOGGER.info(
+            "Service timed_move called: motor=%s, direction=%s, duration_ms=%d (side=%s)",
+            motor,
+            direction,
+            duration_ms,
+            explicit_side,
+        )
+        targets, missing = _resolve_sided_targets(hass, device_ids, explicit_side)
+        if missing:
+            raise ServiceValidationError(
+                f"Could not find Adjustable Bed device with ID {missing[0]}",
+                translation_domain=DOMAIN,
+                translation_key="device_not_found",
+                translation_placeholders={"device_id": missing[0]},
+            )
+
+        preflighted: list[
+            tuple[
+                AdjustableBedCoordinator | PairedBedCoordinator,
+                AdjustableBedCoordinator,
+            ]
+        ] = []
+        plans: dict[int, Callable[[BedController], Coroutine[Any, Any, None]]] = {}
+        try:
+            for coordinator, side in targets:
+                for target in _command_targets(coordinator, side):
+                    plans[id(target)] = await _timed_move_plan(
+                        coordinator,
+                        target,
+                        preflighted,
+                        motor,
+                        direction,
+                        duration_ms,
+                    )
+        except ServiceValidationError:
+            await _release_preflighted(preflighted)
+            raise
+
+        async def move(target: AdjustableBedCoordinator) -> None:
+            await target.async_execute_controller_command(plans[id(target)])
+
+        try:
+            for coordinator, side in targets:
+                if isinstance(coordinator, PairedBedCoordinator):
+                    await coordinator.async_run_child_operation("timed move", move, side=side)
+                else:
+                    await move(coordinator)
+        except Exception:
+            await _release_preflighted(preflighted)
+            raise
 
     hass.services.async_register(
         DOMAIN,
@@ -1868,6 +2033,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     vol.Coerce(int),
                     vol.Range(min=MIN_TIMED_MOVE_DURATION_MS, max=MAX_TIMED_MOVE_DURATION_MS),
                 ),
+                **side_field,
             }
         ),
     )
@@ -2024,9 +2190,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[
-            DOMAIN
-        ].pop(entry.entry_id)
+        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
+            entry.entry_id
+        )
         _LOGGER.debug("Disconnecting from bed...")
         await coordinator.async_shutdown()
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)

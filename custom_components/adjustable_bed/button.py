@@ -569,16 +569,13 @@ def _combined_button_entities_for(
     # connected, else a client-free controller minted from config). For client-free
     # beds (e.g. Linak) an OFFLINE side still participates via its offline
     # controller, so the combined controls register up-front and survive reconnect.
-    # Require EVERY eligible side to support a capability (intersection): the pair
-    # flow only rejects a different bed_type, so two same-protocol sides can still
-    # differ in motor_count / has_massage / variant, and a capability only one side
-    # has must NOT be exposed as a combined control the other can't honour. A side
-    # with no capability source at all (auto-variant, never connected) is excluded,
-    # falling back to the side(s) we can read.
-    eligible = (
-        [child for child in children if child.capability_controller is not None]
-        or children
-    )
+    # A combined action is safe only when EVERY side has a capability source. An
+    # unreadable side is unknown, not absent: intersecting only the readable side
+    # could expose a "both" action the other side cannot honour. Pair-level STOP
+    # remains available through the dedicated resilient stop button above.
+    if any(child.capability_controller is None for child in children):
+        return []
+    eligible = children
     entities: list[ButtonEntity] = []
     for description in BUTTON_DESCRIPTIONS:
         if description.is_coordinator_action or description.press_fn is None:

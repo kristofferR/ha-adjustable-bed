@@ -61,6 +61,40 @@ addresses and switching between them. Also note that the `Back + Legs Up`
 preset only moves both motors on the currently connected controller; it does
 not mean both bed sides.
 
+### Official app recheck (1.03.01)
+
+The June 16, 2026 `OCTO Smart Control` 1.03.01 XAPK (version code 10301) was
+freshly decompiled and traced from its React UI through the Cordova BLE plugin.
+The relevant connection, movement, memory, STOP, and PIN paths match 1.03.00.
+They were also cross-checked against the older 1.1.57 build; that build has the
+same one-target disconnect/close switching and 350 ms movement/memory streaming
+model, but predates the newer PIN-lock handling.
+The current app confirms these lifecycle details:
+
+- It has one `connectedDevice` and sends every write to that device address.
+- A normal device switch runs BLE `disconnect`, then `close`, waits 300 ms, and
+  only then connects the selected address. The control-screen switch aborts if
+  that chain rejects. The pairing screen catches two disconnect errors and may
+  continue, so it is not a safe model for error handling.
+- Motor movement is sent immediately and then every 350 ms while held. Releasing
+  the control clears the interval and sends `NORMAL_MOTORS_STOP` (`0x73`).
+- Memory recall sends `NORMAL_MOTOR_MEMPOS` immediately and every 350 ms until
+  release/cancellation, followed by the same global STOP.
+- A pushed `SYSTEM_BLE_PIN_LOCK` notification immediately retransmits the saved
+  four-digit PIN. `SYSTEM_BLE_PIN_STATE` reports whether the link is unlocked.
+
+The paired coordinator follows the stricter control-screen contract: a
+disconnect error that still reports an active physical link is retained and
+reported, and sequential switching stops before connecting the other address.
+Unit tests cover left-then-right switching, abort-on-release-failure, PIN
+re-authentication, memory streaming, cancellation, and STOP cleanup.
+
+The APK proves the app uses one active GATT target, but it cannot prove whether
+bed firmware permits two simultaneous central connections or whether two
+Bluetooth proxies behave differently from one. Single-proxy and dual-proxy
+operation therefore remain hardware-validation items; the integration makes no
+concurrency claim and uses the conservative one-link-at-a-time profile.
+
 ## Protocol Variants
 
 Octo beds have at least two protocol variants. The integration auto-detects the variant based on the service UUID.

@@ -2770,7 +2770,7 @@ class AdjustableBedCoordinator:
         self._cancel_passive_position_reconciliation_task()
         await self.async_disconnect()
 
-    async def async_disconnect(self, reason: str = "intentional") -> None:
+    async def async_disconnect(self, reason: str = "intentional") -> bool:
         """Disconnect from the bed.
 
         Args:
@@ -2779,9 +2779,9 @@ class AdjustableBedCoordinator:
         """
         _LOGGER.debug("async_disconnect called for %s", self._address)
         async with self._lock:
-            await self._async_disconnect_locked(reason)
+            return await self._async_disconnect_locked(reason)
 
-    async def _async_disconnect_locked(self, reason: str = "intentional") -> None:
+    async def _async_disconnect_locked(self, reason: str = "intentional") -> bool:
         """Disconnect from the bed. The caller MUST already hold ``self._lock``.
 
         Used by the bond-verification path, which runs inside
@@ -2808,6 +2808,8 @@ class AdjustableBedCoordinator:
             self._intentional_disconnect = True
             # Track disconnect reason for diagnostics (issue #168)
             self._last_disconnect_reason = reason
+            client = self._client
+            disconnect_failed = False
             try:
                 # Stop keep-alive and notifications before disconnecting
                 if self._controller is not None:
@@ -2822,18 +2824,30 @@ class AdjustableBedCoordinator:
                         await self._controller.stop_notify()
                     except Exception as err:
                         _LOGGER.debug("Error stopping notifications: %s", err)
-                await self._client.disconnect()
+                await client.disconnect()
                 _LOGGER.debug("Successfully disconnected from %s", self._address)
             except BleakError as err:
+                disconnect_failed = True
                 _LOGGER.debug("Error during disconnect from %s: %s", self._address, err)
             finally:
-                self._client = None
-                self._controller = None
-                # Update disconnect timestamp and notify state change
-                # (don't rely on _on_disconnect callback which may not fire on clean disconnect)
-                self._last_disconnected = datetime.now(UTC)
-                self._notify_connection_state_change(False)
                 self._intentional_disconnect = False
+            # Bleak can raise while the OS link remains active. Keep the live
+            # client/controller instead of reporting a logical disconnect: the
+            # paired sequential guard must know that opening the other side
+            # could create two physical links.
+            if disconnect_failed and client.is_connected:
+                self._client = client
+                _LOGGER.warning(
+                    "Disconnect from %s did not release the BLE link", self._address
+                )
+                return False
+            self._client = None
+            self._controller = None
+            # Update disconnect timestamp and notify state change (don't rely on
+            # _on_disconnect, which may not fire after a clean disconnect).
+            self._last_disconnected = datetime.now(UTC)
+            self._notify_connection_state_change(False)
+        return True
 
     def _reset_disconnect_timer(self) -> None:
         """Reset the disconnect timer."""

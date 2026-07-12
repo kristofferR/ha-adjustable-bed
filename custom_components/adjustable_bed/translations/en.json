@@ -302,6 +302,8 @@
       "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
       "same_device": "Pick two different beds — you selected the same one for both sides.",
       "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
+      "pairing_needs_capabilities": "Connect both beds once before combining them so their motor layouts can be verified.",
+      "mismatched_motor_layouts": "Those beds expose different motor layouts and can't be combined safely.",
       "octo_pairing_needs_connection": "Both Octo beds must be connected before combining them — their capabilities (lights, memory presets, etc.) are read from the live beds and saved for the paired device. Connect each Octo side, then try again.",
       "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
       "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine.",
@@ -313,6 +315,10 @@
       "init": {
         "title": "Adjustable Bed Options",
         "description": "Adjust the configuration for your adjustable bed.",
+        "menu_options": {
+          "settings": "Settings",
+          "unpair": "Split into two beds"
+        },
         "data": {
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
@@ -355,6 +361,13 @@
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range."
+        }
+      },
+      "unpair": {
+        "title": "Split paired bed",
+        "description": "Restore the Left and Right sides as separate Adjustable Bed entries. Side entities keep their entity IDs, history, names, and areas. Combined controls are removed.",
+        "data": {
+          "confirm": "Split this paired bed"
         }
       }
     },
