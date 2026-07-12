@@ -112,7 +112,7 @@ def _switch_entities_for(
             entity_id = registry.async_get_entity_id(
                 "switch",
                 DOMAIN,
-                f"{coordinator.address}_{description.key}",
+                coordinator.entity_unique_id(description.key),
             )
             if entity_id is not None:
                 registry.async_remove(entity_id)
@@ -134,7 +134,7 @@ def _switch_entities_for(
                 entity_id = registry.async_get_entity_id(
                     "switch",
                     DOMAIN,
-                    f"{coordinator.address}_{description.key}",
+                    coordinator.entity_unique_id(description.key),
                 )
                 if entity_id is not None:
                     registry.async_remove(entity_id)
@@ -157,7 +157,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         """Initialize the switch."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on = False  # We don't have state feedback
         # Cache discrete control capability at init. Use capability_controller so
         # a switch created for an offline paired side still caches the correct

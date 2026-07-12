@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.sleep_number import (
     BamkeyNotSupportedError,
+    SleepNumberCommands,
     SleepNumberController,
 )
 from custom_components.adjustable_bed.const import (
@@ -145,6 +146,30 @@ class TestSleepNumberController:
         )
 
         assert coordinator.controller._side == SLEEP_NUMBER_VARIANT_RIGHT
+
+    async def test_per_call_side_binding_preserves_configured_default(
+        self, sleep_number_coordinator
+    ) -> None:
+        """Phase 3 binds bamkey articulation to a side without mutating legacy config."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2F",
+            name="Smart bed 0074EF",
+            entry_id="sleep_number_bound_side",
+        )
+        controller = coordinator.controller
+        controller._send_bamkey_command = AsyncMock()
+
+        await controller.bind_side(SLEEP_NUMBER_VARIANT_RIGHT).set_motor_position(
+            "back", 57
+        )
+
+        controller._send_bamkey_command.assert_awaited_once_with(
+            SleepNumberCommands.SET_ACTUATOR_TARGET_POSITION,
+            SLEEP_NUMBER_VARIANT_RIGHT,
+            "head",
+            "57",
+        )
+        assert controller._side == SLEEP_NUMBER_VARIANT_LEFT
 
     async def test_requires_notification_channel(self, sleep_number_coordinator) -> None:
         """Sleep Number command acks should keep the notify channel active."""

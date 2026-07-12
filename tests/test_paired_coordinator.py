@@ -14,9 +14,13 @@ from types import SimpleNamespace
 import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from custom_components.adjustable_bed.beds.sbi import SBIController
+from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
+    BED_TYPE_SBI,
+    BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_PAIR_ID,
     DOMAIN,
@@ -30,6 +34,7 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
     PairedSideProxy,
+    SingleAddressPairedCoordinator,
 )
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
@@ -474,6 +479,97 @@ class TestSideProxy:
 
         await proxy.async_stop_command()
         parent.async_stop_command.assert_awaited_once_with(side=SIDE_LEFT)
+
+
+class SingleAddressInner:
+    """One physical coordinator double used by the Phase 3 routing tests."""
+
+    def __init__(self, controller_type):
+        self.address = "AA:BB:CC:DD:EE:50"
+        self.name = "One-address bed"
+        self.is_connected = True
+        self.controller = controller_type(self)
+        self.capability_controller = self.controller
+        self.cancel_command = None
+        self.motor_pulse_count = 1
+        self.motor_pulse_delay_ms = 1
+        self.position_data = {}
+
+    @property
+    def client(self):
+        return None
+
+    @property
+    def device_info(self):
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.address)}, name=self.name, manufacturer="Test"
+        )
+
+    async def async_execute_controller_command(self, command_fn, **_kwargs):
+        await command_fn(self.controller)
+
+    def request_command_cancel(self):
+        return None
+
+    def register_connection_state_callback(self, _callback):
+        return lambda: None
+
+    async def async_connect(self):
+        self.is_connected = True
+        return True
+
+    async def async_disconnect(self, _reason="intentional"):
+        self.is_connected = False
+
+    async def async_shutdown(self):
+        self.is_connected = False
+
+
+class TestSingleAddressCoordinator:
+    def _coordinator(self, bed_type, controller_type):
+        entry = SimpleNamespace(
+            data={CONF_PAIR_ID: "pair_single", "name": "Single", CONF_BED_TYPE: bed_type}
+        )
+        inner = SingleAddressInner(controller_type)
+        return SingleAddressPairedCoordinator(None, entry, inner)
+
+    async def test_sbi_uses_native_side_and_both_packets(self):
+        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        packets = []
+
+        async def record(controller):
+            packets.append(controller._build_command(0))
+
+        await coordinator.async_execute_controller_command(record, side=SIDE_LEFT)
+        await coordinator.async_execute_controller_command(record, side=SIDE_RIGHT)
+        await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
+
+        assert packets[0][0] == 0xE6 and packets[0][7] == 0x01
+        assert packets[1][0] == 0xE6 and packets[1][7] == 0x02
+        assert packets[2][0] == 0xE5
+
+    async def test_sleep_number_both_serializes_left_then_right(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        sides = []
+
+        async def record(controller):
+            sides.append(controller._side)
+
+        await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
+
+        assert sides == [SIDE_LEFT, SIDE_RIGHT]
+
+    def test_side_and_combined_ids_share_the_mac_device(self):
+        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        left = coordinator.children[SIDE_LEFT]
+
+        assert left.entity_unique_id("back") == "AA:BB:CC:DD:EE:50_back_left"
+        assert coordinator.entity_unique_id("back_up_both") == (
+            "AA:BB:CC:DD:EE:50_back_up_both"
+        )
+        assert coordinator.device_info["identifiers"] == {
+            (DOMAIN, "AA:BB:CC:DD:EE:50")
+        }
 
 
 class TestConnectionModeResolution:

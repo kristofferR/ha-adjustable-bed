@@ -4,6 +4,7 @@ import { expect, test } from "bun:test";
 import {
   bedEntitiesForDevice,
   bedIsEmpty,
+  isSingleAddressPairedDevice,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
@@ -69,6 +70,53 @@ test("paired parent's stop_both maps to the stop slot", () => {
   const hass = hassWith([entry("button.master_bed_stop_both", "stop_both")]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.stop).toBe("button.master_bed_stop_both");
+});
+
+test("single-address paired entities split by bed_side on one device", () => {
+  const hass = hassWith([
+    entry("cover.b_back_left", "back"),
+    entry("cover.b_back_right", "back"),
+    entry("button.b_flat_both", "preset_flat"),
+  ]);
+  const sideState = (entity_id: string, bed_side: "left" | "right" | "both") => {
+    hass.states[entity_id] = {
+      entity_id,
+      state: "unknown",
+      attributes: { bed_side },
+      last_changed: "",
+      last_updated: "",
+    };
+  };
+  sideState("cover.b_back_left", "left");
+  sideState("cover.b_back_right", "right");
+  sideState("button.b_flat_both", "both");
+
+  expect(isSingleAddressPairedDevice(hass, "dev1")).toBe(true);
+  expect(bedEntitiesForDevice(hass, "dev1", "left").motors[0].cover).toBe(
+    "cover.b_back_left",
+  );
+  expect(bedEntitiesForDevice(hass, "dev1", "right").motors[0].cover).toBe(
+    "cover.b_back_right",
+  );
+  expect(bedEntitiesForDevice(hass, "dev1", "both").presets).toEqual([
+    "button.b_flat_both",
+  ]);
+});
+
+test("side-suffixed translation keys remain a supported fallback", () => {
+  const hass = hassWith([
+    entry("button.b_head_up_left", "head_up_left"),
+    entry("button.b_head_up_right", "head_up_right"),
+    entry("button.b_stop_both", "stop_both"),
+  ]);
+
+  expect(bedEntitiesForDevice(hass, "dev1", "left").motors[0].up).toBe(
+    "button.b_head_up_left",
+  );
+  expect(bedEntitiesForDevice(hass, "dev1", "right").motors[0].up).toBe(
+    "button.b_head_up_right",
+  );
+  expect(isSingleAddressPairedDevice(hass, "dev1")).toBe(true);
 });
 
 test("Okin utility buttons (sync / child lock) bucket into utility", () => {

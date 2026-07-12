@@ -12,6 +12,16 @@ import type {
 } from "./types";
 
 export const PLATFORM = "adjustable_bed";
+export type BedSide = "left" | "right" | "both";
+
+export function splitSide(key: string): { key: string; side?: BedSide } {
+  for (const side of ["left", "right", "both"] as const) {
+    const suffix = `_${side}`;
+    if (key.endsWith(suffix))
+      return { key: key.slice(0, -suffix.length), side };
+  }
+  return { key };
+}
 
 // Default render order of the card's sections (keys without the "show_" prefix).
 export const SECTION_ORDER = [
@@ -78,6 +88,7 @@ function emptyBed(): BedEntities {
 export function bedEntitiesForDevice(
   hass: HomeAssistant,
   deviceId: string | undefined,
+  selectedSide?: BedSide,
 ): BedEntities {
   const bed = emptyBed();
   if (!deviceId || !hass?.entities) return bed;
@@ -107,8 +118,18 @@ export function bedEntitiesForDevice(
     if (entry.hidden) continue;
     const id = entry.entity_id;
     const domain = domainOf(id);
-    const key = keyOf(entry);
-    if (!key) continue;
+    const rawKey = keyOf(entry);
+    if (!rawKey) continue;
+    const split = splitSide(rawKey);
+    const stateSide = (hass.states[id]?.attributes.bed_side ??
+      hass.states[id]?.attributes.side) as
+      | BedSide
+      | undefined;
+    const entitySide = stateSide ?? split.side;
+    if (selectedSide) {
+      if (entitySide !== selectedSide) continue;
+    }
+    const key = selectedSide ? split.key : rawKey;
 
     let match: RegExpMatchArray | null;
 
@@ -206,6 +227,20 @@ export function bedEntitiesForDevice(
     .sort((a, b) => a.slot - b.slot);
 
   return bed;
+}
+
+export function isSingleAddressPairedDevice(
+  hass: HomeAssistant,
+  deviceId: string | undefined,
+): boolean {
+  if (!deviceId || !hass?.entities) return false;
+  return Object.values(hass.entities).some(
+    (entry) =>
+      entry.device_id === deviceId &&
+      entry.platform === PLATFORM &&
+      (hass.states[entry.entity_id]?.attributes.bed_side === "both" ||
+        splitSide(keyOf(entry)).side === "both"),
+  );
 }
 
 // Child (per-side) device IDs of a paired "Dual Bed" parent, ordered by display

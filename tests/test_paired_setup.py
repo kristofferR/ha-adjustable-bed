@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SBI,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_MOTOR_COUNT,
@@ -47,11 +48,16 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_MODE_SINGLE_ADDRESS,
+    SBI_VARIANT_BOTH,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
 )
-from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from custom_components.adjustable_bed.paired_coordinator import (
+    PairedBedCoordinator,
+    SingleAddressPairedCoordinator,
+)
 from custom_components.adjustable_bed.pairing import (
     get_child,
     is_paired,
@@ -107,6 +113,89 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    async def test_single_address_pair_enable_and_revert_in_place(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Phase 3 keeps the entry/MAC and reversibly adds logical side entities."""
+        original_data = {
+            CONF_ADDRESS: LEFT_ADDR,
+            CONF_NAME: "SBI One Address",
+            CONF_BED_TYPE: BED_TYPE_SBI,
+            CONF_PROTOCOL_VARIANT: SBI_VARIANT_BOTH,
+            CONF_MOTOR_COUNT: 4,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PREFERRED_ADAPTER: "auto",
+        }
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="SBI One Address",
+            data=original_data,
+            unique_id=LEFT_ADDR,
+            entry_id="single_address_sbi",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        assert result["type"] == FlowResultType.MENU
+        assert set(result["menu_options"]) == {"settings", "pair_sides"}
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "pair_sides"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        assert entry.entry_id == "single_address_sbi"
+        assert entry.unique_id == LEFT_ADDR
+        assert entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
+        assert isinstance(
+            hass.data[DOMAIN][entry.entry_id], SingleAddressPairedCoordinator
+        )
+        rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        assert any(row.unique_id.endswith("_left") for row in rows)
+        assert any(row.unique_id.endswith("_right") for row in rows)
+        assert any(row.unique_id.endswith("_both") for row in rows)
+
+        device = dr.async_get(hass).async_get_device(
+            identifiers={(DOMAIN, LEFT_ADDR)}
+        )
+        assert device is not None
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await hass.services.async_call(
+            DOMAIN,
+            "stop_all",
+            {"device_id": [device.id]},
+            blocking=True,
+        )
+        # Targeting the one physical device with no side must mean native both,
+        # not the first logical side that happens to share its MAC.
+        packet = mock_bleak_client.write_gatt_char.await_args.args[1]
+        assert packet[0] == 0xE5
+
+        await async_unpair_entry(hass, entry)
+        await hass.async_block_till_done()
+
+        assert entry.data == original_data
+        assert entry.unique_id == LEFT_ADDR
+        assert not is_paired(entry.data)
+        rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        assert not any(
+            row.unique_id.endswith(("_left", "_right", "_both"))
+            for row in rows
+            if row.unique_id not in entry.data.get(
+                "single_address_origin_entity_unique_ids", []
+            )
+        )
+
     async def test_paired_entry_loads_with_both_sides(
         self,
         hass: HomeAssistant,

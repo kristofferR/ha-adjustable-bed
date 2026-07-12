@@ -332,7 +332,7 @@ def _async_remove_stale_select_entity(
     entity_id = registry.async_get_entity_id(
         "select",
         DOMAIN,
-        f"{coordinator.address}_{key}",
+        coordinator.entity_unique_id(key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -352,7 +352,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the massage timer select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
 
         # Build options list: "Off" plus timer durations
@@ -423,7 +424,8 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the controller-state-backed select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
 
         # Use options directly from controller (already formatted)
@@ -496,7 +498,8 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         """Initialize the side-specific select entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_options = options
         self._unregister_callback: Callable[[], None] | None = None
 

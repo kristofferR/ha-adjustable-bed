@@ -17,7 +17,7 @@ import logging
 import struct
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.exc import BleakError
 
@@ -218,7 +218,7 @@ class SleepNumberController(BedController):
     ) -> None:
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
-        self._side = self._normalize_side(side)
+        self._configured_side = self._normalize_side(side)
         self._notify_started = False
         self._bulk_notify_started = False
         self._response_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -275,6 +275,13 @@ class SleepNumberController(BedController):
         if side == SLEEP_NUMBER_VARIANT_RIGHT:
             return SLEEP_NUMBER_VARIANT_RIGHT
         return SLEEP_NUMBER_VARIANT_LEFT
+
+    @property
+    def _side(self) -> str:
+        """Return the per-call side, falling back to the legacy configured side."""
+        if self.command_side in _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES:
+            return cast("str", self.command_side)
+        return self._configured_side
 
     @property
     def control_characteristic_uuid(self) -> str:

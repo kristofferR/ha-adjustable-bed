@@ -25,6 +25,9 @@ from custom_components.adjustable_bed.const import (
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.validators import (
@@ -67,6 +70,24 @@ class TestOkinCB24Controller:
         assert controller_bed_a._build_command(OkinCB24Commands.MASSAGE_ALL_TOGGLE) == bytes(
             [0x05, 0x02, 0x00, 0x00, 0x01, 0x00, 0xAA]
         )
+
+    def test_per_call_side_binding_preserves_configured_default(self) -> None:
+        """Legacy CB24 selects A/B/broadcast without changing standalone bytes."""
+        controller = OkinCB24Controller(MagicMock(), bed_selection=0x00)
+        command = OkinCB24Commands.PRESET_FLAT
+
+        legacy = controller._build_command(command)
+        assert controller.bind_side(SIDE_LEFT)._build_command(command)[-1] == 0xAA
+        assert controller.bind_side(SIDE_RIGHT)._build_command(command)[-1] == 0xBB
+        assert controller.bind_side(SIDE_BOTH)._build_command(command) == legacy
+        assert controller._build_command(command) == legacy
+
+    def test_cbnew_refuses_single_address_pairing(self) -> None:
+        """CBNew packets have no A/B selector and cannot be presented as paired."""
+        controller = OkinCB24Controller(
+            MagicMock(), protocol_variant=OKIN_CB24_VARIANT_CB27NEW
+        )
+        assert controller.supports_single_address_pairing is False
 
     def test_new_protocol_motor_and_stop_packets_match_cbnew(self) -> None:
         """CBNew profiles should use 0x2A/0xAA packet families for motor/stop."""

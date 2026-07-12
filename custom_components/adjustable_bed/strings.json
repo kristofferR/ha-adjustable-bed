@@ -317,6 +317,8 @@
         "description": "Adjust the configuration for your adjustable bed.",
         "menu_options": {
           "settings": "Settings",
+          "pair_sides": "Enable Left / Right / Both controls",
+          "revert_sides": "Restore standalone controls",
           "unpair": "Split into two beds"
         },
         "data": {
@@ -330,6 +332,7 @@
           "disable_discovery": "Stop discovering new Bluetooth devices",
           "preferred_adapter": "Bluetooth adapter",
           "connection_profile": "Connection profile",
+          "cb24_bed_selection": "CB24 bed side",
           "protocol_variant": "Protocol variant",
           "richmat_remote": "Richmat remote",
           "motor_pulse_count": "Motor pulse count",
@@ -351,6 +354,7 @@
           "disable_discovery": "When enabled, Home Assistant stops automatically suggesting newly seen Bluetooth devices as adjustable beds. This applies to the whole integration, not just this bed. You can still add a new bed at any time with 'Add Integration'.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
+          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
           "protocol_variant": "Change the protocol variant if the bed isn't responding correctly.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
@@ -371,10 +375,18 @@
         }
       }
     },
+    "pair_sides": {
+      "title": "Enable paired-side controls",
+      "description": "Expose Left, Right, and Both controls for this bed while keeping its existing Bluetooth address and config entry. This is reversible. Existing standalone behavior is restored if you revert it later.",
+      "data": {
+        "confirm": "Enable Left / Right / Both controls"
+      }
+    },
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
-      "invalid_angle": "Angle must be a positive number between 0 and 180 degrees."
+      "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
+      "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
     }
   },
   "entity": {
@@ -552,6 +564,516 @@
       },
       "lumbar_down": {
         "name": "Lumbar Down"
+      },
+      "preset_flat_left": {
+        "name": "Left: Flat"
+      },
+      "preset_flat_right": {
+        "name": "Right: Flat"
+      },
+      "preset_flat_both": {
+        "name": "Both sides: Flat"
+      },
+      "preset_zero_g_left": {
+        "name": "Left: Zero Gravity"
+      },
+      "preset_zero_g_right": {
+        "name": "Right: Zero Gravity"
+      },
+      "preset_zero_g_both": {
+        "name": "Both sides: Zero Gravity"
+      },
+      "sync_positions_left": {
+        "name": "Left: Sync Both Sides"
+      },
+      "sync_positions_right": {
+        "name": "Right: Sync Both Sides"
+      },
+      "sync_positions_both": {
+        "name": "Both sides: Sync Both Sides"
+      },
+      "child_lock_toggle_left": {
+        "name": "Left: Child Lock"
+      },
+      "child_lock_toggle_right": {
+        "name": "Right: Child Lock"
+      },
+      "child_lock_toggle_both": {
+        "name": "Both sides: Child Lock"
+      },
+      "preset_anti_snore_left": {
+        "name": "Left: Anti-Snore"
+      },
+      "preset_anti_snore_right": {
+        "name": "Right: Anti-Snore"
+      },
+      "preset_anti_snore_both": {
+        "name": "Both sides: Anti-Snore"
+      },
+      "preset_tv_left": {
+        "name": "Left: TV"
+      },
+      "preset_tv_right": {
+        "name": "Right: TV"
+      },
+      "preset_tv_both": {
+        "name": "Both sides: TV"
+      },
+      "preset_lounge_left": {
+        "name": "Left: Lounge"
+      },
+      "preset_lounge_right": {
+        "name": "Right: Lounge"
+      },
+      "preset_lounge_both": {
+        "name": "Both sides: Lounge"
+      },
+      "preset_incline_left": {
+        "name": "Left: Incline"
+      },
+      "preset_incline_right": {
+        "name": "Right: Incline"
+      },
+      "preset_incline_both": {
+        "name": "Both sides: Incline"
+      },
+      "preset_both_up_left": {
+        "name": "Left: Back + Legs Up"
+      },
+      "preset_both_up_right": {
+        "name": "Right: Back + Legs Up"
+      },
+      "preset_both_up_both": {
+        "name": "Both sides: Back + Legs Up"
+      },
+      "preset_yoga_left": {
+        "name": "Left: Yoga"
+      },
+      "preset_yoga_right": {
+        "name": "Right: Yoga"
+      },
+      "preset_yoga_both": {
+        "name": "Both sides: Yoga"
+      },
+      "preset_memory_1_left": {
+        "name": "Left: Memory 1"
+      },
+      "preset_memory_1_right": {
+        "name": "Right: Memory 1"
+      },
+      "preset_memory_1_both": {
+        "name": "Both sides: Memory 1"
+      },
+      "preset_memory_2_left": {
+        "name": "Left: Memory 2"
+      },
+      "preset_memory_2_right": {
+        "name": "Right: Memory 2"
+      },
+      "preset_memory_2_both": {
+        "name": "Both sides: Memory 2"
+      },
+      "preset_memory_3_left": {
+        "name": "Left: Memory 3"
+      },
+      "preset_memory_3_right": {
+        "name": "Right: Memory 3"
+      },
+      "preset_memory_3_both": {
+        "name": "Both sides: Memory 3"
+      },
+      "preset_memory_4_left": {
+        "name": "Left: Memory 4"
+      },
+      "preset_memory_4_right": {
+        "name": "Right: Memory 4"
+      },
+      "preset_memory_4_both": {
+        "name": "Both sides: Memory 4"
+      },
+      "preset_memory_5_left": {
+        "name": "Left: Memory 5"
+      },
+      "preset_memory_5_right": {
+        "name": "Right: Memory 5"
+      },
+      "preset_memory_5_both": {
+        "name": "Both sides: Memory 5"
+      },
+      "preset_memory_6_left": {
+        "name": "Left: Memory 6"
+      },
+      "preset_memory_6_right": {
+        "name": "Right: Memory 6"
+      },
+      "preset_memory_6_both": {
+        "name": "Both sides: Memory 6"
+      },
+      "program_memory_1_left": {
+        "name": "Left: Save to Memory 1"
+      },
+      "program_memory_1_right": {
+        "name": "Right: Save to Memory 1"
+      },
+      "program_memory_1_both": {
+        "name": "Both sides: Save to Memory 1"
+      },
+      "program_memory_2_left": {
+        "name": "Left: Save to Memory 2"
+      },
+      "program_memory_2_right": {
+        "name": "Right: Save to Memory 2"
+      },
+      "program_memory_2_both": {
+        "name": "Both sides: Save to Memory 2"
+      },
+      "program_memory_3_left": {
+        "name": "Left: Save to Memory 3"
+      },
+      "program_memory_3_right": {
+        "name": "Right: Save to Memory 3"
+      },
+      "program_memory_3_both": {
+        "name": "Both sides: Save to Memory 3"
+      },
+      "program_memory_4_left": {
+        "name": "Left: Save to Memory 4"
+      },
+      "program_memory_4_right": {
+        "name": "Right: Save to Memory 4"
+      },
+      "program_memory_4_both": {
+        "name": "Both sides: Save to Memory 4"
+      },
+      "program_memory_5_left": {
+        "name": "Left: Save to Memory 5"
+      },
+      "program_memory_5_right": {
+        "name": "Right: Save to Memory 5"
+      },
+      "program_memory_5_both": {
+        "name": "Both sides: Save to Memory 5"
+      },
+      "program_memory_6_left": {
+        "name": "Left: Save to Memory 6"
+      },
+      "program_memory_6_right": {
+        "name": "Right: Save to Memory 6"
+      },
+      "program_memory_6_both": {
+        "name": "Both sides: Save to Memory 6"
+      },
+      "massage_all_off_left": {
+        "name": "Left: Massage: Off"
+      },
+      "massage_all_off_right": {
+        "name": "Right: Massage: Off"
+      },
+      "massage_all_off_both": {
+        "name": "Both sides: Massage: Off"
+      },
+      "massage_all_toggle_left": {
+        "name": "Left: Massage: Toggle"
+      },
+      "massage_all_toggle_right": {
+        "name": "Right: Massage: Toggle"
+      },
+      "massage_all_toggle_both": {
+        "name": "Both sides: Massage: Toggle"
+      },
+      "massage_all_up_left": {
+        "name": "Left: Massage: Intensity Up"
+      },
+      "massage_all_up_right": {
+        "name": "Right: Massage: Intensity Up"
+      },
+      "massage_all_up_both": {
+        "name": "Both sides: Massage: Intensity Up"
+      },
+      "massage_all_down_left": {
+        "name": "Left: Massage: Intensity Down"
+      },
+      "massage_all_down_right": {
+        "name": "Right: Massage: Intensity Down"
+      },
+      "massage_all_down_both": {
+        "name": "Both sides: Massage: Intensity Down"
+      },
+      "massage_head_toggle_left": {
+        "name": "Left: Massage: Head Toggle"
+      },
+      "massage_head_toggle_right": {
+        "name": "Right: Massage: Head Toggle"
+      },
+      "massage_head_toggle_both": {
+        "name": "Both sides: Massage: Head Toggle"
+      },
+      "massage_head_up_left": {
+        "name": "Left: Massage: Head Up"
+      },
+      "massage_head_up_right": {
+        "name": "Right: Massage: Head Up"
+      },
+      "massage_head_up_both": {
+        "name": "Both sides: Massage: Head Up"
+      },
+      "massage_head_down_left": {
+        "name": "Left: Massage: Head Down"
+      },
+      "massage_head_down_right": {
+        "name": "Right: Massage: Head Down"
+      },
+      "massage_head_down_both": {
+        "name": "Both sides: Massage: Head Down"
+      },
+      "massage_foot_toggle_left": {
+        "name": "Left: Massage: Foot Toggle"
+      },
+      "massage_foot_toggle_right": {
+        "name": "Right: Massage: Foot Toggle"
+      },
+      "massage_foot_toggle_both": {
+        "name": "Both sides: Massage: Foot Toggle"
+      },
+      "massage_foot_up_left": {
+        "name": "Left: Massage: Foot Up"
+      },
+      "massage_foot_up_right": {
+        "name": "Right: Massage: Foot Up"
+      },
+      "massage_foot_up_both": {
+        "name": "Both sides: Massage: Foot Up"
+      },
+      "massage_foot_down_left": {
+        "name": "Left: Massage: Foot Down"
+      },
+      "massage_foot_down_right": {
+        "name": "Right: Massage: Foot Down"
+      },
+      "massage_foot_down_both": {
+        "name": "Both sides: Massage: Foot Down"
+      },
+      "massage_mode_step_left": {
+        "name": "Left: Massage: Mode"
+      },
+      "massage_mode_step_right": {
+        "name": "Right: Massage: Mode"
+      },
+      "massage_mode_step_both": {
+        "name": "Both sides: Massage: Mode"
+      },
+      "massage_circulation_full_body_left": {
+        "name": "Left: Massage: Full Body Loop"
+      },
+      "massage_circulation_full_body_right": {
+        "name": "Right: Massage: Full Body Loop"
+      },
+      "massage_circulation_full_body_both": {
+        "name": "Both sides: Massage: Full Body Loop"
+      },
+      "massage_circulation_head_left": {
+        "name": "Left: Massage: Head Loop"
+      },
+      "massage_circulation_head_right": {
+        "name": "Right: Massage: Head Loop"
+      },
+      "massage_circulation_head_both": {
+        "name": "Both sides: Massage: Head Loop"
+      },
+      "massage_circulation_leg_left": {
+        "name": "Left: Massage: Leg Loop"
+      },
+      "massage_circulation_leg_right": {
+        "name": "Right: Massage: Leg Loop"
+      },
+      "massage_circulation_leg_both": {
+        "name": "Both sides: Massage: Leg Loop"
+      },
+      "massage_circulation_hip_left": {
+        "name": "Left: Massage: Hip Loop"
+      },
+      "massage_circulation_hip_right": {
+        "name": "Right: Massage: Hip Loop"
+      },
+      "massage_circulation_hip_both": {
+        "name": "Both sides: Massage: Hip Loop"
+      },
+      "toggle_light_left": {
+        "name": "Left: Toggle Light"
+      },
+      "toggle_light_right": {
+        "name": "Right: Toggle Light"
+      },
+      "toggle_light_both": {
+        "name": "Both sides: Toggle Light"
+      },
+      "light_cycle_left": {
+        "name": "Left: Light Cycle"
+      },
+      "light_cycle_right": {
+        "name": "Right: Light Cycle"
+      },
+      "light_cycle_both": {
+        "name": "Both sides: Light Cycle"
+      },
+      "toggle_sound_left": {
+        "name": "Left: Toggle Sound"
+      },
+      "toggle_sound_right": {
+        "name": "Right: Toggle Sound"
+      },
+      "toggle_sound_both": {
+        "name": "Both sides: Toggle Sound"
+      },
+      "toggle_light_and_sound_left": {
+        "name": "Left: Toggle Light & Sound"
+      },
+      "toggle_light_and_sound_right": {
+        "name": "Right: Toggle Light & Sound"
+      },
+      "toggle_light_and_sound_both": {
+        "name": "Both sides: Toggle Light & Sound"
+      },
+      "therapy_mode_1_left": {
+        "name": "Left: Therapy Mode 1"
+      },
+      "therapy_mode_1_right": {
+        "name": "Right: Therapy Mode 1"
+      },
+      "therapy_mode_1_both": {
+        "name": "Both sides: Therapy Mode 1"
+      },
+      "therapy_mode_2_left": {
+        "name": "Left: Therapy Mode 2"
+      },
+      "therapy_mode_2_right": {
+        "name": "Right: Therapy Mode 2"
+      },
+      "therapy_mode_2_both": {
+        "name": "Both sides: Therapy Mode 2"
+      },
+      "therapy_mode_3_left": {
+        "name": "Left: Therapy Mode 3"
+      },
+      "therapy_mode_3_right": {
+        "name": "Right: Therapy Mode 3"
+      },
+      "therapy_mode_3_both": {
+        "name": "Both sides: Therapy Mode 3"
+      },
+      "stop_left": {
+        "name": "Left: Stop All"
+      },
+      "stop_right": {
+        "name": "Right: Stop All"
+      },
+      "disconnect_left": {
+        "name": "Left: Disconnect"
+      },
+      "disconnect_right": {
+        "name": "Right: Disconnect"
+      },
+      "disconnect_both": {
+        "name": "Both sides: Disconnect"
+      },
+      "connect_left": {
+        "name": "Left: Connect"
+      },
+      "connect_right": {
+        "name": "Right: Connect"
+      },
+      "connect_both": {
+        "name": "Both sides: Connect"
+      },
+      "head_up_left": {
+        "name": "Left: Head Up"
+      },
+      "head_up_right": {
+        "name": "Right: Head Up"
+      },
+      "head_up_both": {
+        "name": "Both sides: Head Up"
+      },
+      "head_down_left": {
+        "name": "Left: Head Down"
+      },
+      "head_down_right": {
+        "name": "Right: Head Down"
+      },
+      "head_down_both": {
+        "name": "Both sides: Head Down"
+      },
+      "legs_up_left": {
+        "name": "Left: Legs Up"
+      },
+      "legs_up_right": {
+        "name": "Right: Legs Up"
+      },
+      "legs_up_both": {
+        "name": "Both sides: Legs Up"
+      },
+      "legs_down_left": {
+        "name": "Left: Legs Down"
+      },
+      "legs_down_right": {
+        "name": "Right: Legs Down"
+      },
+      "legs_down_both": {
+        "name": "Both sides: Legs Down"
+      },
+      "back_up_left": {
+        "name": "Left: Back Up"
+      },
+      "back_up_right": {
+        "name": "Right: Back Up"
+      },
+      "back_up_both": {
+        "name": "Both sides: Back Up"
+      },
+      "back_down_left": {
+        "name": "Left: Back Down"
+      },
+      "back_down_right": {
+        "name": "Right: Back Down"
+      },
+      "back_down_both": {
+        "name": "Both sides: Back Down"
+      },
+      "feet_up_left": {
+        "name": "Left: Feet Up"
+      },
+      "feet_up_right": {
+        "name": "Right: Feet Up"
+      },
+      "feet_up_both": {
+        "name": "Both sides: Feet Up"
+      },
+      "feet_down_left": {
+        "name": "Left: Feet Down"
+      },
+      "feet_down_right": {
+        "name": "Right: Feet Down"
+      },
+      "feet_down_both": {
+        "name": "Both sides: Feet Down"
+      },
+      "lumbar_up_left": {
+        "name": "Left: Lumbar Up"
+      },
+      "lumbar_up_right": {
+        "name": "Right: Lumbar Up"
+      },
+      "lumbar_up_both": {
+        "name": "Both sides: Lumbar Up"
+      },
+      "lumbar_down_left": {
+        "name": "Left: Lumbar Down"
+      },
+      "lumbar_down_right": {
+        "name": "Right: Lumbar Down"
+      },
+      "lumbar_down_both": {
+        "name": "Both sides: Lumbar Down"
       }
     },
     "cover": {
@@ -602,6 +1124,150 @@
       },
       "keeson_legs": {
         "name": "Legs"
+      },
+      "head_left": {
+        "name": "Left: Head"
+      },
+      "head_right": {
+        "name": "Right: Head"
+      },
+      "head_both": {
+        "name": "Both sides: Head"
+      },
+      "back_left": {
+        "name": "Left: Back"
+      },
+      "back_right": {
+        "name": "Right: Back"
+      },
+      "back_both": {
+        "name": "Both sides: Back"
+      },
+      "legs_left": {
+        "name": "Left: Legs"
+      },
+      "legs_right": {
+        "name": "Right: Legs"
+      },
+      "legs_both": {
+        "name": "Both sides: Legs"
+      },
+      "feet_left": {
+        "name": "Left: Feet"
+      },
+      "feet_right": {
+        "name": "Right: Feet"
+      },
+      "feet_both": {
+        "name": "Both sides: Feet"
+      },
+      "lumbar_left": {
+        "name": "Left: Lumbar"
+      },
+      "lumbar_right": {
+        "name": "Right: Lumbar"
+      },
+      "lumbar_both": {
+        "name": "Both sides: Lumbar"
+      },
+      "pillow_left": {
+        "name": "Left: Pillow"
+      },
+      "pillow_right": {
+        "name": "Right: Pillow"
+      },
+      "pillow_both": {
+        "name": "Both sides: Pillow"
+      },
+      "neck_left": {
+        "name": "Left: Neck"
+      },
+      "neck_right": {
+        "name": "Right: Neck"
+      },
+      "neck_both": {
+        "name": "Both sides: Neck"
+      },
+      "tilt_left": {
+        "name": "Left: Tilt"
+      },
+      "tilt_right": {
+        "name": "Right: Tilt"
+      },
+      "tilt_both": {
+        "name": "Both sides: Tilt"
+      },
+      "head_end_tilt_left": {
+        "name": "Left: Head End Tilt"
+      },
+      "head_end_tilt_right": {
+        "name": "Right: Head End Tilt"
+      },
+      "head_end_tilt_both": {
+        "name": "Both sides: Head End Tilt"
+      },
+      "foot_end_tilt_left": {
+        "name": "Left: Foot End Tilt"
+      },
+      "foot_end_tilt_right": {
+        "name": "Right: Foot End Tilt"
+      },
+      "foot_end_tilt_both": {
+        "name": "Both sides: Foot End Tilt"
+      },
+      "hip_left": {
+        "name": "Left: Hip"
+      },
+      "hip_right": {
+        "name": "Right: Hip"
+      },
+      "hip_both": {
+        "name": "Both sides: Hip"
+      },
+      "bed_height_left": {
+        "name": "Left: Bed Height"
+      },
+      "bed_height_right": {
+        "name": "Right: Bed Height"
+      },
+      "bed_height_both": {
+        "name": "Both sides: Bed Height"
+      },
+      "stair_left": {
+        "name": "Left: Stair"
+      },
+      "stair_right": {
+        "name": "Right: Stair"
+      },
+      "stair_both": {
+        "name": "Both sides: Stair"
+      },
+      "keeson_back_left": {
+        "name": "Left: Back"
+      },
+      "keeson_back_right": {
+        "name": "Right: Back"
+      },
+      "keeson_back_both": {
+        "name": "Both sides: Back"
+      },
+      "keeson_head_left": {
+        "name": "Left: Head"
+      },
+      "keeson_head_right": {
+        "name": "Right: Head"
+      },
+      "keeson_head_both": {
+        "name": "Both sides: Head"
+      },
+      "keeson_legs_left": {
+        "name": "Left: Legs"
+      },
+      "keeson_legs_right": {
+        "name": "Right: Legs"
+      },
+      "keeson_legs_both": {
+        "name": "Both sides: Legs"
       }
     },
     "sensor": {
@@ -625,11 +1291,83 @@
       },
       "massage_timer_mode": {
         "name": "Massage: Timer Mode"
+      },
+      "head_angle_left": {
+        "name": "Left: Head Angle"
+      },
+      "head_angle_right": {
+        "name": "Right: Head Angle"
+      },
+      "head_angle_both": {
+        "name": "Both sides: Head Angle"
+      },
+      "back_angle_left": {
+        "name": "Left: Back Angle"
+      },
+      "back_angle_right": {
+        "name": "Right: Back Angle"
+      },
+      "back_angle_both": {
+        "name": "Both sides: Back Angle"
+      },
+      "legs_angle_left": {
+        "name": "Left: Legs Angle"
+      },
+      "legs_angle_right": {
+        "name": "Right: Legs Angle"
+      },
+      "legs_angle_both": {
+        "name": "Both sides: Legs Angle"
+      },
+      "feet_angle_left": {
+        "name": "Left: Feet Angle"
+      },
+      "feet_angle_right": {
+        "name": "Right: Feet Angle"
+      },
+      "feet_angle_both": {
+        "name": "Both sides: Feet Angle"
+      },
+      "massage_head_level_left": {
+        "name": "Left: Massage: Head Level"
+      },
+      "massage_head_level_right": {
+        "name": "Right: Massage: Head Level"
+      },
+      "massage_head_level_both": {
+        "name": "Both sides: Massage: Head Level"
+      },
+      "massage_foot_level_left": {
+        "name": "Left: Massage: Foot Level"
+      },
+      "massage_foot_level_right": {
+        "name": "Right: Massage: Foot Level"
+      },
+      "massage_foot_level_both": {
+        "name": "Both sides: Massage: Foot Level"
+      },
+      "massage_timer_mode_left": {
+        "name": "Left: Massage: Timer Mode"
+      },
+      "massage_timer_mode_right": {
+        "name": "Right: Massage: Timer Mode"
+      },
+      "massage_timer_mode_both": {
+        "name": "Both sides: Massage: Timer Mode"
       }
     },
     "light": {
       "under_bed_lights": {
         "name": "Under Bed Lights"
+      },
+      "under_bed_lights_left": {
+        "name": "Left: Under Bed Lights"
+      },
+      "under_bed_lights_right": {
+        "name": "Right: Under Bed Lights"
+      },
+      "under_bed_lights_both": {
+        "name": "Both sides: Under Bed Lights"
       }
     },
     "switch": {
@@ -638,6 +1376,24 @@
       },
       "synchro_mode": {
         "name": "Synchro Mode"
+      },
+      "under_bed_lights_left": {
+        "name": "Left: Under Bed Lights"
+      },
+      "under_bed_lights_right": {
+        "name": "Right: Under Bed Lights"
+      },
+      "under_bed_lights_both": {
+        "name": "Both sides: Under Bed Lights"
+      },
+      "synchro_mode_left": {
+        "name": "Left: Synchro Mode"
+      },
+      "synchro_mode_right": {
+        "name": "Right: Synchro Mode"
+      },
+      "synchro_mode_both": {
+        "name": "Both sides: Synchro Mode"
       }
     },
     "binary_sensor": {
@@ -652,6 +1408,18 @@
       },
       "bed_presence_right": {
         "name": "Right Bed Presence"
+      },
+      "ble_connection_left": {
+        "name": "Left: BLE Connection"
+      },
+      "ble_connection_right": {
+        "name": "Right: BLE Connection"
+      },
+      "ble_connection_both": {
+        "name": "Both sides: BLE Connection"
+      },
+      "bed_presence_both": {
+        "name": "Both sides: Bed Presence"
       }
     },
     "number": {
@@ -687,6 +1455,81 @@
       },
       "sleep_number_setting_right": {
         "name": "Sleep Number Setting Right"
+      },
+      "back_position_left": {
+        "name": "Left: Back Position"
+      },
+      "back_position_right": {
+        "name": "Right: Back Position"
+      },
+      "back_position_both": {
+        "name": "Both sides: Back Position"
+      },
+      "legs_position_left": {
+        "name": "Left: Legs Position"
+      },
+      "legs_position_right": {
+        "name": "Right: Legs Position"
+      },
+      "legs_position_both": {
+        "name": "Both sides: Legs Position"
+      },
+      "head_position_left": {
+        "name": "Left: Head Position"
+      },
+      "head_position_right": {
+        "name": "Right: Head Position"
+      },
+      "head_position_both": {
+        "name": "Both sides: Head Position"
+      },
+      "feet_position_left": {
+        "name": "Left: Feet Position"
+      },
+      "feet_position_right": {
+        "name": "Right: Feet Position"
+      },
+      "feet_position_both": {
+        "name": "Both sides: Feet Position"
+      },
+      "massage_head_intensity_left": {
+        "name": "Left: Massage: Head Intensity"
+      },
+      "massage_head_intensity_right": {
+        "name": "Right: Massage: Head Intensity"
+      },
+      "massage_head_intensity_both": {
+        "name": "Both sides: Massage: Head Intensity"
+      },
+      "massage_foot_intensity_left": {
+        "name": "Left: Massage: Foot Intensity"
+      },
+      "massage_foot_intensity_right": {
+        "name": "Right: Massage: Foot Intensity"
+      },
+      "massage_foot_intensity_both": {
+        "name": "Both sides: Massage: Foot Intensity"
+      },
+      "massage_wave_intensity_left": {
+        "name": "Left: Massage: Wave Intensity"
+      },
+      "massage_wave_intensity_right": {
+        "name": "Right: Massage: Wave Intensity"
+      },
+      "massage_wave_intensity_both": {
+        "name": "Both sides: Massage: Wave Intensity"
+      },
+      "light_level_left": {
+        "name": "Left: Light Level"
+      },
+      "light_level_right": {
+        "name": "Right: Light Level"
+      },
+      "light_level_both": {
+        "name": "Both sides: Light Level"
+      },
+      "sleep_number_setting_both": {
+        "name": "Both sides: Sleep Number Setting"
       }
     },
     "select": {
@@ -719,6 +1562,30 @@
       },
       "foundation_preset_right": {
         "name": "Foundation Preset Right"
+      },
+      "massage_timer_left": {
+        "name": "Left: Massage: Timer"
+      },
+      "massage_timer_right": {
+        "name": "Right: Massage: Timer"
+      },
+      "massage_timer_both": {
+        "name": "Both sides: Massage: Timer"
+      },
+      "light_timer_left": {
+        "name": "Left: Light Timer"
+      },
+      "light_timer_right": {
+        "name": "Right: Light Timer"
+      },
+      "light_timer_both": {
+        "name": "Both sides: Light Timer"
+      },
+      "thermal_timer_both": {
+        "name": "Both sides: Climate Timer"
+      },
+      "footwarming_timer_both": {
+        "name": "Both sides: Footwarming Timer"
       }
     },
     "climate": {
@@ -739,6 +1606,34 @@
       },
       "footwarming_climate_right": {
         "name": "Footwarming Right"
+      },
+      "sleep_number_thermal_climate_both": {
+        "name": "Both sides: Climate"
+      },
+      "footwarming_climate_both": {
+        "name": "Both sides: Footwarming"
+      }
+    },
+    "revert_sides": {
+      "title": "Restore standalone controls",
+      "description": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+      "data": {
+        "confirm": "Restore standalone controls"
+      },
+      "title_left": "Restore standalone controls",
+      "title_right": "Restore standalone controls",
+      "title_both": "Restore standalone controls",
+      "description_left": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+      "description_right": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+      "description_both": "Remove the Left, Right, and Both surface and restore this config entry exactly as it was before paired-side controls were enabled. Existing standalone entity IDs and history are preserved.",
+      "data_left": {
+        "confirm": "Restore standalone controls"
+      },
+      "data_right": {
+        "confirm": "Restore standalone controls"
+      },
+      "data_both": {
+        "confirm": "Restore standalone controls"
       }
     }
   },

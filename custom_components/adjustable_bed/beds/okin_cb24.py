@@ -43,6 +43,9 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..const import (
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIN_CB24_VARIANT_CB24,
     OKIN_CB24_VARIANT_CB24_AB,
@@ -52,6 +55,9 @@ from ..const import (
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from .base import BedController
 from .okin_protocol import int_to_bytes
@@ -382,7 +388,23 @@ class OkinCB24Controller(BedController):
         """Return True - CB24 beds support massage functions."""
         return True
 
-    def _build_command(self, command_value: int) -> bytes:
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Legacy CB24 has A/B selectors; CBNew packets do not."""
+        return not self._is_new_protocol
+
+    def _bed_selection_for_side(self, side: str | None = None) -> int:
+        """Resolve the legacy CB24 selector for one logical side."""
+        logical_side = side or self.command_side
+        if logical_side == SIDE_LEFT:
+            return CB24_BED_SELECTION_A
+        if logical_side == SIDE_RIGHT:
+            return CB24_BED_SELECTION_B
+        if logical_side == SIDE_BOTH:
+            return CB24_BED_SELECTION_DEFAULT
+        return self._bed_selection
+
+    def _build_command(self, command_value: int, side: str | None = None) -> bytes:
         """Build legacy CB24-style integer command packet.
 
         Args:
@@ -391,7 +413,7 @@ class OkinCB24Controller(BedController):
         Returns:
             7-byte command: [0x05, 0x02, <4-byte-command-big-endian>, bed_selection]
         """
-        return build_cb24_command(command_value, self._bed_selection)
+        return build_cb24_command(command_value, self._bed_selection_for_side(side))
 
     def _build_motor_command(self, command_value: int) -> bytes:
         """Build a movement command using the profile's packet family."""
@@ -771,7 +793,7 @@ class OkinCB24Controller(BedController):
         """Set head massage to exact intensity level (0-4, 0=off)."""
         level = max(0, min(4, level))
         await self.write_command(
-            build_cb24_massage_intensity(2, level, self._bed_selection)
+            build_cb24_massage_intensity(2, level, self._bed_selection_for_side())
         )
         self._massage_head_level = level
 
@@ -779,6 +801,6 @@ class OkinCB24Controller(BedController):
         """Set foot massage to exact intensity level (0-4, 0=off)."""
         level = max(0, min(4, level))
         await self.write_command(
-            build_cb24_massage_intensity(3, level, self._bed_selection)
+            build_cb24_massage_intensity(3, level, self._bed_selection_for_side())
         )
         self._massage_foot_level = level

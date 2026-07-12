@@ -23,19 +23,36 @@ from typing import Any, Final, TypedDict, cast
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    BED_TYPE_OKIN_CB24,
+    BED_TYPE_RONDURE,
+    BED_TYPE_SBI,
+    BED_TYPE_SLEEP_NUMBER,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
+    CONF_CB24_BED_SELECTION,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PAIR_SCHEMA_VERSION,
+    CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    OKIN_CB24_VARIANT_CB27NEW,
+    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SCHEMA_VERSION,
     PAIR_SIDES,
+    RONDURE_VARIANT_SIDE_A,
+    RONDURE_VARIANT_SIDE_B,
+    SBI_VARIANT_SIDE_A,
+    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
+    SLEEP_NUMBER_VARIANT_LEFT,
+    SLEEP_NUMBER_VARIANT_RIGHT,
 )
 
 
@@ -79,7 +96,25 @@ KEY_ORIGIN_TITLE: Final = "origin_title"
 KEY_ORIGIN_SOURCE: Final = "origin_source"
 KEY_ORIGIN_DATA: Final = "origin_data"
 KEY_ORIGIN_OPTIONS: Final = "origin_options"
+KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
+    "single_address_origin_entity_unique_ids"
+)
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
+SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
+    {BED_TYPE_SBI, BED_TYPE_RONDURE, BED_TYPE_OKIN_CB24, BED_TYPE_SLEEP_NUMBER}
+)
+
+
+def supports_single_address_pairing(
+    bed_type: str | None, protocol_variant: str | None = None
+) -> bool:
+    """Return whether a bed can expose the Phase 3 single-address surface."""
+    if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
+        return False
+    return not (
+        bed_type == BED_TYPE_OKIN_CB24
+        and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
+    )
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -396,4 +431,75 @@ def build_pair_entry_data(
     }
     if connection_mode is not None:
         data[CONF_PAIR_CONNECTION_MODE] = connection_mode
+    return data
+
+
+def build_single_address_pair_entry_data(
+    single_data: Mapping[str, Any],
+    *,
+    name: str,
+    origin_entry_id: str | None = None,
+    origin_unique_id: str | None = None,
+    origin_title: str | None = None,
+    origin_source: str | None = None,
+    origin_options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Convert one side-aware entry into a reversible single-address pair.
+
+    The physical entry remains in place and keeps its MAC unique id. Both child
+    descriptors share that MAC and differ only in their wire-side selector.
+    Top-level legacy data is retained so the one inner coordinator is created
+    exactly as before; the side binding only applies to paired entity calls.
+    """
+    bed_type = cast("str | None", single_data.get(CONF_BED_TYPE))
+    protocol_variant = cast("str | None", single_data.get(CONF_PROTOCOL_VARIANT))
+    if not supports_single_address_pairing(bed_type, protocol_variant):
+        raise ValueError(f"{bed_type!r} does not support single-address pairing")
+
+    address = cast("str", single_data[CONF_ADDRESS])
+    left = _descriptor_from_single(
+        single_data,
+        SIDE_LEFT,
+        absorbed_entry_id=origin_entry_id,
+        origin_unique_id=origin_unique_id,
+        origin_title=origin_title,
+        origin_source=origin_source,
+        origin_data=single_data,
+        origin_options=origin_options,
+    )
+    right = _descriptor_from_single(
+        single_data,
+        SIDE_RIGHT,
+        absorbed_entry_id=origin_entry_id,
+        origin_unique_id=origin_unique_id,
+        origin_title=origin_title,
+        origin_source=origin_source,
+        origin_data=single_data,
+        origin_options=origin_options,
+    )
+
+    if bed_type == BED_TYPE_SBI:
+        left[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_A
+        right[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_B
+    elif bed_type == BED_TYPE_RONDURE:
+        left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
+        right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
+    elif bed_type == BED_TYPE_OKIN_CB24:
+        left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
+        right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
+    elif bed_type == BED_TYPE_SLEEP_NUMBER:
+        left[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_LEFT
+        right[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_RIGHT
+
+    data = dict(single_data)
+    data.update(
+        {
+            CONF_PAIR_ID: make_pair_id([address]),
+            CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
+            CONF_NAME: name,
+            CONF_PAIR_MEMBER_ADDRESSES: [address.upper()],
+            CONF_PAIR_CHILDREN: [left, right],
+        }
+    )
     return data

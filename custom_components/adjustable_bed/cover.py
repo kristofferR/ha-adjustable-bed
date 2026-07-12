@@ -289,7 +289,7 @@ def _async_remove_stale_cover_entities(
         if key in active_keys:
             continue
 
-        unique_id = f"{coordinator.address}_{key}"
+        unique_id = coordinator.entity_unique_id(key)
         entity_id = registry.async_get_entity_id("cover", DOMAIN, unique_id)
         if entity_id is not None:
             registry.async_remove(entity_id)
@@ -312,7 +312,8 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         """Initialize the cover."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None
         self._movement_generation: int = 0  # Track active movement to handle cancellation
