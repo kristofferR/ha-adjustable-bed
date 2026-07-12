@@ -3,26 +3,20 @@
 Reverse-engineered from the Sleepy's Elite app (com.okin.bedding.sleepy)
 for the DewertOkin BOX25 Star controller using Nordic UART Service.
 
-Protocol: BOX25 Star (NUS-based, multi-subsystem)
+Protocol: BOX25 Star (NUS-based StarCode)
 BLE Name: Star*
 Service: Nordic UART (6e400001-b5a3-f393-e0a9-e50e24dcca9e)
 Write:   TX characteristic (6e400002)
 Notify:  RX characteristic (6e400003)
 
-The BOX25 protocol uses a two-track initialization system:
-- Motor/preset commands require CMD_MOTOR_INIT (0x00 0xD0)
-- Massage/light commands require CMD_MASSAGE_LIGHT_INIT (0x00 0xB0)
-Both tracks require a wake command (0x5A 0x0B 0x00 0xA5) first.
-
 Command formats:
-- Motor:        05 02 [b2] [b3] [b4] [b5] [b6] (7 bytes)
-- Preset:       5A 01 03 10 30 [key] A5 (7 bytes)
-- Position:     03 F0 [zone] [pos 0-100] 00 (5 bytes)
-- Lighting:     04 E0 [sub] [val] 00 00 (6 bytes)
-- Vibration:    04 E0 06 [head 0-8] [foot 0-8] 00 (6 bytes)
-- Massage:      08 02 [hAdd] [hRed] [fAdd] [fRed] [allFlags] [mode] [timer] 00 (10 bytes)
+- Motor/preset/light/massage: 5A 01 03 10 [category] [key] A5 (7 bytes)
+- Position:                   5A F0 03 [zone] [position] 00 A5 (7 bytes)
+- Position query:             5A B0 00 A5 (4 bytes)
 
-Ported from ha-dewertokin-bed standalone integration.
+The OEM app sends commands every 100 ms while a button is held and writes to
+Nordic UART without response. A Star252201 controller is the BOX25_STAR variant,
+which must not be confused with the legacy BOX25 packet formats in the same app.
 """
 
 from __future__ import annotations
@@ -44,103 +38,68 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# Valid massage mode flags (byte 7 of massage command)
-_MASSAGE_MODES = (0x08, 0x10, 0x20)  # wave1, wave2, wave3
+
+def _star_command(key: int, category: int = 0x30) -> bytes:
+    """Build an OEM BOX25_STAR command frame."""
+    return bytes([0x5A, 0x01, 0x03, 0x10, category, key, 0xA5])
+
+
+_MASSAGE_MODES = (0x52, 0x53, 0x54)
 
 
 class Box25Commands:
     """BOX25 Star protocol command constants."""
 
-    # ─── Initialization ──────────────────────────────────────────────────
+    # The previously used 00 D0 / 00 B0 initializers and 05/08/04 command
+    # families belong to legacy BOX25. The Sleepy's app selects BOX25_STAR for
+    # Star252201 devices and uses StarCode for every control (issue #372).
     WAKE = bytes([0x5A, 0x0B, 0x00, 0xA5])
-    MOTOR_INIT = bytes([0x00, 0xD0])
-    MASSAGE_LIGHT_INIT = bytes([0x00, 0xB0])
+    QUERY_STATUS = bytes([0x5A, 0xB0, 0x00, 0xA5])
 
-    # ─── Motor / Preset (05 02 prefix, 7 bytes) ─────────────────────────
-    MOTOR_STOP = bytes([0x05, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00])
+    MOTOR_STOP = _star_command(0x0F)
+    HEAD_UP = _star_command(0x00)
+    HEAD_DOWN = _star_command(0x01)
+    FOOT_UP = _star_command(0x02)
+    FOOT_DOWN = _star_command(0x03)
+    LUMBAR_UP = _star_command(0x06)
+    LUMBAR_DOWN = _star_command(0x07)
+    NECK_TILT_UP = _star_command(0x0A)
+    NECK_TILT_DOWN = _star_command(0x0B)
 
-    # Directional motor control
-    HEAD_UP = bytes([0x05, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00])
-    HEAD_DOWN = bytes([0x05, 0x02, 0x00, 0x02, 0x00, 0x00, 0x00])
-    FOOT_UP = bytes([0x05, 0x02, 0x00, 0x04, 0x00, 0x00, 0x00])
-    FOOT_DOWN = bytes([0x05, 0x02, 0x00, 0x08, 0x00, 0x00, 0x00])
-    LUMBAR_UP = bytes([0x05, 0x02, 0x00, 0x10, 0x00, 0x00, 0x00])
-    LUMBAR_DOWN = bytes([0x05, 0x02, 0x00, 0x20, 0x00, 0x00, 0x00])
-    NECK_TILT_UP = bytes([0x05, 0x02, 0x00, 0x40, 0x00, 0x00, 0x00])
-    NECK_TILT_DOWN = bytes([0x05, 0x02, 0x00, 0x80, 0x00, 0x00, 0x00])
-
-    # Presets (preset key, repeated, then a trailing MOTOR_STOP to commit it)
-    PRESET_FLAT = bytes([0x05, 0x02, 0x08, 0x00, 0x00, 0x00, 0x00])
-    PRESET_ZERO_GRAVITY = bytes([0x05, 0x02, 0x00, 0x00, 0x10, 0x00, 0x00])
-    PRESET_ANTI_SNORE = bytes([0x05, 0x02, 0x00, 0x00, 0x80, 0x00, 0x00])
-    PRESET_LOUNGE = bytes([0x05, 0x02, 0x00, 0x00, 0x20, 0x00, 0x00])  # "Relax"
-
-    # Memory recall (4 slots)
-    MEMORY_RECALL_1 = bytes([0x05, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00])
-    MEMORY_RECALL_2 = bytes([0x05, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00])
-    MEMORY_RECALL_3 = bytes([0x05, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00])
-    MEMORY_RECALL_4 = bytes([0x05, 0x02, 0x00, 0x00, 0x00, 0x08, 0x00])
-
-    # Memory store (4 slots)
-    MEMORY_STORE_1 = bytes([0x05, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00])
-    MEMORY_STORE_2 = bytes([0x05, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00])
-    MEMORY_STORE_3 = bytes([0x05, 0x02, 0x00, 0x00, 0x04, 0x00, 0x00])
-    MEMORY_STORE_4 = bytes([0x05, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00])
-
-    MEMORY_RECALL: tuple[bytes, bytes, bytes, bytes] = (
-        MEMORY_RECALL_1,
-        MEMORY_RECALL_2,
-        MEMORY_RECALL_3,
-        MEMORY_RECALL_4,
-    )
-    MEMORY_STORE: tuple[bytes, bytes, bytes, bytes] = (
-        MEMORY_STORE_1,
-        MEMORY_STORE_2,
-        MEMORY_STORE_3,
-        MEMORY_STORE_4,
-    )
-
-    # ─── StarCode presets (5A 01 03 10 30 KK A5, 7 bytes) ────────────────
-    # Star* devices (the "is StarCode" device flag is set) drive presets with
-    # StarCode framing, NOT the CB25 "05 02 …" framing above. Verified against
-    # com.starcode.adjustablem1x12 — the app for these beds (Star252201… /
-    # Ashley/Nectar M1X1232): flat()/callMemory() enqueue the preset key ×3 then
-    # the StarCode terminator 0x0F (NOT the 0x1F motor-interrupt) to commit.
-    # The bed accepts CB25 framing for motors/lights/massage (kept above), but the
-    # CB25 preset bytes never committed on real hardware (#372); these do.
-    # key = 0x03103000 | idx  →  big-endian bytes 03 10 30 <idx>.
-    STAR_PRESET_FLAT = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x10, 0xA5])
-    STAR_PRESET_ZERO_GRAVITY = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x13, 0xA5])
-    STAR_PRESET_ANTI_SNORE = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x16, 0xA5])
-    STAR_PRESET_LOUNGE = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x17, 0xA5])  # app "reading"
-    STAR_PRESET_MEMORY_1 = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x1A, 0xA5])
-    STAR_PRESET_MEMORY_2 = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x1B, 0xA5])
+    STAR_PRESET_FLAT = _star_command(0x10)
+    STAR_PRESET_ZERO_GRAVITY = _star_command(0x13)
+    STAR_PRESET_ANTI_SNORE = _star_command(0x16)
+    STAR_PRESET_LOUNGE = _star_command(0x17)  # app "reading"
+    STAR_PRESET_MEMORY_1 = _star_command(0x1A)
+    STAR_PRESET_MEMORY_2 = _star_command(0x1B)
     STAR_MEMORY_PRESETS = (STAR_PRESET_MEMORY_1, STAR_PRESET_MEMORY_2)
-    STAR_PRESET_TERMINATOR = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x0F, 0xA5])
+    STAR_PRESET_TERMINATOR = MOTOR_STOP
 
     # Saving a position is a long-press operation in the M1X12 app. It repeats
     # the selected key 110 times at the sender's 100 ms interval, without a
     # trailing terminator.
-    STAR_STORE_MEMORY_1 = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x94, 0xA5])
-    STAR_STORE_MEMORY_2 = bytes([0x5A, 0x01, 0x03, 0x10, 0x30, 0x95, 0xA5])
+    STAR_STORE_MEMORY_1 = _star_command(0x94)
+    STAR_STORE_MEMORY_2 = _star_command(0x95)
     STAR_MEMORY_STORE = (STAR_STORE_MEMORY_1, STAR_STORE_MEMORY_2)
 
-    # ─── Lighting (04 E0 prefix, 6 bytes) ────────────────────────────────
-    LIGHT_OFF = bytes([0x04, 0xE0, 0x01, 0x00, 0x00, 0x00])
-    LIGHT_ON_WHITE = bytes([0x04, 0xE0, 0x01, 0x01, 0x00, 0x00])
-
-    # ─── Massage exit ────────────────────────────────────────────────────
-    MASSAGE_EXIT = bytes([0x05, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00])
-
-    # ─── Massage mode commands (08 02 prefix, 10 bytes) ──────────────────
-    MASSAGE_WAVE1 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])
-    MASSAGE_WAVE2 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00])
-    MASSAGE_WAVE3 = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00])
+    LIGHT_ON_WHITE = _star_command(0x73)
+    LIGHT_OFF = _star_command(0x74)
+    LIGHT_TOGGLE = _star_command(0x71)
+    MASSAGE_EXIT = _star_command(0x6F)
+    MASSAGE_WAVE1 = _star_command(0x52)
+    MASSAGE_WAVE2 = _star_command(0x53)
+    MASSAGE_WAVE3 = _star_command(0x54)
+    MASSAGE_INTENSITY_UP = _star_command(0x60, category=0x40)
+    MASSAGE_INTENSITY_DOWN = _star_command(0x61, category=0x40)
+    MASSAGE_HEAD_UP = _star_command(0x60)
+    MASSAGE_HEAD_DOWN = _star_command(0x61)
+    MASSAGE_FOOT_UP = _star_command(0x62)
+    MASSAGE_FOOT_DOWN = _star_command(0x63)
+    MASSAGE_MODES = (MASSAGE_WAVE1, MASSAGE_WAVE2, MASSAGE_WAVE3)
 
 
 # Timing constants (seconds)
 _WAKE_DELAY = 0.15
-_INIT_DELAY = 0.08
 
 # Preset send tuning, mirroring the decompiled "Adjustable Comfort M1X12" app
 # (StarCode/DewertOkin CB25 protocol). The app enqueues every preset as four
@@ -157,9 +116,8 @@ _MEMORY_STORE_REPEAT_COUNT = 110
 class SleepysBox25Controller(BedController):
     """Controller for Sleepy's Elite BOX25 Star beds.
 
-    Uses Nordic UART Service with a two-track initialization system:
-    motor commands require 0xD0 init, massage/light commands require 0xB0 init.
-    Both tracks need a wake command (5A 0B 00 A5) sent first.
+    Uses the OEM app's BOX25_STAR command family over Nordic UART. All controls
+    share the same StarCode framing and use write-without-response.
 
     Presets are armed by repeating the StarCode key, then committed by a trailing
     StarCode 0x0F frame — see _send_preset (#372).
@@ -173,8 +131,7 @@ class SleepysBox25Controller(BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the BOX25 Star controller."""
         super().__init__(coordinator)
-        self._motor_initialized = False
-        self._massage_initialized = False
+        self._initialized = False
         self._head_position: float | None = None
         self._foot_position: float | None = None
         self._lumbar_position: float | None = None
@@ -307,95 +264,39 @@ class SleepysBox25Controller(BedController):
         effective_cancel = self._effective_cancel_event(cancel_event)
         return effective_cancel.is_set() if effective_cancel is not None else False
 
-    async def _ensure_wake(self, cancel_event: asyncio.Event | None = None) -> None:
-        """Send wake command to ensure the controller is responsive."""
-        if self._is_cancelled(cancel_event):
+    async def _ensure_initialized(self, cancel_event: asyncio.Event | None = None) -> None:
+        """Send the proven Star wake frame once per connection."""
+        if self._initialized or self._is_cancelled(cancel_event):
             return
+
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             Box25Commands.WAKE,
             cancel_event=cancel_event,
+            response=False,
         )
         if self._is_cancelled(cancel_event):
             return
         await asyncio.sleep(_WAKE_DELAY)
-
-    async def _ensure_motor_init(self, cancel_event: asyncio.Event | None = None) -> None:
-        """Ensure motor subsystem is initialized."""
-        if self._motor_initialized or self._is_cancelled(cancel_event):
-            return
-
-        await self._ensure_wake(cancel_event)
         if self._is_cancelled(cancel_event):
             return
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            Box25Commands.MOTOR_INIT,
-            cancel_event=cancel_event,
-        )
-        if self._is_cancelled(cancel_event):
-            return
-        await asyncio.sleep(_INIT_DELAY)
-        if self._is_cancelled(cancel_event):
-            return
-        self._motor_initialized = True
-
-    async def _ensure_massage_light_init(
-        self,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Ensure massage/light subsystem is initialized."""
-        if self._massage_initialized or self._is_cancelled(cancel_event):
-            return
-
-        await self._ensure_wake(cancel_event)
-        if self._is_cancelled(cancel_event):
-            return
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            Box25Commands.MASSAGE_LIGHT_INIT,
-            cancel_event=cancel_event,
-        )
-        if self._is_cancelled(cancel_event):
-            return
-        await asyncio.sleep(_INIT_DELAY)
-        if self._is_cancelled(cancel_event):
-            return
-        self._massage_initialized = True
+        self._initialized = True
 
     async def _write_motor_command(
         self,
         command: bytes,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a motor or preset command with motor init."""
-        if self._is_cancelled(cancel_event):
-            return
-        await self._ensure_motor_init(cancel_event)
-        if self._is_cancelled(cancel_event):
-            return
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            cancel_event=cancel_event,
-        )
+        """Write a BOX25_STAR motor or position command."""
+        await self.write_command(command, cancel_event=cancel_event)
 
     async def _write_massage_light_command(
         self,
         command: bytes,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a massage or light command with subsystem init."""
-        if self._is_cancelled(cancel_event):
-            return
-        await self._ensure_massage_light_init(cancel_event)
-        if self._is_cancelled(cancel_event):
-            return
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            command,
-            cancel_event=cancel_event,
-        )
+        """Write a BOX25_STAR massage or light command."""
+        await self.write_command(command, cancel_event=cancel_event)
 
     async def write_command(
         self,
@@ -404,10 +305,10 @@ class SleepysBox25Controller(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write a motor command with init sequence."""
+        """Write a BOX25_STAR command using the OEM app's BLE write mode."""
         if self._is_cancelled(cancel_event):
             return
-        await self._ensure_motor_init(cancel_event)
+        await self._ensure_initialized(cancel_event)
         if self._is_cancelled(cancel_event):
             return
         await self._write_gatt_with_retry(
@@ -416,6 +317,7 @@ class SleepysBox25Controller(BedController):
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event,
+            response=False,
         )
 
     # ─── Notification Handling ───────────────────────────────────────────
@@ -430,7 +332,20 @@ class SleepysBox25Controller(BedController):
 
         length = len(raw)
 
-        if length >= 7 and raw[0] == 0x05:
+        if length >= 9 and raw[0:2] == bytes([0xA5, 0x0D]):
+            # BOX25_STAR status frame. The Sleepy's app reads the 0-100 motor
+            # positions from bytes 4, 6, and 8 respectively.
+            for key, attr, position in (
+                ("head", "_head_position", raw[4]),
+                ("feet", "_foot_position", raw[6]),
+                ("lumbar", "_lumbar_position", raw[8]),
+            ):
+                if 0 <= position <= 100:
+                    value = float(position)
+                    setattr(self, attr, value)
+                    if self._notify_callback:
+                        self._notify_callback(key, value)
+        elif length >= 7 and raw[0] == 0x05:
             self._is_moving = any(b != 0 for b in raw[2:7])
         elif length >= 4 and raw[0] == 0x03:
             zone = raw[1]
@@ -482,7 +397,8 @@ class SleepysBox25Controller(BedController):
                 pass
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
-        """Positions are pushed via notifications, no polling needed."""
+        """Request the BOX25_STAR status frame used for motor positions."""
+        await self.write_command(Box25Commands.QUERY_STATUS)
 
     # ─── Direct Position Control ─────────────────────────────────────────
 
@@ -500,7 +416,7 @@ class SleepysBox25Controller(BedController):
             raise ValueError(f"Unknown motor: {motor}")
 
         pos = max(0, min(100, int(position)))
-        cmd = bytes([0x03, 0xF0, zone, pos, 0x00])
+        cmd = bytes([0x5A, 0xF0, 0x03, zone, pos, 0x00, 0xA5])
         await self._write_motor_command(cmd)
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
@@ -666,7 +582,7 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
-        await self.lights_on()
+        await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
 
     # ─── Massage ─────────────────────────────────────────────────────────
 
@@ -686,33 +602,27 @@ class SleepysBox25Controller(BedController):
 
     async def massage_intensity_up(self) -> None:
         """Increase massage intensity (both zones)."""
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_INTENSITY_UP)
 
     async def massage_intensity_down(self) -> None:
         """Decrease massage intensity (both zones)."""
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_INTENSITY_DOWN)
 
     async def massage_head_up(self) -> None:
-        cmd = bytes([0x08, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_HEAD_UP)
 
     async def massage_head_down(self) -> None:
-        cmd = bytes([0x08, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_HEAD_DOWN)
 
     async def massage_foot_up(self) -> None:
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_FOOT_UP)
 
     async def massage_foot_down(self) -> None:
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(Box25Commands.MASSAGE_FOOT_DOWN)
 
     async def massage_mode_step(self) -> None:
         """Cycle through massage wave modes (wave1 -> wave2 -> wave3 -> wave1)."""
         self._massage_mode_index = (self._massage_mode_index + 1) % len(_MASSAGE_MODES)
-        mode_flag = _MASSAGE_MODES[self._massage_mode_index]
-        cmd = bytes([0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, mode_flag, 0x00, 0x00])
-        await self._write_massage_light_command(cmd)
+        await self._write_massage_light_command(
+            Box25Commands.MASSAGE_MODES[self._massage_mode_index]
+        )
