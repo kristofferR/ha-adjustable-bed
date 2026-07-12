@@ -200,6 +200,7 @@ class BLEDiagnosticRunner:
         self._actual_source: str | None = None
         self._selected_ble_device: BLEDevice | None = None
         self._using_non_connectable_fallback: bool = False
+        self._connection_path: str = "standalone"
         self._background_tasks: set[asyncio.Task[None]] = set()
         self._reconnect_count: int = 0
 
@@ -308,6 +309,7 @@ class BLEDiagnosticRunner:
         """Connect to the BLE device."""
         if self.coordinator and self.coordinator.client and self.coordinator.is_connected:
             _LOGGER.info("Using existing connection from coordinator")
+            self._connection_path = "existing_coordinator"
             self._client = self.coordinator.client
             self._using_coordinator_connection = True
             self._selected_source = self.coordinator.connection_source
@@ -316,6 +318,38 @@ class BLEDiagnosticRunner:
             self._selected_connectable = True
             self.coordinator.pause_disconnect_timer()
             return
+
+        if self.coordinator is not None:
+            _LOGGER.info(
+                "Connecting through the coordinator so diagnostics use the configured "
+                "adapter, pairing, and controller startup path"
+            )
+            try:
+                connected = await self.coordinator.async_ensure_connected(reset_timer=False)
+            except Exception as err:  # noqa: BLE001 - preserve a standalone diagnostic fallback
+                connected = False
+                message = f"Coordinator connection failed before diagnostics: {err}"
+                _LOGGER.warning(message)
+                self._errors.append(message)
+
+            if connected and self.coordinator.client and self.coordinator.is_connected:
+                self._connection_path = "coordinator_connected_for_diagnostics"
+                self._client = self.coordinator.client
+                self._using_coordinator_connection = True
+                self._selected_source = self.coordinator.connection_source
+                self._actual_source = self.coordinator.connection_source
+                self._selected_rssi = self.coordinator.connection_rssi
+                self._selected_connectable = True
+                self.coordinator.pause_disconnect_timer()
+                return
+
+            self._connection_path = "standalone_after_coordinator_failure"
+            message = (
+                "Coordinator could not establish the configured connection; "
+                "continuing with a standalone diagnostic connection"
+            )
+            _LOGGER.warning(message)
+            self._errors.append(message)
 
         _LOGGER.info("Establishing new BLE connection to %s", self.address)
         self._using_coordinator_connection = False
@@ -997,6 +1031,7 @@ class BLEDiagnosticRunner:
             "actual_source": self._actual_source,
             "connectable": self._selected_connectable,
             "non_connectable_fallback_used": self._using_non_connectable_fallback,
+            "connection_path": self._connection_path,
             "backend_details": details,
             "pairing": pairing,
             "scanner_count": self._get_scanner_count(),

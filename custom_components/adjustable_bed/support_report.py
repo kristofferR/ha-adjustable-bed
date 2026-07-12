@@ -128,6 +128,7 @@ def _get_integration_info(entry: ConfigEntry) -> dict[str, Any]:
         "has_massage": entry.data.get(CONF_HAS_MASSAGE),
         "disable_angle_sensing": entry.data.get(CONF_DISABLE_ANGLE_SENSING),
         "preferred_adapter": entry.data.get(CONF_PREFERRED_ADAPTER),
+        "ble_bond_established": entry.data.get(CONF_BLE_BOND_ESTABLISHED),
         "address": entry.data.get(CONF_ADDRESS),
         "kaidi_room_id": entry.data.get(CONF_KAIDI_ROOM_ID),
         "kaidi_target_vaddr": entry.data.get(CONF_KAIDI_TARGET_VADDR),

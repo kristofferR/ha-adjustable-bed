@@ -54,18 +54,21 @@ The support bundle includes everything we need in one file:
 
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
-3. Select your bed device, or enter `target_address` for an unconfigured device, then click **Perform action**
-4. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
-5. A notification will appear with a **download link** — click it to save the file
-6. Attach the JSON file to your GitHub issue
+3. For a control problem, first try the failing Home Assistant command so it is present in the command trace.
+4. Select that same bed device, or enter `target_address` for an unconfigured device, then click **Perform action**.
+5. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
+6. A notification will appear with a **download link** — click it to save the file.
+7. Attach the JSON file to your GitHub issue. Check its `evidence.warnings` section for anything that could not be captured.
 
 The support bundle includes:
 - System info (HA version, Python version, platform)
 - Integration configuration and detected bed type
-- Connection status, BLE adapter info, and connection attempt details
+- Connection status, BLE adapter/proxy health, and connection attempt details
+- ESPHome proxy firmware, API version, pairing capability, availability, and free BLE connection slots when Home Assistant exposes them
 - BLE advertisements by source, detection reasoning, and GATT/descriptor details
+- A structured pairing assessment that detects stale saved bond state and adapter mismatches
 - Captured notifications and buffered command trace
-- Recent error logs
+- Recent error logs plus evidence warnings when logs or a command reproduction are missing
 
 **Privacy note:** PINs are redacted. MAC addresses, device names, and other BLE identifiers are preserved since they are essential for debugging.
 
@@ -143,17 +146,21 @@ The `generate_support_bundle` action captures GATT structure, device info, scann
 
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
-3. Select your bed device (or enter `target_address` for unconfigured devices)
-4. Click **Perform action**
-5. Optionally operate your physical remote during capture to record notifications
-6. Find the JSON report in your `/config/` folder
+3. Try the failing Home Assistant control once if you are troubleshooting commands.
+4. Select that same bed device (or enter `target_address` for unconfigured devices).
+5. Click **Perform action**.
+6. Optionally operate your physical remote during capture to record notifications.
+7. Find the JSON report in your `/config/` folder.
 
 This captures:
 - All GATT services and characteristics
 - Device name and advertising data
 - Notifications sent BY the device (e.g., position updates)
+- Commands recently sent by this integration
+- Adapter and ESPHome Bluetooth proxy health
+- Pairing/authentication evidence and a completeness summary
 
-**Limitation:** This captures what the device *sends*, not commands sent *to* the device. For capturing outgoing commands from an app, see [Capturing App Traffic](#capturing-app-traffic-for-new-bed-support).
+**Limitation:** The command trace contains commands sent by this integration, not commands sent by the official mobile app. For capturing outgoing commands from an app, see [Capturing App Traffic](#capturing-app-traffic-for-new-bed-support).
 
 ---
 
