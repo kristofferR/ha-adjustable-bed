@@ -75,6 +75,7 @@ class ChildDescriptor(TypedDict, total=False):
     name: str
     bed_type: str
     protocol_variant: str
+    kaidi_resolved_variant: str
     preferred_adapter: str
     octo_pin: str
     jensen_pin: str
