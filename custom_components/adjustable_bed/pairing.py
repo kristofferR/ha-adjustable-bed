@@ -23,6 +23,7 @@ from typing import Any, Final, TypedDict, cast
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
 from .const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -31,6 +32,7 @@ from .const import (
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
@@ -39,6 +41,9 @@ from .const import (
     CONF_PAIR_SCHEMA_VERSION,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
+    KAIDI_VARIANT_SEAT_2,
     OKIN_CB24_VARIANT_CB27NEW,
     OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -53,6 +58,7 @@ from .const import (
     SIDE_RIGHT,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
+    VARIANT_AUTO,
 )
 
 
@@ -101,16 +107,32 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 )
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SBI, BED_TYPE_RONDURE, BED_TYPE_OKIN_CB24, BED_TYPE_SLEEP_NUMBER}
+    {
+        BED_TYPE_SBI,
+        BED_TYPE_RONDURE,
+        BED_TYPE_OKIN_CB24,
+        BED_TYPE_SLEEP_NUMBER,
+        BED_TYPE_KAIDI,
+    }
 )
 
 
 def supports_single_address_pairing(
-    bed_type: str | None, protocol_variant: str | None = None
+    bed_type: str | None,
+    protocol_variant: str | None = None,
+    *,
+    resolved_variant: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_KAIDI:
+        effective_variant = (
+            resolved_variant
+            if protocol_variant in {None, VARIANT_AUTO}
+            else protocol_variant
+        )
+        return effective_variant == KAIDI_VARIANT_SEAT_1_2
     return not (
         bed_type == BED_TYPE_OKIN_CB24
         and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
@@ -453,7 +475,14 @@ def build_single_address_pair_entry_data(
     """
     bed_type = cast("str | None", single_data.get(CONF_BED_TYPE))
     protocol_variant = cast("str | None", single_data.get(CONF_PROTOCOL_VARIANT))
-    if not supports_single_address_pairing(bed_type, protocol_variant):
+    resolved_variant = cast(
+        "str | None", single_data.get(CONF_KAIDI_RESOLVED_VARIANT)
+    )
+    if not supports_single_address_pairing(
+        bed_type,
+        protocol_variant,
+        resolved_variant=resolved_variant,
+    ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
 
     address = cast("str", single_data[CONF_ADDRESS])
@@ -490,6 +519,11 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_SLEEP_NUMBER:
         left[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_LEFT
         right[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_RIGHT
+    elif bed_type == BED_TYPE_KAIDI:
+        left[CONF_PROTOCOL_VARIANT] = KAIDI_VARIANT_SEAT_1
+        left[CONF_KAIDI_RESOLVED_VARIANT] = KAIDI_VARIANT_SEAT_1
+        right[CONF_PROTOCOL_VARIANT] = KAIDI_VARIANT_SEAT_2
+        right[CONF_KAIDI_RESOLVED_VARIANT] = KAIDI_VARIANT_SEAT_2
 
     data = dict(single_data)
     data.update(

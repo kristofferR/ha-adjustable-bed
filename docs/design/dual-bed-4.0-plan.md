@@ -31,7 +31,7 @@ on every add path (`config_flow.py:448-449, 922-923, 1147-1148, 1463-1464`). The
 
 There are **two physically different dual-bed cases** that must converge on one UX:
 
-- **Single-address, side-aware** (Sleep Number, SBI, Rondure, CB24): one BLE link already
+- **Single-address, side-aware** (Sleep Number, SBI, Rondure, CB24, Kaidi Seat 1+2): one BLE link already
   reaches both sides; "side" is a per-command argument or wire-encoding. Sleep Number
   *already* ships per-side child entities within one device — `*_sides` tuple properties
   (`bed_presence_sides`, `sleep_number_setting_sides`, `thermal_climate_sides`,
@@ -182,8 +182,8 @@ read, `coordinator.py:470-484`), now keyed `{side: {...}}`.
 ### Single-address vs separate-address (the crux)
 - **single_address** (one MAC): the ONE existing entry is rewritten in place. Both
   descriptors share `CONF_ADDRESS`, differing only in `side` + wire-encoding. No second
-  child entry. `both` is the **native broadcast packet** (SBI `0xE5`, CB24 `0x00`,
-  Sleep Number MCR `0x0F`) or, for `bamkey` (no native both), a serialized left-then-right
+  child entry. `both` is the **native broadcast packet** (SBI `0xE5`, CB24 `0x00`)
+  or a serialized left-then-right write (Sleep Number `bamkey` and Kaidi Seat 1+2)
   over the single `_command_lock`.
 - **separate_address** (two MACs): a NEW parent entry is created. The two child **devices**
   (not entries) are re-homed to it via `device_registry.async_update_device(
@@ -644,17 +644,35 @@ Layer Octo's hard quirks onto the proven Phase-1 core, and ship the card. This i
 ### Phase 3 — Generalize to single-address side-aware protocols
 - Lift construction-time side baking to per-call args (`sbi._build_command(value, side)`,
   `rondure._build_packet(value, side)`, `okin_cb24.build_cb24_command(value, side)`,
-  `sleep_number` bamkey side arg) — default behavior byte-identical.
+  `sleep_number` bamkey side arg, Kaidi Seat 1/2 command profiles) — default behavior
+  byte-identical.
 - single_address `PairedBedCoordinator` realization (native-both packet or serialized
   left-then-right); generalize `*_sides`/`*_for_side` to articulation/presets/lights/
   massage; surface CB24 A/B & SBI/Rondure variants in wizard/options; `_delegated_capability`
   base helper.
 - **Files**: `coordinator.py`, `controller_factory.py`, `beds/base.py`,
-  `beds/{sbi,rondure,okin_cb24,sleep_number}.py`, `config_flow.py`, `validators.py`,
+  `beds/{sbi,rondure,okin_cb24,sleep_number,kaidi}.py`, `config_flow.py`, `validators.py`,
   `cover.py`, `button.py`, `number.py`, `tests/{test_entities,test_config_flow}.py`.
-- **Exit**: SBI/Rondure/CB24/Sleep Number present left/right/both consistently with Octo;
+- **Exit**: SBI/Rondure/CB24/Sleep Number/Kaidi Seat 1+2 present left/right/both
+  consistently with Octo;
   existing single entries byte-identical on the wire (regression-asserted); capability-
   delegation test passes; NEW-protocol CB24 cleanly refused for paired mode.
+
+#### Phase 3 controller audit
+
+- Kaidi `seat_1_2` belongs here: one mesh-over-GATT address carries independently
+  addressable Seat 1 and Seat 2 opcodes, and its existing combined mode serializes both.
+  Single-seat variants remain ineligible.
+- Sleep Number MCR already exposes left/right firmness and foundation selects from one
+  standalone entry. It has no verified live articulation or STOP surface, so converting it
+  would duplicate those existing entities without adding the Phase 3 control contract.
+- BedTech has APK-backed secondary-head, preset, memory, and light opcodes, but not a
+  verified symmetric second-base motor layout. Its current motor labels are also awaiting
+  a separate verification pass. It must not advertise a full left/right/both bed surface
+  until that compatibility contract is known.
+- Jiecang's right/split constants are unused and undocumented at the controller surface.
+  SUTA, MotoSleep, and Richmat expose controller-to-controller sync toggles, not two
+  independently addressable sides on one BLE link. Cool Base left/right means fan zones.
 
 ---
 

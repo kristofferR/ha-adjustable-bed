@@ -22,6 +22,7 @@ from custom_components.adjustable_bed import (
     async_unpair_entry,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
@@ -32,6 +33,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SBI,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_MOTOR_COUNT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
@@ -42,6 +44,8 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     DOMAIN,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
     LEGGETT_VARIANT_GEN2,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
@@ -113,6 +117,43 @@ def _paired_entry(hass: HomeAssistant) -> MockConfigEntry:
 
 
 class TestPairedSetup:
+    @pytest.mark.parametrize(
+        ("resolved_variant", "offers_pairing"),
+        [
+            (KAIDI_VARIANT_SEAT_1_2, True),
+            (KAIDI_VARIANT_SEAT_1, False),
+        ],
+    )
+    async def test_kaidi_pair_menu_requires_dual_lane_variant(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+        resolved_variant: str,
+        offers_pairing: bool,
+    ) -> None:
+        """Only an auto-resolved Kaidi Seat 1+2 entry can enter Phase 3."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Kaidi",
+            data={
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_NAME: "Kaidi",
+                CONF_BED_TYPE: BED_TYPE_KAIDI,
+                CONF_PROTOCOL_VARIANT: "auto",
+                CONF_KAIDI_RESOLVED_VARIANT: resolved_variant,
+            },
+            unique_id=LEFT_ADDR,
+        )
+        entry.add_to_hass(hass)
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+
+        if offers_pairing:
+            assert result["type"] == FlowResultType.MENU
+            assert set(result["menu_options"]) == {"settings", "pair_sides"}
+        else:
+            assert result["type"] == FlowResultType.FORM
+
     async def test_single_address_pair_enable_and_revert_in_place(
         self,
         hass: HomeAssistant,

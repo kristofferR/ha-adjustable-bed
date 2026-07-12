@@ -6,6 +6,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KAIDI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
@@ -14,12 +15,16 @@ from custom_components.adjustable_bed.const import (
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    KAIDI_VARIANT_SEAT_1,
+    KAIDI_VARIANT_SEAT_1_2,
+    KAIDI_VARIANT_SEAT_2,
     OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SINGLE_ADDRESS,
     RONDURE_VARIANT_SIDE_A,
@@ -252,6 +257,46 @@ class TestBuildSingleAddressPairEntryData:
                     CONF_ADDRESS: LEFT_ADDR,
                     CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
                     CONF_PROTOCOL_VARIANT: OKIN_CB24_VARIANT_NEW,
+                },
+                name="Unsupported",
+            )
+
+    def test_kaidi_dual_lane_builds_side_specific_descriptors(self):
+        original = {
+            CONF_ADDRESS: LEFT_ADDR,
+            CONF_BED_TYPE: BED_TYPE_KAIDI,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_KAIDI_RESOLVED_VARIANT: KAIDI_VARIANT_SEAT_1_2,
+            "name": "Kaidi split base",
+        }
+
+        data = build_single_address_pair_entry_data(original, name="Kaidi pair")
+
+        left = get_child(data, SIDE_LEFT)
+        right = get_child(data, SIDE_RIGHT)
+        assert left[CONF_PROTOCOL_VARIANT] == KAIDI_VARIANT_SEAT_1
+        assert left[CONF_KAIDI_RESOLVED_VARIANT] == KAIDI_VARIANT_SEAT_1
+        assert right[CONF_PROTOCOL_VARIANT] == KAIDI_VARIANT_SEAT_2
+        assert right[CONF_KAIDI_RESOLVED_VARIANT] == KAIDI_VARIANT_SEAT_2
+        assert single_data_from_child(left) == original
+
+    def test_kaidi_single_lane_is_refused(self):
+        assert supports_single_address_pairing(
+            BED_TYPE_KAIDI,
+            "auto",
+            resolved_variant=KAIDI_VARIANT_SEAT_1_2,
+        )
+        assert not supports_single_address_pairing(
+            BED_TYPE_KAIDI,
+            KAIDI_VARIANT_SEAT_1,
+            resolved_variant=KAIDI_VARIANT_SEAT_1_2,
+        )
+        with pytest.raises(ValueError, match="does not support"):
+            build_single_address_pair_entry_data(
+                {
+                    CONF_ADDRESS: LEFT_ADDR,
+                    CONF_BED_TYPE: BED_TYPE_KAIDI,
+                    CONF_PROTOCOL_VARIANT: KAIDI_VARIANT_SEAT_1,
                 },
                 name="Unsupported",
             )

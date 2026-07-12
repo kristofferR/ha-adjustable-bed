@@ -21,6 +21,9 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.kaidi_protocol import (
@@ -663,7 +666,9 @@ async def test_memory_programming_commands_use_variant_specific_profile(
 @pytest.mark.asyncio
 async def test_seat_1_2_sends_both_sides_for_head_up(mock_bleak_client: MagicMock) -> None:
     """seat_1_2 should send seat_1 HEAD_UP then seat_2 HEAD_UP."""
-    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+    controller = await _prepare_controller(
+        mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2
+    )
 
     await controller.move_head_up()
 
@@ -679,7 +684,9 @@ async def test_seat_1_2_sends_both_sides_for_head_up(mock_bleak_client: MagicMoc
 @pytest.mark.asyncio
 async def test_seat_1_2_stop_all_sends_both_sides(mock_bleak_client: MagicMock) -> None:
     """seat_1_2 stop_all should send seat_1 STOP_ALL then seat_2 STOP_ALL."""
-    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+    controller = await _prepare_controller(
+        mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2
+    )
 
     await controller.stop_all()
 
@@ -700,6 +707,58 @@ async def test_seat_1_2_preset_sends_both_sides(mock_bleak_client: MagicMock) ->
     assert len(calls) == 2
     assert calls[0].args[1] == controller._build_control_packet(0x68)  # SEAT_1_FLAT
     assert calls[1].args[1] == controller._build_control_packet(0x69)  # SEAT_2_FLAT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("side", "move_command", "stop_command"),
+    [
+        (SIDE_LEFT, 0x01, 0x03),
+        (SIDE_RIGHT, 0x0A, 0x0C),
+    ],
+)
+async def test_seat_1_2_side_binding_targets_one_lane(
+    mock_bleak_client: MagicMock,
+    side: str,
+    move_command: int,
+    stop_command: int,
+) -> None:
+    """A Phase 3 logical side must not write to the other Kaidi lane."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+
+    await controller.bind_side(side).move_head_up()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert [call.args[1] for call in calls] == [
+        controller._build_control_packet(move_command),
+        controller._build_control_packet(stop_command),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_seat_1_2_both_binding_preserves_dual_write(
+    mock_bleak_client: MagicMock,
+) -> None:
+    """The logical both view should retain Kaidi's serialized two-lane write."""
+    controller = await _prepare_controller(mock_bleak_client, variant=KAIDI_VARIANT_SEAT_1_2)
+
+    await controller.bind_side(SIDE_BOTH).preset_flat()
+
+    calls = mock_bleak_client.write_gatt_char.await_args_list
+    assert [call.args[1] for call in calls] == [
+        controller._build_control_packet(0x68),
+        controller._build_control_packet(0x69),
+    ]
+
+
+def test_only_seat_1_2_supports_single_address_pairing() -> None:
+    """Single-seat Kaidi variants must not invent a second physical lane."""
+    assert KaidiController(
+        MagicMock(), variant=KAIDI_VARIANT_SEAT_1_2
+    ).supports_single_address_pairing
+    assert not KaidiController(
+        MagicMock(), variant=KAIDI_VARIANT_SEAT_1
+    ).supports_single_address_pairing
 
 
 # ---------------------------------------------------------------------------

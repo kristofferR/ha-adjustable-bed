@@ -81,6 +81,7 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
@@ -2908,6 +2909,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         if user_input is None and supports_single_address_pairing(
             self.config_entry.data.get(CONF_BED_TYPE),
             self.config_entry.data.get(CONF_PROTOCOL_VARIANT),
+            resolved_variant=self.config_entry.data.get(
+                CONF_KAIDI_RESOLVED_VARIANT
+            ),
         ):
             return self.async_show_menu(
                 step_id="init", menu_options=["settings", "pair_sides"]
@@ -3250,6 +3254,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                         current_data.get(
                             CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
                         ),
+                    ),
+                    resolved_variant=current_data.get(
+                        CONF_KAIDI_RESOLVED_VARIANT
                     ),
                 )
             ):
