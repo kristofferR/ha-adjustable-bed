@@ -43,6 +43,14 @@
       "service_uuid": "45e25100-3171-4cfc-ae89-1d83cf8d8071"
     },
     {
+      "manufacturer_id": 2349,
+      "manufacturer_data_start": [88, 80]
+    },
+    {
+      "manufacturer_id": 2349,
+      "manufacturer_data_start": [67, 80]
+    },
+    {
       "service_uuid": "62741523-52f9-8864-b1ab-3b3a8d65950b"
     },
     {
@@ -82,6 +90,9 @@
     },
     {
       "service_uuid": "00001523-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "92111420-72ab-4564-62ef-2a881286a6b0"
     },
     {
       "service_uuid": "00001234-0000-1000-8000-00805f9b34fb"
@@ -141,9 +152,6 @@
       "service_uuid": "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
     },
     {
-      "service_uuid": "0000e0ff-3c17-d293-8e48-14fe2e4da212"
-    },
-    {
       "service_uuid": "0000fe60-0000-1000-8000-00805f9b34fb"
     },
     {
@@ -169,5 +177,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/kristofferR/ha-adjustable-bed/issues",
   "requirements": ["bleak>=1.0.0", "bleak-retry-connector>=3.5.0"],
-  "version": "3.0.0"
+  "version": "3.1.1"
 }

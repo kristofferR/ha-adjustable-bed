@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
     BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_NORDIC,
@@ -75,6 +76,7 @@ from .const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     # Detection constants
+    BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
     BEDTECH_WRITE_CHAR_UUID,
@@ -83,6 +85,8 @@ from .const import (
     COOLBASE_NAME_PATTERNS,
     DEVICE_INFO_SERVICE_UUID,
     DEWERTOKIN_NAME_PATTERNS,
+    DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
+    DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
     ERGOMOTION_NAME_PATTERNS,
     JENSEN_NAME_PATTERNS,
@@ -97,6 +101,7 @@ from .const import (
     KEESON_JSON_SERVICE_UUID,
     KEESON_NAME_PATTERNS,
     KEESON_SINO_NAME_PATTERNS,
+    LEGGETT_GEN2_MANUFACTURER_PREFIXES,
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
@@ -112,6 +117,7 @@ from .const import (
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     MALOUF_NEW_OKIN_WRITE_CHAR_UUID,
     MANUFACTURER_ID_DEWERTOKIN,
+    MANUFACTURER_ID_LEGGETT_GEN2,
     MANUFACTURER_ID_LOGICDATA,
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
@@ -134,6 +140,8 @@ from .const import (
     RICHMAT_NAME_PATTERNS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
+    RICHMAT_WILINKE_W4_SERVICE_UUID,
+    RICHMAT_WILINKE_W5_SERVICE_UUID,
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
@@ -171,6 +179,17 @@ KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
 )
 
+# WiLinke service UUIDs that non-bed devices also advertise, mapped to the
+# reason they are not bed-unique. These only detect as Richmat when a Richmat
+# name corroborates the match (see const.py for the full rationale).
+NAME_GUARDED_WILINKE_UUIDS: dict[str, str] = {
+    # W4: fully generic FFF0 short UUID - a "NO_DVR-*" camera system (#418)
+    # and a FIXD OBD scanner (#415); all known W4 beds are "DHN-*" units.
+    RICHMAT_WILINKE_W4_SERVICE_UUID.lower(): "generic FFF0 service",
+    # W5: Telink-style custom base - a "Nokia-*" headset (#382).
+    RICHMAT_WILINKE_W5_SERVICE_UUID.lower(): "shared Telink base",
+}
+
 OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     {
         BED_TYPE_LEGGETT_OKIN,
@@ -184,6 +203,18 @@ OKIN_SHARED_UUID_GATT_REFINABLE_TYPES: frozenset[str] = frozenset(
     }
 )
 
+# Shared-UUID profiles that already drive an OKIMAT bed acceptably, so a connected
+# OKIMAT Device Info model must not rewrite them. BED_TYPE_OKIMAT and
+# BED_TYPE_OKIN_UUID resolve to the same controller; BED_TYPE_OKIN_CST is its own
+# deliberately preserved full-bed profile (see refine_okin_shared_uuid_protocol_from_gatt).
+OKIMAT_COMPATIBLE_PROFILES: frozenset[str] = frozenset(
+    {
+        BED_TYPE_OKIMAT,
+        BED_TYPE_OKIN_UUID,
+        BED_TYPE_OKIN_CST,
+    }
+)
+
 NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 
 # Manufacturer ID 89 is Nordic Semiconductor's company ID (0x0059), shared by many
@@ -191,6 +222,12 @@ NORA_CONTROLLER_NORMALIZED_NAMES: frozenset[str] = frozenset({"noracon"})
 # device also advertises a recognizable OKIN/SmartBed name, so a random Nordic
 # gadget (e.g. "ABXM2", #366) is not misidentified as a bed.
 OKIN_CB24_MANUFACTURER_NAME_HINTS: frozenset[str] = frozenset({"okin", "smartbed"})
+
+# Malouf S755 / DewertOkin CB.24.42.28 bases have been observed advertising only
+# Nordic UART plus OKIN's company ID, without the usual Malouf 01000001 family
+# UUID. The name prefix appears to encode the CB.24.42.28 control-box family.
+MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES: frozenset[str] = frozenset({"smartbed428"})
+MALOUF_NEW_OKIN_OKIN_PAYLOAD_PREFIXES: tuple[bytes, ...] = (b"AB\x01\x02",)
 
 
 def detect_richmat_remote_from_name(device_name: str | None) -> str | None:
@@ -263,6 +300,14 @@ def _check_manufacturer_data(
     if MANUFACTURER_ID_LOGICDATA in manufacturer_data:
         return BED_TYPE_LOGICDATA, 0.95, MANUFACTURER_ID_LOGICDATA
 
+    # Leggett & Platt Gen2 / LP Comfort Connect (control box 209-M001): advertises
+    # only manufacturer data under company 0x092D with an "XP"/"CP" payload prefix
+    # and NO service UUID. Matches the LP Control app's isGen2Box() check.
+    # Source: com.leggett.android.universal disassembly.
+    lp_payload = manufacturer_data.get(MANUFACTURER_ID_LEGGETT_GEN2)
+    if lp_payload is not None and lp_payload[:2] in LEGGETT_GEN2_MANUFACTURER_PREFIXES:
+        return BED_TYPE_LEGGETT_GEN2, 0.95, MANUFACTURER_ID_LEGGETT_GEN2
+
     # Note: OKIN Automotive (ID 89) is NOT checked here because it should be
     # a fallback after UUID-based detection. See detect_bed_type_detailed().
 
@@ -292,6 +337,30 @@ def _normalize_compact_identifier(value: str | None) -> str:
 def _is_nora_controller_identifier(value: str | None) -> bool:
     """Return True for NORA_CON / NORACON controller identifiers."""
     return _normalize_compact_identifier(value) in NORA_CONTROLLER_NORMALIZED_NAMES
+
+
+def _is_malouf_new_okin_smartbed_signature(
+    device_name: str,
+    service_uuids: list[str],
+    manufacturer_data: dict[int, bytes] | None,
+) -> bool:
+    """Return True for Nordic-only Malouf New Okin Smartbed advertisements."""
+    if RICHMAT_NORDIC_SERVICE_UUID.lower() not in service_uuids:
+        return False
+    normalized_name = device_name.lower()
+    if not any(
+        normalized_name.startswith(prefix)
+        for prefix in MALOUF_NEW_OKIN_SMARTBED_NAME_PREFIXES
+    ):
+        return False
+    if not manufacturer_data:
+        return False
+
+    okin_payload = manufacturer_data.get(MANUFACTURER_ID_OKIN)
+    return bool(
+        okin_payload
+        and okin_payload.startswith(MALOUF_NEW_OKIN_OKIN_PAYLOAD_PREFIXES)
+    )
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
@@ -399,6 +468,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
     BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
+    BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
     BED_TYPE_OKIN_ORE: "Okin ORE (Dynasty, INNOVA)",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
@@ -499,7 +569,21 @@ def detect_bed_type_from_gatt_services(gatt_services: Any) -> DetectionResult:
         OKIN_SMART_REMOTE_CSS_SERVICE_UUID.lower() in service_uuids
         and OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID.lower() in characteristic_uuids
     )
+    has_dewertokin_rf_gateway = (
+        DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids
+        and DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID.lower() in characteristic_uuids
+    )
     has_nordic_dfu = NORDIC_DFU_SERVICE_UUID.lower() in service_uuids
+
+    if has_dewertokin_rf_gateway:
+        return DetectionResult(
+            bed_type=BED_TYPE_DEWERTOKIN,
+            confidence=0.9,
+            signals=[
+                "gatt_service:dewertokin_rf_gateway",
+                "gatt_char:dewertokin_rf_gateway_name",
+            ],
+        )
 
     if has_okin_uuid_write and has_smart_remote_css:
         signals = [
@@ -547,10 +631,22 @@ def refine_malouf_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
     return bed_type
 
 
+def _is_okimat_bed_model(ble_model: str | None) -> bool:
+    """Return True when Device Info identifies a multi-motor OKIMAT bed actuator.
+
+    OKIMAT bed actuators (e.g. ``OKIMAT 4 IPS/M`` from issue #406) expose the same
+    OKIN write + Smart-Remote-CSS GATT signature as the ELDA single-actuator stair
+    (issue #344, ``MEGAMAT MBZ``). The connected Device Information model is the
+    only reliable way to tell a full bed apart from the niche stair profile.
+    """
+    return "okimat" in (ble_model or "").strip().lower()
+
+
 def refine_okin_shared_uuid_protocol_from_gatt(
     bed_type: str,
     gatt_services: Any,
     protocol_variant: str | None = None,
+    ble_model: str | None = None,
 ) -> str:
     """Correct shared OKIN UUID profiles once connected GATT services are known."""
     is_leggett_okin_variant = (
@@ -561,6 +657,32 @@ def refine_okin_shared_uuid_protocol_from_gatt(
 
     gatt_detection = detect_bed_type_from_gatt_services(gatt_services)
     if gatt_detection.bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_OKIN_RF_ECO_BT}:
+        if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT and _is_okimat_bed_model(ble_model):
+            # Full OKIMAT beds share the RF ECO BT stair's CSS GATT signature, so
+            # the bare signature is not enough to pick the single-actuator stair
+            # profile. The Device Info model proves this is a multi-motor OKIMAT
+            # bed (issue #406).
+            if bed_type in OKIMAT_COMPATIBLE_PROFILES:
+                # Already on an OKIMAT-compatible controller; keep the saved label
+                # (BED_TYPE_OKIMAT/OKIN_UUID resolve to the same controller, and
+                # OKIN CST is its own deliberately preserved full-bed profile).
+                _LOGGER.debug(
+                    "Keeping %s profile for OKIMAT bed model %r despite RF ECO BT GATT signature",
+                    bed_type,
+                    ble_model,
+                )
+                return bed_type
+            # Any other shared-UUID guess — a persisted RF ECO BT stair entry, or
+            # an incompatible profile such as Nectar / OKIN 7-byte / Leggett OKIN —
+            # is the wrong controller for an OKIMAT bed. Promote it to the
+            # multi-motor OKIN UUID profile so the bed recovers (issue #406).
+            _LOGGER.info(
+                "Promoted %s to %s for OKIMAT bed model %r despite RF ECO BT GATT signature",
+                bed_type,
+                BED_TYPE_OKIN_UUID,
+                ble_model,
+            )
+            return BED_TYPE_OKIN_UUID
         if bed_type == BED_TYPE_OKIN_CST and gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
             return bed_type
         if gatt_detection.bed_type != bed_type:
@@ -572,6 +694,77 @@ def refine_okin_shared_uuid_protocol_from_gatt(
             )
         return gatt_detection.bed_type
 
+    return bed_type
+
+
+def refine_okin_dot_protocol_from_gatt(bed_type: str, gatt_services: Any) -> str:
+    """Promote Okimat entries connected to DOT PROTOCOL boxes to okin_dot.
+
+    DOT boxes (RF1058/RF34/RF6707 handsets) are CB24-family receivers: they
+    expose the Nordic UART write characteristic and no Okin 62741523 service.
+    An Okimat/Okin UUID entry pointed at such a box can never work over the
+    Okimat transport, so persist the corrected bed type — this also drops the
+    pairing requirement, which DOT boxes don't have (FurniMove flags DOT the
+    same way, by the presence of its CB24_WRITE_CHARACTERISTIC).
+    """
+    if bed_type not in (BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID) or not gatt_services:
+        return bed_type
+
+    from .const import (
+        BED_TYPE_OKIN_DOT,
+        NORDIC_UART_SERVICE_UUID,
+        NORDIC_UART_WRITE_CHAR_UUID,
+    )
+
+    service_uuids: set[str] = set()
+    characteristic_uuids: set[str] = set()
+    for service in gatt_services:
+        if service_uuid := _uuid_from_gatt_object(service):
+            service_uuids.add(service_uuid)
+        for char in _characteristics_from_gatt_service(service):
+            if char_uuid := _uuid_from_gatt_object(char):
+                characteristic_uuids.add(char_uuid)
+
+    has_okimat_write = (
+        OKIMAT_SERVICE_UUID.lower() in service_uuids
+        and OKIMAT_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+    has_nordic_uart_write = (
+        NORDIC_UART_SERVICE_UUID.lower() in service_uuids
+        and NORDIC_UART_WRITE_CHAR_UUID.lower() in characteristic_uuids
+    )
+    if has_nordic_uart_write and not has_okimat_write:
+        _LOGGER.info(
+            "Promoted %s to %s: connected box exposes Nordic UART and no Okin "
+            "62741523 service (DOT PROTOCOL receiver)",
+            bed_type,
+            BED_TYPE_OKIN_DOT,
+        )
+        return BED_TYPE_OKIN_DOT
+
+    return bed_type
+
+
+def refine_dewertokin_star_protocol_from_name(
+    bed_type: str,
+    device_name: str | None,
+) -> str:
+    """Correct CB35/BOX25 entries from the protocol digits in a Star name.
+
+    ``Star35...`` identifies CB35 while ``Star25...`` identifies BOX25.  Both
+    families can report ``STAR`` in Device Information characteristic 0x2A29;
+    the M1X12 app uses that value to select StarCode framing, not to distinguish
+    CB35 from BOX25.  Treating it as a CB35 discriminator caused a correctly
+    discovered Star25 entry to be overwritten on every connection (issue #413).
+    """
+    if bed_type not in {BED_TYPE_OKIN_CB35, BED_TYPE_SLEEPYS_BOX25}:
+        return bed_type
+
+    normalized_name = (device_name or "").strip().lower()
+    if normalized_name.startswith("star25"):
+        return BED_TYPE_SLEEPYS_BOX25
+    if normalized_name.startswith("star35"):
+        return BED_TYPE_OKIN_CB35
     return bed_type
 
 
@@ -607,6 +800,41 @@ def refine_nordic_uart_protocol_from_device_info(
             ble_model,
         )
     return BED_TYPE_OKIN_64BIT
+
+
+def refine_qrrm_protocol_from_device_info(
+    bed_type: str,
+    device_name: str | None,
+    ble_model: str | None,
+) -> str:
+    """Disambiguate QRRM BedTech and Richmat controllers by exact WLT model.
+
+    The confirmed BedTech BT3000 from issue #410 and Casper/Richmat HJC27 from
+    issue #300 share the QRRM name family, FEE9 GATT layout, and WLT
+    manufacturer. Their vendor models differ by the Richmat controller's ``_S``
+    suffix, so only these observed exact models are safe correction signals.
+    """
+    if bed_type not in {BED_TYPE_BEDTECH, BED_TYPE_RICHMAT}:
+        return bed_type
+    if not (device_name or "").strip().casefold().startswith("qrrm"):
+        return bed_type
+
+    normalized_model = (ble_model or "").strip().casefold()
+    corrected_bed_type = {
+        "wlt825x_h35": BED_TYPE_BEDTECH,
+        "wlt825x_h35_s": BED_TYPE_RICHMAT,
+    }.get(normalized_model)
+    if corrected_bed_type is None:
+        return bed_type
+
+    if corrected_bed_type != bed_type:
+        _LOGGER.info(
+            "Refined QRRM protocol from %s to %s using Device Info model %s",
+            bed_type,
+            corrected_bed_type,
+            ble_model,
+        )
+    return corrected_bed_type
 
 
 def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
@@ -692,9 +920,18 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
     # Priority 2: Kaidi detection - manufacturer data is the primary signal.
     # The bed advertises FFC0 UUID, name "Mouselet", AND manufacturer data with
-    # Company ID 0xFFFF / marker 0xC0FF. Manufacturer data alone is sufficient
-    # for detection (matches the OEM app's discovery), but the other signals
-    # boost confidence when present.
+    # Company ID 0xFFFF / marker 0xC0FF.
+    #
+    # The 0xFFFF/0xC0FF blob is the PairLink mesh SDK transport
+    # (com.pairlink.mesh_lib in the OEM APKs), which non-bed products - notably
+    # BLE mesh LED controllers - also emit. An ESPHome ESP32-C6 LED controller
+    # advertising a structurally valid PairLink payload was misdetected as a
+    # Kaidi bed at 90% confidence (issue #417); even the OEM app's own scan
+    # validation accepts that exact payload (length, sofaType 0x82 = product ID
+    # 130, sane seat counts) and relies on mesh room-ID membership to filter,
+    # which we cannot replicate. So the payload alone is not sufficient: require
+    # a Kaidi-specific signal (Mouselet name, FFC0/mesh UUID, or Kaidi MAC OUI)
+    # to corroborate before detecting.
     has_kaidi_uuid = (
         KAIDI_DISCOVERY_SERVICE_UUID.lower() in service_uuids
         or KAIDI_MESH_SERVICE_UUID.lower() in service_uuids
@@ -703,7 +940,14 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     has_kaidi_mac = any(
         service_info.address.upper().startswith(prefix) for prefix in KAIDI_MAC_PREFIXES
     )
-    if kaidi_adv:
+    if kaidi_adv and not (has_kaidi_uuid or has_kaidi_name or has_kaidi_mac):
+        _LOGGER.debug(
+            "Ignoring PairLink-format manufacturer data for %s (name: %s): "
+            "no Kaidi name, UUID, or MAC OUI to corroborate",
+            service_info.address,
+            service_info.name,
+        )
+    elif kaidi_adv:
         signals.append(f"manufacturer_payload:kaidi_type_{kaidi_adv.adv_type}")
         if has_kaidi_uuid:
             signals.append("uuid:kaidi")
@@ -728,6 +972,19 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         signals.append("uuid:dewertokin")
         _LOGGER.info(
             "Detected DewertOkin bed at %s (name: %s) by service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_DEWERTOKIN,
+            confidence=0.9,
+            signals=signals,
+        )
+
+    if DEWERTOKIN_RF_GATEWAY_SERVICE_UUID.lower() in service_uuids:
+        signals.append("uuid:dewertokin_rf_gateway")
+        _LOGGER.info(
+            "Detected DewertOkin RF-Gateway bed at %s (name: %s) by service UUID",
             service_info.address,
             service_info.name,
         )
@@ -895,7 +1152,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             signals=signals,
         )
 
-    # Check for SUTA Smart Home (AT command protocol over FFF0).
+    # Check for SUTA Smart Home bed frames (AT command protocol over FFF0).
     # Excludes known accessory-only subtypes that use a separate binary protocol.
     if any(device_name.startswith(pattern) for pattern in SUTA_NAME_PATTERNS):
         if any(device_name.startswith(prefix) for prefix in SUTA_UNSUPPORTED_NAME_PREFIXES):
@@ -1075,6 +1332,28 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_MALOUF_NEW_OKIN, confidence=1.0, signals=signals)
+
+    if _is_malouf_new_okin_smartbed_signature(
+        device_name,
+        service_uuids,
+        service_info.manufacturer_data,
+    ):
+        signals.append("uuid:nordic_uart")
+        signals.append("name:smartbed428")
+        signals.append(f"manufacturer_id:{MANUFACTURER_ID_OKIN}")
+        signals.append("manufacturer_payload:ab0102")
+        _LOGGER.info(
+            "Detected Malouf NEW_OKIN Smartbed at %s (name: %s) by Nordic UART "
+            "Smartbed428 advertisement",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_MALOUF_NEW_OKIN,
+            confidence=0.85,
+            signals=signals,
+            manufacturer_id=MANUFACTURER_ID_OKIN,
+        )
 
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
@@ -1298,8 +1577,37 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             requires_characteristic_check=True,
         )
 
-    # Check for BedTech - name-based detection (before Richmat WiLinke since same UUID)
-    # BedTech shares FEE9 service UUID with Richmat WiLinke
+    # Check for BedTech before Richmat WiLinke since they share FEE9 and QRRM
+    # names. Confirmed BedTech QRRM controllers advertise their MAC suffix under
+    # manufacturer ID 0x4C57; confirmed Casper/Richmat QRRM RGB controllers do not.
+    has_bedtech_manufacturer = (
+        BEDTECH_MANUFACTURER_ID in (service_info.manufacturer_data or {})
+        and (
+            device_name.startswith("qrrm")
+            or any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS)
+        )
+    )
+    if has_bedtech_manufacturer and BEDTECH_SERVICE_UUID.lower() in service_uuids:
+        signals.extend(
+            [
+                f"uuid:{BEDTECH_SERVICE_UUID.lower()}",
+                f"manufacturer_id:{BEDTECH_MANUFACTURER_ID}",
+            ]
+        )
+        _LOGGER.info(
+            "Detected BedTech bed at %s (name: %s) by FEE9 UUID + manufacturer ID 0x%04X",
+            service_info.address,
+            service_info.name,
+            BEDTECH_MANUFACTURER_ID,
+        )
+        return DetectionResult(
+            bed_type=BED_TYPE_BEDTECH,
+            confidence=0.95,
+            signals=signals,
+            manufacturer_id=BEDTECH_MANUFACTURER_ID,
+        )
+
+    # BedTech-branded names remain a strong signal even without manufacturer data.
     if any(pattern in device_name for pattern in BEDTECH_NAME_PATTERNS):
         if BEDTECH_SERVICE_UUID.lower() in service_uuids:
             signals.append(f"uuid:{BEDTECH_SERVICE_UUID.lower()}")
@@ -1423,6 +1731,20 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Check for Richmat WiLinke variants (includes FEE9 which is also used by BedTech)
     for wilinke_uuid in RICHMAT_WILINKE_SERVICE_UUIDS:
         if wilinke_uuid.lower() in service_uuids:
+            # Some WiLinke UUIDs are shared with non-bed devices, so they are
+            # only trusted when a Richmat name corroborates the match;
+            # otherwise keep scanning and let detection fall through.
+            guard_reason = NAME_GUARDED_WILINKE_UUIDS.get(wilinke_uuid.lower())
+            if guard_reason and not is_richmat_named:
+                _LOGGER.debug(
+                    "Ignoring WiLinke UUID %s for %s (name: %s): %s with no "
+                    "Richmat name to corroborate",
+                    wilinke_uuid,
+                    service_info.address,
+                    service_info.name,
+                    guard_reason,
+                )
+                continue
             signals.append("uuid:wilinke")
             # FEE9 is ambiguous - could be Richmat or BedTech
             if wilinke_uuid.lower() == BEDTECH_SERVICE_UUID.lower():
@@ -1700,6 +2022,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
 
         # If OKIN manufacturer ID is also present, this is likely a CB24 device
         # (e.g., SmartBed by Okin / Lucid L600) that also advertises Nordic UART.
+        # Nordic-only Malouf Smartbed428 variants are handled before this branch.
         if (
             service_info.manufacturer_data
             and MANUFACTURER_ID_OKIN in service_info.manufacturer_data
@@ -1831,24 +2154,3 @@ async def detect_bed_type_by_characteristics(
         _LOGGER.debug("Characteristic detection failed (malformed service): %s", err)
 
     return None
-
-
-def determine_unsupported_reason(service_info: BluetoothServiceInfoBleak) -> str:
-    """Determine why a device was not detected as a supported bed."""
-    device_name = (service_info.name or "").lower()
-
-    # Check if it was excluded
-    for pattern in EXCLUDED_DEVICE_PATTERNS:
-        if pattern in device_name:
-            return f"Device name contains excluded pattern '{pattern}' (non-bed device)"
-
-    # Check if it has any service UUIDs at all
-    if not service_info.service_uuids:
-        return "No BLE service UUIDs advertised"
-
-    # Check if it has manufacturer data but unknown protocol
-    if service_info.manufacturer_data:
-        return "Has manufacturer data but no recognized service UUIDs"
-
-    # Generic reason
-    return "No matching service UUIDs or name patterns found"

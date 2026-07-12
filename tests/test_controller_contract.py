@@ -22,6 +22,8 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
     LEGGETT_VARIANT_OKIN,
+    MALOUF_LAYOUT_AUTO,
+    MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STANDARD,
     RICHMAT_VARIANT_NORDIC,
     RICHMAT_VARIANT_WILINKE,
@@ -59,9 +61,12 @@ class _FactoryCoordinator(SimpleNamespace):
             motor_pulse_delay_ms=100,
             address="AA:BB:CC:DD:EE:FF",
             name="Contract Test Bed",
+            ble_device_name="Contract Test Bed",
             motor_count=2,
             has_massage=False,
             disable_angle_sensing=True,
+            malouf_layout=MALOUF_LAYOUT_AUTO,
+            malouf_memory_slots=MALOUF_MEMORY_SLOTS_AUTO,
         )
 
     async def async_execute_controller_command(self, *args: Any, **kwargs: Any) -> None:

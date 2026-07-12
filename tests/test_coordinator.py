@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_BEDTECH,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
@@ -22,10 +23,12 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_NECTAR,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -269,6 +272,14 @@ class TestCoordinatorConnection:
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+        pairing = coordinator.pairing_diagnostics
+        assert pairing["required"] is True
+        assert pairing["runtime_bond_established"] is True
+        assert pairing["connection_attempts"][0]["pairing"]["decision"] == (
+            "existing_os_bond_detected"
+        )
+        assert pairing["connection_attempts"][0]["pairing"]["os_bond_reported"] is True
+        assert pairing["connection_attempts"][0]["pairing"]["requested"] is False
 
     async def test_initial_position_read_prepares_controller_before_hydration(
         self,
@@ -815,6 +826,12 @@ class TestCoordinatorPositionSeek:
 
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
+        pairing_attempt = coordinator.pairing_diagnostics["connection_attempts"][0][
+            "pairing"
+        ]
+        assert pairing_attempt["decision"] == "bond_marker_present"
+        assert pairing_attempt["bond_marker_before_attempt"] is True
+        assert pairing_attempt["requested"] is False
 
     @pytest.mark.usefixtures("mock_coordinator_connected")
     async def test_connect_richmat_auto_remote_uses_ble_name_detection(
@@ -1510,7 +1527,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
     ):
-        """Sleep Number MCR should not schedule timer-based auto-reconnect."""
+        """The Gen2 fix must not change Sleep Number MCR reconnect behavior."""
         del mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1744,6 +1761,7 @@ class TestCoordinatorWriteCommand:
 
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
+        coordinator._bond_probe_timed_out = True
 
         async def _auth_failure_command(_controller):
             raise BleakError(
@@ -1769,11 +1787,192 @@ class TestCoordinatorWriteCommand:
             )
 
         assert coordinator._ble_bond_established is False
+        assert coordinator._bond_probe_timed_out is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
         mock_create_issue.assert_awaited_once_with(
             hass, TEST_ADDRESS, TEST_NAME, "okimat_auth_failure_test"
         )
         mock_disconnect.assert_awaited_once_with(reason="authentication_failed")
+
+    async def test_controller_startup_auth_failure_clears_bond_marker(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_adapters,
+    ):
+        """Startup auth failures must recover even after a cached probe timeout."""
+        del mock_bluetooth_adapters
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_startup_auth_failure_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+            "handle=19 error=5 description=Insufficient authentication"
+        )
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=("OKIN", "Model X"),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                side_effect=auth_error,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as mock_create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+            coordinator._bond_probe_timed_out = True
+            result = await coordinator.async_connect()
+
+        assert result is False
+        assert coordinator._ble_bond_established is False
+        assert coordinator._bond_probe_timed_out is False
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        mock_create_issue.assert_awaited_once_with(
+            hass, TEST_ADDRESS, TEST_NAME, "okimat_startup_auth_failure_test"
+        )
+
+    async def test_startup_auth_recovery_survives_failing_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_adapters,
+    ):
+        """A disconnect that raises during auth recovery must not abort the retry path."""
+        del mock_bluetooth_adapters
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_startup_auth_failing_disconnect_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=AA:BB:CC:DD:EE:FF "
+            "handle=19 error=5 description=Insufficient authentication"
+        )
+        # Disconnect cleanup raises a non-BleakError so it escapes the disconnect
+        # helper's own guard and would otherwise replace the auth error.
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect = AsyncMock(side_effect=OSError("cleanup boom"))
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=("OKIN", "Model X"),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                side_effect=auth_error,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+                new_callable=AsyncMock,
+            ) as mock_create_issue,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+            # Must not raise the OSError from the failing disconnect.
+            result = await coordinator.async_connect()
+
+        assert result is False
+        # The recovery still ran despite the failing disconnect.
+        assert coordinator._ble_bond_established is False
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        mock_create_issue.assert_awaited_once_with(
+            hass, TEST_ADDRESS, TEST_NAME, "okimat_startup_auth_failing_disconnect_test"
+        )
 
     async def test_failed_pairing_does_not_persist_bond_marker(
         self,
@@ -1842,6 +2041,21 @@ class TestCoordinatorWriteCommand:
         ]
         assert True in pair_kwargs
         assert False in pair_kwargs
+        pairing_attempts = [
+            attempt["pairing"]
+            for attempt in coordinator.pairing_diagnostics["connection_attempts"]
+        ]
+        assert any(
+            attempt["requested"] is True
+            and attempt["connection_result"] == "pairing_connection_failed"
+            and attempt["error_type"] == "BleakError"
+            for attempt in pairing_attempts
+        )
+        assert any(
+            attempt["decision"] == "retry_without_pairing"
+            and attempt["requested"] is False
+            for attempt in pairing_attempts
+        )
 
     async def test_verify_bonded_detects_unbonded_link_and_repairs(
         self,
@@ -1892,6 +2106,10 @@ class TestCoordinatorWriteCommand:
         assert bonded is False
         assert coordinator._ble_bond_established is False
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+        assert (
+            coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+            == "authentication_failed"
+        )
         mock_create_issue.assert_awaited_once_with(
             hass, TEST_ADDRESS, TEST_NAME, "okimat_verify_bonded_test"
         )
@@ -1938,7 +2156,116 @@ class TestCoordinatorWriteCommand:
         assert coordinator._ble_bond_established is True
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
         assert coordinator._skip_pair_next_attempt is False
+        assert (
+            coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+            == "succeeded"
+        )
         mock_delete_issue.assert_awaited_once_with(hass, TEST_ADDRESS)
+
+
+    async def test_verify_bonded_timeout_is_retryable_for_other_beds(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A transient timeout must not suppress probes on later connections."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_verify_bonded_timeout_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        client = MagicMock()
+        client.is_connected = True
+
+        async def _never_answers(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        client.read_gatt_char = AsyncMock(side_effect=_never_answers)
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.DEVICE_INFO_READ_TIMEOUT",
+            0.05,
+        ):
+            async with asyncio.timeout(5):
+                bonded = await coordinator._async_verify_bonded()
+
+            assert bonded is True
+            assert coordinator._bond_probe_timed_out is False
+            assert client.read_gatt_char.await_count == 1
+            assert (
+                coordinator.pairing_diagnostics["last_bond_verification"]["status"]
+                == "timed_out"
+            )
+
+            async with asyncio.timeout(5):
+                bonded = await coordinator._async_verify_bonded()
+
+        assert bonded is True
+        assert coordinator._bond_probe_timed_out is False
+        assert client.read_gatt_char.await_count == 2
+
+    async def test_verify_bonded_timeout_is_negative_cached_for_okin_cst(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Known-unresponsive OKIN CST probes remain skipped after a timeout."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okin_cst_verify_bonded_timeout_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        client = MagicMock()
+        client.is_connected = True
+
+        async def _never_answers(*args, **kwargs):
+            await asyncio.Event().wait()
+
+        client.read_gatt_char = AsyncMock(side_effect=_never_answers)
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.DEVICE_INFO_READ_TIMEOUT",
+            0.05,
+        ):
+            async with asyncio.timeout(5):
+                bonded = await coordinator._async_verify_bonded()
+
+        assert bonded is True
+        assert coordinator._bond_probe_timed_out is True
+        assert client.read_gatt_char.await_count == 1
+
+        # Second verification must not touch the characteristic again.
+        async with asyncio.timeout(5):
+            bonded = await coordinator._async_verify_bonded()
+
+        assert bonded is True
+        assert client.read_gatt_char.await_count == 1
 
 
 class TestCoordinatorNotifications:
@@ -2356,6 +2683,51 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.disable_angle_sensing is True
         assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
+    async def test_correction_to_box25_repairs_stored_default_angle_sensing(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """A stale CB35 entry repaired to BOX25 should regain position feedback (#413).
+
+        BOX25 reports percentage positions (BEDS_WITH_POSITION_FEEDBACK) without
+        being in BEDS_WITH_ANGLE_SENSING, so the correction must key on the same
+        set the config flow uses for the disable_angle_sensing default.
+        """
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: True},
+            bed_type=BED_TYPE_OKIN_CB35,
+        )
+
+        assert coordinator.disable_angle_sensing is True
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_SLEEPYS_BOX25)
+
+        assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_correction_to_box25_preserves_enabled_position_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ):
+        """Enabled position feedback must survive a correction to BOX25."""
+        coordinator = self._make_coordinator(
+            hass,
+            mock_config_entry_data,
+            {CONF_DISABLE_ANGLE_SENSING: False},
+            bed_type=BED_TYPE_OKIN_CB35,
+        )
+
+        coordinator._apply_runtime_bed_type_correction(BED_TYPE_SLEEPYS_BOX25)
+
+        assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
+        assert coordinator.disable_angle_sensing is False
+        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+
     async def test_correction_updates_richmat_to_okin_64bit(
         self,
         hass: HomeAssistant,
@@ -2372,6 +2744,88 @@ class TestRuntimeBedTypeCorrection:
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_64BIT)
 
         assert coordinator.bed_type == BED_TYPE_OKIN_64BIT
+
+    async def test_qrrm_bt3000_model_correction_selects_bedtech_controller(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected: None,
+        mock_async_ble_device_from_address: MagicMock,
+    ) -> None:
+        """Issue #410's connected model must replace the persisted Richmat fallback."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM157738",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "QRRM157738",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_RICHMAT_REMOTE: "qrrm",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="test_entry_qrrm_bt3000_runtime_correction",
+        )
+        entry.add_to_hass(hass)
+        mock_async_ble_device_from_address.return_value.address = "57:4C:54:30:76:51"
+        mock_async_ble_device_from_address.return_value.name = "QRRM157738"
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("WLT", "WLT825X_H35"),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert coordinator.bed_type == BED_TYPE_BEDTECH
+        assert coordinator.controller.__class__.__name__ == "BedTechController"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_BEDTECH
+        assert CONF_RICHMAT_REMOTE not in entry.data
+
+    async def test_qrrm_hjc27_model_correction_selects_richmat_controller(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected: None,
+        mock_async_ble_device_from_address: MagicMock,
+    ) -> None:
+        """A persisted BedTech fallback must correct Casper/HJC27 back to Richmat."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="QRRM141291",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:52",
+                CONF_NAME: "QRRM141291",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:52",
+            entry_id="test_entry_qrrm_hjc27_runtime_correction",
+        )
+        entry.add_to_hass(hass)
+        mock_async_ble_device_from_address.return_value.address = "57:4C:54:30:76:52"
+        mock_async_ble_device_from_address.return_value.name = "QRRM141291"
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("WLT", "WLT825X_H35_S"),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert coordinator.bed_type == BED_TYPE_RICHMAT
+        assert coordinator.controller.__class__.__name__ == "RichmatController"
+        assert coordinator.controller._remote_code == "qrrm"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        assert CONF_RICHMAT_REMOTE not in entry.data
 
     async def test_correction_to_pairing_required_type_reconnects_before_controller_startup(
         self,
@@ -2483,6 +2937,294 @@ class TestRuntimeBedTypeCorrection:
             coordinator._connection_attempt_details[0]["result"]
             == "retry_with_pairing_after_protocol_correction"
         )
+
+
+
+class TestDeviceInfoCache:
+    """Device Information Service results are cached across reconnects."""
+
+    async def test_failed_device_info_read_retries_then_caches_success(
+        self,
+        hass: HomeAssistant,
+        mock_bleak_client: MagicMock,
+    ):
+        """A failed DIS read retries once connected again, then caches success."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_device_info_cache_test",
+        )
+        entry.add_to_hass(hass)
+
+        gatt_services: list[SimpleNamespace] = []
+        mock_bleak_client.services = MagicMock()
+        mock_bleak_client.services.__iter__ = lambda self: iter(gatt_services)
+        mock_bleak_client.services.__len__ = lambda self: len(gatt_services)
+        mock_bleak_client.services.get_service = MagicMock(return_value=None)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        mock_controller = MagicMock()
+        mock_controller.start_notify = AsyncMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                side_effect=[(None, None), ("OKIN", "Model X")],
+            ) as mock_read_device_info,
+            patch.object(
+                AdjustableBedCoordinator,
+                "_async_verify_bonded",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=mock_controller,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 1
+            assert coordinator._device_info_read_done is False
+            assert coordinator._ble_manufacturer is None
+            assert coordinator._ble_model is None
+
+            await coordinator.async_disconnect()
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 2
+            assert coordinator._device_info_read_done is True
+            assert coordinator._ble_manufacturer == "OKIN"
+            assert coordinator._ble_model == "Model X"
+
+            await coordinator.async_disconnect()
+
+            assert await coordinator.async_connect() is True
+            # Once a useful read succeeds, later reconnects reuse it.
+            assert mock_read_device_info.await_count == 2
+            assert coordinator._ble_manufacturer == "OKIN"
+            assert coordinator._ble_model == "Model X"
+
+    @pytest.mark.parametrize(
+        ("bed_type", "expected_read_done"),
+        [
+            (BED_TYPE_OKIMAT, False),
+            (BED_TYPE_OKIN_CST, True),
+        ],
+    )
+    def test_missing_device_info_cache_policy(
+        self,
+        hass: HomeAssistant,
+        bed_type: str,
+        expected_read_done: bool,
+    ):
+        """Only the known-unresponsive explicit protocol uses a negative cache."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: bed_type,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id=f"{bed_type}_device_info_cache_policy_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._store_ble_device_info(None, None)
+
+        assert coordinator._device_info_read_done is expected_read_done
+
+    def test_useful_device_info_is_cached_for_refinable_bed(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A later successful read should stop retries for refinable protocols."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_useful_device_info_cache_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._store_ble_device_info(None, None)
+        assert coordinator._device_info_read_done is False
+
+        coordinator._store_ble_device_info("OKIN", "OKIMAT 4 IPS/M")
+
+        assert coordinator._device_info_read_done is True
+        assert coordinator._ble_manufacturer == "OKIN"
+        assert coordinator._ble_model == "OKIMAT 4 IPS/M"
+
+    def test_partial_device_info_does_not_latch_for_model_dependent_bed(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A model that timed out must not freeze an OKIMAT bed's identity.
+
+        An OKIMAT bed shares the RF ECO BT GATT signature, so its Device Info
+        model is what keeps it from being demoted to the single-actuator stair
+        profile. If the manufacturer read succeeds but the model times out, the
+        cache must not latch complete, or model=None would persist across every
+        reconnect and misroute the bed (issue #430 follow-up).
+        """
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="okimat_partial_device_info_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        # Manufacturer answered, model timed out (returned None).
+        coordinator._store_ble_device_info("OKIN", None)
+        assert coordinator._device_info_read_done is False
+
+        # A later reconnect recovers the model and stops retrying.
+        coordinator._store_ble_device_info("OKIN", "OKIMAT 4 IPS/M")
+        assert coordinator._device_info_read_done is True
+        assert coordinator._ble_model == "OKIMAT 4 IPS/M"
+
+    def test_partial_device_info_latches_for_model_independent_bed(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A protocol that never consults the DIS model still caches partial reads."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=TEST_NAME,
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="keeson_partial_device_info_test",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+
+        # Manufacturer alone is enough for a bed whose protocol never needs model.
+        coordinator._store_ble_device_info("Keeson", None)
+        assert coordinator._device_info_read_done is True
+
+    async def test_deferred_device_info_read_once_across_reconnects(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+    ):
+        """Timing-sensitive protocols also reuse DIS data after the handshake."""
+        del mock_coordinator_connected
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Sleep Number MCR Bed",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: "64:DB:A0:07:DD:02",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER_MCR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="deferred_device_info_cache_test",
+        )
+        entry.add_to_hass(hass)
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            new_callable=AsyncMock,
+            return_value=("Sleep Number", "MCR"),
+        ) as mock_read_device_info:
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 1
+
+            await coordinator.async_disconnect()
+
+            assert await coordinator.async_connect() is True
+            assert mock_read_device_info.await_count == 1
+            assert coordinator._ble_manufacturer == "Sleep Number"
+            assert coordinator._ble_model == "MCR"
 
 
 class TestMultiMotorConfiguration:

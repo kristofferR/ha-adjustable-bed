@@ -16,7 +16,7 @@
 | Name digits 4-5 | `35` distinguishes CB35 from BOX25 (`25`) |
 | Service UUID | Nordic UART `6E400001-B5A3-F393-E0A9-E50E24DCCA9E` |
 | Manufacturer ID | 89 (OKIN) |
-| Manufacturer Name (2A29) | Exactly `STAR` (post-connection confirmation) |
+| Manufacturer Name (2A29) | `STAR` selects StarCode framing but is shared with BOX25 |
 
 ### Name Encoding
 
@@ -27,9 +27,14 @@ DewertOkin Star device names encode the protocol version: `Star` + `[protocol di
 | `Star352201011800` | `35` | CB.35.22.01 | CB35 (this protocol) |
 | `Star254202079996` | `25` | 25_42_02 | BOX25 (Sleepy's Elite) |
 
-### Post-Connection Verification
+### Manufacturer Name Is Not a Protocol Discriminator
 
-The `com.okin.bedding.adjustbed` app (which supports both CB35 and BOX25) reads BLE characteristic `2A29` (Manufacturer Name) from the Device Information Service (`180A`) after connecting. If it returns exactly `STAR` (4 bytes: 0x53 0x54 0x41 0x52), the device uses CB35. Otherwise it uses BOX25. The integration performs the same check to auto-correct if the name-based detection was wrong.
+Both confirmed `Star25...` BOX25 devices from issues #372 and #413 return
+`STAR` from Device Information characteristic `2A29`. The Adjustable Comfort
+M1X12 app uses this value to choose StarCode command framing within its CB25
+device implementation; it does not prove the device is CB35. The integration
+therefore uses the `25`/`35` digits in the advertised name and never rewrites a
+high-confidence `Star25...` detection from the manufacturer string alone.
 
 ## Protocol
 

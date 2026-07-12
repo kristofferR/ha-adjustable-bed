@@ -17,6 +17,16 @@ These apps share the same Kaidi OEM transport and command family.
 Kaidi beds are identified primarily by manufacturer data, not by advertised
 service UUIDs.
 
+> **PairLink caveat:** the `0xFFFF`/`0xC0FF` manufacturer blob is the PairLink
+> mesh SDK transport (`com.pairlink.mesh_lib` in the OEM APKs), which non-bed
+> products — notably BLE mesh LED controllers — also emit. An ESPHome ESP32-C6
+> LED controller advertising a structurally valid PairLink payload was
+> misdetected as a Kaidi bed (issue #417); the OEM app's own scan validation
+> accepts that payload too and filters on mesh room-ID membership, which the
+> integration cannot replicate. Detection therefore requires a corroborating
+> Kaidi signal — the `Mouselet` name, the FFC0/mesh service UUID, or a known
+> Kaidi MAC OUI — alongside a parseable payload.
+
 | Signal | Value |
 |--------|-------|
 | Manufacturer data company ID | `0xFFFF` in Home Assistant advertisements |

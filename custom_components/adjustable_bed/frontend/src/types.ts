@@ -63,6 +63,7 @@ export interface AdjustableBedCardConfig {
   show_memory?: boolean;
   show_lighting?: boolean;
   show_massage?: boolean;
+  show_utility?: boolean;
   show_climate?: boolean;
   show_connection?: boolean;
   // Section render order (keys without the "show_" prefix). Unlisted sections
@@ -125,6 +126,7 @@ export interface BedEntities {
   lights: LightEntities;
   massage: { buttons: string[]; numbers: string[]; timer?: string };
   climate: { entities: string[]; selects: string[] };
+  utility: string[]; // button.* sync_positions / child_lock_toggle
 }
 
 // Replaced at build time with the integration version (see build.mjs).

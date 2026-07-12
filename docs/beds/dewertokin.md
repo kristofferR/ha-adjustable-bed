@@ -111,7 +111,9 @@ DewertOkin uses the same Okin 6-byte command format (`[0x04, 0x02, <4-byte>]`) a
 - **Okimat** - UUID-based writes to `62741525-...`
 - **Leggett & Platt Okin** - UUID-based writes to `62741525-...`
 
-The key difference is that DewertOkin writes to a BLE **handle** (`0x0013`) rather than a UUID-based characteristic.
+Earlier reverse-engineering notes described DewertOkin writes as handle-based, but
+the numeric handle is not stable across devices and firmware. Use the shared Okin
+write characteristic UUID instead.
 
 Detection is by **device name patterns** ("dewertokin", "dewert", "a h beard", "hankook"), not service UUID.
 
@@ -119,11 +121,13 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 
 ## Protocol Details
 
-**Write Handle:** `0x0013`
+**Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
 **Format:** 6-byte fixed packets
 **Address Type:** Random
 
-**Note:** DewertOkin uses handle-based writes rather than characteristic UUIDs.
+**Note:** Do not hardcode numeric handles such as `0x0013`; GATT handles are
+assigned per device/service layout. Issue #394 reported a bed where the write
+characteristic was handle `0x000d` and `0x0013` belonged to another attribute.
 
 ### Motor Commands
 
@@ -171,12 +175,41 @@ From app disassembly analysis (FurniMove):
 
 ### RF Gateway Variant
 
-Some DewertOkin devices use an RF Gateway with an 8-byte protocol:
-```
+Some DewertOkin devices identify through the Device Information Service as
+manufacturer `DewertOkin GmbH`, model `Bluetooth RF-Gateway`. These receivers
+can expose the normal `62741523-...` / `62741525-...` Okin service plus an
+RF-Gateway settings service:
+
+- **RF-Gateway Settings Service:** `92111420-72ab-4564-62ef-2a881286a6b0`
+- **RF-Gateway Device Name Characteristic:** `92111422-72ab-4564-62ef-2a881286a6b0`
+- **Command Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
+
+`92111422-...` is the gateway's device-name characteristic in FurniMove 2.0.1.
+The app uses its presence to detect RF-Gateway devices and only writes it when
+renaming the gateway. Motor, preset, light, and massage commands still go to the
+normal Okin write characteristic.
+
+The RF-Gateway command format is 8 bytes:
+
+```text
 [0xE5, 0xFE, 0x16, data0, data1, data2, data3, checksum]
 ```
 
-This variant uses the Keeson-style checksum (one's complement of byte sum).
+This wraps the same four big-endian Okin command bytes used by the 6-byte
+protocol. The checksum is the one's complement of the byte sum:
+`(~sum(frame_without_checksum)) & 0xff`.
+
+Example:
+
+```text
+Head Up 6-byte Okin: 04 02 00 00 00 01
+Head Up RF-Gateway:  e5 fe 16 00 00 00 01 05
+```
+
+The command map is the same as the standard DewertOkin/Okin table above; only
+the header and checksum change. The integration auto-selects this path when the
+BLE model is `Bluetooth RF-Gateway` or when the RF-Gateway settings service/name
+characteristic pair is present.
 
 ## Detection
 

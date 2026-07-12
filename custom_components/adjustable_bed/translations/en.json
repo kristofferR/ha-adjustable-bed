@@ -46,6 +46,8 @@
           "bed_type": "Bed type",
           "name": "Name",
           "motor_count": "Number of motors",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
@@ -56,11 +58,14 @@
           "disconnect_after_command": "Disconnect after each command",
           "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
           "octo_pin": "Octo PIN",
-          "jensen_pin": "Jensen PIN"
+          "jensen_pin": "Jensen PIN",
+          "auto_detect_option": "Auto-detect (recommended)"
         },
         "data_description": {
           "bed_type": "Auto-detected bed type. Change if detection was incorrect.",
-          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "protocol_variant": "Some beds have multiple protocol variants. Auto-detect usually works, but you can override if needed.",
@@ -88,6 +93,8 @@
           "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
@@ -98,7 +105,9 @@
         },
         "data_description": {
           "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
-          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
@@ -116,6 +125,8 @@
           "protocol_variant": "Protocol variant",
           "name": "Name",
           "motor_count": "Number of motors",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "preferred_adapter": "Bluetooth adapter",
@@ -127,7 +138,9 @@
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX (found in the bed's Bluetooth settings or on a label).",
           "protocol_variant": "Leave as 'auto' unless you know the specific protocol. Keeson: base (Member's Mark/Purple) or ksbt (KSBT03/KSBT04, including some Ergomotion Sync beds). Leggett: gen2 (most common) or okin. Richmat: auto-detected.",
-          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
           "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
@@ -156,6 +169,18 @@
           "richmat_remote": "Use 'auto' unless you know your remote code."
         }
       },
+      "manual_malouf": {
+        "title": "Malouf/Lucid Actuator Configuration",
+        "description": "Select the physical controls on your Malouf/Lucid remote.",
+        "data": {
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions"
+        },
+        "data_description": {
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
+        }
+      },
       "bluetooth_octo": {
         "title": "Octo PIN Configuration",
         "description": "Enter the PIN for your Octo bed. Leave empty if your bed doesn't require a PIN.",
@@ -176,6 +201,18 @@
           "richmat_remote": "Use 'auto' unless you know your remote code."
         }
       },
+      "bluetooth_malouf": {
+        "title": "Malouf/Lucid Actuator Configuration",
+        "description": "Select the physical controls on your Malouf/Lucid remote.",
+        "data": {
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions"
+        },
+        "data_description": {
+          "malouf_layout": "Physical controls on the remote. This is independent of BLE protocol: Lucid L600 beds have shipped with multiple protocols.",
+          "malouf_memory_slots": "Number of memory buttons on the physical remote. Auto exposes one for a two-motor L600-style layout and two for other layouts."
+        }
+      },
       "bluetooth_pairing": {
         "title": "Bluetooth Pairing Required",
         "description": "**{name}** requires Bluetooth pairing.\n\n**To pair:**\n{pairing_instructions}\n\nIf you've already paired manually via system Bluetooth settings, click 'Skip'.",
@@ -183,12 +220,14 @@
           "action": "Action",
           "pairing_instructions_generic": "Pairing instructions (generic)",
           "pairing_instructions_okin": "Pairing instructions (Okin)",
-          "pairing_instructions_sleep_number": "Pairing instructions (Sleep Number)"
+          "pairing_instructions_sleep_number": "Pairing instructions (Sleep Number)",
+          "pairing_instructions_leggett_gen2": "Pairing instructions (Leggett & Platt Gen2)"
         },
         "data_description": {
           "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",
           "pairing_instructions_okin": "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn button on the box only syncs the RF remote.\n2. While the light is active, click 'Pair Now'.",
-          "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'"
+          "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'",
+          "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. You'll hear a small chime and see a pulsing blue light under the bed - the bed stays in pairing mode for about 2 minutes.\n3. While the light is pulsing, click 'Pair Now'."
         }
       },
       "manual_pairing": {
@@ -239,7 +278,7 @@
       }
     },
     "abort": {
-      "already_configured": "Device is already configured",
+      "already_configured": "This Bluetooth address already belongs to an Adjustable Bed entry. Check both active and ignored Adjustable Bed entries under Settings > Devices & services, then reload or reconfigure that entry instead of adding it again.",
       "configured_retrying_suffix": "[already configured, setup retry]",
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
@@ -265,7 +304,8 @@
       "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
       "octo_pairing_needs_connection": "Both Octo beds must be connected before combining them — their capabilities (lights, memory presets, etc.) are read from the live beds and saved for the paired device. Connect each Octo side, then try again.",
       "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
-      "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine."
+      "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine.",
+      "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support."
     }
   },
   "options": {
@@ -275,6 +315,8 @@
         "description": "Adjust the configuration for your adjustable bed.",
         "data": {
           "motor_count": "Number of motors",
+          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
           "disable_angle_sensing": "Disable angle sensing",
           "passive_position_reconciliation": "Refresh positions while idle",
@@ -294,7 +336,9 @@
           "legs_max_angle": "Maximum legs angle (degrees)"
         },
         "data_description": {
-          "motor_count": "2 motors: back and legs. 3 motors: adds head. 4 motors: adds feet.",
+          "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
+          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
           "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "passive_position_reconciliation": "Periodically reconnect and read positions while idle so Home Assistant catches up with moves made using the physical remote. This is enabled by default for Linak beds and may briefly use the BLE connection in the background.",
           "position_mode": "Speed: faster button response. Accuracy: extra position read after each command.",
@@ -327,6 +371,12 @@
       },
       "preset_zero_g": {
         "name": "Zero Gravity"
+      },
+      "sync_positions": {
+        "name": "Sync Both Sides"
+      },
+      "child_lock_toggle": {
+        "name": "Child Lock"
       },
       "preset_anti_snore": {
         "name": "Anti-Snore"
@@ -818,21 +868,17 @@
     }
   },
   "issues": {
-    "unsupported_device": {
-      "title": "Unsupported BLE device: {name}",
-      "description": "A Bluetooth device was detected that could not be identified as a supported adjustable bed.\n\n**Device:** {name}\n**Address:** `{address}`\n**Reason:** {reason}\n\nIf this is an adjustable bed that you'd like to see supported, please [report it on GitHub]({github_url}) with as much information as possible about your bed model.\n\nYou can also run **Generate Support Bundle** (`adjustable_bed.generate_support_bundle`) with this device's address to capture protocol data that can help us add support."
-    },
     "pairing_required": {
       "title": "Bluetooth pairing required for {name}",
       "fix_flow": {
         "step": {
           "confirm": {
             "title": "Pair your adjustable bed",
-            "description": "**{name}** ({address}) connected but its Bluetooth link is not bonded, so it cannot be controlled yet.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is discoverable, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
+            "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in — you'll hear a chime and see a pulsing blue light under the bed, and the bed stays in pairing mode for about 2 minutes. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
           }
         },
         "abort": {
-          "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
+          "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; Leggett & Platt Smart Bed: unplug the bed and remove the power-supply batteries, then plug it back in and wait for the chime and pulsing blue light; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
         }
       }
     }

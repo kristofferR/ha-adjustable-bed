@@ -12,6 +12,7 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 
 - Never post GitHub comments (issues, pull requests, discussions, releases, etc.) without explicit and specific user approval for that exact comment action.
 - If approval is missing or ambiguous, ask before posting.
+- Never use em dashes (—) in drafted/suggested GitHub replies. Rephrase with commas, colons, parentheses, or separate sentences instead.
 
 ## Architecture
 
@@ -126,6 +127,8 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | Option | Description | Default |
 |--------|-------------|---------|
 | `motor_count` | 2, 3, or 4 motors | 2 |
+| `malouf_layout` | Malouf/Lucid physical actuator layout, independent of protocol | auto |
+| `malouf_memory_slots` | Malouf/Lucid remote memory capacity (auto, 1, or 2) | auto |
 | `has_massage` | Enable massage entities | false |
 | `protocol_variant` | Protocol variant (bed-specific) | auto |
 | `disable_angle_sensing` | Disable position feedback | true |
@@ -210,7 +213,7 @@ under `custom_components/adjustable_bed/frontend/`.
   ```bash
   cd custom_components/adjustable_bed/frontend
   bun install
-  bun run check   # tsgo typecheck + esbuild bundle
+  bun run check   # tsc (TypeScript 7) typecheck + esbuild bundle
   bun test        # discovery unit tests
   ```
   The bundle is written to `frontend/dist/adjustable-bed-card.js` and is

@@ -15,12 +15,14 @@ from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Comman
 from custom_components.adjustable_bed.beds.richmat import RichmatCommands
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_BEDTECH,
     BED_TYPE_KAIDI,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -29,6 +31,7 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
+    CONF_MALOUF_LAYOUT,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -36,6 +39,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
+    MALOUF_LAYOUT_HILO,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_HEAD_MAX_ANGLE,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -78,6 +82,7 @@ class TestCoverEntities:
                 "name": "Malouf Hi-Lo Bed",
                 CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN,
                 CONF_MOTOR_COUNT: 4,
+                CONF_MALOUF_LAYOUT: MALOUF_LAYOUT_HILO,
                 CONF_HAS_MASSAGE: True,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
@@ -140,7 +145,9 @@ class TestCoverEntities:
 
         assert registry.async_get_entity_id("button", DOMAIN, "AA:BB:CC:DD:EE:44_stop")
         for key in ("preset_flat", "preset_memory_1", "toggle_light", "massage_all_toggle"):
-            assert registry.async_get_entity_id("button", DOMAIN, f"AA:BB:CC:DD:EE:44_{key}") is None
+            assert (
+                registry.async_get_entity_id("button", DOMAIN, f"AA:BB:CC:DD:EE:44_{key}") is None
+            )
 
     async def test_malouf_hilo_cover_setup_removes_stale_head_and_feet(
         self,
@@ -189,6 +196,52 @@ class TestCoverEntities:
 
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_head") is None
         assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:02_feet") is None
+
+    async def test_okin_uuid_setup_removes_stale_stair_cover(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Recovering an OKIMAT bed removes the orphaned RF ECO BT stair cover (#406)."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Recovered OKIMAT Bed",
+            data={
+                "address": "AA:BB:CC:DD:EE:46",
+                "name": "Recovered OKIMAT Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:46",
+            entry_id="recovered_okimat_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        # Seed the orphaned stair cover left behind by the old RF ECO BT profile.
+        registry.async_get_or_create(
+            "cover",
+            DOMAIN,
+            "AA:BB:CC:DD:EE:46_stair",
+            config_entry=entry,
+            suggested_object_id="recovered_okimat_bed_stair",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert registry.async_get_entity_id("cover", DOMAIN, "AA:BB:CC:DD:EE:46_stair") is None
+        for key in ("back", "legs"):
+            assert (
+                registry.async_get_entity_id("cover", DOMAIN, f"AA:BB:CC:DD:EE:46_{key}")
+                is not None
+            )
 
     async def test_box25_cover_entities_use_box25_layout(
         self,
@@ -794,9 +847,7 @@ class TestSleepNumberEntities:
             is None
         )
         assert (
-            registry.async_get_entity_id(
-                "number", DOMAIN, "AA:BB:CC:DD:EE:42_sleep_number_setting"
-            )
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:42_sleep_number_setting")
             is None
         )
         assert (
@@ -1098,14 +1149,17 @@ class TestSleepNumberEntities:
 
             return unregister
 
-        with patch(
-            "custom_components.adjustable_bed.light."
-            "AdjustableBedOnOffLight.async_get_last_state",
-            new=AsyncMock(return_value=MagicMock(state=STATE_OFF)),
-        ), patch(
-            "custom_components.adjustable_bed.coordinator."
-            "AdjustableBedCoordinator.register_controller_state_callback",
-            new=_register_without_initial_state,
+        with (
+            patch(
+                "custom_components.adjustable_bed.light."
+                "AdjustableBedOnOffLight.async_get_last_state",
+                new=AsyncMock(return_value=MagicMock(state=STATE_OFF)),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator."
+                "AdjustableBedCoordinator.register_controller_state_callback",
+                new=_register_without_initial_state,
+            ),
         ):
             await hass.config_entries.async_setup(entry.entry_id)
             await hass.async_block_till_done()
@@ -1481,6 +1535,7 @@ class TestSwitchEntities:
             ) -> object:
                 nonlocal scheduled_auto_off
                 if getattr(callback, "__name__", "") == "auto_off_callback":
+
                     def invoke_auto_off() -> None:
                         callback(*args)
 
@@ -1641,8 +1696,70 @@ class TestLightEntities:
             is not None
         )
         assert (
-            registry.async_get_entity_id("select", DOMAIN, "57:4C:62:B0:EF:3D_light_timer")
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:62:B0:EF:3D_light_timer") is None
+        )
+
+    async def test_bedtech_setup_removes_stale_light_switch_and_timer(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """BedTech setup should drop the stale discrete-light switch and light timer (#410).
+
+        Older releases created switch.under_bed_lights (BedTech used to report
+        discrete light control) and, for entries reclassified from Richmat QRRM,
+        left the Richmat light-timer select behind. Both are dead controls the
+        card would still surface.
+        """
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="BedTech QRRM",
+            data={
+                CONF_ADDRESS: "57:4C:54:30:76:51",
+                CONF_NAME: "BedTech QRRM",
+                CONF_BED_TYPE: BED_TYPE_BEDTECH,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="57:4C:54:30:76:51",
+            entry_id="bedtech_stale_light_entities_entry",
+        )
+        entry.add_to_hass(hass)
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        registry.async_get_or_create(
+            "switch",
+            DOMAIN,
+            "57:4C:54:30:76:51_under_bed_lights",
+            config_entry=entry,
+            suggested_object_id="bedtech_qrrm_under_bed_lights",
+        )
+        registry.async_get_or_create(
+            "select",
+            DOMAIN,
+            "57:4C:54:30:76:51_light_timer",
+            config_entry=entry,
+            suggested_object_id="bedtech_qrrm_light_timer",
+        )
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        assert (
+            registry.async_get_entity_id("switch", DOMAIN, "57:4C:54:30:76:51_under_bed_lights")
             is None
+        )
+        assert (
+            registry.async_get_entity_id("select", DOMAIN, "57:4C:54:30:76:51_light_timer") is None
+        )
+        assert (
+            registry.async_get_entity_id("button", DOMAIN, "57:4C:54:30:76:51_toggle_light")
+            is not None
         )
 
     async def test_richmat_qrrm_light_turn_on_and_off(
@@ -2063,7 +2180,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Leggett Gen2 light turn_on with rgb_color should send lights_on + RGBSET."""
+        """Leggett Gen2 light turn_on with rgb_color sends RGBSET only (no separate on)."""
         del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -2104,13 +2221,9 @@ class TestLightEntities:
             blocking=True,
         )
 
-        # Should send lights_on (white RGBSET) then set_light_color (custom RGBSET)
+        # Gen2 has no explicit-on command, so turn_on just sets the colour
+        # (RGBSET turns an RGB light on); no separate white-on is sent.
         assert mock_bleak_client.write_gatt_char.call_args_list == [
-            call(
-                LEGGETT_GEN2_WRITE_CHAR_UUID,
-                LeggettGen2Commands.rgb_set(255, 255, 255, 255),
-                response=True,
-            ),
             call(
                 LEGGETT_GEN2_WRITE_CHAR_UUID,
                 b"RGBSET 0:FF0080FF",
@@ -2129,7 +2242,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Leggett Gen2 light turn_off should send RGBENABLE 0:0."""
+        """Leggett Gen2 light turn_off should send the toggle (UBL TOGGLE)."""
         del mock_coordinator_connected, enable_custom_integrations
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -2175,11 +2288,11 @@ class TestLightEntities:
             blocking=True,
         )
 
-        # Should send lights_off which is RGBENABLE 0:0
+        # Should send lights_off which is the confirmed toggle (UBL TOGGLE)
         assert mock_bleak_client.write_gatt_char.call_args_list == [
             call(
                 LEGGETT_GEN2_WRITE_CHAR_UUID,
-                LeggettGen2Commands.RGB_OFF,
+                LeggettGen2Commands.LIGHT_TOGGLE,
                 response=True,
             )
         ]
@@ -2435,17 +2548,13 @@ class TestSensorEntities:
         registry = er.async_get(hass)
         for axis in ("back", "legs", "head", "feet"):
             assert (
-                registry.async_get_entity_id(
-                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_angle"
-                )
+                registry.async_get_entity_id("sensor", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_angle")
                 is None
             )
         # And no position-seeking number entities (MCR cannot read positions).
         for axis in ("back", "legs", "head", "feet"):
             assert (
-                registry.async_get_entity_id(
-                    "number", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_position"
-                )
+                registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:60_{axis}_position")
                 is None
             )
 

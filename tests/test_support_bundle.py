@@ -5,7 +5,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bleak.exc import BleakError
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.ble_diagnostics import (
@@ -13,9 +15,17 @@ from custom_components.adjustable_bed.ble_diagnostics import (
     DiagnosticReport,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
+    CONF_BED_TYPE,
+    CONF_BLE_BOND_ESTABLISHED,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_MASSAGE,
+    CONF_MOTOR_COUNT,
+    CONF_PREFERRED_ADAPTER,
     DEVICE_INFO_CHARS,
+    DOMAIN,
     LINAK_CONTROL_SERVICE_UUID,
     NORDIC_DFU_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
@@ -805,6 +815,86 @@ class TestSupportBundle:
         assert report["integration"]["address"] == mock_config_entry.data["address"]
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
+
+    async def test_pairing_section_distinguishes_marker_from_backend_bond(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """Bundles should expose persisted and backend bond state independently."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Smart Bed 22D8",
+            data={
+                CONF_ADDRESS: "08:3A:F2:1E:4B:7E",
+                CONF_NAME: "Smart Bed 22D8",
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_BLE_BOND_ESTABLISHED: True,
+            },
+            unique_id="08:3A:F2:1E:4B:7E",
+            entry_id="leggett_pairing_diagnostics",
+        )
+        entry.add_to_hass(hass)
+        diagnostic_report = DiagnosticReport(
+            metadata={"version": "2.0"},
+            device={
+                "address": "08:3A:F2:1E:4B:7E",
+                "pairing": {
+                    "paired": False,
+                    "bonded": False,
+                    "trusted": False,
+                    "address_type": "public",
+                },
+            },
+            advertisement={},
+            advertisements_by_source=[],
+            detection={"bed_type": BED_TYPE_LEGGETT_GEN2, "supported_match": True},
+            gatt_services=[],
+            gatt_summary={"available": False, "service_count": 0},
+            device_information={},
+            notifications=[],
+            notification_summary={"total_notifications": 0, "by_characteristic": {}},
+            adapter_details={},
+            connection_history={},
+            connection_attempt_details=[{"attempt": 1, "result": "failed"}],
+            command_trace=[],
+            errors=["Failed to connect"],
+        )
+
+        with (
+            patch.object(
+                BLEDiagnosticRunner,
+                "run_diagnostics",
+                new=AsyncMock(return_value=diagnostic_report),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+                return_value=[],
+            ),
+        ):
+            report = await generate_support_bundle(
+                hass,
+                address="08:3A:F2:1E:4B:7E",
+                capture_duration=0,
+                include_logs=False,
+                coordinator=None,
+                entry=entry,
+                device_id="leggett-device-id",
+            )
+
+        pairing = report["pairing"]
+        assert report["metadata"]["report_version"] == "2.1"
+        assert pairing["required"] is True
+        assert pairing["connection_gated_by_bond"] is True
+        assert pairing["persisted_bond_marker"] is True
+        assert pairing["runtime_bond_established"] is None
+        assert pairing["diagnostic_backend"]["paired"] is False
+        assert pairing["diagnostic_backend"]["bonded"] is False
 
     async def test_coordinator_records_command_trace(
         self,

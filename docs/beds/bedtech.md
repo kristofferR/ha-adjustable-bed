@@ -35,7 +35,11 @@
 > [!NOTE]
 > BedTech shares the FEE9 service UUID and characteristic with Richmat WiLinke.
 > Both use a similar 5-byte command format with `0x6E` prefix.
-> Manual bed type selection may be required if auto-detection selects the wrong type.
+> QRRM controllers that advertise manufacturer ID `0x4C57` are identified as
+> BedTech. Because ESPHome proxy snapshots can omit that field, the integration
+> also checks the connected controller's vendor model: the confirmed BedTech
+> BT3000 reports `WLT825X_H35`, while the confirmed Casper/Richmat HJC27 reports
+> `WLT825X_H35_S`. Unknown QRRM models are left unchanged rather than guessed.
 
 ### Packet Format
 
@@ -43,6 +47,23 @@
 **Dual Base Commands:** `[0x6E, 0x01, 0x01, charCode, (charCode + 0x70) & 0xFF]`
 
 Commands use ASCII character codes. The last byte is a simple checksum.
+
+### Write Mode
+
+The official app (react-native-ble-manager) uses **write-with-response**
+(`BleManager.write`) for every command; its `writeWithoutResponse` wrapper is
+never called. An earlier claim that the app used write-without-response (and
+that write-with-response made lights/lounge fail) came from an experiment for
+issue #243, not from the official app's implementation. Verified against
+BedTech 7.1.3 Hermes bytecode (2026-07-10, issue #410).
+
+### Command Repeats
+
+The app repeats only motor position commands (`repeat: 1` in its command
+table), re-sending every `repeat_ms` while the button is held. Presets,
+memory, massage, and light commands are sent once. The app sends no stop
+command on button release (BT6500 field reports still show `^` acting as
+stop, so the integration keeps sending it).
 
 ## Commands
 
@@ -54,34 +75,59 @@ Commands use ASCII character codes. The last byte is a simple checksum.
 | Head Down | `%` | `0x25` | Lower head |
 | Foot Up | `&` | `0x26` | Raise foot |
 | Foot Down | `'` | `0x27` | Lower foot |
-| Leg Up | `)` | `0x29` | Raise leg/pillow |
-| Leg Down | `*` | `0x2A` | Lower leg/pillow |
+| Both Heads Up | `)` | `0x29` | Raise both heads (app group `bothHeads`) |
+| Both Heads Down | `*` | `0x2A` | Lower both heads |
+| Pillow Up | `?` | `0x3F` | Raise pillow (BT6500; app group `pillow`) |
+| Pillow Down | `@` | `0x40` | Lower pillow |
+| Lumbar Up | `A` | `0x41` | Raise lumbar (BT6500; app group `lumbar`) |
+| Lumbar Down | `B` | `0x42` | Lower lumbar |
 
-### Sync Commands (Both Sides)
-
-| Command | Char | Hex | Description |
-|---------|------|-----|-------------|
-| Both Heads Up | `?` | `0x3F` | Raise both heads |
-| Both Heads Down | `@` | `0x40` | Lower both heads |
-| Both Feet Up | `A` | `0x41` | Raise both feet |
-| Both Feet Down | `B` | `0x42` | Lower both feet |
+> [!WARNING]
+> Earlier versions of this document labeled `)`/`*` as "leg/pillow" and
+> `?`/`@`/`A`/`B` as "both heads"/"both feet". The BedTech 7.1.3 command
+> table maps `)`/`*` to `bothHeads`, `?`/`@` to `pillow`, and `A`/`B` to
+> `lumbar` (pillow/lumbar exist only on BT6500). The integration's entity
+> mapping still follows the old labels and needs a separate verification
+> pass before being changed.
 
 ### Presets
 
 | Command | Char | Hex | Description |
 |---------|------|-----|-------------|
 | Flat | `1` | `0x31` | Flat position |
+| Flat (alt) | `l` | `0x6C` | Secondary flat command (app `flat2`) |
 | Zero-G | `E` | `0x45` | Zero gravity |
 | Anti-Snore | `F` | `0x46` | Anti-snore |
 | TV | `X` | `0x58` | TV position |
 | Lounge | `e` | `0x65` | Lounge position |
 
+### Model Capabilities (per BedTech 7.1.3)
+
+The app gates features per user-selected model; command bytes are shared.
+
+| Model | Light | Massage | Pillow/Lumbar | Dual (head2) | Presets |
+|-------|-------|---------|---------------|--------------|---------|
+| BT2000 | ❌ | ❌ | ❌ | ❌ | flat, zero-g, anti-snore |
+| BT2500 | ❌ | head only | ❌ | ❌ | flat, zero-g, anti-snore |
+| BT3000 | ✅ | head+foot | ❌ | ❌ | + TV |
+| BT3000FH | ✅ | head+foot | ❌ | ✅ | + TV |
+| BT6500 | ✅ | head+foot | ✅ | ❌ | flat, zero-g, anti-snore |
+| BTX4 | ❌ | ❌ | ❌ | ❌ | flat, zero-g |
+| BTX4FH | ❌ | ❌ | ❌ | ✅ | flat, zero-g |
+| BTX5 | ✅ | head+foot | ❌ | ❌ | flat, zero-g, anti-snore |
+| BTX5FH | ✅ | head+foot | ❌ | ✅ | flat, zero-g, anti-snore |
+
+BT2000/BT2500/BTX4/BTX4FH owners have no BLE light command at all — the
+app hides the button. `light2` (`_u`/`_<`) is only offered on BT3000FH.
+
 ### Memory
 
 | Command | Char | Hex | Description |
 |---------|------|-----|-------------|
-| Memory Go | `/` | `0x2F` | Go to memory position |
-| Memory Save | `,` | `0x2C` | Save current position |
+| Memory 1 Go | `.` | `0x2E` | Go to memory position 1 |
+| Memory 1 Save | `+` | `0x2B` | Save memory position 1 |
+| Memory 2 Go | `/` | `0x2F` | Go to memory position 2 |
+| Memory 2 Save | `,` | `0x2C` | Save memory position 2 |
 
 ### Massage
 
@@ -117,10 +163,11 @@ Commands use ASCII character codes. The last byte is a simple checksum.
 
 | Command | Char | Hex | Description |
 |---------|------|-----|-------------|
-| Light On | `.` | `0x2E` | Turn light on |
-| Light Save | `+` | `0x2B` | Save light setting |
 | Light Off | `u` | `0x75` | Turn light off |
 | Light Toggle | `<` | `0x3C` | Toggle light |
+
+The official app exposes the light as a toggle button. There is no discrete
+light-on command; `.` and `+` belong to memory slot 1.
 
 ## Dual Base Commands
 

@@ -258,6 +258,7 @@ async def async_get_config_entry_diagnostics(
             "adapter_details": coordinator.adapter_details,
             "command_timing": coordinator.command_timing,
         },
+        "pairing": coordinator.pairing_diagnostics,
         "ble": ble_info,
         "gatt_summary": get_gatt_summary(coordinator),
         "advertisement": advertisement_info,

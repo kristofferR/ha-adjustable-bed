@@ -189,11 +189,22 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         if self._coordinator.connection_rssi is not None:
             attrs["rssi"] = self._coordinator.connection_rssi
 
+        # Why the bed last disconnected, so an expected idle disconnect doesn't
+        # read as a fault (issue #385). Intentional/idle reasons mean the bed is
+        # fine and reconnects on demand on the next command.
+        reason = self._coordinator.last_disconnect_reason
+        if reason:
+            attrs["disconnect_reason"] = reason
+
         # State detail for more granular status
         if self._coordinator.is_connecting:
             attrs["state_detail"] = "connecting"
         elif self._coordinator.is_connected:
             attrs["state_detail"] = "connected"
+        elif reason in ("idle_timeout", "intentional"):
+            # Disconnected on purpose (idle timeout or manual) — surface as "idle"
+            # rather than a bare "disconnected" that looks like a fault.
+            attrs["state_detail"] = "idle"
         else:
             attrs["state_detail"] = "disconnected"
 

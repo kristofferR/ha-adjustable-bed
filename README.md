@@ -76,7 +76,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, Woosa Sleep, QMS |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |
 | ✅ [Reverie](docs/beds/reverie.md) | Reverie |
-| ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid, CVB, Smartbed |
+| ✅ [Okimat/Okin](docs/beds/okimat.md) | Lucid (including some Smartbed/L600 bases), CVB, Smartbed |
 | ✅ [Okin 64-Bit](docs/beds/okin-64bit.md) | NORA_CON / NORACON Mattress Firm controllers |
 | ✅ [Jiecang](docs/beds/jiecang.md) | Glideaway, Dream Motion, LOGICDATA |
 | ✅ [Kaidi](docs/beds/kaidi.md) | Rize Remedy III / newer Mouselet-based Rize beds, Floyd Home, ISleep |
@@ -87,7 +87,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Serta](docs/beds/serta.md) | Serta Motion Perfect |
 | ✅ [Mattress Firm 900](docs/beds/mattressfirm.md) | iFlex / older Nordic UART bases |
 | ✅ [Nectar](docs/beds/nectar.md) | Nectar |
-| ✅ [Malouf](docs/beds/malouf.md) | Malouf, Structures |
+| ✅ [Malouf/Lucid](docs/beds/malouf.md) | Malouf, Lucid (including some L600 bases), Structures |
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
@@ -103,6 +103,13 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, LP Prodigy CE |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
+| ⚠️ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF1058/RF34/RF6707 handset beds |
+
+Retail model names do not identify a BLE protocol. In particular, **Lucid
+L600 is not one protocol**: confirmed L600 units include both 7-byte OKIN CB24
+(`Smartbed237...`) and 9-byte legacy Malouf/OKIN (`OKIN-BLE...` with `BTCB`)
+controllers. Auto-detection uses advertising data and connected GATT services,
+not the L600 label.
 
 **Have one of these?** [Let us know](https://github.com/kristofferR/ha-adjustable-bed/issues) how well it works!
 

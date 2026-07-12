@@ -8,6 +8,7 @@
 
 - SUTA bed-frame controllers with names like `SUTA-B*`, `SUTA-M*`, `SUTA-S*`
 - Confirmed app model families include B803/B804/B805, B207/B202, and M-series variants
+- Dreams Sleepmotion / SUTA-B202B with WLT8016_S106 BLE module
 
 ## Apps
 
@@ -30,9 +31,32 @@
 
 ## Protocol Details
 
-**Service UUID:** `0000fff0-0000-1000-8000-00805f9b34fb`  
-**Write Characteristic:** Dynamic discovery by GATT properties (fallback: `0000fff1-0000-1000-8000-00805f9b34fb`)  
-**Format:** ASCII AT commands terminated with `\r\n` (no checksum)
+- **Service UUID:** `0000fff0-0000-1000-8000-00805f9b34fb`
+- **Notify Characteristic:** `0000fff1-0000-1000-8000-00805f9b34fb`
+- **Write Characteristic:** `0000fff2-0000-1000-8000-00805f9b34fb` (write without response on WLT8016_S106)
+- **Format:** ASCII AT commands terminated with `\r\n` (no checksum)
+
+### Connection Setup
+
+The official SUTA 3.15.0 app performs these steps for bed-frame devices before
+sending a command:
+
+1. Connect and select service `FFF0`.
+2. Subscribe to the notifiable characteristic (`FFF1` on WLT8016_S106).
+3. Request MTU 250.
+4. Write the CRLF-terminated AT command to the writable characteristic (`FFF2`).
+
+Notification setup is required even though SUTA does not provide position feedback.
+The MTU request matters because B202 motor commands are 22-24 bytes including CRLF,
+while the default ATT payload is only 20 bytes.
+
+BlueZ may label the generic FFF0 UUID as “PKOC / ICCE Digital Key / Aliro”, but
+the SUTA app explicitly selects FFF0 for bed frames; that label does not describe
+this vendor-specific use. The app selects `FFE0` instead for accessory/smart-mattress
+families such as `SUTA-MOON`, `SUTA-TEMP`, and `SUTA-RBHC`.
+The WLT vendor service `02f00000-0000-0000-0000-00000000fe00` is not referenced by
+the app's bed-control path. The app performs no BLE pairing, PIN, or application-level
+authentication before B202 commands.
 
 ## Detection
 
@@ -137,7 +161,10 @@ Duty cycle cycles: `00` -> `20` -> `33` -> `50` -> `00`. Level cycles: `00` -> `
 
 1. The app includes many extra AT commands (massage, lock, beep, calibration, scheduling). Current integration support is focused on core bed control and presets.
 2. The SUTA accessory family uses a different binary protocol and is intentionally excluded from SUTA bed-frame detection.
-3. Characteristic UUIDs are discovered at runtime from service properties, not hardcoded in the app.
+3. The app discovers the FFF0 write/notify characteristics by their GATT properties;
+   WLT8016_S106 exposes the canonical FFF2/FFF1 pair.
+4. Fresh protocol verification used SUTA 3.15.0 (`com.shuta.smart_home`, version code 75),
+   XAPK SHA-256 `deba1167bbd61b1440f039a29384f44033ac65afadb59cb5c1566ea0be8caa52`.
 
 ## References
 

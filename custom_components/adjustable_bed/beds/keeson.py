@@ -25,6 +25,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ..const import (
+    BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_KEESON,
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_SERVICE_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -35,12 +37,15 @@ from ..const import (
     KEESON_KSBT_CHAR_UUID,
     KEESON_KSBT_FALLBACK_GATT_PAIRS,
     KEESON_KSBT_SERVICE_UUID,
+    KEESON_VARIANT_BASE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_JSON,
+    KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_PURPLE,
+    KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
 )
 from .base import BedController, MotorControlSpec
@@ -51,6 +56,38 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# OEM app hold cadences, normalized to an approximately one-second HA movement
+# command. JSON/A00A remains at the generic setting: Juna and Linx request writes
+# every 5/3 ms respectively, but their BLE service drops requests while a
+# write-with-response is outstanding, so there is no fixed on-air interval to copy.
+_APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
+    KEESON_VARIANT_BASE: (3, 400),
+    KEESON_VARIANT_JSON: (10, 100),
+    KEESON_VARIANT_KSBT: (4, 300),
+    KEESON_VARIANT_KSBT_CR: (4, 300),
+    KEESON_VARIANT_KSBT04C: (4, 300),
+    KEESON_VARIANT_ERGOMOTION: (10, 100),
+    KEESON_VARIANT_OKIN: (10, 100),
+    KEESON_VARIANT_SERTA: (10, 100),
+    KEESON_VARIANT_SINO: (10, 100),
+    KEESON_VARIANT_PURPLE: (10, 100),
+}
+
+_THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
+
+
+def is_ksbt03c_name(name: str | None) -> bool:
+    """Return True if the device name identifies a KSBT03C control box.
+
+    KSBT03C beds (e.g. Ergomotion RIO 5.0) drive three motors: head/back
+    (0x1/0x2), feet/legs (0x4/0x8) and lumbar (0x40/0x80). The Ergomotion
+    Sync app's KSBT03C remote has no head-tilt (0x10/0x20) buttons at all,
+    so those beds have no tilt motor. KSBT03CR is a different control box
+    and is excluded.
+    """
+    normalized = (name or "").strip().lower()
+    return normalized.startswith("ksbt03c") and not normalized.startswith("ksbt03cr")
+
 
 class KeesonCommands:
     """Keeson command constants (32-bit values)."""
@@ -60,7 +97,7 @@ class KeesonCommands:
     PRESET_ZERO_G = 0x1000
 
     # KSBT-specific presets (not available on BaseI4/I5)
-    PRESET_MEMORY_1 = 0x2000  # KSBT "M" button
+    PRESET_MEMORY_1 = 0x2000  # KSBT "Read" button (Ergomotion Sync remotes A/B/C)
     PRESET_TV = 0x4000  # KSBT only
     PRESET_ANTI_SNORE = 0x8000  # KSBT only
 
@@ -70,10 +107,10 @@ class KeesonCommands:
 
     # Memory presets (availability varies by variant)
     PRESET_MEMORY_2 = 0x4000  # Same as TV on KSBT
-    PRESET_MEMORY_4 = 0x10000  # May work on some beds
+    PRESET_MEMORY_4 = 0x10000  # KSBT "M" button (Ergomotion Sync remotes A/B/C)
 
     # Aliases
-    PRESET_LOUNGE = 0x2000  # Same as Memory 1 / KSBT "M" button
+    PRESET_LOUNGE = 0x2000  # Same as Memory 1 / KSBT "Read" button
 
     # Motors
     MOTOR_HEAD_UP = 0x1
@@ -175,6 +212,7 @@ class KeesonController(BedController):
         *,
         betterliving_presets: bool = False,
         cb1322_presets: bool = False,
+        device_name: str | None = None,
     ) -> None:
         """Initialize the Keeson controller.
 
@@ -184,11 +222,21 @@ class KeesonController(BedController):
             char_uuid: The characteristic UUID to use for writing commands
             betterliving_presets: Use BetterLiving BED_DEFAULT preset values
             cb1322_presets: Use CB1322 sub-variant memory preset values
+            device_name: Raw BLE device name (used to detect KSBT03C motor layout)
         """
         super().__init__(coordinator)
         self._variant = variant
         self._betterliving_presets = betterliving_presets
         self._cb1322_presets = cb1322_presets
+        # KSBT03C control boxes have no head-tilt motor; their third motor is
+        # lumbar. The raw BLE name is authoritative when present; only fall
+        # back to the configured name (defaults to the BLE name) when this
+        # connection didn't surface a device name, so a stale or user-edited
+        # configured name can never override the real hardware name.
+        if device_name:
+            self._is_ksbt03c = is_ksbt03c_name(device_name)
+        else:
+            self._is_ksbt03c = is_ksbt03c_name(getattr(coordinator, "name", None))
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
         self._write_with_response = True
@@ -382,10 +430,10 @@ class KeesonController(BedController):
     def _single_shot_count(self) -> int:
         """Repeat count for single-shot commands (massage, presets, lights).
 
-        KSBT variants require sending twice per the Sleep Harmony app's singleSend().
-        The bed firmware uses the first send as wake/sync.
+        Sleep Harmony sends KSBT04C one-shot commands twice. Ergomotion Sync,
+        Adjustable Lite, and SomosBeds send their KSBT/KSBT03CR one-shots once.
         """
-        return 2 if self._is_ksbt else 1
+        return 2 if self._variant == KEESON_VARIANT_KSBT04C else 1
 
     # Capability properties
     @property
@@ -425,7 +473,9 @@ class KeesonController(BedController):
     def memory_slot_count(self) -> int:
         """Return memory slot count based on variant.
 
-        KSBT: Slots 1-2 (M button = slot 1, TV = slot 2)
+        KSBT/KSBT04C: Slots 1-3 (Read = slot 1, TV = slot 2, M = slot 3, from
+            Ergomotion Sync APK remotes A/B/C)
+        KSBT03CR: Slots 1-2 (not covered by Ergomotion Sync, keep legacy)
         BetterLiving/CB1322: Slots 1-2 (from APK analysis)
         BaseI4/I5: Slot 3 only (from APK analysis)
         Ergomotion: 4 slots (needs verification)
@@ -436,8 +486,10 @@ class KeesonController(BedController):
             return 4
         if self._betterliving_presets or self._cb1322_presets:
             return 2  # BetterLiving and CB1322 both have Memory 1 and Memory 2
+        if self._variant in {"ksbt", KEESON_VARIANT_KSBT04C}:
+            return 3  # Read (0x2000), TV (0x4000), M (0x10000) buttons
         if self._is_ksbt:
-            return 2  # Memory 1 (M button) and Memory 2 (TV button)
+            return 2  # KSBT03CR: Memory 1 and Memory 2 only (unverified beyond that)
         elif self._variant == KEESON_VARIANT_PURPLE:
             return 2  # Purple Premium has 2. Plus model bed supports 3, but we don't know what path it uses
         elif self._variant == "ergomotion":
@@ -481,8 +533,13 @@ class KeesonController(BedController):
 
     @property
     def has_tilt_support(self) -> bool:
-        """Return True - Keeson beds have tilt motor control."""
-        return True
+        """Return True if the bed has a head-tilt motor.
+
+        KSBT03C control boxes (e.g. Ergomotion RIO 5.0) have no tilt motor:
+        the Ergomotion Sync app's KSBT03C remote exposes only head, feet and
+        lumbar movement. Other Keeson variants keep tilt control.
+        """
+        return not self._is_ksbt03c
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -543,8 +600,12 @@ class KeesonController(BedController):
             ),
         ]
 
-        if self._coordinator.motor_count >= 3 and self.has_tilt_support:
-            specs.append(
+        # Allocate the extra motor slots (motor_count beyond the standard 2)
+        # in remote order: tilt first where the bed has one, then lumbar.
+        # KSBT03C beds have no tilt motor, so their third motor is lumbar.
+        optional_specs = []
+        if self.has_tilt_support:
+            optional_specs.append(
                 MotorControlSpec(
                     key="tilt",
                     translation_key=translation_overrides.get("tilt", "tilt"),
@@ -554,9 +615,8 @@ class KeesonController(BedController):
                     max_angle=45,
                 )
             )
-
-        if self._coordinator.motor_count >= 4 and self.has_lumbar_support:
-            specs.append(
+        if self.has_lumbar_support:
+            optional_specs.append(
                 MotorControlSpec(
                     key="lumbar",
                     translation_key=translation_overrides.get("lumbar", "lumbar"),
@@ -567,7 +627,20 @@ class KeesonController(BedController):
                 )
             )
 
+        extra_slots = max(0, self._coordinator.motor_count - 2)
+        specs.extend(optional_specs[:extra_slots])
+
         return tuple(specs)
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Clean up optional motor covers that no longer apply.
+
+        Removes the phantom tilt cover on KSBT03C beds (no tilt motor) and
+        covers left behind when the configured motor count is reduced.
+        Active keys are skipped by the cleanup.
+        """
+        return frozenset({"tilt", "lumbar"})
 
     # Massage timer - Keeson only has step command, no direct timer set
     # We cannot reliably emulate stepping without knowing current state
@@ -575,6 +648,15 @@ class KeesonController(BedController):
     def supports_massage_timer(self) -> bool:
         """Return False - Keeson can only step through timer, not set directly."""
         return False
+
+    @property
+    def supports_massage_off_control(self) -> bool:
+        """Return True only for Sino, the sole variant with a real off command.
+
+        Other Keeson variants (KSBT, BaseI4/I5, Ergomotion) can only step
+        massage intensity; massage_off() would raise, so hide the button.
+        """
+        return self._variant == KEESON_VARIANT_SINO
 
     @property
     def supports_massage_intensity_control(self) -> bool:
@@ -900,24 +982,53 @@ class KeesonController(BedController):
             command += KeesonCommands.MOTOR_LUMBAR_DOWN
         return command
 
+    def _motor_pulse_settings(self) -> tuple[int, int]:
+        """Return the effective movement cadence for this controller.
+
+        Keeson app families use different hold intervals even when their packet
+        payloads share the same 32-bit command values. Translate only the stored
+        generic Keeson default so an explicitly customized cadence remains
+        authoritative. BetterLiving chooses 100 ms for its two-motor screen and
+        200 ms for its three-motor screen; the other app families have a fixed
+        variant-level interval.
+        """
+        configured = (
+            self._coordinator.motor_pulse_count,
+            self._coordinator.motor_pulse_delay_ms,
+        )
+        if configured != BED_MOTOR_PULSE_DEFAULTS[BED_TYPE_KEESON]:
+            return configured
+
+        if self._betterliving_presets:
+            if self._coordinator.motor_count == 3:
+                return _THREE_MOTOR_BETTERLIVING_PULSES
+            return _APP_MOTOR_PULSE_DEFAULTS[KEESON_VARIANT_SINO]
+
+        if self._variant in {KEESON_VARIANT_OKIN, KEESON_VARIANT_SINO}:
+            if self._coordinator.motor_count == 3:
+                return _THREE_MOTOR_BETTERLIVING_PULSES
+
+        return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
+
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         """Move a motor in a direction or stop it, always sending STOP at the end."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
+        repeat_count, repeat_delay_ms = self._motor_pulse_settings()
 
         try:
             if command:
                 if self._is_json_variant:
                     await self._write_json_motion_command(
                         command,
-                        repeat_count=self._coordinator.motor_pulse_count,
-                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=repeat_delay_ms,
                     )
                 else:
                     await self.write_command(
                         self._build_command(command),
-                        repeat_count=self._coordinator.motor_pulse_count,
-                        repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=repeat_delay_ms,
                     )
         finally:
             # Always send stop with a fresh event so it's not affected by cancellation
@@ -1053,7 +1164,8 @@ class KeesonController(BedController):
         """Go to memory preset.
 
         Note: Command values vary by protocol variant:
-        - KSBT: Memory 1 (0x2000) = M button, Memory 2 (0x4000) = TV button
+        - KSBT/KSBT04C (Ergomotion Sync APK): Memory 1 (0x2000) = Read button,
+          Memory 2 (0x4000) = TV button, Memory 3 (0x10000) = M button
         - BaseI4/I5: Memory 3 (0x8000) is the only confirmed memory preset
         - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
         - BetterLiving: Memory 1 (0x01000008), Memory 2 (0x01000009)
@@ -1085,6 +1197,26 @@ class KeesonController(BedController):
             else:
                 _LOGGER.warning(
                     "CB1322 memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
+            return
+
+        # KSBT/KSBT04C remotes (Ergomotion Sync APK): memory slot 3 is the
+        # "M" button (0x10000), not 0x8000 which triggers anti-snore there.
+        if self._variant in {"ksbt", KEESON_VARIANT_KSBT04C}:
+            commands = {
+                1: KeesonCommands.PRESET_MEMORY_1,
+                2: KeesonCommands.PRESET_MEMORY_2,
+                3: KeesonCommands.PRESET_MEMORY_4,
+            }
+            if command := commands.get(memory_num):
+                await self.write_command(
+                    self._build_command(command), repeat_count=self._single_shot_count
+                )
+            else:
+                _LOGGER.warning(
+                    "KSBT memory %d not supported (valid: %s)",
                     memory_num,
                     sorted(commands.keys()),
                 )
@@ -1176,7 +1308,7 @@ class KeesonController(BedController):
             await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position (KSBT/Ergomotion/Purple 'M' button / Memory 1)."""
+        """Go to lounge position (KSBT 'Read' button / Memory 1, Lounge on Purple)."""
         if (
             not self._is_ksbt
             and not self._is_json_variant

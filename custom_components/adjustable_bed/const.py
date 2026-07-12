@@ -46,10 +46,13 @@ class ConnectionProfileSettings:
     connection_timeout: float
     post_connect_delay: float
 
+
 # Configuration keys
 CONF_BED_TYPE: Final = "bed_type"
 CONF_PROTOCOL_VARIANT: Final = "protocol_variant"
 CONF_MOTOR_COUNT: Final = "motor_count"
+CONF_MALOUF_LAYOUT: Final = "malouf_layout"
+CONF_MALOUF_MEMORY_SLOTS: Final = "malouf_memory_slots"
 CONF_HAS_MASSAGE: Final = "has_massage"
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
@@ -136,6 +139,30 @@ CONNECTION_PROFILE_RELIABLE: Final = "reliable"
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
 
+# Malouf/Lucid retail models are sold with several unrelated BLE protocols and
+# actuator arrangements. Keep the physical layout separate from protocol
+# detection so a retail name such as "L600" never implies command framing.
+MALOUF_LAYOUT_AUTO: Final = "auto"
+MALOUF_LAYOUT_TWO_MOTOR: Final = "two_motor"
+MALOUF_LAYOUT_HEAD_TILT: Final = "head_tilt"
+MALOUF_LAYOUT_LUMBAR: Final = "lumbar"
+MALOUF_LAYOUT_FOUR_MOTOR: Final = "four_motor"
+MALOUF_LAYOUT_HILO: Final = "hilo"
+MALOUF_LAYOUTS: Final = {
+    MALOUF_LAYOUT_AUTO: "Auto (motor count; select Hi-Lo explicitly)",
+    MALOUF_LAYOUT_TWO_MOTOR: "Back and legs (2 motor, including Lucid L600)",
+    MALOUF_LAYOUT_HEAD_TILT: "Back, legs, and head tilt",
+    MALOUF_LAYOUT_LUMBAR: "Back, legs, and lumbar",
+    MALOUF_LAYOUT_FOUR_MOTOR: "Back, legs, head tilt, and lumbar",
+    MALOUF_LAYOUT_HILO: "Hi-Lo (back, legs, two lift columns, and bed height)",
+}
+MALOUF_MEMORY_SLOTS_AUTO: Final = 0
+MALOUF_MEMORY_SLOT_OPTIONS: Final = {
+    MALOUF_MEMORY_SLOTS_AUTO: "Auto (1 for 2-motor layout, otherwise 2)",
+    1: "1 memory position",
+    2: "2 memory positions",
+}
+
 # Bed types - Protocol-based naming (new)
 # These are the canonical names organized by protocol characteristics
 BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
@@ -143,6 +170,7 @@ BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairin
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
+BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # OKIN Smart Remote single-actuator
@@ -169,6 +197,8 @@ def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
 def passive_position_reconciliation_default_enabled(bed_type: str | None) -> bool:
     """Return whether passive position reconciliation should default to enabled."""
     return supports_passive_position_reconciliation(bed_type)
+
+
 BED_TYPE_REVERIE: Final = "reverie"
 BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
 BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
@@ -192,13 +222,17 @@ BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzi
 BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
-BED_TYPE_SLEEPYS_BOX15: Final = "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
+BED_TYPE_SLEEPYS_BOX15: Final = (
+    "sleepys_box15"  # Sleepy's Elite BOX15 protocol (9-byte with checksum)
+)
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
-BED_TYPE_REMACRO: Final = "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+BED_TYPE_REMACRO: Final = (
+    "remacro"  # Remacro protocol (CheersSleep/Jeromes/Slumberland/The Brick, 8-byte SynData)
+)
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
@@ -216,6 +250,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
     BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -370,6 +405,11 @@ LEGACY_BED_TYPE_MAPPING: Final = {
     # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
 }
 
+# Some controllers (e.g. certain OKIN CST boards) accept a GATT read on a
+# Device Information characteristic but never answer it. Time-box these
+# reads so a silent characteristic cannot stall connection setup.
+DEVICE_INFO_READ_TIMEOUT: Final = 5.0
+
 # Standard BLE Device Information Service UUIDs
 DEVICE_INFO_SERVICE_UUID: Final = "0000180a-0000-1000-8000-00805f9b34fb"
 DEVICE_INFO_CHARS: Final = {
@@ -413,22 +453,42 @@ RICHMAT_NORDIC_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
 RICHMAT_NORDIC_CHAR_UUID: Final = NORDIC_UART_WRITE_CHAR_UUID
 
 # BedTech specific UUIDs (FEE9 service with d44bc439 characteristic)
-# Note: Shares FEE9 service with Richmat WiLinke but uses different packet format
+# Note: Shares FEE9 service with Richmat WiLinke but uses different packet format.
+# Confirmed BedTech QRRM advertisements expose the controller MAC as manufacturer
+# data under company ID 0x4C57 (the little-endian form of the 57:4C MAC prefix).
+# Richmat/Casper QRRM captures using the RGB-strip protocol omit this field.
 BEDTECH_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 BEDTECH_WRITE_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
+BEDTECH_MANUFACTURER_ID: Final = 0x4C57
 
 # WiLinke variants (5-byte commands with checksum)
 # Source: com.desarketing.gmmotor (Germany Motions) APK blutter decompilation
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
 # W1 is the default fallback when no specific service is found
 RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
+# W4 uses the generic FFF0 short UUID, which countless non-bed BLE devices also
+# advertise (a "NO_DVR-*" camera system in issue #418, plus LED strips, scales,
+# etc.), so it is NOT bed-unique. All known W4 beds are Germany Motions units
+# named "DHN-*" (issue #163; confirmed against the GM Bed Control 4.6.0 APK,
+# whose scan is unfiltered and which identifies beds by name/remote code), so
+# detection must require a corroborating Richmat name signal before treating a
+# W4 advertisement as a bed. FFF0 stays in manifest.json because SUTA and the
+# Keeson Sino fallback also discover via it (both name-guarded too).
+RICHMAT_WILINKE_W4_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
+# W5 uses a Telink-style custom 128-bit base (the "0xe0ff" is the little-endian
+# encoding of the generic 0xFFE0 short UUID). That base is shared by many non-bed
+# Telink-chip devices (e.g. a "Nokia-*" headset reported in issue #382), so this
+# UUID is NOT bed-unique: detection must require a corroborating Richmat name
+# signal before treating a W5 advertisement as a bed, and it is intentionally
+# left out of manifest.json's passive bluetooth discovery matchers.
+RICHMAT_WILINKE_W5_SERVICE_UUID: Final = "0000e0ff-3c17-d293-8e48-14fe2e4da212"
 RICHMAT_WILINKE_SERVICE_UUIDS: Final = [
     "8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7",  # Custom (legacy, index 0)
     "0000fee9-0000-1000-8000-00805f9b34fb",  # W1 (index 1) - default fallback
     "0000fee9-0000-1000-8000-00805f9b34bb",  # W2 (index 2) - note different base UUID suffix
     "0000ffe0-0000-1000-8000-00805f9b34fb",  # W3 (index 3)
-    "0000fff0-0000-1000-8000-00805f9b34fb",  # W4 (index 4) - Germany Motions DHN-* beds
-    "0000e0ff-3c17-d293-8e48-14fe2e4da212",  # W5 (index 5) - custom base UUID
+    RICHMAT_WILINKE_W4_SERVICE_UUID,  # W4 (index 4) - Germany Motions DHN-*, name-guarded
+    RICHMAT_WILINKE_W5_SERVICE_UUID,  # W5 (index 5) - shared Telink base, name-guarded
 ]
 RICHMAT_WILINKE_CHAR_UUIDS: Final = [
     # (write_char, notify_char) pairs matching service UUIDs above
@@ -482,10 +542,12 @@ KEESON_FALLBACK_GATT_PAIRS: Final = [
 ]
 
 # BetterLiving-style OKIN-BLE beds advertise both fallback service UUIDs
-KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset({
-    "0000fff0-0000-1000-8000-00805f9b34fb",
-    "0000ffb0-0000-1000-8000-00805f9b34fb",
-})
+KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset(
+    {
+        "0000fff0-0000-1000-8000-00805f9b34fb",
+        "0000ffb0-0000-1000-8000-00805f9b34fb",
+    }
+)
 
 # CB1322 sub-variant manufacturer name markers (lowercase for comparison)
 CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
@@ -508,11 +570,13 @@ SOLACE_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 MOTOSLEEP_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
-# SUTA Smart Home specific UUIDs (AT command protocol)
-# The app discovers writable/notifiable characteristics dynamically by properties.
-# FFF1 is used as a fallback write characteristic when dynamic discovery is unavailable.
+# SUTA Smart Home bed-frame UUIDs (AT command protocol).
+# The official app selects FFF0 for non-accessory SUTA devices, enables FFF1
+# notifications, requests MTU 250, and writes commands to FFF2. The separate
+# FFE0 service is selected for SUTA smart-mattress/accessory families.
 SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
-SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
+SUTA_NOTIFY_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
+SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff2-0000-1000-8000-00805f9b34fb"
 
 # TiMOTION AHF protocol UUIDs (Nordic UART Service)
 TIMOTION_AHF_SERVICE_UUID: Final = NORDIC_UART_SERVICE_UUID
@@ -542,10 +606,17 @@ LOGICDATA_CHAR_UUID: Final = "b9934c44-5c91-462b-80a1-30fccc29d758"
 MANUFACTURER_ID_LOGICDATA: Final = 1351  # 0x0547
 
 # Leggett & Platt specific UUIDs
-# Gen2 variant (Richmat-based, ASCII commands)
+# Gen2 variant (a.k.a. LP Comfort Connect, control box 209-M001, ESP32-based;
+# Richmat-derived ASCII commands)
 LEGGETT_GEN2_SERVICE_UUID: Final = "45e25100-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_WRITE_CHAR_UUID: Final = "45e25101-3171-4cfc-ae89-1d83cf8d8071"
 LEGGETT_GEN2_READ_CHAR_UUID: Final = "45e25103-3171-4cfc-ae89-1d83cf8d8071"
+# LP Comfort Connect beds advertise NO service UUID — only manufacturer data
+# under company ID 0x092D whose payload begins with ASCII "XP" or "CP". The LP
+# Control app (com.leggett.android.universal) recognizes these beds purely by
+# this prefix (isGen2Box()); the company ID is an additional filter.
+MANUFACTURER_ID_LEGGETT_GEN2: Final = 0x092D  # 2349
+LEGGETT_GEN2_MANUFACTURER_PREFIXES: Final = (b"XP", b"CP")
 
 # Okin variant (requires pairing)
 LEGGETT_OKIN_SERVICE_UUID: Final = "62741523-52f9-8864-b1ab-3b3a8d65950b"
@@ -630,7 +701,8 @@ LIMOSS_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 LIMOSS_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
 # DewertOkin specific (A H Beard, HankookGallery beds)
-# Uses handle-based writes rather than UUID
+# Legacy handle from older traces. Handles are device/firmware-specific; the
+# controller writes to the stable shared Okin characteristic UUID instead.
 DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
 
 # DewertOkin manufacturer data (BLE Company ID)
@@ -645,6 +717,13 @@ MANUFACTURER_ID_OKIN: Final = 89  # 0x0059
 # DewertOkin service UUID (unique to FurniMove/DewertOkin devices)
 # This UUID can uniquely identify DewertOkin beds regardless of device name
 DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"
+
+# DewertOkin RF Gateway settings service. Devices with BLE Device Information
+# model "Bluetooth RF-Gateway" expose this name characteristic as the app's
+# signal to wrap normal Okin commands in 8-byte RF frames.
+DEWERTOKIN_RF_GATEWAY_MODEL: Final = "Bluetooth RF-Gateway"
+DEWERTOKIN_RF_GATEWAY_SERVICE_UUID: Final = "92111420-72ab-4564-62ef-2a881286a6b0"
+DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = "92111422-72ab-4564-62ef-2a881286a6b0"
 
 # Serta Motion Perfect III specific
 # Uses handle-based writes rather than UUID
@@ -1061,7 +1140,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
     KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
-    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base"
+    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base",
 }
 
 # Leggett & Platt variants
@@ -1190,9 +1269,7 @@ RICHMAT_REMOTE_BT6500: Final = "BT6500"
 # Richmat WiLinke stop-byte compatibility.
 # Most Richmat remotes use END=0x6E, but some devices require 0x5E to stop
 # movement: QRRM remotes and BedTech BT6500 beds (issue #194).
-RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset(
-    {"qrrm", "bt6500"}
-)
+RICHMAT_WILINKE_STOP_COMPAT_REMOTE_CODES: Final[frozenset[str]] = frozenset({"qrrm", "bt6500"})
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
@@ -1475,9 +1552,7 @@ def resolve_richmat_remote_code(
         return normalized
 
     haystack = " ".join(
-        part.lower()
-        for part in (entry_title, configured_name, device_name)
-        if part
+        part.lower() for part in (entry_title, configured_name, device_name) if part
     )
     if not haystack:
         return normalized or RICHMAT_REMOTE_AUTO
@@ -1563,87 +1638,239 @@ RICHMAT_PROTOCOL_SINGLE: Final = "single"  # [cmd]
 RICHMAT_PROTOCOL_PREFIX55: Final = "prefix55"  # [0x55, 1, 0, cmd, (cmd+0x56)&0xFF]
 RICHMAT_PROTOCOL_PREFIXAA: Final = "prefixaa"  # [0xAA, 1, 0, cmd, (cmd+0xAB)&0xFF]
 
-# Okimat remote code variants
-# Different remotes have different command values and motor configurations
-# References: smartbed-mqtt supported remotes and FurniMove 2.0.1 handsetlist.csv
-OKIMAT_VARIANT_76688: Final = "76688"
-OKIMAT_VARIANT_78375: Final = "78375"
-OKIMAT_VARIANT_78378: Final = "78378"
-OKIMAT_VARIANT_78386: Final = "78386"
-OKIMAT_VARIANT_80599: Final = "80599"
-OKIMAT_VARIANT_80602: Final = "80602"
-OKIMAT_VARIANT_80608: Final = "80608"
-OKIMAT_VARIANT_80616: Final = "80616"
-OKIMAT_VARIANT_82417: Final = "82417"
-OKIMAT_VARIANT_82418: Final = "82418"
-OKIMAT_VARIANT_82620: Final = "82620"
-OKIMAT_VARIANT_82757: Final = "82757"
-OKIMAT_VARIANT_82760: Final = "82760"
-OKIMAT_VARIANT_82764: Final = "82764"
-OKIMAT_VARIANT_82767: Final = "82767"
-OKIMAT_VARIANT_82770: Final = "82770"
-OKIMAT_VARIANT_83358: Final = "83358"
-OKIMAT_VARIANT_83462: Final = "83462"
-OKIMAT_VARIANT_83489: Final = "83489"
-OKIMAT_VARIANT_84931: Final = "84931"
-OKIMAT_VARIANT_84963: Final = "84963"
-OKIMAT_VARIANT_85058: Final = "85058"
-OKIMAT_VARIANT_88875: Final = "88875"
-OKIMAT_VARIANT_88877: Final = "88877"
-OKIMAT_VARIANT_89137: Final = "89137"
-OKIMAT_VARIANT_89138: Final = "89138"
-OKIMAT_VARIANT_89139: Final = "89139"
-OKIMAT_VARIANT_91244: Final = "91244"
-OKIMAT_VARIANT_91246: Final = "91246"
-OKIMAT_VARIANT_92461: Final = "92461"
-OKIMAT_VARIANT_92471: Final = "92471"
-OKIMAT_VARIANT_92535: Final = "92535"
-OKIMAT_VARIANT_92591: Final = "92591"
-OKIMAT_VARIANT_93305: Final = "93305"
-OKIMAT_VARIANT_93306: Final = "93306"
-OKIMAT_VARIANT_93329: Final = "93329"
-OKIMAT_VARIANT_93332: Final = "93332"
-OKIMAT_VARIANT_94238: Final = "94238"
+# Okimat remote code variants (generated; keyed by the printed remote code).
+# Source of truth: DewertOkin FurniMove handset backend + bundled
+# handsetlist.csv capability flags. Drives OKIN_UUID_REMOTES in
+# beds/okin_uuid.py; regenerate via tools/okin_remotes/.
 OKIMAT_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (try 82417 first)",
-    OKIMAT_VARIANT_76688: "76688 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_78375: "78375 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_78378: "78378 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_78386: "78386 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_80599: "80599 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_80602: "80602 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_80608: "80608 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_80616: "80616 - RFS-ELLIPSE/06 (Back, Legs)",
-    OKIMAT_VARIANT_82417: "82417 - RF-TOPLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_82418: "82418 - RF-TOPLINE/11 (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_82620: "82620 - RF-TOPLINE/07/H (Back, Legs)",
-    OKIMAT_VARIANT_82757: "82757 - RF-TOPLINE/07/L (Back, Legs)",
-    OKIMAT_VARIANT_82760: "82760 - RF-TOPLINE/07/L (Back, Legs)",
-    OKIMAT_VARIANT_82764: "82764 - RF-TOPLINE/07/L (Back, Legs)",
-    OKIMAT_VARIANT_82767: "82767 - RF-TOPLINE/07/L (Back, Legs)",
-    OKIMAT_VARIANT_82770: "82770 - RF-TOPLINE/07/L (Back, Legs)",
-    OKIMAT_VARIANT_83358: "83358 - RF-TOPLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_83462: "83462 - SET RF-TOPLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_83489: "83489 - RF-TOPLINE/11/L (Back, Legs)",
-    OKIMAT_VARIANT_84931: "84931 - RF-TOPLINE/07/AL/BK/L (Back, Legs)",
-    OKIMAT_VARIANT_84963: "84963 - RF-TOPLINE/07/BK/BK/L (Back, Legs)",
-    OKIMAT_VARIANT_85058: "85058 - RF-TOPLINE/11/L (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_88875: "88875 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_88877: "88877 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_89137: "89137 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_89138: "89138 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_89139: "89139 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_91244: "91244 - RF-FLASHLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_91246: "91246 - RF-FLASHLINE/09 (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_92461: "92461 - RF-TOPLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_92471: "92471 - RF-TOPLINE/11 (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_92535: "92535 - RF-LITELINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_92591: "92591 - RF-FLASHLINE/09 (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_93305: "93305 - RF-TOPLINE/07 (Back, Legs)",
-    OKIMAT_VARIANT_93306: "93306 - RF-TOPLINE/11 (Back, Legs, 2 Memory)",
-    OKIMAT_VARIANT_93329: "93329 - RF TOPLINE (Head, Back, Legs, 4 Memory)",
-    OKIMAT_VARIANT_93332: "93332 - RF TOPLINE (Head, Back, Legs, Feet, 2 Memory)",
-    OKIMAT_VARIANT_94238: "94238 - RF-FLASHLINE/09 (Back, Legs, 2 Memory)",
+    "62211": "62211 - RF (Head/Back/Legs, 4 Mem)",
+    "62612": "62612 - RF (Head/Back/Legs/Feet, 4 Mem)",
+    "63293": "63293 - RF (Back/Legs)",
+    "63338": "63338 - RF (Back/Legs)",
+    "63365": "63365 - RF (Head/Back/Legs, 4 Mem)",
+    "65418": "65418 - RF (Head/Back/Legs, 4 Mem)",
+    "65433": "65433 - RF (Back/Legs, 4 Mem)",
+    "65567": "65567 - RF (Head/Back/Legs/Feet, 4 Mem, Massage)",
+    "68036": "68036 - RF-SYSTEM/SW/6/1476/2400MHZ (Back/Legs)",
+    "71852": "71852 - SET (Back/Legs)",
+    "71853": "71853 - REMOTE (Back/Legs)",
+    "73591": "73591 - REMOTE (Back/Legs)",
+    "73593": "73593 - SET (Back/Legs)",
+    "74130": "74130 - REMOTE (Head)",
+    "74131": "74131 - SET (Head)",
+    "75225": "75225 - RF-SYSTEM/SW/ST/6/1476/2400MHZ (Back/Legs)",
+    "75267": "75267 - REMOTE (Back/Legs)",
+    "75268": "75268 - SET (Back/Legs)",
+    "76208": "76208 - RF (Back/Legs, 4 Mem, Massage)",
+    "76688": "76688 - RFS-ELLIPSE/SW-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "76691": "76691 - RFS-ELLIPSE/SW-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "77008": "77008 - RF (Back/Legs)",
+    "77010": "77010 - RF (Back/Legs)",
+    "77011": "77011 - RF (Back/Legs)",
+    "77560": "77560 - REMOTE (Back/Legs)",
+    "77561": "77561 - SET (Back/Legs)",
+    "77839": "77839 - RF-TOUCH/BRW/BK/16/1867/L (Back/Legs, 4 Mem)",
+    "77991": "77991 - RF-TOUCH/BRW/BK/16/1867/L (Back/Legs, 4 Mem)",
+    "77994": "77994 - RF-TOUCH/BRW/BK/20/1868/L (Head/Back/Legs/Feet, 4 Mem)",
+    "77995": "77995 - RF-TOUCH/BRW/BK/18/1869/L (Back/Legs/Feet, 4 Mem)",
+    "77996": "77996 - RF-TOUCH/BK/BRW/18/1870/03 (Head/Back/Legs, 4 Mem)",
+    "78031": "78031 - REMOTE (Back/Legs)",
+    "78033": "78033 - SET (Back/Legs)",
+    "78080": "78080 - RF-TOUCH/BRW/BK/16/1889/L (Back/Legs, 4 Mem)",
+    "78081": "78081 - RF-TOUCH/BRW/BK/16/1889/L (Back/Legs, 4 Mem)",
+    "78102": "78102 - RF-TOUCH/BRW/BK/18/1892/L (Head/Back/Legs, 4 Mem)",
+    "78103": "78103 - RF-TOUCH/BRW/BK/20/1890/L (Head/Back/Legs/Feet, 4 Mem)",
+    "78105": "78105 - RF-TOUCH/BRW/BK/16/1893/L (Back/Legs, 4 Mem)",
+    "78109": "78109 - RF-TOUCH/BRW/BK/18/1891/L (Back/Legs/Feet, 4 Mem)",
+    "78110": "78110 - RF-TOUCH/BRW/BK/18/1894/L (Head/Back/Legs, 4 Mem)",
+    "78111": "78111 - RF-TOUCH/BRW/BK/20/1895/L (Head/Back/Legs/Feet, 4 Mem)",
+    "78237": "78237 - REMOTE (Back/Legs)",
+    "78238": "78238 - SET (Back/Legs)",
+    "78281": "78281 - REMOTE (Back/Legs)",
+    "78283": "78283 - SET (Back/Legs)",
+    "78375": "78375 - RFS-ELLIPSE/WS-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "78378": "78378 - RFS-ELLIPSE/WA-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "78379": "78379 - RFS-ELLIPSE/WS-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "78381": "78381 - RFS-ELLIPSE/WA-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "78386": "78386 - RFS-ELLIPSE/WA-SW-06-1902/-/-/-/02 (Back/Legs)",
+    "78737": "78737 - RF-TOUCH/BRW/BK/21/1899/L (Head/Back/Legs, 4 Mem)",
+    "78773": "78773 - RF-TOUCH/BRW/BK/19/1896 (Head/Back/Legs/Feet, 3 Mem)",
+    "78785": "78785 - RF-TOUCH/BRW/BK/19/1897 (Head/Back/Legs/Feet, 3 Mem)",
+    "78791": "78791 - RF-TOUCH/BRW/BK/19/1898/L (Head/Back/Legs/Feet, 3 Mem)",
+    "78847": "78847 - RF-TOUCH/BRW/BK/14/1923 (Back/Legs, 2 Mem)",
+    "78854": "78854 - RF-TOUCH/BRW/BK/14/1924/L (Back/Legs, 2 Mem)",
+    "78860": "78860 - RF-TOUCH/BRW/BK/14/1925/L (Back/Legs, 2 Mem)",
+    "80027": "80027 - RF-TOUCH/BK/BK/14/1923 (Back/Legs, 2 Mem)",
+    "80035": "80035 - RF-TOUCH/BK/BK/19/1896 (Head/Back/Legs/Feet, 3 Mem)",
+    "80036": "80036 - RF-TOUCH/BK/BK/17/1965 (Back/Legs/Feet, 3 Mem)",
+    "80354": "80354 - REMOTE (Back/Legs)",
+    "80355": "80355 - SET (Back/Legs)",
+    "80358": "80358 - REMOTE (Head)",
+    "80360": "80360 - SET (Head)",
+    "80593": "80593 - RF-TOUCH/BRW/BK/8/1952/L (Back/Legs)",
+    "80595": "80595 - RF-TOUCH/BRW/BK/8/1954/L (Back/Legs)",
+    "80597": "80597 - RF-TOUCH/BRW/BK/8/1953/L (Back/Legs)",
+    "80599": "80599 - RFS-ELLIPSE/SW-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "80601": "80601 - RFS-ELLIPSE/SW-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "80602": "80602 - RFS-ELLIPSE/WA-SW-06-1902/-/-/-/02 (Back/Legs)",
+    "80603": "80603 - RFS-ELLIPSE/WS-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "80604": "80604 - RFS-ELLIPSE/WA-SW-09-1845/-/-/M/02 (Back/Legs, 1 Mem)",
+    "80608": "80608 - RFS-ELLIPSE/WA-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "80616": "80616 - RFS-ELLIPSE/WS-SW-06-1844/-/-/-/02 (Back/Legs)",
+    "80673": "80673 - REMOTE (Back/Legs)",
+    "80674": "80674 - REMOTE (Back/Legs)",
+    "80675": "80675 - REMOTE (Back/Legs)",
+    "80676": "80676 - SET (Back/Legs)",
+    "80683": "80683 - SET (Back/Legs)",
+    "80685": "80685 - SET (Back/Legs)",
+    "80714": "80714 - SET (Back/Legs)",
+    "80716": "80716 - REMOTE (Back/Legs)",
+    "80903": "80903 - RF-TOUCH/BK/BK/14/2009 (Back/Legs, 2 Mem)",
+    "81183": "81183 - RF-TOUCH/BRW/BK/8/1952/L (Back/Legs)",
+    "81185": "81185 - RF-TOUCH/BRW/BK/16/1867/L (Back/Legs, 4 Mem)",
+    "81186": "81186 - RF-TOUCH/BRW/BK/8/1954/L (Back/Legs)",
+    "81187": "81187 - RF-TOUCH/BRW/BK/18/1870/L (Head/Back/Legs, 4 Mem)",
+    "81191": "81191 - RF-TOUCH/BRW/BK/20/1868/L (Head/Back/Legs/Feet, 4 Mem)",
+    "81192": "81192 - RF-TOUCH/BRW/BK/18/1894/L (Head/Back/Legs, 4 Mem)",
+    "81193": "81193 - RF-TOUCH/BRW/BK/18/1869/L (Back/Legs/Feet, 4 Mem)",
+    "81194": "81194 - RF-TOUCH/BRW/BK/8/1953/L (Back/Legs)",
+    "81196": "81196 - RF-TOUCH/BRW/BK/16/1889/L (Back/Legs, 4 Mem)",
+    "81197": "81197 - RF-TOUCH/BRW/BK/20/1890/L (Head/Back/Legs/Feet, 4 Mem)",
+    "81202": "81202 - RF-TOUCH/BRW/BK/18/1892/L (Head/Back/Legs, 4 Mem)",
+    "81204": "81204 - RF-TOUCH/BRW/BK/18/1891/L (Back/Legs/Feet, 4 Mem)",
+    "81205": "81205 - RF-TOUCH/BRW/BK/20/1895/L (Head/Back/Legs/Feet, 4 Mem)",
+    "81611": "81611 - REMOTE (Back/Legs)",
+    "81613": "81613 - SET (Back/Legs)",
+    "81619": "81619 - REMOTE (Back)",
+    "81620": "81620 - SET (Head)",
+    "82292": "82292 - RF-TOUCH/BRW/BK/14/2006 (Back/Legs, 2 Mem)",
+    "82295": "82295 - RF-TOUCH/BRW/BK/19/2004 (Head/Back/Legs/Feet, 3 Mem)",
+    "82417": "82417 - RF-TOPLINE (Back/Legs)",
+    "82418": "82418 - RF-TOPLINE (Back/Legs, 2 Mem)",
+    "82620": "82620 - RF-TOPLINE (Back/Legs)",
+    "82634": "82634 - RF-TOPLINE (Head/Back/Legs)",
+    "82635": "82635 - RF-TOPLINE (Head/Back/Legs)",
+    "82755": "82755 - RF-TOPLINE (Head)",
+    "82757": "82757 - RF-TOPLINE (Back/Legs)",
+    "82760": "82760 - RF-TOPLINE (Back/Legs)",
+    "82764": "82764 - RF-TOPLINE (Back/Legs)",
+    "82767": "82767 - RF-TOPLINE (Back/Legs)",
+    "82770": "82770 - RF-TOPLINE (Back/Legs)",
+    "82785": "82785 - RF-TOPLINE (Head/Back/Legs)",
+    "82786": "82786 - RF-TOPLINE (Head/Back/Legs)",
+    "82790": "82790 - RF-TOPLINE (Head/Back/Legs)",
+    "82794": "82794 - RF-TOPLINE (Head/Back/Legs/Feet)",
+    "82795": "82795 - RF-TOPLINE (Head/Back/Legs/Feet)",
+    "82796": "82796 - RF-TOPLINE (Head/Back/Legs/Feet)",
+    "82797": "82797 - RF-TOPLINE (Head/Back/Legs/Feet)",
+    "82799": "82799 - RF-TOPLINE (Head/Back/Legs/Feet)",
+    "83060": "83060 - RF-TOUCH/BRW/BK/14/2182/L (Back/Legs, 2 Mem)",
+    "83126": "83126 - RF-TOUCH/BRW/BK/19/2114 (Back/Legs, 3 Mem, Massage)",
+    "83219": "83219 - RF-TOUCH/BRW/BK/24/2068/- (Head/Back/Legs/Feet, 3 Mem, Massage)",
+    "83358": "83358 - RF-TOPLINE (Back/Legs)",
+    "83462": "83462 - SET (Back/Legs)",
+    "83489": "83489 - RF-TOPLINE (Back/Legs)",
+    "83603": "83603 - SET (Back/Legs)",
+    "84148": "84148 - REMOTE (Back/Legs)",
+    "84149": "84149 - SET (Back/Legs)",
+    "84150": "84150 - REMOTE (Back/Legs)",
+    "84151": "84151 - SET (Back/Legs)",
+    "84173": "84173 - RF-TOUCH/BRW/BK/23/2126 (Head/Back/Legs/Feet, 3 Mem, Massage)",
+    "84562": "84562 - RF-ECO (Back/Legs)",
+    "84563": "84563 - RF-ECO (Back/Legs)",
+    "84564": "84564 - RF-ECO (Head/Back/Legs)",
+    "84582": "84582 - RF-ECO (Head)",
+    "84762": "84762 - HS-IPROXX (Back/Legs)",
+    "84931": "84931 - RF-TOPLINE/07/AL/BK/L (Back/Legs)",
+    "84963": "84963 - RF-TOPLINE/07/BK/BK/L (Back/Legs)",
+    "85057": "85057 - RF-TOPLINE/11/AL/BK/L (Head/Back/Legs/Feet, 4 Mem)",
+    "85058": "85058 - RF-TOPLINE/11/AL/BK/L (Back/Legs, 2 Mem)",
+    "85124": "85124 - RF-LITE/06/BK/BK (Back/Legs)",
+    "85126": "85126 - SET (Back/Legs)",
+    "85281": "85281 - RF-FREE-ELEC (Head/Back/Legs/Feet, 4 Mem)",
+    "86432": "86432 - RF-STYLE (Back/Legs, 2 Mem)",
+    "88875": "88875 - RF-LITELINE/07/ (Back/Legs)",
+    "88877": "88877 - RF-LITELINE/07/ (Back/Legs)",
+    "89137": "89137 - RF-LITELINE/07/ (Back/Legs)",
+    "89138": "89138 - RF-LITELINE/07/ (Back/Legs)",
+    "89139": "89139 - RF-LITELINE/07/ (Back/Legs)",
+    "89424": "89424 - RF (Back/Legs)",
+    "89441": "89441 - RF-FREE-ELEC (Back/Legs, 4 Mem)",
+    "89448": "89448 - RF-FREE-ELEC (Back/Legs/Feet, 4 Mem)",
+    "89476": "89476 - RF-TOPLINE/11/AL/BK (Head/Back/Legs/Feet, 4 Mem)",
+    "89545": "89545 - RF-TOPLINE/11/AL/BK (Back/Legs, 2 Mem)",
+    "89746": "89746 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem)",
+    "89803": "89803 - LITELINE-7-SL-2M (Back/Legs)",
+    "89837": "89837 - RF-TOUCH/18/WH/BK/KL/L (Back/Legs, 3 Mem, Massage)",
+    "90199": "90199 - TOPLINE-11-SL-3M/4M (Back/Legs, 2 Mem)",
+    "90269": "90269 - RF-STYLE/07/WH/WH (Back/Legs, 4 Mem)",
+    "90354": "90354 - RF-STYLE/07/WH/WH (Head/Back/Legs, 2 Mem)",
+    "90392": "90392 - HS-IPROXX (Back/Legs)",
+    "90658": "90658 - RF-TOUCHLINE/15/BK/BK/KL (Head/Back, 4 Mem)",
+    "90675": "90675 - RF-TOUCHLINE/15/AL/BK/KL (Head/Back, 4 Mem)",
+    "90678": "90678 - RF-TOUCHLINE/19/AL/BK/KL (Head/Back/Legs/Feet, 4 Mem)",
+    "90679": "90679 - RF-TOUCHLINE/19/BK/BK/KL (Head/Back/Legs/Feet, 4 Mem)",
+    "90882": "90882 - TOPLINE-11-BK-2M (Back/Legs, 2 Mem)",
+    "90916": "90916 - RF-TOUCHLINE/21/AL/BK/KL (Head/Back/Legs/Feet, 2 Mem, Massage)",
+    "90918": "90918 - RF-TOUCHLINE/21/AL/BK/KL (Back/Legs, 3 Mem, Massage)",
+    "90926": "90926 - RF-ECO (Back/Feet)",
+    "90928": "90928 - TOPLINE-11-SL-3M/4M (Back/Legs, 2 Mem, Massage)",
+    "91050": "91050 - RF-TOUCHLINE/21/AL/BK/KL (Back/Legs, 3 Mem, Massage)",
+    "91244": "91244 - RF-FLASHLINE/07/WH/GY (Back/Legs)",
+    "91246": "91246 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
+    "91334": "91334 - TOPLINE-11-BK-2M (Back/Legs, 2 Mem)",
+    "91616": "91616 - HS-IPROXX (Back/Legs)",
+    "91751": "91751 - LITELINE-7-BK-2M (Back/Legs)",
+    "91914": "91914 - RF-TOUCH/23/WH/BK/KL (Head/Back/Legs/Feet, 3 Mem, Massage)",
+    "92063": "92063 - LITELINE-7-GR-2M (Back/Legs)",
+    "92113": "92113 - RF-STYLE/BK/BK/14/2009 (Back/Legs, 4 Mem)",
+    "92129": "92129 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem, Massage)",
+    "92428": "92428 - RF (Back/Legs, 2 Mem)",
+    "92461": "92461 - \n  RF-TOPLINE\n  SI (Back/Legs)",
+    "92471": "92471 - RF (Back/Legs, 2 Mem)",
+    "92535": "92535 - RF-LITELINE/07/ (Back/Legs)",
+    "92591": "92591 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
+    "93025": "93025 - RF-STYLE/07/WH/WH (Back/Legs)",
+    "93055": "93055 - RF-TOPLINE/15/WH/BK (Back/Legs, 2 Mem)",
+    "93300": "93300 - RF-STYLE/07/WH/WH (Back/Legs, 4 Mem)",
+    "93305": "93305 - RF-TOPLINE (Back/Legs)",
+    "93306": "93306 - RF-TOPLINE (Back/Legs, 2 Mem)",
+    "93329": "93329 - RF-TOPLINE/15/AL/BK/M3/S/ST/IP20/BLI/FL/LED/M (Head/Back/Legs, 4 Mem)",
+    "93332": "93332 - RF-TOPLINE/15/AL/BK/M4/S/ST/IP20/BLI/FL/LED/M (Head/Back/Legs/Feet, 2 Mem)",
+    "93339": "93339 - RF-TOPLINE/15/AL/BK (Back/Legs, 2 Mem, Massage)",
+    "94186": "94186 - RF-TOPLINE (Back/Legs, 2 Mem)",
+    "94238": "94238 - RF (Back/Legs, 2 Mem)",
+    "94239": "94239 - RF (Back/Legs)",
+    "94369": "94369 - RF-TOPLINE (Head/Back/Legs/Feet, 4 Mem)",
+    "94428": "94428 - RF-TOPLINE (Head/Back/Legs/Feet, 4 Mem)",
+    "94429": "94429 - RF-TOPLINE (Head/Back/Legs, 4 Mem)",
+    "94430": "94430 - RF-TOPLINE (Back/Legs, 2 Mem)",
+    "94495": "94495 - RF-FLASHLINE/TEMPUR/07/BLACK (Back/Legs)",
+    "94500": "94500 - RF-FLASHLINE/TEMPUR/09/BLACK (Back/Legs, 2 Mem)",
+    "96312": "96312 - RF34/07/BK/BK (Back/Legs)",
+    "96313": "96313 - RF34/07/WH/GY (Back/Legs)",
+    "96314": "96314 - RF28/07/BK/BK (Back/Legs)",
+    "96315": "96315 - RF28/07/WH/GY (Back/Legs)",
+    "97134": "97134 - RF-TOPLINE/11/AL/BK/L (Back/Legs, 2 Mem)",
+    "97135": "97135 - RF-TOPLINE/15/AL/BK/L (Head/Back/Legs/Feet, 2 Mem)",
+}
+
+# DewertOkin "DOT PROTOCOL" remote codes (generated together with
+# OKIMAT_VARIANTS; regenerate via tools/okin_remotes/). These handsets
+# (RF1058/RF34/RF6707) resolve through the same FurniMove backend but their
+# boxes expose Nordic UART and take CB24-style 7-byte frames — see
+# beds/okin_dot.py. Motor keycodes are renumbered per handset (whichever
+# channels exist start at 0x1/0x2) but keep their section meaning; the table
+# maps them to the standard section fields, so labels match the exposed axes.
+OKIN_DOT_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (RF34 layout, try 97450 first)",
+    "90167": "90167 - RF1058 (Head/Feet, 4 Mem, Massage)",
+    "91983": "91983 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "93558": "93558 - RF1058 (Head/Feet, 3 Mem, Massage)",
+    "97450": "97450 - RF34/09/WH/GY/ (Back/Legs, 2 Mem)",
+    "97544": "97544 - RF34/09/BK/BK/ (Back/Legs, 2 Mem)",
+    "98035": "98035 - RF6707 (Head/Back)",
 }
 
 # OKIN 64-bit protocol variants (10-byte commands with 64-bit bitmasks)
@@ -1691,44 +1918,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     RICHMAT_VARIANT_PREFIXAA,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
-    OKIMAT_VARIANT_76688,
-    OKIMAT_VARIANT_78375,
-    OKIMAT_VARIANT_78378,
-    OKIMAT_VARIANT_78386,
-    OKIMAT_VARIANT_80599,
-    OKIMAT_VARIANT_80602,
-    OKIMAT_VARIANT_80608,
-    OKIMAT_VARIANT_80616,
-    OKIMAT_VARIANT_82417,
-    OKIMAT_VARIANT_82418,
-    OKIMAT_VARIANT_82620,
-    OKIMAT_VARIANT_82757,
-    OKIMAT_VARIANT_82760,
-    OKIMAT_VARIANT_82764,
-    OKIMAT_VARIANT_82767,
-    OKIMAT_VARIANT_82770,
-    OKIMAT_VARIANT_83358,
-    OKIMAT_VARIANT_83462,
-    OKIMAT_VARIANT_83489,
-    OKIMAT_VARIANT_84931,
-    OKIMAT_VARIANT_84963,
-    OKIMAT_VARIANT_85058,
-    OKIMAT_VARIANT_88875,
-    OKIMAT_VARIANT_88877,
-    OKIMAT_VARIANT_89137,
-    OKIMAT_VARIANT_89138,
-    OKIMAT_VARIANT_89139,
-    OKIMAT_VARIANT_91244,
-    OKIMAT_VARIANT_91246,
-    OKIMAT_VARIANT_92461,
-    OKIMAT_VARIANT_92471,
-    OKIMAT_VARIANT_92535,
-    OKIMAT_VARIANT_92591,
-    OKIMAT_VARIANT_93305,
-    OKIMAT_VARIANT_93306,
-    OKIMAT_VARIANT_93329,
-    OKIMAT_VARIANT_93332,
-    OKIMAT_VARIANT_94238,
+    *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
+    *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
     # SBI/Q-Plus variants
@@ -1761,13 +1952,20 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
+    # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): the LP Control app
+    # calls createBond() after service discovery ("Bond Needed...Bonding" in
+    # BLEConnectionViewModel). Issue #385 shows the corresponding hardware
+    # symptom outside its ~2-minute pairing window: unbonded reconnects time out
+    # while the box keeps advertising. The app can re-open that window with its
+    # "PAIR ENABLE" serial command.
+    BED_TYPE_LEGGETT_GEN2,
 }
 
 # Bed type + variant combinations that require BLE pairing
 # Maps bed type to set of variants that require pairing for that specific bed type
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
-    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN},
+    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
 }
 
 
@@ -1789,6 +1987,21 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
+
+def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
+    """Return True for the observed bond-gated connection-failure signature.
+
+    Most pairing-required beds accept the BLE connection and only gate GATT
+    access on the bond. With LP Comfort Connect (Leggett & Platt Gen2), issue
+    #385 shows that an unbonded peer times out while the box keeps advertising
+    outside its pairing window. Treat that observed signature as the pairing
+    symptom; the controller firmware's exact link-layer filtering is not
+    visible in the Android APK.
+    """
+    if bed_type == BED_TYPE_LEGGETT_GEN2:
+        return True
+    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(
@@ -1922,6 +2135,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
     BED_TYPE_OKIN_CB24: (3, 300),
+    # OKIN DOT: FurniMove resends the held keycode ~every 100ms
+    # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
+    BED_TYPE_OKIN_DOT: (10, 100),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),

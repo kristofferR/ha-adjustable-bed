@@ -202,6 +202,11 @@ def _select_entities_for(
                         timer_options,
                     )
                 )
+        else:
+            # A reclassified entry (e.g. Richmat QRRM corrected to BedTech, #410)
+            # can leave behind the old light-timer select; remove it so a dead
+            # control doesn't linger in the UI and card.
+            _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
         thermal_timer_options = list(getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, []))
         thermal_sides = tuple(getattr(controller, "thermal_climate_sides", ()))
@@ -212,7 +217,7 @@ def _select_entities_for(
                 thermal_sides,
                 thermal_timer_options,
             )
-            _async_remove_stale_split_select_entity(hass, coordinator, THERMAL_TIMER_DESCRIPTION.key)
+            _async_remove_stale_select_entity(hass, coordinator, THERMAL_TIMER_DESCRIPTION.key)
             for side_description in (
                 THERMAL_TIMER_LEFT_DESCRIPTION,
                 THERMAL_TIMER_RIGHT_DESCRIPTION,
@@ -253,7 +258,7 @@ def _select_entities_for(
                 footwarming_sides,
                 footwarming_timer_options,
             )
-            _async_remove_stale_split_select_entity(
+            _async_remove_stale_select_entity(
                 hass,
                 coordinator,
                 FOOTWARMING_TIMER_DESCRIPTION.key,
@@ -317,12 +322,12 @@ def _select_entities_for(
     return entities
 
 
-def _async_remove_stale_split_select_entity(
+def _async_remove_stale_select_entity(
     hass: HomeAssistant,
     coordinator: AdjustableBedCoordinator,
     key: str,
 ) -> None:
-    """Remove a legacy non-sided select when side-specific entities exist."""
+    """Remove a select registry entry the current controller no longer provides."""
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
         "select",

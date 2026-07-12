@@ -127,6 +127,17 @@ def _switch_entities_for(
                 continue
             # Default to False: only create entity if controller explicitly supports it
             if not getattr(controller, description.required_capability, False):
+                # Older releases may have created this switch before the
+                # capability was dropped (e.g. BedTech discrete lights, #410);
+                # remove the stale registry entry so a dead control doesn't
+                # linger in the UI and card.
+                entity_id = registry.async_get_entity_id(
+                    "switch",
+                    DOMAIN,
+                    f"{coordinator.address}_{description.key}",
+                )
+                if entity_id is not None:
+                    registry.async_remove(entity_id)
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
