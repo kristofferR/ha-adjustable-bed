@@ -756,7 +756,11 @@ class AdjustableBedCoordinator:
         )
 
     async def _async_handle_ble_authentication_error(
-        self, err: BleakError, *, holding_lock: bool = False
+        self,
+        err: BleakError,
+        *,
+        holding_lock: bool = False,
+        attempt_details: dict[str, Any] | None = None,
     ) -> None:
         """Handle a failure caused by an unauthenticated BLE connection.
 
@@ -773,7 +777,9 @@ class AdjustableBedCoordinator:
             self._address,
             err,
         )
-        self._record_bond_verification("authentication_failed", err)
+        self._record_bond_verification(
+            "authentication_failed", err, attempt_details
+        )
         # A definitive authentication failure invalidates any earlier decision
         # to skip a probe that timed out. The next paired connection should
         # verify the fresh bond again.
@@ -841,9 +847,10 @@ class AdjustableBedCoordinator:
             if _is_ble_authentication_error(err):
                 # We run inside _async_connect_locked, which holds self._lock —
                 # disconnect via the lock-free path to avoid a deadlock.
-                await self._async_handle_ble_authentication_error(err, holding_lock=True)
-                self._record_bond_verification(
-                    "failed_authentication", err, attempt_details
+                await self._async_handle_ble_authentication_error(
+                    err,
+                    holding_lock=True,
+                    attempt_details=attempt_details,
                 )
                 return False
             _LOGGER.debug(

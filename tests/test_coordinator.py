@@ -2108,7 +2108,7 @@ class TestCoordinatorWriteCommand:
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
         assert (
             coordinator.pairing_diagnostics["last_bond_verification"]["status"]
-            == "failed_authentication"
+            == "authentication_failed"
         )
         mock_create_issue.assert_awaited_once_with(
             hass, TEST_ADDRESS, TEST_NAME, "okimat_verify_bonded_test"
