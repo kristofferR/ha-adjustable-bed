@@ -34,6 +34,13 @@ import {
 // Side-effect import: registers <adjustable-bed-card-editor> in the same bundle.
 import "./editor";
 
+interface PairedPane {
+  key: string;
+  label: string;
+  icon: string;
+  bed: BedEntities;
+}
+
 @customElement("adjustable-bed-card")
 export class AdjustableBedCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -45,6 +52,10 @@ export class AdjustableBedCard extends LitElement {
   // the other side's / both-sides' tiles into save actions (which risked saving
   // over the wrong preset). undefined = no section in save mode.
   @state() private _saveModeFor?: string;
+  // Paired beds expose one focused control surface at a time. This avoids the
+  // old three-bed vertical stack while keeping combined actions deliberately
+  // separate from commands for an individual side.
+  @state() private _activePairedPane = "both";
 
   private _watched: string[] = [];
 
@@ -70,7 +81,15 @@ export class AdjustableBedCard extends LitElement {
   }
 
   protected override shouldUpdate(changed: PropertyValues): boolean {
-    if (changed.has("_config")) return true;
+    // Local UI changes can be coalesced with Home Assistant's frequent `hass`
+    // assignment. Never let the watched-entity optimization discard a tab or
+    // save-mode interaction just because `hass` changed in the same cycle.
+    if (
+      changed.has("_config") ||
+      changed.has("_saveModeFor") ||
+      changed.has("_activePairedPane")
+    )
+      return true;
     if (!changed.has("hass") || !this.hass) return true;
     const old = changed.get("hass") as HomeAssistant | undefined;
     if (!old || old.entities !== this.hass.entities) return true;
@@ -137,15 +156,15 @@ export class AdjustableBedCard extends LitElement {
     return this._orderedSections().map((k) => render[k]?.() ?? nothing);
   }
 
-  // Render a paired parent: the combined "both sides" controls (on the parent
-  // device) followed by each side's own section, labelled by the child device
-  // name. _watched tracks the parent plus every side so a state change on any
-  // side re-renders the card.
+  // Render a paired parent as a focused side switcher. The combined actions live
+  // on the synthetic parent; each physical side remains on its child device.
   private _renderPaired(parentId: string, childIds: string[]): TemplateResult {
     const hass = this.hass!;
     const parentBed = bedEntitiesForDevice(hass, parentId);
     const sides = childIds.map((id) => ({
+      key: id,
       label: this._deviceLabel(id),
+      icon: "mdi:bed-single-outline",
       bed: bedEntitiesForDevice(hass, id),
     }));
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
@@ -157,26 +176,15 @@ export class AdjustableBedCard extends LitElement {
     if (bedIsEmpty(parentBed) && sides.every((s) => bedIsEmpty(s.bed)))
       return this._notice("card.no_entities");
 
-    const block = (
-      label: string,
-      bed: BedEntities,
-    ): typeof nothing | TemplateResult =>
-      bedIsEmpty(bed)
-        ? nothing
-        : html`
-            <div class="side">
-              <div class="side-label">${label}</div>
-              ${this._renderSections(bed)}
-            </div>
-          `;
-
-    return html`
-      <ha-card>
-        ${this._header(parentBed)}
-        ${block(localize(this.hass, "card.both_sides"), parentBed)}
-        ${sides.map((s) => block(s.label, s.bed))}
-      </ha-card>
-    `;
+    return this._renderPairedCard(parentId, [
+      {
+        key: "both",
+        label: localize(hass, "card.both_sides"),
+        icon: "mdi:link-variant",
+        bed: parentBed,
+      },
+      ...sides,
+    ]);
   }
 
   private _renderSingleAddressPaired(deviceId: string): TemplateResult {
@@ -192,27 +200,86 @@ export class AdjustableBedCard extends LitElement {
     if (Object.values(beds).every((bed) => bedIsEmpty(bed)))
       return this._notice("card.no_entities");
 
-    const block = (
-      label: string,
-      bed: BedEntities,
-    ): typeof nothing | TemplateResult =>
-      bedIsEmpty(bed)
-        ? nothing
-        : html`
-            <div class="side">
-              <div class="side-label">${label}</div>
-              ${this._renderSections(bed)}
-            </div>
-          `;
+    return this._renderPairedCard(deviceId, [
+      {
+        key: "both",
+        label: localize(hass, "card.both_sides"),
+        icon: "mdi:link-variant",
+        bed: beds.both,
+      },
+      {
+        key: "left",
+        label: localize(hass, "card.left_side"),
+        icon: "mdi:bed-single-outline",
+        bed: beds.left,
+      },
+      {
+        key: "right",
+        label: localize(hass, "card.right_side"),
+        icon: "mdi:bed-single-outline",
+        bed: beds.right,
+      },
+    ]);
+  }
 
+  private _renderPairedCard(
+    titleDeviceId: string,
+    allPanes: PairedPane[],
+  ): TemplateResult {
+    const panes = allPanes.filter((pane) => !bedIsEmpty(pane.bed));
+    const active =
+      panes.find((pane) => pane.key === this._activePairedPane) ?? panes[0];
     return html`
-      <ha-card>
-        ${this._header(beds.both)}
-        ${block(localize(hass, "card.both_sides"), beds.both)}
-        ${block(localize(hass, "card.left_side"), beds.left)}
-        ${block(localize(hass, "card.right_side"), beds.right)}
+      <ha-card class="paired-card">
+        ${this._header(active.bed, titleDeviceId)}
+        <div
+          class="pane-tabs"
+          role="tablist"
+          style=${`--pane-count:${panes.length}`}
+        >
+          ${panes.map(
+            (pane) => html`
+              <button
+                class="pane-tab ${pane.key === active.key ? "active" : ""}"
+                role="tab"
+                aria-selected=${pane.key === active.key ? "true" : "false"}
+                @click=${() => this._selectPairedPane(pane.key)}
+              >
+                <ha-icon icon=${pane.icon}></ha-icon>
+                <span>${pane.label}</span>
+                ${this._connectionDot(pane.bed)}
+              </button>
+            `,
+          )}
+        </div>
+        <div class="pane" role="tabpanel" aria-label=${active.label}>
+          ${this._renderSections(active.bed)}
+        </div>
       </ha-card>
     `;
+  }
+
+  private _selectPairedPane(key: string): void {
+    if (this._activePairedPane === key) return;
+    this._activePairedPane = key;
+    // Save mode is intentionally local to the visible side. Leaving a side
+    // cancels it so returning later can never expose a stale destructive mode.
+    this._saveModeFor = undefined;
+  }
+
+  private _connectionDot(bed: BedEntities): typeof nothing | TemplateResult {
+    if (!bed.connectivity) return nothing;
+    const state = this._state(bed.connectivity);
+    const status =
+      state?.state === "on"
+        ? "connected"
+        : state?.attributes?.state_detail === "idle"
+          ? "idle"
+          : "disconnected";
+    return html`<span
+      class="connection-dot ${status}"
+      title=${localize(this.hass, `status.${status}`)}
+    ></span>`;
   }
 
   private _deviceLabel(id: string): string {
@@ -233,7 +300,7 @@ export class AdjustableBedCard extends LitElement {
 
   // ---- sections -----------------------------------------------------------
 
-  private _header(bed: BedEntities): TemplateResult {
+  private _header(bed: BedEntities, titleDeviceId?: string): TemplateResult {
     // Three connectivity states. "idle" means the bed intentionally dropped the
     // BLE link (idle timeout / manual disconnect) and reconnects on demand on the
     // next command — surfaced via the sensor's `state_detail` attribute (issue
@@ -254,7 +321,7 @@ export class AdjustableBedCard extends LitElement {
     return html`
       <div class="header">
         <ha-icon class="header-icon" icon="mdi:bed-king-outline"></ha-icon>
-        <span class="title">${this._title()}</span>
+        <span class="title">${this._title(titleDeviceId)}</span>
         ${
           conn === undefined
             ? nothing
@@ -333,7 +400,7 @@ export class AdjustableBedCard extends LitElement {
         bed.stop
           ? html`<button class="stop-all" @click=${() => this._press(bed.stop!)}>
               <ha-icon icon="mdi:stop"></ha-icon>
-              <span>${this._name(bed.stop)}</span>
+              <span>${localize(this.hass, "action.stop_all")}</span>
             </button>`
           : nothing
       }
@@ -360,7 +427,7 @@ export class AdjustableBedCard extends LitElement {
     return html`
       <div class="row">
         <div class="row-label">
-          <span>${this._name(m.cover ?? m.up ?? m.down ?? m.angle ?? m.key)}</span>
+          <span>${this._motorName(m)}</span>
           ${readout ? html`<span class="readout">${readout}</span>` : nothing}
         </div>
         <div class="control-group">
@@ -651,15 +718,13 @@ export class AdjustableBedCard extends LitElement {
     return this.hass?.states[entityId];
   }
 
-  private _title(): string {
+  private _title(deviceId?: string): string {
     if (this._config?.name) return this._config.name;
-    return this._deviceName() ?? localize(this.hass, "card.default_name");
+    return this._deviceName(deviceId) ?? localize(this.hass, "card.default_name");
   }
 
-  private _deviceName(): string | undefined {
-    const dev = this._config?.device_id
-      ? this.hass?.devices[this._config.device_id]
-      : undefined;
+  private _deviceName(deviceId = this._config?.device_id): string | undefined {
+    const dev = deviceId ? this.hass?.devices[deviceId] : undefined;
     return dev?.name_by_user || dev?.name || undefined;
   }
 
@@ -670,11 +735,25 @@ export class AdjustableBedCard extends LitElement {
       this._state(entityId)?.attributes.friendly_name ??
       this.hass?.entities[entityId]?.name ??
       entityId;
-    const device = this._deviceName();
+    // Use the entity's own device, not the card's configured device. This is
+    // essential for paired beds where the visible controls may belong to the
+    // parent, left child, or right child.
+    const entityDeviceId = this.hass?.entities[entityId]?.device_id;
+    const device = this._deviceName(entityDeviceId);
     if (device && friendly.startsWith(device + " ")) {
       return friendly.slice(device.length + 1);
     }
     return friendly;
+  }
+
+  private _motorName(m: MotorEntity): string {
+    const key = `motor.${m.key}`;
+    const translated = localize(this.hass, key);
+    if (translated !== key) return translated;
+    return m.key
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
   }
 
   private _angle(m: MotorEntity): number | undefined {
@@ -861,15 +940,81 @@ export class AdjustableBedCard extends LitElement {
       color: var(--secondary-text-color);
       padding: 14px 4px 8px;
     }
-    .side + .side {
-      border-top: 1px solid var(--divider-color, rgba(127, 127, 127, 0.2));
-      margin-top: 12px;
+    .pane-tabs {
+      display: grid;
+      grid-template-columns: repeat(var(--pane-count, 3), minmax(0, 1fr));
+      gap: 4px;
+      padding: 4px;
+      margin: 0 0 6px;
+      border-radius: 14px;
+      background: var(--secondary-background-color);
     }
-    .side-label {
-      font-size: 0.95rem;
-      font-weight: 600;
+    .pane-tab {
+      min-width: 0;
+      height: 42px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .pane-tab ha-icon {
+      --mdc-icon-size: 19px;
+      flex: none;
+    }
+    .pane-tab span:not(.connection-dot) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pane-tab:hover {
       color: var(--primary-text-color);
-      padding: 12px 4px 2px;
+    }
+    .pane-tab.active {
+      color: var(--primary-text-color);
+      background: var(--card-background-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+    }
+    .connection-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--disabled-text-color);
+      flex: none;
+    }
+    .connection-dot.connected {
+      background: var(--success-color, var(--state-active-color, #43a047));
+    }
+    .connection-dot.idle {
+      background: var(--info-color, var(--secondary-text-color));
+    }
+    .connection-dot.disconnected {
+      background: var(--error-color);
+    }
+    .pane {
+      animation: ab-pane-in 0.16s ease-out;
+    }
+    @keyframes ab-pane-in {
+      from {
+        opacity: 0;
+        transform: translateY(2px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     .heading-row {
       display: flex;
