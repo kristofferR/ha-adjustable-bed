@@ -12,6 +12,7 @@ import {
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import {
+  type BedGraphicTone,
   type DualBedGraphicSide,
   renderBedGraphic,
   renderDualBedGraphic,
@@ -43,6 +44,7 @@ interface PairedPane {
   label: string;
   icon: string;
   bed: BedEntities;
+  graphicTone?: BedGraphicTone;
 }
 
 interface BedGraphicState extends DualBedGraphicSide {
@@ -149,10 +151,12 @@ export class AdjustableBedCard extends LitElement {
   // each per-side block of a paired bed).
   private _renderSections(
     bed: BedEntities,
+    graphicTone: BedGraphicTone = "theme",
   ): (typeof nothing | TemplateResult)[] {
     const c = this._config!;
     const render: Record<string, () => typeof nothing | TemplateResult> = {
-      graphic: () => (c.show_graphic !== false ? this._graphic(bed) : nothing),
+      graphic: () =>
+        c.show_graphic !== false ? this._graphic(bed, graphicTone) : nothing,
       motors: () => (c.show_motors !== false ? this._motors(bed) : nothing),
       firmness: () => (c.show_firmness !== false ? this._firmness(bed) : nothing),
       presets: () => (c.show_presets !== false ? this._presets(bed) : nothing),
@@ -172,11 +176,12 @@ export class AdjustableBedCard extends LitElement {
   private _renderPaired(parentId: string, childIds: string[]): TemplateResult {
     const hass = this.hass!;
     const parentBed = bedEntitiesForDevice(hass, parentId);
-    const sides = childIds.map((id) => ({
+    const sides = childIds.map((id, index) => ({
       key: id,
       label: this._deviceLabel(id),
       icon: "mdi:bed-single-outline",
       bed: bedEntitiesForDevice(hass, id),
+      graphicTone: index === 0 ? ("left" as const) : ("right" as const),
     }));
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
       this._collectWatched(b),
@@ -223,12 +228,14 @@ export class AdjustableBedCard extends LitElement {
         label: localize(hass, "card.left_side"),
         icon: "mdi:bed-single-outline",
         bed: beds.left,
+        graphicTone: "left",
       },
       {
         key: "right",
         label: localize(hass, "card.right_side"),
         icon: "mdi:bed-single-outline",
         bed: beds.right,
+        graphicTone: "right",
       },
     ]);
   }
@@ -269,7 +276,7 @@ export class AdjustableBedCard extends LitElement {
           ${combined && this._config?.show_graphic !== false
             ? this._pairedOverview(sidePanes)
             : nothing}
-          ${this._renderSections(active.bed)}
+          ${this._renderSections(active.bed, active.graphicTone)}
           ${combined && this._config?.show_lighting !== false
             ? this._combinedLighting(active.bed, sidePanes)
             : nothing}
@@ -507,12 +514,15 @@ export class AdjustableBedCard extends LitElement {
     `;
   }
 
-  private _graphic(bed: BedEntities): typeof nothing | TemplateResult {
+  private _graphic(
+    bed: BedEntities,
+    tone: BedGraphicTone = "theme",
+  ): typeof nothing | TemplateResult {
     const graphic = this._graphicState(bed);
     if (!graphic) return nothing;
     return html`
       <div class="graphic">
-        ${renderBedGraphic(graphic)}
+        ${renderBedGraphic(graphic, tone)}
       </div>
     `;
   }
@@ -1074,8 +1084,8 @@ export class AdjustableBedCard extends LitElement {
   static override styles = css`
     :host {
       --ab-gap: 10px;
-      --ab-side-left-rgb: 33, 150, 243;
-      --ab-side-right-rgb: 244, 67, 54;
+      --ab-side-left-rgb: 75, 0, 255;
+      --ab-side-right-rgb: 234, 65, 65;
     }
     ha-card {
       padding: 12px 12px 16px;
@@ -1256,12 +1266,64 @@ export class AdjustableBedCard extends LitElement {
     }
     .bed-graphic {
       width: 100%;
-      max-width: 320px;
+      max-width: 350px;
       height: auto;
       overflow: visible;
     }
+    .bed-graphic-theme {
+      --ab-graphic-rgb: var(--rgb-primary-color, 33, 150, 243);
+    }
+    .bed-graphic-left {
+      --ab-graphic-rgb: var(--ab-side-left-rgb);
+    }
+    .bed-graphic-right {
+      --ab-graphic-rgb: var(--ab-side-right-rgb);
+    }
     .bed-graphic.is-moving {
       animation: ab-pulse 2s ease-in-out infinite;
+    }
+    .bed-frame-stop {
+      stop-color: var(--secondary-text-color);
+    }
+    .bed-graphic-theme .bed-mattress-stop {
+      stop-color: rgb(var(--rgb-primary-color, 33, 150, 243));
+    }
+    .bed-graphic-left .bed-mattress-stop,
+    .dual-bed-left-stop {
+      stop-color: rgb(var(--ab-side-left-rgb));
+    }
+    .bed-graphic-right .bed-mattress-stop,
+    .dual-bed-right-stop {
+      stop-color: rgb(var(--ab-side-right-rgb));
+    }
+    .bed-frame,
+    .dual-bed-frame {
+      opacity: 0.78;
+      stroke: var(--primary-text-color);
+      stroke-opacity: 0.14;
+      stroke-width: 1px;
+      vector-effect: non-scaling-stroke;
+    }
+    .bed-side-layer {
+      opacity: 0.86;
+    }
+    .bed-graphic-left .bed-side-layer,
+    .bed-graphic-right .bed-side-layer {
+      opacity: 0.66;
+    }
+    .bed-surface,
+    .dual-bed-surface {
+      stroke: var(--primary-text-color);
+      stroke-opacity: 0.1;
+      stroke-width: 1px;
+      vector-effect: non-scaling-stroke;
+    }
+    .bed-pillow,
+    .dual-bed-pillow {
+      opacity: 0.9;
+    }
+    .bed-panel {
+      transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
     }
     .bed-graphic-label {
       fill: var(--secondary-text-color);
@@ -1272,27 +1334,10 @@ export class AdjustableBedCard extends LitElement {
       padding-top: 8px;
     }
     .dual-bed-graphic {
-      max-width: 350px;
       isolation: isolate;
     }
-    .dual-bed-frame {
-      fill: var(--divider-color, rgba(127, 127, 127, 0.35));
-    }
     .dual-bed-side {
-      opacity: 0.68;
-      mix-blend-mode: screen;
-    }
-    .dual-bed-side-left rect {
-      fill: rgb(var(--ab-side-left-rgb));
-    }
-    .dual-bed-side-right rect {
-      fill: rgb(var(--ab-side-right-rgb));
-    }
-    .dual-bed-side .dual-bed-base {
-      opacity: 0.38;
-    }
-    .dual-bed-side .dual-bed-pillow {
-      opacity: 0.92;
+      opacity: 0.66;
     }
     .dual-bed-panel {
       transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -1346,10 +1391,10 @@ export class AdjustableBedCard extends LitElement {
     @keyframes ab-pulse {
       0%,
       100% {
-        filter: drop-shadow(0 0 3px rgba(var(--rgb-primary-color, 33, 150, 243), 0.25));
+        filter: drop-shadow(0 0 3px rgba(var(--ab-graphic-rgb), 0.25));
       }
       50% {
-        filter: drop-shadow(0 0 10px rgba(var(--rgb-primary-color, 33, 150, 243), 0.55));
+        filter: drop-shadow(0 0 10px rgba(var(--ab-graphic-rgb), 0.55));
       }
     }
     @keyframes ab-side-pulse {
