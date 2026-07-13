@@ -1349,16 +1349,19 @@ export class AdjustableBedCard extends LitElement {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      margin: -2px 4px 2px;
+      width: min(100%, 350px);
+      margin: -2px auto 2px;
     }
     .dual-readout {
       min-width: 0;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 3px;
       padding: 8px 10px;
       border-radius: 10px;
       background: var(--secondary-background-color);
+      text-align: center;
     }
     .dual-side-name {
       display: flex;
