@@ -2465,6 +2465,44 @@ class TestSensorEntities:
         # With 2 motors, should have back_angle and legs_angle sensors
         assert len(sensor_states) == 2
 
+    async def test_non_feedback_bed_creates_no_angle_sensors_when_enabled(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Protocols without angle feedback must not expose dead angle entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Richmat Bed Without Feedback",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:28",
+                CONF_NAME: "Richmat Bed Without Feedback",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:28",
+            entry_id="richmat_no_angle_sensor_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        for axis in ("back", "legs"):
+            assert (
+                registry.async_get_entity_id(
+                    "sensor", DOMAIN, f"AA:BB:CC:DD:EE:28_{axis}_angle"
+                )
+                is None
+            )
+
     async def test_okin_cst_angle_sensors_only_include_back_and_legs(
         self,
         hass: HomeAssistant,

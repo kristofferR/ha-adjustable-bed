@@ -162,6 +162,12 @@ from .pairing import (
     supports_single_address_pairing,
     with_updated_child,
 )
+from .pairing_candidates import (
+    CONF_PAIR_SELECTION,
+    active_pairing_candidates,
+    build_pair_selection_schema,
+    selected_pair_ids,
+)
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
@@ -1460,18 +1466,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         existing pair (a stale/imported duplicate) — combining it again would
         create a second pair sharing the same child {address}_{key} unique IDs.
         """
-        return [
-            entry
-            for entry in self.hass.config_entries.async_entries(DOMAIN)
-            if not is_paired(entry.data)
-            and entry.data.get(CONF_ADDRESS)
-            and not self._is_absorbed_pair_member(entry.data[CONF_ADDRESS])
-            # Only fully-loaded beds: a bed still in SETUP_RETRY / failed initial
-            # setup hasn't registered its entities yet, so _has_unpairable_entities
-            # can't see climate/light/select it would later expose (which a pair
-            # doesn't forward and would drop).
-            and entry.state == ConfigEntryState.LOADED
-        ]
+        # Only fully-loaded beds are returned: a bed still in SETUP_RETRY or
+        # failed initial setup has not registered its entities yet, so later
+        # compatibility checks cannot safely inspect its capabilities.
+        return active_pairing_candidates(self.hass)
 
     async def async_step_pair_beds(
         self, user_input: dict[str, Any] | None = None
@@ -1494,20 +1492,21 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            left = by_id.get(user_input["left_entry"])
-            right = by_id.get(user_input["right_entry"])
+            selected_ids = selected_pair_ids(user_input)
+            left = by_id.get(selected_ids[0]) if selected_ids is not None else None
+            right = by_id.get(selected_ids[1]) if selected_ids is not None else None
             left_layout = await self._pair_layout_snapshot(left) if left is not None else None
             right_layout = await self._pair_layout_snapshot(right) if right is not None else None
             if left is None or right is None:
                 errors["base"] = "unknown"
             elif left.entry_id == right.entry_id:
-                errors["right_entry"] = "same_device"
+                errors[CONF_PAIR_SELECTION] = "same_device"
             elif (left.data.get(CONF_ADDRESS) or "").upper() == (
                 right.data.get(CONF_ADDRESS) or ""
             ).upper():
                 # Two distinct entries for the same MAC would build children with
                 # identical addresses and so collide on {address}_{key} unique IDs.
-                errors["right_entry"] = "same_address"
+                errors[CONF_PAIR_SELECTION] = "same_address"
             elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(right):
                 # Compare RESOLVED bed types: two legacy leggett_platt entries with
                 # DIFFERENT explicit variants (gen2 vs mlrm) are different concrete
@@ -1583,22 +1582,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 return self.async_create_entry(title=name, data=pair_data)
 
-        options = [
-            SelectOptionDict(value=entry.entry_id, label=entry.title or entry.entry_id)
-            for entry in entries
-        ]
-        side_selector = SelectSelector(
-            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
-        )
         return self.async_show_form(
             step_id="pair_beds",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("left_entry"): side_selector,
-                    vol.Required("right_entry"): side_selector,
-                    vol.Optional(CONF_NAME): str,
-                }
-            ),
+            data_schema=build_pair_selection_schema(entries),
             errors=errors,
         )
 

@@ -8,6 +8,7 @@ no manual HACS/Lovelace resource needed, in both storage and YAML dashboards.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -33,11 +34,14 @@ def _dist_dir() -> Path:
     return Path(__file__).parent / "frontend" / "dist"
 
 
-def _gather() -> tuple[bool, str]:
+def _gather() -> tuple[bool, str, str]:
     """Run blocking filesystem work off the event loop.
 
-    Returns whether the bundle exists and the integration version (used to
-    cache-bust the module URL when users upgrade).
+    Return bundle availability, integration version, and a module cache key.
+
+    Including the bundle digest matters when a user reinstalls or develops the
+    same integration version: the browser must not keep executing an older card
+    just because the manifest version stayed unchanged.
     """
     card = _dist_dir() / CARD_FILENAME
     exists = card.is_file()
@@ -49,7 +53,14 @@ def _gather() -> tuple[bool, str]:
         version = str(manifest.get("version", "dev"))
     except (OSError, ValueError):  # pragma: no cover - defensive
         pass
-    return exists, version
+    cache_key = version
+    if exists:
+        try:
+            digest = hashlib.sha256(card.read_bytes()).hexdigest()[:12]
+            cache_key = f"{version}-{digest}"
+        except OSError:  # pragma: no cover - file disappeared after is_file()
+            pass
+    return exists, version, cache_key
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
@@ -66,7 +77,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     # (and potentially double-registering) attempts across entry setups.
     data[DATA_FRONTEND_REGISTERED] = True
 
-    exists, version = await hass.async_add_executor_job(_gather)
+    exists, version, cache_key = await hass.async_add_executor_job(_gather)
     if not exists:
         _LOGGER.warning(
             "Adjustable Bed card bundle missing at %s; build it with "
@@ -80,7 +91,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(URL_BASE, str(_dist_dir()), False)]
         )
-        add_extra_js_url(hass, f"{URL_BASE}/{CARD_FILENAME}?v={version}")
+        add_extra_js_url(hass, f"{URL_BASE}/{CARD_FILENAME}?v={cache_key}")
     except Exception:  # noqa: BLE001 - never let the card break setup
         _LOGGER.warning(
             "Could not register the Adjustable Bed Lovelace card; bed control is "

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -67,6 +68,11 @@ from custom_components.adjustable_bed.pairing import (
     is_paired,
     octo_snapshot_from_descriptor,
     pair_member_addresses,
+)
+from custom_components.adjustable_bed.pairing_candidates import (
+    CONF_PAIR_SELECTION,
+    decode_pair_selection,
+    encode_pair_selection,
 )
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
@@ -632,8 +638,9 @@ class TestPairBedsConversion:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                "left_entry": left.entry_id,
-                "right_entry": right.entry_id,
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                ),
                 CONF_NAME: "Master Bed",
             },
         )
@@ -647,6 +654,46 @@ class TestPairBedsConversion:
         paired = [entry for entry in remaining if is_paired(entry.data)]
         assert len(paired) == 1
         assert set(pair_member_addresses(paired[0].data)) == {LEFT_ADDR, RIGHT_ADDR}
+
+    async def test_pair_form_defaults_to_distinct_beds_and_cannot_select_same_bed(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """The side picker starts valid and only offers distinct assignments."""
+        left = self._single(hass, LEFT_ADDR, "Seng")
+        right = self._single(hass, RIGHT_ADDR, "Bed 4587")
+
+        result = await self._reach_pair_step(hass)
+        schema = result.get("data_schema")
+        assert schema is not None
+        defaults = schema({})
+        assert isinstance(defaults, dict)
+
+        assert decode_pair_selection(defaults[CONF_PAIR_SELECTION]) == (
+            left.entry_id,
+            right.entry_id,
+        )
+        reversed_assignment = schema(
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    right.entry_id, left.entry_id
+                )
+            }
+        )
+        assert isinstance(reversed_assignment, dict)
+        assert reversed_assignment[CONF_PAIR_SELECTION] == encode_pair_selection(
+            right.entry_id, left.entry_id
+        )
+        with pytest.raises(vol.Invalid):
+            schema(
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, left.entry_id
+                    )
+                }
+            )
 
     async def test_pairing_blocked_for_unsafe_offline_platform_entities(
         self,
@@ -669,7 +716,11 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                )
+            },
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "pairing_unsupported_entities"
@@ -702,10 +753,14 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                )
+            },
         )
         assert result["type"] == FlowResultType.FORM
-        assert result["errors"].get("right_entry") == "same_address"
+        assert result["errors"].get(CONF_PAIR_SELECTION) == "same_address"
 
     async def test_pairing_preserves_angle_options(
         self,
@@ -724,7 +779,11 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                )
+            },
         )
         await hass.async_block_till_done()
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -751,7 +810,11 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": left.entry_id, "right_entry": right.entry_id},
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                )
+            },
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "mismatched_motor_layouts"
@@ -780,7 +843,7 @@ class TestPairBedsConversion:
         assert len(entries) >= 2  # keep the real assertion below diagnostic
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": entries[0], "right_entry": entries[1]},
+            {CONF_PAIR_SELECTION: encode_pair_selection(entries[0], entries[1])},
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "octo_pairing_needs_connection"
@@ -853,7 +916,11 @@ class TestPairBedsConversion:
         result = await self._reach_pair_step(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {"left_entry": standard.entry_id, "right_entry": star2.entry_id},
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    standard.entry_id, star2.entry_id
+                )
+            },
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY
 
@@ -1080,16 +1147,20 @@ class TestPairBedsConversion:
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedConfigFlow,
+        )
+
         left = self._single(hass, LEFT_ADDR, "Seng")
         self._single(hass, RIGHT_ADDR, "Bed 4587")
 
-        result = await self._reach_pair_step(hass)
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        result = await flow.async_step_pair_beds(
             {"left_entry": left.entry_id, "right_entry": left.entry_id},
         )
         assert result["type"] == FlowResultType.FORM
-        assert result["errors"]
+        assert result["errors"][CONF_PAIR_SELECTION] == "same_device"
 
     async def test_conversion_rehomes_rows_preserving_history(
         self,
@@ -1132,8 +1203,9 @@ class TestPairBedsConversion:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                "left_entry": left.entry_id,
-                "right_entry": right.entry_id,
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                ),
                 CONF_NAME: "Master Bed",
             },
         )
@@ -1235,7 +1307,11 @@ class TestPairBedsConversion:
         ):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, right.entry_id
+                    )
+                },
             )
             await hass.async_block_till_done()
 
@@ -1290,7 +1366,11 @@ class TestPairBedsConversion:
         with patch.object(hass.config_entries, "async_remove", _failing_remove):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, right.entry_id
+                    )
+                },
             )
             await hass.async_block_till_done()
 
@@ -1343,7 +1423,11 @@ class TestPairBedsConversion:
         ):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, right.entry_id
+                    )
+                },
             )
             await hass.async_block_till_done()
 
@@ -1437,7 +1521,11 @@ class TestPairBedsConversion:
         with patch.object(AdjustableBedCoordinator, "async_connect", fake_connect):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, right.entry_id
+                    )
+                },
             )
             await hass.async_block_till_done()
 
@@ -1493,7 +1581,11 @@ class TestPairBedsConversion:
         ):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {"left_entry": left.entry_id, "right_entry": right.entry_id},
+                {
+                    CONF_PAIR_SELECTION: encode_pair_selection(
+                        left.entry_id, right.entry_id
+                    )
+                },
             )
             await hass.async_block_till_done()
 

@@ -92,6 +92,11 @@ from .pairing import (
     single_options_from_child,
     with_updated_child,
 )
+from .repairs import (
+    async_refresh_combine_beds_issue,
+    async_setup_combine_beds_issue,
+    async_track_combine_beds_issue,
+)
 from .unsupported import (
     async_clear_unsupported_device_issues,
     create_pairing_required_issue,
@@ -179,6 +184,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Clear obsolete "unsupported BLE device" Repairs issues from older versions
     # that nagged about every discovered non-bed device (feature removed).
     async_clear_unsupported_device_issues(hass)
+    async_setup_combine_beds_issue(hass)
 
     from .download import SupportBundleDownloadView
 
@@ -1024,6 +1030,7 @@ async def _maybe_create_pairing_issue_for(
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+    async_track_combine_beds_issue(hass, entry)
     await _async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
@@ -2320,6 +2327,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Refresh the pairing suggestion after a config entry is removed."""
+    hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
