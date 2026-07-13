@@ -370,40 +370,38 @@ export class AdjustableBedCard extends LitElement {
     return html`
       <div class="dual-sync-row">
         <ha-icon icon="mdi:sync"></ha-icon>
-        <div class="dual-sync-copy">
-          <span>${localize(this.hass, "sync.label")}</span>
-          <span>${localize(this.hass, "sync.hint")}</span>
-        </div>
-        <div class="dual-sync-select">
-          <select
-            aria-label=${localize(this.hass, "sync.label")}
-            .value=${""}
-            ?disabled=${busy}
-            @change=${(event: Event) => {
-              const value = (event.currentTarget as HTMLSelectElement).value;
-              if (value === "left" || value === "right") {
-                void this._synchronizePositions(
-                  parentDeviceId,
-                  left,
-                  right,
-                  value,
-                );
-              }
-            }}
+        <span class="dual-sync-label">${localize(this.hass, "sync.label")}</span>
+        <div class="dual-sync-actions">
+          <button
+            class="dual-sync-btn side-left ${
+              this._synchronizingTo === "left" ? "is-active" : ""
+            }"
+            aria-label="${localize(this.hass, "sync.label")} ${left.label}"
+            aria-busy=${this._synchronizingTo === "left" ? "true" : "false"}
+            ?disabled=${busy || leftPlan.length === 0}
+            @click=${() =>
+              void this._synchronizePositions(parentDeviceId, left, right, "left")}
           >
-            <option value="" disabled>
-              ${busy
-                ? localize(this.hass, "sync.running")
-                : localize(this.hass, "sync.choose")}
-            </option>
-            <option value="left" ?disabled=${leftPlan.length === 0}>
-              ${left.label}
-            </option>
-            <option value="right" ?disabled=${rightPlan.length === 0}>
-              ${right.label}
-            </option>
-          </select>
-          <ha-icon icon="mdi:chevron-down"></ha-icon>
+            ${this._synchronizingTo === "left"
+              ? html`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`
+              : html`<span class="dual-swatch"></span>`}
+            <span>${left.label}</span>
+          </button>
+          <button
+            class="dual-sync-btn side-right ${
+              this._synchronizingTo === "right" ? "is-active" : ""
+            }"
+            aria-label="${localize(this.hass, "sync.label")} ${right.label}"
+            aria-busy=${this._synchronizingTo === "right" ? "true" : "false"}
+            ?disabled=${busy || rightPlan.length === 0}
+            @click=${() =>
+              void this._synchronizePositions(parentDeviceId, left, right, "right")}
+          >
+            ${this._synchronizingTo === "right"
+              ? html`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`
+              : html`<span class="dual-swatch"></span>`}
+            <span>${right.label}</span>
+          </button>
         </div>
       </div>
     `;
@@ -1522,61 +1520,69 @@ export class AdjustableBedCard extends LitElement {
       color: var(--secondary-text-color);
       --mdc-icon-size: 19px;
     }
-    .dual-sync-copy {
+    .dual-sync-label {
       min-width: 0;
-      display: flex;
       flex: 1;
-      flex-direction: column;
-      gap: 2px;
       color: var(--primary-text-color);
       font-size: 0.78rem;
       font-weight: 600;
-    }
-    .dual-sync-copy span:last-child {
       overflow: hidden;
-      color: var(--secondary-text-color);
-      font-size: 0.68rem;
-      font-weight: 400;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .dual-sync-select {
-      position: relative;
-      min-width: 108px;
-      max-width: 46%;
+    .dual-sync-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      min-width: 148px;
+      max-width: 52%;
       flex: none;
     }
-    .dual-sync-select select {
-      box-sizing: border-box;
-      width: 100%;
+    .dual-sync-btn {
+      min-width: 0;
       height: 34px;
-      padding: 0 29px 0 10px;
-      appearance: none;
+      padding: 0 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       border: 1px solid var(--divider-color);
       border-radius: 9px;
-      outline: none;
       background: var(--secondary-background-color);
       color: var(--primary-text-color);
       font: inherit;
       font-size: 0.74rem;
+      font-weight: 500;
       cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
     }
-    .dual-sync-select select:focus-visible {
+    .dual-sync-btn:hover:not(:disabled),
+    .dual-sync-btn:focus-visible {
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
     }
-    .dual-sync-select select:disabled {
-      color: var(--disabled-text-color);
-      cursor: wait;
+    .dual-sync-btn:disabled {
+      cursor: default;
+      opacity: 0.42;
     }
-    .dual-sync-select ha-icon {
-      position: absolute;
-      top: 50%;
-      right: 7px;
-      color: var(--secondary-text-color);
-      pointer-events: none;
-      transform: translateY(-50%);
-      --mdc-icon-size: 17px;
+    .dual-sync-btn.is-active {
+      opacity: 1;
+      border-color: var(--primary-color);
+      background: var(--secondary-background-color);
+    }
+    .dual-sync-btn span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dual-sync-spinner {
+      flex: none;
+      animation: ab-spin 0.8s linear infinite;
+      --mdc-icon-size: 15px;
+    }
+    @keyframes ab-spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
     @keyframes ab-pulse {
       0%,
