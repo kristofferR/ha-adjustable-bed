@@ -165,7 +165,7 @@ from .pairing import (
 from .pairing_candidates import (
     CONF_PAIR_SELECTION,
     active_pairing_candidates,
-    ordered_pair_options,
+    build_pair_selection_schema,
     selected_pair_ids,
 )
 from .unsupported import (
@@ -1582,24 +1582,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
                 return self.async_create_entry(title=name, data=pair_data)
 
-        pair_options = ordered_pair_options(entries)
-        pair_selector = SelectSelector(
-            SelectSelectorConfig(
-                options=pair_options,
-                mode=SelectSelectorMode.DROPDOWN,
-            )
-        )
         return self.async_show_form(
             step_id="pair_beds",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_PAIR_SELECTION,
-                        default=pair_options[0]["value"],
-                    ): pair_selector,
-                    vol.Optional(CONF_NAME): str,
-                }
-            ),
+            data_schema=build_pair_selection_schema(entries),
             errors=errors,
         )
 

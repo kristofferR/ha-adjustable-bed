@@ -73,6 +73,7 @@ export class AdjustableBedCard extends LitElement {
   // separate from commands for an individual side.
   @state() private _activePairedPane = "both";
   @state() private _synchronizingTo?: SynchronizeSide;
+  @state() private _synchronizationFailed = false;
 
   private _watched: string[] = [];
 
@@ -105,7 +106,8 @@ export class AdjustableBedCard extends LitElement {
       changed.has("_config") ||
       changed.has("_saveModeFor") ||
       changed.has("_activePairedPane") ||
-      changed.has("_synchronizingTo")
+      changed.has("_synchronizingTo") ||
+      changed.has("_synchronizationFailed")
     )
       return true;
     if (!changed.has("hass") || !this.hass) return true;
@@ -299,6 +301,7 @@ export class AdjustableBedCard extends LitElement {
     // Save mode is intentionally local to the visible side. Leaving a side
     // cancels it so returning later can never expose a stale destructive mode.
     this._saveModeFor = undefined;
+    this._synchronizationFailed = false;
   }
 
   private _connectionStatus(bed: BedEntities): ConnectionStatus | undefined {
@@ -404,6 +407,12 @@ export class AdjustableBedCard extends LitElement {
           </button>
         </div>
       </div>
+      ${this._synchronizationFailed
+        ? html`<div class="dual-sync-error" role="status">
+            <ha-icon icon="mdi:alert-circle-outline"></ha-icon>
+            <span>${localize(this.hass, "sync.incomplete")}</span>
+          </div>`
+        : nothing}
     `;
   }
 
@@ -458,17 +467,21 @@ export class AdjustableBedCard extends LitElement {
     if (plan.length === 0) return;
 
     this._synchronizingTo = sourceSide;
+    this._synchronizationFailed = false;
     try {
-      for (const item of plan) {
-        await this.hass.callService(PLATFORM, "set_position", {
-          device_id: [parentDeviceId],
-          motor: item.motor,
-          position: item.position,
-          side: targetSide,
-        });
-      }
-    } catch {
-      // Home Assistant surfaces service errors through its own notification UI.
+      const results = await Promise.allSettled(
+        plan.map((item) =>
+          this.hass!.callService(PLATFORM, "set_position", {
+            device_id: [parentDeviceId],
+            motor: item.motor,
+            position: item.position,
+            side: targetSide,
+          }),
+        ),
+      );
+      this._synchronizationFailed = results.some(
+        (result) => result.status === "rejected",
+      );
     } finally {
       this._synchronizingTo = undefined;
     }
@@ -1598,6 +1611,23 @@ export class AdjustableBedCard extends LitElement {
       flex: none;
       animation: ab-spin 0.8s linear infinite;
       --mdc-icon-size: 15px;
+    }
+    .dual-sync-error {
+      box-sizing: border-box;
+      width: min(100%, 350px);
+      margin: 5px auto 2px;
+      padding: 6px 9px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--error-color) 12%, transparent);
+      color: var(--error-color);
+      font-size: 0.72rem;
+    }
+    .dual-sync-error ha-icon {
+      flex: none;
+      --mdc-icon-size: 16px;
     }
     @keyframes ab-spin {
       to {

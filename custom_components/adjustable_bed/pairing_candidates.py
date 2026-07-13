@@ -6,10 +6,16 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.selector import SelectOptionDict
+from homeassistant.helpers.selector import (
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import DOMAIN
 from .pairing import is_paired, pair_member_addresses
@@ -78,6 +84,23 @@ def ordered_pair_options(entries: list[ConfigEntry]) -> list[SelectOptionDict]:
         for right in entries
         if left.entry_id != right.entry_id
     ]
+
+
+def build_pair_selection_schema(entries: list[ConfigEntry]) -> vol.Schema:
+    """Build the shared ordered-pair picker used by config and repair flows."""
+    options = ordered_pair_options(entries)
+    pair_selector = SelectSelector(
+        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+    )
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_PAIR_SELECTION,
+                default=options[0]["value"],
+            ): pair_selector,
+            vol.Optional(CONF_NAME): str,
+        }
+    )
 
 
 def selected_pair_ids(user_input: Mapping[str, Any]) -> tuple[str, str] | None:

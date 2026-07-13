@@ -59,5 +59,6 @@
   "combined.on": "På",
   "combined.off": "Av",
   "combined.mixed": "Én side på",
-  "sync.label": "Synkroniser begge til"
+  "sync.label": "Synkroniser begge til",
+  "sync.incomplete": "Noen posisjoner kunne ikke synkroniseres."
 }

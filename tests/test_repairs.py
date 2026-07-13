@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from bleak.exc import BleakError
 from homeassistant.components.repairs import repairs_flow_manager
@@ -270,6 +270,64 @@ async def test_combine_repair_flow_delegates_creation_to_config_flow(
             CONF_NAME: "Combined",
         },
     )
+
+
+async def test_combine_repair_reuses_nested_flow_after_validation_error(
+    hass: HomeAssistant,
+) -> None:
+    """A corrected submission continues the same delegated config flow."""
+    left = _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Left")
+    right = _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Right")
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+    config_form = {
+        "type": FlowResultType.FORM,
+        "flow_id": "config-flow-id",
+        "handler": DOMAIN,
+        "step_id": "pair_beds",
+    }
+    validation_error = {
+        **config_form,
+        "errors": {"base": "incompatible"},
+    }
+    config_created = {
+        "type": FlowResultType.CREATE_ENTRY,
+        "flow_id": "config-flow-id",
+        "handler": DOMAIN,
+        "title": "Combined",
+        "data": {},
+    }
+    pair_selection = encode_pair_selection(left.entry_id, right.entry_id)
+    invalid_input = {CONF_PAIR_SELECTION: pair_selection}
+    corrected_input = {
+        CONF_PAIR_SELECTION: pair_selection,
+        CONF_NAME: "Combined",
+    }
+
+    with (
+        patch.object(
+            hass.config_entries.flow,
+            "async_init",
+            new=AsyncMock(return_value=config_form),
+        ) as init,
+        patch.object(
+            hass.config_entries.flow,
+            "async_configure",
+            new=AsyncMock(side_effect=[validation_error, config_created]),
+        ) as configure,
+    ):
+        first = await flow.async_step_pair_beds(invalid_input)
+        second = await flow.async_step_pair_beds(corrected_input)
+
+    assert first["type"] is FlowResultType.FORM
+    assert first["errors"] == {"base": "incompatible"}
+    assert second["type"] is FlowResultType.CREATE_ENTRY
+    init.assert_awaited_once()
+    assert configure.await_args_list == [
+        call("config-flow-id", invalid_input),
+        call("config-flow-id", corrected_input),
+    ]
+    assert flow._pairing_flow_id is None
 
 
 async def test_async_create_fix_flow_builds_pairing_flow(hass: HomeAssistant) -> None:

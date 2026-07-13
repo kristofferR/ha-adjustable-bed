@@ -59,5 +59,6 @@
   "combined.on": "On",
   "combined.off": "Off",
   "combined.mixed": "One side on",
-  "sync.label": "Match both to"
+  "sync.label": "Match both to",
+  "sync.incomplete": "Some positions could not be synchronized."
 }

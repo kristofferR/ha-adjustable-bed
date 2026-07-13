@@ -9,18 +9,13 @@ import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow
 from homeassistant.config_entries import SOURCE_USER, ConfigEntry
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, EVENT_HOMEASSISTANT_STARTED
+from homeassistant.const import CONF_ADDRESS, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, Event, HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
     async_delete_issue,
-)
-from homeassistant.helpers.selector import (
-    SelectSelector,
-    SelectSelectorConfig,
-    SelectSelectorMode,
 )
 
 from .adapter import get_discovered_service_info
@@ -33,9 +28,8 @@ from .const import (
     DOMAIN,
 )
 from .pairing_candidates import (
-    CONF_PAIR_SELECTION,
     active_pairing_candidates,
-    ordered_pair_options,
+    build_pair_selection_schema,
 )
 
 if TYPE_CHECKING:
@@ -103,6 +97,10 @@ def async_track_combine_beds_issue(
 class CombineBedsRepairFlow(RepairsFlow):
     """Route a Repairs suggestion through the canonical pairing config flow."""
 
+    def __init__(self) -> None:
+        """Track the delegated config flow across validation retries."""
+        self._pairing_flow_id: str | None = None
+
     def _description_placeholders(self) -> dict[str, str]:
         """Describe the currently active candidates without exposing addresses."""
         candidates = active_pairing_candidates(self.hass)
@@ -113,18 +111,8 @@ class CombineBedsRepairFlow(RepairsFlow):
 
     def _schema(self) -> vol.Schema:
         """Build ordered side assignments without any same-bed choices."""
-        options = ordered_pair_options(active_pairing_candidates(self.hass))
-        pair_selector = SelectSelector(
-            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
-        )
-        return vol.Schema(
-            {
-                vol.Required(
-                    CONF_PAIR_SELECTION,
-                    default=options[0]["value"],
-                ): pair_selector,
-                vol.Optional(CONF_NAME): str,
-            }
+        return build_pair_selection_schema(
+            active_pairing_candidates(self.hass)
         )
 
     async def async_step_init(
@@ -140,6 +128,7 @@ class CombineBedsRepairFlow(RepairsFlow):
     ) -> FlowResult:
         """Select sides and delegate validation/creation to the config flow."""
         if len(active_pairing_candidates(self.hass)) < 2:
+            self._pairing_flow_id = None
             async_refresh_combine_beds_issue(self.hass)
             return self.async_abort(reason="not_enough_beds")
 
@@ -150,31 +139,38 @@ class CombineBedsRepairFlow(RepairsFlow):
                 description_placeholders=self._description_placeholders(),
             )
 
-        result = await self.hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": SOURCE_USER},
-            data={CONF_ADDRESS: "pair_beds"},
-        )
-        if (
-            result.get("type") is not FlowResultType.FORM
-            or result.get("step_id") != "pair_beds"
-        ):
-            return self.async_abort(
-                reason=result.get("reason") or "pairing_flow_failed"
+        if self._pairing_flow_id is None:
+            result = await self.hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": SOURCE_USER},
+                data={CONF_ADDRESS: "pair_beds"},
             )
+            if (
+                result.get("type") is not FlowResultType.FORM
+                or result.get("step_id") != "pair_beds"
+            ):
+                return self.async_abort(
+                    reason=result.get("reason") or "pairing_flow_failed"
+                )
+            self._pairing_flow_id = result["flow_id"]
 
         result = await self.hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input
+            self._pairing_flow_id, user_input
         )
         if result.get("type") is FlowResultType.CREATE_ENTRY:
+            self._pairing_flow_id = None
             return self.async_create_entry(title="", data={})
         if result.get("type") is FlowResultType.FORM:
+            self._pairing_flow_id = (
+                result.get("flow_id") or self._pairing_flow_id
+            )
             return self.async_show_form(
                 step_id="pair_beds",
                 data_schema=result.get("data_schema") or self._schema(),
                 errors=result.get("errors"),
                 description_placeholders=self._description_placeholders(),
             )
+        self._pairing_flow_id = None
         return self.async_abort(reason=result.get("reason") or "pairing_flow_failed")
 
 

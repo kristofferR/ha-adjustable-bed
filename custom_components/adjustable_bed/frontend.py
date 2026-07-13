@@ -47,9 +47,11 @@ def _gather() -> tuple[bool, str, str]:
     exists = card.is_file()
     version = "dev"
     try:
-        manifest = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads(
+            (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
+        )
         version = str(manifest.get("version", "dev"))
-    except OSError, ValueError:  # pragma: no cover - defensive
+    except (OSError, ValueError):  # pragma: no cover - defensive
         pass
     cache_key = version
     if exists:
