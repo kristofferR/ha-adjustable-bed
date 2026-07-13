@@ -38,5 +38,6 @@
   "editor.show_lighting": "Lighting",
   "editor.show_massage": "Massage",
   "editor.show_climate": "Climate",
-  "editor.show_connection": "Connection controls"
+  "editor.show_connection": "Connection controls",
+  "card.both_sides": "Both sides"
 }

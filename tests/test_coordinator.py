@@ -1451,6 +1451,31 @@ class TestCoordinatorDisconnectTimer:
         assert coordinator._reconnect_timer is None
         assert coordinator._intentional_disconnect is False
 
+    async def test_disconnect_error_with_live_link_is_reported_and_retained(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A swallowed Bleak error cannot masquerade as a released link."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        mock_bleak_client.is_connected = True
+        mock_bleak_client.disconnect.side_effect = BleakError("link still active")
+
+        disconnected = await coordinator.async_disconnect("sequential_switch")
+
+        assert disconnected is False
+        assert coordinator._client is mock_bleak_client
+        assert coordinator.controller is controller
+        assert coordinator.is_connected is True
+
+        # Leave the shared fixture clean for teardown.
+        mock_bleak_client.disconnect.side_effect = None
+        mock_bleak_client.is_connected = False
+
     async def test_sleep_number_mcr_skips_disconnect_timer_on_connect(
         self,
         hass: HomeAssistant,

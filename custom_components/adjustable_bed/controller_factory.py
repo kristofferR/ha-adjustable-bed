@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 from .adapter import discover_services
 from .const import (
@@ -241,6 +242,7 @@ async def create_controller(
     ble_manufacturer: str | None = None,
     ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
+    capability_snapshot: Mapping[str, Any] | None = None,
 ) -> BedController:
     """Create the appropriate bed controller.
 
@@ -812,7 +814,9 @@ async def create_controller(
         else:
             # Default to standard Octo for all other cases
             _LOGGER.debug("Using standard Octo variant")
-            return OctoController(coordinator, pin=octo_pin)
+            return OctoController(
+                coordinator, pin=octo_pin, capability_snapshot=capability_snapshot
+            )
 
     if bed_type == BED_TYPE_MATTRESSFIRM:
         from .beds.okin_nordic import OkinNordicController

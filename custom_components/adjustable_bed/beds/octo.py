@@ -19,8 +19,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -37,6 +37,42 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Capability fields discovered post-connect (from CAP notifications) that gate
+# which entities exist. They are captured into a per-side snapshot at pairing and
+# restored when minting a client-free controller for an OFFLINE paired Octo side,
+# so its light/RGBW/memory/synchro entities match the live bed without a link.
+# Keys are the field names without the leading underscore (JSON-serialisable).
+_CAPABILITY_SNAPSHOT_KEYS: tuple[str, ...] = (
+    "has_pin",
+    "pin_locked",
+    "has_lights",
+    "has_rgbwi",
+    "rgbwi_value_type",
+    "memory_count",
+    "discovered_motor_count",
+    "has_synchro",
+)
+
+# A memory-recall ("go to position") move is a STREAM of MEMPOS commands, exactly
+# like the app: the bed only travels while the stream keeps arriving (verified
+# from the app — ControlView.goToPosition re-sends NORMAL_MOTOR_MEMPOS every
+# 350ms until the move is stopped). A single command would move the bed one
+# ~350ms step and stop. We re-send every OCTO_MEMPOS_STREAM_DELAY_MS up to
+# OCTO_MEMPOS_STREAM_REPEATS (≈ a full flat<->raised travel); streaming past the
+# target is a no-op (the bed is already there), and a STOP (cancel_event) ends it
+# early — then a STOP is sent, like the app does on release.
+OCTO_MEMPOS_STREAM_DELAY_MS = 350
+OCTO_MEMPOS_STREAM_REPEATS = 86  # ~30s at 350ms
+
+# SYSTEM packet bytes for the PIN state machine (command[0] for a from-device
+# SYSTEM packet is 0x21 = SYSTEM 0x20 | from-device, like the GET_CAPS response).
+# The bed PUSHES PIN_LOCK when it wants re-authentication, and PIN_STATE reports
+# the live lock state — the app reacts by re-sending the PIN immediately rather
+# than waiting for the next periodic keepalive.
+OCTO_SYSTEM_FROM_DEVICE = 0x21
+OCTO_SYSTEM_PIN_STATE = 0x43  # data[0] == 1 -> unlocked
+OCTO_SYSTEM_PIN_LOCK = 0x44  # -> re-send PIN now
 
 
 # Motor bit masks
@@ -79,17 +115,26 @@ OCTO_UNESCAPE_MAP: dict[int, int] = {v: k for k, v in OCTO_ESCAPE_MAP.items()}
 class OctoController(BedController):
     """Controller for Octo beds."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, pin: str = "") -> None:
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        pin: str = "",
+        capability_snapshot: Mapping[str, Any] | None = None,
+    ) -> None:
         """Initialize the Octo controller.
 
         Args:
             coordinator: The bed coordinator.
             pin: Optional PIN for authentication. Required for some Octo beds.
+            capability_snapshot: Capabilities captured at pairing, used to mint a
+                client-free controller for an OFFLINE paired side (no live
+                discovery). Ignored once a live discovery overwrites the fields.
         """
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         self._pin: str = pin
         self._keepalive_task: asyncio.Task[None] | None = None
+        self._pin_resend_task: asyncio.Task[None] | None = None
         self._notifications_started: bool = False  # Track if BLE notifications are active
 
         # Feature discovery state
@@ -108,10 +153,47 @@ class OctoController(BedController):
             asyncio.Event()
         )  # Set when 0xFFFFFF sentinel received
 
+        if capability_snapshot:
+            # Offline mint: pre-populate discovered capabilities so entity gating
+            # matches the live bed, and mark discovery "done" so nothing awaits a
+            # connection that will never happen for this client-free controller.
+            self._apply_capability_snapshot(capability_snapshot)
+            self._features_loaded.set()
+            self._features_complete.set()
+
         _LOGGER.debug(
-            "OctoController initialized (PIN %s)",
+            "OctoController initialized (PIN %s%s)",
             "configured" if pin else "not configured",
+            ", from capability snapshot" if capability_snapshot else "",
         )
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        """Return discovered capabilities as a JSON-serialisable snapshot to
+        persist for a paired side, or None if feature discovery has not
+        COMPLETED.
+
+        Discovery is only complete once the 0xFFFFFF CAP_END sentinel arrives
+        (``_features_complete`` is set, see ``_on_notification``) or the
+        controller was minted from a prior complete snapshot. The
+        ``discover_features`` timeout path fills compatibility defaults (e.g.
+        ``_has_lights=True``) but deliberately never sets ``_features_complete``
+        — so guarding on it prevents those fallback values from being persisted
+        over a real snapshot (or minting a reduced offline profile on reload).
+        """
+        if not self._features_complete.is_set():
+            return None
+        snap = {
+            key: getattr(self, f"_{key}") for key in _CAPABILITY_SNAPSHOT_KEYS
+        }
+        if all(value is None or value is False for value in snap.values()):
+            return None
+        return snap
+
+    def _apply_capability_snapshot(self, snap: Mapping[str, Any]) -> None:
+        """Restore capability fields from a persisted snapshot (offline mint)."""
+        for key in _CAPABILITY_SNAPSHOT_KEYS:
+            if key in snap:
+                setattr(self, f"_{key}", snap[key])
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -381,6 +463,32 @@ class OctoController(BedController):
                         "Drivemode set acknowledged: %s",
                         "sync" if self._synchro_active else "single",
                     )
+
+        # SYSTEM packets from the device (command[0] == 0x21): PIN state machine.
+        if command[0] == OCTO_SYSTEM_FROM_DEVICE and command[1] in (
+            OCTO_SYSTEM_PIN_LOCK,
+            OCTO_SYSTEM_PIN_STATE,
+        ):
+            self._handle_pin_notification(command[1], list(packet_data))
+
+    def _handle_pin_notification(self, command_byte: int, data: list[int]) -> None:
+        """React to the bed's PIN state machine like the app does: re-send the PIN
+        the instant the bed pushes a lock challenge (instead of waiting up to a
+        full keepalive interval), and track live lock state from PIN_STATE."""
+        if command_byte == OCTO_SYSTEM_PIN_LOCK:
+            _LOGGER.debug("Octo bed requested PIN re-authentication (PIN_LOCK)")
+            self._pin_locked = True
+            self._schedule_pin_resend()
+        elif command_byte == OCTO_SYSTEM_PIN_STATE:
+            # data[0] == 1 means the bed is unlocked (PIN accepted).
+            self._pin_locked = not (bool(data) and data[0] == 1)
+
+    def _schedule_pin_resend(self) -> None:
+        """Re-send the PIN from the (sync) notification callback, skipping if a
+        re-send is already in flight."""
+        if self._pin_resend_task is not None and not self._pin_resend_task.done():
+            return
+        self._pin_resend_task = asyncio.create_task(self.send_pin())
 
     async def write_command(
         self,
@@ -910,12 +1018,19 @@ class OctoController(BedController):
             )
             return
 
-        # Protocol uses 0-based slot index
+        # Protocol uses 0-based slot index. STREAM the command (the bed only
+        # travels while MEMPOS keeps arriving — a single shot moves one ~350ms
+        # step and stops), then STOP, mirroring the app's hold-to-recall.
         slot = memory_num - 1
-        await self._write_octo_command(
-            command=[0x02, 0x72],  # NORMAL packet, MOTOR_MEMPOS command
-            data=[slot],
-        )
+        try:
+            await self._write_octo_command(
+                command=[0x02, 0x72],  # NORMAL packet, MOTOR_MEMPOS command
+                data=[slot],
+                repeat_count=OCTO_MEMPOS_STREAM_REPEATS,
+                repeat_delay_ms=OCTO_MEMPOS_STREAM_DELAY_MS,
+            )
+        finally:
+            await self._stop_motors()
 
     async def program_memory(self, memory_num: int) -> None:
         """Save current position to memory slot.
@@ -1057,7 +1172,13 @@ class OctoController(BedController):
         self._keepalive_task = asyncio.create_task(self._keepalive_loop())
 
     async def stop_keepalive(self) -> None:
-        """Stop the keep-alive loop."""
+        """Stop the keep-alive loop (and any in-flight PIN re-send)."""
+        if self._pin_resend_task is not None:
+            self._pin_resend_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._pin_resend_task
+            self._pin_resend_task = None
+
         if self._keepalive_task is None:
             return
 

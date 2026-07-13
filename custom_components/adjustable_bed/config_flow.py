@@ -111,6 +111,8 @@ from .const import (
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
+    OCTO_VARIANT_STAR2,
+    OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
@@ -123,6 +125,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    resolve_explicit_bed_type,
     supports_passive_position_reconciliation,
 )
 from .detection import (
@@ -345,6 +348,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # Carries the finalized entry across the optional verify_connection step
         self._pending_entry: dict[str, Any] | None = None
         self._pending_title: str | None = None
+        # Octo capability snapshots captured per single-entry as the user connects
+        # each side, so a one-link Octo pair can be captured SEQUENTIALLY across
+        # resubmissions of the pair step (connect left, disconnect, connect right)
+        # — the flow instance persists, so a side captured while live stays
+        # available after it disconnects.
+        self._captured_octo_snapshots: dict[str, dict[str, Any]] = {}
         _LOGGER.debug("AdjustableBedConfigFlow initialized")
 
     def _prepare_disambiguation(self, detection_result: DetectionResult) -> bool:
@@ -545,17 +554,132 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 configured[member] = entry
         return configured
 
-    def _has_unpairable_entities(self, entry: ConfigEntry) -> bool:
-        """Whether ``entry`` exposes entities a pair can't recreate yet.
+    def _octo_capability_snapshot(self, entry: ConfigEntry) -> dict | None:
+        """Capability snapshot for a single Octo entry — its LIVE controller's, or
+        the one cached earlier this flow, or None (not Octo / never connected).
 
-        Paired setup forwards binary_sensor/button/cover/number/sensor/switch.
-        A bed with climate/light/select entities would lose them on conversion,
-        so block pairing for those rather than silently dropping them.
+        Octo discovers its capabilities post-connect, and a one-link Octo only ever
+        has ONE side connected at a time, so we cache each side's snapshot the
+        moment it is live and fall back to that cache when it later disconnects.
+        That lets the user capture both sides SEQUENTIALLY (connect left, disconnect,
+        connect right) across resubmissions of the pair step instead of needing both
+        connected at once — which the single-connection profile is designed to avoid.
         """
+        if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
+            return None
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        snapshot_fn = getattr(getattr(coordinator, "controller", None), "capability_snapshot", None)
+        live = snapshot_fn() if callable(snapshot_fn) else None
+        if isinstance(live, dict):
+            # Copy before caching/returning so later controller or builder mutation
+            # can't change the cached sequential snapshot.
+            snapshot = dict(live)
+            self._captured_octo_snapshots[entry.entry_id] = snapshot
+            return dict(snapshot)
+        cached = self._captured_octo_snapshots.get(entry.entry_id)
+        return dict(cached) if isinstance(cached, dict) else None
+
+    def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
+        """Resolve ``entry``'s bed type for the offline-capability-safe check.
+
+        A legacy ``leggett_platt`` entry stores its real protocol under
+        ``protocol_variant``; an EXPLICIT variant resolves to a concrete type
+        that the offline-safe set already lists (``leggett_gen2`` /
+        ``leggett_wilinke``), even though the umbrella ``leggett_platt`` is not.
+        Funnel through the shared ``resolve_explicit_bed_type`` so the gate,
+        offline minting, and the pair descriptors all agree (``okin`` ->
+        leggett_okin, still unsafe; ``auto``/unset stays the umbrella type).
+        """
+        return resolve_explicit_bed_type(
+            entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
+        )
+
+    def _resolved_pair_side_data(self, entry: ConfigEntry) -> dict[str, Any]:
+        """Merged ``data`` + ``options`` for a pair child, with an explicit legacy
+        variant resolved to its concrete bed type.
+
+        Options (e.g. customized angle limits, which the coordinator reads before
+        data) are merged in so they survive the original being absorbed. The
+        bed_type is normalised through the SAME resolver the offline-safe gate
+        used, so the descriptor that gets stored is the one the gate approved —
+        otherwise the pair would carry the umbrella ``leggett_platt`` and
+        ``async_prime_offline_controller`` would refuse to mint the side the gate
+        just promised was offline-safe.
+        """
+        data = {**entry.data, **dict(entry.options)}
+        data[CONF_BED_TYPE] = resolve_explicit_bed_type(
+            data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
+        )
+        return data
+
+    def _is_octo_star2(self, entry: ConfigEntry) -> bool:
+        """Whether ``entry`` is an Octo Remote Star2 bed — a different protocol with
+        FIXED capabilities and no PIN/snapshot, so it is statically offline-safe
+        (unlike standard Octo, which needs a live capability snapshot)."""
+        return (
+            entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+            and entry.data.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
+        )
+
+    async def _pair_layout_snapshot(self, entry: ConfigEntry) -> dict[str, Any] | None:
+        """Capture the side's generic motor layout from its capability controller.
+
+        Prefer the loaded controller, otherwise mint the protocol's supported
+        client-free capability controller. If neither is available, the layout is
+        unknown and pairing is blocked rather than inferred from another protocol.
+        The persisted snapshot keeps the decision auditable after absorption.
+        """
+        from .coordinator import AdjustableBedCoordinator
+
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        controller = getattr(coordinator, "capability_controller", None)
+        if controller is None and not isinstance(coordinator, AdjustableBedCoordinator):
+            coordinator = AdjustableBedCoordinator(self.hass, entry)
+        if coordinator.capability_controller is None:
+            await coordinator.async_prime_offline_controller()
+        controller = coordinator.capability_controller
+        if controller is None:
+            return None
+        specs = list(getattr(controller, "motor_control_specs", ()))
+        configured_motor_count = entry.options.get(
+            CONF_MOTOR_COUNT,
+            entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+        )
+        return {
+            "motor_count": int(configured_motor_count),
+            "motor_keys": sorted(spec.key for spec in specs),
+            "discrete_motor_control": bool(
+                getattr(controller, "has_discrete_motor_control", False)
+            ),
+            "supports_motor_control": bool(getattr(controller, "supports_motor_control", False)),
+        }
+
+    def _has_unsafe_offline_platforms(self, entry: ConfigEntry) -> bool:
+        """Whether ``entry`` exposes climate/light/select a half-available pair
+        couldn't recreate.
+
+        These platforms are now forwarded per-side, but their per-side entities
+        are built from a side's ``capability_controller`` — which only an
+        offline-capability-safe bed type has when a side is offline at setup. For
+        any other type, a half-available pair (or a conversion where a side drops
+        before connecting) would lose those entities, so keep blocking those.
+
+        Octo is offline-capable ONLY via a captured snapshot, so it is unsafe iff
+        it has no snapshot (i.e. wasn't connected at pairing).
+        """
+        bed_type = self._offline_safe_bed_type(entry)
+        if bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES:
+            return False
+        if bed_type == BED_TYPE_OCTO:
+            # Star2 has fixed caps -> statically offline-safe; standard Octo needs a
+            # live capability snapshot.
+            if self._is_octo_star2(entry):
+                return False
+            return self._octo_capability_snapshot(entry) is None
         registry = er.async_get(self.hass)
-        unsupported = {"climate", "light", "select"}
+        platforms = {"climate", "light", "select"}
         return any(
-            entity.domain in unsupported
+            entity.domain in platforms
             for entity in er.async_entries_for_config_entry(registry, entry.entry_id)
         )
 
@@ -1316,8 +1440,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Combine two existing single-bed entries into one paired (Dual Bed) device.
 
-        The two originals are removed and one paired entry is created. Per-side
-        entities keep their {address}_{key} unique_ids, so history follows.
+        Conversion is ADDITIVE: one paired entry is created and the two originals
+        are absorbed. Per-side entities keep their {address}_{key} unique_ids and
+        their device keeps its (DOMAIN, MAC) identifier, so the pair's setup
+        re-homes each original's registry rows in place (history/customizations
+        preserved) and only then removes the original entry. The originals stay
+        loaded and controllable until that handoff, so a failed pair setup never
+        leaves the user without a bed.
         """
         entries = self._pairable_single_entries()
         if len(entries) < 2:
@@ -1329,6 +1458,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             left = by_id.get(user_input["left_entry"])
             right = by_id.get(user_input["right_entry"])
+            left_layout = await self._pair_layout_snapshot(left) if left is not None else None
+            right_layout = await self._pair_layout_snapshot(right) if right is not None else None
             if left is None or right is None:
                 errors["base"] = "unknown"
             elif left.entry_id == right.entry_id:
@@ -1339,46 +1470,75 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Two distinct entries for the same MAC would build children with
                 # identical addresses and so collide on {address}_{key} unique IDs.
                 errors["right_entry"] = "same_address"
-            elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
+            elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(right):
+                # Compare RESOLVED bed types: two legacy leggett_platt entries with
+                # DIFFERENT explicit variants (gen2 vs mlrm) are different concrete
+                # protocols, so they're an incompatible pair even though their raw
+                # umbrella type matches — and would otherwise be stored as mismatched
+                # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
-            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
-                # Octo needs sequential active-connection switching + per-side PIN
-                # and keepalive (Phase 2). Pairing it with the current concurrent
-                # path would be unreliable, so block it until that lands.
-                errors["base"] = "octo_pairing_unsupported"
-            elif self._has_unpairable_entities(left) or self._has_unpairable_entities(
+            elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
+                (not self._is_octo_star2(left) and self._octo_capability_snapshot(left) is None)
+                or (
+                    not self._is_octo_star2(right) and self._octo_capability_snapshot(right) is None
+                )
+            ):
+                # Standard Octo is paired via the sequential active-connection
+                # profile, and its OFFLINE side mints its light/RGBW/memory/synchro
+                # entities from a capability snapshot captured here from the live bed
+                # — so each STANDARD Octo bed must be connected at pairing for its
+                # snapshot to exist. Star2 has fixed caps and needs no snapshot.
+                errors["base"] = "octo_pairing_needs_connection"
+            elif self._has_unsafe_offline_platforms(left) or self._has_unsafe_offline_platforms(
                 right
             ):
+                # climate/light/select are forwarded per-side now, but a
+                # non-offline-capability-safe bed can't rebuild them when a side
+                # is offline, so a half-available pair would lose them.
                 errors["base"] = "pairing_unsupported_entities"
+            elif left_layout is None or right_layout is None:
+                errors["base"] = "pairing_needs_capabilities"
+            elif left_layout != right_layout:
+                errors["base"] = "mismatched_motor_layouts"
             else:
                 name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
                 # Merge each side's options (e.g. customized angle limits, which the
                 # coordinator reads before data) into its descriptor so they aren't
-                # lost when the originals are removed.
+                # lost when the original is absorbed. Each side's (entry_id,
+                # unique_id) is recorded as provenance so the pair's setup can find
+                # and re-home the original entry's registry rows in place.
                 pair_data = build_pair_entry_data(
-                    {**left.data, **dict(left.options)},
-                    {**right.data, **dict(right.options)},
+                    self._resolved_pair_side_data(left),
+                    self._resolved_pair_side_data(right),
                     name=name,
+                    left_octo_snapshot=self._octo_capability_snapshot(left),
+                    right_octo_snapshot=self._octo_capability_snapshot(right),
+                    left_layout_snapshot=left_layout,
+                    right_layout_snapshot=right_layout,
+                    left_origin=(left.entry_id, left.unique_id),
+                    right_origin=(right.entry_id, right.unique_id),
+                    left_origin_title=left.title,
+                    right_origin_title=right.title,
+                    left_origin_source=left.source,
+                    right_origin_source=right.source,
+                    left_origin_data=left.data,
+                    right_origin_data=right.data,
+                    left_origin_options=left.options,
+                    right_origin_options=right.options,
                 )
                 await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
                 self._abort_if_unique_id_configured()
-                # Remove the two originals BEFORE creating the pair. The paired
-                # platforms reuse the same {address}_{key} entity unique_ids, so
-                # the originals' entities must be gone first or the paired ones
-                # would be rejected as duplicates (leaving the pair without
-                # per-side controls). pair_data is already built and the unique_id
-                # checked, and there is no await between the removals and the
-                # return, so this can't leave the user with no bed. (Full
-                # history-preserving device re-homing is a follow-up.)
-                await self.hass.config_entries.async_remove(left.entry_id)
-                await self.hass.config_entries.async_remove(right.entry_id)
-                # async_remove always removes the entry — an unload failure still
-                # deletes it and only flags require_restart — so there is no
-                # surviving-original / partial-removal case to roll back here. (A
-                # truly transactional, history-preserving conversion via device
-                # re-homing is the documented follow-up.)
+                # Do NOT remove the originals here. They stay loaded (so the user
+                # keeps two working beds) until the pair entry's setup re-homes
+                # their entity/device registry rows onto the pair and removes them
+                # — a history-preserving handoff. Removing them now (the old path)
+                # tore down their registry rows and let the paired platforms
+                # recreate fresh ones, resetting per-side history/customizations.
+                # The pair's unique_id (pair_<hash>) never collides with the
+                # originals' MAC unique_ids, so create can proceed while they live.
+                # See _async_rehome_absorbed_singles in __init__.py.
                 _LOGGER.info(
-                    "Combined %s + %s into paired bed %s",
+                    "Combining %s + %s into paired bed %s (originals re-homed at setup)",
                     left.title,
                     right.title,
                     name,
@@ -2692,6 +2852,50 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
+        if is_paired(self.config_entry.data) and user_input is None:
+            return self.async_show_menu(step_id="init", menu_options=["settings", "unpair"])
+        return await self._async_options_form(user_input, step_id="init")
+
+    async def async_step_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage settings for a paired bed."""
+        return await self._async_options_form(user_input, step_id="init")
+
+    async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Confirm splitting a paired bed back into two entries."""
+        if user_input is not None and user_input.get("confirm"):
+            entry_id = self.config_entry.entry_id
+
+            async def finish_unpair() -> None:
+                from . import async_unpair_entry
+
+                entry = self.hass.config_entries.async_get_entry(entry_id)
+                if entry is None:
+                    return
+                try:
+                    await async_unpair_entry(self.hass, entry)
+                except Exception:  # noqa: BLE001 - task must report transaction failure
+                    _LOGGER.exception("Could not unpair config entry %s", entry_id)
+
+            # The options flow belongs to the entry being removed. Schedule the
+            # transaction after returning the flow result so HA never tears down
+            # an entry while its own options flow is still executing.
+            self.hass.async_create_task(finish_unpair(), f"adjustable_bed_unpair_{entry_id}")
+            return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="unpair",
+            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+        )
+
+    async def _async_options_form(
+        self,
+        user_input: dict[str, Any] | None,
+        *,
+        step_id: str,
+    ) -> ConfigFlowResult:
+        """Show and save the normal options form."""
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
         if is_paired(current_data):
@@ -2870,7 +3074,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_OCTO_PIN: "invalid_pin"},
                     )
@@ -2895,7 +3099,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     )
             except ValueError, TypeError:
                 return self.async_show_form(
-                    step_id="init",
+                    step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     errors={"base": "invalid_number"},
                 )
@@ -2905,14 +3109,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     value = float(user_input[CONF_BACK_MAX_ANGLE] or DEFAULT_BACK_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
-                            step_id="init",
+                            step_id=step_id,
                             data_schema=vol.Schema(schema_dict),
                             errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_BACK_MAX_ANGLE] = value
                 except ValueError, TypeError:
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_BACK_MAX_ANGLE: "invalid_angle"},
                     )
@@ -2921,14 +3125,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     value = float(user_input[CONF_LEGS_MAX_ANGLE] or DEFAULT_LEGS_MAX_ANGLE)
                     if value <= 0 or value > 180:
                         return self.async_show_form(
-                            step_id="init",
+                            step_id=step_id,
                             data_schema=vol.Schema(schema_dict),
                             errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                         )
                     user_input[CONF_LEGS_MAX_ANGLE] = value
                 except ValueError, TypeError:
                     return self.async_show_form(
-                        step_id="init",
+                        step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
                         errors={CONF_LEGS_MAX_ANGLE: "invalid_angle"},
                     )
@@ -2980,6 +3184,6 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(
-            step_id="init",
+            step_id=step_id,
             data_schema=vol.Schema(schema_dict),
         )

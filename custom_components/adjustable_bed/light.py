@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.light import (
     ATTR_RGB_COLOR,
@@ -23,6 +23,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -73,27 +74,51 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed light entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
-    controller = coordinator.controller
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[LightEntity] = []
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _light_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
+        async_add_entities(entities)
+        return
+    async_add_entities(_light_entities_for(hass, coordinator))
+
+
+def _light_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[LightEntity]:
+    """Build light entities for a single (child or standalone) coordinator."""
+    controller = coordinator.capability_controller
 
     if controller is None:
-        _async_remove_stale_light_entity(hass, coordinator)
-        return
+        # No controller to read capabilities from (e.g. a paired side offline at
+        # setup whose type can't be offline-minted). Don't run the stale cleanup
+        # here — we can't tell whether the bed has a light, and removing the
+        # existing registry entry would drop a real light that won't be recreated
+        # until the side reconnects and the platform re-runs.
+        return []
 
     if getattr(controller, "supports_light_color_control", False):
         _async_remove_stale_switch_entity(hass, coordinator)
-        async_add_entities([AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)])
-        return
+        return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
     if (
         coordinator.bed_type == BED_TYPE_SLEEP_NUMBER_MCR
         and getattr(controller, "supports_discrete_light_control", False)
     ):
         _async_remove_stale_switch_entity(hass, coordinator)
-        async_add_entities([AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)])
-        return
+        return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
     _async_remove_stale_light_entity(hass, coordinator)
+    return []
 
 
 def _async_remove_stale_light_entity(
@@ -141,7 +166,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}_{description.key}"
 
-        controller = coordinator.controller
+        # Use the capability controller (live when connected, else the client-free
+        # one minted from config) so an OFFLINE offline-safe side still gets the
+        # right colour mode / default colour instead of falling back to plain RGB.
+        controller = coordinator.capability_controller
         color_mode_str = (
             getattr(controller, "supported_color_mode", None) if controller is not None else None
         )

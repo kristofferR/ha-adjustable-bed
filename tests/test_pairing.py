@@ -19,7 +19,11 @@ from custom_components.adjustable_bed.pairing import (
     is_paired,
     iter_children,
     make_pair_id,
+    octo_snapshot_from_descriptor,
+    pair_layout_from_descriptor,
     pair_member_addresses,
+    single_data_from_child,
+    single_options_from_child,
     with_updated_child,
 )
 
@@ -41,9 +45,7 @@ def _paired_data() -> dict:
 
 class TestMakePairId:
     def test_deterministic_and_order_independent(self):
-        assert make_pair_id([LEFT_ADDR, RIGHT_ADDR]) == make_pair_id(
-            [RIGHT_ADDR, LEFT_ADDR]
-        )
+        assert make_pair_id([LEFT_ADDR, RIGHT_ADDR]) == make_pair_id([RIGHT_ADDR, LEFT_ADDR])
 
     def test_case_insensitive(self):
         assert make_pair_id([LEFT_ADDR.lower(), RIGHT_ADDR]) == make_pair_id(
@@ -148,6 +150,27 @@ class TestBuildPairEntryData:
         data = build_pair_entry_data(left, right, name="x")
         assert CONF_PAIR_ID not in get_child(data, SIDE_LEFT)
 
+    def test_provenance_restores_exact_data_options_and_layout(self):
+        original_data = {
+            "address": LEFT_ADDR,
+            "name": "Left",
+            "bed_type": "legacy-original",
+        }
+        original_options = {"motor_count": 3, "back_max_angle": 55.0}
+        layout = {"motor_count": 3, "motor_keys": ["back", "head", "legs"]}
+        data = build_pair_entry_data(
+            {**original_data, **original_options, "bed_type": "resolved-type"},
+            {"address": RIGHT_ADDR, "bed_type": "resolved-type"},
+            name="Master",
+            left_layout_snapshot=layout,
+            left_origin_data=original_data,
+            left_origin_options=original_options,
+        )
+        child = get_child(data, SIDE_LEFT)
+        assert single_data_from_child(child) == original_data
+        assert single_options_from_child(child) == original_options
+        assert pair_layout_from_descriptor(child) == layout
+
 
 class TestWithUpdatedChild:
     def test_patches_correct_side_only(self):
@@ -175,3 +198,27 @@ class TestWithUpdatedChild:
     def test_non_paired_raises(self):
         with pytest.raises(ValueError):
             with_updated_child({CONF_ADDRESS: LEFT_ADDR}, SIDE_LEFT, {"x": 1})
+
+
+class TestOctoSnapshotPlumbing:
+    """Phase 2.5 C3 (commit 1): per-side Octo capability snapshots round-trip
+    through the child descriptor's capabilities['octo']."""
+
+    def test_snapshot_stored_and_read_per_side(self):
+        snap = {"has_lights": True, "has_rgbwi": True, "memory_count": 4}
+        data = build_pair_entry_data(
+            {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", "bed_type": "octo"},
+            {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": "octo"},
+            name="Master",
+            left_octo_snapshot=snap,
+        )
+        children = data["pair_children"]
+        # Left carries the snapshot; right (no snapshot passed) has none.
+        assert octo_snapshot_from_descriptor(children[0]) == snap
+        assert octo_snapshot_from_descriptor(children[1]) is None
+
+    def test_snapshot_none_for_old_or_empty_descriptors(self):
+        assert octo_snapshot_from_descriptor(None) is None
+        assert octo_snapshot_from_descriptor({}) is None
+        assert octo_snapshot_from_descriptor({"capabilities": {}}) is None
+        assert octo_snapshot_from_descriptor({"capabilities": {"octo": {}}}) == {}

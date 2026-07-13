@@ -33,6 +33,8 @@ export interface DeviceRegistryEntry {
   id: string;
   name?: string;
   name_by_user?: string;
+  // Set on a paired side's child device, pointing at the synthetic parent.
+  via_device_id?: string | null;
 }
 
 export interface HomeAssistant {

@@ -26,15 +26,19 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import (
+    CONF_BED_TYPE,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     DEFAULT_PAIR_CONNECTION_MODE,
     DOMAIN,
+    PAIR_CONNECTION_MODE_AUTO,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_SIDES,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
+    requires_sequential_pairing,
 )
 
 if TYPE_CHECKING:
@@ -95,9 +99,21 @@ class PairedBedCoordinator:
         }
         if not self._children:
             raise ValueError("PairedBedCoordinator requires at least one child")
-        self._connection_mode: str = connection_mode or entry.data.get(
+        # Resolve "auto" to a concrete mode from the bed type: single-connection
+        # beds (Octo) get the sequential active-connection profile; everything
+        # else stays concurrent. An explicit concurrent/sequential choice is
+        # honoured as-is. Resolving here (not at pair-build) auto-upgrades any
+        # pre-existing "auto" pair on the next load; entry.data stays "auto".
+        raw_mode = connection_mode or entry.data.get(
             CONF_PAIR_CONNECTION_MODE, DEFAULT_PAIR_CONNECTION_MODE
         )
+        if raw_mode == PAIR_CONNECTION_MODE_AUTO:
+            raw_mode = (
+                PAIR_CONNECTION_MODE_SEQUENTIAL
+                if requires_sequential_pairing(entry.data.get(CONF_BED_TYPE))
+                else PAIR_CONNECTION_MODE_CONCURRENT
+            )
+        self._connection_mode: str = raw_mode
         # Orders connection switching in sequential mode; unused when concurrent.
         self._pair_command_lock = asyncio.Lock()
         # Preemption: STOP bumps this so a movement still queued on the lock is
@@ -207,6 +223,19 @@ class PairedBedCoordinator:
 
         await self._run("seek", side, op)
 
+    async def async_run_child_operation(
+        self,
+        action: str,
+        operation: Callable[
+            [AdjustableBedCoordinator], Coroutine[Any, Any, None]
+        ],
+        *,
+        side: str = SIDE_BOTH,
+        cancel_running: bool = True,
+    ) -> None:
+        """Run a child-specific operation with the paired failure contract."""
+        await self._run(action, side, operation, cancel_running=cancel_running)
+
     async def _run(
         self,
         action: str,
@@ -254,24 +283,32 @@ class PairedBedCoordinator:
 
             self._active_children = {child for _, child in targets}
             try:
-                if len(targets) == 1:
-                    # Single side: no fan-out, the child owns its STOP-on-failure.
+                sequential = self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+                if not sequential and len(targets) == 1:
+                    # Single side, concurrent: no fan-out, the child owns its
+                    # STOP-on-failure; nothing to cancel-STOP at the parent.
                     await op(targets[0][1])
                     return
 
                 try:
-                    if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
-                        await self._run_both_sequential(action, targets, op)
+                    if sequential:
+                        # One BLE link at a time: connect/op/disconnect each
+                        # targeted side in turn (one or both).
+                        await self._run_both_sequential(
+                            action, targets, op, entry_cancel
+                        )
                     else:
                         await self._run_both_concurrent(action, targets, op)
                 except asyncio.CancelledError:
                     # The parent command was cancelled (service cancellation or
                     # config-entry unload) while a side may still be moving.
                     # Cancelling the child TASKS is not the same as a STOP write,
-                    # so explicitly STOP both sides before propagating — otherwise
-                    # a motor can be left running. _stop_children never raises (it
-                    # collects per-side errors), and we re-raise the cancellation
-                    # regardless, so this is purely best-effort cleanup.
+                    # so explicitly STOP the still-connected side(s) before
+                    # propagating — otherwise a motor can be left running. In
+                    # sequential mode _stop_children only targets a side that is
+                    # still connected (a disconnected side already halted on its
+                    # link drop). _stop_children never raises and we re-raise the
+                    # cancellation regardless, so this is best-effort cleanup.
                     await self._stop_children(targets)
                     raise
             finally:
@@ -319,20 +356,138 @@ class PairedBedCoordinator:
         action: str,
         targets: list[tuple[str, AdjustableBedCoordinator]],
         op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
+        entry_cancel: dict[str, int],
     ) -> None:
-        started: list[tuple[str, AdjustableBedCoordinator]] = []
+        """Run each side in turn holding only ONE BLE link at a time: connect the
+        side, run its op, then disconnect it before moving to the next.
+
+        Used for single-connection beds (Octo) whose firmware allows only one
+        concurrent link. Dropping the link halts that side's motors (verified
+        dead-man model — the bed only moves while a command stream arrives), so a
+        side that has been disconnected needs no separate STOP. On failure the
+        loop stops at the first failing side; every side that was connected is
+        disconnected (the ``finally``), so nothing is left connected or moving.
+
+        ``entry_cancel`` is the per-side cancel counter captured at command entry:
+        a STOP (or newer command) bumps it, so before starting each side we re-check
+        and abort the rest of the cycle — otherwise a STOP during side A would still
+        let side B connect and move.
+        """
         errors: dict[str, BaseException] = {}
+
+        def cycle_cancelled() -> bool:
+            # A STOP / newer command for ANY targeted side supersedes the whole
+            # cycle — checking only the side about to run would let a later side
+            # connect after an earlier side of a both-cycle was already cancelled.
+            return any(
+                self._pair_cancel_counter[s] != entry_cancel[s] for s, _ in targets
+            )
+
         for side, child in targets:
+            if cycle_cancelled():
+                # A STOP / newer command landed mid-cycle — abort before
+                # connecting this side (the earlier side already disconnected).
+                break
+
+            # One-link guard: release any OTHER side that is still connected (it
+            # may have been connected out-of-band, e.g. a per-side diagnostic
+            # Connect button) before opening this link, so we never hold two.
+            if not await self._release_other_sides(child):
+                errors[side] = HomeAssistantError(
+                    "could not release the other side before switching"
+                )
+                break
+
             try:
-                await op(child)
-                started.append((side, child))
+                connected = await child.async_connect()
             except Exception as err:  # noqa: BLE001 - CancelledError must propagate
                 errors[side] = err
-                started.append((side, child))
+                break
+            if not connected:
+                errors[side] = HomeAssistantError(
+                    f"{side} side of the pair could not be connected"
+                )
+                break
+
+            # A STOP (or newer command) may have landed WHILE we were connecting —
+            # _stop_children couldn't reach this side then (it wasn't connected
+            # yet), so re-check now and bail (releasing the link) instead of
+            # starting a motor command after the STOP was accepted.
+            if cycle_cancelled():
+                if not await self._safe_disconnect(side, child):
+                    # The post-cancel release raised — surface it; the one-link
+                    # guard may have failed.
+                    errors[side] = HomeAssistantError(
+                        f"{side} side failed to disconnect after cancellation "
+                        "— aborting to keep one link"
+                    )
+                break
+
+            op_error: BaseException | None = None
+            try:
+                await op(child)
+            except asyncio.CancelledError:
+                # Release this side (halts it) before propagating the cancellation.
+                await self._safe_disconnect(side, child)
+                raise
+            except Exception as err:  # noqa: BLE001
+                op_error = err
+
+            # Disconnecting is BOTH the one-link guard and the halt for this side,
+            # so a disconnect failure is fatal: abort rather than connect the next
+            # side onto a possibly-still-live/moving link.
+            disconnected = await self._safe_disconnect(side, child)
+            if op_error is not None or not disconnected:
+                if op_error is not None and not disconnected:
+                    # Both failed: the command erred AND the release that should
+                    # have halted/released the side also failed — surface both, as
+                    # the link may still be live/moving (the more critical fact).
+                    err = HomeAssistantError(
+                        f"{side} side command failed and its release also failed "
+                        f"— the link may still be live"
+                    )
+                    err.__cause__ = op_error
+                    errors[side] = err
+                elif op_error is not None:
+                    errors[side] = op_error
+                else:
+                    errors[side] = HomeAssistantError(
+                        f"{side} side failed to disconnect — aborting to keep one link"
+                    )
                 break
         if errors:
-            stop_errors = await self._stop_children(started)
-            raise PairedSideError(action, _merge_stop_errors(errors, stop_errors))
+            raise PairedSideError(action, errors)
+
+    async def _release_other_sides(self, keep: AdjustableBedCoordinator) -> bool:
+        """Disconnect every side except ``keep`` (the one-link guard before a
+        sequential connect). Returns False if any disconnect failed, so the caller
+        can abort rather than risk opening a second link."""
+        ok = True
+        for side, child in self._children.items():
+            if child is not keep and child.is_connected:
+                if not await self._safe_disconnect(side, child):
+                    ok = False
+        return ok
+
+    async def _safe_disconnect(
+        self, side: str, child: AdjustableBedCoordinator
+    ) -> bool:
+        """Disconnect one side, swallowing failures. Returns True on success — a
+        disconnect error must not mask the command outcome, but callers that rely
+        on the link actually being down (sequential switching) check the result.
+
+        The child returns False when Bleak reports that the physical link remains
+        active after a failed disconnect. Older test doubles return None, which is
+        treated as success for backward compatibility.
+        """
+        try:
+            disconnected = await child.async_disconnect("sequential_switch")
+        except Exception as err:  # noqa: BLE001 - CancelledError must propagate
+            _LOGGER.warning(
+                "Disconnect failed on %s side (%s): %s", side, child.address, err
+            )
+            return False
+        return disconnected is not False and not child.is_connected
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
@@ -352,7 +507,14 @@ class PairedBedCoordinator:
 
         Returns the per-side errors (if any). Always attempts every side — a STOP
         failure on one must never prevent stopping another.
+
+        In sequential mode only a side that is still CONNECTED is stopped: a
+        disconnected side already halted when its link dropped (dead-man model),
+        and stopping it would reconnect it (async_stop_command ensures a link),
+        momentarily creating the two-link state the sequential profile avoids.
         """
+        if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+            targets = [(side, child) for side, child in targets if child.is_connected]
         results = await asyncio.gather(
             *(child.async_stop_command() for _, child in targets),
             return_exceptions=True,
@@ -371,13 +533,37 @@ class PairedBedCoordinator:
         """Connect the children; succeed if *at least one* connects (half-available)."""
         items = list(self._children.items())
         if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+            # Single-connection beds hold one link at a time, so don't keep either
+            # side connected after setup. Connect each side once to verify it is
+            # reachable (this is also where a capability snapshot is captured),
+            # then release it; commands reconnect the targeted side on demand.
             any_connected = False
             for side, child in items:
                 try:
-                    if await child.async_connect():
-                        any_connected = True
+                    connected = await child.async_connect()
                 except Exception as err:  # noqa: BLE001 - CancelledError must propagate
                     _LOGGER.warning("Connect failed on %s side: %s", side, err)
+                    continue
+                if connected:
+                    any_connected = True
+                    # Keep the just-discovered live controller as this side's
+                    # offline capability source BEFORE releasing the link, so its
+                    # per-side entities still build after this disconnect (which
+                    # drops the live controller).
+                    child.cache_capability_controller()
+                    if not await self._safe_disconnect(side, child):
+                        # Releasing the just-verified side raised: opening the next
+                        # side now could hold two links at once, which the single-
+                        # connection profile must never do (the reference app
+                        # strictly disconnects-before-connect and aborts on a
+                        # genuine disconnect error). Stop verifying the rest — one
+                        # side left up beats two — commands reconnect on demand.
+                        _LOGGER.warning(
+                            "Could not release %s side after verify; skipping the "
+                            "remaining side(s) to keep a single BLE link",
+                            side,
+                        )
+                        break
             return any_connected
 
         results = await asyncio.gather(

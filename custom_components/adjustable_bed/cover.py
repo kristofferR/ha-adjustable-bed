@@ -207,7 +207,11 @@ def _cover_entities_for(
     hass: HomeAssistant, coordinator: AdjustableBedCoordinator
 ) -> list[AdjustableBedCover]:
     """Build the motor cover entities for a single (child or standalone) coordinator."""
-    controller = coordinator.controller
+    # capability_controller, not controller: a paired side that is offline at
+    # setup still exposes its covers (built from a client-free controller minted
+    # from config), with byte-identical unique_ids, so they survive reconnect
+    # without a reload.
+    controller = coordinator.capability_controller
 
     if controller is None:
         _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
