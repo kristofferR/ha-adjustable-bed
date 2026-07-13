@@ -58,5 +58,9 @@
   "combined.lights": "Begge sengelys",
   "combined.on": "På",
   "combined.off": "Av",
-  "combined.mixed": "Én side på"
+  "combined.mixed": "Én side på",
+  "sync.label": "Synkroniser til",
+  "sync.hint": "Flytt den andre siden til samme posisjon",
+  "sync.choose": "Velg side…",
+  "sync.running": "Synkroniserer…"
 }

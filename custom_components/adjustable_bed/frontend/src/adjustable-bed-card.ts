@@ -53,6 +53,9 @@ interface BedGraphicState extends DualBedGraphicSide {
 }
 
 type ConnectionStatus = "connected" | "idle" | "disconnected";
+type SynchronizeSide = "left" | "right";
+
+const SYNCHRONIZABLE_MOTORS = new Set(["back", "legs", "head", "feet"]);
 
 @customElement("adjustable-bed-card")
 export class AdjustableBedCard extends LitElement {
@@ -69,6 +72,7 @@ export class AdjustableBedCard extends LitElement {
   // old three-bed vertical stack while keeping combined actions deliberately
   // separate from commands for an individual side.
   @state() private _activePairedPane = "both";
+  @state() private _synchronizingTo?: SynchronizeSide;
 
   private _watched: string[] = [];
 
@@ -100,7 +104,8 @@ export class AdjustableBedCard extends LitElement {
     if (
       changed.has("_config") ||
       changed.has("_saveModeFor") ||
-      changed.has("_activePairedPane")
+      changed.has("_activePairedPane") ||
+      changed.has("_synchronizingTo")
     )
       return true;
     if (!changed.has("hass") || !this.hass) return true;
@@ -274,7 +279,7 @@ export class AdjustableBedCard extends LitElement {
         </div>
         <div class="pane" role="tabpanel" aria-label=${active.label}>
           ${combined && this._config?.show_graphic !== false
-            ? this._pairedOverview(sidePanes)
+            ? this._pairedOverview(titleDeviceId, sidePanes)
             : nothing}
           ${this._renderSections(active.bed, active.graphicTone)}
           ${combined && this._config?.show_lighting !== false
@@ -316,6 +321,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _pairedOverview(
+    parentDeviceId: string,
     sidePanes: PairedPane[],
   ): typeof nothing | TemplateResult {
     const sides = sidePanes
@@ -347,7 +353,114 @@ export class AdjustableBedCard extends LitElement {
           `,
         )}
       </div>
+      ${this._synchronizeSelector(parentDeviceId, left.pane, right.pane)}
     `;
+  }
+
+  private _synchronizeSelector(
+    parentDeviceId: string,
+    left: PairedPane,
+    right: PairedPane,
+  ): typeof nothing | TemplateResult {
+    const leftPlan = this._synchronizationPlan(left.bed, right.bed);
+    const rightPlan = this._synchronizationPlan(right.bed, left.bed);
+    if (leftPlan.length === 0 && rightPlan.length === 0) return nothing;
+
+    const busy = this._synchronizingTo !== undefined;
+    return html`
+      <div class="dual-sync-row">
+        <ha-icon icon="mdi:sync"></ha-icon>
+        <div class="dual-sync-copy">
+          <span>${localize(this.hass, "sync.label")}</span>
+          <span>${localize(this.hass, "sync.hint")}</span>
+        </div>
+        <div class="dual-sync-select">
+          <select
+            aria-label=${localize(this.hass, "sync.label")}
+            .value=${""}
+            ?disabled=${busy}
+            @change=${(event: Event) => {
+              const value = (event.currentTarget as HTMLSelectElement).value;
+              if (value === "left" || value === "right") {
+                void this._synchronizePositions(
+                  parentDeviceId,
+                  left,
+                  right,
+                  value,
+                );
+              }
+            }}
+          >
+            <option value="" disabled>
+              ${busy
+                ? localize(this.hass, "sync.running")
+                : localize(this.hass, "sync.choose")}
+            </option>
+            <option value="left" ?disabled=${leftPlan.length === 0}>
+              ${left.label}
+            </option>
+            <option value="right" ?disabled=${rightPlan.length === 0}>
+              ${right.label}
+            </option>
+          </select>
+          <ha-icon icon="mdi:chevron-down"></ha-icon>
+        </div>
+      </div>
+    `;
+  }
+
+  private _synchronizationPlan(
+    source: BedEntities,
+    target: BedEntities,
+  ): { motor: string; position: number }[] {
+    const targetMotors = new Set(target.motors.map((motor) => motor.key));
+    const shared = source.motors.filter(
+      (motor) =>
+        SYNCHRONIZABLE_MOTORS.has(motor.key) &&
+        targetMotors.has(motor.key) &&
+        (motor.angle !== undefined || motor.position !== undefined),
+    );
+    if (shared.length === 0) return [];
+
+    const plan = shared.map((motor) => ({
+      motor: motor.key,
+      position: this._angle(motor),
+    }));
+    // Never perform a partial synchronization. If one shared motor's feedback
+    // is unavailable, disable that reference side until all positions are known.
+    if (plan.some((item) => item.position === undefined)) return [];
+    return plan as { motor: string; position: number }[];
+  }
+
+  private async _synchronizePositions(
+    parentDeviceId: string,
+    left: PairedPane,
+    right: PairedPane,
+    sourceSide: SynchronizeSide,
+  ): Promise<void> {
+    if (this._synchronizingTo || !this.hass) return;
+    const source = sourceSide === "left" ? left : right;
+    const target = sourceSide === "left" ? right : left;
+    const targetSide: SynchronizeSide =
+      sourceSide === "left" ? "right" : "left";
+    const plan = this._synchronizationPlan(source.bed, target.bed);
+    if (plan.length === 0) return;
+
+    this._synchronizingTo = sourceSide;
+    try {
+      for (const item of plan) {
+        await this.hass.callService(PLATFORM, "set_position", {
+          device_id: [parentDeviceId],
+          motor: item.motor,
+          position: item.position,
+          side: targetSide,
+        });
+      }
+    } catch {
+      // Home Assistant surfaces service errors through its own notification UI.
+    } finally {
+      this._synchronizingTo = undefined;
+    }
   }
 
   private _positionSummary(graphic: BedGraphicState): string {
@@ -1390,6 +1503,80 @@ export class AdjustableBedCard extends LitElement {
       line-height: 1.25;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .dual-sync-row {
+      box-sizing: border-box;
+      width: min(100%, 350px);
+      min-height: 52px;
+      margin: 4px auto 2px;
+      padding: 7px 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 11px;
+      background: var(--card-background-color);
+    }
+    .dual-sync-row > ha-icon {
+      flex: none;
+      color: var(--secondary-text-color);
+      --mdc-icon-size: 19px;
+    }
+    .dual-sync-copy {
+      min-width: 0;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      color: var(--primary-text-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .dual-sync-copy span:last-child {
+      overflow: hidden;
+      color: var(--secondary-text-color);
+      font-size: 0.68rem;
+      font-weight: 400;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dual-sync-select {
+      position: relative;
+      min-width: 108px;
+      max-width: 46%;
+      flex: none;
+    }
+    .dual-sync-select select {
+      box-sizing: border-box;
+      width: 100%;
+      height: 34px;
+      padding: 0 29px 0 10px;
+      appearance: none;
+      border: 1px solid var(--divider-color);
+      border-radius: 9px;
+      outline: none;
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+      font: inherit;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+    .dual-sync-select select:focus-visible {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
+    }
+    .dual-sync-select select:disabled {
+      color: var(--disabled-text-color);
+      cursor: wait;
+    }
+    .dual-sync-select ha-icon {
+      position: absolute;
+      top: 50%;
+      right: 7px;
+      color: var(--secondary-text-color);
+      pointer-events: none;
+      transform: translateY(-50%);
+      --mdc-icon-size: 17px;
     }
     @keyframes ab-pulse {
       0%,

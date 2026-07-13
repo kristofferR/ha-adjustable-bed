@@ -58,5 +58,9 @@
   "combined.lights": "Both under-bed lights",
   "combined.on": "On",
   "combined.off": "Off",
-  "combined.mixed": "One side on"
+  "combined.mixed": "One side on",
+  "sync.label": "Synchronize to",
+  "sync.hint": "Move the other side to match",
+  "sync.choose": "Choose side…",
+  "sync.running": "Synchronizing…"
 }
