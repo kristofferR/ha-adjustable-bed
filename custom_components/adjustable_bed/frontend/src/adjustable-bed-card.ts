@@ -411,12 +411,15 @@ export class AdjustableBedCard extends LitElement {
     source: BedEntities,
     target: BedEntities,
   ): { motor: string; position: number }[] {
-    const targetMotors = new Set(target.motors.map((motor) => motor.key));
+    const targetMotors = new Map(
+      target.motors.map((motor) => [motor.key, motor] as const),
+    );
     const shared = source.motors.filter(
       (motor) =>
         SYNCHRONIZABLE_MOTORS.has(motor.key) &&
         targetMotors.has(motor.key) &&
-        (motor.angle !== undefined || motor.position !== undefined),
+        this._hasPositionFeedback(motor) &&
+        this._hasPositionFeedback(targetMotors.get(motor.key)!),
     );
     if (shared.length === 0) return [];
 
@@ -424,10 +427,20 @@ export class AdjustableBedCard extends LitElement {
       motor: motor.key,
       position: this._angle(motor),
     }));
-    // Never perform a partial synchronization. If one shared motor's feedback
-    // is unavailable, disable that reference side until all positions are known.
-    if (plan.some((item) => item.position === undefined)) return [];
+    // Never perform a partial synchronization. Both sides need live feedback
+    // because the target-side seek also depends on its current position.
+    if (
+      plan.some((item) => item.position === undefined) ||
+      shared.some(
+        (motor) => this._angle(targetMotors.get(motor.key)!) === undefined,
+      )
+    )
+      return [];
     return plan as { motor: string; position: number }[];
+  }
+
+  private _hasPositionFeedback(motor: MotorEntity): boolean {
+    return motor.angle !== undefined || motor.position !== undefined;
   }
 
   private async _synchronizePositions(
@@ -639,15 +652,22 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _graphicState(bed: BedEntities): BedGraphicState | undefined {
-    const withAngle = bed.motors.filter((m) => m.angle);
-    if (withAngle.length === 0) return undefined;
+    const withAngle = bed.motors.filter((motor) => motor.angle);
+    // Registry entries can outlive a configuration change. Do not draw a flat
+    // default graphic from unavailable/unknown sensors: every exposed angle
+    // must have a numeric value before the graphic and its readouts are shown.
+    if (
+      withAngle.length === 0 ||
+      withAngle.some((motor) => this._angle(motor) === undefined)
+    )
+      return undefined;
     const upper =
-      bed.motors.find((m) => m.key === "back") ??
-      bed.motors.find((m) => m.key === "head") ??
+      withAngle.find((m) => m.key === "back") ??
+      withAngle.find((m) => m.key === "head") ??
       withAngle[0];
     const lower =
-      bed.motors.find((m) => m.key === "legs") ??
-      bed.motors.find((m) => m.key === "feet") ??
+      withAngle.find((m) => m.key === "legs") ??
+      withAngle.find((m) => m.key === "feet") ??
       withAngle[withAngle.length - 1];
     const moving = bed.motors.some((m) => {
       const s = m.cover ? this._state(m.cover)?.state : undefined;
