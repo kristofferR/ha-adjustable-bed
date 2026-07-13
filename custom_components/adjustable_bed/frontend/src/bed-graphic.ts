@@ -15,6 +15,17 @@ export interface BedGraphicOptions {
   moving: boolean;
 }
 
+export interface DualBedGraphicSide {
+  upper: BedGraphicPanel;
+  lower: BedGraphicPanel;
+  moving: boolean;
+}
+
+export interface DualBedGraphicOptions {
+  left: DualBedGraphicSide;
+  right: DualBedGraphicSide;
+}
+
 // Clamp so an out-of-range reading can never fold the mattress through the base.
 const clamp = (deg: number): number => Math.max(0, Math.min(75, deg));
 
@@ -72,6 +83,76 @@ export function renderBedGraphic(opts: BedGraphicOptions): TemplateResult {
 
       <text x="86" y="22" text-anchor="middle" class="bed-graphic-label">${fmt(opts.upper)}</text>
       <text x="214" y="22" text-anchor="middle" class="bed-graphic-label">${fmt(opts.lower)}</text>
+    </svg>
+  `;
+}
+
+// Comparison view for paired beds. Both sides share the same hinge so their
+// real positions can be compared at a glance. A small vertical offset and
+// translucent, contrasting colours keep both silhouettes legible even when the
+// positions are identical.
+export function renderDualBedGraphic(
+  opts: DualBedGraphicOptions,
+): TemplateResult {
+  const leftUpper = clamp(opts.left.upper.angle ?? 0);
+  const leftLower = clamp(opts.left.lower.angle ?? 0);
+  const rightUpper = clamp(opts.right.upper.angle ?? 0);
+  const rightLower = clamp(opts.right.lower.angle ?? 0);
+
+  const side = (
+    name: "left" | "right",
+    upper: number,
+    lower: number,
+    offset: number,
+    moving: boolean,
+  ): TemplateResult => svg`
+    <g
+      class="dual-bed-side dual-bed-side-${name} ${moving ? "is-moving" : ""}"
+      style="--dual-offset:${offset}px"
+    >
+      <rect class="dual-bed-base" x="42" y="64" width="216" height="18" rx="6" />
+      <g
+        class="dual-bed-panel"
+        transform=${`rotate(${-lower} 150 70)`}
+      >
+        <rect x="150" y="58" width="108" height="18" rx="6" />
+      </g>
+      <g
+        class="dual-bed-panel"
+        transform=${`rotate(${upper} 150 70)`}
+      >
+        <rect x="42" y="58" width="108" height="18" rx="6" />
+        <rect class="dual-bed-pillow" x="50" y="49" width="40" height="11" rx="5" />
+      </g>
+    </g>
+  `;
+
+  return svg`
+    <svg
+      class="bed-graphic dual-bed-graphic ${
+        opts.left.moving || opts.right.moving ? "is-moving" : ""
+      }"
+      viewBox="0 0 300 108"
+      role="img"
+      aria-hidden="true"
+    >
+      <rect class="dual-bed-frame" x="30" y="86" width="240" height="6" rx="3" />
+      <rect class="dual-bed-frame" x="34" y="90" width="5" height="12" rx="2" />
+      <rect class="dual-bed-frame" x="261" y="90" width="5" height="12" rx="2" />
+      ${side(
+        "left",
+        leftUpper,
+        leftLower,
+        3,
+        opts.left.moving,
+      )}
+      ${side(
+        "right",
+        rightUpper,
+        rightLower,
+        -3,
+        opts.right.moving,
+      )}
     </svg>
   `;
 }

@@ -8,6 +8,7 @@
   "section.utility": "Verktøy",
   "section.climate": "Klima",
   "section.connection": "Tilkobling",
+  "section.bluetooth": "Bluetooth",
   "action.up": "Opp",
   "action.stop": "Stopp",
   "action.stop_all": "Stopp alt",
@@ -53,5 +54,9 @@
   "editor.show_connection": "Tilkoblingskontroller",
   "card.both_sides": "Begge sider",
   "card.left_side": "Venstre",
-  "card.right_side": "Høyre"
+  "card.right_side": "Høyre",
+  "combined.lights": "Begge sengelys",
+  "combined.on": "På",
+  "combined.off": "Av",
+  "combined.mixed": "Én side på"
 }

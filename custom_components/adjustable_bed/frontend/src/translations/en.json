@@ -8,6 +8,7 @@
   "section.utility": "Utility",
   "section.climate": "Climate",
   "section.connection": "Connection",
+  "section.bluetooth": "Bluetooth",
   "action.up": "Up",
   "action.stop": "Stop",
   "action.stop_all": "Stop all",
@@ -53,5 +54,9 @@
   "editor.show_connection": "Connection controls",
   "card.both_sides": "Both sides",
   "card.left_side": "Left",
-  "card.right_side": "Right"
+  "card.right_side": "Right",
+  "combined.lights": "Both under-bed lights",
+  "combined.on": "On",
+  "combined.off": "Off",
+  "combined.mixed": "One side on"
 }
