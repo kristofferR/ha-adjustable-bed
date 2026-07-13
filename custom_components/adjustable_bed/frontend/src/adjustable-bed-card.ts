@@ -1074,8 +1074,8 @@ export class AdjustableBedCard extends LitElement {
   static override styles = css`
     :host {
       --ab-gap: 10px;
-      --ab-side-left-rgb: var(--rgb-primary-color, 33, 150, 243);
-      --ab-side-right-rgb: var(--rgb-purple-color, 156, 107, 255);
+      --ab-side-left-rgb: 33, 150, 243;
+      --ab-side-right-rgb: 244, 67, 54;
     }
     ha-card {
       padding: 12px 12px 16px;
@@ -1273,19 +1273,20 @@ export class AdjustableBedCard extends LitElement {
     }
     .dual-bed-graphic {
       max-width: 350px;
+      isolation: isolate;
     }
     .dual-bed-frame {
       fill: var(--divider-color, rgba(127, 127, 127, 0.35));
     }
     .dual-bed-side {
       opacity: 0.68;
-      transform: translateY(var(--dual-offset));
+      mix-blend-mode: screen;
     }
     .dual-bed-side-left rect {
-      fill: rgba(var(--ab-side-left-rgb), 0.9);
+      fill: rgb(var(--ab-side-left-rgb));
     }
     .dual-bed-side-right rect {
-      fill: rgba(var(--ab-side-right-rgb), 0.9);
+      fill: rgb(var(--ab-side-right-rgb));
     }
     .dual-bed-side .dual-bed-base {
       opacity: 0.38;

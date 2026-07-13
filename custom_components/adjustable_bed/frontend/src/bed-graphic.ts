@@ -88,9 +88,8 @@ export function renderBedGraphic(opts: BedGraphicOptions): TemplateResult {
 }
 
 // Comparison view for paired beds. Both sides share the same hinge so their
-// real positions can be compared at a glance. A small vertical offset and
-// translucent, contrasting colours keep both silhouettes legible even when the
-// positions are identical.
+// real positions can be compared at a glance. Translucent blue and red
+// silhouettes blend to violet wherever their positions coincide.
 export function renderDualBedGraphic(
   opts: DualBedGraphicOptions,
 ): TemplateResult {
@@ -103,12 +102,10 @@ export function renderDualBedGraphic(
     name: "left" | "right",
     upper: number,
     lower: number,
-    offset: number,
     moving: boolean,
   ): TemplateResult => svg`
     <g
       class="dual-bed-side dual-bed-side-${name} ${moving ? "is-moving" : ""}"
-      style="--dual-offset:${offset}px"
     >
       <rect class="dual-bed-base" x="42" y="64" width="216" height="18" rx="6" />
       <g
@@ -143,14 +140,12 @@ export function renderDualBedGraphic(
         "left",
         leftUpper,
         leftLower,
-        3,
         opts.left.moving,
       )}
       ${side(
         "right",
         rightUpper,
         rightLower,
-        -3,
         opts.right.moving,
       )}
     </svg>
