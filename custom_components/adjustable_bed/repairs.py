@@ -1,10 +1,4 @@
-"""Repair flows for the Adjustable Bed integration.
-
-Currently provides a guided fix for the ``pairing_required`` issue: it walks the
-user through putting an OKIN-style base into Bluetooth pairing mode (by
-power-cycling the control box), pairs with ``pair=True``, and verifies the bond
-by reading an auth-gated characteristic before resolving the issue.
-"""
+"""Repair issues and fix flows for the Adjustable Bed integration."""
 
 from __future__ import annotations
 
@@ -14,8 +8,20 @@ from typing import TYPE_CHECKING, Any
 import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow
-from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.config_entries import SOURCE_USER, ConfigEntry
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import CoreState, Event, HomeAssistant, callback
+from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_delete_issue,
+)
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .adapter import get_discovered_service_info
 from .ble_auth import is_ble_authentication_error
@@ -24,12 +30,150 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_PREFERRED_ADAPTER,
     DEVICE_INFO_CHARS,
+    DOMAIN,
+)
+from .pairing_candidates import (
+    CONF_PAIR_SELECTION,
+    active_pairing_candidates,
+    ordered_pair_options,
 )
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+COMBINE_BEDS_ISSUE_ID = "combine_two_beds"
+
+
+@callback
+def async_refresh_combine_beds_issue(hass: HomeAssistant) -> None:
+    """Create or clear the Dual Bed suggestion from current entry state."""
+    candidates = active_pairing_candidates(hass)
+    if len(candidates) < 2:
+        async_delete_issue(hass, DOMAIN, COMBINE_BEDS_ISSUE_ID)
+        return
+
+    async_create_issue(
+        hass,
+        DOMAIN,
+        COMBINE_BEDS_ISSUE_ID,
+        is_fixable=True,
+        is_persistent=True,
+        severity=IssueSeverity.WARNING,
+        translation_key="combine_two_beds",
+        data={"entry_count": len(candidates)},
+    )
+
+
+@callback
+def async_setup_combine_beds_issue(hass: HomeAssistant) -> None:
+    """Reconcile the suggestion once startup entry loading has settled.
+
+    A persistent issue retains the user's dismissed state across restarts. Do
+    not delete it while config entries are only temporarily not loaded during
+    startup, because recreating it would make a dismissed suggestion nag again.
+    """
+    if hass.state is CoreState.running:
+        async_refresh_combine_beds_issue(hass)
+        return
+
+    @callback
+    def refresh_after_start(_: Event) -> None:
+        async_refresh_combine_beds_issue(hass)
+
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, refresh_after_start)
+
+
+@callback
+def async_track_combine_beds_issue(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Refresh the suggestion whenever this entry changes lifecycle state."""
+
+    @callback
+    def refresh() -> None:
+        if hass.state is CoreState.running:
+            async_refresh_combine_beds_issue(hass)
+
+    entry.async_on_unload(entry.async_on_state_change(refresh))
+    refresh()
+
+
+class CombineBedsRepairFlow(RepairsFlow):
+    """Route a Repairs suggestion through the canonical pairing config flow."""
+
+    def _description_placeholders(self) -> dict[str, str]:
+        """Describe the currently active candidates without exposing addresses."""
+        candidates = active_pairing_candidates(self.hass)
+        return {
+            "count": str(len(candidates)),
+            "names": ", ".join(entry.title for entry in candidates),
+        }
+
+    def _schema(self) -> vol.Schema:
+        """Build ordered side assignments without any same-bed choices."""
+        options = ordered_pair_options(active_pairing_candidates(self.hass))
+        pair_selector = SelectSelector(
+            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+        )
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_PAIR_SELECTION,
+                    default=options[0]["value"],
+                ): pair_selector,
+                vol.Optional(CONF_NAME): str,
+            }
+        )
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Open the pairing selection directly from Repairs."""
+        return await self.async_step_pair_beds(user_input)
+
+    async def async_step_pair_beds(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Select sides and delegate validation/creation to the config flow."""
+        if len(active_pairing_candidates(self.hass)) < 2:
+            async_refresh_combine_beds_issue(self.hass)
+            return self.async_abort(reason="not_enough_beds")
+
+        if user_input is None:
+            return self.async_show_form(
+                step_id="pair_beds",
+                data_schema=self._schema(),
+                description_placeholders=self._description_placeholders(),
+            )
+
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_USER},
+            data={CONF_ADDRESS: "pair_beds"},
+        )
+        if (
+            result.get("type") is not FlowResultType.FORM
+            or result.get("step_id") != "pair_beds"
+        ):
+            return self.async_abort(
+                reason=result.get("reason") or "pairing_flow_failed"
+            )
+
+        result = await self.hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input
+        )
+        if result.get("type") is FlowResultType.CREATE_ENTRY:
+            return self.async_create_entry(title="", data={})
+        if result.get("type") is FlowResultType.FORM:
+            return self.async_show_form(
+                step_id="pair_beds",
+                data_schema=result.get("data_schema") or self._schema(),
+                errors=result.get("errors"),
+                description_placeholders=self._description_placeholders(),
+            )
+        return self.async_abort(reason=result.get("reason") or "pairing_flow_failed")
 
 
 class PairingRequiredRepairFlow(RepairsFlow):
@@ -178,6 +322,9 @@ async def async_create_fix_flow(
     data: dict[str, Any] | None,
 ) -> RepairsFlow:
     """Create the repair flow for a fixable issue."""
+    if issue_id == COMBINE_BEDS_ISSUE_ID:
+        return CombineBedsRepairFlow()
+
     payload = data or {}
     return PairingRequiredRepairFlow(
         address=payload.get("address", ""),

@@ -271,8 +271,7 @@
         "title": "Combine two beds",
         "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently — if a sync cable already keeps both sides together, keep a single bed instead.",
         "data": {
-          "left_entry": "Left side bed",
-          "right_entry": "Right side bed",
+          "pair_selection": "Left and Right sides",
           "name": "Name for the combined bed"
         }
       }
@@ -1772,6 +1771,36 @@
         },
         "abort": {
           "pairing_failed": "Pairing didn't complete. Put the bed back into pairing mode (OKIN bases: unplug the control box ~30s, then plug it back in; Leggett & Platt Smart Bed: unplug the bed and remove the power-supply batteries, then plug it back in and wait for the chime and pulsing blue light; other beds: hold the pairing button), make sure it is in range of your Home Assistant adapter or an ESPHome proxy on 2024.3.0+, then run this repair again."
+        }
+      }
+    },
+    "combine_two_beds": {
+      "title": "Combine two beds into one (Dual Bed)",
+      "fix_flow": {
+        "step": {
+          "pair_beds": {
+            "title": "Combine two beds",
+            "description": "Home Assistant found {count} active standalone beds: {names}. If two entries control the independent sides of one physical bed, choose which is Left and Right. Their entity IDs, history, names, areas, and dashboard references are preserved. If these are separate beds, close and dismiss this suggestion.",
+            "data": {
+              "pair_selection": "Left and Right sides",
+              "name": "Name for the combined bed"
+            }
+          }
+        },
+        "error": {
+          "unknown": "The selected bed is no longer available. Reload Repairs and try again.",
+          "same_device": "Pick two different beds; you selected the same one for both sides.",
+          "same_address": "Both selections point at the same Bluetooth address. Pick two different beds.",
+          "mismatched_bed_types": "Those two beds use different protocols and cannot be combined.",
+          "pairing_needs_capabilities": "Connect both beds once before combining them so their motor layouts can be verified.",
+          "mismatched_motor_layouts": "Those beds expose different motor layouts and cannot be combined safely.",
+          "octo_pairing_needs_connection": "Both Octo beds must be connected before combining them so their capabilities can be saved.",
+          "pairing_unsupported_entities": "One of these beds has controls that cannot be recreated safely while a paired side is offline, so pairing is blocked."
+        },
+        "abort": {
+          "not_enough_beds": "Fewer than two active standalone beds remain, so this suggestion no longer applies.",
+          "already_configured": "These beds already belong to a paired Adjustable Bed entry.",
+          "pairing_flow_failed": "The Dual Bed setup flow could not be started. Reload Repairs and try again."
         }
       }
     }
