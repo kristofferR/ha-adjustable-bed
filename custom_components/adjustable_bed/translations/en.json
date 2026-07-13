@@ -266,6 +266,15 @@
         "data_description": {
           "address": "MAC address in format XX:XX:XX:XX:XX:XX"
         }
+      },
+      "pair_beds": {
+        "title": "Combine two beds",
+        "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently — if a sync cable already keeps both sides together, keep a single bed instead.",
+        "data": {
+          "left_entry": "Left side bed",
+          "right_entry": "Right side bed",
+          "name": "Name for the combined bed"
+        }
       }
     },
     "abort": {
@@ -274,7 +283,9 @@
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nUse **Generate Support Bundle** for the existing device entry, or run `adjustable_bed.generate_support_bundle` with `target_address: {address}`. Then reload or reconfigure the existing entry instead of adding it again.",
       "not_supported": "Device is not supported. The required Bluetooth service was not found.",
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
-      "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle."
+      "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
+      "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first."
     },
     "error": {
       "cannot_connect": "Failed to connect to bed. Check that the bed is powered on and in range.",
@@ -289,6 +300,11 @@
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
       "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
+      "same_device": "Pick two different beds — you selected the same one for both sides.",
+      "mismatched_bed_types": "Those two beds are different models and can't be combined. Add them as separate devices.",
+      "octo_pairing_unsupported": "Octo split beds can't be combined yet (their per-side connection switching is coming in a later update). Add each Octo side as a separate device for now.",
+      "pairing_unsupported_entities": "One of these beds has extra controls (such as climate, lights, or selectors) that combining doesn't support yet. Those would be lost, so pairing is blocked for now.",
+      "same_address": "Both selections point at the same bed (same Bluetooth address). Pick two different beds to combine.",
       "auto_detect_failed": "Couldn't identify this bed automatically. Pick a protocol from the list, or choose \"Diagnostic (unknown bed)\" to capture data for support."
     }
   },
@@ -502,6 +518,27 @@
       },
       "legs_down": {
         "name": "Legs Down"
+      },
+      "stop_both": {
+        "name": "Stop Both Sides"
+      },
+      "back_up": {
+        "name": "Back Up"
+      },
+      "back_down": {
+        "name": "Back Down"
+      },
+      "feet_up": {
+        "name": "Feet Up"
+      },
+      "feet_down": {
+        "name": "Feet Down"
+      },
+      "lumbar_up": {
+        "name": "Lumbar Up"
+      },
+      "lumbar_down": {
+        "name": "Lumbar Down"
       }
     },
     "cover": {
@@ -810,6 +847,24 @@
     },
     "multiple_device_targets_not_supported": {
       "message": "Support bundle generation only supports one configured device at a time. Select a single device or use target_address for an unconfigured bed."
+    },
+    "side_not_supported": {
+      "message": "This is a single bed; the Left/Right/Both option only applies to paired beds."
+    },
+    "side_not_available": {
+      "message": "This bed has no {side} side."
+    },
+    "service_not_supported_for_paired": {
+      "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."
+    },
+    "service_needs_side_for_paired": {
+      "message": "{device_name} is a paired bed; target one side's device for {service}."
+    },
+    "missing_target": {
+      "message": "Provide either a device or a target MAC address for the support bundle."
+    },
+    "bundle_needs_side_for_paired": {
+      "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
     }
   },
   "issues": {

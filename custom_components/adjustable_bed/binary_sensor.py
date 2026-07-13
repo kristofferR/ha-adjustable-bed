@@ -23,6 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -61,7 +62,24 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed binary sensor entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    # Paired beds get a per-side BLE-connectivity sensor (and any per-side
+    # presence sensors) built against each child coordinator.
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[BinarySensorEntity] = []
+        for child in coordinator.children.values():
+            entities.extend(_binary_sensor_entities_for(hass, child))
+        async_add_entities(entities)
+        return
+
+    async_add_entities(_binary_sensor_entities_for(hass, coordinator))
+
+
+def _binary_sensor_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[BinarySensorEntity]:
+    """Build binary-sensor entities for a single (child or standalone) coordinator."""
     controller = coordinator.controller
     entities: list[BinarySensorEntity] = []
     for description in BINARY_SENSOR_DESCRIPTIONS:
@@ -91,7 +109,7 @@ async def async_setup_entry(
             continue
         entities.append(AdjustableBedConnectionSensor(coordinator, description))
 
-    async_add_entities(entities)
+    return entities
 
 
 def _async_remove_stale_presence_entity(

@@ -2254,3 +2254,17 @@ async def test_verify_connection_skipped_without_scanner(
 
     assert created["type"] == FlowResultType.CREATE_ENTRY
     assert created["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
+
+
+def test_shown_option_values_coerces_defaults():
+    """String schema defaults are coerced like user_input, so an unchanged
+    numeric field is not mistaken for a change in the paired-options save."""
+    import voluptuous as vol
+
+    from custom_components.adjustable_bed.config_flow import _shown_option_values
+
+    schema = {
+        vol.Optional("pulse", default="10"): vol.Coerce(int),
+        vol.Optional("angle", default="68.0"): vol.Coerce(float),
+    }
+    assert _shown_option_values(schema) == {"pulse": 10, "angle": 68.0}

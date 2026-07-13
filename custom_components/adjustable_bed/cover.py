@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.cover import (
     CoverDeviceClass,
@@ -27,6 +27,7 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
+from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
 
 if TYPE_CHECKING:
     from .beds.base import BedController, MotorControlSpec
@@ -178,41 +179,66 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Adjustable Bed cover entities."""
-    coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
+    # Paired beds expose per-side motors: build the same covers against each
+    # child coordinator (each attaches to its own side sub-device). There is no
+    # combined cover (synthesized position is a non-goal); combined motion is
+    # exposed as "both" buttons instead.
+    if isinstance(coordinator, PairedBedCoordinator):
+        entities: list[AdjustableBedCover] = []
+        for side, child in coordinator.children.items():
+            entities.extend(
+                _cover_entities_for(
+                    hass,
+                    cast(
+                        "AdjustableBedCoordinator",
+                        PairedSideProxy(coordinator, child, side),
+                    ),
+                )
+            )
+        async_add_entities(entities)
+        return
+
+    async_add_entities(_cover_entities_for(hass, coordinator))
+
+
+def _cover_entities_for(
+    hass: HomeAssistant, coordinator: AdjustableBedCoordinator
+) -> list[AdjustableBedCover]:
+    """Build the motor cover entities for a single (child or standalone) coordinator."""
     controller = coordinator.controller
+
+    if controller is None:
+        _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
+        return []
 
     # Skip motor cover entities if bed doesn't support motor control. Still run
     # stale cleanup first, so covers left over from an older config (e.g. a Gen2
     # entry that resolved to a no-actuator profile) are removed rather than left
     # registered and unavailable.
-    if controller is not None and not controller.supports_motor_control:
+    if not controller.supports_motor_control:
         _LOGGER.debug(
             "Skipping motor covers for %s - bed only supports presets",
             coordinator.name,
         )
         _async_remove_stale_cover_entities(hass, coordinator, controller)
-        return
+        return []
 
     # Skip motor cover entities if bed uses discrete motor control (buttons instead)
-    if controller is not None and controller.has_discrete_motor_control:
+    if controller.has_discrete_motor_control:
         _LOGGER.debug(
             "Skipping motor covers for %s - bed uses discrete motor control (buttons instead)",
             coordinator.name,
         )
-        return
-
-    if controller is None:
-        _LOGGER.warning("Skipping motor covers for %s - controller not available", coordinator.name)
-        return
+        return []
 
     _async_remove_stale_cover_entities(hass, coordinator, controller)
 
-    entities = [
+    return [
         AdjustableBedCover(coordinator, _build_cover_description(coordinator, spec))
         for spec in controller.motor_control_specs
     ]
-
-    async_add_entities(entities)
 
 
 def _build_cover_description(
@@ -410,6 +436,11 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
         try:
             _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
+            # cancel_running=True (the default) cancels the in-flight movement
+            # first, then sends this motor's specific stop. For a paired side this
+            # routes through the proxy → the parent preempts the in-flight pulse
+            # (round-16 cancel) before the lock, so the stop is both immediate and
+            # motor-specific (not a side-wide stop_all).
             await self._coordinator.async_execute_controller_command(
                 self.entity_description.stop_fn
             )

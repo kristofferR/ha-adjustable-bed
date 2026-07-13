@@ -60,6 +60,12 @@ test("2-motor bed with light switch and no massage/climate", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("paired parent's stop_both maps to the stop slot", () => {
+  const hass = hassWith([entry("button.master_bed_stop_both", "stop_both")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.stop).toBe("button.master_bed_stop_both");
+});
+
 test("Okin utility buttons (sync / child lock) bucket into utility", () => {
   const hass = hassWith([
     entry("cover.seng_back", "back"),

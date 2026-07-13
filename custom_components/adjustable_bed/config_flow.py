@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from homeassistant.components.bluetooth import (
@@ -21,6 +21,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.const import __version__ as HA_VERSION
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
@@ -81,6 +82,7 @@ from .const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_PIN,
+    CONF_PAIR_ID,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -109,6 +111,7 @@ from .const import (
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
+    PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -136,6 +139,14 @@ from .discovery_settings import (
     async_set_discovery_disabled,
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .pairing import (
+    build_pair_entry_data,
+    get_child,
+    is_paired,
+    iter_children,
+    pair_member_addresses,
+    with_updated_child,
+)
 from .unsupported import (
     build_misidentified_issue_url,
     capture_device_info,
@@ -250,7 +261,9 @@ class CapabilityReport:
 class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Adjustable Bed."""
 
-    VERSION = 3
+    # v4 introduces the paired-bed schema (Dual Bed 4.0). The v3->v4 migration is
+    # a strict no-op for non-paired entries; see async_migrate_entry.
+    VERSION = 4
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -510,6 +523,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
     def _configured_entries_by_address(self) -> dict[str, ConfigEntry]:
         """Return active entries keyed by normalized Bluetooth address.
 
+        Paired entries (Dual Bed 4.0) have a synthetic ``pair_<id>`` unique_id, so
+        they are additionally indexed by each member MAC. Otherwise re-discovery
+        of an absorbed side would slip past the dedup and create a duplicate
+        standalone entry. Single-bed entries have no members, so they are
+        unaffected.
+
         Ignored discovery placeholders must remain selectable in a user-started
         flow. Home Assistant replaces the ignored entry when that flow creates
         the real entry; treating it as configured here made the bed disappear
@@ -522,7 +541,31 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             candidate = entry.unique_id or entry.data.get(CONF_ADDRESS)
             if isinstance(candidate, str):
                 configured[candidate.upper()] = entry
+            for member in pair_member_addresses(entry.data):
+                configured[member] = entry
         return configured
+
+    def _has_unpairable_entities(self, entry: ConfigEntry) -> bool:
+        """Whether ``entry`` exposes entities a pair can't recreate yet.
+
+        Paired setup forwards binary_sensor/button/cover/number/sensor/switch.
+        A bed with climate/light/select entities would lose them on conversion,
+        so block pairing for those rather than silently dropping them.
+        """
+        registry = er.async_get(self.hass)
+        unsupported = {"climate", "light", "select"}
+        return any(
+            entity.domain in unsupported
+            for entity in er.async_entries_for_config_entry(registry, entry.entry_id)
+        )
+
+    def _is_absorbed_pair_member(self, address: str) -> bool:
+        """Whether ``address`` is already a side of an existing paired bed."""
+        member = address.upper()
+        return any(
+            member in pair_member_addresses(entry.data)
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+        )
 
     def _async_abort_retrying_entry(self, address: str) -> ConfigFlowResult:
         """Explain how to recover when the bed is already stuck retrying setup."""
@@ -593,6 +636,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # between Bluetooth discovery (may be lowercase) and manual entry (normalized)
         await self.async_set_unique_id(discovery_info.address.upper())
         self._abort_if_unique_id_configured()
+
+        # Don't re-offer a side already absorbed into a paired bed: its MAC is a
+        # pair member, not the paired entry's (synthetic) unique_id, so the abort
+        # above won't catch it.
+        if self._is_absorbed_pair_member(discovery_info.address):
+            return self.async_abort(reason="already_configured")
 
         # Use detailed detection to get confidence and ambiguity info
         detection_result = detect_bed_type_detailed(discovery_info)
@@ -1108,11 +1157,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             if address == "diagnostic":
                 _LOGGER.debug("User selected diagnostic mode")
                 return await self.async_step_diagnostic()
+            if address == "pair_beds":
+                _LOGGER.debug("User selected combine two beds")
+                return await self.async_step_pair_beds()
 
             _LOGGER.info("User selected device: %s", address)
             # Normalize address to uppercase to match Bluetooth discovery
             await self.async_set_unique_id(address.upper())
             self._abort_if_unique_id_configured()
+            if self._is_absorbed_pair_member(address):
+                return self.async_abort(reason="already_configured")
 
             self._discovery_info = self._discovered_devices[address]
             return await self.async_step_bluetooth_confirm()
@@ -1229,10 +1283,125 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             devices["select_by_brand"] = "Select by actuator brand (recommended)"
         devices["manual"] = "Show all BLE devices"
         devices["diagnostic"] = "Browse unsupported BLE devices"
+        if len(self._pairable_single_entries()) >= 2:
+            devices["pair_beds"] = "Combine two beds into one (Dual Bed)"
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): vol.In(devices)}),
+        )
+
+    def _pairable_single_entries(self) -> list[ConfigEntry]:
+        """Configured single-bed entries that could be combined into a pair.
+
+        Excludes any standalone entry whose MAC is already a member of an
+        existing pair (a stale/imported duplicate) — combining it again would
+        create a second pair sharing the same child {address}_{key} unique IDs.
+        """
+        return [
+            entry
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if not is_paired(entry.data)
+            and entry.data.get(CONF_ADDRESS)
+            and not self._is_absorbed_pair_member(entry.data[CONF_ADDRESS])
+            # Only fully-loaded beds: a bed still in SETUP_RETRY / failed initial
+            # setup hasn't registered its entities yet, so _has_unpairable_entities
+            # can't see climate/light/select it would later expose (which a pair
+            # doesn't forward and would drop).
+            and entry.state == ConfigEntryState.LOADED
+        ]
+
+    async def async_step_pair_beds(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Combine two existing single-bed entries into one paired (Dual Bed) device.
+
+        The two originals are removed and one paired entry is created. Per-side
+        entities keep their {address}_{key} unique_ids, so history follows.
+        """
+        entries = self._pairable_single_entries()
+        if len(entries) < 2:
+            return self.async_abort(reason="not_enough_beds")
+
+        by_id = {entry.entry_id: entry for entry in entries}
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            left = by_id.get(user_input["left_entry"])
+            right = by_id.get(user_input["right_entry"])
+            if left is None or right is None:
+                errors["base"] = "unknown"
+            elif left.entry_id == right.entry_id:
+                errors["right_entry"] = "same_device"
+            elif (left.data.get(CONF_ADDRESS) or "").upper() == (
+                right.data.get(CONF_ADDRESS) or ""
+            ).upper():
+                # Two distinct entries for the same MAC would build children with
+                # identical addresses and so collide on {address}_{key} unique IDs.
+                errors["right_entry"] = "same_address"
+            elif left.data.get(CONF_BED_TYPE) != right.data.get(CONF_BED_TYPE):
+                errors["base"] = "mismatched_bed_types"
+            elif left.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO:
+                # Octo needs sequential active-connection switching + per-side PIN
+                # and keepalive (Phase 2). Pairing it with the current concurrent
+                # path would be unreliable, so block it until that lands.
+                errors["base"] = "octo_pairing_unsupported"
+            elif self._has_unpairable_entities(left) or self._has_unpairable_entities(
+                right
+            ):
+                errors["base"] = "pairing_unsupported_entities"
+            else:
+                name = user_input.get(CONF_NAME) or f"{left.title} + {right.title}"
+                # Merge each side's options (e.g. customized angle limits, which the
+                # coordinator reads before data) into its descriptor so they aren't
+                # lost when the originals are removed.
+                pair_data = build_pair_entry_data(
+                    {**left.data, **dict(left.options)},
+                    {**right.data, **dict(right.options)},
+                    name=name,
+                )
+                await self.async_set_unique_id(pair_data[CONF_PAIR_ID])
+                self._abort_if_unique_id_configured()
+                # Remove the two originals BEFORE creating the pair. The paired
+                # platforms reuse the same {address}_{key} entity unique_ids, so
+                # the originals' entities must be gone first or the paired ones
+                # would be rejected as duplicates (leaving the pair without
+                # per-side controls). pair_data is already built and the unique_id
+                # checked, and there is no await between the removals and the
+                # return, so this can't leave the user with no bed. (Full
+                # history-preserving device re-homing is a follow-up.)
+                await self.hass.config_entries.async_remove(left.entry_id)
+                await self.hass.config_entries.async_remove(right.entry_id)
+                # async_remove always removes the entry — an unload failure still
+                # deletes it and only flags require_restart — so there is no
+                # surviving-original / partial-removal case to roll back here. (A
+                # truly transactional, history-preserving conversion via device
+                # re-homing is the documented follow-up.)
+                _LOGGER.info(
+                    "Combined %s + %s into paired bed %s",
+                    left.title,
+                    right.title,
+                    name,
+                )
+                return self.async_create_entry(title=name, data=pair_data)
+
+        options = [
+            SelectOptionDict(value=entry.entry_id, label=entry.title or entry.entry_id)
+            for entry in entries
+        ]
+        side_selector = SelectSelector(
+            SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+        )
+        return self.async_show_form(
+            step_id="pair_beds",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("left_entry"): side_selector,
+                    vol.Required("right_entry"): side_selector,
+                    vol.Optional(CONF_NAME): str,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_select_actuator(
@@ -1338,6 +1507,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             # Normalize address to uppercase to match Bluetooth discovery
             await self.async_set_unique_id(address.upper())
             self._abort_if_unique_id_configured()
+            if self._is_absorbed_pair_member(address):
+                return self.async_abort(reason="already_configured")
 
             self._discovery_info = self._all_ble_devices[address]
             return await self.async_step_manual_config()
@@ -1697,6 +1868,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
                     await self.async_set_unique_id(address)
                     self._abort_if_unique_id_configured()
+                    if self._is_absorbed_pair_member(address):
+                        return self.async_abort(reason="already_configured")
 
                     _LOGGER.info(
                         "Manual bed configuration: address=%s, type=%s, variant=%s, name=%s, motors=%s, massage=%s, disable_angle_sensing=%s, adapter=%s, pulse_count=%s, pulse_delay=%s",
@@ -2498,13 +2671,38 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+def _shown_option_values(schema_dict: dict[Any, Any]) -> dict[str, Any]:
+    """Return the default value each field in the options form showed, validated
+    the SAME way ``user_input`` was.
+
+    HA validates submitted input against this schema before handing it back, so
+    a raw default of ``"10"`` would mis-compare against the coerced ``10``.
+    Validating an empty input through the same schema coerces the defaults
+    identically, so the paired-options save can tell which fields the user really
+    changed (and not clobber per-side values with mistyped "changes").
+    """
+    try:
+        return cast("dict[str, Any]", vol.Schema(schema_dict)({}))
+    except vol.Invalid:
+        return {}
+
+
 class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     """Handle Adjustable Bed options."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         # Get current values from config entry
-        current_data = self.config_entry.data
+        current_data: dict[str, Any] = dict(self.config_entry.data)
+        if is_paired(current_data):
+            # Per-side settings (motor count, massage, adapter, angle limits)
+            # live in the child descriptors, not parent data. Show the first
+            # side's real values so the form isn't generic defaults; on save,
+            # only the keys the user actually changed propagate (see below), so
+            # untouched values can't clobber the other side's per-side settings.
+            first_child = next(iter(iter_children(current_data)), None)
+            if first_child is not None:
+                current_data = {**current_data, **first_child}
         bed_type = current_data.get(CONF_BED_TYPE)
 
         # Get available Bluetooth adapters
@@ -2738,7 +2936,43 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             if discovery_disabled_input is not None:
                 await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
-            new_data = {**self.config_entry.data, **user_input}
+            if is_paired(self.config_entry.data):
+                # For a paired bed, ONLY the keys the user actually changed go
+                # anywhere. "Changed" is measured against the value the form
+                # ACTUALLY SHOWED (the schema default, seeded from the
+                # representative child / parent data, and validated/coerced the
+                # same way user_input was). Writing the whole form (incl.
+                # unchanged defaults) to parent data would also leak into the
+                # children, since _build_paired_children treats parent data as
+                # shared fields for any key a child descriptor doesn't store.
+                shown = _shown_option_values(schema_dict)
+                changed = {
+                    key: value
+                    for key, value in user_input.items()
+                    if key in shown and shown[key] != value
+                }
+                new_data = {**self.config_entry.data, **changed}
+                submitted_adapter = user_input.get(CONF_PREFERRED_ADAPTER)
+                for side in PAIR_SIDES:
+                    child = get_child(new_data, side)
+                    if child is None:
+                        continue
+                    child_changed = dict(changed)
+                    # A child whose stored adapter has disappeared shows the
+                    # 'auto' fallback; normalize it even though the submitted
+                    # value looks unchanged vs that fallback, so a stale adapter
+                    # doesn't linger.
+                    stored_adapter = child.get(CONF_PREFERRED_ADAPTER)
+                    if (
+                        submitted_adapter is not None
+                        and stored_adapter is not None
+                        and stored_adapter not in adapters
+                    ):
+                        child_changed[CONF_PREFERRED_ADAPTER] = submitted_adapter
+                    if child_changed:
+                        new_data = with_updated_child(new_data, side, child_changed)
+            else:
+                new_data = {**self.config_entry.data, **user_input}
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data=new_data,
