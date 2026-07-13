@@ -123,7 +123,7 @@ def _async_remove_stale_presence_entity(
     entity_id = registry.async_get_entity_id(
         "binary_sensor",
         DOMAIN,
-        f"{coordinator.address}_bed_presence",
+        coordinator.entity_unique_id("bed_presence"),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -142,7 +142,8 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         """Initialize the binary sensor."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -208,6 +209,10 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
         else:
             attrs["state_detail"] = "disconnected"
 
+        side = getattr(self._coordinator, "entity_side", None)
+        if side is not None:
+            attrs["bed_side"] = side
+
         return attrs
 
 
@@ -226,7 +231,8 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         """Initialize the presence sensor."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:

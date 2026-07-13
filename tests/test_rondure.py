@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -24,6 +26,9 @@ from custom_components.adjustable_bed.const import (
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
     RONDURE_WRITE_CHAR_UUID,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -198,6 +203,17 @@ class TestRondurePacketBuilding:
         packet = controller._build_packet(RondureCommands.HEAD_UP)
 
         assert len(packet) == 8
+
+    def test_per_call_side_binding_preserves_configured_default(self):
+        """Phase 3 side calls select A/B/native-both without mutable state."""
+        controller = RondureController(MagicMock(), RONDURE_VARIANT_BOTH)
+        command = RondureCommands.HEAD_UP
+
+        legacy = controller._build_packet(command)
+        assert controller.bind_side(SIDE_LEFT)._build_packet(command)[7] == 0x01
+        assert controller.bind_side(SIDE_RIGHT)._build_packet(command)[7] == 0x02
+        assert controller.bind_side(SIDE_BOTH)._build_packet(command) == legacy
+        assert controller._build_packet(command) == legacy
 
     def test_single_side_packet_is_9_bytes(self):
         """Single-side packet should be exactly 9 bytes."""

@@ -20,7 +20,11 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity
-from .paired_coordinator import PairedBedCoordinator, PairedSideProxy
+from .paired_coordinator import (
+    PairedBedCoordinator,
+    PairedSideProxy,
+    SingleAddressPairedCoordinator,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController, MotorControlSpec
@@ -695,7 +699,7 @@ def _async_remove_stale_button_entities(
         entity_id = registry.async_get_entity_id(
             "button",
             DOMAIN,
-            f"{coordinator.address}_{description.key}",
+            coordinator.entity_unique_id(description.key),
         )
         if entity_id is not None:
             registry.async_remove(entity_id)
@@ -714,8 +718,10 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         """Initialize the button."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
-        self._attr_translation_key = description.translation_key
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        self._attr_translation_key = coordinator.entity_translation_key(
+            description.translation_key or description.key
+        )
 
     async def async_press(self) -> None:
         """Handle button press."""
@@ -772,6 +778,13 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
             raise
 
 
+def _paired_entity_unique_id(coordinator: PairedBedCoordinator, key: str) -> str:
+    """Keep legacy mock/duck coordinators compatible with the parent namespace."""
+    if isinstance(coordinator, PairedBedCoordinator):
+        return coordinator.entity_unique_id(key)
+    return f"{coordinator.pair_id}_{key}"
+
+
 class PairedBedStopButton(ButtonEntity):
     """Combined STOP for a paired bed.
 
@@ -785,8 +798,10 @@ class PairedBedStopButton(ButtonEntity):
     def __init__(self, coordinator: PairedBedCoordinator) -> None:
         """Initialize the combined stop button."""
         self._coordinator = coordinator
-        self._attr_unique_id = f"{coordinator.pair_id}_stop_both"
+        self._attr_unique_id = _paired_entity_unique_id(coordinator, "stop_both")
         self._attr_device_info = coordinator.device_info
+        if isinstance(coordinator, SingleAddressPairedCoordinator):
+            self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
     @property
     def available(self) -> bool:
@@ -817,9 +832,17 @@ class PairedBedCombinedButton(ButtonEntity):
         """Initialize the combined button."""
         self._coordinator = coordinator
         self.entity_description = description
-        self._attr_translation_key = description.translation_key
-        self._attr_unique_id = f"{coordinator.pair_id}_{description.key}_both"
+        self._attr_translation_key = (
+            f"{description.translation_key}_both"
+            if isinstance(coordinator, SingleAddressPairedCoordinator)
+            else description.translation_key
+        )
+        self._attr_unique_id = _paired_entity_unique_id(
+            coordinator, f"{description.key}_both"
+        )
         self._attr_device_info = coordinator.device_info
+        if isinstance(coordinator, SingleAddressPairedCoordinator):
+            self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
     @property
     def available(self) -> bool:
@@ -869,9 +892,18 @@ class PairedBedCombinedMotorButton(ButtonEntity):
         self._move_fn = spec.open_fn if direction == "up" else spec.close_fn
         # Translation key from spec.translation_key (preserves controller-specific
         # label overrides); unique_id stays on the stable spec.key.
-        self._attr_translation_key = f"{spec.translation_key}_{direction}"
-        self._attr_unique_id = f"{coordinator.pair_id}_{spec.key}_{direction}_both"
+        base_translation_key = f"{spec.translation_key}_{direction}"
+        self._attr_translation_key = (
+            f"{base_translation_key}_both"
+            if isinstance(coordinator, SingleAddressPairedCoordinator)
+            else base_translation_key
+        )
+        self._attr_unique_id = _paired_entity_unique_id(
+            coordinator, f"{spec.key}_{direction}_both"
+        )
         self._attr_device_info = coordinator.device_info
+        if isinstance(coordinator, SingleAddressPairedCoordinator):
+            self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
     @property
     def available(self) -> bool:

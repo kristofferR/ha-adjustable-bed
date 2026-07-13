@@ -25,7 +25,11 @@ from bleak.exc import BleakError
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
+    RONDURE_VARIANT_SIDE_B,
     RONDURE_WRITE_CHAR_UUID,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from .base import BedController
 
@@ -129,7 +133,18 @@ class RondureController(BedController):
         """Calculate checksum (bitwise NOT of sum of all bytes)."""
         return (~sum(data)) & 0xFF
 
-    def _build_packet(self, command: int) -> bytes:
+    def _variant_for_side(self, side: str | None = None) -> str:
+        """Resolve a per-call logical side without changing legacy defaults."""
+        logical_side = side or self.command_side
+        if logical_side == SIDE_LEFT:
+            return RONDURE_VARIANT_SIDE_A
+        if logical_side == SIDE_RIGHT:
+            return RONDURE_VARIANT_SIDE_B
+        if logical_side == SIDE_BOTH:
+            return RONDURE_VARIANT_BOTH
+        return self._variant
+
+    def _build_packet(self, command: int, side: str | None = None) -> bytes:
         """Build a command packet for the bed.
 
         Args:
@@ -146,15 +161,16 @@ class RondureController(BedController):
             (command >> 24) & 0xFF,
         ]
 
-        if self._variant == RONDURE_VARIANT_BOTH:
+        variant = self._variant_for_side(side)
+        if variant == RONDURE_VARIANT_BOTH:
             # 8-byte packet: [0xE5, 0xFE, 0x16, cmd[0-3], checksum]
             packet = bytes([0xE5, 0xFE, 0x16] + cmd_bytes)
             checksum = self._calculate_checksum(packet)
             return packet + bytes([checksum])
         else:
             # 9-byte packet: [0xE6, 0xFE, 0x16, cmd[0-3], side, checksum]
-            side = 0x01 if self._variant == RONDURE_VARIANT_SIDE_A else 0x02
-            packet = bytes([0xE6, 0xFE, 0x16] + cmd_bytes + [side])
+            side_byte = 0x01 if variant == RONDURE_VARIANT_SIDE_A else 0x02
+            packet = bytes([0xE6, 0xFE, 0x16] + cmd_bytes + [side_byte])
             checksum = self._calculate_checksum(packet)
             return packet + bytes([checksum])
 

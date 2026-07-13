@@ -29,6 +29,9 @@ from custom_components.adjustable_bed.const import (
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
     SBI_VARIANT_SIDE_B,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -203,6 +206,17 @@ class TestSBIPacketBuilding:
         packet = controller._build_command(SBICommands.MOTOR_HEAD_UP)
 
         assert len(packet) == 8
+
+    def test_per_call_side_binding_preserves_configured_default(self):
+        """Phase 3 side calls select A/B/native-both without mutating legacy mode."""
+        controller = SBIController(MagicMock(), variant=SBI_VARIANT_BOTH)
+        command = SBICommands.MOTOR_HEAD_UP
+
+        legacy = controller._build_command(command)
+        assert controller.bind_side(SIDE_LEFT)._build_command(command)[7] == 0x01
+        assert controller.bind_side(SIDE_RIGHT)._build_command(command)[7] == 0x02
+        assert controller.bind_side(SIDE_BOTH)._build_command(command) == legacy
+        assert controller._build_command(command) == legacy
 
     def test_side_a_packet_is_9_bytes(self):
         """Side A mode packets should be exactly 9 bytes."""

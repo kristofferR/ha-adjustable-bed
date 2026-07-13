@@ -66,6 +66,7 @@ from .const import (
     KEESON_VARIANT_ERGOMOTION,
     OKIN_CST_POSITION_AXES,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
+    PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -76,12 +77,13 @@ from .const import (
 )
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
-from .paired_coordinator import PairedBedCoordinator
+from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
     KEY_ORIGIN_SOURCE,
     KEY_ORIGIN_TITLE,
     KEY_ORIGIN_UNIQUE_ID,
+    KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     get_child,
     is_paired,
     iter_children,
@@ -155,9 +157,8 @@ PLATFORMS: list[Platform] = [
 ]
 
 # Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
-# against the child coordinators. The remaining platforms (climate/light/select)
-# are not forwarded for pairs yet; the combine flow blocks beds that expose them
-# so their entities are never silently dropped.
+# against logical child coordinators; single-address pairs keep every entity on
+# the one physical MAC device while separate-address pairs use child devices.
 PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
@@ -600,6 +601,60 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     if not is_paired(entry.data):
         raise HomeAssistantError("Cannot unpair a standalone bed")
 
+    if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        children = iter_children(entry.data)
+        if not children:
+            raise HomeAssistantError("Single-address pair has no provenance")
+        origin_data = single_data_from_child(children[0])
+        origin_options = single_options_from_child(children[0])
+        origin_title = children[0].get(KEY_ORIGIN_TITLE) or entry.title
+        origin_unique_id = children[0].get(KEY_ORIGIN_UNIQUE_ID) or entry.unique_id
+        paired_data = dict(entry.data)
+        paired_options = dict(entry.options)
+        paired_title = entry.title
+        paired_unique_id = entry.unique_id
+        preserved = set(
+            entry.data.get(KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS, [])
+        )
+        unloaded = await hass.config_entries.async_unload(entry.entry_id)
+        if not unloaded:
+            raise HomeAssistantError("Could not unload the bed before reverting sides")
+        try:
+            hass.config_entries.async_update_entry(
+                entry,
+                data=origin_data,
+                options=origin_options,
+                title=origin_title,
+                unique_id=origin_unique_id,
+            )
+            if not await hass.config_entries.async_setup(entry.entry_id):
+                raise RuntimeError("standalone entry setup failed")
+            registry = er.async_get(hass)
+            for row in list(
+                er.async_entries_for_config_entry(registry, entry.entry_id)
+            ):
+                if row.unique_id not in preserved and row.unique_id.endswith(
+                    ("_left", "_right", "_both")
+                ):
+                    registry.async_remove(row.entity_id)
+        except Exception:
+            _LOGGER.exception(
+                "Failed to revert single-address paired bed %s", entry.title
+            )
+            with contextlib.suppress(Exception):
+                await hass.config_entries.async_unload(entry.entry_id)
+            hass.config_entries.async_update_entry(
+                entry,
+                data=paired_data,
+                options=paired_options,
+                title=paired_title,
+                unique_id=paired_unique_id,
+            )
+            with contextlib.suppress(Exception):
+                await hass.config_entries.async_setup(entry.entry_id)
+            raise
+        return [entry]
+
     children = iter_children(entry.data)
     if len(children) != 2:
         raise HomeAssistantError("Paired bed must contain exactly two sides")
@@ -732,6 +787,9 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         [child.get(CONF_SIDE) for child in entry.data.get(CONF_PAIR_CHILDREN, [])],
     )
 
+    if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        return await _async_setup_single_address_paired_entry(hass, entry)
+
     children = _build_paired_children(hass, entry)
     if not children:
         raise ConfigEntryNotReady("Paired bed has no child sides configured")
@@ -833,6 +891,55 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             )
 
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
+    return True
+
+
+async def _async_setup_single_address_paired_entry(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> bool:
+    """Set up a left/right/both surface over one physical coordinator."""
+    inner = AdjustableBedCoordinator(hass, entry)
+    coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
+    info = coordinator.device_info
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers=info.get("identifiers"),
+        name=info.get("name"),
+        manufacturer=info.get("manufacturer"),
+        model=info.get("model"),
+    )
+    try:
+        async with asyncio.timeout(SETUP_TIMEOUT):
+            connected = await coordinator.async_connect()
+    except TimeoutError:
+        await coordinator.async_shutdown()
+        raise ConfigEntryNotReady(
+            f"Single-address paired bed {entry.title} timed out connecting"
+        ) from None
+    if not connected:
+        await _maybe_create_pairing_issue_for(hass, inner)
+        await coordinator.async_shutdown()
+        raise ConfigEntryNotReady(f"Bed {entry.title} could not be connected")
+
+    controller = inner.controller
+    if controller is not None and not getattr(
+        controller, "supports_single_address_pairing", True
+    ):
+        await coordinator.async_shutdown()
+        raise ConfigEntryNotReady(
+            "This CBNew protocol has no side selector and cannot expose paired sides"
+        )
+
+    hass.data[DOMAIN][entry.entry_id] = coordinator
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+    for side, child in coordinator.children.items():
+        entry.async_create_background_task(
+            hass,
+            child.async_read_initial_positions(),
+            name=f"adjustable_bed_single_address_initial_read_{side}",
+        )
+    _LOGGER.info("Single-address paired bed setup complete for %s", entry.title)
     return True
 
 
@@ -1102,7 +1209,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         if coordinator is None:
             return None
         inferred_side: str | None = None
-        if isinstance(coordinator, PairedBedCoordinator):
+        if isinstance(coordinator, PairedBedCoordinator) and not isinstance(
+            coordinator, SingleAddressPairedCoordinator
+        ):
             macs = {ident[1].upper() for ident in device.identifiers if ident[0] == DOMAIN}
             for side, child in coordinator.children.items():
                 if child.address.upper() in macs:
@@ -1816,15 +1925,17 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    plans[id(target)] = await _set_position_plan(
+                    plans[getattr(target, "operation_identity", id(target))] = (
+                        await _set_position_plan(
                         coordinator, target, preflighted, motor, position
+                        )
                     )
         except ServiceValidationError:
             await _release_preflighted(preflighted)
             raise
 
         async def seek(target: AdjustableBedCoordinator) -> None:
-            config = plans[id(target)]
+            config = plans[getattr(target, "operation_identity", id(target))]
             await target.async_seek_position(
                 position_key=cast(str, config["position_key"]),
                 target_angle=position,
@@ -1995,20 +2106,24 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         try:
             for coordinator, side in targets:
                 for target in _command_targets(coordinator, side):
-                    plans[id(target)] = await _timed_move_plan(
+                    plans[getattr(target, "operation_identity", id(target))] = (
+                        await _timed_move_plan(
                         coordinator,
                         target,
                         preflighted,
                         motor,
                         direction,
                         duration_ms,
+                        )
                     )
         except ServiceValidationError:
             await _release_preflighted(preflighted)
             raise
 
         async def move(target: AdjustableBedCoordinator) -> None:
-            await target.async_execute_controller_command(plans[id(target)])
+            await target.async_execute_controller_command(
+                plans[getattr(target, "operation_identity", id(target))]
+            )
 
         try:
             for coordinator, side in targets:

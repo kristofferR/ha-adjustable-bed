@@ -10,6 +10,7 @@ This guide covers all configuration options available for the Adjustable Bed int
 - [Motor Pulse Settings](#motor-pulse-settings)
 - [Protocol Variants](#protocol-variants)
 - [Bed-Specific Settings](#bed-specific-settings)
+- [Single-Address Left / Right Controls](#single-address-left--right-controls)
 - [Split-King / Sync Mode](#split-king--sync-mode)
 - [Troubleshooting Tips](#troubleshooting-tips)
 
@@ -327,6 +328,32 @@ Increase the "Motor pulse delay" setting. Try 100ms, then 150ms if needed.
 - **Richmat beds:** Select your specific remote code in options
 - **Other beds:** Verify motor count matches your bed's actual motors
 - **Massage not showing:** Enable "Has massage" in options
+
+---
+
+## Single-Address Left / Right Controls
+
+SBI, Rondure, legacy CB24, and Sleep Number beds can reach both physical sides
+through one Bluetooth address. Open the bed's integration options and choose
+**Enable Left / Right / Both controls** to expose the same paired-bed surface
+used by two-address beds.
+
+This conversion keeps the existing config entry, Bluetooth address, device,
+and standalone entity history. It is reversible through **Restore standalone
+controls**. Existing entries do not change automatically.
+
+Routing remains protocol-native:
+
+- SBI and Rondure use their Side A, Side B, and native broadcast packets.
+- Legacy CB24 uses selectors `0xAA` (left/A), `0xBB` (right/B), and `0x00`
+  (both). The selector is also available in initial setup and options.
+- Sleep Number serializes left then right over its one command lock because its
+  bamkey articulation commands have no native both-side packet.
+- CBNew profiles are refused because their known packet format has no A/B side
+  selector. The integration never guesses a selector byte.
+
+Standalone entries retain their configured default side and send the same
+bytes as before. The per-call side binding is used only after this opt-in.
 
 ---
 

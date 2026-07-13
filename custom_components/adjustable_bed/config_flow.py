@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from dataclasses import dataclass
 from typing import Any, cast
@@ -58,6 +59,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -65,9 +67,13 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BEDS_WITH_PERCENTAGE_POSITIONS,
     BEDS_WITH_POSITION_FEEDBACK,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
@@ -75,6 +81,7 @@ from .const import (
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_JENSEN_PIN,
+    CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LEGS_MAX_ANGLE,
     CONF_MALOUF_LAYOUT,
     CONF_MALOUF_MEMORY_SLOTS,
@@ -83,6 +90,7 @@ from .const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_PIN,
     CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
@@ -113,6 +121,7 @@ from .const import (
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
@@ -143,11 +152,14 @@ from .discovery_settings import (
 )
 from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
 from .pairing import (
+    KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
+    build_single_address_pair_entry_data,
     get_child,
     is_paired,
     iter_children,
     pair_member_addresses,
+    supports_single_address_pairing,
     with_updated_child,
 )
 from .unsupported import (
@@ -211,6 +223,19 @@ def _add_malouf_schema_fields(schema: dict[vol.Marker, Any]) -> None:
     )
 
 
+def _add_cb24_side_schema_field(schema: dict[vol.Marker, Any]) -> None:
+    """Expose the legacy CB24 native A/B selector when the type is known."""
+    schema[
+        vol.Optional(CONF_CB24_BED_SELECTION, default=CB24_BED_SELECTION_DEFAULT)
+    ] = vol.In(
+        {
+            CB24_BED_SELECTION_DEFAULT: "Both sides",
+            CB24_BED_SELECTION_A: "Side A / Left",
+            CB24_BED_SELECTION_B: "Side B / Right",
+        }
+    )
+
+
 def _add_malouf_entry_data(
     entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
 ) -> None:
@@ -221,6 +246,16 @@ def _add_malouf_entry_data(
     entry_data[CONF_MALOUF_MEMORY_SLOTS] = int(
         user_input.get(CONF_MALOUF_MEMORY_SLOTS, MALOUF_MEMORY_SLOTS_AUTO)
     )
+
+
+def _add_cb24_entry_data(
+    entry_data: dict[str, Any], user_input: dict[str, Any], bed_type: str | None
+) -> None:
+    """Persist the native CB24 A/B selector when it was collected."""
+    if bed_type == BED_TYPE_OKIN_CB24:
+        entry_data[CONF_CB24_BED_SELECTION] = int(
+            user_input.get(CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT)
+        )
 
 
 # Short, single-attempt timeout for the optional setup-time connection probe.
@@ -1009,6 +1044,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
                 _add_malouf_entry_data(entry_data, user_input, selected_bed_type)
+                _add_cb24_entry_data(entry_data, user_input, selected_bed_type)
                 # Malouf layout/memory fields weren't shown inline (user overrode the
                 # detected type to Malouf), so collect them in a follow-up step.
                 if self._needs_malouf_step(selected_bed_type, user_input):
@@ -1151,6 +1187,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
+        if bed_type == BED_TYPE_OKIN_CB24:
+            _add_cb24_side_schema_field(schema_dict)
 
         # Add PIN field for Octo beds
         if bed_type == BED_TYPE_OCTO:
@@ -1828,6 +1866,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
                 _add_malouf_entry_data(entry_data, user_input, bed_type)
+                _add_cb24_entry_data(entry_data, user_input, bed_type)
                 # Malouf layout/memory fields weren't shown inline (bed type was
                 # chosen from the dropdown), so collect them in a follow-up step.
                 if self._needs_malouf_step(bed_type, user_input):
@@ -1968,6 +2007,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         if defaults_bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
+        if defaults_bed_type == BED_TYPE_OKIN_CB24:
+            _add_cb24_side_schema_field(schema_dict)
 
         return self.async_show_form(
             step_id="manual_config",
@@ -2066,6 +2107,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                         ),
                     }
                     _add_malouf_entry_data(entry_data, user_input, bed_type)
+                    _add_cb24_entry_data(entry_data, user_input, bed_type)
                     # Malouf layout/memory fields weren't shown inline (bed type was
                     # chosen from the dropdown), so collect them in a follow-up step.
                     if self._needs_malouf_step(bed_type, user_input):
@@ -2170,6 +2212,8 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         if preselected_bed_type in MALOUF_BED_TYPES:
             _add_malouf_schema_fields(schema_dict)
+        if preselected_bed_type == BED_TYPE_OKIN_CB24:
+            _add_cb24_side_schema_field(schema_dict)
 
         return self.async_show_form(
             step_id="manual_entry",
@@ -2853,7 +2897,25 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options."""
         if is_paired(self.config_entry.data) and user_input is None:
-            return self.async_show_menu(step_id="init", menu_options=["settings", "unpair"])
+            action = (
+                "revert_sides"
+                if self.config_entry.data.get(CONF_PAIR_MODE)
+                == PAIR_MODE_SINGLE_ADDRESS
+                else "unpair"
+            )
+            return self.async_show_menu(
+                step_id="init", menu_options=["settings", action]
+            )
+        if user_input is None and supports_single_address_pairing(
+            self.config_entry.data.get(CONF_BED_TYPE),
+            self.config_entry.data.get(CONF_PROTOCOL_VARIANT),
+            resolved_variant=self.config_entry.data.get(
+                CONF_KAIDI_RESOLVED_VARIANT
+            ),
+        ):
+            return self.async_show_menu(
+                step_id="init", menu_options=["settings", "pair_sides"]
+            )
         return await self._async_options_form(user_input, step_id="init")
 
     async def async_step_settings(
@@ -2864,6 +2926,18 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
 
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Confirm splitting a paired bed back into two entries."""
+        return await self._async_unpair_form(user_input, step_id="unpair")
+
+    async def async_step_revert_sides(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm reverting a single-address paired surface."""
+        return await self._async_unpair_form(user_input, step_id="revert_sides")
+
+    async def _async_unpair_form(
+        self, user_input: dict[str, Any] | None, *, step_id: str
+    ) -> ConfigFlowResult:
+        """Run the deferred reversible unpair transaction."""
         if user_input is not None and user_input.get("confirm"):
             entry_id = self.config_entry.entry_id
 
@@ -2885,7 +2959,80 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             return self.async_create_entry(title="", data={})
 
         return self.async_show_form(
-            step_id="unpair",
+            step_id=step_id,
+            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+        )
+
+    async def async_step_pair_sides(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Enable the reversible left/right/both surface on one BLE address."""
+        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        controller = getattr(runtime, "capability_controller", None)
+        if controller is not None and not getattr(
+            controller, "supports_single_address_pairing", True
+        ):
+            return self.async_show_form(
+                step_id="pair_sides",
+                data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+                errors={"base": "single_address_pairing_unsupported"},
+            )
+
+        if user_input is not None and user_input.get("confirm"):
+            entry_id = self.config_entry.entry_id
+
+            async def finish_pair_sides() -> None:
+                entry = self.hass.config_entries.async_get_entry(entry_id)
+                if entry is None or is_paired(entry.data):
+                    return
+                original_data = dict(entry.data)
+                original_options = dict(entry.options)
+                registry = er.async_get(self.hass)
+                origin_unique_ids = [
+                    row.unique_id
+                    for row in er.async_entries_for_config_entry(
+                        registry, entry.entry_id
+                    )
+                ]
+                paired_data = build_single_address_pair_entry_data(
+                    original_data,
+                    name=entry.title,
+                    origin_entry_id=entry.entry_id,
+                    origin_unique_id=entry.unique_id,
+                    origin_title=entry.title,
+                    origin_source=entry.source,
+                    origin_options=original_options,
+                )
+                paired_data[KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS] = (
+                    origin_unique_ids
+                )
+                try:
+                    if not await self.hass.config_entries.async_unload(entry.entry_id):
+                        raise RuntimeError("could not unload entry")
+                    self.hass.config_entries.async_update_entry(
+                        entry, data=paired_data
+                    )
+                    if not await self.hass.config_entries.async_setup(entry.entry_id):
+                        raise RuntimeError("paired entry setup failed")
+                except Exception:  # noqa: BLE001 - restore the working standalone entry
+                    self.hass.config_entries.async_update_entry(
+                        entry,
+                        data=original_data,
+                        options=original_options,
+                    )
+                    with contextlib.suppress(Exception):
+                        await self.hass.config_entries.async_setup(entry.entry_id)
+                    _LOGGER.exception(
+                        "Could not enable paired sides for config entry %s", entry_id
+                    )
+
+            self.hass.async_create_task(
+                finish_pair_sides(), f"adjustable_bed_pair_sides_{entry_id}"
+            )
+            return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="pair_sides",
             data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
         )
 
@@ -2898,7 +3045,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         """Show and save the normal options form."""
         # Get current values from config entry
         current_data: dict[str, Any] = dict(self.config_entry.data)
-        if is_paired(current_data):
+        if is_paired(current_data) and current_data.get(CONF_PAIR_MODE) != (
+            PAIR_MODE_SINGLE_ADDRESS
+        ):
             # Per-side settings (motor count, massage, adapter, angle limits)
             # live in the child descriptors, not parent data. Show the first
             # side's real values so the form isn't generic defaults; on save,
@@ -3041,6 +3190,22 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 )
             ] = vol.All(vol.Coerce(int), vol.In(MALOUF_MEMORY_SLOT_OPTIONS))
 
+        if bed_type == BED_TYPE_OKIN_CB24:
+            schema_dict[
+                vol.Optional(
+                    CONF_CB24_BED_SELECTION,
+                    default=current_data.get(
+                        CONF_CB24_BED_SELECTION, CB24_BED_SELECTION_DEFAULT
+                    ),
+                )
+            ] = vol.In(
+                {
+                    CB24_BED_SELECTION_DEFAULT: "Both sides",
+                    CB24_BED_SELECTION_A: "Side A / Left",
+                    CB24_BED_SELECTION_B: "Side B / Right",
+                }
+            )
+
         # Add angle limit fields for beds that use angle-based positions
         # (not percentage-based beds like Keeson/Ergomotion/Serta/Jensen)
         # Only show for beds that actually support position feedback
@@ -3079,6 +3244,27 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                         errors={CONF_OCTO_PIN: "invalid_pin"},
                     )
                 user_input[CONF_OCTO_PIN] = octo_pin
+            if (
+                self.config_entry.data.get(CONF_PAIR_MODE)
+                == PAIR_MODE_SINGLE_ADDRESS
+                and not supports_single_address_pairing(
+                    bed_type,
+                    user_input.get(
+                        CONF_PROTOCOL_VARIANT,
+                        current_data.get(
+                            CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT
+                        ),
+                    ),
+                    resolved_variant=current_data.get(
+                        CONF_KAIDI_RESOLVED_VARIANT
+                    ),
+                )
+            ):
+                return self.async_show_form(
+                    step_id=step_id,
+                    data_schema=vol.Schema(schema_dict),
+                    errors={"base": "single_address_pairing_unsupported"},
+                )
             # Get bed-specific defaults for motor pulse settings
             pulse_defaults = (
                 BED_MOTOR_PULSE_DEFAULTS.get(
@@ -3156,6 +3342,14 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     if key in shown and shown[key] != value
                 }
                 new_data = {**self.config_entry.data, **changed}
+                if (
+                    self.config_entry.data.get(CONF_PAIR_MODE)
+                    == PAIR_MODE_SINGLE_ADDRESS
+                ):
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry, data=new_data
+                    )
+                    return self.async_create_entry(title="", data={})
                 submitted_adapter = user_input.get(CONF_PREFERRED_ADAPTER)
                 for side in PAIR_SIDES:
                     child = get_child(new_data, side)

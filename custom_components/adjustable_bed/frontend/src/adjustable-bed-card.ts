@@ -17,6 +17,7 @@ import {
   SECTION_ORDER,
   bedEntitiesForDevice,
   bedIsEmpty,
+  isSingleAddressPairedDevice,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
@@ -95,6 +96,11 @@ export class AdjustableBedCard extends LitElement {
     const parentId = resolvePairedParentId(this.hass, this._config.device_id);
     const childIds = pairedChildDeviceIds(this.hass, parentId);
     if (parentId && childIds.length) return this._renderPaired(parentId, childIds);
+    if (
+      this._config.device_id &&
+      isSingleAddressPairedDevice(this.hass, this._config.device_id)
+    )
+      return this._renderSingleAddressPaired(this._config.device_id);
 
     const bed = bedEntitiesForDevice(this.hass, this._config.device_id);
     this._watched = this._collectWatched(bed);
@@ -169,6 +175,42 @@ export class AdjustableBedCard extends LitElement {
         ${this._header(parentBed)}
         ${block(localize(this.hass, "card.both_sides"), parentBed)}
         ${sides.map((s) => block(s.label, s.bed))}
+      </ha-card>
+    `;
+  }
+
+  private _renderSingleAddressPaired(deviceId: string): TemplateResult {
+    const hass = this.hass!;
+    const beds = {
+      both: bedEntitiesForDevice(hass, deviceId, "both"),
+      left: bedEntitiesForDevice(hass, deviceId, "left"),
+      right: bedEntitiesForDevice(hass, deviceId, "right"),
+    };
+    this._watched = Object.values(beds).flatMap((bed) =>
+      this._collectWatched(bed),
+    );
+    if (Object.values(beds).every((bed) => bedIsEmpty(bed)))
+      return this._notice("card.no_entities");
+
+    const block = (
+      label: string,
+      bed: BedEntities,
+    ): typeof nothing | TemplateResult =>
+      bedIsEmpty(bed)
+        ? nothing
+        : html`
+            <div class="side">
+              <div class="side-label">${label}</div>
+              ${this._renderSections(bed)}
+            </div>
+          `;
+
+    return html`
+      <ha-card>
+        ${this._header(beds.both)}
+        ${block(localize(hass, "card.both_sides"), beds.both)}
+        ${block(localize(hass, "card.left_side"), beds.left)}
+        ${block(localize(hass, "card.right_side"), beds.right)}
       </ha-card>
     `;
   }

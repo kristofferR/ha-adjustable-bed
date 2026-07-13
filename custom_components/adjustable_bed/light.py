@@ -129,7 +129,7 @@ def _async_remove_stale_light_entity(
     entity_id = registry.async_get_entity_id(
         "light",
         DOMAIN,
-        f"{coordinator.address}_{LIGHT_DESCRIPTION.key}",
+        coordinator.entity_unique_id(LIGHT_DESCRIPTION.key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -143,7 +143,7 @@ def _async_remove_stale_switch_entity(
     entity_id = registry.async_get_entity_id(
         "switch",
         DOMAIN,
-        f"{coordinator.address}_{LIGHT_DESCRIPTION.key}",
+        coordinator.entity_unique_id(LIGHT_DESCRIPTION.key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -164,7 +164,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Initialize the light."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
 
         # Use the capability controller (live when connected, else the client-free
         # one minted from config) so an OFFLINE offline-safe side still gets the
@@ -339,7 +340,8 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Initialize the on/off light."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on: bool | None = None
         self._unregister_callback: Callable[[], None] | None = None
 

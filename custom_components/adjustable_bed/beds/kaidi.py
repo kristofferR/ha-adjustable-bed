@@ -40,6 +40,9 @@ from ..const import (
     KAIDI_VARIANT_SEAT_2,
     KAIDI_VARIANT_SEAT_3,
     KAIDI_WRITE_CHAR_UUID,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from ..kaidi_protocol import extract_kaidi_advertisement, format_kaidi_node_address
 from .base import BedController
@@ -399,7 +402,7 @@ class KaidiController(BedController):
                 f"Unsupported Kaidi variant '{variant}'. "
                 f"Expected one of: {', '.join(sorted(KAIDI_COMMAND_PROFILES))}"
             )
-        self._command_profile = profile
+        self._configured_command_profile = profile
 
         # For dual beds (seat_1_2), build a map from seat_1 → seat_2 commands
         if variant == KAIDI_VARIANT_SEAT_1_2:
@@ -497,6 +500,17 @@ class KaidiController(BedController):
             return KAIDI_PRODUCT_FAMILIES.get(self._product_id, _DEFAULT_PRODUCT_FAMILY)
         return _DEFAULT_PRODUCT_FAMILY
 
+    @property
+    def _command_profile(self) -> KaidiCommandProfile:
+        """Return the profile for the logical side bound to this command."""
+        if self._variant != KAIDI_VARIANT_SEAT_1_2:
+            return self._configured_command_profile
+        if self.command_side == SIDE_LEFT:
+            return KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_1]
+        if self.command_side == SIDE_RIGHT:
+            return KAIDI_COMMAND_PROFILES[KAIDI_VARIANT_SEAT_2]
+        return self._configured_command_profile
+
     # ------------------------------------------------------------------
     # Capability properties
     # ------------------------------------------------------------------
@@ -505,6 +519,11 @@ class KaidiController(BedController):
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic."""
         return KAIDI_WRITE_CHAR_UUID
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        """Only the APK-backed Seat 1+2 family has two addressable lanes."""
+        return self._variant == KAIDI_VARIANT_SEAT_1_2
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -907,7 +926,11 @@ class KaidiController(BedController):
             cancel_event=cancel_event,
             response=self._write_with_response,
         )
-        secondary_id = self._dual_map.get(command_id)
+        secondary_id = (
+            self._dual_map.get(command_id)
+            if self.command_side in {None, SIDE_BOTH}
+            else None
+        )
         if secondary_id is not None:
             await self._write_gatt_with_retry(
                 KAIDI_WRITE_CHAR_UUID,

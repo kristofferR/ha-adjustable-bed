@@ -12,6 +12,7 @@ import inspect
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Coroutine
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -32,6 +33,54 @@ from ..diagnostic_payloads import format_payload
 _LOGGER = logging.getLogger(__name__)
 
 MotorCommandCallable = Callable[["BedController"], Coroutine[Any, Any, None]]
+
+
+class SideBoundController:
+    """View of one controller with a per-call logical bed side.
+
+    Single-address paired beds share one controller and one BLE command lock.
+    This proxy binds ``left``/``right``/``both`` for the duration of each method
+    call instead of mutating the controller's configured legacy variant.
+    """
+
+    def __init__(self, controller: BedController, side: str) -> None:
+        self._controller = controller
+        self._side = side
+
+    def __getattr__(self, name: str) -> Any:
+        token = self._controller._command_side.set(self._side)
+        try:
+            value = getattr(self._controller, name)
+        finally:
+            self._controller._command_side.reset(token)
+
+        # Side-list capability properties on Sleep Number already expose both
+        # sides for standalone entries. A bound logical child must only mint its
+        # own side's entities.
+        if name.endswith("_sides") and isinstance(value, (list, tuple)):
+            return (self._side,) if self._side in value else ()
+        if not callable(value):
+            return value
+
+        if inspect.iscoroutinefunction(value):
+
+            async def async_bound(*args: Any, **kwargs: Any) -> Any:
+                call_token = self._controller._command_side.set(self._side)
+                try:
+                    return await value(*args, **kwargs)
+                finally:
+                    self._controller._command_side.reset(call_token)
+
+            return async_bound
+
+        def bound(*args: Any, **kwargs: Any) -> Any:
+            call_token = self._controller._command_side.set(self._side)
+            try:
+                return value(*args, **kwargs)
+            finally:
+                self._controller._command_side.reset(call_token)
+
+        return bound
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +127,18 @@ class BedController(ABC):
         self._notify_callback: Callable[[str, float], None] | None = None
         self._raw_notify_callback: Callable[[str, bytes], None] | None = None
         self._ble_lock = asyncio.Lock()
+        self._command_side: ContextVar[str | None] = ContextVar(
+            f"adjustable_bed_command_side_{id(self)}", default=None
+        )
+
+    @property
+    def command_side(self) -> str | None:
+        """Return the logical side bound to the current command task."""
+        return self._command_side.get()
+
+    def bind_side(self, side: str) -> SideBoundController:
+        """Return a controller view that binds all calls to ``side``."""
+        return SideBoundController(self, side)
 
     @property
     def ble_lock(self) -> asyncio.Lock:

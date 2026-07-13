@@ -228,7 +228,7 @@ def _async_remove_stale_split_climate_entity(
     entity_id = registry.async_get_entity_id(
         "climate",
         DOMAIN,
-        f"{coordinator.address}_{key}",
+        coordinator.entity_unique_id(key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)
@@ -264,7 +264,8 @@ class AdjustableBedClimate(AdjustableBedEntity, ClimateEntity):
         """Initialize the climate entity."""
         super().__init__(coordinator)
         self.entity_description = description
-        self._attr_unique_id = f"{coordinator.address}_{description.key}"
+        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_supported_features = (
             ClimateEntityFeature.PRESET_MODE
             | ClimateEntityFeature.TURN_ON

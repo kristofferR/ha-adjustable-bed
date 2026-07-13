@@ -26,6 +26,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import (
+    BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
@@ -170,6 +171,10 @@ class PairedBedCoordinator:
             manufacturer=manufacturer,
             model="Adjustable Bed (paired)",
         )
+
+    def entity_unique_id(self, key: str) -> str:
+        """Return a stable unique id for a combined parent entity."""
+        return f"{self._pair_id}_{key}"
 
     # ------------------------------------------------------------------ routing
     def _validate_side(self, side: str) -> None:
@@ -616,6 +621,278 @@ class PairedBedCoordinator:
             self._connection_state_callbacks.discard(callback_fn)
 
         return unregister
+
+
+class SingleAddressSideCoordinator:
+    """Logical left/right coordinator view over one physical BLE coordinator."""
+
+    def __init__(self, inner: AdjustableBedCoordinator, side: str) -> None:
+        object.__setattr__(self, "_single_inner", inner)
+        object.__setattr__(self, "_single_side", side)
+        object.__setattr__(self, "_single_position_data", {})
+        object.__setattr__(self, "_single_position_callbacks", set())
+
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("_single_"):
+            raise AttributeError(name)
+        return getattr(self._single_inner, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name.startswith("_single_"):
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._single_inner, name, value)
+
+    def __hash__(self) -> int:
+        return hash(id(self._single_inner))
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SingleAddressSideCoordinator) and (
+            self._single_inner is other._single_inner
+        )
+
+    @property
+    def side(self) -> str:
+        return self._single_side
+
+    @property
+    def entity_side(self) -> str:
+        """Logical side exposed to entity state and the Lovelace card."""
+        return self._single_side
+
+    @property
+    def operation_identity(self) -> int:
+        """Shared key used by preflight plans for left/right/native-both views."""
+        return id(self._single_inner)
+
+    @property
+    def position_data(self) -> dict[str, float]:
+        return dict(self._single_position_data)
+
+    def _sync_position_state(self) -> None:
+        self._single_position_data.clear()
+        self._single_position_data.update(self._single_inner.position_data)
+        for callback_fn in list(self._single_position_callbacks):
+            callback_fn(dict(self._single_position_data))
+
+    def register_position_callback(
+        self, callback_fn: Callable[[dict[str, float]], None]
+    ) -> Callable[[], None]:
+        self._single_position_callbacks.add(callback_fn)
+        if self._single_position_data:
+            callback_fn(dict(self._single_position_data))
+
+        def unregister() -> None:
+            self._single_position_callbacks.discard(callback_fn)
+
+        return unregister
+
+    @property
+    def controller(self) -> Any | None:
+        controller = self._single_inner.controller
+        return controller.bind_side(self._single_side) if controller is not None else None
+
+    @property
+    def capability_controller(self) -> Any | None:
+        controller = self._single_inner.capability_controller
+        return controller.bind_side(self._single_side) if controller is not None else None
+
+    def entity_unique_id(self, key: str) -> str:
+        suffix = f"_{self._single_side}"
+        sided_key = key if key.endswith(suffix) else f"{key}{suffix}"
+        return f"{self._single_inner.address}_{sided_key}"
+
+    def entity_translation_key(self, key: str) -> str:
+        suffix = f"_{self._single_side}"
+        return key if key.endswith(suffix) else f"{key}{suffix}"
+
+    async def async_execute_controller_command(
+        self, command_fn: CommandFn, **kwargs: Any
+    ) -> None:
+        async def bound(controller: Any) -> None:
+            await command_fn(controller.bind_side(self._single_side))
+
+        await self._single_inner.async_execute_controller_command(bound, **kwargs)
+        self._sync_position_state()
+
+    async def async_execute_controller_query(
+        self, query_fn: Callable[[Any], Coroutine[Any, Any, Any]], **kwargs: Any
+    ) -> Any:
+        async def bound(controller: Any) -> Any:
+            return await query_fn(controller.bind_side(self._single_side))
+
+        result = await self._single_inner.async_execute_controller_query(bound, **kwargs)
+        self._sync_position_state()
+        return result
+
+    async def async_seek_position(
+        self,
+        position_key: str,
+        target_angle: float,
+        move_up_fn: CommandFn,
+        move_down_fn: CommandFn,
+        move_stop_fn: CommandFn,
+    ) -> None:
+        controller = self.capability_controller
+        if controller is not None and controller.supports_direct_position_control:
+
+            async def set_direct(live_controller: Any) -> None:
+                bound = live_controller.bind_side(self._single_side)
+                native = bound.angle_to_native_position(position_key, target_angle)
+                await bound.set_motor_position(position_key, native)
+
+            await self._single_inner.async_execute_controller_command(set_direct)
+            self._single_position_data[position_key] = target_angle
+            for callback_fn in list(self._single_position_callbacks):
+                callback_fn(dict(self._single_position_data))
+            return
+
+        def bind(fn: CommandFn) -> CommandFn:
+            async def bound(controller: Any) -> None:
+                await fn(controller.bind_side(self._single_side))
+
+            return bound
+
+        await self._single_inner.async_seek_position(
+            position_key,
+            target_angle,
+            bind(move_up_fn),
+            bind(move_down_fn),
+            bind(move_stop_fn),
+        )
+        self._sync_position_state()
+
+    async def async_read_initial_positions(self) -> None:
+        if self._single_inner.disable_angle_sensing:
+            return
+
+        async def read(controller: Any) -> None:
+            bound = controller.bind_side(self._single_side)
+            await bound.prepare_for_position_read()
+            await bound.read_positions(self._single_inner.motor_count)
+
+        await self._single_inner.async_execute_controller_query(read)
+        self._sync_position_state()
+
+    async def async_stop_command(self, **_kwargs: Any) -> None:
+        self._single_inner.request_command_cancel()
+
+        async def stop(controller: Any) -> None:
+            await controller.bind_side(self._single_side).stop_all()
+
+        await self._single_inner.async_execute_controller_command(
+            stop, cancel_running=False
+        )
+
+
+class SingleAddressPairedCoordinator(PairedBedCoordinator):
+    """Paired surface backed by one coordinator and one physical BLE link."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        inner: AdjustableBedCoordinator,
+    ) -> None:
+        self._single_inner = inner
+        self._single_native_both = entry.data.get(CONF_BED_TYPE) != BED_TYPE_SLEEP_NUMBER
+        children = {
+            SIDE_LEFT: SingleAddressSideCoordinator(inner, SIDE_LEFT),
+            SIDE_RIGHT: SingleAddressSideCoordinator(inner, SIDE_RIGHT),
+        }
+        self._single_both = SingleAddressSideCoordinator(inner, SIDE_BOTH)
+        super().__init__(
+            hass,
+            entry,
+            children,  # type: ignore[arg-type]
+            connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
+        )
+
+    @property
+    def is_connected(self) -> bool:
+        return self._single_inner.is_connected
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return self._single_inner.device_info
+
+    def entity_unique_id(self, key: str) -> str:
+        return f"{self._single_inner.address}_{key}"
+
+    def _targets_for(self, side: str) -> list[tuple[str, AdjustableBedCoordinator]]:
+        self._validate_side(side)
+        if side == SIDE_BOTH and self._single_native_both:
+            return [
+                (SIDE_LEFT, self._single_both),
+                (SIDE_RIGHT, self._single_both),
+            ]  # type: ignore[list-item]
+        return super()._targets_for(side)
+
+    async def _run_both_concurrent(
+        self,
+        action: str,
+        targets: list[tuple[str, AdjustableBedCoordinator]],
+        op: Callable[[AdjustableBedCoordinator], Coroutine[Any, Any, None]],
+    ) -> None:
+        """Serialize non-native both over the one physical command lock."""
+        if self._single_native_both and len({child for _, child in targets}) == 1:
+            try:
+                await op(targets[0][1])
+            except Exception as err:  # noqa: BLE001
+                stop_errors = await self._stop_children(
+                    [(SIDE_BOTH, targets[0][1])]
+                )
+                raise PairedSideError(
+                    action,
+                    _merge_stop_errors({SIDE_BOTH: err}, stop_errors),
+                ) from err
+            return
+
+        errors: dict[str, BaseException] = {}
+        for side, child in targets:
+            try:
+                await op(child)
+            except Exception as err:  # noqa: BLE001
+                errors[side] = err
+                break
+        if errors:
+            stop_targets = [
+                (side, self._children[side])
+                for side in PAIR_SIDES
+                if side in self._children
+            ]
+            stop_errors = await self._stop_children(stop_targets)
+            raise PairedSideError(action, _merge_stop_errors(errors, stop_errors))
+
+    async def _stop_children(
+        self, targets: list[tuple[str, AdjustableBedCoordinator]]
+    ) -> dict[str, BaseException]:
+        if (
+            self._single_native_both
+            and len(targets) > 1
+            and len({child for _, child in targets}) == 1
+        ):
+            targets = [(SIDE_BOTH, targets[0][1])]
+        return await super()._stop_children(targets)
+
+    async def async_connect(self) -> bool:
+        return await self._single_inner.async_connect()
+
+    async def async_disconnect(self, reason: str = "intentional") -> None:
+        await self._single_inner.async_disconnect(reason)
+
+    async def async_shutdown(self) -> None:
+        for unsub in self._child_unsubs:
+            unsub()
+        self._child_unsubs.clear()
+        await self._single_inner.async_shutdown()
+
+    def _wire_child_connection_callbacks(self) -> None:
+        self._child_unsubs.append(
+            self._single_inner.register_connection_state_callback(
+                self._on_child_connection_change
+            )
+        )
 
 
 class PairedSideProxy:

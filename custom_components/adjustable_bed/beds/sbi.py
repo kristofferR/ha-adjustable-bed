@@ -32,6 +32,10 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
+    SBI_VARIANT_SIDE_B,
+    SIDE_BOTH,
+    SIDE_LEFT,
+    SIDE_RIGHT,
 )
 from .base import BedController
 
@@ -217,7 +221,18 @@ class SBIController(BedController):
         """Get current foot angle in degrees (0-32)."""
         return self._foot_angle
 
-    def _build_command(self, command_value: int) -> bytes:
+    def _variant_for_side(self, side: str | None = None) -> str:
+        """Resolve a per-call logical side without changing legacy defaults."""
+        logical_side = side or self.command_side
+        if logical_side == SIDE_LEFT:
+            return SBI_VARIANT_SIDE_A
+        if logical_side == SIDE_RIGHT:
+            return SBI_VARIANT_SIDE_B
+        if logical_side == SIDE_BOTH:
+            return SBI_VARIANT_BOTH
+        return self._variant
+
+    def _build_command(self, command_value: int, side: str | None = None) -> bytes:
         """Build a command packet from a 32-bit command value.
 
         Uses 8-byte format for "Both" mode (0xE5 header) or
@@ -233,15 +248,16 @@ class SBIController(BedController):
         cmd2 = (command_value >> 16) & 0xFF
         cmd3 = (command_value >> 24) & 0xFF
 
-        if self._variant == SBI_VARIANT_BOTH:
+        variant = self._variant_for_side(side)
+        if variant == SBI_VARIANT_BOTH:
             # 8-byte format for dual control
             header = [0xE5, 0xFE, 0x16]
             data = header + [cmd0, cmd1, cmd2, cmd3]
         else:
             # 9-byte format for single side control
             header = [0xE6, 0xFE, 0x16]
-            side = 0x01 if self._variant == SBI_VARIANT_SIDE_A else 0x02
-            data = header + [cmd0, cmd1, cmd2, cmd3, side]
+            side_byte = 0x01 if variant == SBI_VARIANT_SIDE_A else 0x02
+            data = header + [cmd0, cmd1, cmd2, cmd3, side_byte]
 
         # Inverted sum checksum
         checksum = (~sum(data)) & 0xFF

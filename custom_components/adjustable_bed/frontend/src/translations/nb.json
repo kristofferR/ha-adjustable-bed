@@ -39,5 +39,7 @@
   "editor.show_massage": "Massasje",
   "editor.show_climate": "Klima",
   "editor.show_connection": "Tilkoblingskontroller",
-  "card.both_sides": "Begge sider"
+  "card.both_sides": "Begge sider",
+  "card.left_side": "Venstre",
+  "card.right_side": "Høyre"
 }
