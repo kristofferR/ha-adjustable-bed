@@ -5,12 +5,14 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bleak.exc import BleakError
+from homeassistant.components.repairs import repairs_flow_manager
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.issue_registry import IssueSeverity
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
@@ -164,7 +166,8 @@ async def test_combine_repair_flow_shows_active_bed_picker(
     flow = CombineBedsRepairFlow()
     flow.hass = hass
 
-    result = await flow.async_step_init()
+    # RepairsFlowManager passes its internal issue payload to the init step.
+    result = await flow.async_step_init({"issue_id": COMBINE_BEDS_ISSUE_ID})
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "pair_beds"
@@ -172,6 +175,36 @@ async def test_combine_repair_flow_shows_active_bed_picker(
         "count": "2",
         "names": "Left, Right",
     }
+    schema = result.get("data_schema")
+    assert schema is not None
+    defaults = schema({})
+    assert isinstance(defaults, dict)
+    assert decode_pair_selection(defaults[CONF_PAIR_SELECTION]) == (
+        left.entry_id,
+        right.entry_id,
+    )
+
+
+async def test_combine_repair_opens_through_repairs_manager(
+    hass: HomeAssistant,
+    enable_custom_integrations,
+) -> None:
+    """The Repairs manager's issue metadata is not treated as form input."""
+    assert await async_setup_component(hass, "repairs", {})
+    assert await async_setup_component(hass, DOMAIN, {})
+    left = _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Left")
+    right = _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Right")
+    async_refresh_combine_beds_issue(hass)
+    manager = repairs_flow_manager(hass)
+    assert manager is not None
+
+    result = await manager.async_init(
+        DOMAIN,
+        data={"issue_id": COMBINE_BEDS_ISSUE_ID},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "pair_beds"
     schema = result.get("data_schema")
     assert schema is not None
     defaults = schema({})

@@ -131,7 +131,9 @@ class CombineBedsRepairFlow(RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Open the pairing selection directly from Repairs."""
-        return await self.async_step_pair_beds(user_input)
+        # RepairsFlowManager passes its internal {"issue_id": ...} payload to
+        # the init step. It is flow metadata, not a submitted side assignment.
+        return await self.async_step_pair_beds()
 
     async def async_step_pair_beds(
         self, user_input: dict[str, Any] | None = None
