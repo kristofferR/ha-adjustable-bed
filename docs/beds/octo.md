@@ -1,6 +1,6 @@
 # Octo
 
-**Status:** ✅ Protocol tested for supported 2-4 motor bed receivers
+**Status:** ✅ Protocol tested for 2-4 motor bed receivers; one-motor RTV TV lift implementation is based on the official app and needs hardware validation
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
@@ -10,9 +10,9 @@
 - Beka
 - Cozyworld Cozy2Go
 
-OCTO Smart Control also recognizes non-bed and one-motor products that use the
-same protocol family. Recognition of an OCTO BLE name does not by itself mean
-that the device's actuator layout is supported by this integration.
+OCTO Smart Control also recognizes one-motor products that use the same
+protocol family. The integration supports the official `RTV` **Lift 1M** as a
+separate TV Lift device.
 
 ## Apps
 
@@ -46,7 +46,7 @@ instructions if a configured PIN has been lost.
 | Feature | Supported |
 |---------|-----------|
 | Bed Motor Control | ✅ (2-4 motors; configured during setup and checked against CAP_MOTORCOUNT) |
-| One-motor TV/Bed Lift | ❌ (recognized as OCTO, but no dedicated lift entity yet) |
+| One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Both Up Preset | ✅ (Standard variant: moves head + legs together) |
@@ -54,17 +54,19 @@ instructions if a configured PIN has been lost.
 | Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
 
-### One-motor and TV lift limitation
+### One-motor TV lift
 
-The official OCTO device list identifies `RTV` as **Lift 1M**. Other OCTO
-products can also report a single motor through `CAP_MOTORCOUNT`. The integration
-currently allows only 2, 3, or 4 motors and always creates bed-oriented motor
-entities, beginning with Back and Legs. It therefore does not currently provide
-a correct or safe representation of a one-motor TV/bed lift.
+The official OCTO device list identifies `RTV` as **Lift 1M**, and the official
+app controls it through Standard OCTO motor 1 (`0x02`). An automatically
+discovered `RTV` defaults to one motor and exposes one **TV Lift** cover with
+Raise, Lower, and Stop controls. You can also select one motor manually for a
+Standard OCTO controller.
 
-An `RTV` device may be detected as OCTO because it shares the protocol and an
-official name prefix. Detection is not a claim of TV lift support. Do not
-configure it as a two-motor bed merely to make it pass setup.
+The lift is deliberately not presented as an adjustable bed. Bed-only controls
+such as Flat, Back + Legs Up, memory positions, lights, and synchro mode are
+suppressed even if a malformed or unexpected capability response advertises
+them. Position feedback is not available. The packet implementation is derived
+from the official OCTO app; physical RTV hardware testing is still required.
 
 ## Split Beds
 
@@ -82,9 +84,18 @@ addresses and switching between them. Also note that the `Back + Legs Up`
 preset only moves both motors on the currently connected controller; it does
 not mean both bed sides.
 
-The integration does not merge the two BLE addresses and a separate `RTV`
-controller into one Home Assistant device. Each supported bed receiver is a
-separate config entry. `Synchro Mode`, when advertised by the receiver, is a
+In the current release, each receiver is a separate config entry. The upcoming
+4.0 release adds first-class pairing for the two bed-side receivers. OCTO pairs
+use conservative one-link switching: Left, Right, or Both commands connect to
+one side at a time, and Both visits the two sides sequentially. The separate
+one-motor `RTV` remains its own TV Lift device and must not be added as a bed
+side. Pairing requires compatible bed-side actuator layouts, so a one-motor RTV
+cannot be paired with a two-motor RC2.
+
+This design matches three-device installations such as two `RC2` bed sides plus
+one `RTV` TV lift. The 4.0 dual-bed implementation has extensive failure,
+cancellation, and one-link ordering tests, but still needs validation on real
+dual OCTO hardware. `Synchro Mode`, when advertised by a receiver, remains a
 hardware capability and is not software grouping across arbitrary entries.
 
 ## Protocol Variants
@@ -158,7 +169,7 @@ The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
 
 | Feature ID | Name | Value |
 |------------|------|-------|
-| `0x000001` | CAP_MOTORCOUNT | Motor count reported by the device (1-4; integration supports 2-4) |
+| `0x000001` | CAP_MOTORCOUNT | Motor count reported by the device (1-4; Standard OCTO supports 1-4) |
 | `0x000002` | CAP_MEMCOUNT | Memory preset count |
 | `0x000003` | CAP_PIN | PIN requirement + lock state |
 | `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
@@ -221,7 +232,7 @@ Recognized Standard-variant name prefixes are:
 
 | Prefix | OCTO description |
 |--------|------------------|
-| `RTV` | Lift 1M (detected, but one-motor lift control is not supported) |
+| `RTV` | Lift 1M (defaults to the dedicated one-motor TV Lift layout) |
 | `RC2` | Receiver II |
 | `MC2` | Micro 2 |
 | `OCTOBrick` | Brick 1 (`OCTOBrick2` is covered by the same prefix) |

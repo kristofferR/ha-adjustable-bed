@@ -109,6 +109,7 @@ from .const import (
     MALOUF_LAYOUTS,
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
+    OCTO_VARIANT_STAR2,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -164,6 +165,39 @@ BED_TYPE_AUTO_DETECT = "auto_detect"
 # such as OKIN receivers) — we keep "Auto-detect" selected and ask the user to
 # choose, rather than silently configuring a guessed protocol.
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
+
+
+def _motor_count_options(
+    bed_type: str | None,
+    protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
+) -> list[int]:
+    """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
+        return [1, 2, 3, 4]
+    return [2, 3, 4]
+
+
+def _is_valid_motor_count(
+    bed_type: str | None,
+    protocol_variant: str,
+    motor_count: int,
+) -> bool:
+    """Return whether a motor count is valid for the selected protocol."""
+    return motor_count in _motor_count_options(bed_type, protocol_variant)
+
+
+def _default_motor_count(
+    bed_type: str | None,
+    device_name: str | None = None,
+) -> int:
+    """Return the motor-count default, recognizing OCTO RTV one-motor lifts."""
+    if (
+        bed_type == BED_TYPE_OCTO
+        and device_name is not None
+        and device_name.strip().lower().startswith("rtv")
+    ):
+        return 1
+    return DEFAULT_MOTOR_COUNT
 
 
 def _confident_auto_detect(result: DetectionResult) -> str | None:
@@ -769,6 +803,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
+            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            if selected_bed_type and not _is_valid_motor_count(
+                selected_bed_type, protocol_variant, motor_count
+            ):
+                errors[CONF_MOTOR_COUNT] = "invalid_motor_count_for_bed_type"
+
             # Validate protocol variant is valid for selected bed type
             if selected_bed_type and not is_valid_variant_for_bed_type(
                 selected_bed_type, protocol_variant
@@ -904,7 +944,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         default_pulse_count, default_pulse_delay = pulse_defaults
 
         # Auto-detect motor count for Richmat beds based on remote code features
-        default_motor_count = DEFAULT_MOTOR_COUNT
+        default_motor_count = _default_motor_count(bed_type, self._discovery_info.name)
         detected_remote = detection_result.detected_remote
         if bed_type == BED_TYPE_RICHMAT:
             # Use detected_remote from detection result, or try to extract from name
@@ -950,7 +990,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_BED_TYPE, default=bed_type_default): bed_type_selector,
             vol.Optional(CONF_NAME, default=self._discovery_info.name or "Adjustable Bed"): str,
             vol.Optional(CONF_MOTOR_COUNT, default=default_motor_count): vol.All(
-                vol.Coerce(int), vol.In([2, 3, 4])
+                vol.Coerce(int), vol.In([1, 2, 3, 4])
             ),
             vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
             vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
@@ -1441,6 +1481,12 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, str(discovery_source))
             protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
 
+            motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+            if bed_type != BED_TYPE_AUTO_DETECT and not _is_valid_motor_count(
+                bed_type, protocol_variant, motor_count
+            ):
+                errors[CONF_MOTOR_COUNT] = "invalid_motor_count_for_bed_type"
+
             # Validate protocol variant is valid for bed type
             if bed_type != BED_TYPE_AUTO_DETECT and not is_valid_variant_for_bed_type(
                 bed_type, protocol_variant
@@ -1615,9 +1661,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONF_NAME, default=device_name if device_name != "Unknown" else "Adjustable Bed"
                 ): str,
-                vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
-                    vol.Coerce(int), vol.In([2, 3, 4])
-                ),
+                vol.Optional(
+                    CONF_MOTOR_COUNT,
+                    default=_default_motor_count(defaults_bed_type, device_name),
+                ): vol.All(vol.Coerce(int), vol.In([1, 2, 3, 4])),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
                 vol.Optional(CONF_PREFERRED_ADAPTER, default=discovery_source): vol.In(adapters),
@@ -1665,6 +1712,10 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 preferred_adapter = user_input.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
                 protocol_variant = user_input.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT)
+
+                motor_count = user_input.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+                if not _is_valid_motor_count(bed_type, protocol_variant, motor_count):
+                    errors[CONF_MOTOR_COUNT] = "invalid_motor_count_for_bed_type"
 
                 # Validate protocol variant is valid for bed type
                 if not is_valid_variant_for_bed_type(bed_type, protocol_variant):
@@ -1816,7 +1867,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 vol.Optional(CONF_NAME, default="Adjustable Bed"): str,
                 vol.Optional(CONF_MOTOR_COUNT, default=DEFAULT_MOTOR_COUNT): vol.All(
-                    vol.Coerce(int), vol.In([2, 3, 4])
+                    vol.Coerce(int), vol.In([1, 2, 3, 4])
                 ),
                 vol.Optional(CONF_HAS_MASSAGE, default=DEFAULT_HAS_MASSAGE): bool,
                 vol.Optional(CONF_DISABLE_ANGLE_SENSING, default=default_disable_angle): bool,
@@ -2523,7 +2574,15 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             vol.Optional(
                 CONF_MOTOR_COUNT,
                 default=current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
-            ): vol.All(vol.Coerce(int), vol.In([2, 3, 4])),
+            ): vol.All(
+                vol.Coerce(int),
+                vol.In(
+                    _motor_count_options(
+                        bed_type,
+                        current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
+                    )
+                ),
+            ),
             vol.Optional(
                 CONF_HAS_MASSAGE,
                 default=current_data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE),
@@ -2668,6 +2727,24 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             discovery_disabled_input: bool | None = None
             if CONF_DISABLE_DISCOVERY in user_input:
                 discovery_disabled_input = bool(user_input.pop(CONF_DISABLE_DISCOVERY))
+            requested_variant = user_input.get(
+                CONF_PROTOCOL_VARIANT,
+                current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
+            )
+            requested_motor_count = user_input.get(
+                CONF_MOTOR_COUNT,
+                current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+            )
+            if not _is_valid_motor_count(
+                bed_type,
+                requested_variant,
+                requested_motor_count,
+            ):
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=vol.Schema(schema_dict),
+                    errors={CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"},
+                )
             if bed_type == BED_TYPE_OCTO and CONF_OCTO_PIN in user_input:
                 octo_pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, DEFAULT_OCTO_PIN))
                 if not is_valid_octo_pin(octo_pin):

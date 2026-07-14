@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_REVERIE,
@@ -52,6 +53,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     MALOUF_LAYOUT_HILO,
+    OCTO_VARIANT_STANDARD,
     OKIN_HEAD_MAX_ANGLE,
 )
 
@@ -1290,6 +1292,63 @@ class TestServices:
             bytes.fromhex("040200000000"),
             bytes.fromhex("040200000000"),
         ]
+
+    async def test_timed_move_service_accepts_octo_tv_lift(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Timed move should accept the one-motor OCTO TV Lift surface."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:98",
+                CONF_NAME: "RTV",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 1,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_MOTOR_PULSE_COUNT: 1,
+                CONF_MOTOR_PULSE_DELAY_MS: 100,
+            },
+            unique_id="AA:BB:CC:DD:EE:98",
+            entry_id="octo_rtv_timed_move_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+        controller = hass.data[DOMAIN][entry.entry_id].controller
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": [device_id],
+                "motor": "tv_lift",
+                "direction": "up",
+                "duration_ms": 200,
+            },
+            blocking=True,
+        )
+
+        move_packet = controller._build_packet([0x02, 0x70], [0x02])
+        stop_packet = controller._build_packet([0x02, 0x73])
+        payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+        assert payloads == [move_packet, move_packet, stop_packet, stop_packet]
 
     async def test_timed_move_service_rejects_bed_height_for_standard_layout(
         self,

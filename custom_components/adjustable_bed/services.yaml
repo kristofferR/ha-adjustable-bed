@@ -70,6 +70,8 @@ set_position:
       selector:
         select:
           options:
+            - label: TV Lift
+              value: tv_lift
             - label: Back
               value: back
             - label: Legs

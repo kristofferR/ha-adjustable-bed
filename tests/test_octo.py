@@ -343,6 +343,68 @@ class TestOctoPinAuth:
 class TestOctoCommands:
     """Test Octo motor, light, and stop commands."""
 
+    async def test_one_motor_lift_exposes_only_tv_lift_and_uses_motor_one(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A one-motor OCTO controller should safely model an RTV TV lift."""
+        lift_data = {
+            **mock_octo_config_entry_data,
+            CONF_NAME: "RTV",
+            CONF_MOTOR_COUNT: 1,
+            CONF_OCTO_PIN: "",
+        }
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV",
+            data=lift_data,
+            unique_id="AA:BB:CC:DD:EE:98",
+            entry_id="octo_rtv_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+
+        controller._has_lights = True
+        controller._has_rgbwi = True
+        controller._memory_count = 4
+        controller._has_synchro = True
+
+        assert [spec.key for spec in controller.motor_control_specs] == ["tv_lift"]
+        assert controller.supports_preset_flat is False
+        assert controller.supports_preset_both_up is False
+        assert controller.supports_lights is False
+        assert controller.supports_light_color_control is False
+        assert controller.supports_memory_presets is False
+        assert controller.memory_slot_count == 0
+        assert controller.supports_synchro is False
+        assert controller.stale_motor_entity_keys == frozenset({"back", "legs", "head", "feet"})
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.motor_control_specs[0].open_fn(controller)
+
+        payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+        assert payloads == [
+            controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD]),
+            controller._build_packet([0x02, 0x73]),
+        ]
+
+    async def test_bed_layout_marks_tv_lift_entity_as_stale(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+    ):
+        """Normal OCTO beds should clean up a former TV lift entity."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+
+        assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
+
     async def test_move_head_up_sends_move_then_stop(
         self,
         hass: HomeAssistant,
