@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
@@ -104,6 +104,7 @@ class AcquisitionPlan:
     source: str
     source_url: str
     requested_architecture: str = ""
+    variant_url: str = ""
     detail: str = ""
 
 
@@ -211,6 +212,19 @@ def choose_apkpure_architecture(record: dict[str, object] | None) -> str:
     return concrete[0] if len(concrete) == 1 else ""
 
 
+def choose_apkpure_variant_url(
+    record: dict[str, object] | None, architecture: str
+) -> str:
+    """Return the exact APKPure artifact URL for an advertised architecture."""
+    if not record or not architecture:
+        return ""
+    variants = record.get("variants") or []
+    for variant in variants:
+        if isinstance(variant, dict) and variant.get("architecture") == architecture:
+            return str(variant.get("url") or "")
+    return ""
+
+
 def build_plans(
     latest_rows: list[dict[str, str]],
     discovery_rows: list[dict[str, str]],
@@ -248,6 +262,7 @@ def build_plans(
             )
         elif row["apkpure_status"] == "available":
             apk_record = baseline_apkpure.get(package_id)
+            architecture = choose_apkpure_architecture(apk_record)
             plans.append(
                 AcquisitionPlan(
                     package_id=package_id,
@@ -257,7 +272,8 @@ def build_plans(
                     expected_version_code=row["apkpure_version_code"],
                     source="APKPure",
                     source_url=row["apkpure_url"],
-                    requested_architecture=choose_apkpure_architecture(apk_record),
+                    requested_architecture=architecture,
+                    variant_url=choose_apkpure_variant_url(apk_record, architecture),
                 )
             )
         else:
@@ -281,6 +297,7 @@ def build_plans(
         use_apkpure = row["apkpure_status"] == "available" and row["cross_check"] != "version_mismatch"
         if use_apkpure:
             apk_record = discovered_apkpure.get(package_id)
+            architecture = choose_apkpure_architecture(apk_record)
             plans.append(
                 AcquisitionPlan(
                     package_id=package_id,
@@ -290,7 +307,8 @@ def build_plans(
                     expected_version_code=row["apkpure_version_code"],
                     source="APKPure",
                     source_url=row["apkpure_url"],
-                    requested_architecture=choose_apkpure_architecture(apk_record),
+                    requested_architecture=architecture,
+                    variant_url=choose_apkpure_variant_url(apk_record, architecture),
                 )
             )
         elif row["play_status"] == "available":
@@ -601,7 +619,8 @@ def download_with_apkeep(
 ) -> tuple[Path | None, str, str]:
     """Download one package atomically with pinned apkeep."""
     source_directory = destination / ("apkpure" if plan.selection == "download_apkpure" else "google-play")
-    final_directory = source_directory / plan.package_id
+    suffix = f"-{plan.requested_architecture}" if plan.variant_url else ""
+    final_directory = source_directory / f"{plan.package_id}{suffix}"
     existing = locate_download(final_directory) if final_directory.is_dir() else None
     if existing:
         locator = f"apkeep {APKEEP_VERSION}; existing {plan.source} acquisition"
@@ -612,7 +631,27 @@ def download_with_apkeep(
     source_directory.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f".{plan.package_id}-", dir=source_directory) as temporary:
         temporary_path = Path(temporary)
-        if plan.selection == "download_apkpure":
+        if plan.variant_url:
+            extension = ".xapk" if "/XAPK/" in plan.variant_url else ".apk"
+            artifact_name = (
+                f"{plan.package_id}@{plan.expected_version_name}@"
+                f"{plan.requested_architecture}{extension}"
+            )
+            command = [
+                shutil.which("curl") or "curl",
+                "--fail",
+                "--location",
+                "--retry",
+                "3",
+                "--retry-all-errors",
+                "--continue-at",
+                "-",
+                "--output",
+                str(temporary_path / artifact_name),
+                plan.variant_url,
+            ]
+            locator = f"APKPure exact variant; {plan.variant_url}"
+        elif plan.selection == "download_apkpure":
             app = f"{plan.package_id}@{plan.expected_version_name}"
             command = [
                 apkeep,
@@ -735,12 +774,24 @@ def run_acquisition(
     aapt: str,
     apksigner: str,
     google_play_ini: Path | None,
+    previous_records: dict[str, AcquisitionRecord] | None = None,
+    previous_members: list[MemberRecord] | None = None,
 ) -> tuple[list[AcquisitionRecord], list[MemberRecord]]:
     """Execute the selection plan and return package and split evidence."""
     working_directory = Path.cwd()
     records: list[AcquisitionRecord] = []
     member_records: list[MemberRecord] = []
+    previous_records = previous_records or {}
+    members_by_package: dict[str, list[MemberRecord]] = defaultdict(list)
+    for member in previous_members or []:
+        members_by_package[member.package_id].append(member)
     for index, plan in enumerate(plans, start=1):
+        previous = previous_records.get(plan.package_id)
+        if previous and previous.status in {"downloaded", "reused_current"}:
+            print(f"[{index}/{len(plans)}] {plan.package_id}: preserve verified result", flush=True)
+            records.append(previous)
+            member_records.extend(members_by_package[plan.package_id])
+            continue
         print(f"[{index}/{len(plans)}] {plan.package_id}: {plan.selection}", flush=True)
         record = AcquisitionRecord(
             package_id=plan.package_id,
@@ -841,6 +892,9 @@ def write_readme(
         f"x86_64 Linux asset SHA-256 `{APKEEP_ASSET_SHA256}`. Its release signature was",
         f"verified against PGP fingerprint `{APKEEP_SIGNING_FINGERPRINT}` before use.",
         "APKPure requests pin the expected version and prefer arm64-v8a when advertised.",
+        "When APKPure exposes an exact architecture variant, its recorded artifact URL is",
+        "downloaded directly with retry/resume support because apkeep 1.0.0 can return the",
+        "armv7 artifact for an arm64 request. The resulting archive receives the same checks.",
         "Google Play requests ask for all split APKs and use a local credential file; no",
         "credential or token is written to these reports.",
         "",
@@ -932,6 +986,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--apksigner", default=shutil.which("apksigner"))
     parser.add_argument("--google-play-ini", type=Path)
     parser.add_argument("--plan-only", action="store_true")
+    parser.add_argument(
+        "--retry-failures",
+        action="store_true",
+        help="preserve successful rows from the existing output and retry only exceptions",
+    )
     return parser.parse_args()
 
 
@@ -960,6 +1019,18 @@ def main() -> int:
         print(f"Planned {len(plans)} packages: {dict(sorted(counts.items()))}")
         return 0
 
+    previous_records: dict[str, AcquisitionRecord] = {}
+    previous_members: list[MemberRecord] = []
+    if args.retry_failures:
+        acquisition_path = args.output / "acquisition.csv"
+        files_path = args.output / "files.csv"
+        if not acquisition_path.is_file() or not files_path.is_file():
+            raise SystemExit("--retry-failures requires an existing acquisition.csv and files.csv")
+        previous_records = {
+            row["package_id"]: AcquisitionRecord(**row) for row in read_csv(acquisition_path)
+        }
+        previous_members = [MemberRecord(**row) for row in read_csv(files_path)]
+
     records, members = run_acquisition(
         plans,
         archive_rows,
@@ -969,6 +1040,8 @@ def main() -> int:
         args.aapt,
         args.apksigner,
         args.google_play_ini,
+        previous_records,
+        previous_members,
     )
     write_csv(args.output / "acquisition.csv", ACQUISITION_FIELDS, [asdict(row) for row in records])
     write_csv(args.output / "files.csv", FILE_FIELDS, [asdict(row) for row in members])

@@ -5,6 +5,7 @@ from tools.apk_acquisition import (
     ArtifactInspection,
     build_plans,
     choose_apkpure_architecture,
+    choose_apkpure_variant_url,
     select_local_archive,
     validate_inspection,
 )
@@ -14,6 +15,18 @@ def test_choose_apkpure_architecture_prefers_arm64() -> None:
     assert choose_apkpure_architecture({"architectures": "armeabi-v7a; arm64-v8a"}) == "arm64-v8a"
     assert choose_apkpure_architecture({"architectures": "armeabi-v7a"}) == "armeabi-v7a"
     assert choose_apkpure_architecture({"architectures": "universal"}) == ""
+
+
+def test_choose_apkpure_variant_url_matches_exact_architecture() -> None:
+    record = {
+        "variants": [
+            {"architecture": "armeabi-v7a", "url": "https://example.test/armv7"},
+            {"architecture": "arm64-v8a", "url": "https://example.test/arm64"},
+        ]
+    }
+
+    assert choose_apkpure_variant_url(record, "arm64-v8a") == "https://example.test/arm64"
+    assert choose_apkpure_variant_url(record, "x86") == ""
 
 
 def test_build_plans_uses_play_for_version_mismatch_discovery() -> None:
