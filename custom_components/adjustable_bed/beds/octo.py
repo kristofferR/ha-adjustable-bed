@@ -632,6 +632,11 @@ class OctoController(BedController):
         return bool(self._pin)
 
     @property
+    def _is_one_motor_lift(self) -> bool:
+        """Return whether this controller represents an OCTO one-motor lift."""
+        return self._coordinator.motor_count == 1
+
+    @property
     def supports_lights(self) -> bool:
         """Check if the bed has under-bed lights.
 
@@ -642,6 +647,8 @@ class OctoController(BedController):
         Returns False if:
         - Features were discovered but light feature was not present
         """
+        if self._is_one_motor_lift:
+            return False
         if self._has_lights is not None:
             return self._has_lights
         # Features not discovered - assume lights exist for backward compatibility
@@ -650,26 +657,26 @@ class OctoController(BedController):
     @property
     def supports_light_color_control(self) -> bool:
         """Return True if bed supports RGBWI light color control."""
-        return self._has_rgbwi
+        return not self._is_one_motor_lift and self._has_rgbwi
 
     @property
     def supported_color_mode(self) -> str | None:
         """Return 'rgbw' for RGBWI beds, None otherwise."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return "rgbw"
         return None
 
     @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
         """Return default white color for RGBWI beds."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return (255, 255, 255)
         return None
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return True
         return self.supports_discrete_light_control
 
@@ -677,6 +684,11 @@ class OctoController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has separate on/off light commands."""
         return self.supports_lights
+
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        """Return whether this OCTO controller exposes bed-light toggling."""
+        return not self._is_one_motor_lift and super().supports_light_toggle_control
 
     @property
     def light_auto_off_seconds(self) -> int | None:
@@ -688,6 +700,8 @@ class OctoController(BedController):
     @property
     def supports_memory_presets(self) -> bool:
         """Return True if bed supports memory presets (CAP_MEMCOUNT > 0)."""
+        if self._is_one_motor_lift:
+            return False
         if self._memory_count is not None:
             return self._memory_count > 0
         # Features not discovered - assume no memory presets for safety
@@ -696,6 +710,8 @@ class OctoController(BedController):
     @property
     def memory_slot_count(self) -> int:
         """Return number of memory preset slots."""
+        if self._is_one_motor_lift:
+            return 0
         return self._memory_count if self._memory_count is not None else 0
 
     @property
@@ -709,6 +725,8 @@ class OctoController(BedController):
 
         Returns True only if CAP_SYNCHRO (0x000101) was detected during discovery.
         """
+        if self._is_one_motor_lift:
+            return False
         if self._has_synchro is not None:
             return self._has_synchro
         return False
@@ -969,6 +987,18 @@ class OctoController(BedController):
         """Stop fourth motor."""
         await self._stop_motors()
 
+    async def _move_tv_lift_up(self) -> None:
+        """Raise an OCTO one-motor TV lift."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "up")
+
+    async def _move_tv_lift_down(self) -> None:
+        """Lower an OCTO one-motor TV lift."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "down")
+
+    async def _move_tv_lift_stop(self) -> None:
+        """Stop an OCTO one-motor TV lift."""
+        await self._stop_motors()
+
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self._stop_motors()
@@ -987,6 +1017,17 @@ class OctoController(BedController):
         standard cover entity naming convention.
         """
         motor_count = self._coordinator.motor_count
+
+        if motor_count == 1:
+            return (
+                MotorControlSpec(
+                    key="tv_lift",
+                    translation_key="tv_lift",
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_stop(),
+                ),
+            )
 
         specs: list[MotorControlSpec] = [
             MotorControlSpec(
@@ -1033,8 +1074,20 @@ class OctoController(BedController):
 
     @property
     def supports_preset_both_up(self) -> bool:
-        """Return True - Octo beds support moving both head and legs up."""
-        return True
+        """Return whether this OCTO controller has both bed motors."""
+        return not self._is_one_motor_lift
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        """Return whether this OCTO controller represents a bed."""
+        return not self._is_one_motor_lift
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return entity keys belonging to the other OCTO actuator layout."""
+        if self._is_one_motor_lift:
+            return frozenset({"back", "legs", "head", "feet"})
+        return frozenset({"tv_lift"})
 
     # Preset methods
     async def preset_both_up(self) -> None:

@@ -121,6 +121,7 @@ ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
 TIMED_MOVE_MOTOR_OPTIONS = (
+    "tv_lift",
     "back",
     "legs",
     "head",

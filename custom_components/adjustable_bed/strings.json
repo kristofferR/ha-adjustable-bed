@@ -296,6 +296,7 @@
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "The selected protocol variant is not compatible with the selected bed type.",
+      "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "pairing_not_confirmed": "Please confirm that you have paired the bed before continuing.",
       "pairing_failed": "Pairing failed. Make sure the bed is in pairing mode and try again.",
       "pairing_not_supported": "Pairing not supported by this Bluetooth adapter. If using ESPHome proxy, update to ESPHome >= 2024.3.0.",
@@ -391,6 +392,7 @@
     "error": {
       "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
+      "invalid_motor_count_for_bed_type": "One motor is supported only for Standard OCTO TV lift controllers.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
       "single_address_pairing_unsupported": "This CBNew protocol has no A/B side selector and cannot safely expose paired-side controls."
     }
@@ -1083,6 +1085,9 @@
       }
     },
     "cover": {
+      "tv_lift": {
+        "name": "TV Lift"
+      },
       "head": {
         "name": "Head"
       },
@@ -1696,7 +1701,7 @@
         },
         "motor": {
           "name": "Motor",
-          "description": "The motor to move (back, legs, head, feet, or stair)."
+          "description": "The motor to move (TV lift, back, legs, head, feet, or another supported actuator)."
         },
         "direction": {
           "name": "Direction",

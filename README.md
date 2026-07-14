@@ -155,7 +155,7 @@ To adjust settings after setup, click the **gear icon** on your device in Settin
 
 | Setting | Description |
 |---------|-------------|
-| Motor Count | 2 (back/legs), 3 (adds head), or 4 (adds feet) |
+| Motor Count | 2 (back/legs), 3 (adds head), or 4 (adds feet); Standard Octo RTV TV lifts use 1 |
 | Has Massage | Enable if your bed has massage |
 | Protocol Variant | Usually auto-detected, override if needed |
 | Motor Pulse Settings | Fine-tune movement timing |
