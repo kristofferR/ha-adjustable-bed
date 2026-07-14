@@ -228,6 +228,20 @@ class TestOctoNotificationStream:
         ) == [{"command": [0x11, 0x72], "data": [0x01]}]
         assert octo_stream_controller._response_buffer == bytearray()
 
+    def test_resynchronizes_long_delimiter_run_without_losing_valid_start(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Many malformed candidates should retain the final possible start."""
+        delimiters = bytes([OCTO_PACKET_CHAR]) * 4096
+        assert octo_stream_controller._extract_response_packets(delimiters) == []
+        assert octo_stream_controller._response_buffer == bytearray([OCTO_PACKET_CHAR])
+
+        valid = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        assert octo_stream_controller._extract_response_packets(valid) == [
+            {"command": [0x21, 0x7F], "data": []}
+        ]
+        assert octo_stream_controller._response_buffer == bytearray()
+
     def test_bounds_incomplete_response_and_recovers(
         self, octo_stream_controller: OctoController
     ) -> None:
