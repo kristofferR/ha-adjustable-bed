@@ -691,7 +691,7 @@ def download_with_apkeep(
         result = subprocess.run(command, check=False, capture_output=True, text=True)
         artifact = locate_download(temporary_path)
         if not artifact and plan.selection == "download_google_play":
-            alternate_path = temporary_path / "ad_g3_pro"
+            alternate_path = temporary_path / "mi_a1"
             alternate_path.mkdir()
             alternate_command = [
                 apkeep,
@@ -702,7 +702,7 @@ def download_with_apkeep(
                 "-i",
                 str(google_play_ini),
                 "-o",
-                "device=ad_g3_pro,split_apk=true",
+                "device=mi_a1,split_apk=true",
                 "-r",
                 "1",
                 "-s",
@@ -716,7 +716,7 @@ def download_with_apkeep(
             if artifact:
                 locator = (
                     f"apkeep {APKEEP_VERSION}; {plan.package_id}; google-play; "
-                    "device=ad_g3_pro; split_apk=true"
+                    "device=mi_a1; split_apk=true"
                 )
             else:
                 result = alternate_result
