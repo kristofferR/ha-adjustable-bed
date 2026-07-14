@@ -16,7 +16,9 @@ from custom_components.adjustable_bed.beds.octo import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_LIGHT,
     OCTO_FEATURE_LIGHT_RGBWI,
+    OCTO_MAX_RESPONSE_BUFFER_SIZE,
     OCTO_MOTOR_HEAD,
+    OCTO_PACKET_CHAR,
     OctoController,
     OctoStar2Controller,
 )
@@ -99,6 +101,43 @@ def mock_octo_star2_config_entry(
     return entry
 
 
+@pytest.fixture
+def octo_stream_controller() -> OctoController:
+    """Return a lightweight Octo controller for response-stream tests."""
+    coordinator = MagicMock()
+    coordinator.address = "AA:BB:CC:DD:EE:FF"
+    coordinator.client = None
+    return OctoController(coordinator)
+
+
+def _build_octo_response(
+    controller: OctoController,
+    command: tuple[int, int],
+    data: list[int] | None = None,
+) -> bytes:
+    """Build a from-device OCTO response with escaping and checksum."""
+    packet_data = data or []
+    data_len_high = (len(packet_data) >> 8) & 0xFF
+    data_len_low = len(packet_data) & 0xFF
+    checksum = controller._calculate_checksum(
+        [0x80, *command, data_len_high, data_len_low, *packet_data]
+    )
+    payload = [
+        *command,
+        data_len_high,
+        data_len_low,
+        checksum,
+        *packet_data,
+    ]
+    return bytes(
+        [
+            OCTO_PACKET_CHAR,
+            *controller._escape_bytes(payload),
+            OCTO_PACKET_CHAR,
+        ]
+    )
+
+
 class TestOctoVariantSelection:
     """Test Octo variant selection in controller creation."""
 
@@ -125,6 +164,129 @@ class TestOctoVariantSelection:
         await coordinator.async_connect()
 
         assert isinstance(coordinator.controller, OctoStar2Controller)
+
+
+class TestOctoNotificationStream:
+    """Test OCTO packet reassembly across notified characteristic values."""
+
+    def test_reassembles_at_every_encoded_byte_boundary(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Every split point, including escaped pairs, should reassemble."""
+        packet_data = [0x40, 0x3C, 0x4F, 0x41, 0x01]
+        response = _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            packet_data,
+        )
+        expected = {"command": [0x21, 0x71], "data": packet_data}
+
+        for split_at in range(1, len(response)):
+            controller = OctoController(octo_stream_controller._coordinator)
+            assert controller._extract_response_packets(response[:split_at]) == []
+            assert controller._extract_response_packets(response[split_at:]) == [expected]
+            assert controller._response_buffer == bytearray()
+
+    def test_reassembles_one_byte_notifications(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A response should survive the most fragmented possible delivery."""
+        response = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        packets: list[dict[str, list[int]]] = []
+
+        for byte in response:
+            packets.extend(octo_stream_controller._extract_response_packets(bytes([byte])))
+
+        assert packets == [{"command": [0x21, 0x7F], "data": []}]
+        assert octo_stream_controller._response_buffer == bytearray()
+
+    def test_extracts_multiple_packets_from_one_notification(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """One notified value may contain multiple complete protocol packets."""
+        first = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        second = _build_octo_response(octo_stream_controller, (0x11, 0x72), [0x01])
+
+        assert octo_stream_controller._extract_response_packets(first + second) == [
+            {"command": [0x21, 0x7F], "data": []},
+            {"command": [0x11, 0x72], "data": [0x01]},
+        ]
+
+    def test_resynchronizes_after_noise_and_a_malformed_frame(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A bad candidate should not consume the next valid start delimiter."""
+        malformed = bytearray(_build_octo_response(octo_stream_controller, (0x21, 0x7F)))
+        malformed[-2] ^= 0x01
+        valid = _build_octo_response(octo_stream_controller, (0x11, 0x72), [0x01])
+
+        assert octo_stream_controller._extract_response_packets(
+            b"\x00\xff" + malformed + valid
+        ) == [{"command": [0x11, 0x72], "data": [0x01]}]
+        assert octo_stream_controller._response_buffer == bytearray()
+
+    def test_bounds_incomplete_response_and_recovers(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A missing end delimiter must not grow retained state indefinitely."""
+        incomplete = bytes([OCTO_PACKET_CHAR]) + bytes([0x01] * OCTO_MAX_RESPONSE_BUFFER_SIZE)
+
+        assert octo_stream_controller._extract_response_packets(incomplete) == []
+        assert octo_stream_controller._response_buffer == bytearray()
+
+        valid = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        assert octo_stream_controller._extract_response_packets(valid) == [
+            {"command": [0x21, 0x7F], "data": []}
+        ]
+
+    def test_notification_dispatches_reassembled_packets_and_preserves_raw_chunks(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Reassembly should dispatch all packets without altering diagnostics."""
+        light_data = [0x00, 0x01, 0x02, 0x00, 0x00, 0x01, 0x01]
+        end_data = [0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]
+        responses = _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            light_data,
+        ) + _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            end_data,
+        )
+        first_chunk = bytearray(responses[:5])
+        second_chunk = bytearray(responses[5:])
+        raw_callback = MagicMock()
+        octo_stream_controller.set_raw_notify_callback(raw_callback)
+
+        octo_stream_controller._on_notification(MagicMock(), first_chunk)
+        assert octo_stream_controller._has_lights is None
+        octo_stream_controller._on_notification(MagicMock(), second_chunk)
+
+        assert octo_stream_controller._has_lights is True
+        assert octo_stream_controller._features_complete.is_set()
+        assert raw_callback.call_args_list == [
+            ((OCTO_CHAR_UUID, bytes(first_chunk)),),
+            ((OCTO_CHAR_UUID, bytes(second_chunk)),),
+        ]
+
+    async def test_notification_lifecycle_clears_incomplete_data(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Stale fragments must not cross notification subscriptions."""
+        client = MagicMock()
+        client.is_connected = True
+        client.start_notify = AsyncMock()
+        client.stop_notify = AsyncMock()
+        octo_stream_controller._coordinator.client = client
+        octo_stream_controller._response_buffer.extend(b"\x40\x21")
+
+        await octo_stream_controller.start_notify()
+        assert octo_stream_controller._response_buffer == bytearray()
+
+        octo_stream_controller._response_buffer.extend(b"\x40\x21")
+        await octo_stream_controller.stop_notify()
+        assert octo_stream_controller._response_buffer == bytearray()
 
 
 class TestOctoPinAuth:
