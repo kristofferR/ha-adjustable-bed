@@ -719,7 +719,7 @@
     },
     "generate_support_bundle": {
       "name": "Generate Support Bundle",
-      "description": "Capture the full adjustable-bed support bundle for troubleshooting unsupported or broken beds.",
+      "description": "Capture the full adjustable-bed support bundle for troubleshooting unsupported or broken beds. The bundle includes up to 30 ranked nearby Bluetooth devices, including their names and addresses.",
       "fields": {
         "device_id": {
           "name": "Device",

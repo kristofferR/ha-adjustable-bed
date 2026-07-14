@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.support_bundle import (
     _build_evidence_summary,
+    _build_nearby_device_inventory,
     _build_pairing_assessment,
     _build_scanner_status,
     generate_support_bundle,
@@ -88,6 +89,28 @@ def _build_unknown_service_info(*, source: str, connectable: bool, rssi: int) ->
     service_info.connectable = connectable
     service_info.time = 1_700_000_000
     return service_info
+
+
+def _build_nearby_service_info(
+    *,
+    address: str,
+    name: str,
+    source: str,
+    rssi: int,
+    service_uuids: list[str] | None = None,
+    connectable: bool = True,
+) -> SimpleNamespace:
+    """Create a nearby-device advertisement for inventory tests."""
+    return SimpleNamespace(
+        address=address,
+        name=name,
+        source=source,
+        rssi=rssi,
+        connectable=connectable,
+        service_uuids=service_uuids or [],
+        manufacturer_data={},
+        service_data={},
+    )
 
 
 def _build_reconnect_test_service() -> MagicMock:
@@ -838,6 +861,71 @@ class TestBleDiagnosticsRunner:
 class TestSupportBundle:
     """Test support bundle orchestration."""
 
+    async def test_nearby_device_inventory_ranks_deduplicates_and_caps(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Nearby inventory should favor likely beds, then strong advertisements."""
+        del enable_custom_integrations
+        nearby = [
+            _build_nearby_service_info(
+                address=f"02:00:00:00:00:{index:02X}",
+                name=f"Nearby {index:02d}",
+                source="proxy_1",
+                rssi=-20 - index,
+            )
+            for index in range(35)
+        ]
+        nearby.extend(
+            [
+                _build_nearby_service_info(
+                    address="AA:BB:CC:DD:EE:FF",
+                    name="RC2 Left",
+                    source="proxy_1",
+                    rssi=-95,
+                    service_uuids=[SOLACE_SERVICE_UUID],
+                ),
+                _build_nearby_service_info(
+                    address="AA:BB:CC:DD:EE:FF",
+                    name="RC2 Left",
+                    source="proxy_2",
+                    rssi=-40,
+                    service_uuids=[SOLACE_SERVICE_UUID],
+                ),
+            ]
+        )
+
+        with patch(
+            "custom_components.adjustable_bed.support_bundle.get_discovered_service_info",
+            return_value=nearby,
+        ):
+            inventory = _build_nearby_device_inventory(
+                hass,
+                target_address="02:00:00:00:00:00",
+            )
+
+        assert inventory["limit"] == 30
+        assert inventory["total_visible"] == 36
+        assert inventory["included"] == 30
+        assert inventory["truncated"] is True
+        assert len(inventory["devices"]) == 30
+        assert [device["rank"] for device in inventory["devices"]] == list(range(1, 31))
+
+        likely_bed = inventory["devices"][0]
+        assert likely_bed["address"] == "AA:BB:CC:DD:EE:FF"
+        assert likely_bed["detection"]["bed_type"] == "octo"
+        assert likely_bed["detection"]["supported_match"] is True
+        assert likely_bed["rssi"] == -40
+        assert likely_bed["source_count"] == 2
+        assert likely_bed["sources"][0]["source"] == "proxy_2"
+
+        strongest_unknown = inventory["devices"][1]
+        assert strongest_unknown["address"] == "02:00:00:00:00:00"
+        assert strongest_unknown["is_target"] is True
+        assert strongest_unknown["rssi"] == -20
+        assert all(device["address"] != "02:00:00:00:00:22" for device in inventory["devices"])
+
     async def test_generate_support_bundle_raw_address_has_standard_sections(
         self,
         hass: HomeAssistant,
@@ -888,6 +976,7 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "target_address"
+        assert report["metadata"]["report_version"] == "2.2"
         assert report["integration"]["configured_device"] is False
         assert report["integration"]["kaidi_product_id"] is None
         assert report["integration"]["kaidi_sofa_acu_no"] is None
@@ -897,6 +986,8 @@ class TestSupportBundle:
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
         assert report["bluetooth"]["advertisements_by_source"] == [{"source": "proxy_1"}]
+        assert report["bluetooth"]["nearby_devices"]["limit"] == 30
+        assert report["bluetooth"]["nearby_devices"]["devices"] == []
         assert report["connection_attempt_details"][0]["result"] == "connected"
 
     async def test_generate_support_bundle_configured_device_without_coordinator_keeps_target(
@@ -1035,7 +1126,7 @@ class TestSupportBundle:
             )
 
         pairing = report["pairing"]
-        assert report["metadata"]["report_version"] == "2.1"
+        assert report["metadata"]["report_version"] == "2.2"
         assert pairing["required"] is True
         assert pairing["connection_gated_by_bond"] is True
         assert pairing["persisted_bond_marker"] is True
