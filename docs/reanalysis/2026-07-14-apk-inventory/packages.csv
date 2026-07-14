@@ -1,0 +1,218 @@
+package_id,application_names,archive_count,distinct_file_count,local_version_count,versions,latest_local_version_name,latest_local_version_code,archive_types,architectures,source_paths
+air.no.jensen.adjustablesleep,Adjustable,1,1,1,17.01.052 (17001052),17.01.052,17001052,apk,armeabi-v7a,disassembly/apk/analyzed/Adjustable Sleep_17.01.052_air.no.jensen.adjustablesleep.apk
+cn.com.mancini,Ergomotion Sync,1,1,1,1.0.2 (4),1.0.2,4,xapk,,disassembly/apk/analyzed/Ergomotion Sync_1.0.2_APKPure.xapk
+cn.com.somos,Somos,1,1,1,1.0.0 (1),1.0.0,1,xapk,,disassembly/apk/analyzed/SomosBeds_1.0.0_cn.com.somos.xapk
+com.BF,La Cloud,1,1,1,1.2.3 (11),1.2.3,11,apk,,disassembly/apk/analyzed/dewertokin/com.BF.apk
+com.HHC.MotoSleep,MotoSleep,1,1,1,5.0.6 (2026010401),5.0.6,2026010401,xapk,arm64-v8a,disassembly/apk/analyzed/MotoSleep_5.0.6_com.HHC.MotoSleep.xapk
+com.HHC.PowerBob,Power Bob,1,1,1,2.0.3 (2025061101),2.0.3,2025061101,apk,arm64-v8a; armeabi-v7a; x86_64,disassembly/apk/analyzed/Power Bob for Adjustable Bed_2.0.3_com.HHC.PowerBob.apk
+com.bedding.monitor.sleep_monitor.release,OKIN SMART SLEEP,1,1,1,2.4.9 (263),2.4.9,263,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.bedding.monitor.sleep_monitor.release.xapk
+com.bedjet,BedJet,1,1,1,1.0.6 (18),1.0.6,18,xapk,,disassembly/apk/analyzed/BedJet 3 Smart Remote_1.0.6_APKPure.xapk
+com.bedtech,BedTech,1,1,1,7.1.3 (14),7.1.3,14,xapk,arm64-v8a,disassembly/apk/analyzed/BedTech_7.1.3_com.bedtech.xapk
+com.cheers.brick,The Brick,1,1,1,v1.0 (3),v1.0,3,xapk,,disassembly/apk/analyzed/The Brick_1.0_com.cheers.brick.xapk
+com.cheers.jewmes,Jeromes,1,1,1,v1.202112141512 (20),v1.202112141512,20,xapk,,disassembly/apk/analyzed/Jeromes_1.202112141512_com.cheers.jewmes.xapk
+com.cheers.slumber,slumberland,1,1,1,v1.0 (2),v1.0,2,xapk,,disassembly/apk/analyzed/Slumberland_1.0_com.cheers.slumber.xapk
+com.desarketing.gmmotor,GM Bed Control; GM Control,3,3,3,3.0.5 (8); 3.0.33 (36); 4.6.0 (46001),4.6.0,46001,apk; xapk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Germany Motions GM Bed Control_3.0.33_com.desarketing.gmmotor.xapk; disassembly/apk/analyzed/Germany Motions GM Bed Control_3.0.5_com.desarketing.gmmotor.apk; disassembly/apk/analyzed/Germany Motions GM Bed Control_4.6.0_com.desarketing.gmmotor.xapk
+com.dewertokin.okinsmartcomfort,FurniMove,1,1,1,2.0.1 (18),2.0.1,18,xapk,,disassembly/apk/analyzed/FurniMove_2.0.1_com.dewertokin.okinsmartcomfort.xapk
+com.hettich.hettich,AxisDrive Bed Control,1,1,1,3.3.6 (8),3.3.6,8,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Axis Drive Bed Control_3.3.6_com.hettich.hettich.apk
+com.intretech.app.suta,SUTA,1,1,1,1.0.3 (3),1.0.3,3,apk,armeabi,disassembly/apk/analyzed/SUTA_1.0.3_com.shuta.suta_old.apk
+com.jiecang.app.android.jiecangbed,Comfort Motion,1,1,1,2.1.6 (23),2.1.6,23,xapk,arm64-v8a,disassembly/apk/analyzed/Comfort Motion_2.1.6_com.jiecang.app.android.jiecangbed.xapk
+com.kaidi_test4,Isleep,1,1,1,1.6.3 (45),1.6.3,45,xapk,arm64-v8a,disassembly/apk/analyzed/ISleep_1.6.3_com.kaidi_test4.xapk
+com.kaidi_test4.floyd,Floyd Home,1,1,1,1.0.7 (7),1.0.7,7,xapk,arm64-v8a,disassembly/apk/analyzed/Floyd_1.0.7_com.kaidi_test4.floyd.xapk
+com.kaidi_test4.rize,Rize Beds,1,1,1,1.3.0 (48),1.3.0,48,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Rize Beds_1.3.0_com.kaidi_test4.rize.apk
+com.keeson.adjustablelite,Adjustable Lite,1,1,1,1.0.1 (4),1.0.1,4,xapk,arm64-v8a,disassembly/apk/analyzed/Adjustable Lite_1.0.1_com.keeson.adjustablelite.xapk
+com.keeson.agingplace,Dawn House,1,1,1,1.0.9 (82),1.0.9,82,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Dawn House_1.0.9_APKPure.apk
+com.keeson.beautyrestblack,Beautyrest BLACK,1,1,1,1.2.1 (18),1.2.1,18,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Beautyrest Black_1.2.1_APKPure.apk
+com.keeson.connectedbed,Linx,1,1,1,1.0.7 (27),1.0.7,27,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Linx_1.0.7_APKPure.apk
+com.keeson.coolbase,Cool Base,1,1,1,1.0.0 (3),1.0.0,3,xapk,,disassembly/apk/analyzed/Cool Base_1.0.0_com.keeson.coolbase.xapk
+com.keeson.ergohealth,Ergo Wellness,1,1,1,1.0.0 (2),1.0.0,2,xapk,arm64-v8a,disassembly/apk/analyzed/Ergo Wellness_1.0.0_APKPure.xapk
+com.keeson.junasleep,Juna Sleep,1,1,1,1.0.1 (18),1.0.1,18,xapk,arm64-v8a,disassembly/apk/analyzed/Juna Sleep_1.0.1_APKPure.xapk
+com.keeson.purpleBase,Smart Base,2,2,2,1.0.7 (20); 1.0.8 (23),1.0.8,23,xapk,arm64-v8a,disassembly/apk/analyzed/Purple Smart Base_1.0.7_com.keeson.purpleBase.xapk; disassembly/apk/analyzed/Purple Smart Base_1.0.8_APKPure.xapk
+com.keeson.restonicBT,RestonicBT,1,1,1,1.2.0 (3),1.2.0,3,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Restonic BT Remote_1.2.0_APKPure.apk
+com.keeson.scottlivingrelease,Scott Living,1,1,1,1.0.1 (24),1.0.1,24,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Scott Living_1.0.1_com.keeson.scottlivingrelease.apk
+com.keeson.ssbaudio,Sleep Harmony,1,1,1,1.0.0 (10),1.0.0,10,xapk,arm64-v8a,disassembly/apk/analyzed/Sleep Harmony_1.0.0_APKPure.xapk
+com.leggett.android.universal,LP Control,2,2,2,2.6.0 (39218); 2.9.0 (46164),2.9.0,46164,xapk,arm64-v8a,disassembly/apk/analyzed/leggett/com.leggett.android.universal.xapk; disassembly/apk/analyzed/LP+Adjustable+Bed+Control_2.9.0_APKPure.xapk
+com.leggett.patterns,LP Comfort,1,1,1,1.16.0 (2906),1.16.0,2906,xapk,arm64-v8a,disassembly/apk/analyzed/leggett/com.leggett.patterns.xapk
+com.leggett.prodigy2,Prodigy 2,1,1,1,2.2.0 (44),2.2.0,44,apk,,disassembly/apk/analyzed/leggett/com.leggett.prodigy2.apk
+com.leggett.prodigy2L,Prodigy 2L,1,1,1,1.2 (15),1.2,15,apk,,disassembly/apk/analyzed/leggett/com.leggett.prodigy2L.apk
+com.leggett.prodigy4,Prodigy CE,1,1,1,1.2.0 (18),1.2.0,18,apk,,disassembly/apk/analyzed/leggett/com.leggett.prodigy4.apk
+com.leggett.useries,Ultra Series,1,1,1,2.1 (16),2.1,16,apk,arm64-v8a; armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/leggett/com.leggett.useries.apk
+com.leggettplatt.lp_pseries,Premier Series,1,1,1,1.30 (30),1.30,30,apk,arm64-v8a; armeabi; armeabi-v7a; mips; x86; x86_64,disassembly/apk/analyzed/leggett/com.leggettplatt.lp_pseries.apk
+com.limoss.limossremote,limoss Remote,1,1,1,7.1.8 (44),7.1.8,44,xapk,arm64-v8a,disassembly/apk/analyzed/limossRemote_7.1.8_com.limoss.limossremote.xapk
+com.limoss.stawett,stawett Remote,1,1,1,1.3 (10),1.3,10,apk,arm64-v8a; armeabi; armeabi-v7a,disassembly/apk/analyzed/stawett Remote (Legacy)_1.3_com.stawett.apk
+com.linak.leggettandplatt,Performance Series,1,1,1,1.0 (124),1.0,124,apk,armeabi; armeabi-v7a; x86,disassembly/apk/analyzed/leggett/com.linak.leggettandplatt.apk
+com.linak.linakbed.ble.memory,Bed Control,1,1,1,6.0.5 (259),6.0.5,259,xapk,armeabi-v7a,disassembly/apk/analyzed/Linak Bed Control_6.0.5_com.linak.linakbed.ble.memory.xapk
+com.logicdata.app.android.bed,LOGICDATA MOTIONrelax,1,1,1,1.0.3 (4),1.0.3,4,apk,arm64-v8a,disassembly/apk/analyzed/LOGICDATA MOTIONrelax_1.0.3_com.logicdata.motionrelax.apk
+com.lucid.bedbase,Lucid Base,1,1,1,1.3.3 (16),1.3.3,16,xapk,arm64-v8a,disassembly/apk/analyzed/Lucid Base_1.3.3_com.lucid.bedbase.xapk
+com.malouf.bedbase,Malouf Base,1,1,1,2.4.3 (54),2.4.3,54,xapk,arm64-v8a,disassembly/apk/analyzed/Malouf Base_2.4.3_com.malouf.bedbase.xapk
+com.motion.rmtrelax,Relax Motion,1,1,1,1.5.0 (521),1.5.0,521,xapk,arm64-v8a,disassembly/apk/analyzed/Relax Motion_1.5.0_com.motion.rmtrelax.xapk
+com.okin.MattressPoint,MattressPoint,1,1,1,1.0.1 (3),1.0.1,3,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.MattressPoint.xapk
+com.okin.apex,Comfort Enhancement 3,1,1,1,1.4.0 (5),1.4.0,5,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.apex.xapk
+com.okin.bedding.adjustablelumbar,Adjustable bed(Lumbar),1,1,1,1.1 (29),1.1,29,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.adjustablelumbar.xapk
+com.okin.bedding.adjustbed,Adjustable bed,2,1,1,1.1 (27),1.1,27,xapk,arm64-v8a,disassembly/apk/analyzed/Adjustable bed_1.1_com.okin.bedding.adjustbed.xapk; disassembly/apk/analyzed/dewertokin/com.okin.bedding.adjustbed.xapk
+com.okin.bedding.alya,Alya Smart Furnishing,1,1,1,1.0.2 (3),1.0.2,3,xapk,armeabi-v7a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.alya.xapk
+com.okin.bedding.berun,BERUN,1,1,1,1.1.1 (7),1.1.1,7,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.berun.xapk
+com.okin.bedding.customaticclarity,Rize Clarity,1,1,1,1.0.1 (2),1.0.1,2,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.customaticclarity.xapk
+com.okin.bedding.customaticdemo,Independence,1,1,1,1.1.0 (5),1.1.0,5,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.customaticdemo.xapk
+com.okin.bedding.customaticjeromes,Jerome's C,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.customaticjeromes.apk
+com.okin.bedding.customaticremedy,Rize Remedy,1,1,1,1.0.1 (2),1.0.1,2,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.customaticremedy.xapk
+com.okin.bedding.glory,Customatic Technologies Z-Series,1,1,1,1.0.4 (5),1.0.4,5,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.glory.xapk
+com.okin.bedding.jobs,JobsAI智能助眠床,1,1,1,1.0.6 (7),1.0.6,7,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.jobs.apk
+com.okin.bedding.luxe,Adjustable Comfort - Luxe,1,1,1,1.0.0 (2),1.0.0,2,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.luxe.xapk
+com.okin.bedding.nectarmotion,Nectar Move,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.nectarmotion.apk
+com.okin.bedding.nerum,Nerum,1,1,1,1.0.3 (4),1.0.3,4,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.nerum.xapk
+com.okin.bedding.rizeResident,Resident Adjustable Bed,2,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeResident.apk; disassembly/apk/analyzed/Resident Adjustable Bed_1.0.1_com.okin.bedding.rizeResident.apk
+com.okin.bedding.rizeSanctuary,Jordan's Sanctuary - O,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeSanctuary.apk
+com.okin.bedding.rizeaviada,Rize Aviada - O,1,1,1,1.0.1 (2),1.0.1,2,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeaviada.xapk
+com.okin.bedding.rizebob,POWER BOB ULTRA-O,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizebob.apk
+com.okin.bedding.rizecontempo,Rize Contemporary III - O,1,1,1,1.0.2 (3),1.0.2,3,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizecontempo.apk
+com.okin.bedding.rizeii,Rize Remedy II,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeii.apk
+com.okin.bedding.rizeiicarefree,Carefree,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeiicarefree.apk
+com.okin.bedding.rizeiiclarity,Rize Clarity II - O,1,1,1,1.0.1 (2),1.0.1,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizeiiclarity.apk
+com.okin.bedding.rizemf900,MFirm 900 - O,2,1,1,1.1.2 (4),1.1.2,4,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.rizemf900.xapk; disassembly/apk/analyzed/Mattress Firm 900 - O_1.1.2_com.okin.bedding.rizemf900.xapk
+com.okin.bedding.sleepy,Sleepy's Elite,2,1,1,1.1.4 (13),1.1.4,13,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.bedding.sleepy.xapk; disassembly/apk/analyzed/MFRM Sleepy's Elite_1.1.4_com.okin.bedding.sleepy.xapk
+com.okin.bedding.smartbedwifi,SmartBed,2,1,1,2.2.0 (22),2.2.0,22,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.smartbedwifi.xapk; disassembly/apk/analyzed/OKIN Smart Bed_2.2.0_com.okin.bedding.smartbedwifi.xapk
+com.okin.bedding.support,Support 挺你 科技調整床,1,1,1,1.0.4 (5),1.0.4,5,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.support.apk
+com.okin.bedding.tranquil,Jordan's Tranquil,1,1,1,1.0.2 (3),1.0.2,3,apk,,disassembly/apk/analyzed/dewertokin/com.okin.bedding.tranquil.apk
+com.okin.bedding.ultra,Ultra,1,1,1,1.0.0 (1),1.0.0,1,apk,arm64-v8a; armeabi-v7a; x86_64,disassembly/apk/analyzed/dewertokin/com.okin.bedding.ultra.apk
+com.okin.doublesleep,OKIN SleepEase,1,1,1,1.1.0 (56),1.1.0,56,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.doublesleep.xapk
+com.okin.enhancements,Comfort Enhancements,1,1,1,1.0.3 (4),1.0.3,4,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/dewertokin/com.okin.enhancements.apk
+com.okin.healeverynight,Heal Every Night,1,1,1,1.0 (1),1.0,1,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.okin.healeverynight.apk
+com.okin.ist,Symphony Sleep Sense,1,1,1,2.5.1 (162),2.5.1,162,xapk,armeabi-v7a,disassembly/apk/analyzed/dewertokin/com.okin.ist.xapk
+com.okin.jalon.okimatandroid,OkimattMotion,1,1,1,1.1.1 (3),1.1.1,3,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.jalon.okimatandroid.xapk
+com.okin.mattresstool,BW配网助手,1,1,1,1.0.0 (1),1.0.0,1,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.mattresstool.xapk
+com.okin.minamotobed.release,minamotobed,1,1,1,1.1.3 (39),1.1.3,39,xapk,armeabi-v7a,disassembly/apk/analyzed/dewertokin/com.okin.minamotobed.release.xapk
+com.okin.minghua.R,OKIN-Seating,1,1,1,1.0.1 (2),1.0.1,2,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.okin.minghua.R.apk
+com.okin.mline,M line,1,1,1,1.2.2 (38),1.2.2,38,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.mline.xapk
+com.okin.motionbed,OKIN Motion Bed,1,1,1,1.0 (2),1.0,2,apk,,disassembly/apk/analyzed/dewertokin/com.okin.motionbed.apk
+com.okin.office.smartoffice_ble,SmartOffice-Bluetooth,1,1,1,1.0.4 (6),1.0.4,6,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.office.smartoffice_ble.xapk
+com.okin.okinsmartcomfort,FurniMove,1,1,1,2.1.0 (18),2.1.0,18,xapk,,disassembly/apk/analyzed/dewertokin/com.okin.okinsmartcomfort.xapk
+com.okin.ore.cherish,Cherish,1,1,1,1.0.4 (5),1.0.4,5,apk,,disassembly/apk/analyzed/dewertokin/com.okin.ore.cherish.apk
+com.okin.resident.release,resident,2,1,1,1.0.0 (1),1.0.0,1,apk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.resident.release.apk; disassembly/apk/analyzed/Resident Adjustable Base_1.0.0_com.okin.resident.release.apk
+com.okin.rize,Rize Home,1,1,1,1.1.1 (11),1.1.1,11,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.rize.xapk
+com.okin.sealy,Sealy Posturematic,1,1,1,1.1.1 (126),1.1.1,126,xapk,arm64-v8a; armeabi-v7a,disassembly/apk/analyzed/com.okin.sealy_1.1.1.xapk
+com.okin.seating.smartcomfort,Smart Comfort Pro,1,1,1,1.0.5 (7),1.0.5,7,apk,,disassembly/apk/analyzed/dewertokin/com.okin.seating.smartcomfort.apk
+com.okin.seating.ss,SmartSofa,1,1,1,1.1.3 (5),1.1.3,5,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.seating.ss.xapk
+com.okin.simmons,SIMMONS,1,1,1,1.12.9 (99),1.12.9,99,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.simmons.xapk
+com.okin.simmonskorea,N32 Motion Bed,1,1,1,1.1.12 (35),1.1.12,35,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.simmonskorea.xapk
+com.okin.simon,Simon,1,1,1,1.0.1 (2),1.0.1,2,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.okin.simon.apk
+com.okin.sleepMonitor.onlySnore,OKIN Snore Monitor,1,1,1,2.3.8 (202),2.3.8,202,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.sleepMonitor.onlySnore.xapk
+com.okin.sleeptime,Sleeptime,1,1,1,1.0.0 (1),1.0.0,1,apk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.sleeptime.apk
+com.okin.topsky,TOPSKY TV MOUNT,1,1,1,1.1.5 (32),1.1.5,32,xapk,armeabi-v7a,disassembly/apk/analyzed/dewertokin/com.okin.topsky.xapk
+com.okin.ultramaticSmartBed,Ultramatic Smart Bed,1,1,1,1.1.1 (4),1.1.1,4,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.okin.ultramaticSmartBed.xapk
+com.ore.AvantiBases,AvantiBases,1,1,1,1.0.5 (7),1.0.5,7,apk,,disassembly/apk/analyzed/dewertokin/com.ore.AvantiBases.apk
+com.ore.Dynasty,Dynasty Bases,1,1,1,1.0.2 (3),1.0.2,3,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.Dynasty.xapk
+com.ore.LevaSleep,LEVA,1,1,1,1.0.2 (3),1.0.2,3,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.LevaSleep.xapk
+com.ore.americanstar,AMERICANSTAR,1,1,1,1.0 (1),1.0,1,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.ore.americanstar.apk
+com.ore.bedding.glideawaymontion,Glideaway Montion For Bluetooth,1,1,1,1.0.3 (11),1.0.3,11,xapk,,disassembly/apk/analyzed/dewertokin/com.ore.bedding.glideawaymontion.xapk
+com.ore.bedding.movita2,모비타 AI-1000,1,1,1,1.0.6 (6),1.0.6,6,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.bedding.movita2.xapk
+com.ore.bedding.symphony,Symphony Sleep,1,1,1,1.1.0 (14),1.1.0,14,xapk,,disassembly/apk/analyzed/dewertokin/com.ore.bedding.symphony.xapk
+com.ore.betterliving2,BetterLiving,2,1,1,1.2.5 (12),1.2.5,12,xapk,,disassembly/apk/analyzed/BetterLiving-1_1.2.5_APKPure.xapk; disassembly/apk/analyzed/dewertokin/com.ore.betterliving2.xapk
+com.ore.comfortfurniture,ComfortFurniture,1,1,1,2.3 (10),2.3,10,apk,arm64-v8a; armeabi; armeabi-v7a; mips; x86; x86_64,disassembly/apk/analyzed/dewertokin/com.ore.comfortfurniture.apk
+com.ore.jalon.comfortwifiandroid,ComfortBaseForWifi,1,1,1,3.7 (10),3.7,10,apk,arm64-v8a; armeabi; armeabi-v7a; mips; mips64; x86; x86_64,disassembly/apk/analyzed/dewertokin/com.ore.jalon.comfortwifiandroid.apk
+com.ore.jalon.neworebeding,OkinComfortBed Ⅱ,2,1,1,2.0.2 (9),2.0.2,9,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.jalon.neworebeding.xapk; disassembly/apk/analyzed/OKIN ComfortBed II-N_2.0.2_com.ore.jalon.neworebeding.xapk
+com.ore.jalon.neworebeding_android,OkinComfortBed Ⅱ,1,1,1,1.4 (4),1.4,4,apk,,disassembly/apk/analyzed/dewertokin/com.ore.jalon.neworebeding_android.apk
+com.ore.jalon.officeandr,SmartOffice,1,1,1,1.0.2 (4),1.0.2,4,xapk,,disassembly/apk/analyzed/dewertokin/com.ore.jalon.officeandr.xapk
+com.ore.koizumi2,B-remote 1M,1,1,1,1.1 (3),1.1,3,apk,,disassembly/apk/analyzed/dewertokin/com.ore.koizumi2.apk
+com.ore.maxcoil,MaxCoil Una,1,1,1,1.1.0 (5),1.1.0,5,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.maxcoil.xapk
+com.ore.okincomfortbed,OKIN Comfort Bed,2,1,1,1.1.4 (6),1.1.4,6,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.okincomfortbed.xapk; disassembly/apk/analyzed/OKIN Comfort Bed_1.1.4_com.ore.okincomfortbed.xapk
+com.ore.powersbedding,PowersBedding,1,1,1,1.1.0 (2),1.1.0,2,apk,,disassembly/apk/analyzed/dewertokin/com.ore.powersbedding.apk
+com.ore.serta330,Serta MP Remote,1,1,1,1.1 (7),1.1,7,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Serta MP Remote_1.1_com.ore.serta330.apk
+com.ore.sfm,INNOVA,2,1,1,2.0 (3),2.0,3,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.ore.sfm.apk; disassembly/apk/analyzed/INNOVA_2.0_com.ore.sfm.apk
+com.ore.sfmc2bedsence,Bedsense Bases,1,1,1,1.1 (3),1.1,3,apk,armeabi; armeabi-v7a; mips; x86,disassembly/apk/analyzed/dewertokin/com.ore.sfmc2bedsence.apk
+com.ore.tempur,Tempur Curve,1,1,1,1.7 (16),1.7,16,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Tempur Curve_1.7_APKPure.apk
+com.ore.ultramatic,Ultramatic,1,1,1,1.0.2 (4),1.0.2,4,apk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.ultramatic.apk
+com.ore.yorkfeng.comfortbaseble2,ComfortBaseForBluetooth,1,1,1,1.1.2 (6),1.1.2,6,xapk,arm64-v8a,disassembly/apk/analyzed/dewertokin/com.ore.yorkfeng.comfortbaseble2.xapk
+com.ore.yorkfeng.hestiamotion,HestiaMotion,1,1,1,1.2 (3),1.2,3,apk,,disassembly/apk/analyzed/dewertokin/com.ore.yorkfeng.hestiamotion.apk
+com.reverie.reverie,Reverie Nightstand,1,1,1,3.3.3 (113),3.3.3,113,xapk,arm64-v8a,disassembly/apk/analyzed/Reverie Nightstand_3.3.3_com.reverie.reverie.xapk
+com.richmat.acaa,ACAA bed control,1,1,1,1.0.4 (5),1.0.4,5,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.acaa.apk
+com.richmat.americanstar,AMERICANSTAR,1,1,1,1.0.0 (1),1.0.0,1,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.americanstar.xapk
+com.richmat.avocadoecobase,Avocado Eco Base,1,1,1,1.0.4 (5),1.0.4,5,apk,,disassembly/apk/analyzed/richmat/com.richmat.avocadoecobase.apk
+com.richmat.awmotion,AW MOTION,1,1,1,1.0.1 (10102),1.0.1,10102,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.awmotion.xapk
+com.richmat.bailey2,Bailey's Bed Control,1,1,1,2.1.18 (21),2.1.18,21,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.bailey2.apk
+com.richmat.baseremote,BaseRemote,1,1,1,1.0.1 (2),1.0.1,2,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.baseremote.xapk
+com.richmat.bed_tech,Bed Tech,1,1,1,2.8.3 (13),2.8.3,13,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.bed_tech.xapk
+com.richmat.bedsmart,X-Series,1,1,1,1.0.7 (8),1.0.7,8,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.bedsmart.apk
+com.richmat.bedtech3,Bedtech Bed Control,1,1,1,2.2.11 (24),2.2.11,24,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.bedtech3.apk
+com.richmat.best_mattress,Best Mattress,1,1,1,1.1.1 (3),1.1.1,3,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.best_mattress.apk
+com.richmat.blvd_home,Blvd Home,1,1,1,1.0.1 (2),1.0.1,2,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.blvd_home.apk
+com.richmat.bobpowerbase,Power Bob Base,1,1,1,1.0.1 (10100),1.0.1,10100,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.bobpowerbase.xapk
+com.richmat.casperbase,Casper Base,2,1,1,1.0.8 (10800),1.0.8,10800,xapk,arm64-v8a,disassembly/apk/analyzed/Casper Base_1.0.8_APKPure.xapk; disassembly/apk/analyzed/richmat/com.richmat.casperbase.xapk
+com.richmat.coastersleep,CoasterSleep,1,1,1,1.0.10 (10),1.0.10,10,xapk,,disassembly/apk/analyzed/richmat/com.richmat.coastersleep.xapk
+com.richmat.dreamlab2,Dreamlab Control,1,1,1,5.1.8 (14),5.1.8,14,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.dreamlab2.apk
+com.richmat.dynasty,Dynasty DM9000,1,1,1,1.0.4 (5),1.0.4,5,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.dynasty.xapk
+com.richmat.easyrest,Easy Rest,1,1,1,1.1.1 (3),1.1.1,3,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.easyrest.xapk
+com.richmat.enso2,ENSO Sleep Control,1,1,1,1.0.7 (8),1.0.7,8,xapk,armeabi-v7a,disassembly/apk/analyzed/richmat/com.richmat.enso2.xapk
+com.richmat.eshinesleep,Eshine,1,1,1,1.0.0 (10001),1.0.0,10001,xapk,armeabi-v7a,disassembly/apk/analyzed/richmat/com.richmat.eshinesleep.xapk
+com.richmat.fortywinks,Forty Winks,1,1,1,1.0.1 (2),1.0.1,2,xapk,,disassembly/apk/analyzed/richmat/com.richmat.fortywinks.xapk
+com.richmat.garvee,Garvee,1,1,1,1.0.2 (10200),1.0.2,10200,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.garvee.xapk
+com.richmat.goodvibesleep,Good Vibe Sleep,1,1,1,2.0.0 (20000),2.0.0,20000,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.goodvibesleep.xapk
+com.richmat.harmony,HARMONY,1,1,1,1.0.0 (1),1.0.0,1,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.harmony.apk
+com.richmat.hjbed,HJBed,1,1,1,2.0.8 (20800),2.0.8,20800,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.hjbed.xapk
+com.richmat.hushbase,Hush Base,1,1,1,1.0.4 (10400),1.0.4,10400,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.hushbase.xapk
+com.richmat.idealbed,Idealbed,1,1,1,2.4.2 (17),2.4.2,17,xapk,,disassembly/apk/analyzed/richmat/com.richmat.idealbed.xapk
+com.richmat.innova2,Innova Control,1,1,1,1.1.0 (10),1.1.0,10,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.innova2.xapk
+com.richmat.jerome2,Jerome's power base,1,1,1,1.0.9 (15),1.0.9,15,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.jerome2.xapk
+com.richmat.jeromesadjustablebase,Jerome’s Adjustable Base,1,1,1,1.0.0 (10001),1.0.0,10001,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.jeromesadjustablebase.xapk
+com.richmat.lady_americana,Lady Americana,1,1,1,1.0.2 (3),1.0.2,3,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.lady_americana.apk
+com.richmat.likomio,Likimio,1,1,1,1.0.2 (10201),1.0.2,10201,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.likomio.xapk
+com.richmat.lp,LP Adjustable Base ,1,1,1,2.2.1 (13),2.2.1,13,apk,armeabi; armeabi-v7a; mips,disassembly/apk/analyzed/L&P Adjustable Base_2.2.1_com.richmat.lp2.apk
+com.richmat.lp2,L&P Adjustable Base,1,1,1,2.3.25 (46),2.3.25,46,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.lp2.xapk
+com.richmat.luniosmart,Lunio Smart+,1,1,1,1.0.3 (10301),1.0.3,10301,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.luniosmart.xapk
+com.richmat.luuna,Luuna +,1,1,1,2.0.1 (20102),2.0.1,20102,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.luuna.xapk
+com.richmat.luunarise2,Luuna Rise,1,1,1,1.0.13 (21),1.0.13,21,apk,,disassembly/apk/analyzed/richmat/com.richmat.luunarise2.apk
+com.richmat.majestichome,Majestic Home,1,1,1,1.0.1 (10100),1.0.1,10100,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.majestichome.xapk
+com.richmat.maxprime,Maxprime,1,1,1,1.0.7 (11),1.0.7,11,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.maxprime.apk
+com.richmat.milemont,Milemont,1,1,1,1.0.4 (5),1.0.4,5,xapk,,disassembly/apk/analyzed/richmat/com.richmat.milemont.xapk
+com.richmat.mily,眯狸0压床,1,1,1,1.0.3 (4),1.0.3,4,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.mily.apk
+com.richmat.mlily0,梦百合0压智能床,2,2,1,3.1.1 (31100),3.1.1,31100,apk; xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.apk; disassembly/apk/analyzed/richmat/com.richmat.mlily0.xapk
+com.richmat.mlily2,MLILY Control,1,1,1,1.0.19 (20),1.0.19,20,xapk,,disassembly/apk/analyzed/richmat/com.richmat.mlily2.xapk
+com.richmat.mlily_supreme,Mlily Supreme,1,1,1,1.3.1 (5),1.3.1,5,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.mlily_supreme.apk
+com.richmat.mlilyremote,MLILY Remote,1,1,1,1.0.1 (10103),1.0.1,10103,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.mlilyremote.xapk
+com.richmat.muuegm,MUUEGM,1,1,1,1.0.2 (10200),1.0.2,10200,xapk,armeabi-v7a,disassembly/apk/analyzed/richmat/com.richmat.muuegm.xapk
+com.richmat.myside,My Side,1,1,1,1.0.5 (10500),1.0.5,10500,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.myside.xapk
+com.richmat.nisco,Nisco,1,1,1,1.1.1 (3),1.1.1,3,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.nisco.apk
+com.richmat.nu503,SleepEvolution,1,1,1,3.5.5 (13),3.5.5,13,apk,,disassembly/apk/analyzed/richmat/com.richmat.nu503.apk
+com.richmat.okimiki,okimiki,1,1,1,1.0.0 (10002),1.0.0,10002,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.okimiki.xapk
+com.richmat.powercool,Power Cool Sleep System,1,1,1,1.0.8 (9),1.0.8,9,xapk,,disassembly/apk/analyzed/richmat/com.richmat.powercool.xapk
+com.richmat.purely_sleep,Purely Sleep,1,1,1,1.1.5 (7),1.1.5,7,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.purely_sleep.xapk
+com.richmat.remedy,Home Zone Adjustable,1,1,1,1.0.1 (2),1.0.1,2,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.remedy.apk
+com.richmat.revive3,Revive Control,1,1,1,1.0.26 (27),1.0.26,27,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.revive3.apk
+com.richmat.richmat,Richmat,1,1,1,4.0.2 (40204),4.0.2,40204,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.richmat.xapk
+com.richmat.rmcontrol2,RMControl,2,1,1,21.3.2 (213203),21.3.2,213203,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.rmcontrol2.xapk; disassembly/apk/analyzed/RMControl_21.3.2_com.richmat.rmcontrol2.xapk
+com.richmat.ronco_motion,RONCO MOTION,1,1,1,1.2 (3),1.2,3,apk,arm64-v8a; armeabi; armeabi-v7a; mips; mips64; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.ronco_motion.apk
+com.richmat.silksnow,S&S Base,1,1,1,1.0.3 (10301),1.0.3,10301,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.silksnow.xapk
+com.richmat.silver,W.Silver Products,1,1,1,3.3.7 (9),3.3.7,9,apk,,disassembly/apk/analyzed/richmat/com.richmat.silver.apk
+com.richmat.sleepfunction,SleepFunction Bed Control,2,1,1,1.3.0 (23),1.3.0,23,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.sleepfunction.apk; disassembly/apk/analyzed/SleepFunction Bed Control_1.3.0_com.richmat.sleepfunction.apk
+com.richmat.sonicsleep,소닉슬립,1,1,1,1.0.4 (10400),1.0.4,10400,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.sonicsleep.xapk
+com.richmat.sta2,STA Homecare,1,1,1,1.0.5 (6),1.0.5,6,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.sta2.apk
+com.richmat.superior,Superior,1,1,1,1.0.9 (10),1.0.9,10,xapk,,disassembly/apk/analyzed/richmat/com.richmat.superior.xapk
+com.richmat.svenson,SVEN & SON,2,1,1,2.0.1 (32),2.0.1,32,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.svenson.apk; disassembly/apk/analyzed/SVEN & SON_2.0.1_com.richmat.svenson.apk
+com.richmat.thrivesleep,Thrive Sleep,1,1,1,1.0.1 (10100),1.0.1,10100,xapk,armeabi-v7a,disassembly/apk/analyzed/richmat/com.richmat.thrivesleep.xapk
+com.richmat.tx,TX,1,1,1,1.0.0 (1),1.0.0,1,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.tx.xapk
+com.richmat.wsilver2,W.Silver Products,1,1,1,1.1.19 (40),1.1.19,40,xapk,arm64-v8a,disassembly/apk/analyzed/richmat/com.richmat.wsilver2.xapk
+com.richmat.zerogravity,Zero Gravity,1,1,1,1.0.3 (4),1.0.3,4,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/richmat/com.richmat.zerogravity.apk
+com.sbi.costco,Q-Plus Adjustable Remote,1,1,1,1.8 (13),1.8,13,apk,,disassembly/apk/analyzed/Q-Plus Adjustable Remote_1.8_com.sbi.costco.apk
+com.sbi.laylawf,Layla Adjustable Base Remote,1,1,1,1.1.2 (13),1.1.2,13,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Layla Adjustable Base Remote_1.1.2_com.sbi.laylawf.apk
+com.selectcomfort.SleepIQ,Sleep Number,1,1,1,5.3.32 (1770980846),5.3.32,1770980846,apk,arm64-v8a; armeabi-v7a; x86; x86_64,"disassembly/apk/analyzed/com.selectcomfort.SleepIQ_5.3.32-1770980846_minAPI29(arm64-v8a,armeabi-v7a,x86,x86_64)(nodpi)_apkmirror.com.apk"
+com.sfd.Omazz,Omazz Adjusto III,1,1,1,1.0.3 (11),1.0.3,11,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Omazz Adjusto III_1.0.3_APKPure.apk
+com.sfd.ergomotion,Ergomotion,1,1,1,1.6.4 (29),1.6.4,29,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Ergomotion_1.6.4_com.sfd.ergomotion.apk
+com.sfd.hump,Ergomotion 4.0,1,1,1,3.3 (59),3.3,59,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Ergomotion 4.0_3.3_com.sfd.hump.apk
+com.sfd.kingkoilbed,King Koil Bed,1,1,1,1.0 (1),1.0,1,xapk,arm64-v8a,disassembly/apk/analyzed/King Koil Bed_1.0_APKPure.xapk
+com.sfd.mm,Member's Mark Base Remote,1,1,1,1.0.9 (21),1.0.9,21,apk,arm64-v8a; armeabi; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Member's Mark Base Remote_1.0.9_com.sfd.mm.apk
+com.sfd.rondure_hump,1500 Tilt Base Remote,1,1,1,1.1.3 (29),1.1.3,29,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/1500 Tilt Base Remote_1.1.3_com.BF.apk
+com.sfd.row,Tempur Zero G Bed Base,1,1,1,1.9 (11),1.9,11,apk,arm64-v8a; armeabi-v7a; x86; x86_64,disassembly/apk/analyzed/Tempur Zero G Bed Base_1.9_com.sfd.row.apk
+com.shuta.smart_home,SUTA,1,1,1,3.15.0 (75),3.15.0,75,xapk,,disassembly/apk/analyzed/SUTA_3.15.0_com.shuta.smart_home.xapk
+com.sn.blackdianqi,Motion Bed,1,1,1,1.24 (34),1.24,34,xapk,,disassembly/apk/analyzed/Motion Bed_1.24_com.sn.blackdianqi.xapk
+com.sn.woosa,Woosa Sleep,1,1,1,1.1.6 (10),1.1.6,10,xapk,,disassembly/apk/analyzed/Woosa_Sleep_1.1.6_com.sn.woosa.xapk
+com.starcode.adjustablem1x12,AdjustableM1X12,1,1,1,1.1.3 (6),1.1.3,6,xapk,arm64-v8a,disassembly/apk/analyzed/Adjustable+Comfort+M1X12_1.1.3_APKPure.xapk
+com.svane.svaneremote,Svane Remote,1,1,1,Version 1.8 (8),Version 1.8,8,apk,,disassembly/apk/analyzed/Svane Remote_1.8_com.produktide.svane.svaneremote.apk
+com.synargy.okin,Smart Comfort by SYNARGY,1,1,1,1.0.9 (11),1.0.9,11,apk,,disassembly/apk/analyzed/dewertokin/com.synargy.okin.apk
+com.synergy.okin,Smart Comfort by Synergy,2,1,1,2.2.0 (16),2.2.0,16,xapk,,disassembly/apk/analyzed/dewertokin/com.synergy.okin.xapk; disassembly/apk/analyzed/Smart Comfort by Synergy_2.2.0_com.synergy.okin.xapk
+com.timotion.ahf,AHF Remote,1,1,1,1.0.4 (7),1.0.4,7,xapk,arm64-v8a,disassembly/apk/analyzed/AHF Remote_1.0.4_com.timotion.ahf.xapk
+com.timotion.smartmove,Smart Move+,1,1,1,0.1.8 (7),0.1.8,7,xapk,,disassembly/apk/analyzed/Smart Move+_0.1.8_com.timotion.smartmove.xapk
+com.vibradorm.vmatbasic,VRA,1,1,1,2.4.3 (14),2.4.3,14,apk,,disassembly/apk/analyzed/VIBRADORM Remote for Beds_2.4.3_com.vibradorm.vmatbasic.apk
+de.octoactuators.octosmartcontrolapp,OCTO Smart Control,4,4,3,1.1.57 (10157); 1.03.00 (10300); 1.03.01 (10301),1.03.01,10301,apk; xapk,,disassembly/apk/analyzed/OCTO Smart Control_1.03.00_de.octoactuators.octosmartcontrolapp.apk; disassembly/apk/analyzed/OCTO Smart Control_1.03.00_de.octoactuators.octosmartcontrolapp.xapk; disassembly/apk/analyzed/OCTO Smart Control_1.03.01_de.octoactuators.octosmartcontrolapp.xapk; disassembly/apk/analyzed/OCTO Smart Control_1.1.57_de.octoactuators.octosmartcontrolapp.apk
+de.vibradorm.diamant,Caresse Remote,1,1,1,0.3 (3),0.3,3,apk,,disassembly/apk/analyzed/CARESSE Remote_0.3_de.vibradorm.diamant.apk
+de.vibradorm.vmat,Vib Control,2,2,1,1.11 (49),1.11,49,apk,,disassembly/apk/analyzed/Vib Control_1.11-beta-vc49_de.vibradorm.vmat.apk; disassembly/apk/analyzed/VIBRADORM Remote_1.11_de.vibradorm.vra.apk
+de.vibradorm.werkmeister,Werkmeister Unterfederung,1,1,1,0.2 (2),0.2,2,apk,,disassembly/apk/analyzed/WERKMEISTER Unterfederung_0.2_de.vibradorm.werkmeister.apk
+net.logicdata.mobile.sfapp,SILVERmotion,1,1,1,1.0.0 (2),1.0.0,2,apk,armeabi-v7a,disassembly/apk/analyzed/SILVERmotion_1.0.0_at.silvermotion.apk
