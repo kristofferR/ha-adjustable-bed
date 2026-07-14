@@ -39,12 +39,12 @@ The 28 Google Play developer catalogs associated with live baseline apps returne
 
 | Relevance | Packages |
 |---|---:|
-| likely_bed_app | 34 |
-| needs_review | 8 |
-| not_bed_app | 14 |
+| likely_bed_app | 38 |
+| not_bed_app | 18 |
 
-The relevance field is conservative and keeps ambiguous results for review. It prevents unrelated
-desk, wheelchair, recliner, and catalog apps from being silently treated as adjustable-bed APKs.
+The relevance field includes explicit user-confirmed overrides and conservative title-based
+fallbacks. It prevents unrelated desk, wheelchair, recliner, and catalog apps from being silently
+treated as adjustable-bed APKs.
 
 APKPure's developer and search pages returned Cloudflare 403 responses, and the signed-in browser
 session was not permitted to automate those routes. Individual package lookups remained available

@@ -37,3 +37,18 @@ def test_discovery_relevance_excludes_non_bed_apps() -> None:
     assert discovery_relevance("com.sbi.markbase", "Member's Mark Base WiFi")[0] == (
         "likely_bed_app"
     )
+
+
+def test_discovery_relevance_preserves_user_corrections() -> None:
+    assert discovery_relevance("at.logicdata.motionatwork", "MOTION@work") == (
+        "not_bed_app",
+        "user-confirmed non-bed app",
+    )
+    assert discovery_relevance("com.keeson.smartbed", "Ergo WiFi") == (
+        "not_bed_app",
+        "user-confirmed non-bed app",
+    )
+    assert discovery_relevance("com.ly.homekobo", "HOME KOBO") == (
+        "likely_bed_app",
+        "user-confirmed bed app",
+    )

@@ -63,6 +63,22 @@ DISCOVERY_FIELDS = [
     "blocker",
 ]
 
+USER_CONFIRMED_BED_APPS = {
+    "com.ly.homekobo",
+    "com.okin.meisemobell",
+    "com.okin.yamada",
+    "com.sealy.flexirest",
+    "com.sfd.slim",
+    "com.sn.dianqi",
+}
+
+USER_CONFIRMED_NON_BED_APPS = {
+    "at.logicdata.motionatwork",
+    "com.keeson.ergopowercommand",
+    "com.keeson.rondurewifi",
+    "com.keeson.smartbed",
+}
+
 
 def classify(
     local_version_name: str,
@@ -136,6 +152,11 @@ def classify(
 
 def discovery_relevance(package_id: str, title: str) -> tuple[str, str]:
     """Conservatively bucket developer-catalog discoveries for human review."""
+    if package_id in USER_CONFIRMED_BED_APPS:
+        return "likely_bed_app", "user-confirmed bed app"
+    if package_id in USER_CONFIRMED_NON_BED_APPS:
+        return "not_bed_app", "user-confirmed non-bed app"
+
     value = f"{package_id} {title}".lower()
     exclusions = {
         "desk": "desk/workplace controller",
@@ -415,8 +436,9 @@ The 28 Google Play developer catalogs associated with live baseline apps returne
 |---|---:|
 {discovery_table}
 
-The relevance field is conservative and keeps ambiguous results for review. It prevents unrelated
-desk, wheelchair, recliner, and catalog apps from being silently treated as adjustable-bed APKs.
+The relevance field includes explicit user-confirmed overrides and conservative title-based
+fallbacks. It prevents unrelated desk, wheelchair, recliner, and catalog apps from being silently
+treated as adjustable-bed APKs.
 
 APKPure's developer and search pages returned Cloudflare 403 responses, and the signed-in browser
 session was not permitted to automate those routes. Individual package lookups remained available
