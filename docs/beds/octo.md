@@ -100,7 +100,10 @@ hardware capability and is not software grouping across arbitrary entries.
 
 ## Protocol Variants
 
-Octo beds have at least two protocol variants. The integration auto-detects the variant based on the service UUID.
+Octo beds have at least two protocol variants. Standard OCTO requires a
+recognized official device-name prefix because its `FFE0` service UUID is
+shared with other protocols. Star2 is auto-detected by its dedicated
+`0000aa5c-0000-1000-8000-00805f9b34fb` service UUID.
 
 ### Standard Variant (Most Common)
 

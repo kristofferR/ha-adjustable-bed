@@ -253,37 +253,42 @@ class OctoController(BedController):
         """
         self._response_buffer.extend(data)
         packets: list[dict[str, list[int]]] = []
+        buffer = self._response_buffer
+        trim_at = 0
 
-        while self._response_buffer:
-            start = self._response_buffer.find(OCTO_PACKET_CHAR)
+        while True:
+            start = buffer.find(OCTO_PACKET_CHAR, trim_at)
             if start < 0:
                 # Bytes before a start delimiter cannot become part of a later packet.
-                self._response_buffer.clear()
+                trim_at = len(buffer)
                 break
-            if start:
-                del self._response_buffer[:start]
 
-            end = self._response_buffer.find(OCTO_PACKET_CHAR, 1)
+            end = buffer.find(OCTO_PACKET_CHAR, start + 1)
             if end < 0:
-                # Retain the incomplete packet for the next notification.
+                # Discard leading noise but retain the incomplete packet.
+                trim_at = start
                 break
 
-            packet = self._parse_response_packet(bytes(self._response_buffer[: end + 1]))
+            packet = self._parse_response_packet(bytes(buffer[start : end + 1]))
             if packet is None:
                 # The end delimiter may also be the start of the next valid packet.
-                # Retain it while discarding the malformed candidate before it.
-                del self._response_buffer[:end]
+                # Scan from it without shifting the bytearray on every candidate.
+                trim_at = end
                 continue
 
             packets.append(packet)
-            del self._response_buffer[: end + 1]
+            trim_at = end + 1
 
-        if len(self._response_buffer) > OCTO_MAX_RESPONSE_BUFFER_SIZE:
+        # Front-delete at most once per callback. Repeated bytearray shifts during
+        # malformed-stream resynchronization would otherwise have quadratic cost.
+        del buffer[:trim_at]
+
+        if len(buffer) > OCTO_MAX_RESPONSE_BUFFER_SIZE:
             _LOGGER.debug(
                 "Discarding oversized incomplete Octo response (%d bytes)",
-                len(self._response_buffer),
+                len(buffer),
             )
-            self._response_buffer.clear()
+            buffer.clear()
 
         return packets
 
