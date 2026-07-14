@@ -691,35 +691,40 @@ def download_with_apkeep(
         result = subprocess.run(command, check=False, capture_output=True, text=True)
         artifact = locate_download(temporary_path)
         if not artifact and plan.selection == "download_google_play":
-            alternate_path = temporary_path / "mi_a1"
-            alternate_path.mkdir()
-            alternate_command = [
-                apkeep,
-                "-a",
-                plan.package_id,
-                "-d",
-                "google-play",
-                "-i",
-                str(google_play_ini),
-                "-o",
-                "device=mi_a1,split_apk=true",
-                "-r",
-                "1",
-                "-s",
-                "500",
-                str(alternate_path),
-            ]
-            alternate_result = subprocess.run(
-                alternate_command, check=False, capture_output=True, text=True
+            profiles = (
+                ("px_tablet", "mi_a1", "sm_s20_plus")
+                if ".pad." in plan.package_id
+                else ("mi_a1", "sm_s20_plus")
             )
-            artifact = locate_download(temporary_path)
-            if artifact:
-                locator = (
-                    f"apkeep {APKEEP_VERSION}; {plan.package_id}; google-play; "
-                    "device=mi_a1; split_apk=true"
+            for profile in profiles:
+                alternate_path = temporary_path / profile
+                alternate_path.mkdir()
+                alternate_command = [
+                    apkeep,
+                    "-a",
+                    plan.package_id,
+                    "-d",
+                    "google-play",
+                    "-i",
+                    str(google_play_ini),
+                    "-o",
+                    f"device={profile},split_apk=true",
+                    "-r",
+                    "1",
+                    "-s",
+                    "500",
+                    str(alternate_path),
+                ]
+                result = subprocess.run(
+                    alternate_command, check=False, capture_output=True, text=True
                 )
-            else:
-                result = alternate_result
+                artifact = locate_download(temporary_path)
+                if artifact:
+                    locator = (
+                        f"apkeep {APKEEP_VERSION}; {plan.package_id}; google-play; "
+                        f"device={profile}; split_apk=true"
+                    )
+                    break
         elif not artifact and plan.selection == "download_apkpure":
             fallback_url = f"https://d.apkpure.net/b/XAPK/{plan.package_id}?version=latest"
             fallback_path = temporary_path / f"{plan.package_id}@latest.xapk"
