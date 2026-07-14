@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
@@ -900,19 +900,91 @@ def run_acquisition(
                 record.status = "validation_error"
                 record.detail = "; ".join(filter(None, (record.detail, *errors)))
             elif inspection.technology == "flutter" and "arm64-v8a" not in inspection.flutter_architectures:
-                record.status = "blocked_flutter_arm64"
-                record.detail = "; ".join(
-                    filter(None, (record.detail, "latest Flutter artifact has no arm64-v8a libapp.so"))
-                )
-                fallback = find_flutter_fallback(
-                    plan.package_id, archive_rows, aapt, apksigner, working_directory
-                )
-                if fallback:
-                    record.fallback_artifact_path = fallback.artifact_path
-                    record.fallback_version_name = fallback.version_name
-                    record.fallback_version_code = fallback.version_code
-                    record.fallback_architectures = fallback.architectures
-                    record.fallback_sha256 = fallback.sha256
+                play_selected = False
+                play_detail = ""
+                if google_play_ini and plan.selection != "download_google_play":
+                    play_plan = replace(
+                        plan,
+                        selection="download_google_play",
+                        source="Google Play",
+                        source_url=(
+                            "https://play.google.com/store/apps/details?id="
+                            f"{plan.package_id}"
+                        ),
+                        requested_architecture="",
+                        variant_url="",
+                        detail="",
+                    )
+                    play_artifact, play_locator, play_error = download_with_apkeep(
+                        play_plan, destination, apkeep, google_play_ini
+                    )
+                    if play_artifact:
+                        play_inspection = inspect_artifact(
+                            play_artifact,
+                            plan.package_id,
+                            aapt,
+                            apksigner,
+                            working_directory,
+                        )
+                        play_errors = validate_inspection(play_plan, play_inspection)
+                        if (
+                            not play_errors
+                            and play_inspection.technology == "flutter"
+                            and "arm64-v8a" in play_inspection.flutter_architectures
+                        ):
+                            if inspection.members:
+                                del member_records[-len(inspection.members) :]
+                            member_records.extend(play_inspection.members)
+                            _apply_inspection(record, play_inspection)
+                            record.selection = "download_google_play_flutter_arm64"
+                            record.source = "Google Play"
+                            record.source_url = play_plan.source_url
+                            record.download_locator = play_locator
+                            record.requested_architecture = "arm64-v8a"
+                            record.status = "downloaded"
+                            record.detail = "; ".join(
+                                filter(
+                                    None,
+                                    (
+                                        record.detail,
+                                        "selected Google Play arm64 build because APKPure/local latest was armv7-only",
+                                    ),
+                                )
+                            )
+                            play_selected = True
+                        else:
+                            play_detail = "; ".join(
+                                play_errors
+                                or [
+                                    "Google Play artifact does not contain arm64-v8a libapp.so"
+                                ]
+                            )
+                    else:
+                        play_detail = play_error
+
+                if not play_selected:
+                    record.status = "blocked_flutter_arm64"
+                    record.detail = "; ".join(
+                        filter(
+                            None,
+                            (
+                                record.detail,
+                                "latest Flutter artifact has no arm64-v8a libapp.so",
+                                f"Google Play arm64 fallback: {play_detail}"
+                                if play_detail
+                                else "",
+                            ),
+                        )
+                    )
+                    fallback = find_flutter_fallback(
+                        plan.package_id, archive_rows, aapt, apksigner, working_directory
+                    )
+                    if fallback:
+                        record.fallback_artifact_path = fallback.artifact_path
+                        record.fallback_version_name = fallback.version_name
+                        record.fallback_version_code = fallback.version_code
+                        record.fallback_architectures = fallback.architectures
+                        record.fallback_sha256 = fallback.sha256
             else:
                 record.status = "reused_current" if plan.selection == "reuse_local" else "downloaded"
         records.append(record)
@@ -992,6 +1064,7 @@ def write_readme(
         f"| Source/authentication blockers | {statuses['blocked']} |",
         f"| APKPure downloads selected | {selections['download_apkpure']} |",
         f"| Google Play downloads selected | {selections['download_google_play']} |",
+        f"| Flutter arm64 Play fallbacks selected | {selections['download_google_play_flutter_arm64']} |",
         f"| Flutter artifacts detected | {len(flutter)} |",
         f"| APK/split file rows | {len(members)} |",
         "",
