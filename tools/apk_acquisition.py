@@ -690,9 +690,70 @@ def download_with_apkeep(
             command.append(str(temporary_path))
         result = subprocess.run(command, check=False, capture_output=True, text=True)
         artifact = locate_download(temporary_path)
+        if not artifact and plan.selection == "download_google_play":
+            alternate_path = temporary_path / "ad_g3_pro"
+            alternate_path.mkdir()
+            alternate_command = [
+                apkeep,
+                "-a",
+                plan.package_id,
+                "-d",
+                "google-play",
+                "-i",
+                str(google_play_ini),
+                "-o",
+                "device=ad_g3_pro,split_apk=true",
+                "-r",
+                "1",
+                "-s",
+                "500",
+                str(alternate_path),
+            ]
+            alternate_result = subprocess.run(
+                alternate_command, check=False, capture_output=True, text=True
+            )
+            artifact = locate_download(temporary_path)
+            if artifact:
+                locator = (
+                    f"apkeep {APKEEP_VERSION}; {plan.package_id}; google-play; "
+                    "device=ad_g3_pro; split_apk=true"
+                )
+            else:
+                result = alternate_result
+        elif not artifact and plan.selection == "download_apkpure":
+            fallback_url = f"https://d.apkpure.net/b/XAPK/{plan.package_id}?version=latest"
+            fallback_path = temporary_path / f"{plan.package_id}@latest.xapk"
+            fallback_command = [
+                shutil.which("curl") or "curl",
+                "--fail",
+                "--location",
+                "--retry",
+                "3",
+                "--retry-all-errors",
+                "--continue-at",
+                "-",
+                "--output",
+                str(fallback_path),
+                fallback_url,
+            ]
+            fallback_result = subprocess.run(
+                fallback_command, check=False, capture_output=True, text=True
+            )
+            if fallback_result.returncode != 0:
+                fallback_path.unlink(missing_ok=True)
+            artifact = locate_download(temporary_path)
+            if artifact:
+                locator = f"APKPure latest XAPK fallback; {fallback_url}"
+            else:
+                result = fallback_result
         if not artifact:
             output = "\n".join((result.stdout, result.stderr)).strip().splitlines()
-            detail = " | ".join(output[-4:]) or f"apkeep exited {result.returncode} without an artifact"
+            detail = " | ".join(output[-4:])
+            if not detail or all(line.startswith("Downloading ") for line in output):
+                detail = (
+                    f"{plan.source} returned no APK/XAPK for the requested latest build "
+                    "and emitted no diagnostic"
+                )
             return None, locator, detail
 
         os.replace(temporary_path, final_directory)
