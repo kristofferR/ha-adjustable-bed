@@ -39,8 +39,8 @@ The 28 Google Play developer catalogs associated with live baseline apps returne
 
 | Relevance | Packages |
 |---|---:|
-| likely_bed_app | 38 |
-| not_bed_app | 18 |
+| likely_bed_app | 35 |
+| not_bed_app | 21 |
 
 The relevance field includes explicit user-confirmed overrides and conservative title-based
 fallbacks. It prevents unrelated desk, wheelchair, recliner, and catalog apps from being silently

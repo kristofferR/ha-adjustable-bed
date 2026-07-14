@@ -77,6 +77,9 @@ USER_CONFIRMED_NON_BED_APPS = {
     "com.keeson.ergopowercommand",
     "com.keeson.rondurewifi",
     "com.keeson.smartbed",
+    "com.sbi.ada",
+    "com.sbi.allswell",
+    "com.sbi.markbase",
 }
 
 
@@ -155,6 +158,8 @@ def discovery_relevance(package_id: str, title: str) -> tuple[str, str]:
     if package_id in USER_CONFIRMED_BED_APPS:
         return "likely_bed_app", "user-confirmed bed app"
     if package_id in USER_CONFIRMED_NON_BED_APPS:
+        if package_id.startswith("com.sbi."):
+            return "not_bed_app", "user-confirmed Wi-Fi-only exclusion"
         return "not_bed_app", "user-confirmed non-bed app"
 
     value = f"{package_id} {title}".lower()
