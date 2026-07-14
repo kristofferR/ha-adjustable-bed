@@ -1,0 +1,906 @@
+[
+  {
+    "developer": "Leggett & Platt",
+    "developer_id": "/store/apps/dev?id=5188679186684716638",
+    "query_id": "5188679186684716638",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.leggett.android.universal",
+        "title": "LP Adjustable Bed Control",
+        "url": "https://play.google.com/store/apps/details?id=com.leggett.android.universal"
+      },
+      {
+        "package_id": "com.leggettplatt.lp_pseries",
+        "title": "Leggett & Platt Premier Series",
+        "url": "https://play.google.com/store/apps/details?id=com.leggettplatt.lp_pseries"
+      }
+    ]
+  },
+  {
+    "developer": "Suta (Xiamen) Smart Technology Co., Ltd",
+    "developer_id": "/store/apps/dev?id=5231452964264271689",
+    "query_id": "5231452964264271689",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.shuta.smart_home",
+        "title": "SUTA",
+        "url": "https://play.google.com/store/apps/details?id=com.shuta.smart_home"
+      }
+    ]
+  },
+  {
+    "developer": "Qingdao Richmat Intelligence Technology Inc",
+    "developer_id": "/store/apps/dev?id=5815187403158685768",
+    "query_id": "5815187403158685768",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.richmat.avocadoecobase",
+        "title": "Avocado Eco Base",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.avocadoecobase"
+      },
+      {
+        "package_id": "com.richmat.bailey2",
+        "title": "Bailey's Bed Control",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.bailey2"
+      },
+      {
+        "package_id": "com.richmat.bobpowerbase",
+        "title": "Power Bob Base",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase"
+      },
+      {
+        "package_id": "com.richmat.casperbase",
+        "title": "Casper Base",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.casperbase"
+      },
+      {
+        "package_id": "com.richmat.eshinesleep",
+        "title": "Eshine",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.eshinesleep"
+      },
+      {
+        "package_id": "com.richmat.mlilyremote",
+        "title": "MLILY Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.mlilyremote"
+      },
+      {
+        "package_id": "com.richmat.muuegm",
+        "title": "MUUEGM",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.muuegm"
+      },
+      {
+        "package_id": "com.richmat.revive3",
+        "title": "Revive Control",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.revive3"
+      },
+      {
+        "package_id": "com.richmat.richmat",
+        "title": "Richmat",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.richmat"
+      },
+      {
+        "package_id": "com.richmat.wsilver2",
+        "title": "W.Silver Products",
+        "url": "https://play.google.com/store/apps/details?id=com.richmat.wsilver2"
+      }
+    ]
+  },
+  {
+    "developer": "MotoMotion China Corporation",
+    "developer_id": "/store/apps/dev?id=7229376649823829947",
+    "query_id": "7229376649823829947",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.HHC.MotoMotion",
+        "title": "MotoMotion",
+        "url": "https://play.google.com/store/apps/details?id=com.HHC.MotoMotion"
+      },
+      {
+        "package_id": "com.HHC.MotoSleep",
+        "title": "MotoSleep",
+        "url": "https://play.google.com/store/apps/details?id=com.HHC.MotoSleep"
+      },
+      {
+        "package_id": "com.HHC.PowerBob",
+        "title": "Power Bob for Adjustable Bed",
+        "url": "https://play.google.com/store/apps/details?id=com.HHC.PowerBob"
+      }
+    ]
+  },
+  {
+    "developer": "LINAK",
+    "developer_id": "/store/apps/dev?id=8797908623101889650",
+    "query_id": "8797908623101889650",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.linak.bedconnect.iot",
+        "title": "Bed Connect",
+        "url": "https://play.google.com/store/apps/details?id=com.linak.bedconnect.iot"
+      },
+      {
+        "package_id": "com.linak.deskconnect",
+        "title": "Desk Connect",
+        "url": "https://play.google.com/store/apps/details?id=com.linak.deskconnect"
+      },
+      {
+        "package_id": "com.linak.deskcontrol",
+        "title": "Desk Control",
+        "url": "https://play.google.com/store/apps/details?id=com.linak.deskcontrol"
+      },
+      {
+        "package_id": "com.linak.linakbed.ble.memory",
+        "title": "Bed Control",
+        "url": "https://play.google.com/store/apps/details?id=com.linak.linakbed.ble.memory"
+      },
+      {
+        "package_id": "com.linak.myrecliner",
+        "title": "My Recliner",
+        "url": "https://play.google.com/store/apps/details?id=com.linak.myrecliner"
+      }
+    ]
+  },
+  {
+    "developer": "Ascion LLC d/b/a Reverie",
+    "developer_id": "/store/apps/developer?id=Ascion+LLC+d/b/a+Reverie",
+    "query_id": "Ascion LLC d/b/a Reverie",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.reverie.reverie",
+        "title": "Reverie Nightstand",
+        "url": "https://play.google.com/store/apps/details?id=com.reverie.reverie"
+      }
+    ]
+  },
+  {
+    "developer": "BEDJET LLC",
+    "developer_id": "/store/apps/developer?id=BEDJET+LLC",
+    "query_id": "BEDJET LLC",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.bedjet",
+        "title": "BedJet 3 Smart Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.bedjet"
+      },
+      {
+        "package_id": "com.bedjet.bedjet",
+        "title": "BedJet App (OLD)",
+        "url": "https://play.google.com/store/apps/details?id=com.bedjet.bedjet"
+      },
+      {
+        "package_id": "com.bedjet.vetremote",
+        "title": "VET Animal Warmer - BedJet",
+        "url": "https://play.google.com/store/apps/details?id=com.bedjet.vetremote"
+      }
+    ]
+  },
+  {
+    "developer": "Bed Tech",
+    "developer_id": "/store/apps/developer?id=Bed+Tech",
+    "query_id": "Bed Tech",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.bedtech",
+        "title": "BedTech",
+        "url": "https://play.google.com/store/apps/details?id=com.bedtech"
+      },
+      {
+        "package_id": "com.saatva",
+        "title": "Saatva",
+        "url": "https://play.google.com/store/apps/details?id=com.saatva"
+      }
+    ]
+  },
+  {
+    "developer": "CVB Inc.",
+    "developer_id": "/store/apps/developer?id=CVB+Inc.",
+    "query_id": "CVB Inc.",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.lucid.bedbase",
+        "title": "Lucid Base",
+        "url": "https://play.google.com/store/apps/details?id=com.lucid.bedbase"
+      },
+      {
+        "package_id": "com.malouf.bedbase",
+        "title": "Malouf Base",
+        "url": "https://play.google.com/store/apps/details?id=com.malouf.bedbase"
+      }
+    ]
+  },
+  {
+    "developer": "DewertOkin Technology",
+    "developer_id": "/store/apps/developer?id=DewertOkin+Technology",
+    "query_id": "DewertOkin Technology",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.bedding.monitor.sleep_monitor.release",
+        "title": "OKIN SMART SLEEP",
+        "url": "https://play.google.com/store/apps/details?id=com.bedding.monitor.sleep_monitor.release"
+      },
+      {
+        "package_id": "com.okin.adjustamattress",
+        "title": "AdjustaMattress",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.adjustamattress"
+      },
+      {
+        "package_id": "com.okin.bedding.luxe",
+        "title": "Adjustable Comfort - Luxe",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.bedding.luxe"
+      },
+      {
+        "package_id": "com.okin.bedding.sleepy",
+        "title": "MFRM Sleepy's Elite",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy"
+      },
+      {
+        "package_id": "com.okin.eshine",
+        "title": "Eshine Sleep",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.eshine"
+      },
+      {
+        "package_id": "com.okin.flex_demo",
+        "title": "Flexsteel Pulse",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.flex_demo"
+      },
+      {
+        "package_id": "com.okin.ist",
+        "title": "Symphony Sleep Sense",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.ist"
+      },
+      {
+        "package_id": "com.okin.meisemobell",
+        "title": "마이저모벨",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.meisemobell"
+      },
+      {
+        "package_id": "com.okin.minamotobed.release",
+        "title": "minamotobed",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.minamotobed.release"
+      },
+      {
+        "package_id": "com.okin.okinsmartcomfort",
+        "title": "FurniMove",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort"
+      },
+      {
+        "package_id": "com.okin.rize",
+        "title": "Rize Home",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.rize"
+      },
+      {
+        "package_id": "com.okin.simmonsBlue",
+        "title": "SIMMONS iDEAL BED",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.simmonsBlue"
+      },
+      {
+        "package_id": "com.okin.simmonskorea",
+        "title": "N32 Motion Bed",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.simmonskorea"
+      },
+      {
+        "package_id": "com.okin.sleeptime",
+        "title": "Sleeptime Australia",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.sleeptime"
+      },
+      {
+        "package_id": "com.okin.topsky",
+        "title": "TOPSKY TV MOUNT",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.topsky"
+      },
+      {
+        "package_id": "com.okin.yamada",
+        "title": "アシステック",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.yamada"
+      },
+      {
+        "package_id": "com.ore.Dynasty",
+        "title": "Dynasty Bases",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.Dynasty"
+      },
+      {
+        "package_id": "com.ore.bedding.glideawaymontion",
+        "title": "Glideaway Motion For Bluetooth",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion"
+      },
+      {
+        "package_id": "com.ore.bedding.symphony",
+        "title": "Symphony Sleep",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.bedding.symphony"
+      },
+      {
+        "package_id": "com.ore.jalon.neworebeding",
+        "title": "OKIN ComfortBed II-N",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding"
+      }
+    ]
+  },
+  {
+    "developer": "Ergomotion",
+    "developer_id": "/store/apps/developer?id=Ergomotion",
+    "query_id": "Ergomotion",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "cn.com.mancini",
+        "title": "Ergomotion Sync",
+        "url": "https://play.google.com/store/apps/details?id=cn.com.mancini"
+      },
+      {
+        "package_id": "cn.com.somos",
+        "title": "SomosBeds",
+        "url": "https://play.google.com/store/apps/details?id=cn.com.somos"
+      },
+      {
+        "package_id": "com.keeson.agingplace",
+        "title": "Dawn House",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.agingplace"
+      },
+      {
+        "package_id": "com.keeson.beautyrestblack",
+        "title": "Beautyrest Black",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.beautyrestblack"
+      },
+      {
+        "package_id": "com.keeson.connectedbed",
+        "title": "Linx",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.connectedbed"
+      },
+      {
+        "package_id": "com.keeson.ergohealth",
+        "title": "Ergo Wellness",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.ergohealth"
+      },
+      {
+        "package_id": "com.keeson.ergopowercommand",
+        "title": "Ergo Power Command",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.ergopowercommand"
+      },
+      {
+        "package_id": "com.keeson.junasleep",
+        "title": "Juna Sleep",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.junasleep"
+      },
+      {
+        "package_id": "com.keeson.restonicBT",
+        "title": "Restonic BT Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.restonicBT"
+      },
+      {
+        "package_id": "com.keeson.smartbed",
+        "title": "Ergo WiFi",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.smartbed"
+      },
+      {
+        "package_id": "com.keeson.ssbaudio",
+        "title": "Sleep Harmony",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.ssbaudio"
+      },
+      {
+        "package_id": "com.ore.serta330",
+        "title": "Serta MP Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.serta330"
+      },
+      {
+        "package_id": "com.ore.tempur",
+        "title": "Tempur Curve",
+        "url": "https://play.google.com/store/apps/details?id=com.ore.tempur"
+      },
+      {
+        "package_id": "com.sfd.antisnoringpillow",
+        "title": "SleepFit Pillow",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.antisnoringpillow"
+      },
+      {
+        "package_id": "com.sfd.ergomotion",
+        "title": "Ergomotion",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.ergomotion"
+      },
+      {
+        "package_id": "com.sfd.hump",
+        "title": "Ergomotion 4.0",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.hump"
+      },
+      {
+        "package_id": "com.sfd.kingkoilbed",
+        "title": "King Koil Bed",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.kingkoilbed"
+      },
+      {
+        "package_id": "com.sfd.row",
+        "title": "Tempur Zero G Bed Base",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.row"
+      },
+      {
+        "package_id": "com.sfd.slim",
+        "title": "Ergo Slim",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.slim"
+      },
+      {
+        "package_id": "com.sfd.tempur_au",
+        "title": "Tempur ZeroG",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.tempur_au"
+      }
+    ]
+  },
+  {
+    "developer": "Germany SA",
+    "developer_id": "/store/apps/developer?id=Germany+SA",
+    "query_id": "Germany SA",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.desarketing.gmmotor",
+        "title": "Germany Motions GM Bed Control",
+        "url": "https://play.google.com/store/apps/details?id=com.desarketing.gmmotor"
+      },
+      {
+        "package_id": "com.desarketing.ruf_betten_motor2",
+        "title": "RUF Betten Motor2",
+        "url": "https://play.google.com/store/apps/details?id=com.desarketing.ruf_betten_motor2"
+      },
+      {
+        "package_id": "com.germany.dorsal",
+        "title": "DORSAL",
+        "url": "https://play.google.com/store/apps/details?id=com.germany.dorsal"
+      }
+    ]
+  },
+  {
+    "developer": "Jensen Beds",
+    "developer_id": "/store/apps/developer?id=Jensen+Beds",
+    "query_id": "Jensen Beds",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "air.no.jensen.adjustablesleep",
+        "title": "Adjustable Sleep",
+        "url": "https://play.google.com/store/apps/details?id=air.no.jensen.adjustablesleep"
+      }
+    ]
+  },
+  {
+    "developer": "Kaidi LLC",
+    "developer_id": "/store/apps/developer?id=Kaidi+LLC",
+    "query_id": "Kaidi LLC",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.kaidi_test4",
+        "title": "ISleep",
+        "url": "https://play.google.com/store/apps/details?id=com.kaidi_test4"
+      },
+      {
+        "package_id": "com.pairlink.kaidi.ComfyDS",
+        "title": "ComfyD-S",
+        "url": "https://play.google.com/store/apps/details?id=com.pairlink.kaidi.ComfyDS"
+      },
+      {
+        "package_id": "com.pairlink.kaidi.komfyD",
+        "title": "KomfyD",
+        "url": "https://play.google.com/store/apps/details?id=com.pairlink.kaidi.komfyD"
+      },
+      {
+        "package_id": "com.pairlink.kaidi.sofa",
+        "title": "KomfyD H1",
+        "url": "https://play.google.com/store/apps/details?id=com.pairlink.kaidi.sofa"
+      }
+    ]
+  },
+  {
+    "developer": "LOGICDATA Electronic & Software Entwicklungs GmbH",
+    "developer_id": "/store/apps/developer?id=LOGICDATA+Electronic+%26+Software+Entwicklungs+GmbH",
+    "query_id": "LOGICDATA Electronic & Software Entwicklungs GmbH",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "at.logicdata.motionatwork",
+        "title": "MOTION@work",
+        "url": "https://play.google.com/store/apps/details?id=at.logicdata.motionatwork"
+      },
+      {
+        "package_id": "com.logicdata.app.android.bed",
+        "title": "LOGICDATA MOTIONrelax",
+        "url": "https://play.google.com/store/apps/details?id=com.logicdata.app.android.bed"
+      },
+      {
+        "package_id": "com.logicdata.app.android.pad.bed",
+        "title": "LOGICDATA MOTIONrelax Tablets",
+        "url": "https://play.google.com/store/apps/details?id=com.logicdata.app.android.pad.bed"
+      }
+    ]
+  },
+  {
+    "developer": "Layla Sleep",
+    "developer_id": "/store/apps/developer?id=Layla+Sleep",
+    "query_id": "Layla Sleep",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.sbi.laylawf",
+        "title": "Layla Adjustable Base Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.sbi.laylawf"
+      }
+    ]
+  },
+  {
+    "developer": "Octo Actuators",
+    "developer_id": "/store/apps/developer?id=Octo+Actuators",
+    "query_id": "Octo Actuators",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "de.octoactuators.octosmartcontrolapp",
+        "title": "OCTO Smart Control",
+        "url": "https://play.google.com/store/apps/details?id=de.octoactuators.octosmartcontrolapp"
+      }
+    ]
+  },
+  {
+    "developer": "Purple Innovation, Inc.",
+    "developer_id": "/store/apps/developer?id=Purple+Innovation,+Inc.",
+    "query_id": "Purple Innovation, Inc.",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.keeson.purpleBase",
+        "title": "Purple Smart Base",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.purpleBase"
+      }
+    ]
+  },
+  {
+    "developer": "Remacro Technology Co., Ltd.",
+    "developer_id": "/store/apps/developer?id=Remacro+Technology+Co.,+Ltd.",
+    "query_id": "Remacro Technology Co., Ltd.",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.cheers.brick",
+        "title": "The Brick",
+        "url": "https://play.google.com/store/apps/details?id=com.cheers.brick"
+      },
+      {
+        "package_id": "com.cheers.jewmes",
+        "title": "Jeromes",
+        "url": "https://play.google.com/store/apps/details?id=com.cheers.jewmes"
+      },
+      {
+        "package_id": "com.cheers.sleep",
+        "title": "CheersSleep",
+        "url": "https://play.google.com/store/apps/details?id=com.cheers.sleep"
+      },
+      {
+        "package_id": "com.cheers.slumber",
+        "title": "slumberland",
+        "url": "https://play.google.com/store/apps/details?id=com.cheers.slumber"
+      },
+      {
+        "package_id": "com.motion.rmtrelax",
+        "title": "Relax Motion",
+        "url": "https://play.google.com/store/apps/details?id=com.motion.rmtrelax"
+      }
+    ]
+  },
+  {
+    "developer": "Rize Home",
+    "developer_id": "/store/apps/developer?id=Rize+Home",
+    "query_id": "Rize Home",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.kaidi_test4.floyd",
+        "title": "Floyd",
+        "url": "https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd"
+      },
+      {
+        "package_id": "com.kaidi_test4.rize",
+        "title": "Rize Beds",
+        "url": "https://play.google.com/store/apps/details?id=com.kaidi_test4.rize"
+      }
+    ]
+  },
+  {
+    "developer": "Sleep Number Corporation",
+    "developer_id": "/store/apps/developer?id=Sleep+Number+Corporation",
+    "query_id": "Sleep Number Corporation",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.selectcomfort.SleepIQ",
+        "title": "Sleep Number",
+        "url": "https://play.google.com/store/apps/details?id=com.selectcomfort.SleepIQ"
+      }
+    ]
+  },
+  {
+    "developer": "South Bay International",
+    "developer_id": "/store/apps/developer?id=South+Bay+International",
+    "query_id": "South Bay International",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.keeson.adjustablelite",
+        "title": "Adjustable Lite",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.adjustablelite"
+      },
+      {
+        "package_id": "com.keeson.coolbase",
+        "title": "Cool Base",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.coolbase"
+      },
+      {
+        "package_id": "com.keeson.idealbed6iremote",
+        "title": "iDealBed 6i Adjustable",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.idealbed6iremote"
+      },
+      {
+        "package_id": "com.keeson.rondurewifi",
+        "title": "Ronin WiFi",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.rondurewifi"
+      },
+      {
+        "package_id": "com.keeson.scottlivingrelease",
+        "title": "Scott Living",
+        "url": "https://play.google.com/store/apps/details?id=com.keeson.scottlivingrelease"
+      },
+      {
+        "package_id": "com.sbi.ada",
+        "title": "Ananda Base WiFi",
+        "url": "https://play.google.com/store/apps/details?id=com.sbi.ada"
+      },
+      {
+        "package_id": "com.sbi.allswell",
+        "title": "Allswell Adj Base By South Bay",
+        "url": "https://play.google.com/store/apps/details?id=com.sbi.allswell"
+      },
+      {
+        "package_id": "com.sbi.costco",
+        "title": "Q-Plus Adjustable Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.sbi.costco"
+      },
+      {
+        "package_id": "com.sbi.markbase",
+        "title": "Member's Mark Base WiFi",
+        "url": "https://play.google.com/store/apps/details?id=com.sbi.markbase"
+      },
+      {
+        "package_id": "com.sfd.mm",
+        "title": "Member's Mark Base Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.mm"
+      },
+      {
+        "package_id": "com.sfd.rondure_hump",
+        "title": "1500 Tilt Base Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.sfd.rondure_hump"
+      }
+    ]
+  },
+  {
+    "developer": "TiMOTION",
+    "developer_id": "/store/apps/developer?id=TiMOTION",
+    "query_id": "TiMOTION",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.timotion.ahf",
+        "title": "AHF Remote",
+        "url": "https://play.google.com/store/apps/details?id=com.timotion.ahf"
+      },
+      {
+        "package_id": "com.timotion.mom",
+        "title": "MyOfficeMate",
+        "url": "https://play.google.com/store/apps/details?id=com.timotion.mom"
+      },
+      {
+        "package_id": "com.timotion.motti",
+        "title": "MOTTI",
+        "url": "https://play.google.com/store/apps/details?id=com.timotion.motti"
+      },
+      {
+        "package_id": "com.timotion.smartmove",
+        "title": "Smart Move+",
+        "url": "https://play.google.com/store/apps/details?id=com.timotion.smartmove"
+      },
+      {
+        "package_id": "com.timotion.standuppls",
+        "title": "Stand Up Pls.",
+        "url": "https://play.google.com/store/apps/details?id=com.timotion.standuppls"
+      }
+    ]
+  },
+  {
+    "developer": "Vibradorm GmbH",
+    "developer_id": "/store/apps/developer?id=Vibradorm+GmbH",
+    "query_id": "Vibradorm GmbH",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.vibradorm.vmatbasic",
+        "title": "VIBRADORM Remote for Beds",
+        "url": "https://play.google.com/store/apps/details?id=com.vibradorm.vmatbasic"
+      },
+      {
+        "package_id": "de.vibradorm.vmat",
+        "title": "VIBRADORM Remote",
+        "url": "https://play.google.com/store/apps/details?id=de.vibradorm.vmat"
+      }
+    ]
+  },
+  {
+    "developer": "ZHEJIANG TRI MIX TECHNOLOGY CO.,LTD.",
+    "developer_id": "/store/apps/developer?id=ZHEJIANG+TRI+MIX+TECHNOLOGY+CO.,LTD.",
+    "query_id": "ZHEJIANG TRI MIX TECHNOLOGY CO.,LTD.",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.fenmenbielei.bedsense",
+        "title": "BedSense",
+        "url": "https://play.google.com/store/apps/details?id=com.fenmenbielei.bedsense"
+      },
+      {
+        "package_id": "com.ly.homekobo",
+        "title": "HOME KOBO",
+        "url": "https://play.google.com/store/apps/details?id=com.ly.homekobo"
+      },
+      {
+        "package_id": "com.sddq.sophienew",
+        "title": "Sleep Sophie",
+        "url": "https://play.google.com/store/apps/details?id=com.sddq.sophienew"
+      },
+      {
+        "package_id": "com.sealy.flexirest",
+        "title": "Sealy FlexiRest",
+        "url": "https://play.google.com/store/apps/details?id=com.sealy.flexirest"
+      },
+      {
+        "package_id": "com.sealy.motionflex",
+        "title": "Sealy MotionFlex",
+        "url": "https://play.google.com/store/apps/details?id=com.sealy.motionflex"
+      },
+      {
+        "package_id": "com.sn.b4u",
+        "title": "ELECTROBED",
+        "url": "https://play.google.com/store/apps/details?id=com.sn.b4u"
+      },
+      {
+        "package_id": "com.sn.blackdianqi",
+        "title": "Motion Bed",
+        "url": "https://play.google.com/store/apps/details?id=com.sn.blackdianqi"
+      },
+      {
+        "package_id": "com.sn.dianqi",
+        "title": "SweetNight",
+        "url": "https://play.google.com/store/apps/details?id=com.sn.dianqi"
+      },
+      {
+        "package_id": "com.sn.woosa",
+        "title": "Woosa Sleep",
+        "url": "https://play.google.com/store/apps/details?id=com.sn.woosa"
+      }
+    ]
+  },
+  {
+    "developer": "Zhejiang Jiecang Linear Motion Technology Co.,Ltd",
+    "developer_id": "/store/apps/developer?id=Zhejiang+Jiecang+Linear+Motion+Technology+Co.,Ltd",
+    "query_id": "Zhejiang Jiecang Linear Motion Technology Co.,Ltd",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.dreamhd.jiecang.android.pad.bed",
+        "title": "Dream Motion HD",
+        "url": "https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed"
+      },
+      {
+        "package_id": "com.jiecang.app.android.aidesks",
+        "title": "AiDesk",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.app.android.aidesks"
+      },
+      {
+        "package_id": "com.jiecang.app.android.aidesksbooking",
+        "title": "AiBooking",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.app.android.aidesksbooking"
+      },
+      {
+        "package_id": "com.jiecang.app.android.jiecangbed",
+        "title": "Comfort Motion",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed"
+      },
+      {
+        "package_id": "com.jiecang.dreamask.app.android.bed",
+        "title": "ERGOBALANCE",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed"
+      },
+      {
+        "package_id": "com.jiecang.dreamotion.app.android.bed",
+        "title": "Dream Motion",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed"
+      },
+      {
+        "package_id": "com.jiecang.wheelchair",
+        "title": "iwheel",
+        "url": "https://play.google.com/store/apps/details?id=com.jiecang.wheelchair"
+      },
+      {
+        "package_id": "com.logicdata.app.mattress.bed",
+        "title": "Smart Sleep Air Mattress",
+        "url": "https://play.google.com/store/apps/details?id=com.logicdata.app.mattress.bed"
+      },
+      {
+        "package_id": "com.sendinfo.dreammotionpro",
+        "title": "Dreamotion Smart",
+        "url": "https://play.google.com/store/apps/details?id=com.sendinfo.dreammotionpro"
+      },
+      {
+        "package_id": "jcdownload.app.android",
+        "title": "JC Programmer",
+        "url": "https://play.google.com/store/apps/details?id=jcdownload.app.android"
+      }
+    ]
+  },
+  {
+    "developer": "limoss GmbH & Co. KG",
+    "developer_id": "/store/apps/developer?id=limoss+GmbH+%26+Co.+KG",
+    "query_id": "limoss GmbH & Co. KG",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.limoss.administrator.catalog",
+        "title": "limoss Catalog",
+        "url": "https://play.google.com/store/apps/details?id=com.limoss.administrator.catalog"
+      },
+      {
+        "package_id": "com.limoss.fsmrelax",
+        "title": "FSM Relax",
+        "url": "https://play.google.com/store/apps/details?id=com.limoss.fsmrelax"
+      },
+      {
+        "package_id": "com.limoss.limossremote",
+        "title": "limossRemote",
+        "url": "https://play.google.com/store/apps/details?id=com.limoss.limossremote"
+      }
+    ]
+  },
+  {
+    "developer": "star_seeds",
+    "developer_id": "/store/apps/developer?id=star_seeds",
+    "query_id": "star_seeds",
+    "status": "available",
+    "apps": [
+      {
+        "package_id": "com.dot.bedding.sleepspa.sleep_spa",
+        "title": "Sleep Spa Technology",
+        "url": "https://play.google.com/store/apps/details?id=com.dot.bedding.sleepspa.sleep_spa"
+      },
+      {
+        "package_id": "com.okin.sealy",
+        "title": "Sealy Posturematic",
+        "url": "https://play.google.com/store/apps/details?id=com.okin.sealy"
+      },
+      {
+        "package_id": "com.starcode.abm5_4",
+        "title": "AdjustableM5X4",
+        "url": "https://play.google.com/store/apps/details?id=com.starcode.abm5_4"
+      },
+      {
+        "package_id": "com.starcode.abm5_5",
+        "title": "AdjustableM5X5",
+        "url": "https://play.google.com/store/apps/details?id=com.starcode.abm5_5"
+      },
+      {
+        "package_id": "com.starcode.adjustablem1x12",
+        "title": "Adjustable Comfort M1X12",
+        "url": "https://play.google.com/store/apps/details?id=com.starcode.adjustablem1x12"
+      }
+    ]
+  }
+]

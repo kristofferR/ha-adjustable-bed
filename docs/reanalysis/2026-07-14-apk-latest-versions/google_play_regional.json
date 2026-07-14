@@ -1,0 +1,533 @@
+[
+  {
+    "package_id": "com.dewertokin.okinsmartcomfort",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.hettich.hettich",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.intretech.app.suta",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.leggett.patterns",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.leggett.prodigy2",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.leggett.prodigy2L",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.leggett.prodigy4",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.leggett.useries",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.limoss.stawett",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.linak.leggettandplatt",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.okin.MattressPoint",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "region_restricted",
+    "availability": {
+      "au": "available",
+      "ca": "not_in_region",
+      "de": "not_in_region",
+      "gb": "not_in_region",
+      "jp": "not_in_region",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "MattressPoint",
+    "developer": "DewertOkin Technology",
+    "developer_id": "/store/apps/developer?id=DewertOkin+Technology",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=com.okin.MattressPoint&hl=en&gl=us"
+  },
+  {
+    "package_id": "com.okin.bedding.nerum",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "region_restricted",
+    "availability": {
+      "au": "not_in_region",
+      "ca": "not_in_region",
+      "de": "not_in_region",
+      "gb": "not_in_region",
+      "jp": "available",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "Nerum",
+    "developer": "DewertOkin Technology",
+    "developer_id": "/store/apps/developer?id=DewertOkin+Technology",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=com.okin.bedding.nerum&hl=en&gl=us"
+  },
+  {
+    "package_id": "com.ore.bedding.movita2",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_in_region",
+    "availability": {
+      "au": "not_in_region",
+      "ca": "not_in_region",
+      "de": "not_in_region",
+      "gb": "not_in_region",
+      "jp": "not_in_region",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "모비타AI-1000",
+    "developer": "DewertOkin Technology",
+    "developer_id": "/store/apps/developer?id=DewertOkin+Technology",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=com.ore.bedding.movita2&hl=en&gl=us"
+  },
+  {
+    "package_id": "com.richmat.acaa",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.bed_tech",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.bedtech3",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.easyrest",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.garvee",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.lady_americana",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.lp",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.nisco",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.nu503",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.silver",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.sta2",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.richmat.zerogravity",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.svane.svaneremote",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  },
+  {
+    "package_id": "com.synargy.okin",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "region_restricted",
+    "availability": {
+      "au": "available",
+      "ca": "not_in_region",
+      "de": "not_in_region",
+      "gb": "not_in_region",
+      "jp": "not_in_region",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "Smart Comfort by SYNARGY",
+    "developer": "DewertOkin Technology",
+    "developer_id": "/store/apps/developer?id=DewertOkin+Technology",
+    "developer_website": "http://www.okin-refined.com",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=com.synargy.okin&hl=en&gl=us"
+  },
+  {
+    "package_id": "de.vibradorm.diamant",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "region_restricted",
+    "availability": {
+      "au": "not_in_region",
+      "ca": "not_in_region",
+      "de": "available",
+      "gb": "not_in_region",
+      "jp": "not_in_region",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "CARESSE REMOTE",
+    "developer": "Vibradorm GmbH",
+    "developer_id": "/store/apps/developer?id=Vibradorm+GmbH",
+    "developer_website": "http://www.vibradorm.de",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=de.vibradorm.diamant&hl=en&gl=us"
+  },
+  {
+    "package_id": "de.vibradorm.werkmeister",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "region_restricted",
+    "availability": {
+      "au": "not_in_region",
+      "ca": "not_in_region",
+      "de": "available",
+      "gb": "not_in_region",
+      "jp": "not_in_region",
+      "no": "not_in_region",
+      "us": "not_in_region"
+    },
+    "title": "WERKMEISTER Unterfederung",
+    "developer": "Vibradorm GmbH",
+    "developer_id": "/store/apps/developer?id=Vibradorm+GmbH",
+    "developer_website": "http://www.vibradorm.de",
+    "available": false,
+    "url": "https://play.google.com/store/apps/details?id=de.vibradorm.werkmeister&hl=en&gl=us"
+  },
+  {
+    "package_id": "net.logicdata.mobile.sfapp",
+    "lookup_date": "2026-07-14",
+    "country": "us",
+    "status": "not_found",
+    "error": "request failed: unexpected status: 404",
+    "availability": {
+      "au": "not_found",
+      "ca": "not_found",
+      "de": "not_found",
+      "gb": "not_found",
+      "jp": "not_found",
+      "no": "not_found",
+      "us": "not_found"
+    },
+    "available": false
+  }
+]
