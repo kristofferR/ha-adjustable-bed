@@ -686,7 +686,8 @@ def download_with_apkeep(
                 "500",
             ]
             locator = f"apkeep {APKEEP_VERSION}; {plan.package_id}; google-play; split_apk=true"
-        command.append(str(temporary_path))
+        if not plan.variant_url:
+            command.append(str(temporary_path))
         result = subprocess.run(command, check=False, capture_output=True, text=True)
         artifact = locate_download(temporary_path)
         if not artifact:
