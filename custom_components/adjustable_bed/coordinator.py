@@ -279,7 +279,6 @@ class AdjustableBedCoordinator:
 
         # CB24-specific configuration (SmartBed by Okin split beds)
         self._cb24_bed_selection: int = entry.data.get(CONF_CB24_BED_SELECTION, 0x00)
-        self._cb24_continuous_presets_learned = False
 
         self._client: BleakClient | None = None
         self._controller: BedController | None = None
@@ -578,11 +577,6 @@ class AdjustableBedCoordinator:
     def motor_pulse_delay_ms(self) -> int:
         """Return the motor pulse delay in milliseconds."""
         return self._motor_pulse_delay_ms
-
-    @property
-    def cb24_continuous_presets_learned(self) -> bool:
-        """Return whether CB24 auto mode has learned continuous preset sends."""
-        return self._cb24_continuous_presets_learned
 
     @property
     def controller(self) -> BedController | None:
@@ -1141,17 +1135,6 @@ class AdjustableBedCoordinator:
                     "retrying on the next connection.",
                     self._address,
                 )
-
-    def remember_cb24_continuous_presets(self) -> None:
-        """Persist the learned CB24 continuous preset mode across reconnects."""
-        if self._cb24_continuous_presets_learned:
-            return
-
-        self._cb24_continuous_presets_learned = True
-        _LOGGER.info(
-            "Learned CB24 continuous preset mode for %s; reusing it on reconnects",
-            self._address,
-        )
 
     def record_command_trace(
         self,

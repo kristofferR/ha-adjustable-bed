@@ -397,36 +397,10 @@ async def create_controller(
                 manufacturer_data=manufacturer_data,
             )
 
-        # OLD uses unconditional continuous presets so adaptive fallback is
-        # unnecessary; NEW/CB27NEW are new-protocol one-shot (no legacy path).
-        adaptive_preset_fallback = (
-            not explicit_variant_selected
-            and profile_variant
-            in {
-                OKIN_CB24_VARIANT_CB24,
-                OKIN_CB24_VARIANT_CB27,
-                OKIN_CB24_VARIANT_CB24_AB,
-                OKIN_CB24_VARIANT_CB1221,
-                OKIN_CB24_VARIANT_DACHENG,
-            }
-        )
-        initial_continuous_presets = (
-            adaptive_preset_fallback
-            and getattr(coordinator, "cb24_continuous_presets_learned", False)
-        )
-
-        if initial_continuous_presets:
-            _LOGGER.debug(
-                "Reusing learned CB24 continuous preset mode for %s",
-                coordinator.address,
-            )
-
         return OkinCB24Controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
-            adaptive_preset_fallback=adaptive_preset_fallback,
-            initial_continuous_presets=initial_continuous_presets,
         )
 
     if bed_type == BED_TYPE_OKIN_ORE:

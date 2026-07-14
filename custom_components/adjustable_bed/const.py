@@ -998,7 +998,7 @@ OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
 OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
 OKIN_CB24_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
-    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (continuous presets)",
+    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (safe one-shot presets)",
     OKIN_CB24_VARIANT_NEW: "NEW protocol (CB27New)",
     OKIN_CB24_VARIANT_CB24: "CB24 profile (legacy packets, one-shot presets)",
     OKIN_CB24_VARIANT_CB27: "CB27 profile (legacy packets, one-shot presets)",
