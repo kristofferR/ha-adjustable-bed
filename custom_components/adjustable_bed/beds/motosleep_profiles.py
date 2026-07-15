@@ -153,6 +153,8 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
         motors=motors,
         commands=_POWER_BOB_COMMANDS[profile_id],
         explicit_stop=explicit_stop,
+        # Settings always routes to PanelRGB. Character 10 selects its Mood or
+        # Night configuration independently of the root motor panel.
         rgb_light=True,
     )
 

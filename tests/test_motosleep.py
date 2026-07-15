@@ -92,6 +92,16 @@ def test_power_bob_capabilities_are_not_universal() -> None:
     assert profile.stop is None
 
 
+@pytest.mark.parametrize("name", ["HHC0000010CDEF", "HHC0000050CDEF"])
+def test_power_bob_minimal_panels_keep_orthogonal_rgb_settings(name: str) -> None:
+    """Mood/Night PanelRGB routing is independent of the root motor panel."""
+    profile = resolve_motosleep_profile(name)
+
+    assert profile.profile_id in {"power_bob_one", "power_bob_five"}
+    assert profile.rgb_light is True
+    assert profile.light_toggle is None
+
+
 def test_neutral_axis_builds_a_generic_cover_description() -> None:
     """An APK-proven axis with tentative semantics must still create an entity."""
     controller, _client = _controller("HHC0000040CDEF")

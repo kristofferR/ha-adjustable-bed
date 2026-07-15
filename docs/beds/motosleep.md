@@ -114,6 +114,11 @@ Power Bob places selector before value; MotoSleep places value before selector.
 Both XOR the decimal digits and append a five-digit decimal checksum plus
 `R\r`.
 
+Power Bob RGB settings are independent of the selected root motor panel.
+Advertised-name character 10 selects the Mood configuration when it is `D` and
+the Night configuration otherwise, so even minimal one-motor panels retain RGB
+settings when their root controls do not include the raw `$A` light toggle.
+
 ## MOTO binary protocol
 
 Binary bed commands use this exact nine-byte frame:
