@@ -20,8 +20,15 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
   `@coderabbitai review` trigger on that PR whenever a new head commit needs
   review. It does not authorize any other GitHub comment or reply.
 - Do not treat `Review skipped: automatic reviews are disabled` as completion.
-  Post the approved trigger, wait for CodeRabbit's `Review finished` response,
-  and then fetch thread-aware review state for the latest head.
+  Post the approved trigger, then track that specific trigger through completion.
+- CodeRabbit is complete only when the newest `@coderabbitai review` trigger has
+  a later `Review finished` response, the top CodeRabbit summary no longer says
+  `Currently processing new changes in this PR` (or otherwise marks the review
+  in progress), and the review covers the latest head commit. An older finished
+  response or a green CodeRabbit status is not sufficient for a newer trigger.
+- Re-fetch the top summary, trigger/reply timeline, and thread-aware review state
+  after the apparent terminal transition. Do not infer completion from cached
+  output captured before that transition.
 - If the user has also posted `@codex review`, wait for that review and include
   its findings in the same loop.
 - After addressing feedback, commit and push the fixes, resolve only the threads
