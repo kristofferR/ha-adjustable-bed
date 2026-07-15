@@ -166,6 +166,19 @@ from .kaidi_protocol import extract_kaidi_advertisement
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _is_motosleep_local_name(device_name: str) -> bool:
+    """Return whether the normalized name is an HHC or exact MOTO bed name."""
+    return (
+        device_name.startswith("hhc")
+        or (len(device_name) >= 14 and "hhc" in device_name)
+        or (
+            len(device_name) == 28
+            and re.match(r"^moto[bs]\d{2}\w[0-9][bcd][a-z]\w\w\w", device_name) is not None
+        )
+    )
+
+
 # MAC address regex pattern (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
 MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
@@ -1666,8 +1679,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 service_info.name,
             )
             return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        # Check for MotoSleep name pattern (HHC prefix)
-        if device_name.startswith("hhc"):
+        # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
+        # routes exact 28-character MOTO model names to its binary bed protocol.
+        # AUDIO and MotoAMP are intentionally not bed controllers.
+        if _is_motosleep_local_name(device_name):
             signals.append("name:motosleep")
             _LOGGER.info(
                 "Detected MotoSleep bed at %s (name: %s)",
@@ -1780,8 +1795,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_RICHMAT, confidence=0.8, signals=signals)
 
-    # Check for MotoSleep - name-based detection (HHC prefix)
-    if device_name.startswith("hhc"):
+    # Check for MotoSleep - name-based HHC and MOTO bed-controller detection.
+    if _is_motosleep_local_name(device_name):
         signals.append("name:motosleep")
         _LOGGER.info(
             "Detected MotoSleep bed at %s (name: %s)",

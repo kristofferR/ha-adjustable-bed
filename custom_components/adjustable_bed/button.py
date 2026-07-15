@@ -143,6 +143,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         required_capability="supports_preset_lounge",
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_swing",
+        translation_key="preset_swing",
+        icon="mdi:bed-clock",
+        press_fn=lambda ctrl: cast(Any, ctrl).preset_swing(),
+        cancel_movement=True,
+        required_capability="supports_preset_swing",
+    ),
+    AdjustableBedButtonEntityDescription(
         key="preset_incline",
         translation_key="preset_incline",
         icon="mdi:angle-acute",
@@ -165,6 +173,14 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         press_fn=lambda ctrl: ctrl.preset_yoga(),
         cancel_movement=True,
         required_capability="supports_preset_yoga",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="auxiliary_action",
+        translation_key="auxiliary_action",
+        icon="mdi:gesture-tap-button",
+        press_fn=lambda ctrl: cast(Any, ctrl).auxiliary_action(),
+        cancel_movement=True,
+        required_capability="supports_auxiliary_action",
     ),
     # Program buttons (config category)
     AdjustableBedButtonEntityDescription(
@@ -504,6 +520,8 @@ async def async_setup_entry(
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
     controller = coordinator.controller
+    if controller is not None and getattr(controller, "auto_enable_massage", False):
+        has_massage = True
 
     if controller is not None:
         _async_remove_stale_button_entities(hass, coordinator, controller, has_massage)

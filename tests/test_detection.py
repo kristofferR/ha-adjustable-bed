@@ -564,6 +564,32 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="HHC5678ABCD")
         assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
 
+    def test_detect_motosleep_by_contained_hhc(self):
+        """Both OEM apps retain sufficiently long names containing HHC."""
+        service_info = _make_service_info(name="XXHHC000150000")
+        assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
+
+    @pytest.mark.parametrize("prefix", ["MOTOB", "MOTOS"])
+    def test_detect_binary_motosleep_by_exact_model_name(self, prefix: str):
+        """Exact 28-character MOTO bed names select the bed integration."""
+        service_info = _make_service_info(name=prefix + "0044DQNX" + "0" * 15)
+        assert len(service_info.name) == 28
+        assert detect_bed_type(service_info) == BED_TYPE_MOTOSLEEP
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "MOTOAMP",
+            "AUDIO",
+            "MOTOB004DQNX",
+            "MOTOB004DQNX" + "0" * 16,
+        ],
+    )
+    def test_motosleep_discovery_rejects_audio_and_incomplete_names(self, name: str):
+        """Amplifier/audio and malformed MOTO names are not bed controllers."""
+        service_info = _make_service_info(name=name)
+        assert detect_bed_type(service_info) is None
+
     @pytest.mark.parametrize(
         ("name", "service_uuids"),
         [

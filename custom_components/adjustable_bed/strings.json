@@ -373,6 +373,12 @@
       "preset_lounge": {
         "name": "Lounge"
       },
+      "preset_swing": {
+        "name": "Swing"
+      },
+      "auxiliary_action": {
+        "name": "Auxiliary action"
+      },
       "preset_incline": {
         "name": "Incline"
       },
@@ -533,6 +539,15 @@
       },
       "tilt": {
         "name": "Tilt"
+      },
+      "auxiliary": {
+        "name": "Auxiliary"
+      },
+      "auxiliary_1": {
+        "name": "Auxiliary 1"
+      },
+      "auxiliary_2": {
+        "name": "Auxiliary 2"
       },
       "head_end_tilt": {
         "name": "Head End Tilt"
