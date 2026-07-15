@@ -419,6 +419,17 @@ class TestOctoCommands:
 
         assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
 
+    async def test_star2_layout_marks_tv_lift_entity_as_stale(
+        self,
+        hass: HomeAssistant,
+        mock_octo_star2_config_entry,
+    ):
+        """Star2 should clean up a former one-motor TV lift entity."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_star2_config_entry)
+        controller = OctoStar2Controller(coordinator)
+
+        assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
+
     async def test_move_head_up_sends_move_then_stop(
         self,
         hass: HomeAssistant,

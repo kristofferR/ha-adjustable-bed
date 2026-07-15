@@ -1238,6 +1238,11 @@ class OctoStar2Controller(BedController):
         _LOGGER.debug("OctoStar2Controller initialized")
 
     @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return stale OCTO motor entities to remove for Star2."""
+        return frozenset({"tv_lift"})
+
+    @property
     def supports_lights(self) -> bool:
         """Star2 protocol doesn't support light control."""
         return False
