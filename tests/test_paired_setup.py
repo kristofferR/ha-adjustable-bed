@@ -848,6 +848,37 @@ class TestPairBedsConversion:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "octo_pairing_needs_connection"
 
+    async def test_octo_one_motor_lifts_cannot_be_paired_as_bed_sides(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """Matching one-motor OCTO lifts remain separate standalone devices."""
+        left = self._single(hass, LEFT_ADDR, "RTV Left", bed_type=BED_TYPE_OCTO)
+        right = self._single(hass, RIGHT_ADDR, "RTV Right", bed_type=BED_TYPE_OCTO)
+        for entry in (left, right):
+            hass.config_entries.async_update_entry(
+                entry,
+                data={
+                    **entry.data,
+                    CONF_MOTOR_COUNT: 1,
+                },
+            )
+
+        result = await self._reach_pair_step(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_PAIR_SELECTION: encode_pair_selection(
+                    left.entry_id, right.entry_id
+                )
+            },
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["errors"]["base"] == "octo_tv_lift_pairing_unsupported"
+
     async def test_standard_octo_and_star2_pair_when_layouts_match(
         self,
         hass: HomeAssistant,

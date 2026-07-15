@@ -422,6 +422,17 @@ class TestOctoCommands:
 
         assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
 
+    async def test_star2_layout_marks_tv_lift_entity_as_stale(
+        self,
+        hass: HomeAssistant,
+        mock_octo_star2_config_entry,
+    ):
+        """Star2 should clean up a former one-motor TV lift entity."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_star2_config_entry)
+        controller = OctoStar2Controller(coordinator)
+
+        assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
+
     async def test_move_head_up_sends_move_then_stop(
         self,
         hass: HomeAssistant,
@@ -1146,12 +1157,31 @@ class TestPinReauth:
     def _ctrl():
         from types import SimpleNamespace
 
-        return OctoController(SimpleNamespace(motor_count=2))
+        return OctoController(SimpleNamespace(motor_count=2, address="AA:BB:CC:DD:EE:FF"))
 
     async def test_pin_lock_schedules_resend(self):
         ctrl = self._ctrl()
         ctrl.send_pin = AsyncMock()
         ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
+        assert ctrl._pin_locked is True
+        assert ctrl._pin_resend_task is not None
+        await ctrl._pin_resend_task
+        ctrl.send_pin.assert_awaited_once()
+
+    async def test_fragmented_pin_lock_notification_schedules_resend(self):
+        """A PIN challenge split across notifications is handled after reassembly."""
+        ctrl = self._ctrl()
+        ctrl.send_pin = AsyncMock()
+        response = _build_octo_response(
+            ctrl,
+            (0x21, OCTO_SYSTEM_PIN_LOCK),
+            [],
+        )
+
+        ctrl._on_notification(MagicMock(), bytearray(response[:4]))
+        assert ctrl._pin_resend_task is None
+        ctrl._on_notification(MagicMock(), bytearray(response[4:]))
+
         assert ctrl._pin_locked is True
         assert ctrl._pin_resend_task is not None
         await ctrl._pin_resend_task

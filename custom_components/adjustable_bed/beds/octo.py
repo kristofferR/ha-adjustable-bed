@@ -517,12 +517,12 @@ class OctoController(BedController):
                             "sync" if self._synchro_active else "single",
                         )
 
-        # SYSTEM packets from the device (command[0] == 0x21): PIN state machine.
-        if command[0] == OCTO_SYSTEM_FROM_DEVICE and command[1] in (
-            OCTO_SYSTEM_PIN_LOCK,
-            OCTO_SYSTEM_PIN_STATE,
-        ):
-            self._handle_pin_notification(command[1], list(packet_data))
+            # SYSTEM packets from the device (command[0] == 0x21): PIN state machine.
+            if command[0] == OCTO_SYSTEM_FROM_DEVICE and command[1] in (
+                OCTO_SYSTEM_PIN_LOCK,
+                OCTO_SYSTEM_PIN_STATE,
+            ):
+                self._handle_pin_notification(command[1], list(packet_data))
 
     def _handle_pin_notification(self, command_byte: int, data: list[int]) -> None:
         """React to the bed's PIN state machine like the app does: re-send the PIN
@@ -1357,6 +1357,11 @@ class OctoStar2Controller(BedController):
         super().__init__(coordinator)
         self._notify_callback: Callable[[str, float], None] | None = None
         _LOGGER.debug("OctoStar2Controller initialized")
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return stale OCTO motor entities to remove for Star2."""
+        return frozenset({"tv_lift"})
 
     @property
     def supports_lights(self) -> bool:

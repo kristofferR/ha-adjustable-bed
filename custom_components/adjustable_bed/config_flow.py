@@ -709,6 +709,16 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             and entry.data.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
         )
 
+    def _is_octo_one_motor_lift(self, entry: ConfigEntry) -> bool:
+        """Return whether an OCTO entry uses the standalone one-motor lift layout."""
+        if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
+            return False
+        motor_count = entry.options.get(
+            CONF_MOTOR_COUNT,
+            entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
+        )
+        return motor_count == 1
+
     async def _pair_layout_snapshot(self, entry: ConfigEntry) -> dict[str, Any] | None:
         """Capture the side's generic motor layout from its capability controller.
 
@@ -1567,6 +1577,13 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 # umbrella type matches — and would otherwise be stored as mismatched
                 # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
+            elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
+                self._is_octo_one_motor_lift(left) or self._is_octo_one_motor_lift(right)
+            ):
+                # One-motor Standard OCTO entries are standalone TV/bed lifts,
+                # not bed sides. Reject even two matching lifts so the generic
+                # layout-equality gate cannot turn them into a paired bed.
+                errors["base"] = "octo_tv_lift_pairing_unsupported"
             elif self._offline_safe_bed_type(left) == BED_TYPE_OCTO and (
                 (not self._is_octo_star2(left) and self._octo_capability_snapshot(left) is None)
                 or (
