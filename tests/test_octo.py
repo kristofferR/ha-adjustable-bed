@@ -1179,12 +1179,14 @@ class TestPinReauth:
         )
 
         ctrl._on_notification(MagicMock(), bytearray(response[:4]))
-        assert ctrl._pin_resend_task is None
+        initial_resend_task = ctrl._pin_resend_task
+        assert initial_resend_task is None
         ctrl._on_notification(MagicMock(), bytearray(response[4:]))
 
         assert ctrl._pin_locked is True
-        assert ctrl._pin_resend_task is not None
-        await ctrl._pin_resend_task
+        resend_task = ctrl._pin_resend_task
+        assert resend_task is not None
+        await resend_task
         ctrl.send_pin.assert_awaited_once()
 
     async def test_pin_state_tracks_lock(self):
