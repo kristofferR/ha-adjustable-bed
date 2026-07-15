@@ -14,14 +14,13 @@ release reaches real users with the corresponding beds. Maintainers cannot own
 or directly test this many physical models. Static verification proves what the
 OEM apps send, but not how every firmware and actuator behaves.
 
-## Analyzed apps
+## Analysis provenance
 
-| App | Package | Frozen version | Bed protocol |
-|-----|---------|----------------|--------------|
-| [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) | `com.HHC.MotoSleep` | 5.1.5 (`2026071001`) | Wrapped/raw HHC ASCII and nine-byte MOTO binary |
-| [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) | `com.HHC.PowerBob` | 2.0.3 | Raw HHC ASCII |
-
-The clean-room runs satisfy the reusable Phase 4 requirements tracked by
+The [README Supported Beds table](../../README.md#supported-beds) remains the
+canonical support matrix. Protocol evidence here was frozen from MotoSleep
+`com.HHC.MotoSleep` 5.1.5 (`2026071001`) and Power Bob
+`com.HHC.PowerBob` 2.0.3. These clean-room runs satisfy the reusable Phase 4
+requirements tracked by
 [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436).
 
 Audio-only code is deliberately excluded. `AUDIO`, `YbAudio`, `MotoAMP`,

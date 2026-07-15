@@ -308,34 +308,20 @@ def _resolve_hhc(name: str) -> MotoSleepProfile:
 _MOTO_RE = re.compile(r"^MOTO(B|S)(\d{2})(\w)([0-9])([BCD])([A-Za-f])(\w)(\w)(\w)")
 
 
-def _moto_features(name: str) -> tuple[bool, bool, bool, bool, bool]:
-    """Decode delay, wireless sync, massage, speaker, and explicit STOP bits."""
-    char = name[10]
-    if "A" <= char <= "Z":
-        value = ord(char) - ord("A")
-    elif "a" <= char <= "f":
-        value = ord(char) - ord("a") + 26
-    else:
-        value = 0
-    delay, wireless_sync, massage, speaker, explicit_stop = (
-        bool(value & bit) for bit in (1, 2, 4, 8, 16)
+def _unknown_moto_profile() -> MotoSleepProfile:
+    """Return a binary transport with no speculative bed controls."""
+    return MotoSleepProfile(
+        profile_id="motosleep_moto_unknown",
+        transport=MotoSleepTransport.MOTO_BINARY,
+        motors=_frozen(),
+        presets=_frozen(),
     )
-    if char == "e":
-        delay = True
-    elif char == "f":
-        delay = False
-    return delay, wireless_sync, massage, speaker, explicit_stop
 
 
 def _resolve_moto(name: str) -> MotoSleepProfile:
     match = _MOTO_RE.match(name)
     if match is None or len(name) != 28:
-        return MotoSleepProfile(
-            profile_id="motosleep_moto_unknown",
-            transport=MotoSleepTransport.MOTO_BINARY,
-            motors=_frozen(),
-            presets=_frozen(),
-        )
+        return _unknown_moto_profile()
 
     page = name[7]
     motors_by_page: dict[str, dict[str, MotorPair]] = {
@@ -399,6 +385,9 @@ def _resolve_moto(name: str) -> MotoSleepProfile:
         "8": "wrs20ms_swing",
         "9": "wr219",
     }
+    if page not in motors_by_page or page not in profile_names:
+        return _unknown_moto_profile()
+
     presets: dict[str, Command]
     swing: Command | None = None
     if page == "9":
@@ -409,7 +398,6 @@ def _resolve_moto(name: str) -> MotoSleepProfile:
         if page == "8":
             swing = 0x8014
 
-    _delay, _wireless_sync, _massage, _speaker, _explicit_stop = _moto_features(name)
     memory_recall = () if page == "9" else (0x800C, 0x800D)
     memory_save = () if page == "9" else (0x811D, 0x811E)
     return MotoSleepProfile(
@@ -419,8 +407,8 @@ def _resolve_moto(name: str) -> MotoSleepProfile:
         presets=_frozen(presets),
         memory_recall=memory_recall,
         memory_save=memory_save,
-        # The app's per-product binary massage table is runtime-selected.  Do
-        # not assign its five command families friendly labels here.
+        # The app's remaining model flags select runtime massage/audio tables.
+        # Do not infer bed capabilities or friendly labels without those tables.
         stop=((0x9088, 1), 6, 100) if page == "9" else ((0x0000, 0), 5, 100),
         write_with_response=True,
         swing=swing,
@@ -431,7 +419,7 @@ def resolve_motosleep_profile(device_name: str | None) -> MotoSleepProfile:
     """Resolve the exact OEM-app profile selected by an advertised local name."""
     name = device_name or ""
     upper_name = name.upper()
-    if name.startswith("MOTO"):
+    if upper_name.startswith("MOTO"):
         return _resolve_moto(name)
     if "HHC" in upper_name and len(name) == 14:
         return _resolve_power_bob(name)

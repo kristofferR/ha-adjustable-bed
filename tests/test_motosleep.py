@@ -293,6 +293,26 @@ def test_binary_moto_unknown_name_is_conservative() -> None:
     assert profile.stop is None
 
 
+def test_binary_moto_unknown_page_is_conservative() -> None:
+    """A regex-shaped name with an unknown page cannot crash profile routing."""
+    profile = resolve_motosleep_profile(_moto_name("X"))
+
+    assert profile.profile_id == "motosleep_moto_unknown"
+    assert profile.transport is MotoSleepTransport.MOTO_BINARY
+    assert not profile.motors
+    assert profile.stop is None
+
+
+def test_lowercase_moto_name_does_not_fall_back_to_hhc_controls() -> None:
+    """Case-insensitive detection still yields a conservative binary profile."""
+    profile = resolve_motosleep_profile(_moto_name("4").lower())
+
+    assert profile.profile_id == "motosleep_moto_unknown"
+    assert profile.transport is MotoSleepTransport.MOTO_BINARY
+    assert not profile.motors
+    assert profile.stop is None
+
+
 @pytest.mark.parametrize(
     ("command", "data", "expected"),
     [
