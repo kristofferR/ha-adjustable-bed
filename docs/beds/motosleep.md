@@ -1,94 +1,161 @@
-# MotoSleep
+# MotoSleep / Power Bob
 
-**Status:** ✅ Tested
+**Existing HHC support:** ✅ User tested
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), waynebowie99 and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+**Expanded model matrix:** STATIC VERIFIED / HARDWARE UNVERIFIED
 
-## Known Models
-- Beds with HHC (Hangzhou Huaci) controllers
-- Power Bob
-- Device names start with "HHC" (e.g., `HHC3611243CDEF`)
+This integration follows the controller routing in the two shipped Android
+apps. It does not treat every device using the shared HHC UUID as one universal
+bed. The advertised local name selects the transport, motor layout, presets,
+features, and STOP behavior.
 
-## Apps
+Hardware confirmation for the expanded matrix is deferred until a beta or
+release reaches real users with the corresponding beds. Maintainers cannot own
+or directly test this many physical models. Static verification proves what the
+OEM apps send, but not how every firmware and actuator behaves.
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) | `com.HHC.MotoSleep` |
-| ✅ | [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) | `com.HHC.PowerBob` |
+## Analyzed apps
 
-## Features
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ |
-| Position Feedback | ❌ |
-| Memory Presets | ✅ (2 slots) |
-| Massage | ✅ |
-| Under-bed Lights | ✅ |
-| Zero-G / Anti-Snore | ✅ |
-| Split-King Sync | ✅ (toggle) |
+| App | Package | Frozen version | Bed protocol |
+|-----|---------|----------------|--------------|
+| [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) | `com.HHC.MotoSleep` | 5.1.5 (`2026071001`) | Wrapped/raw HHC ASCII and nine-byte MOTO binary |
+| [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) | `com.HHC.PowerBob` | 2.0.3 | Raw HHC ASCII |
 
-## Protocol Details
+The clean-room runs satisfy the reusable Phase 4 requirements tracked by
+[issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436).
 
-**Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
-**Format:** 2 bytes `[0x24, ASCII_char]` (0x24 = '$')
+Audio-only code is deliberately excluded. `AUDIO`, `YbAudio`, `MotoAMP`,
+speakers, music, and volume controls are not adjustable-bed functions. Physical
+bed swing/rocking commands remain supported.
 
-### Motor Commands
+## Discovery and model routing
 
-| Command | Bytes | ASCII | Description |
-|---------|-------|-------|-------------|
-| Head Up | `24 4B` | `$K` | Raise head |
-| Head Down | `24 4C` | `$L` | Lower head |
-| Feet Up | `24 4D` | `$M` | Raise feet |
-| Feet Down | `24 4E` | `$N` | Lower feet |
-| Neck Up | `24 50` | `$P` | Raise neck |
-| Neck Down | `24 51` | `$Q` | Lower neck |
-| Lumbar Up | `24 70` | `$p` | Raise lumbar |
-| Lumbar Down | `24 71` | `$q` | Lower lumbar |
-| Stop | `24 62` | `$b` | Stop all motors (button release) |
+- Power Bob accepts an exact 14-character name containing `HHC`. Characters 8
+  and 9 select 14 root panel profiles.
+- Current MotoSleep HHC names use characters 16, 18, 22, and 26 to select 21
+  panel profiles, raw versus wrapped writes, conditional axes, and `New`
+  variants.
+- Binary MOTO beds use exact 28-character `MOTOB...` or `MOTOS...` names.
+  Character 7 selects ten bed pages: WRS23ms, WRS14Dmm, WRS18ms, WRS14ms,
+  WRS20ms, WRS16ms, WRC30Mms, WRS27ms, WRS20ms Swing, and WR219.
+- Unmatched Power Bob selectors and malformed MOTO names receive no speculative
+  controls. Legacy manual configurations without a usable advertised name keep
+  a conservative two-axis fallback; current long HHC names retain the app's
+  PanelOne default route.
 
-### Preset Commands
+## GATT roles
 
-| Command | Bytes | ASCII |
-|---------|-------|-------|
-| Home/Flat | `24 4F` | `$O` |
-| Zero-G | `24 54` | `$T` |
-| Anti-Snore | `24 52` | `$R` |
-| TV | `24 53` | `$S` |
-| Memory 1 | `24 55` | `$U` |
-| Memory 2 | `24 56` | `$V` |
-| Save Memory 1 | `24 5A` | `$Z` |
-| Save Memory 2 | `24 61` | `$a` |
-| Save Zero-G | `24 59` | `$Y` |
-| Save Anti-Snore | `24 57` | `$W` |
-| Save TV | `24 58` | `$X` |
+The apps prefer the following roles and retain the exact discovered UUID:
 
-### Other Commands
+| Role | Preferred | Fallback |
+|------|-----------|----------|
+| Service | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000fff0-0000-1000-8000-00805f9b34fb` |
+| Write | `0000ffe1-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` |
+| Notify (MotoSleep) | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` |
 
-| Command | Bytes | ASCII |
-|---------|-------|-------|
-| Lights Toggle | `24 41` | `$A` |
-| Massage Head | `24 43` | `$C` |
-| Massage Foot | `24 42` | `$B` |
-| Massage Stop | `24 44` | `$D` |
-| Massage Head Up | `24 47` | `$G` |
-| Massage Head Down | `24 48` | `$H` |
-| Massage Foot Up | `24 45` | `$E` |
-| Massage Foot Down | `24 46` | `$F` |
-| Massage Head Off | `24 4A` | `$J` |
-| Massage Foot Off | `24 49` | `$I` |
-| Sync Toggle | `24 7A` | `$z` |
+Power Bob writes without response. MotoSleep HHC and MOTO binary write with
+response.
 
-## Command Timing
+## HHC ASCII protocols
 
-From app disassembly analysis:
+Raw actions are a dollar sign plus one case-sensitive command letter. Power Bob
+always sends raw actions. MotoSleep normally sends the raw form; names with
+`localName[22] == "M"` wrap a short action such as `$K` as `$#$KR\r`.
 
-- **Motor commands:** Single command per button press (no repeat interval)
-- **Pattern:** Send command on press, motors stop when no command received
-- **Stop command:** Dedicated `$b` (0x62) command sent on button release. Sent 3 times with 50ms delay using a fresh cancel event to ensure delivery.
+Common commands include:
 
-## Supported Bed Model Variants
+| Function | Commands |
+|----------|----------|
+| Main head/back | `$K` up, `$L` down |
+| Legs/feet | `$M` up, `$N` down |
+| Auxiliary pair 1 | `$p` up, `$q` down |
+| Auxiliary pair 2 | `$P` up, `$Q` down |
+| Flat, anti-snore, TV, zero gravity | `$O`, `$R`, `$S`, `$T` |
+| Memory recall 1/2 | `$U`, `$V` |
+| Memory save 1/2 | `$Z`, `$a` |
+| Light, head massage, foot massage, massage stop | `$A`, `$C`, `$B`, `$D` |
+| Extended head intensity | `$G` up, `$H` down |
+| Extended foot intensity | `$E` up, `$F` down |
+| Extended head/foot massage toggle | `$J`, `$I` |
+| Panel E auxiliary action | `$W` |
+| Explicit motor STOP | `$b` |
 
-From app analysis, dedicated support for:
-- WR1140
-- WRS14 series (WRS14Dmm, WRS14ms)
-- WRS16ms, WRS18ms, WRS20ms, WRS23ms
+Availability and axis meaning are profile-specific. In particular, the Power
+Bob A15 profile selected by `HHC0069815CDEF` labels uppercase `$P/$Q` as lumbar.
+Lowercase `$p/$q` is not the manual lumbar pair for that bed. This is the root
+cause of [issue #445](https://github.com/kristofferR/ha-adjustable-bed/issues/445).
+
+Where an app exposes a command pair but does not establish one unique physical
+label across models, Home Assistant uses `Auxiliary`, `Auxiliary 1`, or
+`Auxiliary 2`. This preserves statically proven controls without guessing that
+they are lumbar, neck, or tilt. Real users can provide model-specific hardware
+confirmation after release.
+
+Panel E's exact `$W` callsite is likewise preserved as an `Auxiliary action`
+button. The APK does not provide a trustworthy physical label, so the
+integration does not invent one.
+
+### HHC timing
+
+- Movement actions repeat at 100 ms while active.
+- Power Bob sends its first movement pulse after the first 100 ms interval; it
+  does not send an immediate pulse on press.
+- Current MotoSleep HHC sends `$b` five times at 0, 30, 60, 90, and 120 ms on
+  release.
+- Power Bob sends that STOP schedule only on the profiles whose release paths
+  contain `$b`. Other Power Bob profiles stop when periodic movement writes
+  cease.
+- Presets, memory, light, and massage actions are single writes.
+
+### RGB lighting
+
+Both apps scale each RGB component from 0..255 to 0..120. Red, green, and blue
+use decimal selectors `00315`, `00316`, and `00317`, with 20 ms between writes.
+Power Bob places selector before value; MotoSleep places value before selector.
+Both XOR the decimal digits and append a five-digit decimal checksum plus
+`R\r`.
+
+## MOTO binary protocol
+
+Binary bed commands use this exact nine-byte frame:
+
+```text
+24 23 CMD_HI CMD_LO DATA_HI DATA_LO XOR(2..5) 41 0D
+```
+
+Command and data are unsigned 16-bit big-endian values. Model profiles select
+the exposed axes from the exact app page controls, including WRC30M neck/back/
+lumbar/foot axes and WR219's distinct motor values.
+
+Common fixed commands include:
+
+| Function | Command |
+|----------|---------|
+| Standard head/back up/down | `0x0002` / `0x0001` |
+| Standard legs up/down | `0x0008` / `0x0004` |
+| MotoB/Swing legs up/down | `0x0200` / `0x0100` |
+| MotoS back up/down | `0x0020` / `0x0010` |
+| Anti-snore, TV, zero gravity | `0x8009`, `0x800A`, `0x800B` |
+| Memory 1, memory 2, flat | `0x800C`, `0x800D`, `0x800E` |
+| Save memory 1/2 | `0x811D`, `0x811E` |
+| WRS20 Swing | `0x8014` |
+| WR219 flat, swing | `0x5555`, `0x9089` |
+
+Normal MOTO movement release sends command/data `0x0000/0x0000` five times at
+100 ms intervals. WR219 sends `0x9088/0x0001` six times at 100 ms intervals.
+
+## Deferred user validation
+
+The app-selected bytes, frames, callsites, timing, and routing are statically
+verified. The following cannot be finished by maintainers without real user
+hardware or app-delivered runtime tables:
+
+- Assign product-facing lumbar/neck/tilt labels to every neutral HHC auxiliary
+  entity.
+- Bind every binary MOTO massage table member to a model-specific zone, mode,
+  intensity, and off label. The five exact command families are known, but the
+  generic callsite obtains their per-product mapping at runtime.
+- Confirm friendly units for RGB, alarm, bind, and sync notification fields.
+
+These are post-beta/release validation requests, not a requirement that a
+maintainer acquire the beds and not a reason to guess protocol semantics.
