@@ -14,6 +14,31 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 - If approval is missing or ambiguous, ask before posting.
 - Never use em dashes (—) in drafted/suggested GitHub replies. Rephrase with commas, colons, parentheses, or separate sentences instead.
 
+### Pull request review loops
+
+- A user request to run a PR loop for a specific PR approves only the exact
+  `@coderabbitai review` comments needed by that loop: one for its then-current
+  head and one for each new head produced while addressing feedback in the same
+  loop. This bounded approval expires when the loop converges, the user cancels
+  it, or the task changes. It does not authorize any other comment or reply.
+- Do not treat `Review skipped: automatic reviews are disabled` as completion.
+  Post the approved trigger, then track that specific trigger through completion.
+- CodeRabbit is complete only when the newest `@coderabbitai review` trigger has
+  a later `Review finished` response, the top CodeRabbit summary no longer says
+  `Currently processing new changes in this PR` (or otherwise marks the review
+  in progress), and the review covers the latest head commit. An older finished
+  response or a green CodeRabbit status is not sufficient for a newer trigger.
+- Re-fetch the top summary, trigger/reply timeline, and thread-aware review state
+  after the apparent terminal transition. Do not infer completion from cached
+  output captured before that transition.
+- If the user has also posted `@codex review`, wait for that review and include
+  its findings in the same loop.
+- After addressing feedback, commit and push the fixes, resolve only the threads
+  demonstrably addressed, trigger review for the new head, and continue.
+- The loop is complete only when CI is green, all requested review systems have
+  finished against the latest head, no unresolved actionable threads remain,
+  the PR is mergeable, and the worktree is clean.
+
 ## Architecture
 
 Key modules (not an exhaustive listing — check the folder for the rest):
@@ -266,6 +291,21 @@ The `run_diagnostics` service captures protocol data for debugging and adding ne
 ## APK Reverse Engineering
 
 The `disassembly/` folder contains tools and output from reverse engineering bed controller Android apps to extract BLE protocols.
+
+### Mandatory clean-room analysis while issue #436 is open
+
+Until [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436) is complete and its work is merged, any task that inspects an APK must produce reusable Phase 4 evidence so the package does not need to be analyzed again later. This is also required before implementing a bug fix or enhancement that depends on BLE protocol behavior, including command bytes, packet construction, timing, STOP/release behavior, discovery, authentication, parsing, model variants, or capability selection.
+
+- Use the verified latest artifact from the frozen acquisition corpus. Include the complete APK/XAPK/split set and record its identity and hashes.
+- Follow the clean-room workflow and completion gates in [issue #443](https://github.com/kristofferR/ha-adjustable-bed/issues/443). Analyze the artifact in a fresh isolated workspace before consulting integration code, existing protocol documentation, legacy analyses, issues, PRs, commits, captures, or reports for other apps.
+- If the current context has already accessed forbidden comparison material, start a new isolated analyst context with only the artifact, identity manifest, pinned schema, protocol-neutral tools, and the reusable #443 prompt. Do not call a contaminated run clean-room or COMPLETE.
+- Cover every application stack that contains app logic. Flutter requires Blutter, React Native/Hermes requires shipped-bundle analysis, AIR requires FFDec, and suspicious or failed jadx output requires smali or another authoritative fallback.
+- Freeze package-local `ANALYSIS.md`, schema-valid `analysis.json`, `SEARCH_LOG.md`, reproducer/test-vector scripts, and `REPORT.SHA256`. A PARTIAL or BLOCKED report must identify the exact gap and actionable next step.
+- Register analyses completed ahead of the scheduled Phase 4B bulk run in [issue #447](https://github.com/kristofferR/ha-adjustable-bed/issues/447), including the exact package/version, artifact-set hash, report status, and originating issue or PR. An accepted COMPLETE report that passes the #443 gates replaces that package's Phase 4A route and must be excluded from the later bulk run. PARTIAL or BLOCKED work remains in the completion queue.
+- Only after the clean-room report is frozen may a separate comparison pass inspect the integration and historical evidence, implement corrections, and update durable protocol documentation.
+- Keep raw artifacts, decompilation output, and Phase 4 reports machine-local and ignored as required by #436. Commit only durable integration, test, documentation, and workflow-instruction changes.
+- Do not assume maintainers can physically test a discovered bed. A report may be COMPLETE when app behavior is exhaustively proven from the artifact while hardware status remains explicitly unverified. Treat physical checks and captures as deferred external validation for real users after a beta or release, not as an immediately actionable maintainer task or an automatic reason to fail the analysis.
+- Never guess protocol behavior when the required artifact or analysis layer is unavailable. Record the precise APK or runtime-table blocker. If only physical semantics remain, record a deferred validation request for real users after beta/release; do not ask a maintainer to acquire or immediately test the bed.
 
 See **[disassembly/AGENTS.md](disassembly/AGENTS.md)** for detailed instructions on:
 - Decompiling APKs with jadx

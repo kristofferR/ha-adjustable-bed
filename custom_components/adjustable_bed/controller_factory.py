@@ -653,7 +653,7 @@ async def create_controller(
     if bed_type == BED_TYPE_MOTOSLEEP:
         from .beds.motosleep import MotoSleepController
 
-        return MotoSleepController(coordinator)
+        return MotoSleepController(coordinator, device_name=device_name)
 
     if bed_type == BED_TYPE_SUTA:
         from .beds.suta import SutaController

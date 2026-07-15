@@ -743,6 +743,11 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_preset_swing(self) -> bool:
+        """Return True if bed supports a physical swing/rocking mode."""
+        return False
+
+    @property
     def supports_preset_incline(self) -> bool:
         """Return True if bed supports incline preset."""
         return False

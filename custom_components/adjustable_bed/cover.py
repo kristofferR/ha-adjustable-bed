@@ -231,7 +231,7 @@ def _build_cover_description(
 ) -> AdjustableBedCoverEntityDescription:
     """Build a cover description from the controller-provided motor spec."""
     templates_by_key = {description.key: description for description in COVER_DESCRIPTIONS}
-    template = templates_by_key[spec.key]
+    template = templates_by_key.get(spec.key)
     max_angle = spec.max_angle
 
     if coordinator.bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND) and spec.key in (
@@ -241,10 +241,10 @@ def _build_cover_description(
         max_angle = REVERIE_BACK_MAX_ANGLE
 
     return AdjustableBedCoverEntityDescription(
-        key=template.key,
+        key=spec.key,
         translation_key=spec.translation_key,
-        icon=template.icon,
-        device_class=template.device_class,
+        icon=template.icon if template is not None else "mdi:bed-outline",
+        device_class=(template.device_class if template is not None else CoverDeviceClass.DAMPER),
         open_fn=spec.open_fn,
         close_fn=spec.close_fn,
         stop_fn=spec.stop_fn,

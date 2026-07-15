@@ -71,7 +71,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [Linak](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
 | ✅ [Keeson](docs/beds/keeson.md) | Ergomotion, Tempur, Beautyrest, King Koil, Member's Mark, Purple, GhostBed, ErgoSportive |
 | ✅ [Richmat](docs/beds/richmat.md) | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
-| ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob |
+| ✅ [MotoSleep](docs/beds/motosleep.md) | HHC, Power Bob, binary MOTO models |
 | ✅ [Octo](docs/beds/octo.md) | Octo |
 | ✅ [Solace](docs/beds/solace.md) | Solace, Sealy, Woosa Sleep, QMS |
 | ✅ [Leggett & Platt](docs/beds/leggett-platt.md) | Leggett & Platt |
