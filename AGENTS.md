@@ -14,6 +14,22 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 - If approval is missing or ambiguous, ask before posting.
 - Never use em dashes (—) in drafted/suggested GitHub replies. Rephrase with commas, colons, parentheses, or separate sentences instead.
 
+### Pull request review loops
+
+- A user request to run a PR loop is explicit approval to post the exact
+  `@coderabbitai review` trigger on that PR whenever a new head commit needs
+  review. It does not authorize any other GitHub comment or reply.
+- Do not treat `Review skipped: automatic reviews are disabled` as completion.
+  Post the approved trigger, wait for CodeRabbit's `Review finished` response,
+  and then fetch thread-aware review state for the latest head.
+- If the user has also posted `@codex review`, wait for that review and include
+  its findings in the same loop.
+- After addressing feedback, commit and push the fixes, resolve only the threads
+  demonstrably addressed, trigger review for the new head, and continue.
+- The loop is complete only when CI is green, all requested review systems have
+  finished against the latest head, no unresolved actionable threads remain,
+  the PR is mergeable, and the worktree is clean.
+
 ## Architecture
 
 Key modules (not an exhaustive listing — check the folder for the rest):
