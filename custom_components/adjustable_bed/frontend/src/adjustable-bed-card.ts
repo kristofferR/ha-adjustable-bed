@@ -27,6 +27,7 @@ import {
   resolvePairedParentId,
 } from "./discovery";
 import { localize } from "./localize";
+import { settleSequentially } from "./settle-sequentially";
 import {
   type AdjustableBedCardConfig,
   type BedEntities,
@@ -469,18 +470,16 @@ export class AdjustableBedCard extends LitElement {
     this._synchronizingTo = sourceSide;
     this._synchronizationFailed = false;
     try {
-      const results = await Promise.allSettled(
-        plan.map((item) =>
-          this.hass!.callService(PLATFORM, "set_position", {
-            device_id: [parentDeviceId],
-            motor: item.motor,
-            position: item.position,
-            side: targetSide,
-          }),
+      this._synchronizationFailed = await settleSequentially(
+        plan.map(
+          (item) => () =>
+            this.hass!.callService(PLATFORM, "set_position", {
+              device_id: [parentDeviceId],
+              motor: item.motor,
+              position: item.position,
+              side: targetSide,
+            }),
         ),
-      );
-      this._synchronizationFailed = results.some(
-        (result) => result.status === "rejected",
       );
     } finally {
       this._synchronizingTo = undefined;
