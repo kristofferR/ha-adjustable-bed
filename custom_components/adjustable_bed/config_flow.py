@@ -177,6 +177,20 @@ def _motor_count_options(
     return [2, 3, 4]
 
 
+def _motor_count_options_for_all_variants(bed_type: str | None) -> list[int]:
+    """Return the union of motor counts selectable across protocol variants."""
+    variants = get_variants_for_bed_type(bed_type)
+    if variants is None:
+        return _motor_count_options(bed_type)
+    return sorted(
+        {
+            motor_count
+            for variant in variants
+            for motor_count in _motor_count_options(bed_type, variant)
+        }
+    )
+
+
 def _is_valid_motor_count(
     bed_type: str | None,
     protocol_variant: str,
@@ -2576,12 +2590,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 default=current_data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT),
             ): vol.All(
                 vol.Coerce(int),
-                vol.In(
-                    _motor_count_options(
-                        bed_type,
-                        current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
-                    )
-                ),
+                vol.In(_motor_count_options_for_all_variants(bed_type)),
             ),
             vol.Optional(
                 CONF_HAS_MASSAGE,

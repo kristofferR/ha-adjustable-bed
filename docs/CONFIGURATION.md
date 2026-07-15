@@ -39,7 +39,7 @@ To adjust settings after setup:
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
-| **Motor Count** | 2, 3, 4; 1 for Standard OCTO TV lifts | 2 | Number of controllable motor sections |
+| **Motor Count** | 2, 3, 4; 1 for one-motor Standard OCTO lifts | 2 | Number of controllable motor sections |
 | **Has Massage** | On/Off | Off | Enable massage controls if your bed supports it |
 | **Preferred Adapter** | Auto / Specific adapter | Auto | Which Bluetooth adapter or proxy to use |
 
@@ -47,12 +47,12 @@ To adjust settings after setup:
 
 | Motors | Controllable Sections |
 |--------|----------------------|
-| 1 | TV Lift (Standard OCTO `RTV` only) |
+| 1 | TV/bed lift (Standard OCTO; `RTV` is detected automatically) |
 | 2 | Back + Legs |
 | 3 | Head + Back + Legs |
 | 4 | Head + Back + Legs + Feet |
 
-**Tip:** Count the distinct moving sections when using your physical remote to determine the correct setting. An OCTO device named `RTV` is detected automatically as a one-motor TV lift.
+**Tip:** Count the distinct moving sections when using your physical remote to determine the correct setting. A one-motor Standard OCTO controller can be selected manually; an OCTO device named `RTV` is detected automatically as a one-motor TV lift.
 
 ### Malouf/Lucid Layout and Memory
 

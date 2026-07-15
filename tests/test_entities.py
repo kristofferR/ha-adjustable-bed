@@ -183,22 +183,17 @@ class TestCoverEntities:
 
         registry = er.async_get(hass)
         address = "AA:BB:CC:DD:EE:98"
-        assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_tv_lift")
-        for key in ("back", "legs", "head", "feet"):
-            assert registry.async_get_entity_id("cover", DOMAIN, f"{address}_{key}") is None
-
-        assert registry.async_get_entity_id("button", DOMAIN, f"{address}_stop")
-        for key in (
-            "preset_flat",
-            "preset_both_up",
-            "preset_memory_1",
-            "program_memory_1",
-            "toggle_light",
-        ):
-            assert registry.async_get_entity_id("button", DOMAIN, f"{address}_{key}") is None
-        assert registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights") is None
-        assert registry.async_get_entity_id("switch", DOMAIN, f"{address}_synchro_mode") is None
-        assert registry.async_get_entity_id("light", DOMAIN, f"{address}_under_bed_lights") is None
+        entry_entities = er.async_entries_for_config_entry(registry, entry.entry_id)
+        assert {
+            (registered.entity_id.partition(".")[0], registered.unique_id)
+            for registered in entry_entities
+        } == {
+            ("binary_sensor", f"{address}_ble_connection"),
+            ("button", f"{address}_connect"),
+            ("button", f"{address}_disconnect"),
+            ("button", f"{address}_stop"),
+            ("cover", f"{address}_tv_lift"),
+        }
 
     async def test_malouf_hilo_cover_setup_removes_stale_head_and_feet(
         self,
