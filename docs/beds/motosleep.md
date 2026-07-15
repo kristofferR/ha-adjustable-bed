@@ -19,8 +19,17 @@ OEM apps send, but not how every firmware and actuator behaves.
 The [README Supported Beds table](../../README.md#supported-beds) remains the
 canonical support matrix. Protocol evidence here was frozen from MotoSleep
 `com.HHC.MotoSleep` 5.1.5 (`2026071001`) and Power Bob
-`com.HHC.PowerBob` 2.0.3. These clean-room runs satisfy the reusable Phase 4
-requirements tracked by
+`com.HHC.PowerBob` 2.0.3. Both reports are COMPLETE and pass the reusable
+[Phase 4 completion gates](https://github.com/kristofferR/ha-adjustable-bed/issues/443):
+
+| Package | Artifact-set SHA-256 | Frozen report evidence |
+|---------|---------------------|------------------------|
+| `com.HHC.MotoSleep` 5.1.5 (`2026071001`) | `d909b93159816b0de135e26a423f618eabbe3d9c1effbe885c3d4d08d9f26c96` | Package-local `REPORT.SHA256` verifies `analysis.json` as `1d70180d98fc76727c6c6a1ebb7a51430c1f2d4bd0b4d3f0e61608658194b3ab` |
+| `com.HHC.PowerBob` 2.0.3 (`2025061101`) | `134568e8bbdc3a6794eb12e3452abec74957924824d8c24c0b1479af4f90ab31` | Package-local `REPORT.SHA256` verifies `analysis.json` as `25a0a8be736003b7802e9dfad89df8d2ac1701c9181c6ad596e0fe5cd277a872` |
+
+The durable [#447 accepted-exclusions registry](https://github.com/kristofferR/ha-adjustable-bed/issues/447)
+records both reports as accepted and removed from the later #436 bulk run. Raw
+reports and APKs remain machine-local as required by
 [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436).
 
 Audio-only code is deliberately excluded. `AUDIO`, `YbAudio`, `MotoAMP`,
