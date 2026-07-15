@@ -46,6 +46,10 @@ interface PairedPane {
   icon: string;
   bed: BedEntities;
   graphicTone?: BedGraphicTone;
+  synchronizationTarget?: {
+    deviceId: string;
+    side?: SynchronizeSide;
+  };
 }
 
 interface BedGraphicState extends DualBedGraphicSide {
@@ -190,6 +194,9 @@ export class AdjustableBedCard extends LitElement {
       icon: "mdi:bed-single-outline",
       bed: bedEntitiesForDevice(hass, id),
       graphicTone: index === 0 ? ("left" as const) : ("right" as const),
+      // Target the selected child device instead of inferring its backend side
+      // from display order. A renamed child can appear in either visual pane.
+      synchronizationTarget: { deviceId: id },
     }));
     this._watched = [parentBed, ...sides.map((s) => s.bed)].flatMap((b) =>
       this._collectWatched(b),
@@ -237,6 +244,7 @@ export class AdjustableBedCard extends LitElement {
         icon: "mdi:bed-single-outline",
         bed: beds.left,
         graphicTone: "left",
+        synchronizationTarget: { deviceId, side: "left" },
       },
       {
         key: "right",
@@ -244,6 +252,7 @@ export class AdjustableBedCard extends LitElement {
         icon: "mdi:bed-single-outline",
         bed: beds.right,
         graphicTone: "right",
+        synchronizationTarget: { deviceId, side: "right" },
       },
     ]);
   }
@@ -282,7 +291,7 @@ export class AdjustableBedCard extends LitElement {
         </div>
         <div class="pane" role="tabpanel" aria-label=${active.label}>
           ${combined && this._config?.show_graphic !== false
-            ? this._pairedOverview(titleDeviceId, sidePanes)
+            ? this._pairedOverview(sidePanes)
             : nothing}
           ${this._renderSections(active.bed, active.graphicTone)}
           ${combined && this._config?.show_lighting !== false
@@ -325,7 +334,6 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _pairedOverview(
-    parentDeviceId: string,
     sidePanes: PairedPane[],
   ): typeof nothing | TemplateResult {
     const sides = sidePanes
@@ -357,15 +365,16 @@ export class AdjustableBedCard extends LitElement {
           `,
         )}
       </div>
-      ${this._synchronizeSelector(parentDeviceId, left.pane, right.pane)}
+      ${this._synchronizeSelector(left.pane, right.pane)}
     `;
   }
 
   private _synchronizeSelector(
-    parentDeviceId: string,
     left: PairedPane,
     right: PairedPane,
   ): typeof nothing | TemplateResult {
+    if (!left.synchronizationTarget || !right.synchronizationTarget)
+      return nothing;
     const leftPlan = this._synchronizationPlan(left.bed, right.bed);
     const rightPlan = this._synchronizationPlan(right.bed, left.bed);
     if (leftPlan.length === 0 && rightPlan.length === 0) return nothing;
@@ -384,7 +393,7 @@ export class AdjustableBedCard extends LitElement {
             aria-busy=${this._synchronizingTo === "left" ? "true" : "false"}
             ?disabled=${busy || leftPlan.length === 0}
             @click=${() =>
-              void this._synchronizePositions(parentDeviceId, left, right, "left")}
+              void this._synchronizePositions(left, right, "left")}
           >
             ${this._synchronizingTo === "left"
               ? html`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`
@@ -399,7 +408,7 @@ export class AdjustableBedCard extends LitElement {
             aria-busy=${this._synchronizingTo === "right" ? "true" : "false"}
             ?disabled=${busy || rightPlan.length === 0}
             @click=${() =>
-              void this._synchronizePositions(parentDeviceId, left, right, "right")}
+              void this._synchronizePositions(left, right, "right")}
           >
             ${this._synchronizingTo === "right"
               ? html`<ha-icon class="dual-sync-spinner" icon="mdi:loading"></ha-icon>`
@@ -454,7 +463,6 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private async _synchronizePositions(
-    parentDeviceId: string,
     left: PairedPane,
     right: PairedPane,
     sourceSide: SynchronizeSide,
@@ -462,8 +470,8 @@ export class AdjustableBedCard extends LitElement {
     if (this._synchronizingTo || !this.hass) return;
     const source = sourceSide === "left" ? left : right;
     const target = sourceSide === "left" ? right : left;
-    const targetSide: SynchronizeSide =
-      sourceSide === "left" ? "right" : "left";
+    const serviceTarget = target.synchronizationTarget;
+    if (!serviceTarget) return;
     const plan = this._synchronizationPlan(source.bed, target.bed);
     if (plan.length === 0) return;
 
@@ -474,10 +482,10 @@ export class AdjustableBedCard extends LitElement {
         plan.map(
           (item) => () =>
             this.hass!.callService(PLATFORM, "set_position", {
-              device_id: [parentDeviceId],
+              device_id: [serviceTarget.deviceId],
               motor: item.motor,
               position: item.position,
-              side: targetSide,
+              ...(serviceTarget.side ? { side: serviceTarget.side } : {}),
             }),
         ),
       );
