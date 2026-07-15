@@ -29,6 +29,10 @@ bed swing/rocking commands remain supported.
 
 ## Discovery and model routing
 
+Character positions in this section are zero-based string indexes, matching the
+apps' `localName[index]` expressions. For example, `HHC0069815CDEF` has `1` at
+index 8 and `5` at index 9, which selects the Power Bob A15 panel.
+
 - Power Bob accepts an exact 14-character name containing `HHC`. Characters 8
   and 9 select 14 root panel profiles.
 - Current MotoSleep HHC names use characters 16, 18, 22, and 26 to select 21

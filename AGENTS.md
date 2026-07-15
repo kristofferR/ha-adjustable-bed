@@ -16,9 +16,11 @@ This is a Home Assistant custom integration for controlling smart adjustable bed
 
 ### Pull request review loops
 
-- A user request to run a PR loop is explicit approval to post the exact
-  `@coderabbitai review` trigger on that PR whenever a new head commit needs
-  review. It does not authorize any other GitHub comment or reply.
+- A user request to run a PR loop for a specific PR approves only the exact
+  `@coderabbitai review` comments needed by that loop: one for its then-current
+  head and one for each new head produced while addressing feedback in the same
+  loop. This bounded approval expires when the loop converges, the user cancels
+  it, or the task changes. It does not authorize any other comment or reply.
 - Do not treat `Review skipped: automatic reviews are disabled` as completion.
   Post the approved trigger, then track that specific trigger through completion.
 - CodeRabbit is complete only when the newest `@coderabbitai review` trigger has
