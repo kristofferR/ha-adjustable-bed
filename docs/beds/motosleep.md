@@ -72,6 +72,11 @@ response.
 
 ## HHC ASCII protocols
 
+**MotoSleep HHC status:** EXISTING CORE USER TESTED; EXPANDED PROFILES STATIC
+VERIFIED / HARDWARE UNVERIFIED
+
+**Power Bob HHC status:** STATIC VERIFIED / HARDWARE UNVERIFIED
+
 Raw actions are a dollar sign plus one case-sensitive command letter. Power Bob
 always sends raw actions. MotoSleep normally sends the raw form; names with
 `localName[22] == "M"` wrap a short action such as `$K` as `$#$KR\r`.
@@ -135,6 +140,8 @@ the Night configuration otherwise, so even minimal one-motor panels retain RGB
 settings when their root controls do not include the raw `$A` light toggle.
 
 ## MOTO binary protocol
+
+**MOTO binary status:** STATIC VERIFIED / HARDWARE UNVERIFIED
 
 Binary bed commands use this exact nine-byte frame:
 
