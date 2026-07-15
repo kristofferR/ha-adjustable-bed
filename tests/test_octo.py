@@ -16,7 +16,9 @@ from custom_components.adjustable_bed.beds.octo import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_LIGHT,
     OCTO_FEATURE_LIGHT_RGBWI,
+    OCTO_MAX_RESPONSE_BUFFER_SIZE,
     OCTO_MOTOR_HEAD,
+    OCTO_PACKET_CHAR,
     OctoController,
     OctoStar2Controller,
 )
@@ -99,6 +101,43 @@ def mock_octo_star2_config_entry(
     return entry
 
 
+@pytest.fixture
+def octo_stream_controller() -> OctoController:
+    """Return a lightweight Octo controller for response-stream tests."""
+    coordinator = MagicMock()
+    coordinator.address = "AA:BB:CC:DD:EE:FF"
+    coordinator.client = None
+    return OctoController(coordinator)
+
+
+def _build_octo_response(
+    controller: OctoController,
+    command: tuple[int, int],
+    data: list[int] | None = None,
+) -> bytes:
+    """Build a from-device OCTO response with escaping and checksum."""
+    packet_data = data or []
+    data_len_high = (len(packet_data) >> 8) & 0xFF
+    data_len_low = len(packet_data) & 0xFF
+    checksum = controller._calculate_checksum(
+        [0x80, *command, data_len_high, data_len_low, *packet_data]
+    )
+    payload = [
+        *command,
+        data_len_high,
+        data_len_low,
+        checksum,
+        *packet_data,
+    ]
+    return bytes(
+        [
+            OCTO_PACKET_CHAR,
+            *controller._escape_bytes(payload),
+            OCTO_PACKET_CHAR,
+        ]
+    )
+
+
 class TestOctoVariantSelection:
     """Test Octo variant selection in controller creation."""
 
@@ -125,6 +164,143 @@ class TestOctoVariantSelection:
         await coordinator.async_connect()
 
         assert isinstance(coordinator.controller, OctoStar2Controller)
+
+
+class TestOctoNotificationStream:
+    """Test OCTO packet reassembly across notified characteristic values."""
+
+    def test_reassembles_at_every_encoded_byte_boundary(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Every split point, including escaped pairs, should reassemble."""
+        packet_data = [0x40, 0x3C, 0x4F, 0x41, 0x01]
+        response = _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            packet_data,
+        )
+        expected = {"command": [0x21, 0x71], "data": packet_data}
+
+        for split_at in range(1, len(response)):
+            controller = OctoController(octo_stream_controller._coordinator)
+            assert controller._extract_response_packets(response[:split_at]) == []
+            assert controller._extract_response_packets(response[split_at:]) == [expected]
+            assert controller._response_buffer == bytearray()
+
+    def test_reassembles_one_byte_notifications(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A response should survive the most fragmented possible delivery."""
+        response = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        packets: list[dict[str, list[int]]] = []
+
+        for byte in response:
+            packets.extend(octo_stream_controller._extract_response_packets(bytes([byte])))
+
+        assert packets == [{"command": [0x21, 0x7F], "data": []}]
+        assert octo_stream_controller._response_buffer == bytearray()
+
+    def test_extracts_multiple_packets_from_one_notification(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """One notified value may contain multiple complete protocol packets."""
+        first = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        second = _build_octo_response(octo_stream_controller, (0x11, 0x72), [0x01])
+
+        assert octo_stream_controller._extract_response_packets(first + second) == [
+            {"command": [0x21, 0x7F], "data": []},
+            {"command": [0x11, 0x72], "data": [0x01]},
+        ]
+
+    def test_resynchronizes_after_noise_and_a_malformed_frame(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A bad candidate should not consume the next valid start delimiter."""
+        malformed = bytearray(_build_octo_response(octo_stream_controller, (0x21, 0x7F)))
+        malformed[-2] ^= 0x01
+        valid = _build_octo_response(octo_stream_controller, (0x11, 0x72), [0x01])
+
+        assert octo_stream_controller._extract_response_packets(
+            b"\x00\xff" + malformed + valid
+        ) == [{"command": [0x11, 0x72], "data": [0x01]}]
+        assert octo_stream_controller._response_buffer == bytearray()
+
+    def test_resynchronizes_long_delimiter_run_without_losing_valid_start(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Many malformed candidates should retain the final possible start."""
+        delimiters = bytes([OCTO_PACKET_CHAR]) * 4096
+        assert octo_stream_controller._extract_response_packets(delimiters) == []
+        assert octo_stream_controller._response_buffer == bytearray([OCTO_PACKET_CHAR])
+
+        valid = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        assert octo_stream_controller._extract_response_packets(valid) == [
+            {"command": [0x21, 0x7F], "data": []}
+        ]
+        assert octo_stream_controller._response_buffer == bytearray()
+
+    def test_bounds_incomplete_response_and_recovers(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """A missing end delimiter must not grow retained state indefinitely."""
+        incomplete = bytes([OCTO_PACKET_CHAR]) + bytes([0x01] * OCTO_MAX_RESPONSE_BUFFER_SIZE)
+
+        assert octo_stream_controller._extract_response_packets(incomplete) == []
+        assert octo_stream_controller._response_buffer == bytearray()
+
+        valid = _build_octo_response(octo_stream_controller, (0x21, 0x7F))
+        assert octo_stream_controller._extract_response_packets(valid) == [
+            {"command": [0x21, 0x7F], "data": []}
+        ]
+
+    def test_notification_dispatches_reassembled_packets_and_preserves_raw_chunks(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Reassembly should dispatch all packets without altering diagnostics."""
+        light_data = [0x00, 0x01, 0x02, 0x00, 0x00, 0x01, 0x01]
+        end_data = [0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]
+        responses = _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            light_data,
+        ) + _build_octo_response(
+            octo_stream_controller,
+            (0x21, 0x71),
+            end_data,
+        )
+        first_chunk = bytearray(responses[:5])
+        second_chunk = bytearray(responses[5:])
+        raw_callback = MagicMock()
+        octo_stream_controller.set_raw_notify_callback(raw_callback)
+
+        octo_stream_controller._on_notification(MagicMock(), first_chunk)
+        assert octo_stream_controller._has_lights is None
+        octo_stream_controller._on_notification(MagicMock(), second_chunk)
+
+        assert octo_stream_controller._has_lights is True
+        assert octo_stream_controller._features_complete.is_set()
+        assert raw_callback.call_args_list == [
+            ((OCTO_CHAR_UUID, bytes(first_chunk)),),
+            ((OCTO_CHAR_UUID, bytes(second_chunk)),),
+        ]
+
+    async def test_notification_lifecycle_clears_incomplete_data(
+        self, octo_stream_controller: OctoController
+    ) -> None:
+        """Stale fragments must not cross notification subscriptions."""
+        client = MagicMock()
+        client.is_connected = True
+        client.start_notify = AsyncMock()
+        client.stop_notify = AsyncMock()
+        octo_stream_controller._coordinator.client = client
+        octo_stream_controller._response_buffer.extend(b"\x40\x21")
+
+        await octo_stream_controller.start_notify()
+        assert octo_stream_controller._response_buffer == bytearray()
+
+        octo_stream_controller._response_buffer.extend(b"\x40\x21")
+        await octo_stream_controller.stop_notify()
+        assert octo_stream_controller._response_buffer == bytearray()
 
 
 class TestOctoPinAuth:
@@ -180,6 +356,79 @@ class TestOctoPinAuth:
 
 class TestOctoCommands:
     """Test Octo motor, light, and stop commands."""
+
+    async def test_one_motor_lift_exposes_only_tv_lift_and_uses_motor_one(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry_data: dict,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A one-motor OCTO controller should safely model an RTV TV lift."""
+        lift_data = {
+            **mock_octo_config_entry_data,
+            CONF_NAME: "RTV",
+            CONF_MOTOR_COUNT: 1,
+            CONF_OCTO_PIN: "",
+        }
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV",
+            data=lift_data,
+            unique_id="AA:BB:CC:DD:EE:98",
+            entry_id="octo_rtv_entry",
+        )
+        entry.add_to_hass(hass)
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        await coordinator.async_connect()
+        controller = cast(OctoController, coordinator.controller)
+
+        controller._has_lights = True
+        controller._has_rgbwi = True
+        controller._memory_count = 4
+        controller._has_synchro = True
+
+        assert [spec.key for spec in controller.motor_control_specs] == ["tv_lift"]
+        assert controller.supports_preset_flat is False
+        assert controller.supports_preset_both_up is False
+        assert controller.supports_lights is False
+        assert controller.supports_light_color_control is False
+        assert controller.supports_memory_presets is False
+        assert controller.memory_slot_count == 0
+        assert controller.supports_synchro is False
+        assert controller.stale_motor_entity_keys == frozenset({"back", "legs", "head", "feet"})
+
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await controller.motor_control_specs[0].open_fn(controller)
+
+        payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
+        assert payloads == [
+            controller._build_packet([0x02, 0x70], [OCTO_MOTOR_HEAD]),
+            controller._build_packet([0x02, 0x73]),
+        ]
+
+    async def test_bed_layout_marks_tv_lift_entity_as_stale(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry,
+    ):
+        """Normal OCTO beds should clean up a former TV lift entity."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+
+        assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
+
+    async def test_star2_layout_marks_tv_lift_entity_as_stale(
+        self,
+        hass: HomeAssistant,
+        mock_octo_star2_config_entry,
+    ):
+        """Star2 should clean up a former one-motor TV lift entity."""
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_star2_config_entry)
+        controller = OctoStar2Controller(coordinator)
+
+        assert controller.stale_motor_entity_keys == frozenset({"tv_lift"})
 
     async def test_move_head_up_sends_move_then_stop(
         self,

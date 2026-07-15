@@ -106,6 +106,8 @@ timed_move:
       selector:
         select:
           options:
+            - label: TV Lift
+              value: tv_lift
             - label: Back
               value: back
             - label: Legs

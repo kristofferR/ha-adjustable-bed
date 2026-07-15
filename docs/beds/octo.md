@@ -1,13 +1,18 @@
 # Octo
 
-**Status:** ✅ Tested
+**Status:** ✅ Protocol tested for 2-4 motor bed receivers; one-motor RTV TV lift implementation is based on the official app and needs hardware validation
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
 ## Known Models
+
 - Octo-branded adjustable beds
 - Beka
 - Cozyworld Cozy2Go
+
+OCTO Smart Control also recognizes one-motor products that use the same
+protocol family. The integration supports the official `RTV` **Lift 1M** as a
+separate TV Lift device.
 
 ## Apps
 
@@ -31,19 +36,37 @@ Some Octo beds require a 4-digit PIN to maintain the Bluetooth connection. Witho
 
 ### Finding Your PIN
 
-The PIN is typically found in your Octo physical remote's settings menu, or in the documentation that came with your bed. If you don't know your PIN and the bed works without one, leave it empty.
+This is the receiver's OCTO app PIN, not a Bluetooth pairing code. If you set a
+four-digit PIN in OCTO Smart Control, enter the same code here. If the receiver
+works without a PIN, leave this field empty. Follow the manufacturer's reset
+instructions if a configured PIN has been lost.
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ (2-4 motors, auto-detected via CAP_MOTORCOUNT) |
+| Bed Motor Control | ✅ (2-4 motors; configured during setup and checked against CAP_MOTORCOUNT) |
+| One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
 | Position Feedback | ❌ |
 | Memory Presets | ✅ (dynamically detected, Standard variant only) |
 | Both Up Preset | ✅ (Standard variant: moves head + legs together) |
 | Under-bed Lights | ✅ (Standard variant only; RGBW color picker on beds with CAP_LIGHT_RGBWI) |
 | Synchro/Linked Mode | ✅ (Standard variant, split-king beds with CAP_SYNCHRO) |
 | PIN Authentication | ✅ (Standard variant only) |
+
+### One-motor TV lift
+
+The official OCTO device list identifies `RTV` as **Lift 1M**, and the official
+app controls it through Standard OCTO motor 1 (`0x02`). An automatically
+discovered `RTV` defaults to one motor and exposes one **TV Lift** cover with
+Raise, Lower, and Stop controls. You can also select one motor manually for a
+Standard OCTO controller.
+
+The lift is deliberately not presented as an adjustable bed. Bed-only controls
+such as Flat, Back + Legs Up, memory positions, lights, and synchro mode are
+suppressed even if a malformed or unexpected capability response advertises
+them. Position feedback is not available. The packet implementation is derived
+from the official OCTO app; physical RTV hardware testing is still required.
 
 ## Split Beds
 
@@ -61,9 +84,26 @@ addresses and switching between them. Also note that the `Back + Legs Up`
 preset only moves both motors on the currently connected controller; it does
 not mean both bed sides.
 
+In the current release, each receiver is a separate config entry. The upcoming
+4.0 release adds first-class pairing for the two bed-side receivers. OCTO pairs
+use conservative one-link switching: Left, Right, or Both commands connect to
+one side at a time, and Both visits the two sides sequentially. The separate
+one-motor `RTV` remains its own TV Lift device and must not be added as a bed
+side. Pairing requires compatible bed-side actuator layouts, so a one-motor RTV
+cannot be paired with a two-motor RC2.
+
+This design matches three-device installations such as two `RC2` bed sides plus
+one `RTV` TV lift. The 4.0 dual-bed implementation has extensive failure,
+cancellation, and one-link ordering tests, but still needs validation on real
+dual OCTO hardware. `Synchro Mode`, when advertised by a receiver, remains a
+hardware capability and is not software grouping across arbitrary entries.
+
 ## Protocol Variants
 
-Octo beds have at least two protocol variants. The integration auto-detects the variant based on the service UUID.
+Octo beds have at least two protocol variants. Standard OCTO requires a
+recognized official device-name prefix because its `FFE0` service UUID is
+shared with other protocols. Star2 is auto-detected by its dedicated
+`0000aa5c-0000-1000-8000-00805f9b34fb` service UUID.
 
 ### Standard Variant (Most Common)
 
@@ -78,6 +118,18 @@ Octo beds have at least two protocol variants. The integration auto-detects the 
 ```
 
 **Checksum:** `((sum_of_all_bytes XOR 0xFF) + 1) & 0xFF`
+
+Bytes `0x40`, `0x3C`, `0x4F`, and `0x41` inside the frame payload are escaped.
+The delimiters themselves remain unescaped.
+
+#### Notification framing
+
+An OCTO packet and a BLE notification are not the same boundary. A complete
+packet can span multiple notified characteristic values, and one notified value
+can contain multiple packets. The integration keeps an incomplete response
+between callbacks, extracts every complete `0x40 ... 0x40` frame, then verifies
+its unescaped length and checksum before dispatching it. Malformed data is
+discarded up to the next possible frame delimiter.
 
 #### Motor Commands
 
@@ -120,7 +172,7 @@ The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
 
 | Feature ID | Name | Value |
 |------------|------|-------|
-| `0x000001` | CAP_MOTORCOUNT | Motor count (2-4) |
+| `0x000001` | CAP_MOTORCOUNT | Motor count reported by the device (1-4; Standard OCTO supports 1-4) |
 | `0x000002` | CAP_MEMCOUNT | Memory preset count |
 | `0x000003` | CAP_PIN | PIN requirement + lock state |
 | `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
@@ -172,7 +224,31 @@ To configure PIN, enter your 4-digit PIN during setup or in the integration opti
 
 ## Detection
 
-- **Standard variant:** Detected by device name containing `octo`
+- **Standard variant:** Detected by an official OCTO device-name prefix. The
+  shared `FFE0` service UUID alone is not sufficient because other protocol
+  families also use it.
 - **Star2 variant:** Auto-detected by service UUID `0000aa5c-0000-1000-8000-00805f9b34fb`
 
 You can also manually select the variant in the integration options.
+
+Recognized Standard-variant name prefixes are:
+
+| Prefix | OCTO description |
+|--------|------------------|
+| `RTV` | Lift 1M (defaults to the dedicated one-motor TV Lift layout) |
+| `RC2` | Receiver II |
+| `MC2` | Micro 2 |
+| `OCTOBrick` | Brick 1 (`OCTOBrick2` is covered by the same prefix) |
+| `MC1` | Micro 1 |
+| `L2M` | Lift 2M |
+| `CLI` | Cosy Lift |
+| `OCTOIQ` | IQ Redesign |
+| `RC3` | Receiver II 3M |
+| `BMB` | BrickMini Basic |
+| `BMS` | BrickMini Memo |
+| `BM3` | BrickMini Basic 3M |
+| `DA1458x` | Legacy receiver/SoC name |
+
+These names select the likely protocol implementation. Features are still
+limited by the device capabilities and the support table above, and every OEM
+combination is not necessarily hardware-tested.

@@ -20,7 +20,11 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
+    _default_motor_count,
+    _is_valid_motor_count,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
@@ -66,9 +70,12 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     MALOUF_LAYOUT_HILO,
+    OCTO_VARIANT_STANDARD,
+    OCTO_VARIANT_STAR2,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
@@ -100,6 +107,17 @@ def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
     # Unrelated beds are unaffected.
     assert _skips_setup_connection_probe(BED_TYPE_KEESON, "auto") is False
     assert _skips_setup_connection_probe(None, None) is False
+
+
+def test_octo_one_motor_count_is_limited_to_standard_tv_lifts() -> None:
+    """Only Standard OCTO supports the one-motor TV lift layout."""
+    assert _default_motor_count(BED_TYPE_OCTO, "RTV") == 1
+    assert _default_motor_count(BED_TYPE_OCTO, "RTV-1234") == 1
+    assert _default_motor_count(BED_TYPE_OCTO, "RC2") == 2
+    assert _is_valid_motor_count(BED_TYPE_OCTO, OCTO_VARIANT_STANDARD, 1)
+    assert _is_valid_motor_count(BED_TYPE_OCTO, "auto", 1)
+    assert not _is_valid_motor_count(BED_TYPE_OCTO, OCTO_VARIANT_STAR2, 1)
+    assert not _is_valid_motor_count(BED_TYPE_LINAK, "auto", 1)
 
 
 class TestPairingInstructions:
@@ -660,6 +678,29 @@ class TestBluetoothDiscoveryFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
+
+    async def test_octo_rtv_discovery_defaults_to_one_motor(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_octo_rc2: MagicMock,
+        enable_custom_integrations,
+    ):
+        """The official RTV name should select the safe one-motor lift layout."""
+        mock_bluetooth_service_info_octo_rc2.name = "RTV"
+        mock_bluetooth_service_info_octo_rc2.address = "EC:4E:1A:B5:39:98"
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_octo_rc2,
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "bluetooth_confirm"
+        motor_count_marker = next(
+            marker for marker in result["data_schema"].schema if marker.schema == CONF_MOTOR_COUNT
+        )
+        assert motor_count_marker.default() == 1
 
     async def test_bluetooth_discovery_confirm(
         self,
@@ -1908,6 +1949,43 @@ class TestUserFlow:
 
 class TestOptionsFlow:
     """Test options flow."""
+
+    async def test_octo_options_can_switch_variant_and_one_motor_together(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A Star2 entry can switch to Standard and one motor in one save."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OCTO Star2",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:97",
+                CONF_NAME: "OCTO Star2",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2,
+            },
+            unique_id="AA:BB:CC:DD:EE:97",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        assert result["type"] == FlowResultType.FORM
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_MOTOR_COUNT: 1,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_MOTOR_COUNT] == 1
+        assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
 
     async def test_options_flow(
         self,

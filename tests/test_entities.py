@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -40,6 +41,7 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     MALOUF_LAYOUT_HILO,
+    OCTO_VARIANT_STANDARD,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_HEAD_MAX_ANGLE,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -148,6 +150,50 @@ class TestCoverEntities:
             assert (
                 registry.async_get_entity_id("button", DOMAIN, f"AA:BB:CC:DD:EE:44_{key}") is None
             )
+
+    async def test_octo_rtv_exposes_only_tv_lift_cover_and_stop(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """OCTO RTV should expose a lift, never bed-only entities."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="RTV",
+            data={
+                "address": "AA:BB:CC:DD:EE:98",
+                "name": "RTV",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 1,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+            },
+            unique_id="AA:BB:CC:DD:EE:98",
+            entry_id="octo_rtv_entity_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        address = "AA:BB:CC:DD:EE:98"
+        entry_entities = er.async_entries_for_config_entry(registry, entry.entry_id)
+        assert {
+            (registered.entity_id.partition(".")[0], registered.unique_id)
+            for registered in entry_entities
+        } == {
+            ("binary_sensor", f"{address}_ble_connection"),
+            ("button", f"{address}_connect"),
+            ("button", f"{address}_disconnect"),
+            ("button", f"{address}_stop"),
+            ("cover", f"{address}_tv_lift"),
+        }
 
     async def test_malouf_hilo_cover_setup_removes_stale_head_and_feet(
         self,

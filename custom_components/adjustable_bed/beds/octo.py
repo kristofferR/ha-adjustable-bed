@@ -64,6 +64,11 @@ OCTO_DRIVEMODE_TIMEOUT = 3.0
 # Feature discovery timeout
 OCTO_FEATURE_TIMEOUT = 5.0
 
+# Maximum encoded OCTO packet size: two delimiters plus the worst case where
+# every byte in the five-byte header and 16-bit-length data field is escaped.
+# This retains every protocol-valid packet while bounding a missing delimiter.
+OCTO_MAX_RESPONSE_BUFFER_SIZE = 2 + (2 * (5 + 0xFFFF))
+
 # Byte stuffing constants
 OCTO_PACKET_CHAR = 0x40
 OCTO_ESCAPE_CHAR = 0x3C
@@ -91,6 +96,7 @@ class OctoController(BedController):
         self._pin: str = pin
         self._keepalive_task: asyncio.Task[None] | None = None
         self._notifications_started: bool = False  # Track if BLE notifications are active
+        self._response_buffer = bytearray()
 
         # Feature discovery state
         self._has_pin: bool | None = None  # None = not yet discovered
@@ -191,7 +197,7 @@ class OctoController(BedController):
         # Build final packet with unescaped delimiters
         return bytes([OCTO_PACKET_CHAR, *escaped_payload, OCTO_PACKET_CHAR])
 
-    def _parse_response_packet(self, message: bytes) -> dict | None:
+    def _parse_response_packet(self, message: bytes) -> dict[str, list[int]] | None:
         """Parse a response packet from the bed.
 
         Format: [0x40, escaped(...), 0x40]
@@ -235,6 +241,56 @@ class OctoController(BedController):
             return None
 
         return {"command": command, "data": data}
+
+    def _extract_response_packets(self, data: bytes) -> list[dict[str, list[int]]]:
+        """Buffer notified values and return every complete, valid response packet.
+
+        BLE notification boundaries are not OCTO packet boundaries. In particular,
+        the controller may emit a protocol packet across multiple notifications when
+        it does not fit in one notified characteristic value. Raw ``0x40`` bytes
+        cannot occur inside a packet because the OCTO serializer escapes them, so
+        delimiter pairs provide an unambiguous framing boundary.
+        """
+        self._response_buffer.extend(data)
+        packets: list[dict[str, list[int]]] = []
+        buffer = self._response_buffer
+        trim_at = 0
+
+        while True:
+            start = buffer.find(OCTO_PACKET_CHAR, trim_at)
+            if start < 0:
+                # Bytes before a start delimiter cannot become part of a later packet.
+                trim_at = len(buffer)
+                break
+
+            end = buffer.find(OCTO_PACKET_CHAR, start + 1)
+            if end < 0:
+                # Discard leading noise but retain the incomplete packet.
+                trim_at = start
+                break
+
+            packet = self._parse_response_packet(bytes(buffer[start : end + 1]))
+            if packet is None:
+                # The end delimiter may also be the start of the next valid packet.
+                # Scan from it without shifting the bytearray on every candidate.
+                trim_at = end
+                continue
+
+            packets.append(packet)
+            trim_at = end + 1
+
+        # Front-delete at most once per callback. Repeated bytearray shifts during
+        # malformed-stream resynchronization would otherwise have quadratic cost.
+        del buffer[:trim_at]
+
+        if len(buffer) > OCTO_MAX_RESPONSE_BUFFER_SIZE:
+            _LOGGER.debug(
+                "Discarding oversized incomplete Octo response (%d bytes)",
+                len(buffer),
+            )
+            buffer.clear()
+
+        return packets
 
     def _extract_feature_value_pair(
         self, data: list[int]
@@ -351,36 +407,33 @@ class OctoController(BedController):
         _LOGGER.debug("Received notification: %s", data.hex())
         self.forward_raw_notification(OCTO_CHAR_UUID, bytes(data))
 
-        packet = self._parse_response_packet(bytes(data))
-        if packet is None:
-            return
+        for packet in self._extract_response_packets(bytes(data)):
+            command = packet["command"]
+            packet_data = packet["data"]
 
-        command = packet["command"]
-        packet_data = packet["data"]
+            # Handle feature response (0x21 0x71)
+            if command[0] == 0x21 and command[1] == 0x71:
+                self._handle_feature_response(packet_data)
 
-        # Handle feature response (0x21 0x71)
-        if command[0] == 0x21 and command[1] == 0x71:
-            self._handle_feature_response(packet_data)
-
-        # Handle CONFIG responses (0x11 = response to CONFIG 0x10)
-        if command[0] == 0x11:
-            if command[1] == 0x72:
-                # CONFIG_GET_DRIVEMODE response
-                if packet_data:
-                    self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
-                    _LOGGER.debug(
-                        "Drivemode response: %s",
-                        "sync" if self._synchro_active else "single",
-                    )
-                    self._drivemode_event.set()
-            elif command[1] == 0x71:
-                # CONFIG_SET_DRIVEMODE acknowledgment
-                if packet_data:
-                    self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
-                    _LOGGER.debug(
-                        "Drivemode set acknowledged: %s",
-                        "sync" if self._synchro_active else "single",
-                    )
+            # Handle CONFIG responses (0x11 = response to CONFIG 0x10)
+            if command[0] == 0x11:
+                if command[1] == 0x72:
+                    # CONFIG_GET_DRIVEMODE response
+                    if packet_data:
+                        self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
+                        _LOGGER.debug(
+                            "Drivemode response: %s",
+                            "sync" if self._synchro_active else "single",
+                        )
+                        self._drivemode_event.set()
+                elif command[1] == 0x71:
+                    # CONFIG_SET_DRIVEMODE acknowledgment
+                    if packet_data:
+                        self._synchro_active = packet_data[0] == OCTO_DRIVEMODE_SYNC
+                        _LOGGER.debug(
+                            "Drivemode set acknowledged: %s",
+                            "sync" if self._synchro_active else "single",
+                        )
 
     async def write_command(
         self,
@@ -431,9 +484,7 @@ class OctoController(BedController):
         packet = self._build_packet(command, data)
         await self.write_command(packet, repeat_count, repeat_delay_ms, cancel_event)
 
-    async def start_notify(
-        self, callback: Callable[[str, float], None] | None = None
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for notifications.
 
         Octo beds don't support position notifications, but we use notifications
@@ -441,6 +492,7 @@ class OctoController(BedController):
         """
         self._notify_callback = callback
         if self.client is not None and self.client.is_connected:
+            self._response_buffer.clear()
             try:
                 async with self._ble_lock:
                     await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
@@ -452,6 +504,7 @@ class OctoController(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for notifications."""
         self._notifications_started = False
+        self._response_buffer.clear()
         if self.client is not None and self.client.is_connected:
             with contextlib.suppress(BleakError):
                 async with self._ble_lock:
@@ -476,6 +529,11 @@ class OctoController(BedController):
         return bool(self._pin)
 
     @property
+    def _is_one_motor_lift(self) -> bool:
+        """Return whether this controller represents an OCTO one-motor lift."""
+        return self._coordinator.motor_count == 1
+
+    @property
     def supports_lights(self) -> bool:
         """Check if the bed has under-bed lights.
 
@@ -486,6 +544,8 @@ class OctoController(BedController):
         Returns False if:
         - Features were discovered but light feature was not present
         """
+        if self._is_one_motor_lift:
+            return False
         if self._has_lights is not None:
             return self._has_lights
         # Features not discovered - assume lights exist for backward compatibility
@@ -494,26 +554,26 @@ class OctoController(BedController):
     @property
     def supports_light_color_control(self) -> bool:
         """Return True if bed supports RGBWI light color control."""
-        return self._has_rgbwi
+        return not self._is_one_motor_lift and self._has_rgbwi
 
     @property
     def supported_color_mode(self) -> str | None:
         """Return 'rgbw' for RGBWI beds, None otherwise."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return "rgbw"
         return None
 
     @property
     def default_light_rgb_color(self) -> tuple[int, int, int] | None:
         """Return default white color for RGBWI beds."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return (255, 255, 255)
         return None
 
     @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command."""
-        if self._has_rgbwi:
+        if self.supports_light_color_control:
             return True
         return self.supports_discrete_light_control
 
@@ -521,6 +581,11 @@ class OctoController(BedController):
     def supports_discrete_light_control(self) -> bool:
         """Return True if bed has separate on/off light commands."""
         return self.supports_lights
+
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        """Return whether this OCTO controller exposes bed-light toggling."""
+        return not self._is_one_motor_lift and super().supports_light_toggle_control
 
     @property
     def light_auto_off_seconds(self) -> int | None:
@@ -532,6 +597,8 @@ class OctoController(BedController):
     @property
     def supports_memory_presets(self) -> bool:
         """Return True if bed supports memory presets (CAP_MEMCOUNT > 0)."""
+        if self._is_one_motor_lift:
+            return False
         if self._memory_count is not None:
             return self._memory_count > 0
         # Features not discovered - assume no memory presets for safety
@@ -540,6 +607,8 @@ class OctoController(BedController):
     @property
     def memory_slot_count(self) -> int:
         """Return number of memory preset slots."""
+        if self._is_one_motor_lift:
+            return 0
         return self._memory_count if self._memory_count is not None else 0
 
     @property
@@ -553,6 +622,8 @@ class OctoController(BedController):
 
         Returns True only if CAP_SYNCHRO (0x000101) was detected during discovery.
         """
+        if self._is_one_motor_lift:
+            return False
         if self._has_synchro is not None:
             return self._has_synchro
         return False
@@ -620,6 +691,7 @@ class OctoController(BedController):
         # skip notification setup when disable_angle_sensing is true, but Octo still
         # needs notifications for feature discovery (PIN/lights detection)
         if not self._notifications_started:
+            self._response_buffer.clear()
             try:
                 async with self._ble_lock:
                     await self.client.start_notify(OCTO_CHAR_UUID, self._on_notification)
@@ -812,6 +884,18 @@ class OctoController(BedController):
         """Stop fourth motor."""
         await self._stop_motors()
 
+    async def _move_tv_lift_up(self) -> None:
+        """Raise an OCTO one-motor TV lift."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "up")
+
+    async def _move_tv_lift_down(self) -> None:
+        """Lower an OCTO one-motor TV lift."""
+        await self._octo_move_with_stop(OCTO_MOTOR_HEAD, "down")
+
+    async def _move_tv_lift_stop(self) -> None:
+        """Stop an OCTO one-motor TV lift."""
+        await self._stop_motors()
+
     async def stop_all(self) -> None:
         """Stop all motors."""
         await self._stop_motors()
@@ -830,6 +914,17 @@ class OctoController(BedController):
         standard cover entity naming convention.
         """
         motor_count = self._coordinator.motor_count
+
+        if motor_count == 1:
+            return (
+                MotorControlSpec(
+                    key="tv_lift",
+                    translation_key="tv_lift",
+                    open_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_up(),
+                    close_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_down(),
+                    stop_fn=lambda ctrl: cast(OctoController, ctrl)._move_tv_lift_stop(),
+                ),
+            )
 
         specs: list[MotorControlSpec] = [
             MotorControlSpec(
@@ -876,8 +971,20 @@ class OctoController(BedController):
 
     @property
     def supports_preset_both_up(self) -> bool:
-        """Return True - Octo beds support moving both head and legs up."""
-        return True
+        """Return whether this OCTO controller has both bed motors."""
+        return not self._is_one_motor_lift
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        """Return whether this OCTO controller represents a bed."""
+        return not self._is_one_motor_lift
+
+    @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return entity keys belonging to the other OCTO actuator layout."""
+        if self._is_one_motor_lift:
+            return frozenset({"back", "legs", "head", "feet"})
+        return frozenset({"tv_lift"})
 
     # Preset methods
     async def preset_both_up(self) -> None:
@@ -1131,6 +1238,11 @@ class OctoStar2Controller(BedController):
         _LOGGER.debug("OctoStar2Controller initialized")
 
     @property
+    def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return stale OCTO motor entities to remove for Star2."""
+        return frozenset({"tv_lift"})
+
+    @property
     def supports_lights(self) -> bool:
         """Star2 protocol doesn't support light control."""
         return False
@@ -1191,9 +1303,7 @@ class OctoStar2Controller(BedController):
             if i < repeat_count - 1:
                 await asyncio.sleep(repeat_delay_ms / 1000)
 
-    async def start_notify(
-        self, callback: Callable[[str, float], None] | None = None
-    ) -> None:
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for notifications.
 
         Star2 doesn't support position notifications, so this only stores the callback.

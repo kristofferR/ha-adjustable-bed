@@ -54,6 +54,16 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
 # - 4 motors: back, legs, head, feet
 COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
     AdjustableBedCoverEntityDescription(
+        key="tv_lift",
+        translation_key="tv_lift",
+        icon="mdi:television-classic",
+        device_class=CoverDeviceClass.DAMPER,
+        open_fn=lambda ctrl: ctrl.move_back_up(),
+        close_fn=lambda ctrl: ctrl.move_back_down(),
+        stop_fn=lambda ctrl: ctrl.move_back_stop(),
+        min_motors=1,
+    ),
+    AdjustableBedCoverEntityDescription(
         key="back",
         translation_key="back",
         icon="mdi:human-handsup",

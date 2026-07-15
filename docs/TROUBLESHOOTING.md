@@ -103,7 +103,7 @@ This guide covers common issues and their solutions when using the Adjustable Be
 
 **Solutions:**
 1. **Verify features:** Check if your bed actually has the feature (massage, lights, etc.)
-2. **Update motor count:** Set correct number of motors in options (2, 3, or 4)
+2. **Update motor count:** Set the correct number of motors in options (2, 3, or 4; use 1 only for a one-motor Standard OCTO lift, with `RTV` detected automatically)
 3. **Enable massage:** If bed has massage, enable it in integration options
 
 ### Commands are slow or delayed
