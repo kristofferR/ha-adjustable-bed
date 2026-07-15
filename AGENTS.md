@@ -278,6 +278,7 @@ Until [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436) 
 - Freeze package-local `ANALYSIS.md`, schema-valid `analysis.json`, `SEARCH_LOG.md`, reproducer/test-vector scripts, and `REPORT.SHA256`. A PARTIAL or BLOCKED report must identify the exact gap and actionable next step.
 - Only after the clean-room report is frozen may a separate comparison pass inspect the integration and historical evidence, implement corrections, and update durable protocol documentation.
 - Keep raw artifacts, decompilation output, and Phase 4 reports machine-local and ignored as required by #436. Commit only durable integration, test, documentation, and workflow-instruction changes.
+- Do not assume maintainers can physically test a discovered bed. A report may be COMPLETE when app behavior is exhaustively proven from the artifact while hardware status remains explicitly unverified. Treat physical checks and captures as deferred external validation for real users after a beta or release, not as an immediately actionable maintainer task or an automatic reason to fail the analysis.
 - Never guess protocol behavior when the required artifact or analysis layer is unavailable. Record the blocker and request the precise APK, capture, or hardware validation needed.
 
 See **[disassembly/AGENTS.md](disassembly/AGENTS.md)** for detailed instructions on:
