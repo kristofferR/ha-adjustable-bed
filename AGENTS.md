@@ -267,6 +267,19 @@ The `run_diagnostics` service captures protocol data for debugging and adding ne
 
 The `disassembly/` folder contains tools and output from reverse engineering bed controller Android apps to extract BLE protocols.
 
+### Mandatory clean-room analysis while issue #436 is open
+
+Until [issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436) is complete and its work is merged, any task that inspects an APK must produce reusable Phase 4 evidence so the package does not need to be analyzed again later. This is also required before implementing a bug fix or enhancement that depends on BLE protocol behavior, including command bytes, packet construction, timing, STOP/release behavior, discovery, authentication, parsing, model variants, or capability selection.
+
+- Use the verified latest artifact from the frozen acquisition corpus. Include the complete APK/XAPK/split set and record its identity and hashes.
+- Follow the clean-room workflow and completion gates in [issue #443](https://github.com/kristofferR/ha-adjustable-bed/issues/443). Analyze the artifact in a fresh isolated workspace before consulting integration code, existing protocol documentation, legacy analyses, issues, PRs, commits, captures, or reports for other apps.
+- If the current context has already accessed forbidden comparison material, start a new isolated analyst context with only the artifact, identity manifest, pinned schema, protocol-neutral tools, and the reusable #443 prompt. Do not call a contaminated run clean-room or COMPLETE.
+- Cover every application stack that contains app logic. Flutter requires Blutter, React Native/Hermes requires shipped-bundle analysis, AIR requires FFDec, and suspicious or failed jadx output requires smali or another authoritative fallback.
+- Freeze package-local `ANALYSIS.md`, schema-valid `analysis.json`, `SEARCH_LOG.md`, reproducer/test-vector scripts, and `REPORT.SHA256`. A PARTIAL or BLOCKED report must identify the exact gap and actionable next step.
+- Only after the clean-room report is frozen may a separate comparison pass inspect the integration and historical evidence, implement corrections, and update durable protocol documentation.
+- Keep raw artifacts, decompilation output, and Phase 4 reports machine-local and ignored as required by #436. Commit only durable integration, test, documentation, and workflow-instruction changes.
+- Never guess protocol behavior when the required artifact or analysis layer is unavailable. Record the blocker and request the precise APK, capture, or hardware validation needed.
+
 See **[disassembly/AGENTS.md](disassembly/AGENTS.md)** for detailed instructions on:
 - Decompiling APKs with jadx
 - Analyzing Flutter apps with blutter
