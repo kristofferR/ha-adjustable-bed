@@ -70,6 +70,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     MALOUF_LAYOUT_HILO,
@@ -1948,6 +1949,43 @@ class TestUserFlow:
 
 class TestOptionsFlow:
     """Test options flow."""
+
+    async def test_octo_options_can_switch_variant_and_one_motor_together(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A Star2 entry can switch to Standard and one motor in one save."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OCTO Star2",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:97",
+                CONF_NAME: "OCTO Star2",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2,
+            },
+            unique_id="AA:BB:CC:DD:EE:97",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        assert result["type"] == FlowResultType.FORM
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_MOTOR_COUNT: 1,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_MOTOR_COUNT] == 1
+        assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
 
     async def test_options_flow(
         self,
