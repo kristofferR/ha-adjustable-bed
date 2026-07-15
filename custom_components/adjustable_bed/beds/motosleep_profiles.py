@@ -79,15 +79,15 @@ def _profile(
     massage = {
         key: command
         for key, command in {
-            "head_toggle": "C",
-            "foot_toggle": "B",
+            # Standard panels use C/B while PanelZero uses J/I for the same
+            # head/foot on-off actions. The variants are mutually exclusive.
+            "head_toggle": "C" if "C" in available else "J",
+            "foot_toggle": "B" if "B" in available else "I",
             "off": "D",
             "head_up": "G",
             "head_down": "H",
             "foot_up": "E",
             "foot_down": "F",
-            "head_off": "J",
-            "foot_off": "I",
         }.items()
         if command in available
     }
@@ -321,6 +321,7 @@ def _unknown_moto_profile() -> MotoSleepProfile:
 
 
 def _resolve_moto(name: str) -> MotoSleepProfile:
+    name = name.upper()
     match = _MOTO_RE.match(name)
     if match is None or len(name) != 28:
         return _unknown_moto_profile()
@@ -422,11 +423,11 @@ def resolve_motosleep_profile(device_name: str | None) -> MotoSleepProfile:
     name = device_name or ""
     upper_name = name.upper()
     if upper_name.startswith("MOTO"):
-        return _resolve_moto(name)
+        return _resolve_moto(upper_name)
     if "HHC" in upper_name and len(name) == 14:
-        return _resolve_power_bob(name)
+        return _resolve_power_bob(upper_name)
     if "HHC" in upper_name and len(name) >= 14:
-        return _resolve_hhc(name)
+        return _resolve_hhc(upper_name)
 
     # Manual configurations created before model routing had no reliable local
     # name.  Keep their prior two-axis behavior, but do not expose speculative

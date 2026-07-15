@@ -37,6 +37,8 @@ bed swing/rocking commands remain supported.
 - Binary MOTO beds use exact 28-character `MOTOB...` or `MOTOS...` names.
   Character 7 selects ten bed pages: WRS23ms, WRS14Dmm, WRS18ms, WRS14ms,
   WRS20ms, WRS16ms, WRC30Mms, WRS27ms, WRS20ms Swing, and WR219.
+- Advertised-name matching and model routing normalize letter case, including
+  selector letters. Protocol command letters remain case-sensitive.
 - Unmatched Power Bob selectors and malformed MOTO names receive no speculative
   controls. Legacy manual configurations without a usable advertised name keep
   a conservative two-axis fallback; current long HHC names retain the app's

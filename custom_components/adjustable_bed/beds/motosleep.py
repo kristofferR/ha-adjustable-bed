@@ -165,6 +165,10 @@ class MotoSleepController(BedController):
         return self.profile.rgb_light
 
     @property
+    def supports_light_toggle_control(self) -> bool:
+        return self.profile.light_toggle is not None
+
+    @property
     def supported_color_mode(self) -> str | None:
         return "rgb" if self.profile.rgb_light else None
 
@@ -208,7 +212,7 @@ class MotoSleepController(BedController):
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
-        return bool({"head_toggle", "head_off"} & self.profile.massage.keys())
+        return "head_toggle" in self.profile.massage
 
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
@@ -216,7 +220,7 @@ class MotoSleepController(BedController):
 
     @property
     def supports_foot_massage_toggle_control(self) -> bool:
-        return bool({"foot_toggle", "foot_off"} & self.profile.massage.keys())
+        return "foot_toggle" in self.profile.massage
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
@@ -528,10 +532,10 @@ class MotoSleepController(BedController):
         await self._massage("off")
 
     async def massage_head_toggle(self) -> None:
-        await self._massage("head_toggle" if "head_toggle" in self.profile.massage else "head_off")
+        await self._massage("head_toggle")
 
     async def massage_foot_toggle(self) -> None:
-        await self._massage("foot_toggle" if "foot_toggle" in self.profile.massage else "foot_off")
+        await self._massage("foot_toggle")
 
     async def massage_head_up(self) -> None:
         await self._massage("head_up")

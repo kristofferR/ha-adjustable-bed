@@ -51,6 +51,7 @@ def test_power_bob_selector_matrix(name: str, profile_id: str) -> None:
     """Every root selector from Power Bob 2.0.3 resolves independently."""
     assert len(name) == 14
     assert resolve_motosleep_profile(name).profile_id == profile_id
+    assert resolve_motosleep_profile(name.lower()).profile_id == profile_id
 
 
 def test_issue_445_name_routes_pq_to_lumbar() -> None:
@@ -96,10 +97,13 @@ def test_power_bob_capabilities_are_not_universal() -> None:
 def test_power_bob_minimal_panels_keep_orthogonal_rgb_settings(name: str) -> None:
     """Mood/Night PanelRGB routing is independent of the root motor panel."""
     profile = resolve_motosleep_profile(name)
+    controller, _client = _controller(name)
 
     assert profile.profile_id in {"power_bob_one", "power_bob_five"}
     assert profile.rgb_light is True
     assert profile.light_toggle is None
+    assert controller.supports_light_color_control is True
+    assert controller.supports_light_toggle_control is False
 
 
 def test_neutral_axis_builds_a_generic_cover_description() -> None:
@@ -154,6 +158,7 @@ def _hhc_name(c16: str, c18: str = "0", c22: str = "0", c26: str = "0") -> str:
 def test_motosleep_hhc_selector_matrix(name: str, profile_id: str) -> None:
     """Every MotoSleep HHC page selector resolves to its own profile."""
     assert resolve_motosleep_profile(name).profile_id == profile_id
+    assert resolve_motosleep_profile(name.lower()).profile_id == profile_id
 
 
 def test_hhc_raw_and_wrapped_transport_selection() -> None:
@@ -313,14 +318,14 @@ def test_binary_moto_unknown_page_is_conservative() -> None:
     assert profile.stop is None
 
 
-def test_lowercase_moto_name_does_not_fall_back_to_hhc_controls() -> None:
-    """Case-insensitive detection still yields a conservative binary profile."""
+def test_lowercase_moto_name_routes_to_the_exact_binary_profile() -> None:
+    """Case-insensitive detection and profile routing select the same model."""
     profile = resolve_motosleep_profile(_moto_name("4").lower())
 
-    assert profile.profile_id == "motosleep_moto_unknown"
+    assert profile.profile_id == "motosleep_moto_wrs20ms"
     assert profile.transport is MotoSleepTransport.MOTO_BINARY
-    assert not profile.motors
-    assert profile.stop is None
+    assert profile.motors["lumbar"] == (0x0080, 0x0040)
+    assert profile.stop == ((0x0000, 0), 5, 100)
 
 
 @pytest.mark.parametrize(
@@ -461,6 +466,23 @@ async def test_hhc_zero_profile_uses_separate_massage_intensity_actions() -> Non
     assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
         b"$G",
         b"$F",
+    ]
+
+
+async def test_hhc_zero_profile_routes_zone_on_off_actions_as_toggles() -> None:
+    """PanelZero J/I actions retain their APK-proven on-off semantics."""
+    controller, client = _controller(_hhc_name("0"))
+
+    assert controller.profile.massage["head_toggle"] == "J"
+    assert controller.profile.massage["foot_toggle"] == "I"
+    assert controller.supports_head_massage_toggle_control is True
+    assert controller.supports_foot_massage_toggle_control is True
+    await controller.massage_head_toggle()
+    await controller.massage_foot_toggle()
+
+    assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
+        b"$J",
+        b"$I",
     ]
 
 

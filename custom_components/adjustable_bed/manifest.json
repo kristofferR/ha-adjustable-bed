@@ -22,10 +22,19 @@
       "local_name": "*HHC*"
     },
     {
+      "local_name": "*hhc*"
+    },
+    {
       "local_name": "MOTOB*"
     },
     {
+      "local_name": "motob*"
+    },
+    {
       "local_name": "MOTOS*"
+    },
+    {
+      "local_name": "motos*"
     },
     {
       "service_uuid": "0000ffc0-0000-1000-8000-00805f9b34fb",
