@@ -714,3 +714,120 @@ class SleepysBox25Controller(BedController):
             "timer_mode": str(self._massage_timer_minutes),
             "active": self._massage_active,
         }
+
+
+def _legacy_normal(key: int) -> bytes:
+    """Build the OEM legacy CB25 32-bit normal frame."""
+    return b"\x05\x02" + int(key).to_bytes(4, "big") + b"\x00"
+
+
+def _legacy_extended(subcommand: int, value: int, value2: int = 0) -> bytes:
+    """Build the OEM legacy CB25 extended-value frame."""
+    return bytes([0x04, 0xE0, subcommand, value, value2, 0x00])
+
+
+_LEGACY_NORMAL_BY_STAR_KEY: dict[tuple[int, int], bytes] = {
+    # Motors and STOP.
+    (0x30, 0x00): _legacy_normal(0x00000001),
+    (0x30, 0x01): _legacy_normal(0x00000002),
+    (0x30, 0x02): _legacy_normal(0x00000004),
+    (0x30, 0x03): _legacy_normal(0x00000008),
+    (0x30, 0x06): _legacy_normal(0x00000010),
+    (0x30, 0x07): _legacy_normal(0x00000020),
+    (0x30, 0x0A): _legacy_normal(0x00000040),
+    (0x30, 0x0B): _legacy_normal(0x00000080),
+    (0x30, 0x0F): _legacy_normal(0x00000000),
+    # Presets and memory.
+    (0x30, 0x10): _legacy_normal(0x08000000),
+    (0x30, 0x11): _legacy_normal(0x00004000),
+    (0x30, 0x13): _legacy_normal(0x00001000),
+    (0x30, 0x16): _legacy_normal(0x00008000),
+    (0x30, 0x17): _legacy_normal(0x00002000),
+    (0x30, 0x1A): _legacy_normal(0x00010000),
+    (0x30, 0x1B): _legacy_normal(0x00040000),
+    (0x30, 0x94): _legacy_normal(0x08010000),
+    (0x30, 0x95): _legacy_normal(0x08040000),
+    # Light and massage actions exposed by the Sleepy's control surface.
+    (0x30, 0x71): bytes.fromhex("08020002000000000000"),
+    (0x30, 0x73): _legacy_extended(0x01, 0x01),
+    (0x30, 0x74): _legacy_extended(0x01, 0x00),
+    (0x30, 0x5A): _legacy_normal(0x00080000),
+    (0x30, 0x6F): _legacy_normal(0x02000000),
+    (0x30, 0x52): bytes.fromhex("08020000000000080000"),
+    (0x30, 0x53): bytes.fromhex("08020000000000100000"),
+    (0x30, 0x54): bytes.fromhex("08020000000000200000"),
+    (0x30, 0x60): _legacy_normal(0x00000800),
+    (0x30, 0x61): _legacy_normal(0x00800000),
+    (0x30, 0x62): _legacy_normal(0x00000400),
+    (0x30, 0x63): _legacy_normal(0x01000000),
+    (0x40, 0x60): _legacy_normal(0x00000C00),
+    (0x40, 0x61): _legacy_normal(0x01800000),
+}
+
+
+def _translate_star_to_legacy(command: bytes) -> bytes:
+    """Translate an inherited BOX25 Star action into the proven legacy dialect."""
+    if command == Box25Commands.WAKE:
+        # Sleepy's sends this transport wake for both runtime dialects.
+        return command
+    if command == Box25Commands.QUERY_STATUS:
+        return b"\x00\xD0"
+    if len(command) == 7 and command[:4] == b"\x5A\x01\x03\x10" and command[-1] == 0xA5:
+        try:
+            return _LEGACY_NORMAL_BY_STAR_KEY[(command[4], command[5])]
+        except KeyError as err:
+            raise ValueError(
+                "No artifact-proven legacy CB25 mapping for StarCode action "
+                f"{command.hex()}"
+            ) from err
+    if len(command) == 7 and command[:3] == b"\x5A\xF0\x03" and command[-1] == 0xA5:
+        return bytes([0x03, 0xF0, command[3], command[4], 0x00])
+    if len(command) == 8 and command[:3] == b"\x5A\xE0\x04" and command[-1] == 0xA5:
+        return _legacy_extended(command[3], command[4], command[5])
+    raise ValueError(f"Unsupported StarCode frame for legacy CB25: {command.hex()}")
+
+
+class SleepysBox25LegacyController(SleepysBox25Controller):
+    """Sleepy's BOX25 runtime controller using the legacy CB25 wire dialect.
+
+    The OEM app uses this dialect when the Device Information manufacturer
+    value does not contain ``star``. Session setup and feedback parsing are
+    shared with BOX25_STAR; every outbound action is translated to the exact
+    legacy packet family recovered from the same app.
+    """
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        """Translate inherited actions and write the legacy frame without response."""
+        translated = _translate_star_to_legacy(command)
+        if self._is_cancelled(cancel_event):
+            return
+        await self._ensure_initialized(cancel_event)
+        if self._is_cancelled(cancel_event):
+            return
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid,
+            translated,
+            repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms,
+            cancel_event=cancel_event,
+            response=False,
+        )
+
+    async def _ensure_initialized(self, cancel_event: asyncio.Event | None = None) -> None:
+        """Send the common transport wake without translating it recursively."""
+        if self._initialized or self._is_cancelled(cancel_event):
+            return
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid,
+            Box25Commands.WAKE,
+            cancel_event=cancel_event,
+            response=True,
+        )
+        if not self._is_cancelled(cancel_event):
+            self._initialized = True

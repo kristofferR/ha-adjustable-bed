@@ -110,6 +110,9 @@ from .const import (
     SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
+    SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
+    SLEEPYS_BOX25_VARIANT_STAR,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -849,9 +852,42 @@ async def create_controller(
         return SleepysBox24Controller(coordinator)
 
     if bed_type == BED_TYPE_SLEEPYS_BOX25:
-        from .beds.sleepys_box25 import SleepysBox25Controller
+        from .beds.sleepys_box25 import (
+            SleepysBox25Controller,
+            SleepysBox25LegacyController,
+        )
 
-        _LOGGER.debug("Using Sleepy's BOX25 Star controller")
+        variant = protocol_variant or VARIANT_AUTO
+        normalized_name = (device_name or "").strip().casefold()
+        fixed_star_name = any(
+            normalized_name.startswith(prefix)
+            for prefix in SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES
+        )
+        manufacturer_selects_star = "star" in (ble_manufacturer or "").casefold()
+
+        if variant == SLEEPYS_BOX25_VARIANT_LEGACY:
+            use_legacy = True
+            selection_reason = "configured legacy override"
+        elif variant == SLEEPYS_BOX25_VARIANT_STAR:
+            use_legacy = False
+            selection_reason = "configured StarCode override"
+        elif fixed_star_name:
+            use_legacy = False
+            selection_reason = "fixed StarCode product name"
+        elif manufacturer_selects_star:
+            use_legacy = False
+            selection_reason = "Device Information manufacturer contains 'star'"
+        else:
+            # This is the OEM runtime fallback for missing, unreadable, empty,
+            # or non-Star 0x2A29 values. Do not infer StarCode from NUS alone.
+            use_legacy = True
+            selection_reason = "Device Information legacy fallback"
+
+        if use_legacy:
+            _LOGGER.info("Using legacy BOX25 dialect (%s)", selection_reason)
+            return SleepysBox25LegacyController(coordinator)
+
+        _LOGGER.info("Using BOX25 StarCode dialect (%s)", selection_reason)
         return SleepysBox25Controller(coordinator)
 
     if bed_type == BED_TYPE_STAR_ELEVATE:

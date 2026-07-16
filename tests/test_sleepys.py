@@ -21,6 +21,8 @@ from custom_components.adjustable_bed.beds.sleepys import (
 from custom_components.adjustable_bed.beds.sleepys_box25 import (
     Box25Commands,
     SleepysBox25Controller,
+    SleepysBox25LegacyController,
+    _translate_star_to_legacy,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
@@ -31,12 +33,18 @@ from custom_components.adjustable_bed.const import (
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_BASE_WRITE_CHAR_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX24_WRITE_CHAR_UUID,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
+    SLEEPYS_BOX25_VARIANT_STAR,
+    VARIANT_AUTO,
 )
+from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -114,6 +122,7 @@ def mock_sleepys_box25_config_entry_data() -> dict:
         CONF_HAS_MASSAGE: False,
         CONF_DISABLE_ANGLE_SENSING: False,
         CONF_PREFERRED_ADAPTER: "auto",
+        CONF_PROTOCOL_VARIANT: SLEEPYS_BOX25_VARIANT_STAR,
     }
 
 
@@ -1557,3 +1566,121 @@ class TestSleepysBox25Controller:
             await controller.read_positions()
 
         mock_write.assert_awaited_once_with(Box25Commands.QUERY_STATUS)
+
+
+class TestSleepysBox25RuntimeDialect:
+    """Tests for the APK-proven 0x2A29 StarCode/legacy runtime switch."""
+
+    @staticmethod
+    def _factory_coordinator() -> MagicMock:
+        coordinator = MagicMock()
+        coordinator.cancel_command = asyncio.Event()
+        coordinator.address = "AA:BB:CC:DD:EE:25"
+        return coordinator
+
+    @pytest.mark.parametrize(
+        ("device_name", "manufacturer", "expected_type"),
+        [
+            ("Star252201011800", "STAR", SleepysBox25Controller),
+            ("Star252201011800", "Okin", SleepysBox25LegacyController),
+            ("Star252201011800", None, SleepysBox25LegacyController),
+            # These F23/kneading identifiers are fixed StarCode classes in the
+            # recovered M1X12/M5X5/SleepSpa creator tables.
+            ("STAR254205-ABC", None, SleepysBox25Controller),
+            ("STAR255403-ABC", "Okin", SleepysBox25Controller),
+        ],
+    )
+    async def test_auto_variant_matches_device_information_runtime_branch(
+        self,
+        device_name: str,
+        manufacturer: str | None,
+        expected_type: type[SleepysBox25Controller],
+    ) -> None:
+        controller = await create_controller(
+            self._factory_coordinator(),
+            BED_TYPE_SLEEPYS_BOX25,
+            VARIANT_AUTO,
+            client=None,
+            device_name=device_name,
+            ble_manufacturer=manufacturer,
+        )
+
+        assert type(controller) is expected_type
+
+    @pytest.mark.parametrize(
+        ("variant", "expected_type"),
+        [
+            (SLEEPYS_BOX25_VARIANT_STAR, SleepysBox25Controller),
+            (SLEEPYS_BOX25_VARIANT_LEGACY, SleepysBox25LegacyController),
+        ],
+    )
+    async def test_manual_dialect_override_is_respected(
+        self,
+        variant: str,
+        expected_type: type[SleepysBox25Controller],
+    ) -> None:
+        controller = await create_controller(
+            self._factory_coordinator(),
+            BED_TYPE_SLEEPYS_BOX25,
+            variant,
+            client=None,
+            device_name="STAR254205-ABC",
+            ble_manufacturer="STAR",
+        )
+
+        assert type(controller) is expected_type
+
+    def test_box25_variants_are_available_to_config_flow(self) -> None:
+        assert get_variants_for_bed_type(BED_TYPE_SLEEPYS_BOX25) == {
+            VARIANT_AUTO: "Auto (Device Information manufacturer)",
+            SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
+            SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+        }
+
+    @pytest.mark.parametrize(
+        ("star", "legacy"),
+        [
+            (Box25Commands.HEAD_UP, "05020000000100"),
+            (Box25Commands.FOOT_DOWN, "05020000000800"),
+            (Box25Commands.LUMBAR_UP, "05020000001000"),
+            (Box25Commands.NECK_TILT_DOWN, "05020000008000"),
+            (Box25Commands.MOTOR_STOP, "05020000000000"),
+            (Box25Commands.STAR_PRESET_FLAT, "05020800000000"),
+            (Box25Commands.STAR_PRESET_TV, "05020000400000"),
+            (Box25Commands.STAR_PRESET_MEMORY_1, "05020001000000"),
+            (Box25Commands.STAR_STORE_MEMORY_2, "05020804000000"),
+            (Box25Commands.LIGHT_ON_WHITE, "04E001010000"),
+            (Box25Commands.LIGHT_OFF, "04E001000000"),
+            (Box25Commands.LIGHT_TOGGLE, "08020002000000000000"),
+            (Box25Commands.MASSAGE_TOGGLE, "05020008000000"),
+            (Box25Commands.MASSAGE_EXIT, "05020200000000"),
+            (Box25Commands.MASSAGE_WAVE2, "08020000000000100000"),
+            (Box25Commands.MASSAGE_INTENSITY_UP, "050200000C0000"),
+            (Box25Commands.MASSAGE_HEAD_DOWN, "05020080000000"),
+            (Box25Commands.QUERY_STATUS, "00D0"),
+            (bytes.fromhex("5AF003023900A5"), "03F0023900"),
+            (bytes.fromhex("5AE00406080800A5"), "04E006080800"),
+        ],
+    )
+    def test_exact_legacy_command_translation(self, star: bytes, legacy: str) -> None:
+        assert _translate_star_to_legacy(star) == bytes.fromhex(legacy)
+
+    async def test_legacy_writer_preserves_repeat_timing_and_write_mode(self) -> None:
+        controller = SleepysBox25LegacyController(self._factory_coordinator())
+        controller._initialized = True
+
+        with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as write:
+            await controller.write_command(
+                Box25Commands.HEAD_UP,
+                repeat_count=7,
+                repeat_delay_ms=100,
+            )
+
+        write.assert_awaited_once_with(
+            NORDIC_UART_WRITE_CHAR_UUID,
+            bytes.fromhex("05020000000100"),
+            repeat_count=7,
+            repeat_delay_ms=100,
+            cancel_event=None,
+            response=False,
+        )

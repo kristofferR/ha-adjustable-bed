@@ -27,11 +27,11 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 |---------|-------------|----------|--------|------|--------|---------|-----------|--------------|
 | BOX15 | 9 bytes | Yes | ✅ | ❌ | ❌ | ❌ | ❌ | FFE5 |
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
-| BOX25 Star | 4/7/20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
+| BOX25 (StarCode or legacy) | 2-20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
 **Protocol Selection:**
 
-- If your device name starts with **"Star"** and advertises Nordic UART, use the BOX25 Star variant
+- If your device name starts with **"Star25"** and advertises Nordic UART, use BOX25. Auto mode reads Device Information `2A29`: text containing `star` selects StarCode; any other/missing value selects legacy CB25. A manual dialect override is available.
 - If your bed has **lumbar control** (but no Star name), use the BOX15 variant
 - If your bed has **OKIN 64-bit service UUID** (62741523-...), use BOX24
 - Octo Star2 beds also use `Star2` names, but they advertise the Octo Star2 UUID and are detected as Octo first
@@ -144,7 +144,7 @@ E6 FE 2C 02 00 00 00 00 [checksum]
 A5 5A 00 00 00 40 02
 ```
 
-### BOX25 Star Protocol (StarCode, Nordic UART)
+### BOX25 Protocol (Nordic UART)
 
 **Service UUID:** `6E400001-B5A3-F393-E0A9-E50E24DCCA9E` (Nordic UART)
 
@@ -158,8 +158,13 @@ A5 5A 00 00 00 40 02
 
 **Integration direct-position surface:** `head` and `feet` sliders/services. The protocol also reports lumbar position and accepts direct lumbar position commands, but neck tilt does not currently have a protocol-backed position zone.
 
-The Sleepy's app classifies `Star252201...` devices as `BOX25_STAR`. This is
-important because the app also contains a different legacy `BOX25` protocol.
+The Sleepy's app first classifies `Star25...` as BOX25, reads manufacturer name
+characteristic `2A29`, then promotes it to `BOX25_STAR` only when the decoded
+text starts with `star`. The M1X12/M5X5 implementations corroborate the same
+runtime split using a case-insensitive `contains("star")` test. Fixed F23 and
+kneading product identifiers (`STAR254203/4205/4255/4256/4257`,
+`STAR255401/5402/5403`) are StarCode-only.
+
 `BOX25_STAR` uses StarCode for every motor, preset, light, and massage action:
 
 ```text
@@ -255,6 +260,30 @@ The 10/20/30 minute timer maps to values 1/2/3:
 5A E0 04 07 [1-3] 00 00 A5
 ```
 
+#### Legacy CB25 Runtime Dialect
+
+When `2A29` is missing, unreadable, empty, or does not contain `star`, Auto mode
+uses the legacy packet builders recovered from the same reachable BOX25 class:
+
+```text
+normal:   05 02 [32-bit key, big-endian] 00
+extended: 04 E0 [subcommand] [value] [value2] 00
+position: 03 F0 [zone] [position] 00
+query:    00 B0 (massage/light), 00 D0 (motor position)
+```
+
+Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
+and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,
+`00001000` zero-G, `00008000` anti-snore, `00002000` lounge,
+`00010000` memory 1, and `00040000` memory 2. The integration preserves the
+same three-repeat plus STOP recall sequence and the proven long-press memory
+programming behavior.
+
+Legacy light on/off uses `04 E0 01 01/00 00 00`; toggle and wave modes use the
+10-byte `08 02` family. Direct brightness, combined massage intensity, and the
+timer use the same subcommands as StarCode without the `5A ... A5` wrapper.
+Feedback uses the shared BOX25 parser below.
+
 #### Notification Parsing
 
 The `BOX25_STAR` bed pushes a 20-byte status packet via Nordic UART RX:
@@ -293,7 +322,7 @@ From app disassembly:
 
 Sleepy's Elite beds are auto-detected by name plus BLE services:
 
-- Device names starting with "star" (case-insensitive) plus Nordic UART → BOX25 Star
+- Device names starting with `star25` (case-insensitive) plus Nordic UART → BOX25, then `2A29` selects StarCode or legacy packets at connection time
 - `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](star-elevate.md),
   never BOX25
 - Device names starting with "star" without Nordic UART are treated as a low-confidence BOX25 match because Octo Star2 uses similar names

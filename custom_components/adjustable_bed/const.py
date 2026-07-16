@@ -841,6 +841,19 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Also used by Sealy Posturematic CB35 (com.okin.sealy)
 SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
 
+# Fixed F23/kneading product names are StarCode-only; other STAR25 names use
+# the runtime Device Information selector declared with the protocol variants.
+SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES: Final = (
+    "star254203",
+    "star254205",
+    "star254255",
+    "star254256",
+    "star254257",
+    "star255401",
+    "star255402",
+    "star255403",
+)
+
 # Separate two-actuator StarCode accessory used by M1X12/M5X5 applications.
 STAR_ELEVATE_NAME_PATTERNS: Final = ("elevate",)
 
@@ -967,6 +980,17 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
+
+# STAR25 controllers select their packet dialect from Device Information 0x2A29.
+# StarCode is selected when the manufacturer text contains "star"; missing,
+# unreadable, empty, or other values select the legacy CB25 packet family.
+SLEEPYS_BOX25_VARIANT_STAR: Final = "box25_star"
+SLEEPYS_BOX25_VARIANT_LEGACY: Final = "box25_legacy"
+SLEEPYS_BOX25_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Device Information manufacturer)",
+    SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
+    SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+}
 
 # Sleep Number side selection variants
 SLEEP_NUMBER_VARIANT_LEFT: Final = "left"
@@ -1783,6 +1807,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
+    SLEEPYS_BOX25_VARIANT_STAR,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
     # SBI/Q-Plus variants
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
