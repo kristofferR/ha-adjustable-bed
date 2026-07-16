@@ -625,7 +625,9 @@ async def create_controller(
             return KeesonController(coordinator, variant="serta")
         elif keeson_variant == KEESON_VARIANT_PURPLE:
             _LOGGER.debug("Using Purple Keeson variant")
-            return KeesonController(coordinator, variant="purple")
+            return KeesonController(
+                coordinator, variant="purple", device_name=device_name
+            )
         elif keeson_variant == KEESON_VARIANT_SINO:
             _LOGGER.debug("Using Sino Keeson variant (big-endian)")
             return KeesonController(
@@ -636,7 +638,9 @@ async def create_controller(
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")
-            return KeesonController(coordinator, variant="base")
+            return KeesonController(
+                coordinator, variant="base", device_name=device_name
+            )
 
     if bed_type == BED_TYPE_OKIN_FFE:
         from .beds.keeson import KeesonController

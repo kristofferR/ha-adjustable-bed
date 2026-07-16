@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_JSON_WRITE_CHAR_UUID,
+    KEESON_KSBT_CHAR_UUID,
     KEESON_VARIANT_JSON,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -995,6 +996,238 @@ class TestKeesonPositionNotifications:
         assert coordinator.controller._notify_callback is callback
 
 
+class TestPurpleSmartBaseProtocol:
+    """Test current Purple Premium and Premium Plus protocol variants."""
+
+    async def test_premium_and_plus_build_distinct_packets(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Premium uses checksummed P1 and Plus uses zero-suffixed P2."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        premium = KeesonController(
+            coordinator, variant="purple", device_name="base-i5.123456"
+        )
+        plus = KeesonController(
+            coordinator, variant="purple", device_name="KSBT04C123456789"
+        )
+
+        assert premium._build_command(KeesonCommands.MOTOR_HEAD_UP) == bytes.fromhex(
+            "e5fe160100000005"
+        )
+        assert plus._build_command(KeesonCommands.MOTOR_HEAD_UP) == bytes.fromhex(
+            "04020000000100"
+        )
+        assert plus.control_characteristic_uuid == KEESON_KSBT_CHAR_UUID
+
+    async def test_plus_capabilities_and_memory_map(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Purple Plus exposes three proven slots and no lounge action."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        premium = KeesonController(
+            coordinator, variant="purple", device_name="base-i5.123456"
+        )
+        plus = KeesonController(
+            coordinator, variant="purple", device_name="KSBT04C123456789"
+        )
+        plus.write_command = AsyncMock()
+
+        assert premium.memory_slot_count == 2
+        assert premium.supports_preset_lounge
+        assert plus.memory_slot_count == 3
+        assert not plus.supports_preset_lounge
+
+        for memory_num in (1, 2, 3):
+            await plus.preset_memory(memory_num)
+
+        assert [call.args[0] for call in plus.write_command.await_args_list] == [
+            bytes.fromhex("04020001000000"),
+            bytes.fromhex("04020000200000"),
+            bytes.fromhex("04020000400000"),
+        ]
+
+    @pytest.mark.parametrize("device_name", ["base-i5.123456", "KSBT04C123456789"])
+    async def test_purple_release_uses_p2_zero_frame(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        device_name: str,
+    ):
+        """Test both Purple surfaces release with the artifact's P2 STOP."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="purple", device_name=device_name
+        )
+        controller.write_command = AsyncMock()
+
+        await controller.stop_all()
+
+        assert controller.write_command.await_args.args == (
+            bytes.fromhex("04020000000000"),
+        )
+        cancel_event = controller.write_command.await_args.kwargs["cancel_event"]
+        assert isinstance(cancel_event, asyncio.Event)
+        assert not cancel_event.is_set()
+
+    async def test_plus_program_memory_matches_send_memory_sequence(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test Plus memory 2 save performs 26 delayed P2 writes."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator.cancel_command.clear()
+        controller = KeesonController(
+            coordinator, variant="purple", device_name="KSBT04C123456789"
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        await controller.program_memory(2)
+
+        assert controller.write_command.await_count == 26
+        assert all(
+            call.args == (bytes.fromhex("04020000200000"),)
+            for call in controller.write_command.await_args_list
+        )
+        assert [call.args for call in sleep.await_args_list] == [(0.2,)] * 26
+
+
+class TestSleepHarmonyProtocol:
+    """Test current Sleep Harmony protocol routing and release behavior."""
+
+    async def test_base_i5_uses_side_zero_p2_packet(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test explicit Sleep Harmony base-i5 uses E6 plus side zero."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="ksbt04c", device_name="base-i5.123456"
+        )
+
+        assert controller._build_command(KeesonCommands.MOTOR_HEAD_UP) == bytes.fromhex(
+            "e6fe16010000000004"
+        )
+        assert controller._build_command(0) == bytes.fromhex(
+            "e6fe16000000000005"
+        )
+        assert controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
+
+    async def test_motor_hold_and_delayed_release_match_remote(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test Sleep Harmony repeats at 300 ms and stops after 200 ms."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="ksbt04c", device_name="KSBT04C123456789"
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        await controller.move_head_up()
+
+        calls = controller.write_command.await_args_list
+        assert calls[0].args == (bytes.fromhex("040200000001f8"),)
+        assert calls[0].kwargs == {
+            "repeat_count": 4,
+            "repeat_delay_ms": 300,
+        }
+        assert calls[1].args == (bytes.fromhex("040200000000f9"),)
+        assert isinstance(calls[1].kwargs["cancel_event"], asyncio.Event)
+        sleep.assert_awaited_once_with(0.2)
+
+    async def test_memory_three_and_massage_off_append_delayed_stop(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test recovered M3 and massage-off actions each release with STOP."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="ksbt04c", device_name="KSBT04C123456789"
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        assert controller.supports_massage_off_control
+        await controller.preset_memory(3)
+        await controller.massage_off()
+
+        assert [call.args[0] for call in controller.write_command.await_args_list] == [
+            bytes.fromhex("04020000800079"),
+            bytes.fromhex("040200000000f9"),
+            bytes.fromhex("040202000000f7"),
+            bytes.fromhex("040200000000f9"),
+        ]
+        assert [call.args for call in sleep.await_args_list] == [(0.2,), (0.2,)]
+
+    async def test_stop_all_sends_immediate_sleep_harmony_stop(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test the safety stop bypasses the UI release delay."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="ksbt04c", device_name="KSBT04C123456789"
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        await controller.stop_all()
+
+        controller.write_command.assert_awaited_once()
+        assert controller.write_command.await_args.args == (
+            bytes.fromhex("040200000000f9"),
+        )
+        sleep.assert_not_awaited()
+
+
 class TestKsbt03cMotorLayout:
     """Test KSBT03C (Ergomotion RIO 5.0) motor layout handling (issue #408)."""
 
@@ -1300,7 +1533,7 @@ class TestKsbt03cMotorLayout:
         [
             ("ksbt", 1),
             ("ksbt_cr", 1),
-            ("ksbt04c", 2),
+            ("ksbt04c", 1),
         ],
     )
     def test_ksbt_single_shot_count_matches_oem_app(
@@ -1310,7 +1543,7 @@ class TestKsbt03cMotorLayout:
         variant: str,
         expected: int,
     ):
-        """Test only Sleep Harmony's KSBT04C one-shots are duplicated."""
+        """Test OEM app one-shots are sent once before any release sequence."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         controller = KeesonController(coordinator, variant=variant)
 
@@ -1334,7 +1567,7 @@ class TestKsbt03cMotorLayout:
 class TestKeesonMassageOffGating:
     """Test massage-off capability gating (issue #408)."""
 
-    @pytest.mark.parametrize("variant", ["base", "ksbt", "ksbt04c", "ergomotion"])
+    @pytest.mark.parametrize("variant", ["base", "ksbt", "ergomotion"])
     async def test_non_sino_variants_hide_massage_off(
         self,
         hass: HomeAssistant,
@@ -1385,15 +1618,18 @@ class TestKsbtMemoryPresets:
 
         assert controller.memory_slot_count == slots
 
-    @pytest.mark.parametrize("variant", ["ksbt", "ksbt04c"])
     @pytest.mark.parametrize(
-        "memory_num,expected_value",
+        "variant,memory_num,expected_value",
         [
             # Literal protocol values from the Ergomotion Sync APK, pinned so a
             # bad edit to the KeesonCommands constants cannot self-verify.
-            (1, 0x2000),  # Read button
-            (2, 0x4000),  # TV button
-            (3, 0x10000),  # M button
+            ("ksbt", 1, 0x2000),  # Read button
+            ("ksbt", 2, 0x4000),  # TV button
+            ("ksbt", 3, 0x10000),  # M button
+            # Sleep Harmony labels Reading/TV/Snore as M1/M2/M3.
+            ("ksbt04c", 1, 0x2000),
+            ("ksbt04c", 2, 0x4000),
+            ("ksbt04c", 3, 0x8000),
         ],
     )
     async def test_ksbt_preset_memory_mapping(
@@ -1406,7 +1642,7 @@ class TestKsbtMemoryPresets:
         memory_num: int,
         expected_value: int,
     ):
-        """Test KSBT/KSBT04C memory slots map to the Read/TV/M remote buttons."""
+        """Test direct KSBT and Sleep Harmony use their proven memory labels."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(coordinator, variant=variant)

@@ -1027,13 +1027,13 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
     KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
-    KEESON_VARIANT_KSBT04C: "KSBT04C (7-byte with checksum, Beautyrest Baselogic)",
+    KEESON_VARIANT_KSBT04C: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
     KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
-    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base",
+    KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
 # Leggett & Platt variants

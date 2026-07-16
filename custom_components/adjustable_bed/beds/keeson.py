@@ -75,11 +75,21 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
 
 _THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
 
-# The direct six-byte P2 protocol has no dedicated release/STOP frame. OEM apps
-# stop refreshing the held key and request status three times at 300 ms intervals.
+# The direct six-byte P2 protocol has no dedicated release/STOP frame. Current
+# SFD apps stop refreshing the held key and request status three times at 300 ms
+# intervals. Member's Mark also stops by ceasing refreshes and keeps issuing the
+# same status query on its independent 400 ms timer.
 _KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
 _KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
 _KSBT_RELEASE_QUERY_COUNT = 3
+
+_PURPLE_PLUS_NAME_PREFIX = "ksbt04c"
+_PURPLE_RELEASE_COMMAND = bytes.fromhex("04020000000000")
+_PURPLE_MEMORY_PROGRAM_COUNT = 26
+_PURPLE_MEMORY_PROGRAM_DELAY_SECONDS = 0.2
+
+_SLEEP_HARMONY_BASE_I5_PREFIX = "base-i5."
+_SLEEP_HARMONY_RELEASE_DELAY_SECONDS = 0.2
 
 
 def is_ksbt03c_name(name: str | None) -> bool:
@@ -239,10 +249,24 @@ class KeesonController(BedController):
         # back to the configured name (defaults to the BLE name) when this
         # connection didn't surface a device name, so a stale or user-edited
         # configured name can never override the real hardware name.
-        if device_name:
-            self._is_ksbt03c = is_ksbt03c_name(device_name)
-        else:
-            self._is_ksbt03c = is_ksbt03c_name(getattr(coordinator, "name", None))
+        resolved_device_name = device_name or getattr(coordinator, "name", None)
+        self._is_ksbt03c = (
+            variant == KEESON_VARIANT_KSBT
+            and is_ksbt03c_name(resolved_device_name)
+        )
+        self._is_sleep_harmony_base_i5 = (
+            variant == KEESON_VARIANT_KSBT04C
+            and (resolved_device_name or "")
+            .strip()
+            .lower()
+            .startswith(_SLEEP_HARMONY_BASE_I5_PREFIX)
+        )
+        self._is_purple_plus = variant == KEESON_VARIANT_PURPLE and (
+            (resolved_device_name or "").strip().lower().startswith(
+                _PURPLE_PLUS_NAME_PREFIX
+            )
+            or self._has_ksbt_service()
+        )
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
         self._write_with_response = True
@@ -262,6 +286,10 @@ class KeesonController(BedController):
         # Determine the characteristic UUID
         if char_uuid:
             self._char_uuid = char_uuid
+        elif self._is_sleep_harmony_base_i5:
+            self._char_uuid = self._detect_characteristic_uuid()
+        elif self._is_purple_plus:
+            self._char_uuid = self._detect_ksbt_characteristic_uuid()
         elif variant == KEESON_VARIANT_JSON:
             self._char_uuid = self._detect_json_characteristic_uuid()
         elif variant in {"ksbt", KEESON_VARIANT_KSBT_CR, KEESON_VARIANT_KSBT04C}:
@@ -279,9 +307,22 @@ class KeesonController(BedController):
         )
 
         _LOGGER.debug(
-            "KeesonController initialized (variant: %s, char: %s)",
+            "KeesonController initialized (variant: %s, purple_plus: %s, "
+            "sleep_harmony_base_i5: %s, char: %s)",
             variant,
+            self._is_purple_plus,
+            self._is_sleep_harmony_base_i5,
             self._char_uuid,
+        )
+
+    def _has_ksbt_service(self) -> bool:
+        """Return whether the connected device exposes Nordic UART service."""
+        client = self.client
+        if client is None or client.services is None:
+            return False
+        return any(
+            str(service.uuid).lower() == KEESON_KSBT_SERVICE_UUID.lower()
+            for service in client.services
         )
 
     def _detect_characteristic_uuid(self) -> str:
@@ -436,10 +477,10 @@ class KeesonController(BedController):
     def _single_shot_count(self) -> int:
         """Repeat count for single-shot commands (massage, presets, lights).
 
-        Sleep Harmony sends KSBT04C one-shot commands twice. Ergomotion Sync,
-        Adjustable Lite, and SomosBeds send their KSBT/KSBT03CR one-shots once.
+        Current OEM apps send UI one-shot commands once. Sleep Harmony follows
+        each command with a delayed STOP rather than duplicating the command.
         """
-        return 2 if self._variant == KEESON_VARIANT_KSBT04C else 1
+        return 1
 
     # Capability properties
     @property
@@ -452,7 +493,8 @@ class KeesonController(BedController):
         return (
             self._is_ksbt
             or self._is_json_variant
-            or self._variant in {"ergomotion", KEESON_VARIANT_PURPLE}
+            or self._variant == "ergomotion"
+            or (self._variant == KEESON_VARIANT_PURPLE and not self._is_purple_plus)
         )
 
     @property
@@ -497,7 +539,7 @@ class KeesonController(BedController):
         if self._is_ksbt:
             return 2  # KSBT03CR: Memory 1 and Memory 2 only (unverified beyond that)
         elif self._variant == KEESON_VARIANT_PURPLE:
-            return 2  # Purple Premium has 2. Plus model bed supports 3, but we don't know what path it uses
+            return 3 if self._is_purple_plus else 2
         elif self._variant == "ergomotion":
             return 4  # Ergomotion may support all 4
         else:
@@ -657,12 +699,12 @@ class KeesonController(BedController):
 
     @property
     def supports_massage_off_control(self) -> bool:
-        """Return True only for Sino, the sole variant with a real off command.
+        """Return True for variants with a verified massage-off command.
 
-        Other Keeson variants (KSBT, BaseI4/I5, Ergomotion) can only step
-        massage intensity; massage_off() would raise, so hide the button.
+        Sino sets both zones to intensity zero. Sleep Harmony KSBT04C uses the
+        dedicated 0x02000000 all-zone STOP command.
         """
-        return self._variant == KEESON_VARIANT_SINO
+        return self._variant in {KEESON_VARIANT_SINO, KEESON_VARIANT_KSBT04C}
 
     @property
     def supports_massage_intensity_control(self) -> bool:
@@ -745,6 +787,15 @@ class KeesonController(BedController):
             if command_value == 0:
                 return self._build_json_command(command_value, ctrm=0, km=1, keykt=0)
             return self._build_json_command(command_value, ctrm=1, km=1, keykt=0)
+        if self._is_sleep_harmony_base_i5:
+            # Sleep Harmony base-i5: E6/FE/16 + command_le32 + side 00 + checksum.
+            int_bytes = int_to_bytes(command_value)
+            int_bytes.reverse()
+            data = [0xE6, 0xFE, 0x16] + int_bytes + [0x00]
+            return bytes(data + [(~sum(data)) & 0xFF])
+        if self._is_purple_plus:
+            # Purple Premium Plus P2: [0x04, 0x02, command_be32, 0x00].
+            return bytes([0x04, 0x02] + int_to_bytes(command_value) + [0x00])
         if self._variant == "ksbt":
             # KSBT: [0x04, 0x02, ...int_to_bytes(command)]
             return bytes([0x04, 0x02] + int_to_bytes(command_value))
@@ -1044,15 +1095,33 @@ class KeesonController(BedController):
             except Exception:
                 _LOGGER.debug("Failed to release motor command during cleanup")
 
-    async def _release_motion(self) -> None:
+    async def _release_motion(self, *, delay: bool = True) -> None:
         """Send the protocol-specific motor release sequence.
 
         Direct six-byte KSBT/P2 remotes do not transmit a zero-key frame on
-        release. They stop the 100 ms key refresh and send status query ``00 B0``
-        at +300, +600, and +900 ms. Other variants retain their explicit zero
-        frame, whose packet format is specific to that protocol family.
+        release. Current SFD apps stop the 100 ms key refresh and send status
+        query ``00 B0`` at +300, +600, and +900 ms. The Member's Mark app also
+        stops by ceasing refreshes and continues its independent ``00 B0`` query
+        timer. Other variants retain their explicit zero frame, whose packet
+        format is specific to that protocol family.
         """
         cancel_event = asyncio.Event()
+        if self._variant == KEESON_VARIANT_PURPLE:
+            await self.write_command(
+                _PURPLE_RELEASE_COMMAND,
+                cancel_event=cancel_event,
+            )
+            return
+
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            if delay:
+                await asyncio.sleep(_SLEEP_HARMONY_RELEASE_DELAY_SECONDS)
+            await self.write_command(
+                self._build_command(0),
+                cancel_event=cancel_event,
+            )
+            return
+
         if self._variant == KEESON_VARIANT_KSBT:
             for _ in range(_KSBT_RELEASE_QUERY_COUNT):
                 await asyncio.sleep(_KSBT_RELEASE_QUERY_DELAY_SECONDS)
@@ -1066,6 +1135,12 @@ class KeesonController(BedController):
             self._build_command(0),
             cancel_event=cancel_event,
         )
+
+    async def _write_single_shot(self, command: bytes) -> None:
+        """Write a one-shot action and perform any app-specific release."""
+        await self.write_command(command, repeat_count=self._single_shot_count)
+        if self._variant == KEESON_VARIANT_KSBT04C:
+            await self._release_motion()
 
     async def _write_json_motion_command(
         self,
@@ -1147,7 +1222,7 @@ class KeesonController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         self._motor_state = {}
-        await self._release_motion()
+        await self._release_motion(delay=False)
 
     # Tilt motor control
     async def move_tilt_up(self) -> None:
@@ -1179,21 +1254,29 @@ class KeesonController(BedController):
     async def preset_flat(self) -> None:
         """Go to flat position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_FLAT), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(BetterLivingCommands.PRESET_FLAT)
+            )
         else:
-            await self.write_command(self._build_command(KeesonCommands.PRESET_FLAT), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.PRESET_FLAT)
+            )
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset.
 
         Note: Command values vary by protocol variant:
-        - KSBT/KSBT04C (Ergomotion Sync APK): Memory 1 (0x2000) = Read button,
-          Memory 2 (0x4000) = TV button, Memory 3 (0x10000) = M button
+        - KSBT: Memory 1 (0x2000) = Read button, Memory 2 (0x4000) = TV
+          button, Memory 3 (0x10000) = M button
+        - Sleep Harmony KSBT04C: Memory 1/2/3 labels send Read (0x2000),
+          TV (0x4000), and Snore (0x8000)
         - BaseI4/I5: Memory 3 (0x8000) is the only confirmed memory preset
         - Memory 3 (0x8000) on KSBT is actually anti-snore, not memory
         - BetterLiving: Memory 1 (0x01000008), Memory 2 (0x01000009)
         - CB1322: Memory 1 (0x00010000), Memory 2 (0x00040000)
-        - Purple: Memory 1 (0x00010000), Memory 2 (0x00004000)
+        - Purple Premium: Memory 1 (0x00010000), Memory 2 (0x00004000)
+        - Purple Premium Plus: Memory 1 (0x00010000), Memory 2 (0x00002000),
+          Memory 3 (0x00004000)
         """
         if self._betterliving_presets:
             commands = {
@@ -1201,7 +1284,7 @@ class KeesonController(BedController):
                 2: BetterLivingCommands.PRESET_MEMORY_2,
             }
             if command := commands.get(memory_num):
-                await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
+                await self._write_single_shot(self._build_command(command))
             else:
                 _LOGGER.warning(
                     "BetterLiving memory %d not supported (valid: %s)",
@@ -1216,7 +1299,7 @@ class KeesonController(BedController):
                 2: CB1322Commands.PRESET_MEMORY_2,
             }
             if command := commands.get(memory_num):
-                await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
+                await self._write_single_shot(self._build_command(command))
             else:
                 _LOGGER.warning(
                     "CB1322 memory %d not supported (valid: %s)",
@@ -1225,18 +1308,47 @@ class KeesonController(BedController):
                 )
             return
 
-        # KSBT/KSBT04C remotes (Ergomotion Sync APK): memory slot 3 is the
-        # "M" button (0x10000), not 0x8000 which triggers anti-snore there.
-        if self._variant in {"ksbt", KEESON_VARIANT_KSBT04C}:
-            commands = {
-                1: KeesonCommands.PRESET_MEMORY_1,
-                2: KeesonCommands.PRESET_MEMORY_2,
-                3: KeesonCommands.PRESET_MEMORY_4,
-            }
+        if self._variant == KEESON_VARIANT_PURPLE:
+            commands = (
+                {
+                    1: KeesonCommands.PRESET_MEMORY_4,
+                    2: KeesonCommands.PRESET_MEMORY_1,
+                    3: KeesonCommands.PRESET_MEMORY_2,
+                }
+                if self._is_purple_plus
+                else {
+                    1: KeesonCommands.PRESET_MEMORY_4,
+                    2: KeesonCommands.PRESET_MEMORY_2,
+                }
+            )
             if command := commands.get(memory_num):
-                await self.write_command(
-                    self._build_command(command), repeat_count=self._single_shot_count
+                await self._write_single_shot(self._build_command(command))
+            else:
+                _LOGGER.warning(
+                    "Purple memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
                 )
+            return
+
+        if self._variant in {"ksbt", KEESON_VARIANT_KSBT04C}:
+            # Sleep Harmony labels Reading/TV/Snore as M1/M2/M3. Direct
+            # six-byte KSBT instead maps its third M button to 0x10000.
+            commands = (
+                {
+                    1: KeesonCommands.PRESET_MEMORY_1,
+                    2: KeesonCommands.PRESET_MEMORY_2,
+                    3: KeesonCommands.PRESET_ANTI_SNORE,
+                }
+                if self._variant == KEESON_VARIANT_KSBT04C
+                else {
+                    1: KeesonCommands.PRESET_MEMORY_1,
+                    2: KeesonCommands.PRESET_MEMORY_2,
+                    3: KeesonCommands.PRESET_MEMORY_4,
+                }
+            )
+            if command := commands.get(memory_num):
+                await self._write_single_shot(self._build_command(command))
             else:
                 _LOGGER.warning(
                     "KSBT memory %d not supported (valid: %s)",
@@ -1257,10 +1369,6 @@ class KeesonController(BedController):
                 memory_num,
             )
 
-        #Purple treats Memory 4 as memory 1
-        if self._variant == KEESON_VARIANT_PURPLE and memory_num == 1:
-            memory_num = 4
-
         commands = {
             1: KeesonCommands.PRESET_MEMORY_1,
             2: KeesonCommands.PRESET_MEMORY_2,
@@ -1268,14 +1376,15 @@ class KeesonController(BedController):
             4: KeesonCommands.PRESET_MEMORY_4,
         }
         if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command), repeat_count=self._single_shot_count)
+            await self._write_single_shot(self._build_command(command))
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory.
 
         BetterLiving BED_DEFAULT has dedicated save commands.
-        CB1322 and Purple emulates save by sending the recall command repeated 30x at 100ms
-        (simulating a long press on the physical remote).
+        CB1322 emulates save by sending the recall command repeated 30x at 100ms.
+        Purple's dedicated send-memory flow performs 26 writes, each after a
+        200ms delay (approximately 5.2 seconds total).
         Other Keeson variants don't support programming.
         """
         if self._betterliving_presets:
@@ -1293,17 +1402,42 @@ class KeesonController(BedController):
                 )
             return
 
-        if self._cb1322_presets or self._variant == KEESON_VARIANT_PURPLE:
-            if self._variant == KEESON_VARIANT_PURPLE:
-                commands = {
+        if self._variant == KEESON_VARIANT_PURPLE:
+            commands = (
+                {
+                    1: KeesonCommands.PRESET_MEMORY_4,
+                    2: KeesonCommands.PRESET_MEMORY_1,
+                    3: KeesonCommands.PRESET_MEMORY_2,
+                }
+                if self._is_purple_plus
+                else {
                     1: KeesonCommands.PRESET_MEMORY_4,
                     2: KeesonCommands.PRESET_MEMORY_2,
                 }
+            )
+            if command := commands.get(memory_num):
+                cancel_event = self._coordinator.cancel_command
+                for _ in range(_PURPLE_MEMORY_PROGRAM_COUNT):
+                    if cancel_event.is_set():
+                        return
+                    await asyncio.sleep(_PURPLE_MEMORY_PROGRAM_DELAY_SECONDS)
+                    await self.write_command(
+                        self._build_command(command),
+                        cancel_event=cancel_event,
+                    )
             else:
-                commands = {
-                    1: CB1322Commands.PRESET_MEMORY_1,
-                    2: CB1322Commands.PRESET_MEMORY_2,
-                }
+                _LOGGER.warning(
+                    "Purple save memory %d not supported (valid: %s)",
+                    memory_num,
+                    sorted(commands.keys()),
+                )
+            return
+
+        if self._cb1322_presets:
+            commands = {
+                1: CB1322Commands.PRESET_MEMORY_1,
+                2: CB1322Commands.PRESET_MEMORY_2,
+            }
             if command := commands.get(memory_num):
                 await self.write_command(
                     self._build_command(command),
@@ -1312,8 +1446,7 @@ class KeesonController(BedController):
                 )
             else:
                 _LOGGER.warning(
-                    "%s save memory %d not supported (valid: %s)",
-                    self._variant,
+                    "CB1322 save memory %d not supported (valid: %s)",
                     memory_num,
                     sorted(commands.keys()),
                 )
@@ -1326,32 +1459,43 @@ class KeesonController(BedController):
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(BetterLivingCommands.PRESET_ZERO_G)
+            )
         else:
-            await self.write_command(self._build_command(KeesonCommands.PRESET_ZERO_G), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.PRESET_ZERO_G)
+            )
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (KSBT 'Read' button / Memory 1, Lounge on Purple)."""
         if (
             not self._is_ksbt
             and not self._is_json_variant
-            and self._variant not in {"ergomotion", KEESON_VARIANT_PURPLE}
+            and self._variant != "ergomotion"
+            and (
+                self._variant != KEESON_VARIANT_PURPLE or self._is_purple_plus
+            )
         ):
             _LOGGER.warning("Lounge preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_LOUNGE), repeat_count=self._single_shot_count)
+        await self._write_single_shot(
+            self._build_command(KeesonCommands.PRESET_LOUNGE)
+        )
 
     async def preset_tv(self) -> None:
         """Go to TV position (KSBT/Ergomotion only)."""
         if self._variant in ["base",KEESON_VARIANT_PURPLE]:
             _LOGGER.warning("TV preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_TV), repeat_count=self._single_shot_count)
+        await self._write_single_shot(self._build_command(KeesonCommands.PRESET_TV))
 
     async def preset_anti_snore(self) -> None:
         """Go to anti-snore position."""
         if self._betterliving_presets:
-            await self.write_command(self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(BetterLivingCommands.PRESET_ANTI_SNORE)
+            )
             return
         if (
             not self._is_ksbt
@@ -1360,7 +1504,9 @@ class KeesonController(BedController):
         ):
             _LOGGER.warning("Anti-snore preset is not available on %s beds", self._variant)
             return
-        await self.write_command(self._build_command(KeesonCommands.PRESET_ANTI_SNORE), repeat_count=self._single_shot_count)
+        await self._write_single_shot(
+            self._build_command(KeesonCommands.PRESET_ANTI_SNORE)
+        )
 
     # Light methods
     async def lights_on(self) -> None:
@@ -1417,7 +1563,9 @@ class KeesonController(BedController):
                     repeat_count=self._single_shot_count,
                 )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_STEP), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_STEP)
+            )
 
     async def massage_off(self) -> None:
         """Turn off all massage."""
@@ -1427,6 +1575,10 @@ class KeesonController(BedController):
             await self.write_command(self._build_command(SinoCommands.MASSAGE_FOOT_INTENSITY_BASE), repeat_count=self._single_shot_count)
             self._head_massage = 0
             self._foot_massage = 0
+        elif self._variant == KEESON_VARIANT_KSBT04C:
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_ALL_STOP)
+            )
         else:
             # Standard Keeson doesn't have a dedicated off command
             await super().massage_off()
@@ -1442,7 +1594,9 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_UP), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_UP)
+            )
 
     async def massage_head_down(self) -> None:
         """Decrease head massage intensity."""
@@ -1455,7 +1609,9 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_DOWN)
+            )
 
     async def massage_foot_up(self) -> None:
         """Increase foot massage intensity."""
@@ -1468,7 +1624,9 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_UP), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_UP)
+            )
 
     async def massage_foot_down(self) -> None:
         """Decrease foot massage intensity."""
@@ -1481,7 +1639,9 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_DOWN)
+            )
 
     async def massage_intensity_up(self) -> None:
         """Increase all massage intensity."""
@@ -1550,7 +1710,9 @@ class KeesonController(BedController):
                 repeat_count=self._single_shot_count,
             )
         else:
-            await self.write_command(self._build_command(KeesonCommands.MASSAGE_TIMER_STEP), repeat_count=self._single_shot_count)
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_TIMER_STEP)
+            )
 
     async def massage_head_toggle(self) -> None:
         """Toggle head massage zone on/off."""
@@ -1569,9 +1731,8 @@ class KeesonController(BedController):
                 )
         else:
             # Standard Keeson: step through head massage intensity (wraps max→0)
-            await self.write_command(
-                self._build_command(KeesonCommands.MASSAGE_HEAD_UP),
-                repeat_count=self._single_shot_count,
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_HEAD_UP)
             )
 
     async def massage_foot_toggle(self) -> None:
@@ -1591,9 +1752,8 @@ class KeesonController(BedController):
                 )
         else:
             # Standard Keeson: step through foot massage intensity (wraps max→0)
-            await self.write_command(
-                self._build_command(KeesonCommands.MASSAGE_FOOT_UP),
-                repeat_count=self._single_shot_count,
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.MASSAGE_FOOT_UP)
             )
 
     async def sound_toggle(self) -> None:
