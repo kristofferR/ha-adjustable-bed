@@ -20,6 +20,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
+from homeassistant.util import dt as dt_util
 
 from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
@@ -516,7 +517,7 @@ class SleepStarController(BedController):
             self._notify_started = True
 
         fresh_event = asyncio.Event()
-        now = datetime.now().astimezone()
+        now = dt_util.now()
         # Cb37BaseBleDevice startup followed by the demo subclass startup.
         startup_frames = (
             build_cb37_config_query(1),
@@ -733,11 +734,15 @@ class SleepStarController(BedController):
 
     async def _query_missing_config_pages(self, pages: list[int]) -> None:
         """Request each still-missing configuration page at sender cadence."""
-        for index, page in enumerate(pages):
-            if page not in self._received_config_pages:
-                await self._write_frame(build_cb37_config_query(page), cancel_event=asyncio.Event())
-            if index < len(pages) - 1:
-                await asyncio.sleep(_SENDER_CADENCE_SECONDS)
+        async with self._session_lock:
+            for index, page in enumerate(pages):
+                if page not in self._received_config_pages:
+                    await self._write_frame(
+                        build_cb37_config_query(page),
+                        cancel_event=asyncio.Event(),
+                    )
+                if index < len(pages) - 1:
+                    await asyncio.sleep(_SENDER_CADENCE_SECONDS)
 
     def _handle_star_notification(self, data: bytes) -> None:
         """Route Star status families and normalize motor positions."""

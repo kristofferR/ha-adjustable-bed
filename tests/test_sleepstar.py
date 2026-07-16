@@ -151,9 +151,16 @@ async def test_session_subscribes_then_sends_complete_startup_sequence(
 ) -> None:
     """Session setup preserves the app's notification-first 100 ms ordering."""
     controller, _coordinator, client = sleepstar_controller
-    with patch(
-        "custom_components.adjustable_bed.beds.sleepstar._SENDER_CADENCE_SECONDS",
-        0,
+    local = datetime(2026, 7, 16, 13, 45, 30, tzinfo=timezone(timedelta(hours=2)))
+    with (
+        patch(
+            "custom_components.adjustable_bed.beds.sleepstar._SENDER_CADENCE_SECONDS",
+            0,
+        ),
+        patch(
+            "custom_components.adjustable_bed.beds.sleepstar.dt_util.now",
+            return_value=local,
+        ),
     ):
         await controller.start_notify()
 
@@ -161,8 +168,8 @@ async def test_session_subscribes_then_sends_complete_startup_sequence(
     assert client.start_notify.await_args.args[0] == NORDIC_UART_READ_CHAR_UUID
     writes = [call.args[1] for call in client.write_gatt_char.await_args_list]
     assert writes[0] == build_cb37_config_query(1)
-    assert writes[1].startswith(bytes.fromhex("AA0000030108"))
-    assert writes[2].startswith(bytes.fromhex("AA000009020B5A1407"))
+    assert writes[1] == build_cb37_time(local)
+    assert writes[2] == build_wrapped_star_time(local)
     assert writes[3:] == [
         build_sensor_version_query(),
         SleepStarCommands.QUERY_MOTORS,
@@ -172,6 +179,57 @@ async def test_session_subscribes_then_sends_complete_startup_sequence(
         build_environment_address_query(),
     ]
     assert all(call.kwargs["response"] is False for call in client.write_gatt_char.await_args_list)
+    await controller.stop_notify()
+
+
+async def test_config_page_notification_does_not_interleave_startup_writes(
+    sleepstar_controller: tuple[SleepStarController, MagicMock, MagicMock],
+) -> None:
+    """Missing-page writes wait until the ordered startup sequence completes."""
+    controller, _coordinator, client = sleepstar_controller
+    page1 = bytes([0x2A, 0, 0, 5, 0x81, 9, 0b00001011, 1, 0x1F, 2, 3, 4, 5]) + bytes(7)
+    delivered_page1 = False
+    local = datetime(2026, 7, 16, 13, 45, 30, tzinfo=timezone(timedelta(hours=2)))
+
+    async def deliver_page1_during_first_write(*_args: object, **_kwargs: object) -> None:
+        nonlocal delivered_page1
+        if not delivered_page1:
+            delivered_page1 = True
+            controller._on_notification(1, bytearray(page1))
+
+    client.write_gatt_char.side_effect = deliver_page1_during_first_write
+    with (
+        patch(
+            "custom_components.adjustable_bed.beds.sleepstar._SENDER_CADENCE_SECONDS",
+            0,
+        ),
+        patch(
+            "custom_components.adjustable_bed.beds.sleepstar.dt_util.now",
+            return_value=local,
+        ),
+    ):
+        await controller.start_notify()
+        assert controller._config_pages_task is not None
+        await controller._config_pages_task
+
+    writes = [call.args[1] for call in client.write_gatt_char.await_args_list]
+    assert writes[:4] == [
+        build_cb37_config_query(1),
+        build_cb37_time(local),
+        build_wrapped_star_time(local),
+        build_sensor_version_query(),
+    ]
+    assert writes[4:-2] == [
+        SleepStarCommands.QUERY_MOTORS,
+        SleepStarCommands.QUERY_LIGHT,
+        build_sleep_query_config(),
+        build_environment_duration_query(),
+        build_environment_address_query(),
+    ]
+    assert writes[-2:] == [
+        build_cb37_config_query(2),
+        build_cb37_config_query(4),
+    ]
     await controller.stop_notify()
 
 
