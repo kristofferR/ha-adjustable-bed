@@ -37,8 +37,11 @@ Brands using Keeson/Ergomotion actuators:
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` |
+| ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` |
+| ✅ | [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) | `com.sbi.costco` |
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` |
 | ✅ | [Tempur Zero G Bed Base](https://play.google.com/store/apps/details?id=com.sfd.row) | `com.sfd.row` |
+| ✅ | Tempur Curve | `com.ore.tempur` |
 | ✅ | [Member's Mark Base Remote](https://play.google.com/store/apps/details?id=com.sfd.mm) | `com.sfd.mm` |
 | ✅ | Ergomotion Sync | `cn.com.mancini` |
 | ✅ | Linx | `com.keeson.connectedbed` |
@@ -96,10 +99,16 @@ One-shot buttons use `ctrm=1, km=1, keykt=0`. Held motion is not fully uniform:
 
 The integration treats `0000a00a` as a distinct Keeson variant and uses the shared 32-bit command values, while accommodating the split held-motion metadata from the Juna/Linx app family.
 
-### KSBT Variant (Older Remotes)
+### KSBT Variant (Direct P2 Remotes)
 
 **Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
+
+Held movement keys are written immediately and refreshed every 100 ms. Releasing
+a key cancels that refresh and writes the two-byte status query `[0x00, 0xB0]`
+at +300, +600 and +900 ms. The current Ergomotion 4.0, Q-Plus and 1500 Tilt
+Base apps all prove this behavior independently. They do not write the six-byte
+zero-key packet as the P2 release sequence.
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
@@ -194,7 +203,7 @@ app/protocol family, not to the shared 32-bit command values:
 |---------------------|------------------|-------------------|-------------------------|
 | BaseI4/BaseI5 | Member's Mark | 400ms fixed-delay scheduler | 3 writes, 400ms apart |
 | JSON/A00A | Juna / Linx | Requests every 5ms / 3ms, but drops requests while a write-with-response is pending | Existing safe 10 writes, 100ms apart |
-| KSBT | Ergomotion Sync / Adjustable Lite | 300ms `Timer.schedule` | 4 writes, 300ms apart |
+| KSBT direct P2 | Ergomotion 4.0 / Q-Plus / 1500 Tilt Base | 100ms handler loop | 10 writes, 100ms apart |
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | KSBT04C | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
@@ -216,11 +225,12 @@ BetterLiving devices use the BetterLiving cadence whenever that app profile is
 detected, even if a future factory path pairs the profile flag with a different
 base Keeson variant.
 
-Release behavior also varies. Ergomotion and Purple send an explicit zero frame;
-standard KSBT and Member's Mark merely cancel their repeat timer; Sleep Harmony
-sends two delayed zero frames. The integration intentionally sends an immediate
-zero frame after every movement for hardware safety. One-shot commands are sent
-once on KSBT and KSBT03CR, while Sleep Harmony's KSBT04C variant sends them twice.
+Release behavior also varies. Direct six-byte KSBT/P2 stops its 100 ms refresh
+and sends `00 B0` queries at +300/+600/+900 ms; it does not send a zero-key
+frame. Base/Ergomotion/Purple families use their own explicit zero frame, while
+checksum and KSBT03CR variants retain their independently derived release
+behavior. One-shot commands are sent once on KSBT and KSBT03CR, while Sleep
+Harmony's KSBT04C variant sends them twice.
 
 ## Split-Bed Support (Member's Mark)
 

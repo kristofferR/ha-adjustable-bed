@@ -63,7 +63,7 @@ _LOGGER = logging.getLogger(__name__)
 _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
     KEESON_VARIANT_BASE: (3, 400),
     KEESON_VARIANT_JSON: (10, 100),
-    KEESON_VARIANT_KSBT: (4, 300),
+    KEESON_VARIANT_KSBT: (10, 100),
     KEESON_VARIANT_KSBT_CR: (4, 300),
     KEESON_VARIANT_KSBT04C: (4, 300),
     KEESON_VARIANT_ERGOMOTION: (10, 100),
@@ -74,6 +74,12 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
 }
 
 _THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
+
+# The direct six-byte P2 protocol has no dedicated release/STOP frame. OEM apps
+# stop refreshing the held key and request status three times at 300 ms intervals.
+_KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
+_KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
+_KSBT_RELEASE_QUERY_COUNT = 3
 
 
 def is_ksbt03c_name(name: str | None) -> bool:
@@ -1011,7 +1017,7 @@ class KeesonController(BedController):
         return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it, always sending STOP at the end."""
+        """Move a motor in a direction or stop it, always releasing at the end."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
         repeat_count, repeat_delay_ms = self._motor_pulse_settings()
@@ -1031,15 +1037,35 @@ class KeesonController(BedController):
                         repeat_delay_ms=repeat_delay_ms,
                     )
         finally:
-            # Always send stop with a fresh event so it's not affected by cancellation
+            # Always release with a fresh event so it is not affected by cancellation.
             self._motor_state = {}
             try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
+                await self._release_motion()
             except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+                _LOGGER.debug("Failed to release motor command during cleanup")
+
+    async def _release_motion(self) -> None:
+        """Send the protocol-specific motor release sequence.
+
+        Direct six-byte KSBT/P2 remotes do not transmit a zero-key frame on
+        release. They stop the 100 ms key refresh and send status query ``00 B0``
+        at +300, +600, and +900 ms. Other variants retain their explicit zero
+        frame, whose packet format is specific to that protocol family.
+        """
+        cancel_event = asyncio.Event()
+        if self._variant == KEESON_VARIANT_KSBT:
+            for _ in range(_KSBT_RELEASE_QUERY_COUNT):
+                await asyncio.sleep(_KSBT_RELEASE_QUERY_DELAY_SECONDS)
+                await self.write_command(
+                    _KSBT_RELEASE_QUERY,
+                    cancel_event=cancel_event,
+                )
+            return
+
+        await self.write_command(
+            self._build_command(0),
+            cancel_event=cancel_event,
+        )
 
     async def _write_json_motion_command(
         self,
@@ -1121,10 +1147,7 @@ class KeesonController(BedController):
     async def stop_all(self) -> None:
         """Stop all motors."""
         self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
-        )
+        await self._release_motion()
 
     # Tilt motor control
     async def move_tilt_up(self) -> None:

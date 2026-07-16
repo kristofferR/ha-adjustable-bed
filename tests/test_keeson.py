@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -1173,7 +1174,7 @@ class TestKsbt03cMotorLayout:
         [
             ("base", 2, (3, 400)),
             ("json", 2, (10, 100)),
-            ("ksbt", 2, (4, 300)),
+            ("ksbt", 2, (10, 100)),
             ("ksbt_cr", 2, (4, 300)),
             ("ksbt04c", 2, (4, 300)),
             ("ergomotion", 2, (10, 100)),
@@ -1228,6 +1229,7 @@ class TestKsbt03cMotorLayout:
         hass: HomeAssistant,
         mock_keeson_config_entry,
         mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """Test per-device pulse tuning overrides the OEM app default."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
@@ -1238,12 +1240,60 @@ class TestKsbt03cMotorLayout:
             coordinator, variant="ksbt", device_name="KSBT03C300039050"
         )
         controller.write_command = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            AsyncMock(),
+        )
 
         await controller.move_head_up()
 
         first_call = controller.write_command.await_args_list[0]
         assert first_call.kwargs["repeat_count"] == 6
         assert first_call.kwargs["repeat_delay_ms"] == 250
+
+    async def test_ksbt_motion_uses_p2_hold_and_release_sequence(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test direct P2 motion refreshes at 100 ms and releases with queries."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator, variant="ksbt", device_name="KSBT03C300039050"
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        await controller.move_head_up()
+
+        calls = controller.write_command.await_args_list
+        assert len(calls) == 4
+        assert calls[0].args == (bytes.fromhex("040200000001"),)
+        assert calls[0].kwargs == {
+            "repeat_count": 10,
+            "repeat_delay_ms": 100,
+        }
+        assert [call.args for call in calls[1:]] == [
+            (bytes.fromhex("00b0"),),
+            (bytes.fromhex("00b0"),),
+            (bytes.fromhex("00b0"),),
+        ]
+        release_events = [call.kwargs["cancel_event"] for call in calls[1:]]
+        assert all(isinstance(event, asyncio.Event) for event in release_events)
+        assert release_events[0] is release_events[1] is release_events[2]
+        assert not release_events[0].is_set()
+        assert [call.args for call in sleep.await_args_list] == [
+            (0.3,),
+            (0.3,),
+            (0.3,),
+        ]
 
     @pytest.mark.parametrize(
         ("variant", "expected"),
