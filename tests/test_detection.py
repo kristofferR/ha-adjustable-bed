@@ -466,7 +466,7 @@ class TestDetectBedTypeByServiceUUID:
             service_uuids=[NORDIC_UART_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
-        assert result.bed_type not in {BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STAR_ELEVATE}
+        assert result.bed_type is None
 
     def test_detect_sleepstar_as_distinct_sleep_monitor_protocol(self):
         """SLEEPSTAR must not be conflated with either direct StarCode family."""

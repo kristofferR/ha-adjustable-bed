@@ -638,9 +638,9 @@ class SleepysBox25Controller(BedController):
 
     async def massage_off(self) -> None:
         """Exit massage mode."""
+        await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
         self._massage_active = False
         self._massage_timer_minutes = 0
-        await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
         self.forward_controller_state_updates(
             {"massage_active": False, "massage_timer": 0}
         )
@@ -693,7 +693,6 @@ class SleepysBox25Controller(BedController):
     async def set_massage_timer(self, minutes: int) -> None:
         """Select the OEM massage timer (10/20/30 minutes), or turn it off."""
         if minutes == 0:
-            self._massage_timer_minutes = 0
             await self.massage_off()
             return
         try:
@@ -804,6 +803,8 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Translate inherited actions and write the legacy frame without response."""
+        if self._is_cancelled(cancel_event):
+            return
         translated = _translate_star_to_legacy(command)
         if self._is_cancelled(cancel_event):
             return

@@ -9,10 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import (
-    StarElevateCommands,
-    StarElevateController,
-)
+from custom_components.adjustable_bed.beds.star_elevate import StarElevateController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     CONF_BED_TYPE,
@@ -79,12 +76,12 @@ class TestStarElevateController:
         controller = coordinator.controller
 
         cases = (
-            (controller.move_head_up, StarElevateCommands.ACTUATOR_1_UP),
-            (controller.move_head_down, StarElevateCommands.ACTUATOR_1_DOWN),
-            (controller.move_feet_up, StarElevateCommands.ACTUATOR_2_UP),
-            (controller.move_feet_down, StarElevateCommands.ACTUATOR_2_DOWN),
-            (controller.move_both_up, StarElevateCommands.BOTH_UP),
-            (controller.move_both_down, StarElevateCommands.BOTH_DOWN),
+            (controller.move_head_up, bytes.fromhex("5A 01 03 10 30 40 A5")),
+            (controller.move_head_down, bytes.fromhex("5A 01 03 10 30 41 A5")),
+            (controller.move_feet_up, bytes.fromhex("5A 01 03 10 30 42 A5")),
+            (controller.move_feet_down, bytes.fromhex("5A 01 03 10 30 43 A5")),
+            (controller.move_both_up, bytes.fromhex("5A 01 03 10 30 44 A5")),
+            (controller.move_both_down, bytes.fromhex("5A 01 03 10 30 45 A5")),
         )
         for method, expected in cases:
             with patch.object(controller, "_move_with_stop", AsyncMock()) as mock_move:
@@ -103,13 +100,14 @@ class TestStarElevateController:
         # Connection setup has already enabled RX and sent wake. Reset the flag
         # to exercise the same lazy fallback used after a missed initialization.
         controller._initialized = False
+        both_up = bytes.fromhex("5A 01 03 10 30 44 A5")
 
         with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as mock_write:
-            await controller.write_command(StarElevateCommands.BOTH_UP)
+            await controller.write_command(both_up)
 
         assert [call.args[1] for call in mock_write.await_args_list] == [
-            StarElevateCommands.WAKE,
-            StarElevateCommands.BOTH_UP,
+            bytes.fromhex("5A 0B 00 A5"),
+            both_up,
         ]
         assert [call.kwargs["response"] for call in mock_write.await_args_list] == [False, False]
 
@@ -127,5 +125,9 @@ class TestStarElevateController:
             await controller.preset_flat()
             await controller.stop_all()
 
-        assert mock_write.await_args_list[0].args == (StarElevateCommands.FLAT,)
-        assert mock_write.await_args_list[1].args[0] == StarElevateCommands.STOP
+        assert mock_write.await_args_list[0].args == (
+            bytes.fromhex("5A 01 03 10 30 46 A5"),
+        )
+        assert mock_write.await_args_list[1].args[0] == bytes.fromhex(
+            "5A 01 03 10 30 0F A5"
+        )

@@ -1272,6 +1272,35 @@ class TestSleepysBox25Controller:
         assert controller._initialized is False
         mock_client.write_gatt_char.assert_not_called()
 
+    async def test_failed_massage_exit_preserves_reported_state(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A failed exit write must not report massage as stopped."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        for operation in (controller.massage_off, lambda: controller.set_massage_timer(0)):
+            controller._massage_active = True
+            controller._massage_timer_minutes = 20
+            state_before = dict(coordinator.controller_state)
+            with (
+                patch.object(
+                    controller,
+                    "_write_motor_command",
+                    AsyncMock(side_effect=ConnectionError("write failed")),
+                ),
+                pytest.raises(ConnectionError, match="write failed"),
+            ):
+                await operation()
+
+            assert controller.get_massage_state()["active"] is True
+            assert controller.get_massage_state()["timer_mode"] == "20"
+            assert coordinator.controller_state == state_before
+
     async def test_all_controls_use_oem_box25_star_frames(
         self,
         hass: HomeAssistant,
@@ -1684,3 +1713,14 @@ class TestSleepysBox25RuntimeDialect:
             cancel_event=None,
             response=False,
         )
+
+    async def test_pre_cancelled_legacy_write_skips_translation(self) -> None:
+        """Unsupported input must not raise when cancellation already won."""
+        controller = SleepysBox25LegacyController(self._factory_coordinator())
+        cancel_event = asyncio.Event()
+        cancel_event.set()
+
+        with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as write:
+            await controller.write_command(b"\xff", cancel_event=cancel_event)
+
+        write.assert_not_awaited()

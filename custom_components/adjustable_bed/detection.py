@@ -407,6 +407,10 @@ GENERIC_SHARED_SERVICE_UUIDS: frozenset[str] = frozenset(
 # Only applied when device has generic UUIDs (see GENERIC_SHARED_SERVICE_UUIDS)
 # See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
 EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
+    # Flexsteel seating controllers recovered from com.okin.flex_demo. These
+    # advertise Nordic UART but are chairs, not adjustable-bed control boxes.
+    "flx_audio",
+    "flx_rush",
     # Mobility devices
     "scooter",
     "ninebot",

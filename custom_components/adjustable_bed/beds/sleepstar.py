@@ -203,6 +203,7 @@ def crc16_modbus(data: bytes) -> int:
 
 
 def _with_modbus_crc(data: bytes) -> bytes:
+    """Append a low-byte-first MODBUS CRC to an environment payload."""
     crc = crc16_modbus(data)
     return data + bytes([crc & 0xFF, crc >> 8])
 
@@ -275,6 +276,7 @@ class SleepStarController(BedController):
         *,
         manufacturer_data: dict[int, bytes] | None = None,
     ) -> None:
+        """Initialize SLEEPSTAR session, capability, and state caches."""
         super().__init__(coordinator)
         self.sleep_monitor_variant = resolve_sleepstar_variant(manufacturer_data)
         self._session_lock = asyncio.Lock()
@@ -301,98 +303,122 @@ class SleepStarController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
+        """Return the Nordic UART TX characteristic."""
         return NORDIC_UART_WRITE_CHAR_UUID
 
     @property
     def requires_notification_channel(self) -> bool:
+        """Return True because CB37 startup and state require RX notifications."""
         return True
 
     @property
     def supports_position_feedback(self) -> bool:
+        """Return True for the app-proven six-part position report."""
         return True
 
     @property
     def supports_direct_position_control(self) -> bool:
+        """Return True for the five app-addressable position zones."""
         return True
 
     @property
     def allow_position_polling_during_commands(self) -> bool:
+        """Disable polling while commands share the serialized CB37 sender."""
         return False
 
     @property
     def supports_preset_zero_g(self) -> bool:
+        """Return True for the Zero-G preset."""
         return True
 
     @property
     def supports_preset_anti_snore(self) -> bool:
+        """Return True for the anti-snore preset."""
         return True
 
     @property
     def supports_preset_tv(self) -> bool:
+        """Return True for the TV preset."""
         return True
 
     @property
     def supports_preset_lounge(self) -> bool:
+        """Return True for the lounge preset."""
         return True
 
     @property
     def supports_preset_both_up(self) -> bool:
+        """Return True for the combined head-and-feet movement."""
         return True
 
     @property
     def supports_memory_presets(self) -> bool:
+        """Return True for the two app-visible memory recalls."""
         return True
 
     @property
     def memory_slot_count(self) -> int:
+        """Return the two app-visible programmable memory slots."""
         return 2
 
     @property
     def supports_memory_programming(self) -> bool:
+        """Return True for the proven memory-store commands."""
         return True
 
     @property
     def supports_lights(self) -> bool:
+        """Return True for RGB light control."""
         return True
 
     @property
     def supports_discrete_light_control(self) -> bool:
+        """Return True for separate light-on and light-off packets."""
         return True
 
     @property
     def supports_light_level_control(self) -> bool:
+        """Return True for direct brightness control."""
         return True
 
     @property
     def light_level_max(self) -> int:
+        """Return the app-proven maximum brightness level."""
         return 6
 
     @property
     def auto_enable_massage(self) -> bool:
+        """Expose sonic controls without the legacy manual feature toggle."""
         return True
 
     @property
     def supports_massage(self) -> bool:
+        """Return True for S9000AI sonic massage."""
         return True
 
     @property
     def supports_massage_intensity_control(self) -> bool:
+        """Return True for direct sonic intensity control."""
         return True
 
     @property
     def massage_intensity_zones(self) -> list[str]:
+        """Return the head, foot, and combined sonic zones."""
         return ["head", "foot", "all"]
 
     @property
     def massage_intensity_max(self) -> int:
+        """Return the app-proven maximum sonic intensity."""
         return 6
 
     @property
     def supports_massage_timer(self) -> bool:
+        """Return True for direct sonic timer selection."""
         return True
 
     @property
     def massage_timer_options(self) -> list[int]:
+        """Return the app's timer durations in minutes."""
         return [10, 20, 30]
 
     @property
@@ -448,9 +474,11 @@ class SleepStarController(BedController):
 
     @property
     def stale_motor_entity_keys(self) -> frozenset[str]:
+        """Return obsolete generic entity aliases to remove."""
         return frozenset({"back", "legs"})
 
     def _track_task(self, coroutine: Any, *, name: str) -> asyncio.Task[Any]:
+        """Create and retain a session-owned background task."""
         task = asyncio.create_task(coroutine, name=name)
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
@@ -464,6 +492,7 @@ class SleepStarController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        """Write one CB37 family frame without a GATT response."""
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
             frame,
@@ -474,6 +503,7 @@ class SleepStarController(BedController):
         )
 
     async def _initialize_session_locked(self) -> None:
+        """Subscribe and send the complete one-time CB37 startup sequence."""
         if self._session_initialized:
             return
 
@@ -511,14 +541,17 @@ class SleepStarController(BedController):
         await self.refresh_protocol_state()
 
     async def _ensure_session(self) -> None:
+        """Initialize the session once under its serialization lock."""
         async with self._session_lock:
             await self._initialize_session_locked()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        """Register a position callback and initialize RX plus CB37 state."""
         self._notify_callback = callback
         await self._ensure_session()
 
     async def stop_notify(self) -> None:
+        """Cancel session tasks and unsubscribe from Nordic UART RX."""
         self._notify_callback = None
         if self._config_retry_task is not None:
             self._config_retry_task.cancel()
@@ -550,6 +583,7 @@ class SleepStarController(BedController):
         self._config_pages_task = None
 
     async def _retry_config_once(self) -> None:
+        """Run the app's single delayed configuration recovery query."""
         try:
             await asyncio.sleep(_CONFIG_RETRY_SECONDS)
             client = self.client
@@ -559,6 +593,7 @@ class SleepStarController(BedController):
             _LOGGER.debug("SLEEPSTAR config recovery query failed", exc_info=True)
 
     async def _query_device_config(self, *, reset: bool) -> None:
+        """Request CB37 configuration page 1, optionally clearing cached pages."""
         if reset:
             self._config_bitmap = None
             self._config_pages.clear()
@@ -588,6 +623,7 @@ class SleepStarController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        """Ensure the CB37 session, then send a protocol frame."""
         await self._ensure_session()
         await self._write_frame(
             command,
@@ -599,6 +635,7 @@ class SleepStarController(BedController):
     def _on_notification(
         self, characteristic: BleakGATTCharacteristic | int, data: bytearray
     ) -> None:
+        """De-duplicate and route direct, wrapped, sleep, and environment data."""
         raw = bytes(data)
         uuid = getattr(characteristic, "uuid", NORDIC_UART_READ_CHAR_UUID)
         self.forward_raw_notification(str(uuid), raw)
@@ -651,6 +688,7 @@ class SleepStarController(BedController):
             self.forward_controller_state_update(key, raw.hex())
 
     def _handle_config_response(self, raw: bytes) -> None:
+        """Cache a configuration page and schedule advertised missing pages."""
         bitmap = raw[6]
         page = raw[7]
         self._config_bitmap = bitmap
@@ -694,6 +732,7 @@ class SleepStarController(BedController):
         self.forward_controller_state_updates(updates)
 
     async def _query_missing_config_pages(self, pages: list[int]) -> None:
+        """Request each still-missing configuration page at sender cadence."""
         for index, page in enumerate(pages):
             if page not in self._received_config_pages:
                 await self._write_frame(build_cb37_config_query(page), cancel_event=asyncio.Event())
@@ -701,6 +740,7 @@ class SleepStarController(BedController):
                 await asyncio.sleep(_SENDER_CADENCE_SECONDS)
 
     def _handle_star_notification(self, data: bytes) -> None:
+        """Route Star status families and normalize motor positions."""
         if len(data) < 3 or data[0] != 0xA5:
             return
 
@@ -735,9 +775,11 @@ class SleepStarController(BedController):
         )
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+        """Request the current multi-part motor position report."""
         await self.write_command(SleepStarCommands.QUERY_MOTORS)
 
     async def set_motor_position(self, motor: str, position: int) -> None:
+        """Move one app-addressable zone to a 0-100 target."""
         zone_map = {
             "head": 0,
             "back": 0,
@@ -756,101 +798,133 @@ class SleepStarController(BedController):
         )
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:  # noqa: ARG002
+        """Clamp an integration percentage to the native 0-100 range."""
         return int(max(0, min(100, angle)))
 
     async def _send_stop(self) -> None:
+        """Send STOP with a fresh cancellation event."""
         await self.write_command(SleepStarCommands.STOP, cancel_event=asyncio.Event())
 
     async def move_head_up(self) -> None:
+        """Raise the head actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.HEAD_UP)
 
     async def move_head_down(self) -> None:
+        """Lower the head actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.HEAD_DOWN)
 
     async def move_head_stop(self) -> None:
+        """Stop head movement through the shared STOP packet."""
         await self._send_stop()
 
     async def move_back_up(self) -> None:
+        """Raise the head actuator through the legacy back alias."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
+        """Lower the head actuator through the legacy back alias."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
+        """Stop the legacy back alias through shared STOP."""
         await self._send_stop()
 
     async def move_feet_up(self) -> None:
+        """Raise the feet actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.FEET_UP)
 
     async def move_feet_down(self) -> None:
+        """Lower the feet actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.FEET_DOWN)
 
     async def move_feet_stop(self) -> None:
+        """Stop feet movement through the shared STOP packet."""
         await self._send_stop()
 
     async def move_legs_up(self) -> None:
+        """Raise the feet actuator through the legacy legs alias."""
         await self.move_feet_up()
 
     async def move_legs_down(self) -> None:
+        """Lower the feet actuator through the legacy legs alias."""
         await self.move_feet_down()
 
     async def move_legs_stop(self) -> None:
+        """Stop the legacy legs alias through shared STOP."""
         await self._send_stop()
 
     async def move_lumbar_up(self) -> None:
+        """Raise the lumbar actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.LUMBAR_UP)
 
     async def move_lumbar_down(self) -> None:
+        """Lower the lumbar actuator and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.LUMBAR_DOWN)
 
     async def move_lumbar_stop(self) -> None:
+        """Stop lumbar movement through the shared STOP packet."""
         await self._send_stop()
 
     async def move_part4_up(self) -> None:
+        """Raise the app's generic Part 4 actuator."""
         await self._move_with_stop(SleepStarCommands.PART4_UP)
 
     async def move_part4_down(self) -> None:
+        """Lower the app's generic Part 4 actuator."""
         await self._move_with_stop(SleepStarCommands.PART4_DOWN)
 
     async def move_part4_stop(self) -> None:
+        """Stop Part 4 through the shared STOP packet."""
         await self._send_stop()
 
     async def move_part5_up(self) -> None:
+        """Raise the app's generic Part 5 actuator."""
         await self._move_with_stop(SleepStarCommands.PART5_UP)
 
     async def move_part5_down(self) -> None:
+        """Lower the app's generic Part 5 actuator."""
         await self._move_with_stop(SleepStarCommands.PART5_DOWN)
 
     async def move_part5_stop(self) -> None:
+        """Stop Part 5 through the shared STOP packet."""
         await self._send_stop()
 
     # Use base-class optional method names for generic motor entity dispatch,
     # without claiming physical neck/pillow semantics in the exposed labels.
     async def move_neck_up(self) -> None:
+        """Dispatch Auxiliary 1 up without claiming physical semantics."""
         await self.move_part4_up()
 
     async def move_neck_down(self) -> None:
+        """Dispatch Auxiliary 1 down without claiming physical semantics."""
         await self.move_part4_down()
 
     async def move_neck_stop(self) -> None:
+        """Dispatch Auxiliary 1 STOP through the generic entity hook."""
         await self.move_part4_stop()
 
     async def move_pillow_up(self) -> None:
+        """Dispatch Auxiliary 2 up without claiming physical semantics."""
         await self.move_part5_up()
 
     async def move_pillow_down(self) -> None:
+        """Dispatch Auxiliary 2 down without claiming physical semantics."""
         await self.move_part5_down()
 
     async def move_pillow_stop(self) -> None:
+        """Dispatch Auxiliary 2 STOP through the generic entity hook."""
         await self.move_part5_stop()
 
     async def stop_all(self) -> None:
+        """Stop all actuators with the shared wrapped STOP packet."""
         await self._send_stop()
 
     async def preset_both_up(self) -> None:
+        """Raise head and feet together and guarantee STOP."""
         await self._move_with_stop(SleepStarCommands.HEAD_FEET_UP)
 
     async def _send_preset(self, command: bytes) -> None:
+        """Repeat a recall three times, then guarantee STOP."""
         try:
             await self.write_command(
                 command,
@@ -863,26 +937,33 @@ class SleepStarController(BedController):
                 await self._send_stop()
 
     async def preset_flat(self) -> None:
+        """Recall the flat preset."""
         await self._send_preset(SleepStarCommands.PRESET_FLAT)
 
     async def preset_tv(self) -> None:
+        """Recall the TV preset."""
         await self._send_preset(SleepStarCommands.PRESET_TV)
 
     async def preset_zero_g(self) -> None:
+        """Recall the Zero-G preset."""
         await self._send_preset(SleepStarCommands.PRESET_ZERO_G)
 
     async def preset_anti_snore(self) -> None:
+        """Recall the anti-snore preset."""
         await self._send_preset(SleepStarCommands.PRESET_ANTI_SNORE)
 
     async def preset_lounge(self) -> None:
+        """Recall the lounge preset."""
         await self._send_preset(SleepStarCommands.PRESET_LOUNGE)
 
     async def preset_memory(self, memory_num: int) -> None:
+        """Recall one of two app-visible memory presets."""
         if not 1 <= memory_num <= len(SleepStarCommands.MEMORY_PRESETS):
             raise ValueError("SLEEPSTAR memory slot must be 1 or 2")
         await self._send_preset(SleepStarCommands.MEMORY_PRESETS[memory_num - 1])
 
     async def program_memory(self, memory_num: int) -> None:
+        """Store one of two memory slots using the proven long press count."""
         if not 1 <= memory_num <= len(SleepStarCommands.MEMORY_STORE):
             raise ValueError("SLEEPSTAR memory slot must be 1 or 2")
         await self.write_command(
@@ -892,18 +973,22 @@ class SleepStarController(BedController):
         )
 
     async def lights_on(self) -> None:
+        """Turn the RGB light on with the dedicated command."""
         await self.write_command(SleepStarCommands.LIGHT_ON)
         self.forward_controller_state_update("under_bed_lights_on", True)
 
     async def lights_off(self) -> None:
+        """Turn the RGB light off and clear cached brightness."""
         await self.write_command(SleepStarCommands.LIGHT_OFF)
         self._light_level = 0
         self.forward_controller_state_updates({"under_bed_lights_on": False, "light_level": 0})
 
     async def lights_toggle(self) -> None:
+        """Toggle the RGB light with the app's dedicated key."""
         await self.write_command(SleepStarCommands.LIGHT_TOGGLE)
 
     async def _send_twice_then_stop(self, command: bytes) -> None:
+        """Send a dynamic control twice, then guarantee STOP."""
         try:
             await self.write_command(command, repeat_count=2, repeat_delay_ms=100)
             await asyncio.sleep(_SENDER_CADENCE_SECONDS)
@@ -912,6 +997,7 @@ class SleepStarController(BedController):
                 await self._send_stop()
 
     async def set_light_level(self, level: int) -> None:
+        """Set brightness in the app-proven 0-6 range."""
         normalized = max(0, min(self.light_level_max, int(level)))
         if normalized == 0:
             await self.lights_off()
@@ -929,13 +1015,16 @@ class SleepStarController(BedController):
         await self._send_twice_then_stop(wrap_control_box(star_extended(0x01, index)))
 
     async def massage_off(self) -> None:
+        """Stop sonic massage by selecting the zero timer value."""
         await self.set_massage_timer(0)
 
     async def massage_mode_step(self) -> None:
+        """Cycle through the five app-visible sonic modes."""
         self._massage_mode = (self._massage_mode + 1) % 5
         await self._send_twice_then_stop(wrap_control_box(star_extended(0x08, self._massage_mode)))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set head, foot, or combined sonic intensity from 0 through 6."""
         normalized = max(0, min(self.massage_intensity_max, int(level)))
         if zone == "head":
             command = star_extended(0x0F, normalized)
@@ -950,6 +1039,7 @@ class SleepStarController(BedController):
         self.forward_controller_state_update(f"massage_{zone}_intensity", normalized)
 
     async def set_massage_timer(self, minutes: int) -> None:
+        """Set the sonic timer to off, 10, 20, or 30 minutes."""
         if minutes == 0:
             encoded = 0
         else:
@@ -967,6 +1057,7 @@ class SleepStarController(BedController):
         )
 
     def get_massage_state(self) -> dict[str, object]:
+        """Return cached sonic intensity, timer, and active state."""
         return {
             **{f"{zone}_intensity": value for zone, value in self._massage_intensities.items()},
             "timer_mode": str(self._massage_timer_minutes),
@@ -974,11 +1065,13 @@ class SleepStarController(BedController):
         }
 
     async def query_sleep_config(self) -> None:
+        """Query sleep-monitor configuration state."""
         await self.write_command(build_sleep_query_config())
 
     async def set_anti_snore_config(
         self, *, enabled: bool, sensitivity: int, motor: int, duration: int
     ) -> None:
+        """Write anti-snore monitor configuration."""
         await self.write_command(
             build_anti_snore_config(
                 enabled=enabled,
@@ -989,51 +1082,65 @@ class SleepStarController(BedController):
         )
 
     async def set_sleep_zone_config(self, *, zone_type: int, left: int, right: int) -> None:
+        """Write the left/right sleep-zone thresholds."""
         await self.write_command(
             build_sleep_zone_config(zone_type=zone_type, left=left, right=right)
         )
 
     async def query_monthly_report(self, *, side: int, year: int, month: int) -> None:
+        """Request a monthly report for the selected side."""
         await self.write_command(build_monthly_report_query(side=side, year=year, month=month))
 
     async def query_daily_report(self, *, side: int, year: int, month: int, day: int) -> None:
+        """Request a daily report for the selected side."""
         await self.write_command(
             build_daily_report_query(side=side, year=year, month=month, day=day)
         )
 
     async def query_environment_address(self) -> None:
+        """Discover the environment sensor's MODBUS address."""
         await self.write_command(build_environment_address_query())
 
     async def query_environment_registers(self, address: int) -> None:
+        """Read seven environment registers from a discovered address."""
         await self.write_command(build_environment_register_query(address))
 
     async def media_previous(self) -> None:
+        """Select the previous media track."""
         await self.write_command(wrap_control_box(star_normal(0x03104018)))
 
     async def media_play_pause(self) -> None:
+        """Toggle media playback."""
         await self.write_command(wrap_control_box(star_normal(0x0310401A)))
 
     async def media_next(self) -> None:
+        """Select the next media track."""
         await self.write_command(wrap_control_box(star_normal(0x03104019)))
 
     async def media_volume_up(self) -> None:
+        """Increase media volume by one command step."""
         await self.write_command(wrap_control_box(star_normal(0x03104016)))
 
     async def media_volume_down(self) -> None:
+        """Decrease media volume by one command step."""
         await self.write_command(wrap_control_box(star_normal(0x03104017)))
 
     async def usb_play(self) -> None:
+        """Select USB playback."""
         await self.write_command(wrap_control_box(star_normal(51400707)))
 
     async def usb_exit(self) -> None:
+        """Exit USB playback."""
         await self.write_command(wrap_control_box(star_normal(51396657)))
 
     async def play_noise(self, index: int) -> None:
+        """Play one of the three app-visible noise tracks."""
         if index not in (1, 2, 3):
             raise ValueError("SLEEPSTAR noise index must be 1, 2, or 3")
         await self.write_command(wrap_control_box(star_normal(0x0310401F + index)))
 
     async def stop_noise(self) -> None:
+        """Stop the current noise track."""
         await self.write_command(wrap_control_box(star_normal(0x03104023)))
 
     async def set_noise_volume(self, level: int) -> None:
@@ -1047,6 +1154,7 @@ class SleepStarController(BedController):
         await self.write_command(wrap_control_box(star_normal((51396626, 51396627)[sonic_type])))
 
     async def reset_sound(self) -> None:
+        """Reset sound settings with the app's dedicated key."""
         await self.write_command(wrap_control_box(star_normal(51396661)))
 
     async def select_sound_preset(self, preset: int) -> None:
@@ -1057,6 +1165,7 @@ class SleepStarController(BedController):
         await self.write_command(wrap_control_box(star_normal(keys[preset])))
 
     async def set_sound_cutoff(self, value: int) -> None:
+        """Set the raw sound-cutoff value."""
         await self.write_command(wrap_control_box(star_extended(14, max(0, min(255, int(value))))))
 
     async def set_eq_profile_value(self, value: int) -> None:

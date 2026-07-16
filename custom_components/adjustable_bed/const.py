@@ -2071,8 +2071,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX24: (10, 100),
-    # Adjustable Comfort M1X12 / M5X5 ELEVATE sender tick.
-    BED_TYPE_STAR_ELEVATE: (10, 100),
     # Jensen: 400ms delay → 3 repeats = 1.2s total
     # Source: air.no.jensen.adjustablesleep APK analysis (RaiseAndLower.as:79 uses 400ms)
     BED_TYPE_JENSEN: (3, 400),
