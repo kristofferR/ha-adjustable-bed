@@ -187,6 +187,7 @@ BED_TYPE_SLEEPYS_BOX15: Final = (
 )
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
+BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transparent StarCode
 BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
@@ -264,6 +265,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Sleepy's Elite BOX25 Star
     BED_TYPE_SLEEPYS_BOX25,
+    # SleepSpa S9000AI / SLEEPSTAR
+    BED_TYPE_SLEEPSTAR,
     # Separate ELEVATE two-actuator accessory
     BED_TYPE_STAR_ELEVATE,
     # Svane
@@ -840,6 +843,14 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Source: com.okin.bedding.sleepy (Sleepy's Elite) BOX25 Star analysis
 # Also used by Sealy Posturematic CB35 (com.okin.sealy)
 SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
+
+# SleepSpa S9000AI demo sleep-monitor controller. Company ID 0x00B2 payload
+# byte 6 selects the app's single (0x88) or dual (0x86) device class. Missing
+# or unknown subtype data follows the OEM dual fallback.
+SLEEPSTAR_NAME_PATTERNS: Final = ("sleepstar",)
+SLEEPSTAR_MANUFACTURER_ID: Final = 0x00B2
+SLEEPSTAR_SINGLE_SUBTYPE: Final = 0x88
+SLEEPSTAR_DUAL_SUBTYPE: Final = 0x86
 
 # Fixed F23/kneading product names are StarCode-only; other STAR25 names use
 # the runtime Device Information selector declared with the protocol variants.
@@ -1923,6 +1934,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SLEEPSTAR,
     }
 )
 
@@ -1944,6 +1956,7 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_JENSEN,
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SLEEPSTAR,
     }
 )
 
@@ -1995,6 +2008,9 @@ DEFAULT_MOTOR_PULSE_DELAY_MS: Final = 100  # Default for most beds
 # Per-bed-type motor pulse defaults based on app disassembly analysis
 # Target: ~1.0 second total motor movement duration (repeat_count = 1000ms / delay_ms)
 BED_MOTOR_PULSE_DEFAULTS: Final = {
+    # SleepSpa S9000AI: all transparent StarCode traffic uses the app's
+    # 100 ms BLE sender cadence.
+    BED_TYPE_SLEEPSTAR: (10, 100),
     # Richmat: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md
     BED_TYPE_RICHMAT: (7, 150),

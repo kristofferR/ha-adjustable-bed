@@ -82,8 +82,8 @@ class StarElevateController(BedController):
             MotorControlSpec(
                 key="elevate_both",
                 translation_key="elevate_both",
-                open_fn=lambda ctrl: ctrl.move_both_up(),
-                close_fn=lambda ctrl: ctrl.move_both_down(),
+                open_fn=_move_elevate_both_up,
+                close_fn=_move_elevate_both_down,
                 stop_fn=lambda ctrl: ctrl.stop_all(),
             ),
         )
@@ -218,3 +218,17 @@ class StarElevateController(BedController):
 
     async def program_memory(self, memory_num: int) -> None:
         _LOGGER.warning("ELEVATE has no programmable memory slot %d", memory_num)
+
+
+async def _move_elevate_both_up(controller: BedController) -> None:
+    """Dispatch the ELEVATE-only union movement from a generic motor spec."""
+    if not isinstance(controller, StarElevateController):
+        raise TypeError("ELEVATE union control requires StarElevateController")
+    await controller.move_both_up()
+
+
+async def _move_elevate_both_down(controller: BedController) -> None:
+    """Dispatch the ELEVATE-only union movement from a generic motor spec."""
+    if not isinstance(controller, StarElevateController):
+        raise TypeError("ELEVATE union control requires StarElevateController")
+    await controller.move_both_down()

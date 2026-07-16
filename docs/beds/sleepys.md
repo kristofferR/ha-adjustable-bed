@@ -23,6 +23,10 @@
 
 The Sleepy's Elite app supports multiple control box types. This integration implements three BLE protocols:
 
+`SLEEPSTAR` is not one of these variants. It is the SleepSpa S9000AI CB37
+sleep-monitor protocol, which tunnels StarCode inside an additional envelope.
+Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
+
 | Variant | Packet Size | Checksum | Lumbar | Neck | Lights | Massage | Positions | Service UUID |
 |---------|-------------|----------|--------|------|--------|---------|-----------|--------------|
 | BOX15 | 9 bytes | Yes | ✅ | ❌ | ❌ | ❌ | ❌ | FFE5 |

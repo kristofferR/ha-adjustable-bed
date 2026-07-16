@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -830,6 +831,15 @@ async def create_controller(
         from .beds.sleep_number_mcr import SleepNumberMcrController
 
         return SleepNumberMcrController(coordinator)
+
+    if bed_type == BED_TYPE_SLEEPSTAR:
+        from .beds.sleepstar import SleepStarController
+
+        _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
+        return SleepStarController(
+            coordinator,
+            manufacturer_data=manufacturer_data,
+        )
 
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController

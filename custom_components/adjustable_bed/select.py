@@ -145,6 +145,8 @@ async def async_setup_entry(
     coordinator: AdjustableBedCoordinator = hass.data[DOMAIN][entry.entry_id]
     has_massage = entry.data.get(CONF_HAS_MASSAGE, False)
     controller = coordinator.controller
+    if controller is not None and getattr(controller, "auto_enable_massage", False):
+        has_massage = True
 
     entities: list[SelectEntity] = []
 

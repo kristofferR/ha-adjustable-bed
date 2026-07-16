@@ -45,6 +45,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -457,7 +458,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.95
         assert result.signals == ["name:star_elevate", "uuid:nordic_uart"]
 
-    @pytest.mark.parametrize("name", ["FLX_AUDIO", "FLX_RUSH", "SLEEPSTAR"])
+    @pytest.mark.parametrize("name", ["FLX_AUDIO", "FLX_RUSH"])
     def test_shared_nordic_uart_does_not_imply_sleepys_or_elevate(self, name: str):
         """Unrelated app devices sharing NUS must remain unidentified."""
         service_info = _make_service_info(
@@ -466,6 +467,32 @@ class TestDetectBedTypeByServiceUUID:
         )
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type not in {BED_TYPE_SLEEPYS_BOX25, BED_TYPE_STAR_ELEVATE}
+
+    def test_detect_sleepstar_as_distinct_sleep_monitor_protocol(self):
+        """SLEEPSTAR must not be conflated with either direct StarCode family."""
+        service_info = _make_service_info(
+            name="SLEEPSTAR",
+            service_uuids=[NORDIC_UART_SERVICE_UUID],
+            manufacturer_data={0xB2: b"\x00\x00\x00\x00\x00\x00\x88"},
+        )
+        result = detect_bed_type_detailed(service_info)
+        assert result.bed_type == BED_TYPE_SLEEPSTAR
+        assert result.confidence == 0.98
+        assert result.signals == [
+            "name:sleepstar",
+            "sleepstar_subtype:single",
+            "uuid:nordic_uart",
+            "manufacturer_id:178",
+        ]
+
+    def test_sleepbt_remains_rejected(self):
+        """SleepSpa ships SLEEPBT library classes but the app rejects them."""
+        service_info = _make_service_info(
+            name="SLEEPBT",
+            service_uuids=[NORDIC_UART_SERVICE_UUID],
+            manufacturer_data={0xB2: b"\x00\x00\x00\x00\x00\x00\x88"},
+        )
+        assert detect_bed_type(service_info) is None
 
     def test_runtime_refinement_keeps_star25_on_box25(self):
         """A Star25 name remains BOX25 even though Device Info may say STAR (#413)."""

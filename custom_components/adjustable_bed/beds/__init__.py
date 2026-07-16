@@ -64,6 +64,7 @@ from .sbi import SBIController
 from .scott_living import ScottLivingController
 from .sleep_number import SleepNumberController
 from .sleep_number_mcr import SleepNumberMcrController
+from .sleepstar import SleepStarController
 from .sleepys_box25 import SleepysBox25Controller, SleepysBox25LegacyController
 from .solace import SolaceController
 from .star_elevate import StarElevateController
@@ -111,6 +112,7 @@ __all__ = [
     "ScottLivingController",
     "SleepNumberController",
     "SleepNumberMcrController",
+    "SleepStarController",
     "SleepysBox25Controller",
     "SleepysBox25LegacyController",
     "StarElevateController",

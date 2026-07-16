@@ -25,6 +25,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [BedTech](beds/bedtech.md) | ✅ Supported | 5 presets, 4 massage modes, dual-base support |
 | [Sleep Number](beds/sleep_number.md) | 🧪 Needs Testing | Newer Fuzion: direct position, side selection, presence, climate. Older BAM/MCR: split firmness, foundation presets, under-bed lights |
 | [Sleepy's Elite](beds/sleepys.md) | ✅ Supported | Lumbar (BOX15), Zero-G, Flat presets |
+| [SleepSpa S9000AI](beds/sleepstar.md) | 🧪 Needs Testing | CB37 sleep monitor, five app-addressable actuators, position feedback, sonic massage, RGB lighting |
 | [Svane](beds/svane.md) | ✅ Supported | LinonPI protocol, multi-service |
 | [Vibradorm](beds/vibradorm.md) | ✅ Supported | Position feedback, 4 memory presets, lights |
 | [SUTA Smart Home](beds/suta.md) | 🧪 Needs Testing | AT command protocol, 4 memory slots, discrete lights |
@@ -141,6 +142,7 @@ These beds have their own dedicated integrations:
    - `Smart bed *` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - MAC-address-like name such as `64:DB:A0:07:DD:02` + service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)
    - `Sleepy*` → Sleepy's Elite (try BOX24 first, BOX15 if lumbar needed)
+   - `SLEEPSTAR*` + Nordic UART → [SleepSpa S9000AI](beds/sleepstar.md); `SLEEPBT*` is intentionally rejected
    - `VMAT*` → Vibradorm
    - `SUTA-*` → SUTA Smart Home (bed-frame variants)
    - `AHF*` → TiMOTION AHF
@@ -201,6 +203,7 @@ Community contributors who helped reverse-engineer specific protocols:
 | BedTech | [kristofferR](https://github.com/kristofferR) |
 | Okin 64-bit | [kristofferR](https://github.com/kristofferR) |
 | Sleepy's Elite | [kristofferR](https://github.com/kristofferR) |
+| SleepSpa S9000AI | [kristofferR](https://github.com/kristofferR) |
 | Jensen | [kristofferR](https://github.com/kristofferR) |
 | Svane | [kristofferR](https://github.com/kristofferR) |
 | Vibradorm | [kristofferR](https://github.com/kristofferR) |

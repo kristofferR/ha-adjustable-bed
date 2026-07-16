@@ -67,6 +67,7 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
@@ -123,6 +124,7 @@ from .const import (
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
     NORDIC_DFU_SERVICE_UUID,
+    NORDIC_UART_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_ONLY_PATTERNS,
@@ -146,6 +148,10 @@ from .const import (
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
+    SLEEPSTAR_DUAL_SUBTYPE,
+    SLEEPSTAR_MANUFACTURER_ID,
+    SLEEPSTAR_NAME_PATTERNS,
+    SLEEPSTAR_SINGLE_SUBTYPE,
     SLEEPYS_BOX25_NAME_PATTERNS,
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
@@ -520,6 +526,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number 360 / i8 FlexFit (BAM/MCR)",
+    BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
@@ -1215,11 +1222,58 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
+    # SleepSpa bundles library implementations for SLEEPBT, but its application
+    # model filter rejects both SLEEPBT subtypes. Do not let the shared Nordic
+    # UART fallback misclassify these monitors as a generic Richmat/Keeson bed.
+    if device_name.startswith("sleepbt"):
+        return DetectionResult(
+            bed_type=None,
+            confidence=0.0,
+            signals=["name:sleepbt_rejected"],
+        )
+
+    # SleepSpa S9000AI is a CB37 monitor that tunnels StarCode over Nordic UART.
+    # It is distinct from direct BOX25/CB35 StarCode and from the app's rejected
+    # SLEEPBT classes. The app selects single only for payload byte 6 == 0x88;
+    # byte 0x86, missing data, and unknown values all select its dual fallback.
+    if any(device_name.startswith(pattern) for pattern in SLEEPSTAR_NAME_PATTERNS):
+        signals.append("name:sleepstar")
+        has_nordic_uart = NORDIC_UART_SERVICE_UUID.lower() in service_uuids
+        payload = (service_info.manufacturer_data or {}).get(SLEEPSTAR_MANUFACTURER_ID, b"")
+        subtype = (
+            "single"
+            if len(payload) >= 7 and payload[6] == SLEEPSTAR_SINGLE_SUBTYPE
+            else "dual"
+            if len(payload) >= 7 and payload[6] == SLEEPSTAR_DUAL_SUBTYPE
+            else "dual_fallback"
+        )
+        signals.append(f"sleepstar_subtype:{subtype}")
+        if has_nordic_uart:
+            signals.append("uuid:nordic_uart")
+        if SLEEPSTAR_MANUFACTURER_ID in (service_info.manufacturer_data or {}):
+            signals.append(f"manufacturer_id:{SLEEPSTAR_MANUFACTURER_ID}")
+
+        confidence = 0.3
+        if has_nordic_uart and payload:
+            confidence = 0.98
+        elif has_nordic_uart:
+            confidence = 0.95
+        elif payload:
+            confidence = 0.9
+        return DetectionResult(
+            bed_type=BED_TYPE_SLEEPSTAR,
+            confidence=confidence,
+            signals=signals,
+            manufacturer_id=(
+                SLEEPSTAR_MANUFACTURER_ID
+                if SLEEPSTAR_MANUFACTURER_ID in (service_info.manufacturer_data or {})
+                else None
+            ),
+        )
+
     # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
     # command range. Check it before the generic Star controller family.
     if any(device_name.startswith(pattern) for pattern in STAR_ELEVATE_NAME_PATTERNS):
-        from .const import NORDIC_UART_SERVICE_UUID
-
         signals.append("name:star_elevate")
         if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
             signals.append("uuid:nordic_uart")
@@ -1244,8 +1298,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Post-connection, the adjustbed app also reads BLE characteristic 2A29
     # (Manufacturer Name): exactly "STAR" confirms CB35.
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
-        from .const import NORDIC_UART_SERVICE_UUID
-
         signals.append("name:dewertokin_star")
 
         # Parse protocol version from name digits (positions 4-5 of original name)
