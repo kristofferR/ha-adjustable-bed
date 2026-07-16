@@ -187,6 +187,7 @@ BED_TYPE_SLEEPYS_BOX15: Final = (
 )
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
+BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
@@ -263,6 +264,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Sleepy's Elite BOX25 Star
     BED_TYPE_SLEEPYS_BOX25,
+    # Separate ELEVATE two-actuator accessory
+    BED_TYPE_STAR_ELEVATE,
     # Svane
     BED_TYPE_SVANE,
     # Vibradorm
@@ -837,6 +840,9 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Source: com.okin.bedding.sleepy (Sleepy's Elite) BOX25 Star analysis
 # Also used by Sealy Posturematic CB35 (com.okin.sealy)
 SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
+
+# Separate two-actuator StarCode accessory used by M1X12/M5X5 applications.
+STAR_ELEVATE_NAME_PATTERNS: Final = ("elevate",)
 
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
@@ -2023,6 +2029,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Sleepy's BOX24: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX24: (10, 100),
+    # Adjustable Comfort M1X12 / M5X5 ELEVATE sender tick.
+    BED_TYPE_STAR_ELEVATE: (10, 100),
     # Jensen: 400ms delay → 3 repeats = 1.2s total
     # Source: air.no.jensen.adjustablesleep APK analysis (RaiseAndLower.as:79 uses 400ms)
     BED_TYPE_JENSEN: (3, 400),

@@ -71,6 +71,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -149,6 +150,7 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    STAR_ELEVATE_NAME_PATTERNS,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
@@ -521,6 +523,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
+    BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane",
@@ -1211,6 +1214,25 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             service_info.name,
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
+
+    # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
+    # command range. Check it before the generic Star controller family.
+    if any(device_name.startswith(pattern) for pattern in STAR_ELEVATE_NAME_PATTERNS):
+        from .const import NORDIC_UART_SERVICE_UUID
+
+        signals.append("name:star_elevate")
+        if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:nordic_uart")
+            return DetectionResult(
+                bed_type=BED_TYPE_STAR_ELEVATE,
+                confidence=0.95,
+                signals=signals,
+            )
+        return DetectionResult(
+            bed_type=BED_TYPE_STAR_ELEVATE,
+            confidence=0.3,
+            signals=signals,
+        )
 
     # Check for DewertOkin Star controllers - name pattern + Nordic UART service.
     # Both CB35 (Sealy Posturematic) and BOX25 Star (Sleepy's Elite) use Star* names

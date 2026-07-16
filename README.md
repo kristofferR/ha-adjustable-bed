@@ -101,6 +101,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
+| ⚠️ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, LP Prodigy CE |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ⚠️ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF1058/RF34/RF6707 handset beds |

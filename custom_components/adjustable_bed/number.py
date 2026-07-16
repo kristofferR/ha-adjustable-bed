@@ -150,6 +150,16 @@ class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
 
 MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, ...] = (
     AdjustableBedMassageNumberEntityDescription(
+        key="massage_intensity",
+        translation_key="massage_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="all",
+    ),
+    AdjustableBedMassageNumberEntityDescription(
         key="massage_head_intensity",
         translation_key="massage_head_intensity",
         icon="mdi:vibrate",
@@ -703,6 +713,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
 
         # Map zone to state key
         key_map = {
+            "all": "intensity",
             "head": "head_intensity",
             "foot": "foot_intensity",
             "wave": "wave_intensity",

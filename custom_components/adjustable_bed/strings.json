@@ -519,6 +519,15 @@
       "head": {
         "name": "Head"
       },
+      "elevate_actuator_1": {
+        "name": "ELEVATE Actuator 1"
+      },
+      "elevate_actuator_2": {
+        "name": "ELEVATE Actuator 2"
+      },
+      "elevate_both": {
+        "name": "ELEVATE Both Actuators"
+      },
       "back": {
         "name": "Back"
       },
@@ -639,6 +648,9 @@
       },
       "massage_head_intensity": {
         "name": "Massage: Head Intensity"
+      },
+      "massage_intensity": {
+        "name": "Massage: Intensity"
       },
       "massage_foot_intensity": {
         "name": "Massage: Foot Intensity"

@@ -66,6 +66,7 @@ from .sleep_number import SleepNumberController
 from .sleep_number_mcr import SleepNumberMcrController
 from .sleepys_box25 import SleepysBox25Controller
 from .solace import SolaceController
+from .star_elevate import StarElevateController
 from .suta import SutaController
 from .svane import SvaneController
 from .timotion_ahf import TiMOTIONAhfController
@@ -111,6 +112,7 @@ __all__ = [
     "SleepNumberController",
     "SleepNumberMcrController",
     "SleepysBox25Controller",
+    "StarElevateController",
     "SolaceController",
     "SvaneController",
     "SutaController",

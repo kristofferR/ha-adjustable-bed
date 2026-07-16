@@ -1194,13 +1194,13 @@ class TestSleepysBox25Controller:
         assert controller.motor_control_specs[3].translation_key == "head_end_tilt"
         assert controller.stale_motor_entity_keys == {"back", "legs"}
 
-    async def test_star_status_notifications_propagate_motor_positions(
+    async def test_star_status_notifications_propagate_and_clamp_motor_positions(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """BOX25_STAR A5 0D status bytes should update head, feet, and lumbar."""
+        """BOX25_STAR A5 0D status bytes should update and clamp motor positions."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
@@ -1212,10 +1212,29 @@ class TestSleepysBox25Controller:
         characteristic.uuid = "test-char"
         controller._on_notification(
             characteristic,
-            bytearray.fromhex("A5 0D 11 01 16 00 21 00 37 00 00 00 70 01 01 00 00 00 00 00"),
+            bytearray.fromhex("A5 0D 11 01 78 00 21 00 FF 00 00 00 70 01 01 00 00 00 00 00"),
         )
 
-        assert updates == [("head", 22.0), ("feet", 33.0), ("lumbar", 55.0)]
+        assert updates == [("head", 100.0), ("feet", 33.0), ("lumbar", 100.0)]
+
+    async def test_star_notification_parser_ignores_legacy_and_short_frames(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """The BOX25_STAR controller must not interpret legacy BOX25 packets."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda key, value: updates.append((key, value))
+        characteristic = MagicMock(uuid="test-char")
+
+        controller._on_notification(characteristic, bytearray.fromhex("03 00 32 00"))
+        controller._on_notification(characteristic, bytearray.fromhex("A5 0D 00 00 32"))
+
+        assert updates == []
 
     async def test_cancelled_write_command_does_not_mark_init_complete(
         self,
@@ -1228,6 +1247,10 @@ class TestSleepysBox25Controller:
         await coordinator.async_connect()
         controller = coordinator.controller
         mock_client = coordinator._client
+        # Connection setup follows the OEM session and has already sent wake
+        # before subscribing. Reset here to exercise the pre-cancelled init path.
+        controller._initialized = False
+        mock_client.write_gatt_char.reset_mock()
         cancel_event = asyncio.Event()
         cancel_event.set()
 
@@ -1284,26 +1307,28 @@ class TestSleepysBox25Controller:
             else:
                 mock_write.assert_awaited_once_with(expected, cancel_event=None)
 
-    async def test_star_wake_and_commands_use_write_without_response(
+    async def test_star_wake_uses_response_then_commands_do_not(
         self,
         hass: HomeAssistant,
         mock_sleepys_box25_config_entry,
         mock_coordinator_connected,
     ):
-        """The Sleepy's app writes BOX25_STAR packets without response."""
+        """The app wakes with response, then writes normal commands without it."""
         coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
         await coordinator.async_connect()
         controller = coordinator.controller
+        # Connection setup sends wake before notifications. Reset the per-
+        # connection flag so this test can assert both write modes together.
+        controller._initialized = False
 
         with (
             patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as mock_write,
-            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.write_command(Box25Commands.HEAD_UP)
 
         assert mock_write.await_count == 2
         assert mock_write.call_args_list[0].args[1] == Box25Commands.WAKE
-        assert mock_write.call_args_list[0].kwargs["response"] is False
+        assert mock_write.call_args_list[0].kwargs["response"] is True
         assert mock_write.call_args_list[1].args[1] == Box25Commands.HEAD_UP
         assert mock_write.call_args_list[1].kwargs["response"] is False
 
@@ -1325,11 +1350,65 @@ class TestSleepysBox25Controller:
             await controller.massage_toggle()
 
         assert [call.args[0] for call in mock_write.await_args_list] == [
+            Box25Commands.MASSAGE_TOGGLE,
             Box25Commands.MASSAGE_WAVE1,
             Box25Commands.MASSAGE_WAVE2,
-            Box25Commands.MASSAGE_WAVE3,
-            Box25Commands.MASSAGE_EXIT,
+            Box25Commands.MASSAGE_TOGGLE,
         ]
+
+    async def test_advanced_massage_and_light_controls_use_exact_extended_frames(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Direct OEM sliders should expose their proven ranges and encodings."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert controller.massage_intensity_zones == ["all"]
+        assert controller.massage_intensity_max == 7
+        assert controller.massage_timer_options == [10, 20, 30]
+        assert controller.light_level_max == 6
+
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
+            await controller.set_massage_intensity("all", 7)
+            await controller.set_massage_timer(20)
+            await controller.set_light_level(6)
+
+        assert [call.args[0] for call in mock_write.await_args_list] == [
+            bytes.fromhex("5A E0 04 06 08 08 00 A5"),
+            bytes.fromhex("5A E0 04 07 02 00 00 A5"),
+            bytes.fromhex("5A E0 04 00 06 00 00 A5"),
+        ]
+        assert controller.get_massage_state() == {
+            "intensity": 7,
+            "timer_mode": "20",
+            "active": False,
+        }
+        assert coordinator.controller_state["light_level"] == 6
+
+    async def test_massage_notification_maps_exact_duration_buckets(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A5 0B uses big-endian seconds and the OEM 10/20/30 minute buckets."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        characteristic = MagicMock(uuid="test-char")
+
+        controller._on_notification(
+            characteristic,
+            bytearray.fromhex("A5 0B 0E 00 02 59 00 00 00 00 00 00 00 00 00 00"),
+        )
+
+        assert controller.get_massage_state()["timer_mode"] == "20"
+        assert coordinator.controller_state["massage_timer"] == 20
+        assert coordinator.controller_state["massage_active"] is True
 
     async def test_preset_arms_then_commits_with_starcode_terminator(
         self,
@@ -1380,6 +1459,7 @@ class TestSleepysBox25Controller:
 
         cases = (
             (controller.preset_flat, Box25Commands.STAR_PRESET_FLAT),
+            (controller.preset_tv, Box25Commands.STAR_PRESET_TV),
             (controller.preset_zero_g, Box25Commands.STAR_PRESET_ZERO_GRAVITY),
             (controller.preset_anti_snore, Box25Commands.STAR_PRESET_ANTI_SNORE),
             (controller.preset_lounge, Box25Commands.STAR_PRESET_LOUNGE),

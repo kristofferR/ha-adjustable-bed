@@ -59,6 +59,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -852,6 +853,12 @@ async def create_controller(
 
         _LOGGER.debug("Using Sleepy's BOX25 Star controller")
         return SleepysBox25Controller(coordinator)
+
+    if bed_type == BED_TYPE_STAR_ELEVATE:
+        from .beds.star_elevate import StarElevateController
+
+        _LOGGER.debug("Using ELEVATE two-actuator StarCode controller")
+        return StarElevateController(coordinator)
 
     if bed_type == BED_TYPE_SVANE:
         from .beds.svane import SvaneController

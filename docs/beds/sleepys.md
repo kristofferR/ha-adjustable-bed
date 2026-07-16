@@ -15,6 +15,9 @@
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy) | `com.okin.bedding.sleepy` |
+| ✅ | Adjustable Comfort M1X12 | `com.starcode.adjustablem1x12` |
+| ✅ | AdjustableM5X4 / AdjustableM5X5 | `com.starcode.abm5_4` / `com.starcode.abm5_5` |
+| ✅ | MFRM Luxe / Ultra | `com.okin.bedding.luxe` / `com.okin.bedding.ultra` |
 
 ## Protocol Variants
 
@@ -49,9 +52,9 @@ The Sleepy's Elite app supports multiple control box types. This integration imp
 | Zero-G Preset | ✅ | ✅ | ✅ |
 | Anti-Snore Preset | ❌ | ❌ | ✅ |
 | Lounge Preset | ❌ | ❌ | ✅ |
-| Under-Bed Lights | ❌ | ❌ | ✅ (on/off) |
-| Massage | ❌ | ❌ | ✅ (3 wave modes) |
-| Massage Intensity | ❌ | ❌ | ✅ (per-zone) |
+| Under-Bed Lights | ❌ | ❌ | ✅ (on/off and level 0-6) |
+| Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
+| Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
 
 ## Protocol Details
 
@@ -163,8 +166,10 @@ important because the app also contains a different legacy `BOX25` protocol.
 5A 01 03 10 [category] [command] A5
 ```
 
-Commands are written to Nordic UART without response. The integration sends the
-proven `5A 0B 00 A5` wake frame once before the first command. The legacy
+Normal commands are written to Nordic UART without response. The integration
+sends the proven `5A 0B 00 A5` wake frame once **with response**, before enabling
+RX notifications, exactly matching the Sleepy's app session. There is no
+application-level delay after wake. The legacy
 `00 D0` / `00 B0` subsystem initializers and `05 02`, `08 02`, and `04 E0`
 command families do not apply to `BOX25_STAR`.
 
@@ -224,15 +229,31 @@ query is `5A B0 00 A5`.
 | `0x73` | Turn under-bed light on |
 | `0x74` | Turn under-bed light off |
 
+Direct brightness uses `5A E0 04 00 [level 0-6] 00 00 A5`.
+
 #### Massage Commands
 
 | Category | Command | Action |
 |----------|---------|--------|
 | `0x30` | `0x52` / `0x53` / `0x54` | Massage modes 1-3 |
+| `0x30` | `0x5A` | Toggle massage on/off |
 | `0x30` | `0x6F` | Massage off |
 | `0x30` | `0x60` / `0x61` | Head strength up/down |
 | `0x30` | `0x62` / `0x63` | Foot strength up/down |
 | `0x40` | `0x60` / `0x61` | Overall strength up/down |
+
+The direct combined-intensity slider is normalized as 0-7 in the app. Zero is
+encoded as zero; positive levels are encoded as 2-8:
+
+```text
+5A E0 04 06 [encoded] [encoded] 00 A5
+```
+
+The 10/20/30 minute timer maps to values 1/2/3:
+
+```text
+5A E0 04 07 [1-3] 00 00 A5
+```
 
 #### Notification Parsing
 
@@ -244,6 +265,11 @@ A5 0D ... [head at byte 4] ... [foot at byte 6] ... [lumbar at byte 8] ...
 
 Each motor position is clamped to the app's 0-100 range. Issue #372's captured
 notification `A5 0D 11 01 16 00 00 ...` therefore reports head position 22.
+
+`A5 0B` is the massage/status branch. Remaining duration is the big-endian
+value `(byte[4] << 8) | byte[5]`; 1-600, 601-1200, and 1201-1800 seconds map to
+the 10, 20, and 30 minute timer choices. The OEM parser consumes each BLE value
+event directly and does not reassemble fragments.
 
 ## Checksum Calculation (BOX15 only)
 
@@ -260,14 +286,16 @@ From app disassembly:
 - **Repeat Interval:** Continuous while button held
 - **Pattern:** Send command repeatedly with ~100ms delay
 - **Stop Required:** Yes, explicit stop after motor release
-- **BOX25 Star write mode:** write without response
-- **BOX25 Star wake delay:** 150ms after the one-time wake command
+- **BOX25 Star normal write mode:** write without response
+- **BOX25 Star wake:** one write with response before notifications, no app delay
 
 ## Detection
 
 Sleepy's Elite beds are auto-detected by name plus BLE services:
 
 - Device names starting with "star" (case-insensitive) plus Nordic UART → BOX25 Star
+- `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](star-elevate.md),
+  never BOX25
 - Device names starting with "star" without Nordic UART are treated as a low-confidence BOX25 match because Octo Star2 uses similar names
 - Device names containing "sleepy" or "mfrm" (case-insensitive):
   - OKIN 64-bit service (62741523-...) → BOX24

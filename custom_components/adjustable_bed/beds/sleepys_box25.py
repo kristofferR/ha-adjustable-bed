@@ -14,9 +14,10 @@ Command formats:
 - Position:                   5A F0 03 [zone] [position] 00 A5 (7 bytes)
 - Position query:             5A B0 00 A5 (4 bytes)
 
-The OEM app sends commands every 100 ms while a button is held and writes to
-Nordic UART without response. A Star252201 controller is the BOX25_STAR variant,
-which must not be confused with the legacy BOX25 packet formats in the same app.
+The OEM app sends commands every 100 ms while a button is held and writes normal
+commands to Nordic UART without response. Its one-time wake write uses a response
+and is sent before notifications are enabled. A BOX25_STAR controller must not be
+confused with the legacy BOX25 packet formats bundled in the same app.
 """
 
 from __future__ import annotations
@@ -44,6 +45,11 @@ def _star_command(key: int, category: int = 0x30) -> bytes:
     return bytes([0x5A, 0x01, 0x03, 0x10, category, key, 0xA5])
 
 
+def _star_extended(subcommand: int, value: int, value2: int = 0) -> bytes:
+    """Build an OEM BOX25_STAR extended-value frame."""
+    return bytes([0x5A, 0xE0, 0x04, subcommand, value, value2, 0x00, 0xA5])
+
+
 _MASSAGE_MODES = (0x52, 0x53, 0x54)
 
 
@@ -51,8 +57,8 @@ class Box25Commands:
     """BOX25 Star protocol command constants."""
 
     # The previously used 00 D0 / 00 B0 initializers and 05/08/04 command
-    # families belong to legacy BOX25. The Sleepy's app selects BOX25_STAR for
-    # Star252201 devices and uses StarCode for every control (issue #372).
+    # families belong to legacy BOX25. The Sleepy's app selects BOX25_STAR after
+    # the NUS/Device Information check and uses StarCode for every control.
     WAKE = bytes([0x5A, 0x0B, 0x00, 0xA5])
     QUERY_STATUS = bytes([0x5A, 0xB0, 0x00, 0xA5])
 
@@ -67,6 +73,7 @@ class Box25Commands:
     NECK_TILT_DOWN = _star_command(0x0B)
 
     STAR_PRESET_FLAT = _star_command(0x10)
+    STAR_PRESET_TV = _star_command(0x11)
     STAR_PRESET_ZERO_GRAVITY = _star_command(0x13)
     STAR_PRESET_ANTI_SNORE = _star_command(0x16)
     STAR_PRESET_LOUNGE = _star_command(0x17)  # app "reading"
@@ -85,6 +92,7 @@ class Box25Commands:
     LIGHT_ON_WHITE = _star_command(0x73)
     LIGHT_OFF = _star_command(0x74)
     LIGHT_TOGGLE = _star_command(0x71)
+    MASSAGE_TOGGLE = _star_command(0x5A)
     MASSAGE_EXIT = _star_command(0x6F)
     MASSAGE_WAVE1 = _star_command(0x52)
     MASSAGE_WAVE2 = _star_command(0x53)
@@ -97,9 +105,6 @@ class Box25Commands:
     MASSAGE_FOOT_DOWN = _star_command(0x63)
     MASSAGE_MODES = (MASSAGE_WAVE1, MASSAGE_WAVE2, MASSAGE_WAVE3)
 
-
-# Timing constants (seconds)
-_WAKE_DELAY = 0.15
 
 # Preset send tuning, mirroring the decompiled "Adjustable Comfort M1X12" app
 # (StarCode/DewertOkin CB25 protocol). The app enqueues every preset as four
@@ -137,7 +142,10 @@ class SleepysBox25Controller(BedController):
         self._lumbar_position: float | None = None
         self._is_moving = False
         self._massage_active = False
-        self._massage_mode_index = 0  # Index into _MASSAGE_MODES
+        self._massage_mode_index = -1  # First step selects OEM mode 1.
+        self._massage_intensity = 0
+        self._massage_timer_minutes = 0
+        self._light_level: int | None = None
 
     # ─── BLE Properties ──────────────────────────────────────────────────
 
@@ -154,6 +162,10 @@ class SleepysBox25Controller(BedController):
 
     @property
     def supports_preset_anti_snore(self) -> bool:
+        return True
+
+    @property
+    def supports_preset_tv(self) -> bool:
         return True
 
     @property
@@ -195,6 +207,37 @@ class SleepysBox25Controller(BedController):
     @property
     def supports_massage(self) -> bool:
         return True
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return True
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        """Expose the one combined intensity slider proven by the OEM app."""
+        return ["all"]
+
+    @property
+    def massage_intensity_max(self) -> int:
+        """Return the OEM UI's normalized 0-7 intensity range."""
+        return 7
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [10, 20, 30]
+
+    @property
+    def supports_light_level_control(self) -> bool:
+        return True
+
+    @property
+    def light_level_max(self) -> int:
+        """Return the OEM UI's exact 0-6 brightness range."""
+        return 6
 
     @property
     def supports_position_feedback(self) -> bool:
@@ -273,11 +316,8 @@ class SleepysBox25Controller(BedController):
             self.control_characteristic_uuid,
             Box25Commands.WAKE,
             cancel_event=cancel_event,
-            response=False,
+            response=True,
         )
-        if self._is_cancelled(cancel_event):
-            return
-        await asyncio.sleep(_WAKE_DELAY)
         if self._is_cancelled(cancel_event):
             return
         self._initialized = True
@@ -332,42 +372,40 @@ class SleepysBox25Controller(BedController):
 
         length = len(raw)
 
-        if length >= 9 and raw[0:2] == bytes([0xA5, 0x0D]):
+        if length >= 19 and raw[0:2] == bytes([0xA5, 0x0D]):
             # BOX25_STAR status frame. The Sleepy's app reads the 0-100 motor
-            # positions from bytes 4, 6, and 8 respectively.
+            # positions from bytes 4, 6, and 8 respectively and clamps them.
             for key, attr, position in (
                 ("head", "_head_position", raw[4]),
                 ("feet", "_foot_position", raw[6]),
                 ("lumbar", "_lumbar_position", raw[8]),
             ):
-                if 0 <= position <= 100:
-                    value = float(position)
-                    setattr(self, attr, value)
-                    if self._notify_callback:
-                        self._notify_callback(key, value)
-        elif length >= 7 and raw[0] == 0x05:
-            self._is_moving = any(b != 0 for b in raw[2:7])
-        elif length >= 4 and raw[0] == 0x03:
-            zone = raw[1]
-            position = raw[2]
-            if 0 <= position <= 100:
-                if zone == 0x00:
-                    self._head_position = float(position)
-                    if self._notify_callback:
-                        self._notify_callback("head", float(position))
-                elif zone == 0x01:
-                    self._foot_position = float(position)
-                    if self._notify_callback:
-                        self._notify_callback("feet", float(position))
-                elif zone == 0x02:
-                    self._lumbar_position = float(position)
-                    if self._notify_callback:
-                        self._notify_callback("lumbar", float(position))
-        elif length >= 8 and raw[0] == 0x08:
-            mode_byte = raw[7]
-            self._massage_active = mode_byte != 0
-            if mode_byte in _MASSAGE_MODES:
-                self._massage_mode_index = _MASSAGE_MODES.index(mode_byte)
+                value = float(min(100, max(0, position)))
+                setattr(self, attr, value)
+                if self._notify_callback:
+                    self._notify_callback(key, value)
+            self._is_moving = raw[17] != 0
+        elif length >= 16 and raw[0:2] == bytes([0xA5, 0x0B]):
+            # The app buckets the big-endian remaining duration into its three
+            # timer choices. Other nibble fields are intentionally not assigned
+            # semantics here because this app's recovered model names are gone.
+            seconds = (raw[4] << 8) | raw[5]
+            if 1 <= seconds <= 600:
+                minutes = 10
+            elif 601 <= seconds <= 1200:
+                minutes = 20
+            elif 1201 <= seconds <= 1800:
+                minutes = 30
+            else:
+                minutes = 0
+            self._massage_timer_minutes = minutes
+            self._massage_active = seconds > 0
+            self.forward_controller_state_updates(
+                {
+                    "massage_timer": minutes,
+                    "massage_active": self._massage_active,
+                }
+            )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications via Nordic UART RX."""
@@ -379,6 +417,8 @@ class SleepysBox25Controller(BedController):
             return
 
         try:
+            # The OEM session writes wake with response before enabling RX.
+            await self._ensure_initialized()
             await client.start_notify(NORDIC_UART_READ_CHAR_UUID, self._on_notification)
             _LOGGER.debug("Subscribed to BOX25 notifications")
         except BleakError:
@@ -538,7 +578,7 @@ class SleepysBox25Controller(BedController):
                     Box25Commands.STAR_PRESET_TERMINATOR,
                     cancel_event=asyncio.Event(),
                 )
-            except BleakError, ConnectionError:
+            except (BleakError, ConnectionError):
                 _LOGGER.debug(
                     "Failed to send committing terminator after preset",
                     exc_info=True,
@@ -546,6 +586,9 @@ class SleepysBox25Controller(BedController):
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.STAR_PRESET_FLAT)
+
+    async def preset_tv(self) -> None:
+        await self._send_preset(Box25Commands.STAR_PRESET_TV)
 
     async def preset_zero_g(self) -> None:
         await self._send_preset(Box25Commands.STAR_PRESET_ZERO_GRAVITY)
@@ -584,21 +627,29 @@ class SleepysBox25Controller(BedController):
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
 
+    async def set_light_level(self, level: int) -> None:
+        """Set the exact OEM 0-6 under-bed light brightness value."""
+        normalized = max(0, min(self.light_level_max, int(level)))
+        await self._write_massage_light_command(_star_extended(0x00, normalized))
+        self._light_level = normalized
+        self.forward_controller_state_update("light_level", normalized)
+
     # ─── Massage ─────────────────────────────────────────────────────────
 
     async def massage_off(self) -> None:
         """Exit massage mode."""
         self._massage_active = False
+        self._massage_timer_minutes = 0
         await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
+        self.forward_controller_state_updates(
+            {"massage_active": False, "massage_timer": 0}
+        )
 
     async def massage_toggle(self) -> None:
-        """Toggle massage: start wave_1 if off, exit if on."""
-        if self._massage_active:
-            await self.massage_off()
-        else:
-            self._massage_active = True
-            self._massage_mode_index = 0
-            await self._write_massage_light_command(Box25Commands.MASSAGE_WAVE1)
+        """Send the OEM's dedicated massage on/off toggle."""
+        await self._write_massage_light_command(Box25Commands.MASSAGE_TOGGLE)
+        self._massage_active = not self._massage_active
+        self.forward_controller_state_update("massage_active", self._massage_active)
 
     async def massage_intensity_up(self) -> None:
         """Increase massage intensity (both zones)."""
@@ -626,3 +677,40 @@ class SleepysBox25Controller(BedController):
         await self._write_massage_light_command(
             Box25Commands.MASSAGE_MODES[self._massage_mode_index]
         )
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        """Set the combined massage intensity exactly as the OEM slider does."""
+        if zone != "all":
+            raise ValueError(f"Unsupported BOX25 massage zone: {zone}")
+        normalized = max(0, min(self.massage_intensity_max, int(level)))
+        # The UI presents 0..7 but encodes positive levels as 2..8. Feedback
+        # decoders in the corroborating StarCode apps subtract one again.
+        encoded = normalized + 1 if normalized > 0 else 0
+        await self._write_massage_light_command(_star_extended(0x06, encoded, encoded))
+        self._massage_intensity = normalized
+        self.forward_controller_state_update("massage_intensity", normalized)
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Select the OEM massage timer (10/20/30 minutes), or turn it off."""
+        if minutes == 0:
+            self._massage_timer_minutes = 0
+            await self.massage_off()
+            return
+        try:
+            encoded = self.massage_timer_options.index(int(minutes)) + 1
+        except ValueError as err:
+            raise ValueError(
+                f"Unsupported BOX25 massage timer {minutes}; "
+                f"expected one of {self.massage_timer_options}"
+            ) from err
+        await self._write_massage_light_command(_star_extended(0x07, encoded))
+        self._massage_timer_minutes = int(minutes)
+        self.forward_controller_state_update("massage_timer", int(minutes))
+
+    def get_massage_state(self) -> dict[str, object]:
+        """Return normalized combined intensity and timer state."""
+        return {
+            "intensity": self._massage_intensity,
+            "timer_mode": str(self._massage_timer_minutes),
+            "active": self._massage_active,
+        }
