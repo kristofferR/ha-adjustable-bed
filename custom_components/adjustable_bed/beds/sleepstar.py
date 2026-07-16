@@ -44,6 +44,11 @@ _PRESET_REPEAT_COUNT = 3
 _MEMORY_STORE_REPEAT_COUNT = 55
 
 
+def _as_local_datetime(now: datetime) -> datetime:
+    """Localize naive values while preserving an explicit local timezone."""
+    return now.astimezone() if now.tzinfo is None else now
+
+
 def star_normal(key: int) -> bytes:
     """Build the app's seven-byte StarCode normal frame."""
     return b"\x5a\x01" + int(key).to_bytes(4, "big") + b"\xa5"
@@ -87,7 +92,7 @@ def build_cb37_config_query(page: int) -> bytes:
 
 def build_cb37_time(now: datetime) -> bytes:
     """Build the unwrapped CB37 date/time calibration frame."""
-    local = now.astimezone()
+    local = _as_local_datetime(now)
     offset = local.utcoffset()
     timezone_hours = int(offset.total_seconds() / 3600) if offset is not None else 0
     return bytes(
@@ -112,7 +117,7 @@ def build_cb37_time(now: datetime) -> bytes:
 
 def build_wrapped_star_time(now: datetime) -> bytes:
     """Build the demo device's transparent StarCode time calibration frame."""
-    local = now.astimezone()
+    local = _as_local_datetime(now)
     inner = bytes(
         [
             0x5A,
