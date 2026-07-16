@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from homeassistant.components.bluetooth.match import IntegrationMatcher
+
 
 def test_manifest_discovers_motosleep_names_in_both_cases() -> None:
     """Name-only MotoSleep advertisements must reach normalized routing."""
@@ -16,7 +18,17 @@ def test_manifest_discovers_motosleep_names_in_both_cases() -> None:
     local_names = {
         entry["local_name"] for entry in manifest["bluetooth"] if "local_name" in entry
     }
-    assert {"*HHC*", "*hhc*", "MOTOB*", "motob*", "MOTOS*", "motos*"} <= local_names
+    assert {"HHC*", "hhc*", "MOTOB*", "motob*", "MOTOS*", "motos*"} <= local_names
+
+
+def test_manifest_bluetooth_matchers_are_accepted_by_home_assistant() -> None:
+    """Every discovery hint must be safe to load into the Bluetooth index."""
+    manifest_path = (
+        Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    IntegrationMatcher(manifest["bluetooth"]).async_setup()
 
 
 def test_manifest_discovers_okin_receiver_name_only_advertisements() -> None:
