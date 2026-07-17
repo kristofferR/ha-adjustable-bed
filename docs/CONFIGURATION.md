@@ -144,6 +144,7 @@ These settings control how motor movement commands are sent. Adjusting them can 
 | Linak | 10 | 100ms |
 | Sleepy's BOX15 | 10 | 100ms |
 | Sleepy's BOX24 | 10 | 100ms |
+| SleepSpa S9000AI / SLEEPSTAR | 10 | 100ms |
 | Jensen | 3 | 400ms |
 | Svane | 10 | 100ms |
 | Vibradorm | 10 | 100ms |

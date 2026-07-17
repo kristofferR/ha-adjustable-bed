@@ -91,6 +91,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [BedTech](docs/beds/bedtech.md) | BedTech |
 | ✅ [Sleep Number](docs/beds/sleep_number.md) | Climate 360, FlexFit, FlexFit Smart, i8 / 360 FlexFit 2 |
 | ✅ [Sleepy's Elite](docs/beds/sleepys.md) | Sleepy's |
+| ⚠️ [SleepSpa S9000AI](docs/beds/sleepstar.md) | SleepSpa S9000AI (`SLEEPSTAR`) |
 | ✅ [Vibradorm](docs/beds/vibradorm.md) | Vibradorm |
 | ✅ [SUTA Smart Home](docs/beds/suta.md) | SUTA |
 | ✅ [TiMOTION AHF](docs/beds/timotion-ahf.md) | TiMOTION |
@@ -101,6 +102,7 @@ The names below refer to motor/actuator manufacturers. Your bed might use one of
 | ✅ [SBI/Q-Plus](docs/beds/sbi.md) | Q-Plus (Costco) |
 | ✅ [Logicdata](docs/beds/logicdata.md) | SILVERmotion, SimplicityFrame |
 | ✅ [Okin CB35](docs/beds/okin-cb35.md) | Sealy Posturematic |
+| ⚠️ [DewertOkin ELEVATE](docs/beds/star-elevate.md) | ELEVATE two-actuator lift accessory |
 | ✅ [Okin CST](docs/beds/okin-cst.md) | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, LP Prodigy CE |
 | ✅ [OKIN Smart Remote / RF ECO BT](docs/beds/okin-rf-eco-bt.md) | Elda BTH / MEGAMAT staircase actuator |
 | ⚠️ [Okin DOT](docs/beds/okin-dot.md) | DewertOkin RF1058/RF34/RF6707 handset beds |
