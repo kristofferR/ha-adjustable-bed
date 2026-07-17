@@ -83,6 +83,7 @@ from .const import (
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
+    KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
@@ -570,8 +571,7 @@ async def create_controller(
                         keeson_cb1322_presets = True
                     else:
                         _LOGGER.info(
-                            "Auto-detected Keeson Sino variant for %s "
-                            "(name: %s, services: %s)",
+                            "Auto-detected Keeson Sino variant for %s (name: %s, services: %s)",
                             coordinator.address,
                             device_name or "unknown",
                             sorted(service_uuids),
@@ -590,8 +590,10 @@ async def create_controller(
                 )
                 keeson_variant = KEESON_VARIANT_KSBT_CR
             elif normalized_name.startswith("ksbt04c") or normalized_name == "smart_dfu":
-                _LOGGER.info(
-                    "Auto-detected KSBT04C variant for %s (name: %s)",
+                _LOGGER.warning(
+                    "Device %s advertises the ambiguous name %s; using the "
+                    "legacy generic KSBT04C profile. Select Purple or Sleep "
+                    "Harmony explicitly if that is the matching app family.",
                     coordinator.address,
                     device_name,
                 )
@@ -610,8 +612,19 @@ async def create_controller(
             _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
             return KeesonController(coordinator, variant="ksbt_cr", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT04C:
-            _LOGGER.debug("Using KSBT04C Keeson variant (7-byte with checksum)")
-            return KeesonController(coordinator, variant="ksbt04c", device_name=device_name)
+            _LOGGER.debug("Using generic KSBT04C Keeson variant (7-byte with checksum)")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_KSBT04C,
+                device_name=device_name,
+            )
+        elif keeson_variant == KEESON_VARIANT_SLEEP_HARMONY:
+            _LOGGER.debug("Using explicit Sleep Harmony Keeson variant")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_SLEEP_HARMONY,
+                device_name=device_name,
+            )
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
@@ -625,9 +638,7 @@ async def create_controller(
             return KeesonController(coordinator, variant="serta")
         elif keeson_variant == KEESON_VARIANT_PURPLE:
             _LOGGER.debug("Using Purple Keeson variant")
-            return KeesonController(
-                coordinator, variant="purple", device_name=device_name
-            )
+            return KeesonController(coordinator, variant="purple", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_SINO:
             _LOGGER.debug("Using Sino Keeson variant (big-endian)")
             return KeesonController(
@@ -638,9 +649,7 @@ async def create_controller(
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")
-            return KeesonController(
-                coordinator, variant="base", device_name=device_name
-            )
+            return KeesonController(coordinator, variant="base", device_name=device_name)
 
     if bed_type == BED_TYPE_OKIN_FFE:
         from .beds.keeson import KeesonController
@@ -914,7 +923,11 @@ async def create_controller(
         from .beds.sbi import SBIController
 
         # Use configured variant or default to "both" for dual-bed control
-        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else SBI_VARIANT_BOTH
+        variant = (
+            protocol_variant
+            if protocol_variant and protocol_variant != "auto"
+            else SBI_VARIANT_BOTH
+        )
         _LOGGER.debug("Using SBI controller with variant: %s", variant)
         return SBIController(coordinator, variant=variant)
 

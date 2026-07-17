@@ -55,7 +55,7 @@ Brands using Keeson/Ergomotion actuators:
 |---------|-----------|------------|------|------------|------|-------|------|------------------|-----------------------|
 | Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Memory Presets | ✅ (slots 3-4) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
+| Memory Presets | ⚠️ 4 exposed (slot 3 app-confirmed) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 exposed (verification needed) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
 | TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
@@ -141,7 +141,7 @@ Auto-detected from device name prefix `ksbt03cr`. Uses the same 32-bit command v
 ### Sleep Harmony Variant
 
 Sleep Harmony 1.0.1 has two name-selected packet families behind the explicit
-`Sleep Harmony (KSBT04C / base-i5)` profile:
+`sleep_harmony` (`Sleep Harmony (KSBT04C / base-i5)`) profile:
 
 | Name prefix | GATT | Frame |
 |-------------|------|-------|
@@ -295,9 +295,9 @@ Unique service UUID auto-detection:
 
 | Device Name Prefix | Protocol |
 |-------------------|----------|
-| `base` / `base-i5` | Profile-dependent: Purple Premium uses E5/8-byte; Sleep Harmony uses E6/9-byte; select the explicit profile |
+| `base` / `base-i5` | Ambiguous: Auto keeps the Base profile; Purple Premium uses E5/8-byte and Sleep Harmony uses E6/9-byte, so select either profile explicitly |
 | `KSBT03C` | Nordic UART with 6-byte packets (3 motors: no head tilt; e.g. Ergomotion Rio 5.0) |
 | `KSBT04` | Nordic UART with 6-byte packets (confirmed Rio 6.0 family) |
-| `KSBT04C` | Profile-dependent: Purple Plus uses a trailing zero, Sleep Harmony uses a checksum; select the matching explicit profile |
+| `KSBT04C` | Ambiguous: Auto keeps the legacy generic checksum profile; Purple Plus uses a trailing zero and Sleep Harmony uses app-specific checksum/release behavior, so select either profile explicitly |
 | `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |
