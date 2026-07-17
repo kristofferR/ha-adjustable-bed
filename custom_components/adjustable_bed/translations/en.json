@@ -646,6 +646,15 @@
       "feet_position": {
         "name": "Feet Position"
       },
+      "lumbar_position": {
+        "name": "Lumbar Position"
+      },
+      "auxiliary_1_position": {
+        "name": "Auxiliary 1 Position"
+      },
+      "auxiliary_2_position": {
+        "name": "Auxiliary 2 Position"
+      },
       "massage_head_intensity": {
         "name": "Massage: Head Intensity"
       },

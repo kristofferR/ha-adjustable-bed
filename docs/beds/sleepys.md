@@ -290,7 +290,9 @@ Feedback uses the shared BOX25 parser below.
 
 #### Notification Parsing
 
-The `BOX25_STAR` bed pushes a 20-byte status packet via Nordic UART RX:
+Both legacy `BOX25` and `BOX25_STAR` route Nordic UART RX notifications through
+the same parser. A legacy `00 D0` position query and the StarCode
+`5A B0 00 A5` query therefore produce the same 20-byte position packet family:
 
 ```text
 A5 0D ... [head at byte 4] ... [foot at byte 6] ... [lumbar at byte 8] ...
@@ -298,6 +300,8 @@ A5 0D ... [head at byte 4] ... [foot at byte 6] ... [lumbar at byte 8] ...
 
 Each motor position is clamped to the app's 0-100 range. Issue #372's captured
 notification `A5 0D 11 01 16 00 00 ...` therefore reports head position 22.
+Parsing is selected by this notification header, not by a pending-query token
+or the runtime dialect.
 
 `A5 0B` is the massage/status branch. Remaining duration is the big-endian
 value `(byte[4] << 8) | byte[5]`; 1-600, 601-1200, and 1201-1800 seconds map to

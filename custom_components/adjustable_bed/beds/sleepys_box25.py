@@ -373,8 +373,9 @@ class SleepysBox25Controller(BedController):
         length = len(raw)
 
         if length >= 19 and raw[0:2] == bytes([0xA5, 0x0D]):
-            # BOX25_STAR status frame. The Sleepy's app reads the 0-100 motor
-            # positions from bytes 4, 6, and 8 respectively and clamps them.
+            # Both legacy BOX25 and BOX25_STAR use this shared status parser.
+            # The Sleepy's app reads the 0-100 motor positions from bytes 4, 6,
+            # and 8 respectively and clamps them.
             for key, attr, position in (
                 ("head", "_head_position", raw[4]),
                 ("feet", "_foot_position", raw[6]),
@@ -437,7 +438,7 @@ class SleepysBox25Controller(BedController):
                 pass
 
     async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
-        """Request the BOX25_STAR status frame used for motor positions."""
+        """Request the shared BOX25 status frame used for motor positions."""
         await self.write_command(Box25Commands.QUERY_STATUS)
 
     # ─── Direct Position Control ─────────────────────────────────────────
@@ -632,7 +633,12 @@ class SleepysBox25Controller(BedController):
         normalized = max(0, min(self.light_level_max, int(level)))
         await self._write_massage_light_command(_star_extended(0x00, normalized))
         self._light_level = normalized
-        self.forward_controller_state_update("light_level", normalized)
+        self.forward_controller_state_updates(
+            {
+                "light_level": normalized,
+                "under_bed_lights_on": normalized > 0,
+            }
+        )
 
     # ─── Massage ─────────────────────────────────────────────────────────
 

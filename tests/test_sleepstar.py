@@ -284,6 +284,45 @@ async def test_sonic_intensity_and_timer_use_two_writes_then_stop(
     assert write.await_args_list[1].args == (SleepStarCommands.STOP,)
     assert write.await_args_list[2].args[0] == wrap_control_box(star_extended(0x0B, 2))
     assert write.await_args_list[3].args == (SleepStarCommands.STOP,)
+    assert controller.get_massage_state()["intensity"] == 6
+    intensity_updates = _coordinator.handle_controller_state_updates.call_args_list[0].args[0]
+    assert intensity_updates["massage_intensity"] == 6
+
+
+async def test_repeated_command_holds_sender_lock_against_background_query(
+    sleepstar_controller: tuple[SleepStarController, MagicMock, MagicMock],
+) -> None:
+    """A background recovery query cannot interleave repeated user frames."""
+    controller, _coordinator, client = sleepstar_controller
+    controller._session_initialized = True
+    controller._notify_started = True
+    command = bytes.fromhex("AA00000902075A0103103094A5")
+    writes: list[bytes] = []
+    first_write_started = asyncio.Event()
+    release_first_write = asyncio.Event()
+
+    async def hold_first_write(_uuid: str, frame: bytes, **_kwargs: object) -> None:
+        writes.append(frame)
+        if len(writes) == 1:
+            first_write_started.set()
+            await release_first_write.wait()
+
+    client.write_gatt_char.side_effect = hold_first_write
+    repeated = asyncio.create_task(
+        controller.write_command(command, repeat_count=3, repeat_delay_ms=0)
+    )
+    await first_write_started.wait()
+    recovery = asyncio.create_task(controller._query_device_config(reset=False))
+    await asyncio.sleep(0)
+    release_first_write.set()
+    await asyncio.gather(repeated, recovery)
+
+    assert writes == [
+        command,
+        command,
+        command,
+        build_cb37_config_query(1),
+    ]
 
 
 async def test_direct_and_wrapped_motor_notifications_are_parsed(

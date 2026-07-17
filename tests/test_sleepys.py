@@ -1426,6 +1426,13 @@ class TestSleepysBox25Controller:
             "active": False,
         }
         assert coordinator.controller_state["light_level"] == 6
+        assert coordinator.controller_state["under_bed_lights_on"] is True
+
+        with patch.object(controller, "write_command", AsyncMock()):
+            await controller.set_light_level(0)
+
+        assert coordinator.controller_state["light_level"] == 0
+        assert coordinator.controller_state["under_bed_lights_on"] is False
 
     async def test_massage_notification_maps_exact_duration_buckets(
         self,
@@ -1693,6 +1700,33 @@ class TestSleepysBox25RuntimeDialect:
     )
     def test_exact_legacy_command_translation(self, star: bytes, legacy: str) -> None:
         assert _translate_star_to_legacy(star) == bytes.fromhex(legacy)
+
+    async def test_legacy_position_query_uses_shared_a50d_parser(self) -> None:
+        """Legacy 00 D0 responses use the same A5 0D parser as StarCode."""
+        controller = SleepysBox25LegacyController(self._factory_coordinator())
+        controller._initialized = True
+        updates: list[tuple[str, float]] = []
+        controller._notify_callback = lambda key, value: updates.append((key, value))
+        characteristic = MagicMock(uuid="test-char")
+
+        with patch.object(controller, "_write_gatt_with_retry", AsyncMock()) as write:
+            await controller.read_positions()
+
+        write.assert_awaited_once_with(
+            NORDIC_UART_WRITE_CHAR_UUID,
+            bytes.fromhex("00 D0"),
+            repeat_count=1,
+            repeat_delay_ms=100,
+            cancel_event=None,
+            response=False,
+        )
+
+        controller._on_notification(
+            characteristic,
+            bytearray.fromhex("A5 0D 11 01 32 00 21 00 0C 00 00 00 70 01 01 00 00 00 00"),
+        )
+
+        assert updates == [("head", 50.0), ("feet", 33.0), ("lumbar", 12.0)]
 
     async def test_legacy_writer_preserves_repeat_timing_and_write_mode(self) -> None:
         controller = SleepysBox25LegacyController(self._factory_coordinator())

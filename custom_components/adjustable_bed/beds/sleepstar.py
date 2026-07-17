@@ -281,6 +281,7 @@ class SleepStarController(BedController):
         super().__init__(coordinator)
         self.sleep_monitor_variant = resolve_sleepstar_variant(manufacturer_data)
         self._session_lock = asyncio.Lock()
+        self._sender_lock = asyncio.Lock()
         self._session_initialized = False
         self._notify_started = False
         self._background_tasks: set[asyncio.Task[Any]] = set()
@@ -494,14 +495,15 @@ class SleepStarController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write one CB37 family frame without a GATT response."""
-        await self._write_gatt_with_retry(
-            self.control_characteristic_uuid,
-            frame,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=False,
-        )
+        async with self._sender_lock:
+            await self._write_gatt_with_retry(
+                self.control_characteristic_uuid,
+                frame,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=False,
+            )
 
     async def _initialize_session_locked(self) -> None:
         """Subscribe and send the complete one-time CB37 startup sequence."""
@@ -1041,7 +1043,10 @@ class SleepStarController(BedController):
             raise ValueError(f"Unsupported SLEEPSTAR sonic zone: {zone}")
         await self._send_twice_then_stop(wrap_control_box(command))
         self._massage_intensities[zone] = normalized
-        self.forward_controller_state_update(f"massage_{zone}_intensity", normalized)
+        updates = {f"massage_{zone}_intensity": normalized}
+        if zone == "all":
+            updates["massage_intensity"] = normalized
+        self.forward_controller_state_updates(updates)
 
     async def set_massage_timer(self, minutes: int) -> None:
         """Set the sonic timer to off, 10, 20, or 30 minutes."""
@@ -1065,6 +1070,7 @@ class SleepStarController(BedController):
         """Return cached sonic intensity, timer, and active state."""
         return {
             **{f"{zone}_intensity": value for zone, value in self._massage_intensities.items()},
+            "intensity": self._massage_intensities["all"],
             "timer_mode": str(self._massage_timer_minutes),
             "active": self._massage_timer_minutes > 0,
         }
