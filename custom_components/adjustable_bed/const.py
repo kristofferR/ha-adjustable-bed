@@ -1019,6 +1019,7 @@ KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
+KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -1027,13 +1028,14 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
     KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
-    KEESON_VARIANT_KSBT04C: "KSBT04C (7-byte with checksum, Beautyrest Baselogic)",
+    KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
+    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
     KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
-    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base",
+    KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
 # Leggett & Platt variants
@@ -1756,6 +1758,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,
@@ -1857,6 +1860,7 @@ def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None)
     if bed_type == BED_TYPE_LEGGETT_GEN2:
         return True
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+
 
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(
