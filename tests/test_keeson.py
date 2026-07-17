@@ -1025,8 +1025,10 @@ class TestPurpleSmartBaseProtocol:
 
         assert premium.memory_slot_count == 2
         assert premium.supports_preset_lounge
+        assert not premium.supports_lights
         assert plus.memory_slot_count == 3
         assert not plus.supports_preset_lounge
+        assert plus.supports_lights
 
         for memory_num in (1, 2, 3):
             await plus.preset_memory(memory_num)

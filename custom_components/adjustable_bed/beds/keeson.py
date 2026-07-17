@@ -581,7 +581,7 @@ class KeesonController(BedController):
             return False
         if self._variant == KEESON_VARIANT_PURPLE:
             # Plus model has massage and lighting; Premium base has neither
-            return self._coordinator.has_massage
+            return self._is_purple_plus
         return True
 
     @property

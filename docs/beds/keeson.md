@@ -140,6 +140,9 @@ Auto-detected from device name prefix `ksbt03cr`. Uses the same 32-bit command v
 
 ### Sleep Harmony Variant
 
+**Validation status:** Clean-room APK analysis complete; physical Sleep Harmony
+hardware has not yet been tested.
+
 Sleep Harmony 1.0.1 has two name-selected packet families behind the explicit
 `sleep_harmony` (`Sleep Harmony (KSBT04C / base-i5)`) profile:
 
