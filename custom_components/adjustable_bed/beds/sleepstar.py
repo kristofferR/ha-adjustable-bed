@@ -38,7 +38,8 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_SENDER_CADENCE_SECONDS = 0.1
+_SENDER_CADENCE_MS = 100
+_SENDER_CADENCE_SECONDS = _SENDER_CADENCE_MS / 1000
 _CONFIG_RETRY_SECONDS = 12.0
 _DUPLICATE_NOTIFICATION_SECONDS = 0.2
 _PRESET_REPEAT_COUNT = 3
@@ -270,6 +271,8 @@ class SleepStarCommands:
 
 class SleepStarController(BedController):
     """Controller for SleepSpa S9000AI ``SLEEPSTAR`` devices."""
+
+    _movement_repeat_delay_ms = _SENDER_CADENCE_MS
 
     def __init__(
         self,

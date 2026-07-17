@@ -106,6 +106,9 @@ class Box25Commands:
     MASSAGE_MODES = (MASSAGE_WAVE1, MASSAGE_WAVE2, MASSAGE_WAVE3)
 
 
+# Sender cadence and preset tuning, mirroring the decompiled direct Star apps.
+_SENDER_CADENCE_MS = 100
+
 # Preset send tuning, mirroring the decompiled "Adjustable Comfort M1X12" app
 # (StarCode/DewertOkin CB25 protocol). The app enqueues every preset as four
 # packets drained 100 ms apart by its periodic BLE sender: the preset key ×3,
@@ -113,7 +116,7 @@ class Box25Commands:
 # receiving the key and only drives to the target once the terminator arrives.
 # The terminator is the StarCode 0x0F packet. See _send_preset (#372).
 _PRESET_REPEAT_COUNT = 3
-_PRESET_REPEAT_DELAY_MS = 100
+_PRESET_REPEAT_DELAY_MS = _SENDER_CADENCE_MS
 _PRESET_COMMIT_DELAY = 0.1
 _MEMORY_STORE_REPEAT_COUNT = 110
 
@@ -127,6 +130,10 @@ class SleepysBox25Controller(BedController):
     Presets are armed by repeating the StarCode key, then committed by a trailing
     StarCode 0x0F frame — see _send_preset (#372).
     """
+
+    # The recovered apps use a fixed 100 ms sender. Faster configurable values
+    # can flood the controller before it recognizes a held movement.
+    _movement_repeat_delay_ms = _SENDER_CADENCE_MS
 
     # Position feedback: head/feet/lumbar at 0-100 percentage
     _HEAD_MAX_ANGLE: float = 100.0
@@ -578,7 +585,7 @@ class SleepysBox25Controller(BedController):
                     Box25Commands.STAR_PRESET_TERMINATOR,
                     cancel_event=asyncio.Event(),
                 )
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug(
                     "Failed to send committing terminator after preset",
                     exc_info=True,
@@ -641,9 +648,7 @@ class SleepysBox25Controller(BedController):
         await self._write_motor_command(Box25Commands.MASSAGE_EXIT)
         self._massage_active = False
         self._massage_timer_minutes = 0
-        self.forward_controller_state_updates(
-            {"massage_active": False, "massage_timer": 0}
-        )
+        self.forward_controller_state_updates({"massage_active": False, "massage_timer": 0})
 
     async def massage_toggle(self) -> None:
         """Send the OEM's dedicated massage on/off toggle."""
@@ -770,18 +775,17 @@ def _translate_star_to_legacy(command: bytes) -> bytes:
         # Sleepy's sends this transport wake for both runtime dialects.
         return command
     if command == Box25Commands.QUERY_STATUS:
-        return b"\x00\xD0"
-    if len(command) == 7 and command[:4] == b"\x5A\x01\x03\x10" and command[-1] == 0xA5:
+        return b"\x00\xd0"
+    if len(command) == 7 and command[:4] == b"\x5a\x01\x03\x10" and command[-1] == 0xA5:
         try:
             return _LEGACY_NORMAL_BY_STAR_KEY[(command[4], command[5])]
         except KeyError as err:
             raise ValueError(
-                "No artifact-proven legacy CB25 mapping for StarCode action "
-                f"{command.hex()}"
+                f"No artifact-proven legacy CB25 mapping for StarCode action {command.hex()}"
             ) from err
-    if len(command) == 7 and command[:3] == b"\x5A\xF0\x03" and command[-1] == 0xA5:
+    if len(command) == 7 and command[:3] == b"\x5a\xf0\x03" and command[-1] == 0xA5:
         return bytes([0x03, 0xF0, command[3], command[4], 0x00])
-    if len(command) == 8 and command[:3] == b"\x5A\xE0\x04" and command[-1] == 0xA5:
+    if len(command) == 8 and command[:3] == b"\x5a\xe0\x04" and command[-1] == 0xA5:
         return _legacy_extended(command[3], command[4], command[5])
     raise ValueError(f"Unsupported StarCode frame for legacy CB25: {command.hex()}")
 

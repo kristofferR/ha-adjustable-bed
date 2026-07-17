@@ -322,6 +322,10 @@ From app disassembly:
 - **BOX25 Star normal write mode:** write without response
 - **BOX25 Star wake:** one write with response before notifications, no app delay
 
+BOX25 movement always uses the recovered 100 ms sender cadence for both runtime
+dialects. The configurable pulse count still controls the maximum hold duration,
+but a generic motor pulse delay override is intentionally ignored.
+
 ## Detection
 
 Sleepy's Elite beds are auto-detected by name plus BLE services:

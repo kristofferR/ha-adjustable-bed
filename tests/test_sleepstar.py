@@ -236,8 +236,10 @@ async def test_config_page_notification_does_not_interleave_startup_writes(
 async def test_movement_preset_and_memory_cadence(
     sleepstar_controller: tuple[SleepStarController, MagicMock, MagicMock],
 ) -> None:
-    """Movement and recall guarantee STOP while store uses the app's 55 writes."""
-    controller, _coordinator, _client = sleepstar_controller
+    """Movement fixes the OEM cadence while recall and store preserve their sequences."""
+    controller, coordinator, _client = sleepstar_controller
+    coordinator.motor_pulse_count = 100
+    coordinator.motor_pulse_delay_ms = 10
     controller._session_initialized = True
     controller._notify_started = True
     with (
@@ -253,7 +255,7 @@ async def test_movement_preset_and_memory_cadence(
 
     assert write.await_args_list[0].args == (SleepStarCommands.HEAD_UP,)
     assert write.await_args_list[0].kwargs == {
-        "repeat_count": 1,
+        "repeat_count": 100,
         "repeat_delay_ms": 100,
     }
     assert write.await_args_list[1].args == (SleepStarCommands.STOP,)

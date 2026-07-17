@@ -18,6 +18,10 @@ uses the same Nordic UART service and StarCode envelope.
 | Held-command interval | 100 ms |
 | Authentication | None |
 
+The 100 ms movement cadence is protocol-fixed. The configurable pulse count
+still controls maximum hold duration, but the generic motor pulse delay setting
+does not replace this cadence.
+
 The integration requires the ELEVATE name plus Nordic UART for high-confidence
 automatic discovery. Nordic UART by itself is intentionally not treated as a bed
 signature because many unrelated devices use it.

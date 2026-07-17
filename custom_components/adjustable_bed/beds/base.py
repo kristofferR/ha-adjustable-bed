@@ -68,6 +68,8 @@ class BedController(ABC):
     - massage_* methods
     """
 
+    _movement_repeat_delay_ms: int | None = None
+
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         """Initialize the controller.
 
@@ -493,21 +495,27 @@ class BedController(ABC):
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 
-        Uses coordinator's motor_pulse_count and motor_pulse_delay_ms for timing.
-        Subclasses that need different movement patterns should override this.
-        Requires _send_stop() to be implemented.
+        Uses the coordinator's motor pulse count. Protocols with a fixed sender
+        cadence can set ``_movement_repeat_delay_ms``; all others use the
+        coordinator's configurable delay. Subclasses that need different
+        movement patterns should override this. Requires _send_stop() to be
+        implemented.
 
         Args:
             command: The movement command bytes to send repeatedly.
         """
         try:
             pulse_count = self._coordinator.motor_pulse_count
-            pulse_delay = self._coordinator.motor_pulse_delay_ms
+            pulse_delay = (
+                self._movement_repeat_delay_ms
+                if self._movement_repeat_delay_ms is not None
+                else self._coordinator.motor_pulse_delay_ms
+            )
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:
                 await self._send_stop()
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send STOP during cleanup", exc_info=True)
 
     async def _preset_with_stop(
@@ -530,7 +538,7 @@ class BedController(ABC):
         finally:
             try:
                 await self._send_stop()
-            except (BleakError, ConnectionError):
+            except BleakError, ConnectionError:
                 _LOGGER.debug("Failed to send STOP during preset cleanup", exc_info=True)
 
     async def read_non_notifying_positions(self) -> None:  # noqa: B027
