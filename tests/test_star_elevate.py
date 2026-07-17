@@ -88,28 +88,6 @@ class TestStarElevateController:
                 await method()
             mock_move.assert_awaited_once_with(expected)
 
-    async def test_movement_enforces_oem_sender_cadence(
-        self,
-        hass: HomeAssistant,
-        mock_star_elevate_config_entry,
-        mock_coordinator_connected,
-    ) -> None:
-        """A faster generic tuning value must not replace ELEVATE's 100 ms cadence."""
-        coordinator = AdjustableBedCoordinator(hass, mock_star_elevate_config_entry)
-        await coordinator.async_connect()
-        coordinator._motor_pulse_count = 100
-        coordinator._motor_pulse_delay_ms = 10
-        controller = coordinator.controller
-
-        with patch.object(controller, "write_command", AsyncMock()) as write:
-            await controller.move_head_up()
-
-        assert write.await_args_list[0].args == (bytes.fromhex("5A 01 03 10 30 40 A5"),)
-        assert write.await_args_list[0].kwargs == {
-            "repeat_count": 100,
-            "repeat_delay_ms": 100,
-        }
-
     async def test_lazy_session_wake_and_commands_use_write_without_response(
         self,
         hass: HomeAssistant,
@@ -147,5 +125,9 @@ class TestStarElevateController:
             await controller.preset_flat()
             await controller.stop_all()
 
-        assert mock_write.await_args_list[0].args == (bytes.fromhex("5A 01 03 10 30 46 A5"),)
-        assert mock_write.await_args_list[1].args[0] == bytes.fromhex("5A 01 03 10 30 0F A5")
+        assert mock_write.await_args_list[0].args == (
+            bytes.fromhex("5A 01 03 10 30 46 A5"),
+        )
+        assert mock_write.await_args_list[1].args[0] == bytes.fromhex(
+            "5A 01 03 10 30 0F A5"
+        )

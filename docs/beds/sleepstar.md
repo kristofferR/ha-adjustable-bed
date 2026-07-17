@@ -57,12 +57,10 @@ The integration enables RX notifications before writing anything, then sends:
 5. Motor, light, sleep configuration, environment duration, and environment
    address state queries
 
-Writes use the app's fixed 100 ms sender cadence. The configurable pulse count
-still controls maximum movement hold duration, but the generic motor pulse delay
-setting does not replace this cadence. A single 12-second recovery timer clears
-and requests configuration page 1 again. Page 1 contains a bitmap for pages 2
-through 8; only advertised missing pages are requested. Disconnect cleanup
-cancels all session timers and sends no logout packet.
+Writes use the app's 100 ms sender cadence. A single 12-second recovery timer
+clears and requests configuration page 1 again. Page 1 contains a bitmap for
+pages 2 through 8; only advertised missing pages are requested. Disconnect
+cleanup cancels all session timers and sends no logout packet.
 
 ## Packet families
 

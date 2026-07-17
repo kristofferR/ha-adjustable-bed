@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_SENDER_CADENCE_MS = 100
-
 
 def _elevate_command(key: int) -> bytes:
     """Build a StarCode ELEVATE command."""
@@ -49,8 +47,6 @@ class StarElevateCommands:
 
 class StarElevateController(BedController):
     """Controller for the separate ``ELEVATE*`` Nordic UART accessory."""
-
-    _movement_repeat_delay_ms = _SENDER_CADENCE_MS
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator)
@@ -96,7 +92,9 @@ class StarElevateController(BedController):
     def stale_motor_entity_keys(self) -> frozenset[str]:
         return frozenset({"back", "legs", "head", "feet"})
 
-    def _effective_cancel_event(self, cancel_event: asyncio.Event | None) -> asyncio.Event | None:
+    def _effective_cancel_event(
+        self, cancel_event: asyncio.Event | None
+    ) -> asyncio.Event | None:
         return cancel_event if cancel_event is not None else self._coordinator.cancel_command
 
     async def _ensure_initialized(self, cancel_event: asyncio.Event | None = None) -> None:
@@ -136,7 +134,9 @@ class StarElevateController(BedController):
             response=False,
         )
 
-    def _on_notification(self, characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
+    def _on_notification(
+        self, characteristic: BleakGATTCharacteristic, data: bytearray
+    ) -> None:
         """Forward raw data; both analyzed apps assign no semantic ELEVATE fields."""
         self.forward_raw_notification(characteristic.uuid, bytes(data))
 

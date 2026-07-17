@@ -1608,29 +1608,6 @@ class TestSleepysBox25RuntimeDialect:
         return coordinator
 
     @pytest.mark.parametrize(
-        "controller_type",
-        [SleepysBox25Controller, SleepysBox25LegacyController],
-    )
-    async def test_movement_enforces_oem_sender_cadence(
-        self,
-        controller_type: type[SleepysBox25Controller],
-    ) -> None:
-        """A stored 10 ms tuning value must not flood either CB25 wire dialect."""
-        coordinator = self._factory_coordinator()
-        coordinator.motor_pulse_count = 100
-        coordinator.motor_pulse_delay_ms = 10
-        controller = controller_type(coordinator)
-
-        with patch.object(controller, "write_command", AsyncMock()) as write:
-            await controller.move_head_up()
-
-        assert write.await_args_list[0].args == (Box25Commands.HEAD_UP,)
-        assert write.await_args_list[0].kwargs == {
-            "repeat_count": 100,
-            "repeat_delay_ms": 100,
-        }
-
-    @pytest.mark.parametrize(
         ("device_name", "manufacturer", "expected_type"),
         [
             ("Star252201011800", "STAR", SleepysBox25Controller),
