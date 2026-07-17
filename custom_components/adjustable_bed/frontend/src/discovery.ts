@@ -59,6 +59,7 @@ export const PRESET_ORDER = [
   "preset_anti_snore",
   "preset_tv",
   "preset_lounge",
+  "preset_swing",
   "preset_incline",
   "preset_both_up",
   "preset_yoga",
@@ -168,7 +169,11 @@ export function bedEntitiesForDevice(
           bed.lights.toggle = id;
         } else if (key === "light_cycle") {
           bed.lights.cycle = id;
-        } else if (key === "sync_positions" || key === "child_lock_toggle") {
+        } else if (
+          key === "sync_positions" ||
+          key === "child_lock_toggle" ||
+          key === "auxiliary_action"
+        ) {
           bed.utility.push(id);
         } else if (key.startsWith("massage_")) {
           bed.massage.buttons.push(id);

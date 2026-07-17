@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -511,6 +512,61 @@ class TestCoverEntities:
 
 class TestNumberEntities:
     """Test number entities."""
+
+    async def test_sleepstar_number_entities_follow_custom_motor_specs(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """SLEEPSTAR should expose all five percentage-backed position zones."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="SLEEPSTAR Numbers",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:47",
+                CONF_NAME: "SLEEPSTAR Numbers",
+                CONF_BED_TYPE: BED_TYPE_SLEEPSTAR,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:47",
+            entry_id="sleepstar_number_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import entity_registry as er
+
+        registry = er.async_get(hass)
+        expected_keys = (
+            "head_position",
+            "feet_position",
+            "lumbar_position",
+            "sleepstar_part4_position",
+            "sleepstar_part5_position",
+        )
+        for key in expected_keys:
+            entity_id = registry.async_get_entity_id("number", DOMAIN, f"AA:BB:CC:DD:EE:47_{key}")
+            assert entity_id is not None
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.attributes["min"] == 0
+            assert state.attributes["max"] == 100
+            assert state.attributes["unit_of_measurement"] == "%"
+
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:47_back_position")
+            is None
+        )
+        assert (
+            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:47_legs_position")
+            is None
+        )
 
     async def test_box25_number_entities_only_include_head_and_feet_position(
         self,

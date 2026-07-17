@@ -67,10 +67,12 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -122,6 +124,7 @@ from .const import (
     MANUFACTURER_ID_OKIN,
     MANUFACTURER_ID_VIBRADORM,
     NORDIC_DFU_SERVICE_UUID,
+    NORDIC_UART_SERVICE_UUID,
     OCTO_NAME_PATTERNS,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_ONLY_PATTERNS,
@@ -145,10 +148,15 @@ from .const import (
     SERTA_NAME_PATTERNS,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
+    SLEEPSTAR_DUAL_SUBTYPE,
+    SLEEPSTAR_MANUFACTURER_ID,
+    SLEEPSTAR_NAME_PATTERNS,
+    SLEEPSTAR_SINGLE_SUBTYPE,
     SLEEPYS_BOX25_NAME_PATTERNS,
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    STAR_ELEVATE_NAME_PATTERNS,
     SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
     SUTA_UNSUPPORTED_NAME_PREFIXES,
@@ -165,6 +173,19 @@ from .const import (
 from .kaidi_protocol import extract_kaidi_advertisement
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _is_motosleep_local_name(device_name: str) -> bool:
+    """Return whether the normalized name is an HHC or exact MOTO bed name."""
+    return (
+        device_name.startswith("hhc")
+        or (len(device_name) >= 14 and "hhc" in device_name)
+        or (
+            len(device_name) == 28
+            and re.match(r"^moto[bs]\d{2}\w[0-9][bcd][a-z]\w\w\w", device_name) is not None
+        )
+    )
+
 
 # MAC address regex pattern (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX)
 MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
@@ -386,6 +407,10 @@ GENERIC_SHARED_SERVICE_UUIDS: frozenset[str] = frozenset(
 # Only applied when device has generic UUIDs (see GENERIC_SHARED_SERVICE_UUIDS)
 # See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
 EXCLUDED_DEVICE_PATTERNS: tuple[str, ...] = (
+    # Flexsteel seating controllers recovered from com.okin.flex_demo. These
+    # advertise Nordic UART but are chairs, not adjustable-bed control boxes.
+    "flx_audio",
+    "flx_rush",
     # Mobility devices
     "scooter",
     "ninebot",
@@ -505,9 +530,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SERTA: "Serta Motion Perfect",
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Climate 360 / FlexFit",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number 360 / i8 FlexFit (BAM/MCR)",
+    BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
     BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite (BOX15, with lumbar)",
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite (BOX24)",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite (BOX25 Star)",
+    BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace",
     BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
     BED_TYPE_SVANE: "Svane",
@@ -1199,6 +1226,72 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=1.0, signals=signals)
 
+    # SleepSpa bundles library implementations for SLEEPBT, but its application
+    # model filter rejects both SLEEPBT subtypes. Do not let the shared Nordic
+    # UART fallback misclassify these monitors as a generic Richmat/Keeson bed.
+    if device_name.startswith("sleepbt"):
+        return DetectionResult(
+            bed_type=None,
+            confidence=0.0,
+            signals=["name:sleepbt_rejected"],
+        )
+
+    # SleepSpa S9000AI is a CB37 monitor that tunnels StarCode over Nordic UART.
+    # It is distinct from direct BOX25/CB35 StarCode and from the app's rejected
+    # SLEEPBT classes. The app selects single only for payload byte 6 == 0x88;
+    # byte 0x86, missing data, and unknown values all select its dual fallback.
+    if any(device_name.startswith(pattern) for pattern in SLEEPSTAR_NAME_PATTERNS):
+        signals.append("name:sleepstar")
+        has_nordic_uart = NORDIC_UART_SERVICE_UUID.lower() in service_uuids
+        payload = (service_info.manufacturer_data or {}).get(SLEEPSTAR_MANUFACTURER_ID, b"")
+        subtype = (
+            "single"
+            if len(payload) >= 7 and payload[6] == SLEEPSTAR_SINGLE_SUBTYPE
+            else "dual"
+            if len(payload) >= 7 and payload[6] == SLEEPSTAR_DUAL_SUBTYPE
+            else "dual_fallback"
+        )
+        signals.append(f"sleepstar_subtype:{subtype}")
+        if has_nordic_uart:
+            signals.append("uuid:nordic_uart")
+        if SLEEPSTAR_MANUFACTURER_ID in (service_info.manufacturer_data or {}):
+            signals.append(f"manufacturer_id:{SLEEPSTAR_MANUFACTURER_ID}")
+
+        confidence = 0.3
+        if has_nordic_uart and payload:
+            confidence = 0.98
+        elif has_nordic_uart:
+            confidence = 0.95
+        elif payload:
+            confidence = 0.9
+        return DetectionResult(
+            bed_type=BED_TYPE_SLEEPSTAR,
+            confidence=confidence,
+            signals=signals,
+            manufacturer_id=(
+                SLEEPSTAR_MANUFACTURER_ID
+                if SLEEPSTAR_MANUFACTURER_ID in (service_info.manufacturer_data or {})
+                else None
+            ),
+        )
+
+    # ELEVATE is a separate StarCode controller with a dedicated 0x40-0x4F
+    # command range. Check it before the generic Star controller family.
+    if any(device_name.startswith(pattern) for pattern in STAR_ELEVATE_NAME_PATTERNS):
+        signals.append("name:star_elevate")
+        if NORDIC_UART_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:nordic_uart")
+            return DetectionResult(
+                bed_type=BED_TYPE_STAR_ELEVATE,
+                confidence=0.95,
+                signals=signals,
+            )
+        return DetectionResult(
+            bed_type=BED_TYPE_STAR_ELEVATE,
+            confidence=0.3,
+            signals=signals,
+        )
+
     # Check for DewertOkin Star controllers - name pattern + Nordic UART service.
     # Both CB35 (Sealy Posturematic) and BOX25 Star (Sleepy's Elite) use Star* names
     # with Nordic UART. The protocol version is encoded in positions 4-5 of the name:
@@ -1209,8 +1302,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Post-connection, the adjustbed app also reads BLE characteristic 2A29
     # (Manufacturer Name): exactly "STAR" confirms CB35.
     if any(device_name.startswith(pattern) for pattern in SLEEPYS_BOX25_NAME_PATTERNS):
-        from .const import NORDIC_UART_SERVICE_UUID
-
         signals.append("name:dewertokin_star")
 
         # Parse protocol version from name digits (positions 4-5 of original name)
@@ -1666,8 +1757,10 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
                 service_info.name,
             )
             return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        # Check for MotoSleep name pattern (HHC prefix)
-        if device_name.startswith("hhc"):
+        # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
+        # routes exact 28-character MOTO model names to its binary bed protocol.
+        # AUDIO and MotoAMP are intentionally not bed controllers.
+        if _is_motosleep_local_name(device_name):
             signals.append("name:motosleep")
             _LOGGER.info(
                 "Detected MotoSleep bed at %s (name: %s)",
@@ -1780,8 +1873,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_RICHMAT, confidence=0.8, signals=signals)
 
-    # Check for MotoSleep - name-based detection (HHC prefix)
-    if device_name.startswith("hhc"):
+    # Check for MotoSleep - name-based HHC and MOTO bed-controller detection.
+    if _is_motosleep_local_name(device_name):
         signals.append("name:motosleep")
         _LOGGER.info(
             "Detected MotoSleep bed at %s (name: %s)",

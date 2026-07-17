@@ -22,21 +22,16 @@ Protocol families detected from the OEM SmartBed app:
 - OLD protocol (CB24/CB27/CB24AB/CB1221/Dacheng): uses 0x05 0x02 packets.
 
 Preset behavior in this integration:
-- NEW protocol profiles use one-shot presets.
-- Legacy profiles (`cb24`, `cb27`, `cb24_ab`, `cb1221`, `dacheng`) use one-shot
-  presets (matching v2.4.0 behavior that worked on known hardware).
-- `cb_old` compatibility variant uses continuous presets at 300ms and sends
-  STOP after completion.
-- Auto-detected legacy profiles can promote to continuous preset mode when the
-  same preset is retried repeatedly in a short window, avoiding manual profile
-  changes.
+- All profiles use one-shot presets. The OEM app repeats legacy preset packets
+  only while the user holds a touchscreen button and treats a 5.2-second hold
+  as a memory-save gesture. A fixed continuous stream can therefore overwrite
+  stored presets instead of recalling them.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import time
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -67,16 +62,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# Legacy continuous preset timing for the `cb_old` compatibility variant.
-# The OEM app sends continuously at 300ms intervals; the actuator moves
-# incrementally per command.  55 repeats ≈ 16.5s covers typical full-travel
-# preset recalls.  The cancel-event mechanism allows early interruption.
-_PRESET_CONTINUOUS_COUNT = 55
-_PRESET_CONTINUOUS_DELAY_MS = 300
-_ADAPTIVE_PRESET_RETRY_WINDOW_SECONDS = 12.0
-_ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT = 2
-
-# Device profile variants grouped by protocol and preset behavior.
+# Device profile variants grouped by protocol family.
 _LEGACY_PROTOCOL_VARIANTS = frozenset(
     {
         OKIN_CB24_VARIANT_OLD,
@@ -88,7 +74,6 @@ _LEGACY_PROTOCOL_VARIANTS = frozenset(
     }
 )
 _NEW_PROTOCOL_VARIANTS = frozenset({OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW})
-_CONTINUOUS_PRESET_VARIANTS = frozenset({OKIN_CB24_VARIANT_OLD})
 
 # CBNewProtocol memory command mapping (CB24 integer command -> memory index).
 _CBNEW_MEMORY_BY_COMMAND: dict[int, int] = {
@@ -261,10 +246,7 @@ class OkinCB24Controller(BedController):
         self,
         coordinator: AdjustableBedCoordinator,
         bed_selection: int = 0x00,
-        protocol_variant: str = OKIN_CB24_VARIANT_OLD,
-        *,
-        adaptive_preset_fallback: bool = False,
-        initial_continuous_presets: bool = False,
+        protocol_variant: str = OKIN_CB24_VARIANT_CB24,
     ) -> None:
         """Initialize the Okin CB24 controller.
 
@@ -272,35 +254,17 @@ class OkinCB24Controller(BedController):
             coordinator: The AdjustableBedCoordinator instance
             bed_selection: Bed selection (0x00=default, 0xAA=bed A, 0xBB=bed B)
             protocol_variant: CB24 profile variant (cb24/cb27/cb24_ab/cb1221/dacheng/cb27new)
-            adaptive_preset_fallback: Enable automatic one-shot->continuous preset fallback
-            initial_continuous_presets: Reuse a previously learned continuous preset mode
         """
         super().__init__(coordinator)
         self._motor_state: dict[str, MotorDirection] = {}
         self._bed_selection = bed_selection
         self._protocol_variant = protocol_variant
         self._is_new_protocol = protocol_variant in _NEW_PROTOCOL_VARIANTS
-        self._continuous_presets = (
-            not self._is_new_protocol
-            and (
-                protocol_variant in _CONTINUOUS_PRESET_VARIANTS
-                or initial_continuous_presets
-            )
-        )
-        self._adaptive_preset_fallback = (
-            adaptive_preset_fallback and not self._is_new_protocol and not self._continuous_presets
-        )
-        self._last_one_shot_preset_command: int | None = None
-        self._last_one_shot_preset_monotonic = 0.0
-        self._now = time.monotonic
-        self._same_preset_retry_count = 0
         if not self._is_new_protocol and protocol_variant not in _LEGACY_PROTOCOL_VARIANTS:
             _LOGGER.warning(
-                "Unknown CB24 protocol variant '%s'; defaulting to OLD protocol handling",
+                "Unknown CB24 protocol variant '%s'; defaulting to legacy one-shot handling",
                 protocol_variant,
             )
-            self._continuous_presets = True
-            self._adaptive_preset_fallback = False
 
         self._lights_on = False
         self._massage_on = False
@@ -309,12 +273,10 @@ class OkinCB24Controller(BedController):
         self._massage_mode = 0
 
         _LOGGER.debug(
-            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s, continuous_presets=%s, adaptive_preset_fallback=%s)",
+            "OkinCB24Controller initialized (bed_selection=%#x, variant=%s, new_protocol=%s)",
             bed_selection,
             protocol_variant,
             self._is_new_protocol,
-            self._continuous_presets,
-            self._adaptive_preset_fallback,
         )
 
     @property
@@ -545,96 +507,9 @@ class OkinCB24Controller(BedController):
         )
 
     # Preset methods
-    def _should_promote_presets_to_continuous(
-        self, command_value: int, *, _now: float | None = None
-    ) -> bool:
-        """Promote auto legacy presets after repeated quick retries."""
-        if not self._adaptive_preset_fallback:
-            return False
-
-        now = _now if _now is not None else self._now()
-        if (
-            self._last_one_shot_preset_command == command_value
-            and now - self._last_one_shot_preset_monotonic
-            <= _ADAPTIVE_PRESET_RETRY_WINDOW_SECONDS
-        ):
-            self._same_preset_retry_count += 1
-            if self._same_preset_retry_count < _ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT:
-                _LOGGER.debug(
-                    "CB24 adaptive retry %d/%d for preset %#x before continuous promotion",
-                    self._same_preset_retry_count,
-                    _ADAPTIVE_PRESET_PROMOTION_RETRY_COUNT,
-                    command_value,
-                )
-                self._last_one_shot_preset_monotonic = now
-                return False
-
-            retry_count = self._same_preset_retry_count
-            self._continuous_presets = True
-            self._adaptive_preset_fallback = False
-            self._same_preset_retry_count = 0
-            self._coordinator.remember_cb24_continuous_presets()
-            _LOGGER.debug(
-                "CB24 preset mode auto-promoted to continuous after %d retries for preset %#x",
-                retry_count,
-                command_value,
-            )
-            return True
-
-        self._same_preset_retry_count = 0
-        self._last_one_shot_preset_command = command_value
-        self._last_one_shot_preset_monotonic = now
-        return False
-
-    async def _send_continuous_preset(self, preset_command: bytes) -> None:
-        """Send a continuous legacy preset stream followed by STOP."""
-        try:
-            await self.write_command(
-                preset_command,
-                repeat_count=_PRESET_CONTINUOUS_COUNT,
-                repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
-            )
-        finally:
-            # Send STOP to signal preset completion, shielded from
-            # cancellation (same pattern as _move_motor).
-            try:
-                await asyncio.shield(
-                    self.write_command(
-                        self._build_stop_command(),
-                        cancel_event=asyncio.Event(),
-                    )
-                )
-            except asyncio.CancelledError:
-                raise
-            except (BleakError, ConnectionError):
-                _LOGGER.debug("Failed to send stop after preset", exc_info=True)
-
     async def _send_preset(self, command_value: int) -> None:
-        """Send a preset command using the appropriate protocol.
-
-        NEW_PROTOCOL (CB27New/CBNew): One-shot — the actuator receives the
-        command once and moves to the saved position autonomously.
-
-        LEGACY profiles:
-        - `cb_old`: Continuous — the actuator moves incrementally per command
-          and needs repeated sends at 300ms intervals; STOP is sent afterward.
-        - `cb24`/`cb27`/`cb24_ab`/`cb1221`/`dacheng`: one-shot by default.
-        - Auto mode can promote legacy presets to continuous when a preset is
-          retried repeatedly in a short window, avoiding manual compatibility
-          changes.
-        """
+        """Send one preset packet without simulating a destructive long press."""
         preset_command = self._build_preset_command(command_value)
-
-        if self._is_new_protocol:
-            await self.write_command(preset_command)
-            return
-
-        if self._continuous_presets or self._should_promote_presets_to_continuous(
-            command_value
-        ):
-            await self._send_continuous_preset(preset_command)
-            return
-
         await self.write_command(preset_command)
 
     async def preset_flat(self) -> None:

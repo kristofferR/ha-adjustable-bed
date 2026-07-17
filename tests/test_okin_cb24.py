@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
 from custom_components.adjustable_bed.beds.okin_cb24 import (
-    _PRESET_CONTINUOUS_COUNT,
-    _PRESET_CONTINUOUS_DELAY_MS,
     OkinCB24Commands,
     OkinCB24Controller,
 )
@@ -41,7 +38,6 @@ def _make_factory_coordinator() -> SimpleNamespace:
     return SimpleNamespace(
         client=None,
         cancel_command=None,
-        cb24_continuous_presets_learned=False,
         motor_pulse_count=10,
         motor_pulse_delay_ms=100,
         address="AA:BB:CC:DD:EE:FF",
@@ -131,8 +127,8 @@ class TestOkinCB24Controller:
         )
 
     @pytest.mark.asyncio
-    async def test_old_protocol_preset_sends_continuously_then_stop(self) -> None:
-        """`cb_old` compatibility presets should send repeatedly at 300ms then STOP."""
+    async def test_old_protocol_compatibility_preset_is_one_shot(self) -> None:
+        """The legacy alias must not turn preset recall into a memory-save hold."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
@@ -140,15 +136,9 @@ class TestOkinCB24Controller:
 
         await controller._send_preset(OkinCB24Commands.PRESET_FLAT)
 
-        assert controller.write_command.await_count == 2
-        first_call = controller.write_command.await_args_list[0]
-        assert first_call == call(
+        controller.write_command.assert_awaited_once_with(
             controller._build_command(OkinCB24Commands.PRESET_FLAT),
-            repeat_count=_PRESET_CONTINUOUS_COUNT,
-            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
-        second_call = controller.write_command.await_args_list[1]
-        assert second_call.args[0] == controller._build_command(0)
 
     @pytest.mark.asyncio
     async def test_cb24_profile_preset_is_one_shot(self) -> None:
@@ -165,115 +155,26 @@ class TestOkinCB24Controller:
         )
 
     @pytest.mark.asyncio
-    async def test_adaptive_cb24_promotes_to_continuous_after_retry(self) -> None:
-        """Auto legacy mode should switch after repeated quick same-preset retries."""
-        coordinator = MagicMock()
-        coordinator.address = "AA:BB:CC:DD:EE:FF"
-        coordinator.remember_cb24_continuous_presets = MagicMock()
-        controller = OkinCB24Controller(
-            coordinator,
-            protocol_variant=OKIN_CB24_VARIANT_CB24,
-            adaptive_preset_fallback=True,
-        )
-        controller.write_command = AsyncMock()
-        current_time = 1.0
-
-        def fake_now() -> float:
-            nonlocal current_time
-            value = current_time
-            current_time += 1.0
-            return value
-
-        controller._now = fake_now
-
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-
-        assert controller.write_command.await_count == 4
-        assert controller.write_command.await_args_list[0] == call(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
-        )
-        assert controller.write_command.await_args_list[1] == call(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
-        )
-        assert controller.write_command.await_args_list[2] == call(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
-            repeat_count=_PRESET_CONTINUOUS_COUNT,
-            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
-        )
-        assert controller.write_command.await_args_list[3].args[0] == controller._build_command(0)
-        coordinator.remember_cb24_continuous_presets.assert_called_once_with()
-        assert controller._continuous_presets is True
-        assert controller._adaptive_preset_fallback is False
-
-    @pytest.mark.asyncio
-    async def test_adaptive_cb24_stays_one_shot_for_different_preset(self) -> None:
-        """Adaptive fallback should not promote when different presets are tapped."""
+    async def test_repeated_cb24_presets_remain_one_shot(self) -> None:
+        """Repeated retries must never be learned as a destructive long press."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(
             coordinator,
             protocol_variant=OKIN_CB24_VARIANT_CB24,
-            adaptive_preset_fallback=True,
         )
         controller.write_command = AsyncMock()
 
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
-        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_2)
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
+        await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
 
-        assert controller.write_command.await_count == 2
-        assert controller.write_command.await_args_list[0] == call(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
-        )
-        assert controller.write_command.await_args_list[1] == call(
-            controller._build_command(OkinCB24Commands.PRESET_MEMORY_2),
-        )
-        assert controller._continuous_presets is False
-        assert controller._adaptive_preset_fallback is True
-
-    def test_adaptive_cb24_stays_one_shot_after_window_expires(self) -> None:
-        """Adaptive fallback should not promote when retry is outside the 12-second window."""
-        coordinator = MagicMock()
-        coordinator.address = "AA:BB:CC:DD:EE:FF"
-        controller = OkinCB24Controller(
-            coordinator,
-            protocol_variant=OKIN_CB24_VARIANT_CB24,
-            adaptive_preset_fallback=True,
-        )
-
-        # First tap at t=1000 records the preset and timestamp
-        result1 = controller._should_promote_presets_to_continuous(
-            OkinCB24Commands.PRESET_MEMORY_1, _now=1000.0
-        )
-        assert result1 is False
-
-        # Retry same preset after window has expired (13s > 12s) — treated as fresh tap
-        result2 = controller._should_promote_presets_to_continuous(
-            OkinCB24Commands.PRESET_MEMORY_1, _now=1013.0
-        )
-        assert result2 is False
-        assert controller._continuous_presets is False
-        assert controller._adaptive_preset_fallback is True
+        expected_call = call(controller._build_command(OkinCB24Commands.PRESET_MEMORY_1))
+        assert controller.write_command.await_args_list == [expected_call] * 3
 
     @pytest.mark.asyncio
-    async def test_old_protocol_preset_sends_stop_on_cancellation(self) -> None:
-        """`cb_old` compatibility profile should still attempt STOP on cancellation."""
-        coordinator = MagicMock()
-        coordinator.address = "AA:BB:CC:DD:EE:FF"
-        controller = OkinCB24Controller(coordinator, protocol_variant=OKIN_CB24_VARIANT_OLD)
-        controller.write_command = AsyncMock(side_effect=[asyncio.CancelledError(), None])
-
-        with pytest.raises(asyncio.CancelledError):
-            await controller._send_preset(OkinCB24Commands.PRESET_FLAT)
-
-        assert controller.write_command.await_count == 2
-        second_call = controller.write_command.await_args_list[1]
-        assert second_call.args[0] == controller._build_command(0)
-
-    @pytest.mark.asyncio
-    async def test_default_is_old_protocol(self) -> None:
-        """Default variant should use OLD protocol behavior."""
+    async def test_default_is_cb24_one_shot(self) -> None:
+        """Direct controller construction should default to safe CB24 behavior."""
         coordinator = MagicMock()
         coordinator.address = "AA:BB:CC:DD:EE:FF"
         controller = OkinCB24Controller(coordinator)
@@ -281,12 +182,9 @@ class TestOkinCB24Controller:
 
         await controller._send_preset(OkinCB24Commands.PRESET_MEMORY_1)
 
-        assert controller.write_command.await_count == 2
-        first_call = controller.write_command.await_args_list[0]
-        assert first_call == call(
+        assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
+        controller.write_command.assert_awaited_once_with(
             controller._build_command(OkinCB24Commands.PRESET_MEMORY_1),
-            repeat_count=_PRESET_CONTINUOUS_COUNT,
-            repeat_delay_ms=_PRESET_CONTINUOUS_DELAY_MS,
         )
 
     @pytest.mark.asyncio
@@ -341,7 +239,6 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
         assert controller._is_new_protocol is False
-        assert controller._adaptive_preset_fallback is True
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -372,7 +269,6 @@ class TestOkinCB24FactoryProfiles:
 
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == expected_variant
-        assert controller._adaptive_preset_fallback is True
 
     @pytest.mark.asyncio
     async def test_unknown_manufacturer_payload_falls_back_to_name_heuristic(self) -> None:
@@ -389,13 +285,12 @@ class TestOkinCB24FactoryProfiles:
 
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB27NEW
-        assert controller._adaptive_preset_fallback is False
 
     @pytest.mark.asyncio
-    async def test_auto_detect_reuses_learned_continuous_preset_mode_after_reconnect(
+    async def test_obsolete_learned_continuous_flag_cannot_change_safe_behavior(
         self,
     ) -> None:
-        """Factory should preserve learned CB24 continuous preset mode across reconnects."""
+        """A stale runtime flag must not restore destructive preset repeats."""
         coordinator = _make_factory_coordinator()
         coordinator.cb24_continuous_presets_learned = True
         controller = await create_controller(
@@ -408,8 +303,13 @@ class TestOkinCB24FactoryProfiles:
 
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24
-        assert controller._continuous_presets is True
-        assert controller._adaptive_preset_fallback is False
+        controller.write_command = AsyncMock()
+
+        await controller._send_preset(OkinCB24Commands.PRESET_ZERO_G)
+
+        controller.write_command.assert_awaited_once_with(
+            controller._build_command(OkinCB24Commands.PRESET_ZERO_G),
+        )
 
     @pytest.mark.asyncio
     async def test_manufacturer_payload_takes_precedence_over_cb27new_name(self) -> None:
@@ -427,7 +327,6 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == OKIN_CB24_VARIANT_CB24_AB
         assert controller._is_new_protocol is False
-        assert controller._adaptive_preset_fallback is True
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -461,7 +360,6 @@ class TestOkinCB24FactoryProfiles:
         assert isinstance(controller, OkinCB24Controller)
         assert controller._protocol_variant == profile_variant
         assert controller._is_new_protocol is is_new_protocol
-        assert controller._adaptive_preset_fallback is False
 
 
 class TestOkinCB24VariantValidation:

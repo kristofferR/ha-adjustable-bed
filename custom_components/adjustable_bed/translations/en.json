@@ -421,6 +421,12 @@
       "preset_lounge": {
         "name": "Lounge"
       },
+      "preset_swing": {
+        "name": "Swing"
+      },
+      "auxiliary_action": {
+        "name": "Auxiliary action"
+      },
       "preset_incline": {
         "name": "Incline"
       },
@@ -1092,6 +1098,15 @@
       "head": {
         "name": "Head"
       },
+      "elevate_actuator_1": {
+        "name": "ELEVATE Actuator 1"
+      },
+      "elevate_actuator_2": {
+        "name": "ELEVATE Actuator 2"
+      },
+      "elevate_both": {
+        "name": "ELEVATE Both Actuators"
+      },
       "back": {
         "name": "Back"
       },
@@ -1112,6 +1127,15 @@
       },
       "tilt": {
         "name": "Tilt"
+      },
+      "auxiliary": {
+        "name": "Auxiliary"
+      },
+      "auxiliary_1": {
+        "name": "Auxiliary 1"
+      },
+      "auxiliary_2": {
+        "name": "Auxiliary 2"
       },
       "head_end_tilt": {
         "name": "Head End Tilt"
@@ -1447,8 +1471,20 @@
       "feet_position": {
         "name": "Feet Position"
       },
+      "lumbar_position": {
+        "name": "Lumbar Position"
+      },
+      "auxiliary_1_position": {
+        "name": "Auxiliary 1 Position"
+      },
+      "auxiliary_2_position": {
+        "name": "Auxiliary 2 Position"
+      },
       "massage_head_intensity": {
         "name": "Massage: Head Intensity"
+      },
+      "massage_intensity": {
+        "name": "Massage: Intensity"
       },
       "massage_foot_intensity": {
         "name": "Massage: Foot Intensity"
@@ -1654,7 +1690,7 @@
     },
     "generate_support_bundle": {
       "name": "Generate Support Bundle",
-      "description": "Capture the full adjustable-bed support bundle for troubleshooting unsupported or broken beds.",
+      "description": "Capture the full adjustable-bed support bundle for troubleshooting unsupported or broken beds. The bundle includes up to 30 ranked nearby Bluetooth devices, including their names and addresses.",
       "fields": {
         "device_id": {
           "name": "Device",

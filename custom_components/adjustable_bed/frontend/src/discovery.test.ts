@@ -141,6 +141,13 @@ test("bed with only utility buttons is not empty", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("tentatively labelled bed action buckets into utility", () => {
+  const hass = hassWith([entry("button.b_aux", "auxiliary_action")]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.utility).toEqual(["button.b_aux"]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("memory asymmetry: goto for some slots, save for all", () => {
   const hass = hassWith([
     entry("button.b_save1", "program_memory_1"),

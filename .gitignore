@@ -15,5 +15,17 @@ uv.lock
 # Disassembly/reverse engineering artifacts
 disassembly/
 
+# Machine-local APK reanalysis reports and one-off tooling
+docs/reanalysis/
+tools/apk_acquisition.py
+tools/apk_inventory.py
+tools/apk_latest_report.py
+tools/apkpure_inventory.py
+tools/google_play_inventory/
+tests/test_apk_acquisition.py
+tests/test_apk_inventory.py
+tests/test_apk_latest_report.py
+tests/test_apkpure_inventory.py
+
 # Claude Code instructions (symlink to AGENTS.md)
 CLAUDE.md

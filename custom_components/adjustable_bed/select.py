@@ -166,6 +166,8 @@ def _select_entities_for(
     """Build select entities for a single (child or standalone) coordinator."""
     has_massage = coordinator.has_massage
     controller = coordinator.capability_controller
+    if controller is not None and getattr(controller, "auto_enable_massage", False):
+        has_massage = True
 
     entities: list[SelectEntity] = []
 

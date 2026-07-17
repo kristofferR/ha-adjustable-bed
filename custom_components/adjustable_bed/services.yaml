@@ -214,7 +214,7 @@ timed_move:
 
 generate_support_bundle:
   name: Generate Support Bundle
-  description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, adapter and ESPHome proxy health, GATT details, scanner state, command trace, and recent integration logs into one JSON file.
+  description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, adapter and ESPHome proxy health, GATT details, scanner state, up to 30 ranked nearby Bluetooth devices, command trace, and recent integration logs into one JSON file. Nearby device names and addresses are included.
   fields:
     device_id:
       name: Device

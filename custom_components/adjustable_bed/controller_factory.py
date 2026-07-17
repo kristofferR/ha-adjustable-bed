@@ -56,10 +56,12 @@ from .const import (
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SUTA,
     BED_TYPE_SVANE,
     BED_TYPE_TIMOTION_AHF,
@@ -84,6 +86,7 @@ from .const import (
     KEESON_VARIANT_PURPLE,
     KEESON_VARIANT_SERTA,
     KEESON_VARIANT_SINO,
+    KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_VARIANT_MLRM,
     LEGGETT_VARIANT_OKIN,
     MANUFACTURER_ID_OKIN,
@@ -110,6 +113,9 @@ from .const import (
     SBI_VARIANT_BOTH,
     SLEEP_NUMBER_VARIANT_LEFT,
     SLEEP_NUMBER_VARIANT_RIGHT,
+    SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
+    SLEEPYS_BOX25_VARIANT_STAR,
     VARIANT_AUTO,
 )
 from .kaidi_protocol import extract_kaidi_advertisement
@@ -399,36 +405,10 @@ async def create_controller(
                 manufacturer_data=manufacturer_data,
             )
 
-        # OLD uses unconditional continuous presets so adaptive fallback is
-        # unnecessary; NEW/CB27NEW are new-protocol one-shot (no legacy path).
-        adaptive_preset_fallback = (
-            not explicit_variant_selected
-            and profile_variant
-            in {
-                OKIN_CB24_VARIANT_CB24,
-                OKIN_CB24_VARIANT_CB27,
-                OKIN_CB24_VARIANT_CB24_AB,
-                OKIN_CB24_VARIANT_CB1221,
-                OKIN_CB24_VARIANT_DACHENG,
-            }
-        )
-        initial_continuous_presets = (
-            adaptive_preset_fallback
-            and getattr(coordinator, "cb24_continuous_presets_learned", False)
-        )
-
-        if initial_continuous_presets:
-            _LOGGER.debug(
-                "Reusing learned CB24 continuous preset mode for %s",
-                coordinator.address,
-            )
-
         return OkinCB24Controller(
             coordinator,
             bed_selection=cb24_bed_selection,
             protocol_variant=profile_variant,
-            adaptive_preset_fallback=adaptive_preset_fallback,
-            initial_continuous_presets=initial_continuous_presets,
         )
 
     if bed_type == BED_TYPE_OKIN_ORE:
@@ -598,8 +578,7 @@ async def create_controller(
                         keeson_cb1322_presets = True
                     else:
                         _LOGGER.info(
-                            "Auto-detected Keeson Sino variant for %s "
-                            "(name: %s, services: %s)",
+                            "Auto-detected Keeson Sino variant for %s (name: %s, services: %s)",
                             coordinator.address,
                             device_name or "unknown",
                             sorted(service_uuids),
@@ -618,8 +597,10 @@ async def create_controller(
                 )
                 keeson_variant = KEESON_VARIANT_KSBT_CR
             elif normalized_name.startswith("ksbt04c") or normalized_name == "smart_dfu":
-                _LOGGER.info(
-                    "Auto-detected KSBT04C variant for %s (name: %s)",
+                _LOGGER.warning(
+                    "Device %s advertises the ambiguous name %s; using the "
+                    "legacy generic KSBT04C profile. Select Purple or Sleep "
+                    "Harmony explicitly if that is the matching app family.",
                     coordinator.address,
                     device_name,
                 )
@@ -638,8 +619,19 @@ async def create_controller(
             _LOGGER.debug("Using KSBT03CR Keeson variant (7-byte, 0x05 prefix)")
             return KeesonController(coordinator, variant="ksbt_cr", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_KSBT04C:
-            _LOGGER.debug("Using KSBT04C Keeson variant (7-byte with checksum)")
-            return KeesonController(coordinator, variant="ksbt04c", device_name=device_name)
+            _LOGGER.debug("Using generic KSBT04C Keeson variant (7-byte with checksum)")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_KSBT04C,
+                device_name=device_name,
+            )
+        elif keeson_variant == KEESON_VARIANT_SLEEP_HARMONY:
+            _LOGGER.debug("Using explicit Sleep Harmony Keeson variant")
+            return KeesonController(
+                coordinator,
+                variant=KEESON_VARIANT_SLEEP_HARMONY,
+                device_name=device_name,
+            )
         elif keeson_variant == KEESON_VARIANT_ERGOMOTION:
             _LOGGER.debug("Using Ergomotion Keeson variant (with position feedback)")
             return KeesonController(coordinator, variant="ergomotion")
@@ -653,7 +645,7 @@ async def create_controller(
             return KeesonController(coordinator, variant="serta")
         elif keeson_variant == KEESON_VARIANT_PURPLE:
             _LOGGER.debug("Using Purple Keeson variant")
-            return KeesonController(coordinator, variant="purple")
+            return KeesonController(coordinator, variant="purple", device_name=device_name)
         elif keeson_variant == KEESON_VARIANT_SINO:
             _LOGGER.debug("Using Sino Keeson variant (big-endian)")
             return KeesonController(
@@ -664,7 +656,7 @@ async def create_controller(
         else:
             # Auto or base variant
             _LOGGER.debug("Using Base Keeson variant")
-            return KeesonController(coordinator, variant="base")
+            return KeesonController(coordinator, variant="base", device_name=device_name)
 
     if bed_type == BED_TYPE_OKIN_FFE:
         from .beds.keeson import KeesonController
@@ -681,7 +673,7 @@ async def create_controller(
     if bed_type == BED_TYPE_MOTOSLEEP:
         from .beds.motosleep import MotoSleepController
 
-        return MotoSleepController(coordinator)
+        return MotoSleepController(coordinator, device_name=device_name)
 
     if bed_type == BED_TYPE_SUTA:
         from .beds.suta import SutaController
@@ -857,6 +849,15 @@ async def create_controller(
 
         return SleepNumberMcrController(coordinator)
 
+    if bed_type == BED_TYPE_SLEEPSTAR:
+        from .beds.sleepstar import SleepStarController
+
+        _LOGGER.debug("Using SleepSpa S9000AI SLEEPSTAR controller")
+        return SleepStarController(
+            coordinator,
+            manufacturer_data=manufacturer_data,
+        )
+
     if bed_type == BED_TYPE_OKIN_64BIT:
         from .beds.okin_64bit import Okin64BitController
 
@@ -878,10 +879,49 @@ async def create_controller(
         return SleepysBox24Controller(coordinator)
 
     if bed_type == BED_TYPE_SLEEPYS_BOX25:
-        from .beds.sleepys_box25 import SleepysBox25Controller
+        from .beds.sleepys_box25 import (
+            SleepysBox25Controller,
+            SleepysBox25LegacyController,
+        )
 
-        _LOGGER.debug("Using Sleepy's BOX25 Star controller")
+        variant = protocol_variant or VARIANT_AUTO
+        normalized_name = (device_name or "").strip().casefold()
+        fixed_star_name = any(
+            normalized_name.startswith(prefix)
+            for prefix in SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES
+        )
+        manufacturer_selects_star = "star" in (ble_manufacturer or "").casefold()
+
+        if variant == SLEEPYS_BOX25_VARIANT_LEGACY:
+            use_legacy = True
+            selection_reason = "configured legacy override"
+        elif variant == SLEEPYS_BOX25_VARIANT_STAR:
+            use_legacy = False
+            selection_reason = "configured StarCode override"
+        elif fixed_star_name:
+            use_legacy = False
+            selection_reason = "fixed StarCode product name"
+        elif manufacturer_selects_star:
+            use_legacy = False
+            selection_reason = "Device Information manufacturer contains 'star'"
+        else:
+            # This is the OEM runtime fallback for missing, unreadable, empty,
+            # or non-Star 0x2A29 values. Do not infer StarCode from NUS alone.
+            use_legacy = True
+            selection_reason = "Device Information legacy fallback"
+
+        if use_legacy:
+            _LOGGER.info("Using legacy BOX25 dialect (%s)", selection_reason)
+            return SleepysBox25LegacyController(coordinator)
+
+        _LOGGER.info("Using BOX25 StarCode dialect (%s)", selection_reason)
         return SleepysBox25Controller(coordinator)
+
+    if bed_type == BED_TYPE_STAR_ELEVATE:
+        from .beds.star_elevate import StarElevateController
+
+        _LOGGER.debug("Using ELEVATE two-actuator StarCode controller")
+        return StarElevateController(coordinator)
 
     if bed_type == BED_TYPE_SVANE:
         from .beds.svane import SvaneController
@@ -940,7 +980,11 @@ async def create_controller(
         from .beds.sbi import SBIController
 
         # Use configured variant or default to "both" for dual-bed control
-        variant = protocol_variant if protocol_variant and protocol_variant != "auto" else SBI_VARIANT_BOTH
+        variant = (
+            protocol_variant
+            if protocol_variant and protocol_variant != "auto"
+            else SBI_VARIANT_BOTH
+        )
         _LOGGER.debug("Using SBI controller with variant: %s", variant)
         return SBIController(coordinator, variant=variant)
 

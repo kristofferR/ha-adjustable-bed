@@ -227,6 +227,8 @@ BED_TYPE_SLEEPYS_BOX15: Final = (
 )
 BED_TYPE_SLEEPYS_BOX24: Final = "sleepys_box24"  # Sleepy's Elite BOX24 protocol (7-byte)
 BED_TYPE_SLEEPYS_BOX25: Final = "sleepys_box25"  # Sleepy's Elite BOX25 Star (NUS multi-subsystem)
+BED_TYPE_SLEEPSTAR: Final = "sleepstar"  # SleepSpa S9000AI / SLEEPSTAR transparent StarCode
+BED_TYPE_STAR_ELEVATE: Final = "star_elevate"  # ELEVATE two-actuator StarCode accessory
 BED_TYPE_SVANE: Final = "svane"  # Svane LinonPI multi-service protocol
 BED_TYPE_VIBRADORM: Final = "vibradorm"  # Vibradorm VMAT protocol
 BED_TYPE_RONDURE: Final = "rondure"  # 1500 Tilt Base / Rondure Hump (8/9-byte FurniBus protocol)
@@ -303,6 +305,10 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEPYS_BOX24,
     # Sleepy's Elite BOX25 Star
     BED_TYPE_SLEEPYS_BOX25,
+    # SleepSpa S9000AI / SLEEPSTAR
+    BED_TYPE_SLEEPSTAR,
+    # Separate ELEVATE two-actuator accessory
+    BED_TYPE_STAR_ELEVATE,
     # Svane
     BED_TYPE_SVANE,
     # Vibradorm
@@ -945,6 +951,30 @@ SLEEPYS_NAME_PATTERNS: Final = ("sleepy", "mfrm")
 # Also used by Sealy Posturematic CB35 (com.okin.sealy)
 SLEEPYS_BOX25_NAME_PATTERNS: Final = ("star",)
 
+# SleepSpa S9000AI demo sleep-monitor controller. Company ID 0x00B2 payload
+# byte 6 selects the app's single (0x88) or dual (0x86) device class. Missing
+# or unknown subtype data follows the OEM dual fallback.
+SLEEPSTAR_NAME_PATTERNS: Final = ("sleepstar",)
+SLEEPSTAR_MANUFACTURER_ID: Final = 0x00B2
+SLEEPSTAR_SINGLE_SUBTYPE: Final = 0x88
+SLEEPSTAR_DUAL_SUBTYPE: Final = 0x86
+
+# Fixed F23/kneading product names are StarCode-only; other STAR25 names use
+# the runtime Device Information selector declared with the protocol variants.
+SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES: Final = (
+    "star254203",
+    "star254205",
+    "star254255",
+    "star254256",
+    "star254257",
+    "star255401",
+    "star255402",
+    "star255403",
+)
+
+# Separate two-actuator StarCode accessory used by M1X12/M5X5 applications.
+STAR_ELEVATE_NAME_PATTERNS: Final = ("elevate",)
+
 # Jensen name patterns (JMC400 / LinON Entry)
 # Source: com.hilding.jbg_ble APK analysis
 JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
@@ -1069,6 +1099,17 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 
+# STAR25 controllers select their packet dialect from Device Information 0x2A29.
+# StarCode is selected when the manufacturer text contains "star"; missing,
+# unreadable, empty, or other values select the legacy CB25 packet family.
+SLEEPYS_BOX25_VARIANT_STAR: Final = "box25_star"
+SLEEPYS_BOX25_VARIANT_LEGACY: Final = "box25_legacy"
+SLEEPYS_BOX25_VARIANTS: Final = {
+    VARIANT_AUTO: "Auto (Device Information manufacturer)",
+    SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
+    SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+}
+
 # Sleep Number side selection variants
 SLEEP_NUMBER_VARIANT_LEFT: Final = "left"
 SLEEP_NUMBER_VARIANT_RIGHT: Final = "right"
@@ -1105,7 +1146,7 @@ OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
 OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
 OKIN_CB24_VARIANTS: Final = {
     VARIANT_AUTO: "Auto-detect (recommended)",
-    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (continuous presets)",
+    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (safe one-shot presets)",
     OKIN_CB24_VARIANT_NEW: "NEW protocol (CB27New)",
     OKIN_CB24_VARIANT_CB24: "CB24 profile (legacy packets, one-shot presets)",
     OKIN_CB24_VARIANT_CB27: "CB27 profile (legacy packets, one-shot presets)",
@@ -1126,6 +1167,7 @@ KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
+KEESON_VARIANT_SLEEP_HARMONY: Final = "sleep_harmony"
 # Deprecated alias kept for compatibility with older references.
 KEESON_VARIANT_ORE: Final = KEESON_VARIANT_SINO
 KEESON_VARIANTS: Final = {
@@ -1134,13 +1176,14 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
     KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
     KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
-    KEESON_VARIANT_KSBT04C: "KSBT04C (7-byte with checksum, Beautyrest Baselogic)",
+    KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
+    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
     KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
     KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
     KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
     KEESON_VARIANT_SINO: "Sino (Dynasty, INNOVA, BetterLiving - big-endian)",
     "ore": "ORE (deprecated alias for Sino)",
-    KEESON_VARIANT_PURPLE: "Purple Premium Smart Base",
+    KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
 # Leggett & Platt variants
@@ -1901,6 +1944,7 @@ ALL_PROTOCOL_VARIANTS: Final = [
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
+    KEESON_VARIANT_SLEEP_HARMONY,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SERTA,
@@ -1922,6 +1966,8 @@ ALL_PROTOCOL_VARIANTS: Final = [
     *(_variant for _variant in OKIN_DOT_VARIANTS if _variant != VARIANT_AUTO),
     OKIN_64BIT_VARIANT_NORDIC,
     OKIN_64BIT_VARIANT_CUSTOM,
+    SLEEPYS_BOX25_VARIANT_STAR,
+    SLEEPYS_BOX25_VARIANT_LEGACY,
     # SBI/Q-Plus variants
     SBI_VARIANT_BOTH,
     SBI_VARIANT_SIDE_A,
@@ -2003,6 +2049,7 @@ def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None)
         return True
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
+
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(
     {
@@ -2036,6 +2083,7 @@ BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_VIBRADORM,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SLEEPSTAR,
     }
 )
 
@@ -2057,6 +2105,7 @@ BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
         BED_TYPE_JENSEN,
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_SLEEPYS_BOX25,
+        BED_TYPE_SLEEPSTAR,
     }
 )
 
@@ -2108,6 +2157,9 @@ DEFAULT_MOTOR_PULSE_DELAY_MS: Final = 100  # Default for most beds
 # Per-bed-type motor pulse defaults based on app disassembly analysis
 # Target: ~1.0 second total motor movement duration (repeat_count = 1000ms / delay_ms)
 BED_MOTOR_PULSE_DEFAULTS: Final = {
+    # SleepSpa S9000AI: all transparent StarCode traffic uses the app's
+    # 100 ms BLE sender cadence.
+    BED_TYPE_SLEEPSTAR: (10, 100),
     # Richmat: 150ms delay → 7 repeats = 1.05s total
     # Source: com.richmat.sleepfunction ANALYSIS.md
     BED_TYPE_RICHMAT: (7, 150),

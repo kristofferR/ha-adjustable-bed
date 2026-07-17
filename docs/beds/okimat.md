@@ -211,6 +211,15 @@ The app supports multiple protocol versions based on device name:
 | `okin-ble` | CB.13/CB.15 (FFE5) | 9-byte: `[0xE6, 0xFE, 0x16, cmd(4), side, checksum]` |
 | `smartbed` | CB.24 (Nordic UART) | 7-byte: `[0x05, 0x02, cmd(4), 0x00]` (no checksum) |
 
+### CB.24 Preset Safety
+
+CB.24 preset recalls are sent as a single packet. The SmartBed app repeats the
+same packet every 300 ms only while a touchscreen button remains held, and a
+5.2-second hold is the controller's memory-save gesture. Fixed-duration or
+automatically learned repeat streams can therefore overwrite the remote's
+stored presets. All CB.24 profile variants, including the legacy `cb_old`
+compatibility alias, use safe one-shot preset recall.
+
 ### Additional Motors Supported
 
 | Motor | Up | Down |

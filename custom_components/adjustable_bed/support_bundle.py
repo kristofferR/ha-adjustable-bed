@@ -22,6 +22,7 @@ from homeassistant.const import CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .adapter import RSSI_UNAVAILABLE, get_discovered_service_info
 from .ble_auth import is_ble_authentication_error
 from .ble_diagnostics import BLEDiagnosticRunner
 from .const import (
@@ -35,6 +36,8 @@ from .const import (
     SUPPORTED_BED_TYPES,
     requires_pairing,
 )
+from .detection import detect_bed_type_detailed
+from .diagnostic_payloads import format_mapping_payloads
 from .redaction import redact_pins_only
 from .support_report import (
     _get_bluetooth_info,
@@ -48,7 +51,8 @@ from .support_report import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_REPORT_VERSION = "2.1"
+_REPORT_VERSION = "2.2"
+_MAX_NEARBY_BLUETOOTH_DEVICES = 30
 _BLUETOOTH_DOMAIN = "bluetooth"
 _ESPHOME_DOMAIN = "esphome"
 _ESPHOME_PAIRING_FEATURE_FLAG = 1 << 3
@@ -194,6 +198,11 @@ async def _build_bluetooth_section(
     info["target_address"] = address
 
     try:
+        info["nearby_devices"] = _build_nearby_device_inventory(hass, address)
+    except Exception as err:  # noqa: BLE001 - diagnostics must degrade gracefully
+        info["nearby_devices_error"] = str(err)
+
+    try:
         info["scanners"] = await _build_scanner_status(
             hass,
             diagnostics_report.get("advertisements_by_source", []),
@@ -202,6 +211,152 @@ async def _build_bluetooth_section(
         info["scanners_error"] = str(err)
 
     return info
+
+
+def _build_nearby_device_inventory(
+    hass: HomeAssistant,
+    target_address: str,
+    *,
+    limit: int = _MAX_NEARBY_BLUETOOTH_DEVICES,
+) -> dict[str, Any]:
+    """Return a ranked, bounded inventory of nearby Bluetooth devices."""
+    grouped: dict[str, list[Any]] = {}
+    for service_info in get_discovered_service_info(
+        hass,
+        include_non_connectable=True,
+    ):
+        address = str(getattr(service_info, "address", "")).upper()
+        if not address:
+            continue
+        grouped.setdefault(address, []).append(service_info)
+
+    devices: list[dict[str, Any]] = []
+    normalized_target = target_address.upper()
+    for snapshots in grouped.values():
+        candidates = [
+            _nearby_device_snapshot(service_info, normalized_target) for service_info in snapshots
+        ]
+        best = max(candidates, key=_nearby_device_priority)
+        sources = sorted(
+            (
+                {
+                    "source": candidate["source"],
+                    "rssi": candidate["rssi"],
+                    "connectable": candidate["connectable"],
+                }
+                for candidate in candidates
+            ),
+            key=lambda source: (
+                not source["connectable"],
+                -(source["rssi"] if isinstance(source["rssi"], int) else RSSI_UNAVAILABLE),
+                source["source"] or "",
+            ),
+        )
+        best["sources"] = sources
+        best["source_count"] = len(sources)
+        devices.append(best)
+
+    devices.sort(key=_nearby_device_sort_key)
+    included = devices[: max(0, limit)]
+    for rank, device in enumerate(included, start=1):
+        device["rank"] = rank
+
+    return {
+        "limit": limit,
+        "total_visible": len(devices),
+        "included": len(included),
+        "truncated": len(devices) > len(included),
+        "ranking": [
+            "supported_bed_match",
+            "detection_confidence",
+            "connectable",
+            "rssi",
+        ],
+        "privacy_note": (
+            "Contains Bluetooth names and addresses visible to Home Assistant "
+            "when the bundle was generated."
+        ),
+        "devices": included,
+    }
+
+
+def _nearby_device_snapshot(
+    service_info: Any,
+    target_address: str,
+) -> dict[str, Any]:
+    """Serialize one nearby advertisement with detection evidence."""
+    try:
+        detection = detect_bed_type_detailed(service_info)
+        bed_type = detection.bed_type
+        detection_info: dict[str, Any] = {
+            "bed_type": bed_type,
+            "confidence": detection.confidence,
+            "signals": list(detection.signals),
+            "ambiguous_types": list(detection.ambiguous_types or []),
+            "supported_match": bed_type in SUPPORTED_BED_TYPES if bed_type else False,
+        }
+    except Exception as err:  # noqa: BLE001 - one malformed advertisement must not abort a bundle
+        detection_info = {
+            "bed_type": None,
+            "confidence": 0.0,
+            "signals": [],
+            "ambiguous_types": [],
+            "supported_match": False,
+            "error": str(err),
+        }
+
+    raw_rssi = getattr(service_info, "rssi", None)
+    rssi = raw_rssi if isinstance(raw_rssi, int) else None
+    raw_name = getattr(service_info, "name", None)
+    name = raw_name if isinstance(raw_name, str) else None
+    raw_source = getattr(service_info, "source", None)
+    source = raw_source if isinstance(raw_source, str) else None
+    service_uuids = getattr(service_info, "service_uuids", None) or []
+    manufacturer_data = getattr(service_info, "manufacturer_data", None)
+    service_data = getattr(service_info, "service_data", None)
+    address = str(getattr(service_info, "address", "")).upper()
+
+    return {
+        "address": address,
+        "name": name,
+        "rssi": rssi,
+        "source": source,
+        "connectable": bool(getattr(service_info, "connectable", True)),
+        "is_target": address == target_address,
+        "service_uuids": sorted(str(uuid).lower() for uuid in service_uuids),
+        "manufacturer_data": format_mapping_payloads(
+            manufacturer_data if isinstance(manufacturer_data, dict) else None
+        ),
+        "service_data": format_mapping_payloads(
+            service_data if isinstance(service_data, dict) else None
+        ),
+        "detection": detection_info,
+    }
+
+
+def _nearby_device_priority(device: dict[str, Any]) -> tuple[bool, float, bool, int]:
+    """Return the descending priority tuple for one nearby device snapshot."""
+    detection = device["detection"]
+    rssi = device["rssi"] if isinstance(device["rssi"], int) else RSSI_UNAVAILABLE
+    return (
+        bool(detection["supported_match"]),
+        float(detection["confidence"]),
+        bool(device["connectable"]),
+        rssi,
+    )
+
+
+def _nearby_device_sort_key(device: dict[str, Any]) -> tuple[Any, ...]:
+    """Return a stable ascending key with likely and strong devices first."""
+    supported, confidence, connectable, rssi = _nearby_device_priority(device)
+    return (
+        not supported,
+        -confidence,
+        not connectable,
+        -rssi,
+        (device["name"] or "").lower(),
+        device["address"],
+    )
 
 
 async def _build_scanner_status(

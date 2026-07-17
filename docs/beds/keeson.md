@@ -37,9 +37,13 @@ Brands using Keeson/Ergomotion actuators:
 | Analyzed | App | Package ID |
 |----------|-----|------------|
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` |
+| ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` |
+| ✅ | [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) | `com.sbi.costco` |
 | ✅ | [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) | `com.sfd.ergomotion` |
 | ✅ | [Tempur Zero G Bed Base](https://play.google.com/store/apps/details?id=com.sfd.row) | `com.sfd.row` |
+| ✅ | Tempur Curve | `com.ore.tempur` |
 | ✅ | [Member's Mark Base Remote](https://play.google.com/store/apps/details?id=com.sfd.mm) | `com.sfd.mm` |
+| ✅ | [Sleep Harmony](https://play.google.com/store/apps/details?id=com.keeson.ssbaudio) | `com.keeson.ssbaudio` |
 | ✅ | Ergomotion Sync | `cn.com.mancini` |
 | ✅ | Linx | `com.keeson.connectedbed` |
 | ✅ | Juna Sleep | `com.keeson.junasleep` |
@@ -49,15 +53,15 @@ Brands using Keeson/Ergomotion actuators:
 
 | Feature | BaseI4/I5 | JSON/A00A | KSBT | Ergomotion | Okin | Serta | Sino | Purple (Premium) | Purple (Premium Plus) |
 |---------|-----------|------------|------|------------|------|-------|------|------------------|-----------------------|
-| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
-| Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
-| Memory Presets | ✅ (slots 3-4) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ✅ (4 slots) | ✅ | ✅ | ✅ | ✅ | ❓ |
-| TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❓ |
-| Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❓ |
-| Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❓ |
-| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
-| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❓ |
-| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❓ |
+| Motor Control | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Position Feedback | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Memory Presets | ⚠️ 4 exposed (slot 3 app-confirmed) | ✅ (remote-dependent 0x2000/0x4000/0x8000/0x10000) | ✅ (slots 1-3: Read/TV/M) | ⚠️ 4 exposed (verification needed) | ✅ | ✅ | ✅ | ✅ (2 slots) | ✅ (3 slots) |
+| TV Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Anti-Snore Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Lounge Preset | ❌ | ✅ (remote-dependent) | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Massage | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Safety Lights | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Zero-G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## Protocol Variants
 
@@ -96,10 +100,19 @@ One-shot buttons use `ctrm=1, km=1, keykt=0`. Held motion is not fully uniform:
 
 The integration treats `0000a00a` as a distinct Keeson variant and uses the shared 32-bit command values, while accommodating the split held-motion metadata from the Juna/Linx app family.
 
-### KSBT Variant (Older Remotes)
+### KSBT Variant (Direct P2 Remotes)
 
 **Primary Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART Service)
 **Format:** 6 bytes `[0x04, 0x02, ...int_bytes]` (big-endian)
+
+Ergomotion 4.0, Q-Plus and 1500 Tilt Base write held movement keys immediately
+and refresh them every 100 ms. Releasing a key cancels that refresh and writes
+the two-byte status query `[0x00, 0xB0]` at +300, +600 and +900 ms. Member's
+Mark uses a 400 ms movement refresh and runs the same query on an independent
+400 ms timer. None of these P2 paths writes the six-byte zero-key packet on
+release. The integration uses the 100 ms compatibility cadence needed by
+KSBT03C beds such as the issue #408 device; explicit per-device pulse settings
+remain authoritative.
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
@@ -107,6 +120,10 @@ Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rat
 **Ergomotion Sync remotes (from `cn.com.mancini` APK):** the app has three remote layouts — A and C target `KSBT04C` devices, B targets `KSBT03C` (e.g. Rio 5.0). All three share the same preset buttons: Read = `0x2000`, TV = `0x4000`, M = `0x10000`, Zero-G = `0x1000`, Flat = `0x8000000`, light toggle = `0x20000`, and massage steps head `0x800` / foot `0x400` / timer `0x200` (no all-off command). The Anti-Snore button (`0x8000`) appears on layouts B/C only; that describes the remote UIs, not command support — the integration exposes anti-snore on all KSBT variants. Read/TV/M are exposed as memory slots 1-3 on KSBT variants.
 
 **KSBT03C motor layout:** the KSBT03C remote (layout B) drives only three motors — head/back (`0x1`/`0x2`), feet/legs (`0x4`/`0x8`) and lumbar (`0x40`/`0x80`). There are no head-tilt (`0x10`/`0x20`) buttons, so KSBT03C beds have no tilt motor and the integration maps the third configured motor to lumbar. KSBT04C remotes (layouts A/C) additionally have the head-tilt buttons.
+
+That three-motor rule belongs to the direct six-byte KSBT profile. Sleep Harmony
+also accepts a `KSBT03C` name but uses its separate explicit profile and exposes
+head, foot, tilt/EJ and lumbar controls.
 
 **Status:** the KSBT03C command values and 3-motor layout are APK-derived (Ergomotion Sync 1.0.2) and not yet confirmed on hardware; the Rio 5.0 report in issue #408 confirms the lumbar motor responds to `0x40`/`0x80` and that no tilt motor exists.
 
@@ -121,6 +138,30 @@ Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rat
 
 Auto-detected from device name prefix `ksbt03cr`. Uses the same 32-bit command values as standard KSBT; only the framing differs (7-byte packet with `0x05` prefix and trailing `0x00` byte instead of 6-byte packet with `0x04` prefix). Falls back to the same alternative service UUIDs as standard KSBT.
 
+### Sleep Harmony Variant
+
+**Validation status:** Clean-room APK analysis complete; physical Sleep Harmony
+hardware has not yet been tested.
+
+Sleep Harmony 1.0.1 has two name-selected packet families behind the explicit
+`sleep_harmony` (`Sleep Harmony (KSBT04C / base-i5)`) profile:
+
+| Name prefix | GATT | Frame |
+|-------------|------|-------|
+| `KSBT04C` / `KSBT03C` | Nordic UART 6E400001 / 2 / 3 | `04 02 + command_be32 + complement checksum` |
+| `base-i5.` | FFE5 / FFE9, notify FFE4 | `E6 FE 16 + command_le32 + side 00 + complement checksum` |
+
+Motor commands start immediately and repeat every 300 ms. Releasing a motor or
+one-shot button waits 200 ms and sends one protocol-specific zero command. The
+integration preserves that UI release delay but keeps the safety `stop_all`
+service immediate. Sleep Harmony's popup M1/M2/M3 sends Reading `0x2000`, TV
+`0x4000`, and Snore `0x8000`; it has no memory-save action. Its dedicated
+massage-off command is `0x02000000`.
+
+These prefixes overlap Purple Smart Base while the packet endings differ. Select
+the explicit Purple or Sleep Harmony profile; a name alone cannot distinguish
+the ecosystems safely.
+
 ### Sino Variant (Dynasty, INNOVA, BetterLiving)
 **Primary Service UUID:** `0000ffe5-0000-1000-8000-00805f9b34fb`
 **Format:** 8 bytes `[0xE5, 0xFE, 0x16, b4, b5, b6, b7, checksum]` (big-endian byte order)
@@ -131,24 +172,33 @@ Used by BetterLiving/OKIN-BLE devices. Same packet structure as Base variant but
 Same protocol as Base variant but with real-time position updates via BLE notifications.
 
 ### Purple Variant
-Same protocol as Base variant, but with support for Lounge and Anti-Snore presets. Additionally, Memory 1 is mapped to the typical Memory 4 address. Also supports saving memory presets by sending the recall command repeated 30x at 100ms. Note that only the "Premium" model bed has been tested, no functionality has been verified for the "Premium Plus" model.
 
-**Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
+Purple Smart Base 1.0.8 has two explicitly selected products:
 
-Position data formats (by header byte):
+| Product | Name prefix | GATT | Command frame |
+|---------|-------------|------|---------------|
+| Premium | `base-i5` | FFE5 / FFE9, notify FFE4 | `E5 FE 16 + mask_le32 + complement checksum` |
+| Premium Plus | `KSBT04C` | Nordic UART 6E400001 / 2 / 3 | `04 02 + mask_be32 + 00` |
 
-| Header | Length | Description |
-|--------|--------|-------------|
-| `0xED` | 16 bytes | Basic position data |
-| `0xF0` | 19 bytes | Extended position data |
-| `0xF1` | 20 bytes | Full status data |
+Both repeat movement every 100 ms. On release, the app writes the Premium Plus
+zero-mask frame `04 02 00 00 00 00 00`, including when Premium's FFE9 target is
+selected. Premium has lounge, anti-snore and two memory slots. Premium Plus has
+pillow and lumbar motors, anti-snore, three memory slots, massage, underbed and
+motion lighting, and no lounge action.
 
-Position data includes:
-- Head position (16-bit, 0-100 scale)
-- Foot position (16-bit, 0-100 scale)
-- Movement status flags
-- Massage levels (0-6)
-- LED status
+Memory recall/save masks differ:
+
+| Slot | Premium | Premium Plus |
+|------|---------|--------------|
+| 1 | `0x00010000` | `0x00010000` |
+| 2 | `0x00004000` | `0x00002000` |
+| 3 | unavailable | `0x00004000` |
+
+The dedicated save flow performs 26 writes, each after 200 ms, for about 5.2
+seconds. Notifications report massage time/strength, light state, motion-light
+state/duration and version; the app contains no bed-position feedback parser.
+Select the explicit Purple profile because `base-i5` and `KSBT04C` names are
+also used by other Keeson app families with different packet endings.
 
 ### Commands (32-bit Values)
 
@@ -168,8 +218,8 @@ Position data includes:
 | Massage Foot Up | `0x00000400` | Increase foot massage |
 | Massage Head Up | `0x00000800` | Increase head massage |
 | Zero-G | `0x00001000` | Zero-G preset |
-| Memory 1 / Lounge | `0x00002000` | KSBT "Read" button, Lounge on Purple, not available on BaseI4/I5 |
-| Memory 2 / TV | `0x00004000` | KSBT TV button, Purple Memory 2, not available on BaseI4/I5  |
+| Memory 1 / Lounge | `0x00002000` | KSBT "Read" button; Purple Premium lounge; Purple Plus memory 2 |
+| Memory 2 / TV | `0x00004000` | KSBT TV button; Purple Premium memory 2; Purple Plus memory 3 |
 | Memory 3 / Anti-Snore | `0x00008000` | Memory 3 on BaseI4/I5, Anti-Snore on KSBT and Purple |
 | Memory 4 / M | `0x00010000` | KSBT "M" button (memory slot 3), Maps to Memory 1 on Purple |
 | Toggle Lights | `0x00020000` | Toggle safety lights |
@@ -194,9 +244,9 @@ app/protocol family, not to the shared 32-bit command values:
 |---------------------|------------------|-------------------|-------------------------|
 | BaseI4/BaseI5 | Member's Mark | 400ms fixed-delay scheduler | 3 writes, 400ms apart |
 | JSON/A00A | Juna / Linx | Requests every 5ms / 3ms, but drops requests while a write-with-response is pending | Existing safe 10 writes, 100ms apart |
-| KSBT | Ergomotion Sync / Adjustable Lite | 300ms `Timer.schedule` | 4 writes, 300ms apart |
+| KSBT direct P2 | Ergomotion 4.0 / Q-Plus / 1500 Tilt Base; Member's Mark | 100ms in the SFD apps, 400ms in Member's Mark | 10 writes, 100ms apart; explicit user overrides are preserved |
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
-| KSBT04C | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
+| Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
 | Serta | Serta MP Remote | 100ms handler loop | 10 writes, 100ms apart |
 | Sino / BetterLiving OKIN | BetterLiving | 100ms on the two-motor screen, 200ms on the three-motor screen | 10 x 100ms or 5 x 200ms |
@@ -216,11 +266,15 @@ BetterLiving devices use the BetterLiving cadence whenever that app profile is
 detected, even if a future factory path pairs the profile flag with a different
 base Keeson variant.
 
-Release behavior also varies. Ergomotion and Purple send an explicit zero frame;
-standard KSBT and Member's Mark merely cancel their repeat timer; Sleep Harmony
-sends two delayed zero frames. The integration intentionally sends an immediate
-zero frame after every movement for hardware safety. One-shot commands are sent
-once on KSBT and KSBT03CR, while Sleep Harmony's KSBT04C variant sends them twice.
+Release behavior also varies. The current SFD direct-six-byte P2 apps stop their
+100 ms refresh and send `00 B0` queries at +300/+600/+900 ms. Member's Mark
+stops its 400 ms refresh without a dedicated release write, while its independent
+timer continues sending `00 B0`. None sends a zero-key frame. Base/Ergomotion/
+Serta families retain their family-specific zero frames. Purple uses the explicit
+seven-byte P2 zero frame. Sleep Harmony waits 200 ms and sends one zero frame
+after both movement and one-shot actions. KSBT03CR retains its independently
+derived release behavior. One-shot commands themselves are sent once before any
+profile-specific release.
 
 ## Split-Bed Support (Member's Mark)
 
@@ -244,8 +298,9 @@ Unique service UUID auto-detection:
 
 | Device Name Prefix | Protocol |
 |-------------------|----------|
-| `base` | Standard FFE5/FFE9 (8-byte) |
+| `base` / `base-i5` | Ambiguous: Auto keeps the Base profile; Purple Premium uses E5/8-byte and Sleep Harmony uses E6/9-byte, so select either profile explicitly |
 | `KSBT03C` | Nordic UART with 6-byte packets (3 motors: no head tilt; e.g. Ergomotion Rio 5.0) |
-| `KSBT04C` | Nordic UART with 6-byte packets (used by some Ergomotion Sync beds, including Rio 6.0) |
+| `KSBT04` | Nordic UART with 6-byte packets (confirmed Rio 6.0 family) |
+| `KSBT04C` | Ambiguous: Auto keeps the legacy generic checksum profile; Purple Plus uses a trailing zero and Sleep Harmony uses app-specific checksum/release behavior, so select either profile explicitly |
 | `ksbt03cr` | Nordic UART with 7-byte packets (KSBT03CR variant) |
 | `EH` | Mattress variant (E0FF service) |

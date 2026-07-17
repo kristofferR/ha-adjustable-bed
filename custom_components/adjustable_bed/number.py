@@ -23,6 +23,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_OKIN_CST,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEPSTAR,
     BED_TYPE_SLEEPYS_BOX25,
     BEDS_WITH_POSITION_FEEDBACK,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
@@ -151,6 +152,16 @@ class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
 
 MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, ...] = (
     AdjustableBedMassageNumberEntityDescription(
+        key="massage_intensity",
+        translation_key="massage_intensity",
+        icon="mdi:vibrate",
+        native_min_value=0,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        massage_zone="all",
+    ),
+    AdjustableBedMassageNumberEntityDescription(
         key="massage_head_intensity",
         translation_key="massage_head_intensity",
         icon="mdi:vibrate",
@@ -266,6 +277,8 @@ def _number_entities_for(
     # capability_controller: an offline paired side still gets its number entities
     # built from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
+    if controller is not None and getattr(controller, "auto_enable_massage", False):
+        has_massage = True
 
     entities: list[NumberEntity] = []
 
@@ -274,6 +287,12 @@ def _number_entities_for(
     # remove any so existing installs don't keep dead orphaned numbers (#322).
     if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
         _async_remove_stale_position_entities(hass, coordinator)
+    elif bed_type == BED_TYPE_SLEEPSTAR:
+        _async_remove_stale_position_entities(
+            hass,
+            coordinator,
+            stale_keys=frozenset({"back_position", "legs_position"}),
+        )
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
@@ -369,6 +388,40 @@ def _number_entities_for(
                         min_motors=2,
                     )
                     entities.append(AdjustableBedPositionNumber(coordinator, box25_desc))
+            elif bed_type == BED_TYPE_SLEEPSTAR and controller is not None:
+                _LOGGER.debug(
+                    "Setting up SLEEPSTAR position numbers for %s",
+                    coordinator.name,
+                )
+
+                icons = {
+                    "head": "mdi:head",
+                    "feet": "mdi:foot-print",
+                    "lumbar": "mdi:human-handsup",
+                    "sleepstar_part4": "mdi:bed-outline",
+                    "sleepstar_part5": "mdi:bed-outline",
+                }
+                for spec in controller.motor_control_specs:
+                    if spec.position_key is None:
+                        continue
+                    max_value = float(spec.max_angle)
+                    sleepstar_desc = AdjustableBedNumberEntityDescription(
+                        key=f"{spec.key}_position",
+                        translation_key=f"{spec.translation_key}_position",
+                        icon=icons.get(spec.key, "mdi:bed-outline"),
+                        native_min_value=0,
+                        native_max_value=max_value,
+                        native_step=1,
+                        native_unit_of_measurement="%",
+                        mode=NumberMode.SLIDER,
+                        position_key=spec.position_key,
+                        move_up_fn=spec.open_fn,
+                        move_down_fn=spec.close_fn,
+                        move_stop_fn=spec.stop_fn,
+                        max_angle=max_value,
+                        min_motors=1,
+                    )
+                    entities.append(AdjustableBedPositionNumber(coordinator, sleepstar_desc))
             elif bed_type == BED_TYPE_OKIN_CST:
                 _LOGGER.debug(
                     "Setting up CST position numbers for %s",
@@ -616,6 +669,8 @@ def _async_remove_stale_sleep_number_entity(
 def _async_remove_stale_position_entities(
     hass: HomeAssistant,
     coordinator: AdjustableBedCoordinator,
+    *,
+    stale_keys: frozenset[str] | None = None,
 ) -> None:
     """Remove position number entities the integration no longer creates.
 
@@ -626,6 +681,8 @@ def _async_remove_stale_position_entities(
     """
     registry = er.async_get(hass)
     for description in NUMBER_DESCRIPTIONS:
+        if stale_keys is not None and description.key not in stale_keys:
+            continue
         entity_id = registry.async_get_entity_id(
             "number", DOMAIN, coordinator.entity_unique_id(description.key)
         )
@@ -730,6 +787,7 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
 
         # Map zone to state key
         key_map = {
+            "all": "intensity",
             "head": "head_intensity",
             "foot": "foot_intensity",
             "wave": "wave_intensity",
