@@ -856,6 +856,15 @@ class KeesonController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
+        selected_cancel_event = (
+            cancel_event
+            if cancel_event is not None
+            else self._coordinator.cancel_command
+        )
+        if selected_cancel_event.is_set():
+            _LOGGER.debug("Skipping Keeson write because command was cancelled")
+            return
+
         self._refresh_write_mode()
         _LOGGER.debug(
             "Writing command to Keeson bed: %s (repeat: %d, delay: %dms)",
@@ -868,7 +877,7 @@ class KeesonController(BedController):
             command,
             repeat_count=repeat_count,
             repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
+            cancel_event=selected_cancel_event,
             response=self._write_with_response,
         )
 
@@ -1578,9 +1587,8 @@ class KeesonController(BedController):
             )
             self._led_on = not self._led_on
         else:
-            await self.write_command(
-                self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS),
-                repeat_count=self._single_shot_count,
+            await self._write_single_shot(
+                self._build_command(KeesonCommands.TOGGLE_SAFETY_LIGHTS)
             )
 
     # Massage methods

@@ -257,6 +257,46 @@ class TestKeesonController:
         with pytest.raises(ConnectionError):
             await coordinator.controller.write_command(coordinator.controller._build_command(0))
 
+    async def test_write_command_honors_default_cancellation(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test an omitted event uses the coordinator cancellation state."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator.cancel_command.set()
+        controller = coordinator.controller
+        controller._write_gatt_with_retry = AsyncMock()
+
+        await controller.write_command(controller._build_command(0))
+
+        controller._write_gatt_with_retry.assert_not_awaited()
+
+    async def test_write_command_preserves_explicit_release_event(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test a fresh explicit event bypasses stale command cancellation."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        coordinator.cancel_command.set()
+        controller = coordinator.controller
+        controller._write_gatt_with_retry = AsyncMock()
+        release_event = asyncio.Event()
+        command = controller._build_command(0)
+
+        await controller.write_command(command, cancel_event=release_event)
+
+        controller._write_gatt_with_retry.assert_awaited_once()
+        assert (
+            controller._write_gatt_with_retry.await_args.kwargs["cancel_event"]
+            is release_event
+        )
+
 
 class TestKeesonMovement:
     """Test Keeson movement commands."""
@@ -1062,6 +1102,29 @@ class TestPurpleSmartBaseProtocol:
         cancel_event = controller.write_command.await_args.kwargs["cancel_event"]
         assert isinstance(cancel_event, asyncio.Event)
         assert not cancel_event.is_set()
+
+    async def test_plus_light_toggle_appends_release(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Test Purple Plus light toggles append the required zero-mask frame."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator,
+            variant=KEESON_VARIANT_PURPLE,
+            device_name="KSBT04C123456789",
+        )
+        controller.write_command = AsyncMock()
+
+        await controller.lights_toggle()
+
+        assert [call.args[0] for call in controller.write_command.await_args_list] == [
+            bytes.fromhex("04020002000000"),
+            bytes.fromhex("04020000000000"),
+        ]
 
     @pytest.mark.parametrize(
         ("variant", "device_name", "expected_release", "expected_delays"),
