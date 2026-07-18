@@ -86,6 +86,7 @@ from .const import (
     COMFORT_MOTION_SERVICE_UUID,
     COOLBASE_NAME_PATTERNS,
     DEVICE_INFO_SERVICE_UUID,
+    DEWERTOKIN_EXCLUDED_DEVICE_NAMES,
     DEWERTOKIN_NAME_PATTERNS,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
@@ -908,6 +909,25 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # Parse Kaidi metadata up front so validated Kaidi advertisements are not
     # discarded by the generic "mouse" exclusion before protocol detection.
     kaidi_adv = extract_kaidi_advertisement(service_info.manufacturer_data)
+
+    # The Jura TT214H BlueFrog coffee-machine dongle advertises the same 1523
+    # service UUID as DewertOkin beds. Its exact model/name is authoritative
+    # enough to reject before the otherwise high-confidence UUID check (#450).
+    if (
+        device_name in DEWERTOKIN_EXCLUDED_DEVICE_NAMES
+        and DEWERTOKIN_SERVICE_UUID.lower() in service_uuids
+    ):
+        _LOGGER.debug(
+            "Device %s excluded: known Jura BlueFrog dongle '%s' advertises "
+            "the shared DewertOkin service UUID",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(
+            bed_type=None,
+            confidence=0.0,
+            signals=["excluded:jura_bluefrog"],
+        )
 
     # Exclude devices that are clearly not beds based on name, but only when
     # they have generic/shared UUIDs. This preserves UUID-based detection for
