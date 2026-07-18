@@ -68,7 +68,7 @@ body:
         4. Click the **download link** in the notification that appears
         5. Drag and drop the JSON file here
 
-        **Alternative:** Download diagnostics from Settings → Integrations → Adjustable Bed → ⋮ → Download diagnostics
+        **Alternative:** Download diagnostics from Settings → Devices & Services → Adjustable Bed → ⋮ → Download diagnostics
       placeholder: "Drag and drop the support bundle JSON file here"
     validations:
       required: true

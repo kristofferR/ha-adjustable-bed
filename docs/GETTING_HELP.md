@@ -55,7 +55,7 @@ The support bundle includes everything we need in one file:
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
 3. For a control problem, first try the failing Home Assistant command so it is present in the command trace.
-4. Select that same bed device, or enter `target_address` for an unconfigured device, then click **Perform action**.
+4. Select that same bed device, or leave the device empty and enter `target_address` for an unconfigured device, then click **Perform action**.
 5. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
 6. A notification will appear with a **download link** — click it to save the file.
 7. Attach the JSON file to your GitHub issue. Check its `evidence.warnings` section for anything that could not be captured.
@@ -76,7 +76,7 @@ The support bundle includes:
 
 If you prefer to gather information separately:
 
-1. Go to **Settings** → **Integrations** → **Adjustable Bed**
+1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
 2. Click the **⋮** menu → **Download diagnostics**
 3. Attach the downloaded JSON file to your issue
 
@@ -98,11 +98,16 @@ If your bed isn't supported yet, file a [New Bed Support Request](https://github
 
 **Start by generating a support bundle** — it captures all the BLE data (service UUIDs, device name, GATT structure) needed to implement a new protocol. Without it, we cannot begin implementation.
 
-1. Add the Adjustable Bed integration and select **"Diagnostic (unknown bed)"** as the bed type
+You don't need to configure anything first — the support bundle action works directly on any BLE device your Home Assistant can see:
+
+1. **Find your bed's MAC address:** go to **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed**, choose **"Browse unsupported BLE devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details — note the address. This step only inspects the device; it doesn't add anything.
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
-3. Select the device and click **Perform action**
-4. A notification will appear with a **download link** — click it to save the file
-5. Attach the JSON file to your issue
+3. Leave the **Device** field empty and enter the MAC address in **Target Address**
+4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
+5. A notification will appear with a **download link** — click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
+6. Attach the JSON file to your issue
+
+**Alternative — add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Show all BLE devices"**, select your bed, and set **Bed type** to **"Diagnostic (unknown bed)"**. You can then run `generate_support_bundle` with that device selected in the **Device** field. Note that "Diagnostic (unknown bed)" only appears in the bed type dropdown on this path — it is not listed under "Select by actuator brand", and it is not in the shorter bed type list shown when a bed was auto-detected.
 
 Then fill in the rest of the template with your bed manufacturer/model, remote model number, and any other details.
 
@@ -129,7 +134,7 @@ Let us know if you can:
 | Scenario | Recommended Tool |
 |----------|------------------|
 | Troubleshooting a configured bed | Support bundle or diagnostics download |
-| Finding your bed's MAC address | Integration shows discovered MACs when manually adding |
+| Finding your bed's MAC address | **"Browse unsupported BLE devices"** in the add-integration wizard |
 | Identifying bed type/service UUIDs | `generate_support_bundle` with `target_address` |
 | New bed support - capture what app sends | nRF Connect logging (see below) |
 | Device not visible to HA at all | nRF Connect to verify it exists |
@@ -147,10 +152,10 @@ The `generate_support_bundle` action captures GATT structure, device info, scann
 1. Go to **Developer Tools** → **Actions**
 2. Search for `adjustable_bed.generate_support_bundle`
 3. Try the failing Home Assistant control once if you are troubleshooting commands.
-4. Select that same bed device (or enter `target_address` for unconfigured devices).
+4. Select that same bed device, or leave the device empty and enter `target_address` for an unconfigured device (provide exactly one of the two).
 5. Click **Perform action**.
 6. Optionally operate your physical remote during capture to record notifications.
-7. Find the JSON report in your `/config/` folder.
+7. A notification will appear with a **download link**; the JSON report is also saved in your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
 
 This captures:
 - All GATT services and characteristics

@@ -73,7 +73,7 @@ This guide covers common issues and their solutions when using the Adjustable Be
 **Solutions:**
 1. **Verify BLE advertising:** Use a BLE scanner app to confirm the bed is visible
 2. **Check MAC address:** Verify the MAC address matches what's shown in your BLE scanner
-3. **Try manual configuration:** Use manual setup if auto-discovery doesn't find the bed
+3. **Try manual configuration:** If auto-discovery doesn't find the bed, use **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed** and choose **"Select by actuator brand"** or **"Show all BLE devices"**
 
 ---
 
@@ -192,7 +192,7 @@ the next command from Home Assistant — no action is needed.
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Manual configuration:** Remove and re-add the bed using manual setup
+1. **Manual configuration:** Remove and re-add the bed, choosing the bed type yourself via **"Select by actuator brand"** or **"Show all BLE devices"** instead of accepting the auto-detected type
 2. **Try different types:** If one type doesn't work, try related types (e.g., Okimat ↔ Leggett Okin)
 
 ### Keeson Variant Selection

@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_DEWERTOKIN,
+    BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JIECANG,
     BED_TYPE_KAIDI,
@@ -81,7 +82,7 @@ from custom_components.adjustable_bed.const import (
     TIMOTION_AHF_SERVICE_UUID,
     requires_pairing,
 )
-from custom_components.adjustable_bed.detection import detect_bed_type
+from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES, detect_bed_type
 from custom_components.adjustable_bed.discovery_settings import (
     async_is_discovery_disabled,
     async_set_discovery_disabled,
@@ -743,6 +744,102 @@ class TestBluetoothDiscoveryFlow:
         assert result["data"][CONF_MOTOR_COUNT] == 4
         assert result["data"][CONF_HAS_MASSAGE] is True
         assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
+
+    async def test_bluetooth_confirm_bed_type_dropdown_uses_display_names(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Regression for #385: the confirm dropdown showed raw type slugs from
+        SUPPORTED_BED_TYPES, with no "Diagnostic (unknown bed)" entry. It must use
+        the same display-name options as the other selection paths."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        bed_type_marker = next(
+            marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
+        )
+        selector = result["data_schema"].schema[bed_type_marker]
+        options = selector.config["options"]
+        options_by_value = {option["value"]: option["label"] for option in options}
+
+        assert bed_type_marker.default() == BED_TYPE_LINAK
+        assert options_by_value[BED_TYPE_LINAK] == BED_TYPE_DISPLAY_NAMES[BED_TYPE_LINAK]
+        assert options_by_value[BED_TYPE_DIAGNOSTIC] == "Diagnostic (unknown bed)"
+
+    async def test_bluetooth_confirm_legacy_alias_default_stays_selectable(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info_ambiguous_okin: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A legacy-alias bed type (absent from the display-name list) chosen via
+        disambiguation must be prepended so the dropdown default stays valid."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info_ambiguous_okin,
+        )
+        assert result["step_id"] == "bluetooth_disambiguate"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={"bed_type_choice": BED_TYPE_OKIMAT},
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        bed_type_marker = next(
+            marker for marker in result["data_schema"].schema if marker.schema == CONF_BED_TYPE
+        )
+        selector = result["data_schema"].schema[bed_type_marker]
+        option_values = [option["value"] for option in selector.config["options"]]
+
+        assert bed_type_marker.default() == BED_TYPE_OKIMAT
+        assert option_values[0] == BED_TYPE_OKIMAT
+        assert option_values.count(BED_TYPE_OKIMAT) == 1
+
+    async def test_bluetooth_confirm_diagnostic_bed_type_creates_entry(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """Selecting "Diagnostic (unknown bed)" on the confirm step must create
+        an entry so users can capture a support bundle (#385)."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
+                CONF_NAME: "Mystery Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+        )
+
+        # A connectable scanner is mocked, so the verify_connection step appears.
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={},
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_DIAGNOSTIC
 
     async def test_bluetooth_discovery_confirm_coerces_string_motor_count(
         self,
