@@ -841,6 +841,51 @@ class TestBluetoothDiscoveryFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_DIAGNOSTIC
 
+    async def test_bluetooth_confirm_diagnostic_entry_created_when_probe_fails(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """A failed connection probe must not block a diagnostic entry: the
+        whole point is capturing bundles for beds we cannot reach (#385)."""
+        from custom_components.adjustable_bed.config_flow import CapabilityReport
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+
+        with patch.object(
+            AdjustableBedConfigFlow,
+            "_probe_capabilities",
+            AsyncMock(return_value=CapabilityReport(device_found=False)),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={
+                    CONF_BED_TYPE: BED_TYPE_DIAGNOSTIC,
+                    CONF_NAME: "Unreachable Bed",
+                    CONF_MOTOR_COUNT: 2,
+                    CONF_HAS_MASSAGE: False,
+                    CONF_DISABLE_ANGLE_SENSING: True,
+                    CONF_PREFERRED_ADAPTER: "auto",
+                },
+            )
+
+            # The probe failed, but the verify step is informational only.
+            assert result["type"] == FlowResultType.FORM
+            assert result["step_id"] == "verify_connection"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={},
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_BED_TYPE] == BED_TYPE_DIAGNOSTIC
+
     async def test_bluetooth_discovery_confirm_coerces_string_motor_count(
         self,
         hass: HomeAssistant,
