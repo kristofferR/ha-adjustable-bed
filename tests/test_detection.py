@@ -61,6 +61,7 @@ from custom_components.adjustable_bed.const import (
     DEVICE_INFO_SERVICE_UUID,
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
+    DEWERTOKIN_SERVICE_UUID,
     JENSEN_SERVICE_UUID,
     KAIDI_DISCOVERY_SERVICE_UUID,
     KAIDI_MESH_SERVICE_UUID,
@@ -1970,6 +1971,23 @@ class TestExcludedDevicePatterns:
     are also used by legitimate beds, causing false positive discovery.
     See: https://github.com/kristofferR/ha-adjustable-bed/issues/187
     """
+
+    def test_jura_bluefrog_is_not_detected_as_dewertokin(self):
+        """The TT214H coffee-machine dongle shares DewertOkin's UUID (#450)."""
+        service_info = _make_service_info(
+            name="TT214H BlueFrog",
+            address="CC:2D:04:34:E9:4A",
+            service_uuids=[
+                DEWERTOKIN_SERVICE_UUID,
+                "00001623-0000-1000-8000-00805f9b34fb",
+            ],
+        )
+
+        result = detect_bed_type_detailed(service_info)
+
+        assert result.bed_type is None
+        assert result.confidence == 0.0
+        assert result.signals == ["excluded:jura_bluefrog"]
 
     @pytest.mark.parametrize(
         "name",

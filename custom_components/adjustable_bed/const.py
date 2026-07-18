@@ -613,9 +613,11 @@ MANUFACTURER_ID_DEWERTOKIN: Final = 1643  # 0x066B
 # Used by SmartBed devices that advertise manufacturer data instead of service UUIDs
 MANUFACTURER_ID_OKIN: Final = 89  # 0x0059
 
-# DewertOkin service UUID (unique to FurniMove/DewertOkin devices)
-# This UUID can uniquely identify DewertOkin beds regardless of device name
+# Primary DewertOkin service UUID. The Jura TT214H BlueFrog coffee-machine
+# dongle also advertises this UUID, so detection excludes that exact known
+# non-bed name before treating the UUID as a DewertOkin signal (issue #450).
 DEWERTOKIN_SERVICE_UUID: Final = "00001523-0000-1000-8000-00805f9b34fb"
+DEWERTOKIN_EXCLUDED_DEVICE_NAMES: Final = frozenset({"tt214h bluefrog"})
 
 # DewertOkin RF Gateway settings service. Devices with BLE Device Information
 # model "Bluetooth RF-Gateway" expose this name characteristic as the app's
