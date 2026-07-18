@@ -114,7 +114,6 @@ from .const import (
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTES,
-    SUPPORTED_BED_TYPES,
     VARIANT_AUTO,
     DetectionResult,
     get_richmat_features,
@@ -998,7 +997,28 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
                 or BED_TYPE_AUTO_DETECT
             )
         else:
-            bed_type_selector = vol.In(SUPPORTED_BED_TYPES)
+            # Same display-name dropdown as the full list, so users see
+            # "Diagnostic (unknown bed)" etc. instead of raw type slugs
+            # (issue #385). Detection may return a legacy alias (e.g.
+            # dewertokin) that the display list omits; prepend it so the
+            # detected default stays selectable.
+            options = get_bed_type_options()
+            if isinstance(bed_type_default, str) and bed_type_default not in {
+                option["value"] for option in options
+            }:
+                options.insert(
+                    0,
+                    SelectOptionDict(
+                        value=bed_type_default,
+                        label=BED_TYPE_DISPLAY_NAMES.get(bed_type_default, bed_type_default),
+                    ),
+                )
+            bed_type_selector = SelectSelector(
+                SelectSelectorConfig(
+                    options=options,
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            )
 
         schema_dict: dict[vol.Marker, Any] = {
             vol.Optional(CONF_BED_TYPE, default=bed_type_default): bed_type_selector,

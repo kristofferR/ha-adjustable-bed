@@ -55,11 +55,14 @@ body:
       description: |
         **The support bundle captures all BLE data needed to implement your bed's protocol** (service UUIDs, GATT structure, device name, advertisements). Without it, we cannot begin implementation.
 
-        1. Add the Adjustable Bed integration and select "Diagnostic (unknown bed)" as the bed type
+        1. Find your bed's MAC address: Settings → Devices & Services → Add Integration → Adjustable Bed → "Browse unsupported BLE devices", then select your bed (this only inspects the device, it doesn't add anything)
         2. Go to Developer Tools → Actions
-        3. Search for `adjustable_bed.generate_support_bundle` and select the device
-        4. Click the **download link** in the notification that appears
-        5. Drag and drop the JSON file here
+        3. Search for `adjustable_bed.generate_support_bundle`, leave the device empty, and enter the MAC address in "Target Address"
+        4. Click "Perform action" and operate your physical remote during the capture
+        5. Click the **download link** in the notification that appears
+        6. Drag and drop the JSON file here
+
+        Note: the bundle records what your bed transmits (notifications and GATT structure) plus this integration's own commands. It cannot see commands sent by the official app or remote. If you have nRF Connect, an app-traffic capture is a valuable supplement, see [Capturing App Traffic](https://github.com/kristofferR/ha-adjustable-bed/blob/master/docs/GETTING_HELP.md#capturing-app-traffic-for-new-bed-support).
       placeholder: "Drag and drop the support bundle JSON file here"
     validations:
       required: true

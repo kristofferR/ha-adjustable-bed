@@ -110,7 +110,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 
 ## Adding a New Bed Type
 
-1. **Document the BLE protocol** - Use APK reverse engineering (see `disassembly/AGENTS.md`) to extract UUIDs and command bytes. The `run_diagnostics` service captures GATT structure and device responses. User-provided nRF Connect logs can supplement APK analysis with real traffic captures.
+1. **Document the BLE protocol** - Use APK reverse engineering (see `disassembly/AGENTS.md`) to extract UUIDs and command bytes. The `generate_support_bundle` service captures GATT structure and device responses. User-provided nRF Connect logs can supplement APK analysis with real traffic captures.
 
 2. **Add constants to `const.py`**:
    ```python
@@ -181,8 +181,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 | `adjustable_bed.stop_all` | Immediately stop all motors |
 | `adjustable_bed.set_position` | Move motor to a specific position |
 | `adjustable_bed.timed_move` | Move motor for a specified duration |
-| `adjustable_bed.run_diagnostics` | Capture BLE protocol data for debugging |
-| `adjustable_bed.generate_support_bundle` | Generate JSON support bundle with diagnostics (params: device_id, include_logs) |
+| `adjustable_bed.generate_support_bundle` | Capture the full JSON support bundle (BLE diagnostics, GATT details, pairing evidence, command trace, logs). Params: `device_id` or `target_address` (exactly one), `capture_duration`, `include_logs` |
 
 ## Critical Implementation Details
 
@@ -260,11 +259,11 @@ under `custom_components/adjustable_bed/frontend/`.
 
 ### Using BLE Diagnostics
 
-The `run_diagnostics` service captures protocol data for debugging and adding new bed support:
-1. Call the service with either a configured device or a raw MAC address
-2. Operate the physical remote during the capture period
-3. Find the JSON report in your HA config directory
-4. The report contains GATT services, characteristics, and captured notifications
+The `generate_support_bundle` service captures protocol data for debugging and adding new bed support:
+1. Call the service with either a configured device (`device_id`) or a raw MAC address (`target_address`) - exactly one of the two
+2. Operate the physical remote during the capture period (default 120 seconds)
+3. A persistent notification provides a download link; the JSON report is also saved in the HA config directory as `adjustable_bed_support_bundle_*.json`
+4. The report contains GATT services, characteristics, captured notifications, advertisements per source, pairing evidence, and the recent command trace
 
 ### Common Issues
 
