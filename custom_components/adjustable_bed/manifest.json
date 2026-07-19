@@ -207,5 +207,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/kristofferR/ha-adjustable-bed/issues",
   "requirements": ["bleak>=1.0.0", "bleak-retry-connector>=3.5.0"],
-  "version": "3.3.0"
+  "version": "3.3.1"
 }
