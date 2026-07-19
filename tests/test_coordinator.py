@@ -1663,6 +1663,32 @@ class TestCoordinatorDisconnectTimer:
         assert coordinator._reconnect_timer is None
         assert coordinator._intentional_disconnect is False
 
+    async def test_failed_connection_cleanup_is_intentional(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Failure cleanup must not let the callback schedule auto-reconnect."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = mock_bleak_client
+        coordinator._controller = MagicMock()
+        intentional_during_disconnect: list[bool] = []
+
+        async def disconnect() -> None:
+            intentional_during_disconnect.append(coordinator._intentional_disconnect)
+            coordinator._on_disconnect(mock_bleak_client)
+
+        mock_bleak_client.disconnect = AsyncMock(side_effect=disconnect)
+
+        await coordinator._async_cleanup_failed_connection()
+
+        assert intentional_during_disconnect == [True]
+        assert coordinator._client is None
+        assert coordinator._controller is None
+        assert coordinator._reconnect_timer is None
+        assert coordinator._intentional_disconnect is False
+
     async def test_sleep_number_mcr_skips_disconnect_timer_on_connect(
         self,
         hass: HomeAssistant,

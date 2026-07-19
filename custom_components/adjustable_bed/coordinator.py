@@ -1232,6 +1232,101 @@ class AdjustableBedCoordinator:
 
         return not self._uses_persistent_connection()
 
+    def _prepare_pairing_attempt(
+        self,
+        device: BLEDevice,
+        pairing_details: dict[str, Any],
+    ) -> tuple[bool, bool, bool]:
+        """Resolve pairing policy and diagnostics for one connection attempt."""
+        bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
+        bond_marker_before_attempt = self._ble_bond_established
+        transient_skip_was_set = self._skip_pair_next_attempt
+        os_bond_reported = (
+            bed_requires_pairing and self._device_reports_existing_bond(device)
+        )
+        if (
+            bed_requires_pairing
+            and not self._ble_bond_established
+            and os_bond_reported
+        ):
+            _LOGGER.info(
+                "Existing BLE bond detected for %s; skipping pair=True",
+                self._address,
+            )
+            self._mark_ble_bond_established()
+
+        use_pairing = (
+            bed_requires_pairing
+            and not self._ble_bond_established
+            and not self._skip_pair_next_attempt
+            and self._pairing_supported is not False
+        )
+        pair_after_service_discovery = bool(
+            use_pairing
+            and requires_pairing_after_service_discovery(
+                self._bed_type,
+                self._protocol_variant,
+            )
+        )
+        pairing_ordering = "not_requested"
+        if use_pairing:
+            pairing_ordering = (
+                "connect_discover_then_pair"
+                if pair_after_service_discovery
+                else "backend_default"
+            )
+        if not bed_requires_pairing:
+            pairing_decision = "not_required"
+        elif os_bond_reported and not bond_marker_before_attempt:
+            pairing_decision = "existing_os_bond_detected"
+        elif self._ble_bond_established:
+            pairing_decision = "bond_marker_present"
+        elif transient_skip_was_set:
+            pairing_decision = "retry_without_pairing"
+        elif self._pairing_supported is False:
+            pairing_decision = "adapter_pairing_unsupported"
+        else:
+            pairing_decision = "pairing_requested"
+        pairing_details.update(
+            {
+                "required": bed_requires_pairing,
+                "requested": use_pairing,
+                "decision": pairing_decision,
+                "adapter_pairing_supported": self._pairing_supported,
+                "bond_marker_before_attempt": bond_marker_before_attempt,
+                "bond_marker_after_detection": self._ble_bond_established,
+                "os_bond_reported": os_bond_reported,
+                "transient_skip_was_set": transient_skip_was_set,
+                "ordering": pairing_ordering,
+            }
+        )
+        # Consume the transient skip flag: it only suppresses pairing for the
+        # single attempt immediately following a failed pair.
+        self._skip_pair_next_attempt = False
+        return bed_requires_pairing, use_pairing, pair_after_service_discovery
+
+    async def _async_cleanup_failed_connection(self) -> None:
+        """Release a failed-attempt client without scheduling auto-reconnect."""
+        client = self._client
+        if client is None:
+            return
+
+        _LOGGER.debug("Cleaning up failed connection attempt...")
+        self._intentional_disconnect = True
+        try:
+            await client.disconnect()
+            _LOGGER.debug("Disconnect cleanup successful")
+        except Exception as disconnect_err:
+            _LOGGER.debug(
+                "Error during disconnect cleanup: %s (%s)",
+                disconnect_err,
+                type(disconnect_err).__name__,
+            )
+        finally:
+            self._client = None
+            self._controller = None
+            self._intentional_disconnect = False
+
     async def _async_connect_locked(self, reset_timer: bool = True) -> bool:
         """Connect to the bed (must hold lock)."""
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
@@ -1521,73 +1616,15 @@ class AdjustableBedCoordinator:
                 # some ESP-IDF/ESPHome stacks respond with auth error 82 and can
                 # leave the proxy stuck in ESTABLISHED state when asked to re-pair
                 # an already-bonded device.
-                bed_requires_pairing = requires_pairing(self._bed_type, self._protocol_variant)
                 pairing_details = attempt_details["pairing"]
-                bond_marker_before_attempt = self._ble_bond_established
-                transient_skip_was_set = self._skip_pair_next_attempt
-                os_bond_reported = (
-                    bed_requires_pairing and self._device_reports_existing_bond(device)
+                (
+                    bed_requires_pairing,
+                    use_pairing,
+                    pair_after_service_discovery,
+                ) = self._prepare_pairing_attempt(
+                    device,
+                    pairing_details,
                 )
-                if (
-                    bed_requires_pairing
-                    and not self._ble_bond_established
-                    and os_bond_reported
-                ):
-                    _LOGGER.info(
-                        "Existing BLE bond detected for %s; skipping pair=True",
-                        self._address,
-                    )
-                    self._mark_ble_bond_established()
-
-                use_pairing = (
-                    bed_requires_pairing
-                    and not self._ble_bond_established
-                    and not self._skip_pair_next_attempt
-                    and self._pairing_supported is not False
-                )
-                pair_after_service_discovery = bool(
-                    use_pairing
-                    and requires_pairing_after_service_discovery(
-                        self._bed_type,
-                        self._protocol_variant,
-                    )
-                )
-                pairing_ordering = "not_requested"
-                if use_pairing:
-                    pairing_ordering = (
-                        "connect_discover_then_pair"
-                        if pair_after_service_discovery
-                        else "backend_default"
-                    )
-                if not bed_requires_pairing:
-                    pairing_decision = "not_required"
-                elif os_bond_reported and not bond_marker_before_attempt:
-                    pairing_decision = "existing_os_bond_detected"
-                elif self._ble_bond_established:
-                    pairing_decision = "bond_marker_present"
-                elif transient_skip_was_set:
-                    pairing_decision = "retry_without_pairing"
-                elif self._pairing_supported is False:
-                    pairing_decision = "adapter_pairing_unsupported"
-                else:
-                    pairing_decision = "pairing_requested"
-                pairing_details.update(
-                    {
-                        "required": bed_requires_pairing,
-                        "requested": use_pairing,
-                        "decision": pairing_decision,
-                        "adapter_pairing_supported": self._pairing_supported,
-                        "bond_marker_before_attempt": bond_marker_before_attempt,
-                        "bond_marker_after_detection": self._ble_bond_established,
-                        "os_bond_reported": os_bond_reported,
-                        "transient_skip_was_set": transient_skip_was_set,
-                        "ordering": pairing_ordering,
-                    }
-                )
-                # Consume the transient skip flag: it only suppresses pairing for
-                # the single attempt immediately following a failed pair, so we
-                # never get stuck skipping pairing forever.
-                self._skip_pair_next_attempt = False
                 keep_connecting_through_startup = self._uses_persistent_connection()
                 if use_pairing:
                     _LOGGER.info(
@@ -2204,23 +2241,7 @@ class AdjustableBedCoordinator:
                     type(err).__name__,
                     err.args,
                 )
-                if self._client:
-                    _LOGGER.debug("Cleaning up failed connection attempt...")
-                    client = self._client
-                    self._intentional_disconnect = True
-                    try:
-                        await client.disconnect()
-                        _LOGGER.debug("Disconnect cleanup successful")
-                    except Exception as disconnect_err:
-                        _LOGGER.debug(
-                            "Error during disconnect cleanup: %s (%s)",
-                            disconnect_err,
-                            type(disconnect_err).__name__,
-                        )
-                    finally:
-                        self._client = None
-                        self._controller = None
-                        self._intentional_disconnect = False
+                await self._async_cleanup_failed_connection()
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
             except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures
@@ -2250,19 +2271,7 @@ class AdjustableBedCoordinator:
                 )
                 # Log full traceback at debug level
                 _LOGGER.debug("Full traceback:\n%s", traceback.format_exc())
-                if self._client:
-                    _LOGGER.debug("Cleaning up failed connection attempt...")
-                    try:
-                        await self._client.disconnect()
-                        _LOGGER.debug("Disconnect cleanup successful")
-                    except Exception as disconnect_err:
-                        _LOGGER.debug(
-                            "Error during disconnect cleanup: %s (%s)",
-                            disconnect_err,
-                            type(disconnect_err).__name__,
-                        )
-                    self._client = None
-                    self._controller = None
+                await self._async_cleanup_failed_connection()
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
 
