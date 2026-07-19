@@ -120,6 +120,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    requires_pairing_after_service_discovery,
     supports_passive_position_reconciliation,
 )
 from .detection import (
@@ -429,9 +430,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self._get_config_translation(
                 "step.bluetooth_pairing.data_description.pairing_instructions_leggett_gen2",
                 "1. Unplug your bed's power cord and remove any batteries from the power supply.\n"
-                "2. Plug the bed back in. You'll hear a small chime and see a pulsing blue light "
-                "under the bed - the bed stays in pairing mode for about 2 minutes.\n"
-                "3. While the light is pulsing, click 'Pair Now'.",
+                "2. Plug the bed back in. Wait for a small chime and a pulsing blue light "
+                "under the bed.\n"
+                "3. While the light is pulsing, promptly click 'Pair Now'.",
             )
         if bed_type in {
             BED_TYPE_OKIMAT,
@@ -2182,7 +2183,7 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _attempt_pairing(self, address: str | None) -> bool:
-        """Attempt to pair with the device using establish_connection with pair=True.
+        """Attempt to pair using the protocol's required connection ordering.
 
         Returns:
             True if pairing succeeded, False otherwise
@@ -2245,18 +2246,34 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             getattr(matching_service_info, "connectable", None),
         )
 
-        # Connect with pairing enabled - this handles both built-in HA Bluetooth
-        # (pairing during connection) and ESPHome proxy (pairing after connection)
+        bed_type = self._manual_data.get(CONF_BED_TYPE) if self._manual_data else None
+        protocol_variant = (
+            self._manual_data.get(CONF_PROTOCOL_VARIANT) if self._manual_data else None
+        )
+        pair_after_service_discovery = bool(
+            bed_type and requires_pairing_after_service_discovery(bed_type, protocol_variant)
+        )
+
+        # LP Control first connects and discovers GATT, then asks Android to
+        # create the bond. BlueZ's pair=True path calls Device1.Pair instead of
+        # making the app's ordinary unbonded GATT connection first.
         client = await establish_connection(
             BleakClient,
             device,
             address,
             max_attempts=1,
             timeout=CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout,
-            pair=True,
+            pair=not pair_after_service_discovery,
+            use_services_cache=not pair_after_service_discovery,
         )
         try:
-            # Connection with pair=True succeeded - pairing is complete
+            if pair_after_service_discovery:
+                _LOGGER.info(
+                    "Connected to %s and discovered services; creating the BLE bond now",
+                    address,
+                )
+                await client.pair()
+
             _LOGGER.info("Pairing successful for %s", address)
             return True
         finally:

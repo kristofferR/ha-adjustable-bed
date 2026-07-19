@@ -6,6 +6,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
@@ -264,6 +265,112 @@ class TestPairingPersistence:
 
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
+
+    async def test_leggett_gen2_pairs_after_service_discovery(self, hass: HomeAssistant) -> None:
+        """LP Comfort Connect must connect and discover GATT before bonding."""
+        flow = self._new_pairing_flow(hass)
+        flow._manual_data[CONF_BED_TYPE] = BED_TYPE_LEGGETT_GEN2
+
+        service_info = MagicMock()
+        service_info.address = flow._manual_data[CONF_ADDRESS]
+        service_info.source = "local"
+        service_info.connectable = True
+        service_info.device = MagicMock()
+
+        events: list[str] = []
+        client = MagicMock()
+
+        async def pair() -> None:
+            events.append("pair")
+
+        async def disconnect() -> None:
+            events.append("disconnect")
+
+        client.pair = AsyncMock(side_effect=pair)
+        client.disconnect = AsyncMock(side_effect=disconnect)
+
+        async def establish(*_args: object, **_kwargs: object) -> MagicMock:
+            events.append("connect")
+            return client
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+                return_value=[service_info],
+            ),
+            patch(
+                "bleak_retry_connector.establish_connection",
+                new=AsyncMock(side_effect=establish),
+            ) as mock_establish,
+        ):
+            assert await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS]) is True
+
+        assert events == ["connect", "pair", "disconnect"]
+        assert mock_establish.await_args.kwargs["pair"] is False
+        assert mock_establish.await_args.kwargs["use_services_cache"] is False
+
+    async def test_leggett_gen2_pair_failure_disconnects(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A failed post-discovery bond must not leave the GATT link open."""
+        flow = self._new_pairing_flow(hass)
+        flow._manual_data[CONF_BED_TYPE] = BED_TYPE_LEGGETT_GEN2
+
+        service_info = MagicMock()
+        service_info.address = flow._manual_data[CONF_ADDRESS]
+        service_info.source = "local"
+        service_info.connectable = True
+        service_info.device = MagicMock()
+
+        client = MagicMock()
+        client.pair = AsyncMock(side_effect=BleakError("pairing rejected"))
+        client.disconnect = AsyncMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+                return_value=[service_info],
+            ),
+            patch(
+                "bleak_retry_connector.establish_connection",
+                new=AsyncMock(return_value=client),
+            ),
+            pytest.raises(BleakError, match="pairing rejected"),
+        ):
+            await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS])
+
+        client.disconnect.assert_awaited_once_with()
+
+    async def test_other_beds_keep_pair_during_connection(self, hass: HomeAssistant) -> None:
+        """Existing pairing-required protocols keep the standard Bleak path."""
+        flow = self._new_pairing_flow(hass)
+
+        service_info = MagicMock()
+        service_info.address = flow._manual_data[CONF_ADDRESS]
+        service_info.source = "local"
+        service_info.connectable = True
+        service_info.device = MagicMock()
+
+        client = MagicMock()
+        client.pair = AsyncMock()
+        client.disconnect = AsyncMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
+                return_value=[service_info],
+            ),
+            patch(
+                "bleak_retry_connector.establish_connection",
+                new=AsyncMock(return_value=client),
+            ) as mock_establish,
+        ):
+            assert await flow._attempt_pairing(flow._manual_data[CONF_ADDRESS]) is True
+
+        assert mock_establish.await_args.kwargs["pair"] is True
+        assert mock_establish.await_args.kwargs["use_services_cache"] is True
+        client.pair.assert_not_awaited()
+        client.disconnect.assert_awaited_once()
 
 
 class TestDetectBedType:

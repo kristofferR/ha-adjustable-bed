@@ -142,6 +142,7 @@ from .const import (
     get_richmat_motor_count,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
+    requires_pairing_after_service_discovery,
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
@@ -1544,6 +1545,20 @@ class AdjustableBedCoordinator:
                     and not self._skip_pair_next_attempt
                     and self._pairing_supported is not False
                 )
+                pair_after_service_discovery = bool(
+                    use_pairing
+                    and requires_pairing_after_service_discovery(
+                        self._bed_type,
+                        self._protocol_variant,
+                    )
+                )
+                pairing_ordering = "not_requested"
+                if use_pairing:
+                    pairing_ordering = (
+                        "connect_discover_then_pair"
+                        if pair_after_service_discovery
+                        else "backend_default"
+                    )
                 if not bed_requires_pairing:
                     pairing_decision = "not_required"
                 elif os_bond_reported and not bond_marker_before_attempt:
@@ -1566,6 +1581,7 @@ class AdjustableBedCoordinator:
                         "bond_marker_after_detection": self._ble_bond_established,
                         "os_bond_reported": os_bond_reported,
                         "transient_skip_was_set": transient_skip_was_set,
+                        "ordering": pairing_ordering,
                     }
                 )
                 # Consume the transient skip flag: it only suppresses pairing for
@@ -1575,11 +1591,12 @@ class AdjustableBedCoordinator:
                 keep_connecting_through_startup = self._uses_persistent_connection()
                 if use_pairing:
                     _LOGGER.info(
-                        "Pairing enabled for %s (bed type: %s, variant: %s) - "
+                        "Pairing enabled for %s (bed type: %s, variant: %s, ordering: %s) - "
                         "GATT services cache disabled to force fresh discovery",
                         self._name,
                         self._bed_type,
                         self._protocol_variant,
+                        pairing_details["ordering"],
                     )
 
                 # Mark that we're connecting to suppress spurious disconnect warnings
@@ -1612,9 +1629,21 @@ class AdjustableBedCoordinator:
                             max_attempts=1,
                             timeout=self._connection_timeout,
                             ble_device_callback=ble_device_callback,
-                            pair=use_pairing,
+                            pair=use_pairing and not pair_after_service_discovery,
                             use_services_cache=not disable_cache,
                         )
+                        # LP Control requests the Android bond only after the
+                        # unbonded GATT link has reported SERVICES_DISCOVERED.
+                        # establish_connection() returns after Bleak has loaded
+                        # the service collection, so pairing here preserves that
+                        # proven application ordering on BlueZ as well.
+                        if pair_after_service_discovery:
+                            _LOGGER.info(
+                                "Connected to %s and discovered services; "
+                                "creating the BLE bond now",
+                                self._address,
+                            )
+                            await self._client.pair()
                         # If we get here with pairing enabled, mark it as supported
                         if use_pairing:
                             self._pairing_supported = True
@@ -1627,6 +1656,18 @@ class AdjustableBedCoordinator:
                         # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
                         # TypeError: older bleak-retry-connector doesn't have pair kwarg
                         if use_pairing:
+                            # A post-discovery pair() failure leaves a live
+                            # unbonded client, unlike a failed pair=True connect.
+                            # Release it before the compatibility retry.
+                            if self._client is not None:
+                                client = self._client
+                                self._intentional_disconnect = True
+                                try:
+                                    with contextlib.suppress(Exception):
+                                        await client.disconnect()
+                                finally:
+                                    self._client = None
+                                    self._intentional_disconnect = False
                             _LOGGER.warning(
                                 "Pairing not supported by Bluetooth adapter: %s. "
                                 "If using ESPHome proxy, update to ESPHome >= 2024.3.0. "
@@ -2165,8 +2206,10 @@ class AdjustableBedCoordinator:
                 )
                 if self._client:
                     _LOGGER.debug("Cleaning up failed connection attempt...")
+                    client = self._client
+                    self._intentional_disconnect = True
                     try:
-                        await self._client.disconnect()
+                        await client.disconnect()
                         _LOGGER.debug("Disconnect cleanup successful")
                     except Exception as disconnect_err:
                         _LOGGER.debug(
@@ -2174,8 +2217,10 @@ class AdjustableBedCoordinator:
                             disconnect_err,
                             type(disconnect_err).__name__,
                         )
-                    self._client = None
-                    self._controller = None
+                    finally:
+                        self._client = None
+                        self._controller = None
+                        self._intentional_disconnect = False
                 self._connection_attempt_details.append(attempt_details)
                 # Delay is handled at the start of the next iteration with progressive backoff
             except Exception as err:  # noqa: BLE001 - preserve retry diagnostics for unexpected connect failures

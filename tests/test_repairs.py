@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
@@ -11,6 +13,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_LEGGETT_GEN2,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     DOMAIN,
@@ -103,12 +106,13 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     flow.hass = hass
 
     client = MagicMock()
+    client.pair = AsyncMock()
     client.read_gatt_char = AsyncMock(return_value=b"Model X")
     client.disconnect = AsyncMock()
 
     with (
         patch(BLEAK_DEVICE, return_value=MagicMock()),
-        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)) as mock_establish,
         patch.object(
             hass.config_entries, "async_reload", new=AsyncMock()
         ) as mock_reload,
@@ -117,8 +121,133 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
 
     assert result is True
     assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+    assert mock_establish.await_args.kwargs["pair"] is True
+    client.pair.assert_not_awaited()
     mock_reload.assert_awaited_once_with(entry.entry_id)
     client.disconnect.assert_awaited_once()
+
+
+async def test_leggett_gen2_repair_pairs_after_service_discovery(
+    hass: HomeAssistant,
+) -> None:
+    """The repair path must mirror the LP app's connect-then-bond ordering."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+            CONF_BLE_BOND_ESTABLISHED: False,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_leggett_gen2_entry",
+    )
+    entry.add_to_hass(hass)
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+
+    cleanup_order: list[str] = []
+
+    async def disconnect() -> None:
+        cleanup_order.append("disconnect")
+
+    async def reload_entry(_entry_id: str) -> None:
+        cleanup_order.append("reload")
+
+    client = MagicMock()
+    client.pair = AsyncMock()
+    client.read_gatt_char = AsyncMock(return_value=b"209-M001")
+    client.disconnect = AsyncMock(side_effect=disconnect)
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)) as mock_establish,
+        patch.object(
+            hass.config_entries,
+            "async_reload",
+            new=AsyncMock(side_effect=reload_entry),
+        ),
+    ):
+        assert await flow._async_try_pair() is True
+
+    assert mock_establish.await_args.kwargs["pair"] is False
+    assert mock_establish.await_args.kwargs["use_services_cache"] is False
+    client.pair.assert_awaited_once()
+    client.disconnect.assert_awaited_once()
+    assert cleanup_order == ["disconnect", "reload"]
+
+
+async def test_leggett_gen2_repair_disconnects_when_pairing_fails(
+    hass: HomeAssistant,
+) -> None:
+    """A failed post-discovery repair bond must release its connected client."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+            CONF_BLE_BOND_ESTABLISHED: False,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_leggett_gen2_failure_entry",
+    )
+    entry.add_to_hass(hass)
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+
+    client = MagicMock()
+    client.pair = AsyncMock(side_effect=BleakError("pairing rejected"))
+    client.disconnect = AsyncMock()
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+    ):
+        assert await flow._async_try_pair() is False
+
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+    client.disconnect.assert_awaited_once_with()
+
+
+async def test_leggett_gen2_repair_disconnects_when_pairing_is_cancelled(
+    hass: HomeAssistant,
+) -> None:
+    """Cancelling post-discovery pairing must still release the live client."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+            CONF_BLE_BOND_ESTABLISHED: False,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_leggett_gen2_cancelled_entry",
+    )
+    entry.add_to_hass(hass)
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+
+    client = MagicMock()
+    client.pair = AsyncMock(side_effect=asyncio.CancelledError())
+    client.disconnect = AsyncMock()
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await flow._async_try_pair()
+
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+    client.disconnect.assert_awaited_once_with()
 
 
 async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistant) -> None:

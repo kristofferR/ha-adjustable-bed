@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
+    requires_pairing_after_service_discovery,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -261,6 +262,7 @@ class TestLeggettGen2Connection:
         ("bed_type", "variant", "expected"),
         [
             (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
             # Okin-style pairing beds accept the connection and only gate GATT
             # access, so a connect timeout there is not a pairing symptom.
@@ -274,6 +276,22 @@ class TestLeggettGen2Connection:
     ):
         """Only Gen2 showed the bond-gated timeout signature in issue #385."""
         assert connection_gated_by_bond(bed_type, variant) is expected
+
+    @pytest.mark.parametrize(
+        ("bed_type", "variant", "expected"),
+        [
+            (BED_TYPE_LEGGETT_GEN2, None, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
+            (BED_TYPE_OKIMAT, None, False),
+        ],
+    )
+    async def test_pairing_order(
+        self, bed_type: str, variant: str | None, expected: bool
+    ) -> None:
+        """Only LP Gen2 connects and discovers GATT before requesting a bond."""
+        assert requires_pairing_after_service_discovery(bed_type, variant) is expected
 
     async def test_gen2_unexpected_disconnect_schedules_auto_reconnect(
         self,

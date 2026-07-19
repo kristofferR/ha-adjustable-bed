@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_BEDTECH,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -280,6 +281,217 @@ class TestCoordinatorConnection:
         )
         assert pairing["connection_attempts"][0]["pairing"]["os_bond_reported"] is True
         assert pairing["connection_attempts"][0]["pairing"]["requested"] is False
+
+    async def test_leggett_gen2_connects_discovers_then_pairs(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """Gen2 coordinator pairing must follow the LP Control app ordering."""
+        del mock_bluetooth_adapters
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Unpaired LP Gen2 Bed",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="leggett_gen2_pair_order_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        events: list[str] = []
+
+        async def establish(*_args: object, **_kwargs: object) -> MagicMock:
+            events.append("connect_and_discover")
+            return mock_bleak_client
+
+        async def pair() -> None:
+            events.append("pair")
+
+        mock_bleak_client.pair = AsyncMock(side_effect=pair)
+
+        controller = MagicMock()
+        controller.requires_persistent_connection = True
+        controller.requires_notification_channel = False
+        controller.supports_under_bed_lights = False
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new=AsyncMock(side_effect=establish),
+            ) as mock_establish_connection,
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=(None, None),
+            ),
+            patch.object(
+                AdjustableBedCoordinator,
+                "_async_verify_bonded",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=controller,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, entry)
+            coordinator._max_retries = 1
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert events == ["connect_and_discover", "pair"]
+        assert mock_establish_connection.await_args.kwargs["pair"] is False
+        assert mock_establish_connection.await_args.kwargs["use_services_cache"] is False
+        mock_bleak_client.pair.assert_awaited_once_with()
+        assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
+
+        pairing = coordinator.pairing_diagnostics["connection_attempts"][0]["pairing"]
+        assert pairing["requested"] is True
+        assert pairing["ordering"] == "connect_discover_then_pair"
+        assert pairing["connection_result"] == "pairing_connection_succeeded"
+
+    @pytest.mark.parametrize(
+        ("pair_error", "max_retries", "fallback_pair"),
+        [
+            (NotImplementedError("pairing unavailable"), 1, None),
+            (BleakError("pairing rejected"), 2, False),
+        ],
+    )
+    async def test_leggett_gen2_pair_fallback_disconnect_is_intentional(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_adapters,
+        mock_bleak_client: MagicMock,
+        pair_error: Exception,
+        max_retries: int,
+        fallback_pair: bool | None,
+    ) -> None:
+        """Pairing failures intentionally release Gen2 before no-pair fallback."""
+        del mock_bluetooth_adapters
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Unpaired LP Gen2 Bed",
+            data={
+                CONF_ADDRESS: TEST_ADDRESS,
+                CONF_NAME: TEST_NAME,
+                CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+                CONF_MOTOR_COUNT: 4,
+                CONF_HAS_MASSAGE: True,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id=TEST_ADDRESS,
+            entry_id="leggett_gen2_pair_fallback_test",
+        )
+        entry.add_to_hass(hass)
+
+        adapter_result = MagicMock()
+        adapter_result.device = MagicMock()
+        adapter_result.device.address = TEST_ADDRESS
+        adapter_result.device.name = TEST_NAME
+        adapter_result.device.details = {"source": "local"}
+        adapter_result.source = "local"
+        adapter_result.rssi = -60
+        adapter_result.connectable = True
+        adapter_result.available_sources = ["local"]
+
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        intentional_during_disconnect: list[bool] = []
+
+        async def disconnect() -> None:
+            intentional_during_disconnect.append(coordinator._intentional_disconnect)
+            coordinator._on_disconnect(mock_bleak_client)
+
+        mock_bleak_client.pair = AsyncMock(side_effect=pair_error)
+        mock_bleak_client.disconnect = AsyncMock(side_effect=disconnect)
+
+        controller = MagicMock()
+        controller.requires_persistent_connection = True
+        controller.requires_notification_channel = False
+        controller.supports_under_bed_lights = False
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                return_value=adapter_result,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.establish_connection",
+                new_callable=AsyncMock,
+                return_value=mock_bleak_client,
+            ) as mock_establish_connection,
+            patch(
+                "custom_components.adjustable_bed.coordinator.discover_services",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+                new_callable=AsyncMock,
+                return_value=(None, None),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.create_controller",
+                new_callable=AsyncMock,
+                return_value=controller,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator._max_retries = max_retries
+            result = await coordinator.async_connect()
+
+        assert result is True
+        assert mock_establish_connection.await_count == 2
+        assert mock_establish_connection.await_args_list[0].kwargs["pair"] is False
+        fallback_kwargs = mock_establish_connection.await_args_list[1].kwargs
+        if fallback_pair is None:
+            assert "pair" not in fallback_kwargs
+        else:
+            assert fallback_kwargs["pair"] is fallback_pair
+        assert intentional_during_disconnect == [True]
+        assert coordinator._intentional_disconnect is False
+        mock_bleak_client.disconnect.assert_awaited_once_with()
 
     async def test_initial_position_read_prepares_controller_before_hydration(
         self,
