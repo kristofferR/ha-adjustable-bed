@@ -175,8 +175,10 @@ See the [Configuration Guide](docs/CONFIGURATION.md) for all options.
 The integration ships a native Lovelace card, **Adjustable Bed Card**, that
 gives you a complete control panel for your bed — position controls, presets,
 memory, lighting, massage, climate, and connection — all in the Home Assistant
-theme. It loads automatically; there's nothing to add as a HACS/Lovelace
-resource.
+theme. It registers and loads automatically; you do not need to add a
+HACS/Lovelace resource manually. If Home Assistant was open in your browser
+during an integration update, reload that page once after restarting Home
+Assistant so the browser picks up the updated card module.
 
 To add it: edit a dashboard → **Add Card** → search for **Adjustable Bed**, then
 pick your bed device. Or in YAML:
