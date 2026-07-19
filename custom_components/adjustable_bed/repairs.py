@@ -1,9 +1,9 @@
 """Repair flows for the Adjustable Bed integration.
 
 Currently provides a guided fix for the ``pairing_required`` issue: it walks the
-user through putting an OKIN-style base into Bluetooth pairing mode (by
-power-cycling the control box), pairs with ``pair=True``, and verifies the bond
-by reading an auth-gated characteristic before resolving the issue.
+user through putting the base into Bluetooth pairing mode, follows the
+controller-specific connection/bond ordering, and verifies the bond by reading
+an auth-gated characteristic before resolving the issue.
 """
 
 from __future__ import annotations
@@ -21,9 +21,12 @@ from .adapter import get_discovered_service_info
 from .ble_auth import is_ble_authentication_error
 from .const import (
     ADAPTER_AUTO,
+    CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
+    requires_pairing_after_service_discovery,
 )
 
 if TYPE_CHECKING:
@@ -95,7 +98,7 @@ class PairingRequiredRepairFlow(RepairsFlow):
         return None
 
     async def _async_try_pair(self) -> bool:
-        """Connect with pair=True and verify the encrypted link is bonded."""
+        """Create a bond with the controller-specific ordering and verify it."""
         from bleak import BleakClient
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
@@ -108,65 +111,89 @@ class PairingRequiredRepairFlow(RepairsFlow):
             )
             return False
 
-        try:
-            client = await establish_connection(
-                BleakClient,
-                device,
-                self._name,
-                max_attempts=1,
-                pair=True,
-                use_services_cache=False,
-            )
-        except Exception as err:  # noqa: BLE001 - any failure means "not paired"
-            _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
-            return False
-
-        bonded = False
-        try:
-            # Verify the bond by reading a known auth-gated characteristic. A
-            # still-unbonded link fails with GATT error=5; non-auth errors
-            # (e.g. the characteristic is absent) are inconclusive, not failures.
-            await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
-            bonded = True
-        except BleakError as err:
-            if is_ble_authentication_error(err):
-                _LOGGER.warning(
-                    "Repair: bond verification failed for %s: %s", self._address, err
+        pair_after_service_discovery = False
+        if self._entry_id is not None:
+            entry = self.hass.config_entries.async_get_entry(self._entry_id)
+            if entry is not None:
+                bed_type = entry.data.get(CONF_BED_TYPE)
+                pair_after_service_discovery = bool(
+                    bed_type
+                    and requires_pairing_after_service_discovery(
+                        bed_type,
+                        entry.data.get(CONF_PROTOCOL_VARIANT),
+                    )
                 )
-            else:
+
+        client: BleakClient | None = None
+        reload_entry_id: str | None = None
+        try:
+            try:
+                client = await establish_connection(
+                    BleakClient,
+                    device,
+                    self._name,
+                    max_attempts=1,
+                    pair=not pair_after_service_discovery,
+                    use_services_cache=False,
+                )
+                if pair_after_service_discovery:
+                    await client.pair()
+            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+                _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
+                return False
+
+            bonded = False
+            try:
+                # Verify the bond by reading a known auth-gated characteristic. A
+                # still-unbonded link fails with GATT error=5; non-auth errors
+                # (e.g. the characteristic is absent) are inconclusive, not failures.
+                await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
+                bonded = True
+            except BleakError as err:
+                if is_ble_authentication_error(err):
+                    _LOGGER.warning(
+                        "Repair: bond verification failed for %s: %s",
+                        self._address,
+                        err,
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Repair: bond verification inconclusive for %s: %s",
+                        self._address,
+                        err,
+                    )
+                    bonded = True
+            except Exception as err:  # noqa: BLE001
                 _LOGGER.debug(
                     "Repair: bond verification inconclusive for %s: %s",
                     self._address,
                     err,
                 )
                 bonded = True
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.debug(
-                "Repair: bond verification inconclusive for %s: %s",
-                self._address,
-                err,
-            )
-            bonded = True
+
+            if not bonded:
+                return False
+
+            # Persist the confirmed bond and reload so the coordinator reuses it
+            # (and does not try to re-pair on top of the existing bond).
+            if self._entry_id is not None:
+                entry = self.hass.config_entries.async_get_entry(self._entry_id)
+                if entry is not None:
+                    if not entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+                        self.hass.config_entries.async_update_entry(
+                            entry,
+                            data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
+                        )
+                    reload_entry_id = self._entry_id
         finally:
-            try:
-                await client.disconnect()
-            except Exception:  # noqa: BLE001
-                pass
+            if client is not None:
+                try:
+                    await client.disconnect()
+                except Exception:  # noqa: BLE001
+                    pass
 
-        if not bonded:
-            return False
-
-        # Persist the confirmed bond and reload so the coordinator reuses it
-        # (and does not try to re-pair on top of the existing bond).
-        if self._entry_id is not None:
-            entry = self.hass.config_entries.async_get_entry(self._entry_id)
-            if entry is not None:
-                if not entry.data.get(CONF_BLE_BOND_ESTABLISHED):
-                    self.hass.config_entries.async_update_entry(
-                        entry,
-                        data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
-                    )
-                await self.hass.config_entries.async_reload(self._entry_id)
+        if reload_entry_id is not None:
+            await self.hass.config_entries.async_reload(reload_entry_id)
 
         _LOGGER.info("Repair: pairing succeeded for %s", self._address)
         return True

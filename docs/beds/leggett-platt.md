@@ -43,33 +43,36 @@ Leggett & Platt beds have three protocol variants with different detection metho
   from that prefix, matching the LP Control app's `isGen2Box()` check.
 - Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
 
-> **Connection & bonding (LP Comfort Connect):** the ESP32 controller requires a
-> **BLE bond** (issue #385). Outside its pairing window, the reported unbonded
-> connection attempts time out while the box keeps advertising. The LP Control
-> app bonds after service discovery
+> **Connection & bonding (LP Comfort Connect):** LP Control requests an Android
+> **BLE bond** for an unbonded Gen2 device, but only after service discovery
 > (`BLEConnectionViewModel`: bond state `BOND_NONE` + Gen2 → `createBond()`),
-> which is why the app can reconnect at any time.
+> while the Gen2 controller concurrently configures its GATT receive paths.
 >
-> The APK proves that the app requires a bond; the controller firmware is not
-> present in the APK, so the exact link-layer filtering mechanism is inferred
-> from the observed timeout-while-advertising behavior.
+> The issue #385 support bundles show the unbonded BlueZ connection timing out
+> before GATT discovery while the box remains visible. They do not reach a
+> pairing attempt, so the exact controller-side reason remains hardware
+> behavior that the APK cannot prove.
 >
-> The integration therefore pairs (`pair=True`) on the first connection, which
-> must happen during the pairing window:
+> The integration therefore mirrors the app's ordering on the first connection:
+> connect without a bond, discover the live GATT services, then create the BLE
+> bond while that link is active. This must happen during the pairing window:
 >
 > - **Entering pairing mode** (per the LP Control app): unplug the bed, remove
 >   any batteries from the power supply, plug it back in — a small chime plays
->   and a pulsing blue light shows under the bed. The window lasts ~2 minutes.
+>   and a pulsing blue light shows under the bed. Pair promptly while it pulses;
+>   the APK does not state the duration of this initial power-cycle window.
 >   A connected client can also re-open the window with the `PAIR ENABLE`
->   serial command (the app's "pair another phone" feature).
+>   serial command; for that "Pair Another Phone" flow, the app states that
+>   pairing mode remains active for 2 minutes.
 > - `DWIPE` is the app's Gen2 factory-reset command. Whether it specifically
 >   clears the controller's bond table is firmware behavior and is not required
 >   by this integration flow.
 >
-> Once bonded, reconnects are accepted outside the pairing window. The
-> integration still holds the link open for this bed type (no idle disconnect).
-> While Home Assistant is connected the physical remote cannot be used (same
-> limitation as the app: the box allows one active client).
+> After BlueZ confirms the bond, the integration records it and reconnects
+> without trying to pair again. Hardware confirmation of the initial bond and
+> subsequent reconnect remains pending. The integration holds the link open for
+> this bed type (no idle disconnect); LP Control's own UI warns that the remote
+> does not function while the app is connected.
 
 ### Okin Variant
 - **Service UUID:** `62741523-...` (shared with Okimat and Nectar)

@@ -229,7 +229,7 @@
           "pairing_instructions_generic": "1. Put your bed in pairing mode (hold lamp button until blue light blinks, or unplug for 30+ seconds)\n2. Click 'Pair Now'",
           "pairing_instructions_okin": "1. Put the OKIN base into Bluetooth pairing mode by power-cycling the control box: unplug it for ~30 seconds, then plug it back in. The status light blinks blue, then turns green after ~20 seconds. (Some models instead use the under-bed lamp/light button - hold it until the light blinks blue.) There is no separate Bluetooth pairing button; any Pair/Learn button on the box only syncs the RF remote.\n2. While the light is active, click 'Pair Now'.",
           "pairing_instructions_sleep_number": "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n2. Click 'Pair Now'",
-          "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. You'll hear a small chime and see a pulsing blue light under the bed - the bed stays in pairing mode for about 2 minutes.\n3. While the light is pulsing, click 'Pair Now'."
+          "pairing_instructions_leggett_gen2": "1. Unplug your bed's power cord and remove any batteries from the power supply.\n2. Plug the bed back in. Wait for a small chime and a pulsing blue light under the bed.\n3. While the light is pulsing, promptly click 'Pair Now'."
         }
       },
       "manual_pairing": {
@@ -862,7 +862,7 @@
         "step": {
           "confirm": {
             "title": "Pair your adjustable bed",
-            "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in — you'll hear a chime and see a pulsing blue light under the bed, and the bed stays in pairing mode for about 2 minutes. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
+            "description": "**{name}** ({address}) requires a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. **OKIN bases** (Okimat, Okin CST, Nectar OKIN-*, Mattress Firm 900-O): power-cycle the control box — unplug it for ~30 seconds, then plug it back in (the light blinks blue, then turns green); they have no Bluetooth pairing button. **Leggett & Platt Smart Bed (LP Comfort Connect)**: unplug the bed's power cord, remove any batteries from the power supply, then plug it back in — wait for a chime and a pulsing blue light under the bed. **Other beds**: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, promptly press **Submit** to pair.\n\nPairing happens on your Home Assistant host or Bluetooth proxy — not your phone. ESPHome proxies must run ESPHome 2024.3.0 or newer."
           }
         },
         "abort": {

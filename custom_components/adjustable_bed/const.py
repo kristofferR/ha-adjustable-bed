@@ -1855,12 +1855,11 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
-    # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): the LP Control app
-    # calls createBond() after service discovery ("Bond Needed...Bonding" in
-    # BLEConnectionViewModel). Issue #385 shows the corresponding hardware
-    # symptom outside its ~2-minute pairing window: unbonded reconnects time out
-    # while the box keeps advertising. The app can re-open that window with its
-    # "PAIR ENABLE" serial command.
+    # Leggett & Platt Gen2 (LP Comfort Connect, 209-M001): LP Control calls
+    # createBond() for an unbonded Gen2 device after service discovery. Issue
+    # #385 shows repeated unbonded BlueZ connection timeouts while the box keeps
+    # advertising. The controller-side reason remains hardware behavior, not
+    # something the APK can prove.
     BED_TYPE_LEGGETT_GEN2,
 }
 
@@ -1890,6 +1889,20 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
         if protocol_variant in BED_TYPE_VARIANTS_REQUIRING_PAIRING[bed_type]:
             return True
     return False
+
+
+def requires_pairing_after_service_discovery(
+    bed_type: str, protocol_variant: str | None = None
+) -> bool:
+    """Return True when GATT discovery must precede the BLE bond request.
+
+    LP Control connects and discovers services before calling the Android
+    bonding API. BlueZ's usual ``pair=True`` path instead invokes
+    ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
+    """
+    if bed_type == BED_TYPE_LEGGETT_GEN2:
+        return True
+    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
 
 def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
