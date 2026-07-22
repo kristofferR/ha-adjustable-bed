@@ -301,6 +301,7 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the configuration for your adjustable bed.",
         "data": {
+          "bed_type": "Bed type",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
@@ -323,6 +324,7 @@
           "legs_max_angle": "Maximum legs angle (degrees)"
         },
         "data_description": {
+          "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
           "motor_count": "Number of physical actuators. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
           "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",

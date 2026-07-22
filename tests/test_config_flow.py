@@ -54,6 +54,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
     BEDS_WITH_POSITION_FEEDBACK,
+    CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_DISABLE_ANGLE_SENSING,
@@ -70,6 +71,7 @@ from custom_components.adjustable_bed.const import (
     CONF_MALOUF_MEMORY_SLOTS,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
+    CONF_OCTO_PIN,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
@@ -2199,6 +2201,124 @@ class TestUserFlow:
 class TestOptionsFlow:
     """Test options flow."""
 
+    async def test_options_flow_can_change_bed_type_and_rebuild_dependent_fields(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """Changing type rebuilds the form, then saves type-specific settings."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Okin CST Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
+                CONF_NAME: "Okin CST Bed",
+                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
+                CONF_MOTOR_COUNT: 4,
+                CONF_BLE_BOND_ESTABLISHED: True,
+                CONF_BACK_MAX_ANGLE: 68.0,
+            },
+            unique_id="AA:BB:CC:DD:EE:96",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await hass.config_entries.options.async_init(entry.entry_id)
+        bed_type_marker = next(
+            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
+        )
+        bed_type_selector = initial["data_schema"].schema[bed_type_marker]
+        option_values = {option["value"] for option in bed_type_selector.config["options"]}
+        assert bed_type_marker.default() == BED_TYPE_OKIN_CST
+        assert BED_TYPE_OCTO in option_values
+
+        rebuilt = await hass.config_entries.options.async_configure(
+            initial["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 4,
+            },
+        )
+
+        assert rebuilt["type"] == FlowResultType.FORM
+        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert rebuilt_markers[CONF_BED_TYPE].default() == BED_TYPE_OCTO
+        assert CONF_PROTOCOL_VARIANT in rebuilt_markers
+        assert CONF_OCTO_PIN in rebuilt_markers
+        assert CONF_BACK_MAX_ANGLE not in rebuilt_markers
+
+        saved = await hass.config_entries.options.async_configure(
+            rebuilt["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_OCTO_PIN: "1234",
+            },
+        )
+
+        assert saved["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OCTO
+        assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
+        assert entry.data[CONF_OCTO_PIN] == "1234"
+        assert CONF_BLE_BOND_ESTABLISHED not in entry.data
+        assert CONF_BACK_MAX_ANGLE not in entry.data
+
+    async def test_options_flow_normalizes_fields_after_bed_type_change(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """A new type cannot inherit an invalid motor count or stale variant."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="OCTO Lift",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:95",
+                CONF_NAME: "OCTO Lift",
+                CONF_BED_TYPE: BED_TYPE_OCTO,
+                CONF_MOTOR_COUNT: 1,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+                CONF_OCTO_PIN: "3060",
+            },
+            unique_id="AA:BB:CC:DD:EE:95",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await hass.config_entries.options.async_init(entry.entry_id)
+        rebuilt = await hass.config_entries.options.async_configure(
+            initial["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 1,
+                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
+            },
+        )
+
+        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
+        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
+        assert CONF_PROTOCOL_VARIANT not in rebuilt_markers
+        assert CONF_OCTO_PIN not in rebuilt_markers
+
+        saved = await hass.config_entries.options.async_configure(
+            rebuilt["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_MOTOR_COUNT: 2,
+            },
+        )
+
+        assert saved["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+        assert entry.data[CONF_MOTOR_COUNT] == 2
+        assert CONF_PROTOCOL_VARIANT not in entry.data
+        assert CONF_OCTO_PIN not in entry.data
+
     async def test_octo_options_can_switch_variant_and_one_motor_together(
         self,
         hass: HomeAssistant,
@@ -2284,6 +2404,12 @@ class TestOptionsFlow:
         enable_custom_integrations,
     ):
         """The discovery toggle persists globally and never lands in entry data."""
+        # Legacy releases could leave this global preference in entry data. It
+        # must neither override the global value nor survive the next save.
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_DISABLE_DISCOVERY: True},
+        )
         await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
 
@@ -2294,6 +2420,12 @@ class TestOptionsFlow:
             return_value=[],
         ):
             result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+            discovery_marker = next(
+                marker
+                for marker in result["data_schema"].schema
+                if marker.schema == CONF_DISABLE_DISCOVERY
+            )
+            assert discovery_marker.default() is False
             result = await hass.config_entries.options.async_configure(
                 result["flow_id"],
                 user_input={
