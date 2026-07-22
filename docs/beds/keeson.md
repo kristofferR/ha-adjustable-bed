@@ -110,9 +110,16 @@ and refresh them every 100 ms. Releasing a key cancels that refresh and writes
 the two-byte status query `[0x00, 0xB0]` at +300, +600 and +900 ms. Member's
 Mark uses a 400 ms movement refresh and runs the same query on an independent
 400 ms timer. None of these P2 paths writes the six-byte zero-key packet on
-release. The integration uses the 100 ms compatibility cadence needed by
-KSBT03C beds such as the issue #408 device; explicit per-device pulse settings
-remain authoritative.
+release.
+
+Ergomotion Sync 1.0.5 is distinct: all three remote layouts write immediately
+and use a 300 ms fixed-delay timer. Release only cancels that timer; its status
+queries run in a separate background loop. The app leaves Android's
+characteristic write type unchanged. Android defaults a characteristic that
+advertises write-without-response to that mode, so detected `KSBT03C` beds use
+unacknowledged writes when the characteristic supports them. This prevents a
+BLE proxy acknowledgement round trip from stretching every refresh interval.
+Explicit per-device pulse settings remain authoritative.
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
@@ -245,6 +252,7 @@ app/protocol family, not to the shared 32-bit command values:
 | BaseI4/BaseI5 | Member's Mark | 400ms fixed-delay scheduler | 3 writes, 400ms apart |
 | JSON/A00A | Juna / Linx | Requests every 5ms / 3ms, but drops requests while a write-with-response is pending | Existing safe 10 writes, 100ms apart |
 | KSBT direct P2 | Ergomotion 4.0 / Q-Plus / 1500 Tilt Base; Member's Mark | 100ms in the SFD apps, 400ms in Member's Mark | 10 writes, 100ms apart; explicit user overrides are preserved |
+| KSBT03C | Ergomotion Sync 1.0.5, Rio 5 layout | Immediate write plus 300ms `Timer.schedule`; release only cancels the timer | 4 writes, 300ms apart, with no release packet |
 | KSBT03CR | SomosBeds | 300ms `Timer.schedule` | 4 writes, 300ms apart |
 | Sleep Harmony (`KSBT04C` / `base-i5.`) | Sleep Harmony | 300ms handler loop | 4 writes, 300ms apart |
 | Ergomotion | Ergomotion / Ergomotion 4.0 / Tempur Zero G | 100ms handler loop | 10 writes, 100ms apart |
@@ -267,14 +275,14 @@ detected, even if a future factory path pairs the profile flag with a different
 base Keeson variant.
 
 Release behavior also varies. The current SFD direct-six-byte P2 apps stop their
-100 ms refresh and send `00 B0` queries at +300/+600/+900 ms. Member's Mark
-stops its 400 ms refresh without a dedicated release write, while its independent
-timer continues sending `00 B0`. None sends a zero-key frame. Base/Ergomotion/
-Serta families retain their family-specific zero frames. Purple uses the explicit
-seven-byte P2 zero frame. Sleep Harmony waits 200 ms and sends one zero frame
-after both movement and one-shot actions. KSBT03CR retains its independently
-derived release behavior. One-shot commands themselves are sent once before any
-profile-specific release.
+100 ms refresh and send `00 B0` queries at +300/+600/+900 ms. Ergomotion Sync
+and Member's Mark stop their movement refresh without a dedicated release write;
+their independent status timers continue sending `00 B0`. None sends a zero-key
+frame. Base/Ergomotion/Serta families retain their family-specific zero frames.
+Purple uses the explicit seven-byte P2 zero frame. Sleep Harmony waits 200 ms
+and sends one zero frame after both movement and one-shot actions. KSBT03CR
+retains its independently derived release behavior. One-shot commands themselves
+are sent once before any profile-specific release.
 
 ## Split-Bed Support (Member's Mark)
 

@@ -241,6 +241,42 @@ class TestKeesonController:
             KEESON_JSON_WRITE_CHAR_UUID, command, response=True
         )
 
+    async def test_ksbt03c_write_command_uses_no_response_when_supported(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """KSBT03C should match Ergomotion Sync's Android-default write mode."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+
+        controller = KeesonController(
+            coordinator,
+            variant="ksbt",
+            device_name="KSBT03C300039050",
+        )
+        mock_bleak_client.services = [
+            SimpleNamespace(
+                characteristics=[
+                    SimpleNamespace(
+                        uuid=KEESON_KSBT_CHAR_UUID,
+                        properties=["write", "write-without-response"],
+                    )
+                ]
+            )
+        ]
+
+        command = controller._build_command(KeesonCommands.MOTOR_HEAD_UP)
+        await controller.write_command(command)
+
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            KEESON_KSBT_CHAR_UUID,
+            command,
+            response=False,
+        )
+
     async def test_write_command_not_connected(
         self,
         hass: HomeAssistant,
@@ -1614,6 +1650,21 @@ class TestKsbt03cMotorLayout:
 
         assert controller._motor_pulse_settings() == expected
 
+    def test_ksbt03c_uses_ergomotion_sync_motor_cadence(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+    ):
+        """KSBT03C uses Ergomotion Sync's immediate plus 300 ms timer."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        controller = KeesonController(
+            coordinator,
+            variant="ksbt",
+            device_name="KSBT03C300039050",
+        )
+
+        assert controller._motor_pulse_settings() == (4, 300)
+
     @pytest.mark.parametrize(
         ("motor_count", "expected"),
         [
@@ -1682,17 +1733,17 @@ class TestKsbt03cMotorLayout:
         assert release_event is not coordinator.cancel_command
         assert not release_event.is_set()
 
-    async def test_ksbt_motion_uses_p2_hold_and_release_sequence(
+    async def test_generic_ksbt_motion_uses_sfd_hold_and_release_sequence(
         self,
         hass: HomeAssistant,
         mock_keeson_config_entry,
         mock_coordinator_connected,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Test direct P2 motion refreshes at 100 ms and releases with queries."""
+        """Test non-KSBT03C P2 motion keeps the current SFD sequence."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
-        controller = KeesonController(coordinator, variant="ksbt", device_name="KSBT03C300039050")
+        controller = KeesonController(coordinator, variant="ksbt", device_name="KSBT300039050")
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
@@ -1723,6 +1774,37 @@ class TestKsbt03cMotorLayout:
             (0.3,),
             (0.3,),
         ]
+
+    async def test_ksbt03c_motion_matches_ergomotion_sync_hold_and_release(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test Rio 5 refreshes at 300 ms and release only ends refreshing."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator,
+            variant="ksbt",
+            device_name="KSBT03C300039050",
+        )
+        controller.write_command = AsyncMock()
+        sleep = AsyncMock()
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            sleep,
+        )
+
+        await controller.move_head_up()
+
+        controller.write_command.assert_awaited_once_with(
+            bytes.fromhex("040200000001"),
+            repeat_count=4,
+            repeat_delay_ms=300,
+        )
+        sleep.assert_not_awaited()
 
     async def test_ksbt_stop_all_does_not_wait_for_status_queries(
         self,
