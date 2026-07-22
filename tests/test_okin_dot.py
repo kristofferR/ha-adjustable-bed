@@ -131,8 +131,8 @@ class TestOkinDotRemoteTable:
         remote = OKIN_UUID_REMOTES[variant]
         assert remote.dot is True
         assert remote.flat == 0x8000000
-        # DOT light keys are hold-style per the backend (5s @ 100ms).
-        assert remote.toggle_lights == OkinUuidComplexCommand(0x20000, 50, 100)
+        # UBL timing metadata does not make a button press repeat automatically.
+        assert remote.toggle_lights == 0x20000
 
     @pytest.mark.parametrize(
         ("variant", "motors"),

@@ -63,8 +63,9 @@ def load_live():
             kc = x["keycode"].lower()
             if a in ACT:
                 m[ACT[a]] = kc
-                # Hold timing (authoritative): MemoSave is hold-to-save on all
-                # handsets; a subset of handsets also hold the UBL key.
+                # Preserve backend timing metadata. MemoSave uses it as a
+                # hold-to-save duration. FurniMove's UBL touch path does not
+                # consult these fields; it repeats only while touch is held.
                 if a == "MemoSave" and x.get("duration") and x.get("frequency"):
                     rec["memory_save_duration_ms"] = x["duration"]
                     rec["memory_save_frequency_ms"] = x["frequency"]
