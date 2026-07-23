@@ -1066,8 +1066,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     coordinator.name,
                 )
                 pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-            # Round up to honor requested duration as minimum
-            calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
+            # The first write is immediate, so one additional repeat is needed
+            # after the requested number of delay intervals.
+            calculated_repeat_count = max(
+                2,
+                (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1,
+            )
 
             _LOGGER.debug(
                 "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",

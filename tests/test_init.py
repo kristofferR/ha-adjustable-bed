@@ -1291,7 +1291,7 @@ class TestServices:
                 bytes.fromhex("040200000001"),
                 response=True,
             )
-        ] * 3
+        ] * 4
 
     async def test_timed_move_service_accepts_okin_rf_eco_bt_stair(
         self,
@@ -1349,6 +1349,7 @@ class TestServices:
 
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
         assert payloads == [
+            bytes.fromhex("040200000001"),
             bytes.fromhex("040200000001"),
             bytes.fromhex("040200000001"),
             bytes.fromhex("040200000000"),
@@ -1410,7 +1411,13 @@ class TestServices:
         move_packet = controller._build_packet([0x02, 0x70], [0x02])
         stop_packet = controller._build_packet([0x02, 0x73])
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
-        assert payloads == [move_packet, move_packet, stop_packet, stop_packet]
+        assert payloads == [
+            move_packet,
+            move_packet,
+            move_packet,
+            stop_packet,
+            stop_packet,
+        ]
 
     async def test_timed_move_service_rejects_bed_height_for_standard_layout(
         self,
