@@ -2290,6 +2290,7 @@ class TestOptionsFlow:
                 CONF_MOTOR_COUNT: 1,
                 CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
                 CONF_OCTO_PIN: "3060",
+                CONF_DISABLE_ANGLE_SENSING: True,
             },
             unique_id="AA:BB:CC:DD:EE:95",
         )
@@ -2309,6 +2310,7 @@ class TestOptionsFlow:
 
         rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
         assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
+        assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
         assert CONF_PROTOCOL_VARIANT not in rebuilt_markers
         assert CONF_OCTO_PIN not in rebuilt_markers
 
@@ -2323,8 +2325,41 @@ class TestOptionsFlow:
         assert saved["type"] == FlowResultType.CREATE_ENTRY
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
         assert entry.data[CONF_MOTOR_COUNT] == 2
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
         assert CONF_PROTOCOL_VARIANT not in entry.data
         assert CONF_OCTO_PIN not in entry.data
+
+    async def test_options_flow_keeps_current_legacy_bed_type_selectable(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """An existing legacy alias remains valid while editing other options."""
+        del enable_custom_integrations
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Legacy Okimat",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:91",
+                CONF_NAME: "Legacy Okimat",
+                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_MOTOR_COUNT: 2,
+            },
+            unique_id="AA:BB:CC:DD:EE:91",
+        )
+        entry.add_to_hass(hass)
+        await async_setup_component(hass, DOMAIN, {})
+        await hass.async_block_till_done()
+
+        initial = await hass.config_entries.options.async_init(entry.entry_id)
+        marker = next(
+            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
+        )
+        selector = initial["data_schema"].schema[marker]
+        option_values = {option["value"] for option in selector.config["options"]}
+
+        assert marker.default() == BED_TYPE_OKIMAT
+        assert BED_TYPE_OKIMAT in option_values
 
     async def test_options_flow_resets_variant_and_timing_for_new_protocol(
         self,

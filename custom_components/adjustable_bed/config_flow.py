@@ -2671,6 +2671,15 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         if bed_type is None:
             bed_type = BED_TYPE_DIAGNOSTIC
 
+        bed_type_options = get_bed_type_options()
+        if bed_type not in {option["value"] for option in bed_type_options}:
+            bed_type_options.insert(
+                0,
+                SelectOptionDict(
+                    value=bed_type,
+                    label=BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type),
+                ),
+            )
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
         motor_count_options = _motor_count_options_for_all_variants(bed_type)
@@ -2701,7 +2710,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
         schema_dict = {
             vol.Optional(CONF_BED_TYPE, default=bed_type): SelectSelector(
                 SelectSelectorConfig(
-                    options=get_bed_type_options(),
+                    options=bed_type_options,
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
@@ -2873,6 +2882,9 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 )
                 self._pending_data[CONF_MOTOR_PULSE_COUNT] = pulse_count
                 self._pending_data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
+                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = (
+                    requested_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+                )
                 return await self.async_step_init()
 
             bed_type = requested_bed_type
