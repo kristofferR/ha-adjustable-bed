@@ -201,6 +201,13 @@ def _is_valid_motor_count(
     return motor_count in _motor_count_options(bed_type, protocol_variant)
 
 
+def _has_position_feedback(bed_type: str | None, protocol_variant: str) -> bool:
+    """Return whether the selected protocol exposes motor position feedback."""
+    return bed_type in BEDS_WITH_POSITION_FEEDBACK or (
+        bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
+    )
+
+
 def _default_motor_count(
     bed_type: str | None,
     device_name: str | None = None,
@@ -2876,14 +2883,31 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     self._pending_data[CONF_PROTOCOL_VARIANT] = requested_variant
                 else:
                     self._pending_data.pop(CONF_PROTOCOL_VARIANT, None)
+                requested_motor_options = _motor_count_options(
+                    requested_bed_type,
+                    requested_variant,
+                )
+                requested_motor_count = self._pending_data.get(
+                    CONF_MOTOR_COUNT,
+                    DEFAULT_MOTOR_COUNT,
+                )
+                if requested_motor_count not in requested_motor_options:
+                    requested_motor_count = _default_motor_count(
+                        requested_bed_type,
+                        current_data.get(CONF_NAME),
+                    )
+                    if requested_motor_count not in requested_motor_options:
+                        requested_motor_count = requested_motor_options[0]
+                self._pending_data[CONF_MOTOR_COUNT] = requested_motor_count
                 pulse_count, pulse_delay = BED_MOTOR_PULSE_DEFAULTS.get(
                     requested_bed_type,
                     (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS),
                 )
                 self._pending_data[CONF_MOTOR_PULSE_COUNT] = pulse_count
                 self._pending_data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
-                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = (
-                    requested_bed_type not in BEDS_WITH_POSITION_FEEDBACK
+                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = not _has_position_feedback(
+                    requested_bed_type,
+                    requested_variant,
                 )
                 return await self.async_step_init()
 
@@ -2903,6 +2927,20 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                 user_input[CONF_PROTOCOL_VARIANT] = requested_variant
             else:
                 user_input.pop(CONF_PROTOCOL_VARIANT, None)
+            if (
+                self.config_entry.data.get(CONF_BED_TYPE) != bed_type
+                and _has_position_feedback(bed_type, form_variant)
+                != _has_position_feedback(bed_type, requested_variant)
+            ):
+                # Rebuild once more when the chosen variant changes position
+                # capability, so the user sees the new sensing default and can
+                # still explicitly override it on the following submission.
+                self._pending_data = {**self._pending_data, **user_input}
+                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = not _has_position_feedback(
+                    bed_type,
+                    requested_variant,
+                )
+                return await self.async_step_init()
             requested_motor_count = user_input.get(
                 CONF_MOTOR_COUNT,
                 form_motor_count,

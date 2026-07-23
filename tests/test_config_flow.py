@@ -80,6 +80,7 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    KEESON_VARIANT_ERGOMOTION,
     LEGGETT_VARIANT_OKIN,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
@@ -2225,6 +2226,7 @@ class TestOptionsFlow:
                 CONF_MOTOR_COUNT: 4,
                 CONF_BLE_BOND_ESTABLISHED: True,
                 CONF_BACK_MAX_ANGLE: 68.0,
+                CONF_DISABLE_ANGLE_SENSING: False,
             },
             unique_id="AA:BB:CC:DD:EE:96",
         )
@@ -2255,6 +2257,7 @@ class TestOptionsFlow:
         assert CONF_PROTOCOL_VARIANT in rebuilt_markers
         assert CONF_OCTO_PIN in rebuilt_markers
         assert CONF_BACK_MAX_ANGLE not in rebuilt_markers
+        assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is True
 
         saved = await hass.config_entries.options.async_configure(
             rebuilt["flow_id"],
@@ -2272,6 +2275,7 @@ class TestOptionsFlow:
         assert entry.data[CONF_OCTO_PIN] == "1234"
         assert CONF_BLE_BOND_ESTABLISHED not in entry.data
         assert CONF_BACK_MAX_ANGLE not in entry.data
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_options_flow_normalizes_fields_after_bed_type_change(
         self,
@@ -2318,7 +2322,6 @@ class TestOptionsFlow:
             rebuilt["flow_id"],
             user_input={
                 CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_MOTOR_COUNT: 2,
             },
         )
 
@@ -2360,6 +2363,15 @@ class TestOptionsFlow:
 
         assert marker.default() == BED_TYPE_OKIMAT
         assert BED_TYPE_OKIMAT in option_values
+
+        saved = await hass.config_entries.options.async_configure(
+            initial["flow_id"],
+            user_input={CONF_HAS_MASSAGE: True},
+        )
+
+        assert saved["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_HAS_MASSAGE] is True
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
 
     async def test_options_flow_resets_variant_and_timing_for_new_protocol(
         self,
@@ -2403,16 +2415,36 @@ class TestOptionsFlow:
         assert rebuilt_markers[CONF_MOTOR_PULSE_COUNT].default() == "10"
         assert rebuilt_markers[CONF_MOTOR_PULSE_DELAY_MS].default() == "100"
 
-        saved = await hass.config_entries.options.async_configure(
+        variant_rebuilt = await hass.config_entries.options.async_configure(
             rebuilt["flow_id"],
             user_input={
                 CONF_BED_TYPE: BED_TYPE_KEESON,
                 CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
+                CONF_DISABLE_ANGLE_SENSING: True,
+            },
+        )
+
+        variant_markers = {
+            marker.schema: marker for marker in variant_rebuilt["data_schema"].schema
+        }
+        assert variant_rebuilt["type"] == FlowResultType.FORM
+        assert variant_markers[CONF_PROTOCOL_VARIANT].default() == KEESON_VARIANT_ERGOMOTION
+        assert variant_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
+
+        saved = await hass.config_entries.options.async_configure(
+            variant_rebuilt["flow_id"],
+            user_input={
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
+                CONF_DISABLE_ANGLE_SENSING: True,
             },
         )
 
         assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
+        assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
+        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == 10
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
 
