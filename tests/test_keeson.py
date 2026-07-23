@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -1780,9 +1780,10 @@ class TestKsbt03cMotorLayout:
         hass: HomeAssistant,
         mock_keeson_config_entry,
         mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Test Rio 5 refreshes at 300 ms and release only ends refreshing."""
+        """Test Rio 5 repeats at 300 ms and emits no release packet."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(
@@ -1790,21 +1791,60 @@ class TestKsbt03cMotorLayout:
             variant="ksbt",
             device_name="KSBT03C300039050",
         )
-        controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.base.asyncio.sleep",
             sleep,
         )
 
         await controller.move_head_up()
 
-        controller.write_command.assert_awaited_once_with(
-            bytes.fromhex("040200000001"),
-            repeat_count=4,
-            repeat_delay_ms=300,
+        assert mock_bleak_client.write_gatt_char.await_args_list == [
+            call(
+                KEESON_KSBT_CHAR_UUID,
+                bytes.fromhex("040200000001"),
+                response=True,
+            )
+        ] * 4
+        assert sleep.await_args_list == [call(0.3)] * 3
+
+    async def test_ksbt03c_motion_honors_coordinator_cancellation(
+        self,
+        hass: HomeAssistant,
+        mock_keeson_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        """Test cancelling the repeat timer stops Rio 5 without a release write."""
+        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+        await coordinator.async_connect()
+        controller = KeesonController(
+            coordinator,
+            variant="ksbt",
+            device_name="KSBT03C300039050",
         )
-        sleep.assert_not_awaited()
+        original_sleep = asyncio.sleep
+
+        async def cancel_during_refresh(delay: float) -> None:
+            if delay == 0.3:
+                coordinator.cancel_command.set()
+            else:
+                await original_sleep(delay)
+
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.base.asyncio.sleep",
+            cancel_during_refresh,
+        )
+
+        await controller.move_head_up()
+
+        mock_bleak_client.write_gatt_char.assert_awaited_once_with(
+            KEESON_KSBT_CHAR_UUID,
+            bytes.fromhex("040200000001"),
+            response=True,
+        )
+        assert coordinator.cancel_command.is_set()
 
     async def test_ksbt_stop_all_does_not_wait_for_status_queries(
         self,

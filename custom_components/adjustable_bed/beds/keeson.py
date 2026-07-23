@@ -80,8 +80,8 @@ _ERGOMOTION_SYNC_KSBT03C_PULSES = (4, 300)
 
 # The direct six-byte P2 protocol has no dedicated release/STOP frame. Current
 # SFD apps stop refreshing the held key and request status three times at 300 ms
-# intervals. Ergomotion Sync and Member's Mark instead run status queries on
-# independent timers; movement release only stops their held-key refresh.
+# intervals. Ergomotion Sync instead runs status queries on an independent
+# timer; movement release only stops its held-key refresh.
 _KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
 _KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
 _KSBT_RELEASE_QUERY_COUNT = 3
@@ -1113,7 +1113,7 @@ class KeesonController(BedController):
         return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it, always releasing at the end."""
+        """Move a motor and always run the protocol-specific release cleanup."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
         repeat_count, repeat_delay_ms = self._motor_pulse_settings()
@@ -1133,7 +1133,8 @@ class KeesonController(BedController):
                         repeat_delay_ms=repeat_delay_ms,
                     )
         finally:
-            # Always release with a fresh event so it is not affected by cancellation.
+            # Release writes use a fresh event so cancellation cannot suppress them.
+            # KSBT03C has no release write; ending the cancellable refresh is its stop.
             self._motor_state = {}
             await self._release_motion()
 
@@ -1142,7 +1143,8 @@ class KeesonController(BedController):
 
         Direct six-byte KSBT/P2 remotes do not transmit a zero-key frame on
         release. Ergomotion Sync stops KSBT03C motion solely by cancelling its
-        300 ms repeat timer; its ``00 B0`` status queries run independently.
+        300 ms repeat timer, which observes the coordinator cancellation event
+        between writes; its ``00 B0`` status queries run independently.
         Current SFD apps stop the 100 ms key refresh and send status query
         ``00 B0`` at +300, +600, and +900 ms. Other variants retain their
         explicit zero frame, whose packet format is specific to that family.
