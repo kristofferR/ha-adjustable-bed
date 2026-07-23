@@ -99,9 +99,12 @@ keycodes have been verified for that handset.
 The remote table is **generated from the DewertOkin FurniMove handset backend**
 (`GET /mobile-data/button/{code}`), which returns authoritative 32-bit keycodes
 and timing metadata per remote code. For codes the backend no longer serves,
-keycodes are taken from the bundled `handsetlist.csv` capability flags by
-matching each pruned code to a live code with the identical capability
-signature. See
+keycodes are inherited from a live code with the identical `handsetlist.csv`
+capability signature when one exists (`csv-inherit:<code>`). When no live
+sibling exists, they are rebuilt from the universal/modal keycode maps according
+to the CSV capability flags (`csv-reconstruct`). These reconstructed entries
+have lower assurance than backend or live-sibling values, and Flat may be
+approximate. See
 `beds/okin_uuid_remotes.py` for the generated table (each entry is tagged
 `backend`, `csv-inherit:<code>`, or `csv-reconstruct`) and
 `tools/okin_remotes/` for the regeneration pipeline.
