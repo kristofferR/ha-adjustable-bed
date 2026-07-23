@@ -2623,6 +2623,22 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             return VARIANT_AUTO
         return next(iter(variants))
 
+    @classmethod
+    def _variant_for_bed_type_change(
+        cls,
+        previous_bed_type: str,
+        requested_bed_type: str,
+        data: dict[str, Any],
+    ) -> str:
+        """Reset variants unless both bed types explicitly share one variant table."""
+        previous_variants = get_variants_for_bed_type(previous_bed_type)
+        requested_variants = get_variants_for_bed_type(requested_bed_type)
+        if previous_variants is requested_variants and requested_variants is not None:
+            return cls._variant_for_bed_type(requested_bed_type, data)
+        if requested_variants and VARIANT_AUTO not in requested_variants:
+            return next(iter(requested_variants))
+        return VARIANT_AUTO
+
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
         """Drop settings that belong only to the previously selected protocol."""
@@ -2842,7 +2858,8 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     **user_input,
                     CONF_BED_TYPE: requested_bed_type,
                 }
-                requested_variant = self._variant_for_bed_type(
+                requested_variant = self._variant_for_bed_type_change(
+                    bed_type,
                     requested_bed_type,
                     self._pending_data,
                 )
@@ -2850,6 +2867,12 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
                     self._pending_data[CONF_PROTOCOL_VARIANT] = requested_variant
                 else:
                     self._pending_data.pop(CONF_PROTOCOL_VARIANT, None)
+                pulse_count, pulse_delay = BED_MOTOR_PULSE_DEFAULTS.get(
+                    requested_bed_type,
+                    (DEFAULT_MOTOR_PULSE_COUNT, DEFAULT_MOTOR_PULSE_DELAY_MS),
+                )
+                self._pending_data[CONF_MOTOR_PULSE_COUNT] = pulse_count
+                self._pending_data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
                 return await self.async_step_init()
 
             bed_type = requested_bed_type
@@ -2952,7 +2975,7 @@ class AdjustableBedOptionsFlow(OptionsFlowWithConfigEntry):
             if discovery_disabled_input is not None:
                 await async_set_discovery_disabled(self.hass, discovery_disabled_input)
             # Update the config entry with new options
-            new_data = {**self.config_entry.data, **user_input}
+            new_data = {**self.config_entry.data, **self._pending_data, **user_input}
             # This preference is integration-wide. Remove any legacy per-entry
             # copy while saving unrelated options so it cannot become a second
             # source of truth.
