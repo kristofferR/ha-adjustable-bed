@@ -110,8 +110,8 @@ and refresh them every 100 ms. Releasing a key cancels that refresh and writes
 the two-byte status query `[0x00, 0xB0]` at +300, +600 and +900 ms. None of
 these P2 paths writes the six-byte zero-key packet on release.
 
-Ergomotion Sync 1.0.5 is distinct: all three remote layouts write immediately
-and use a 300 ms fixed-delay timer. Release only cancels that timer; its status
+Ergomotion Sync 1.0.5's KSBT03C layout B is distinct: it writes immediately and
+uses a 300 ms fixed-delay timer. Release only cancels that timer; its status
 queries run in a separate background loop. The app leaves Android's
 characteristic write type unchanged. Android defaults a characteristic that
 advertises write-without-response to that mode, so detected `KSBT03C` beds use
@@ -119,7 +119,8 @@ unacknowledged writes when the characteristic supports them. This prevents a
 BLE proxy acknowledgement round trip from stretching every refresh interval.
 Explicit per-device pulse settings remain authoritative. No KSBT03C release
 frame was found in the complete clean-room analysis, so the integration does
-not guess or substitute a zero-key frame.
+not guess or substitute a zero-key frame. Sync's KSBT04C layouts use their
+separate integration profile, including its existing zero-frame release.
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.

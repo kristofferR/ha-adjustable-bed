@@ -187,7 +187,7 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
 
 **IMPORTANT: Protocol values are hardware-specific.** Timing values (repeat counts, delays), command bytes, and packet formats vary between bed types. Do NOT copy values from one bed's protocol documentation to another. Each bed type's parameters must come from actual device testing or reverse engineering - never guess or extrapolate from other implementations.
 
-1. **Always send STOP after movement** - Movement methods use `try/finally` to guarantee STOP is sent even if cancelled. The STOP command uses a fresh `asyncio.Event()` so it's not affected by the cancel signal.
+1. **Always perform protocol-specific STOP/release cleanup after movement** - Movement methods use `try/finally` so cleanup runs even if cancelled. When the protocol defines a STOP or release frame, send it with a fresh `asyncio.Event()` so the cancel signal cannot suppress it. If complete artifact evidence proves that a protocol stops solely by ending its held-command refresh and defines no release frame (for example, KSBT03C), ending that cancellable refresh is the required cleanup; never invent or extrapolate a hardware command merely to send an extra packet.
 
 2. **Command serialization** - All entities must use `coordinator.async_execute_controller_command()` instead of calling controller methods directly. This ensures proper locking and prevents concurrent BLE writes.
 

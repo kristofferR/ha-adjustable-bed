@@ -1082,7 +1082,7 @@ class KeesonController(BedController):
             command += KeesonCommands.MOTOR_LUMBAR_DOWN
         return command
 
-    def _motor_pulse_settings(self) -> tuple[int, int]:
+    def motor_pulse_settings(self) -> tuple[int, int]:
         """Return the effective movement cadence for this controller.
 
         Keeson app families use different hold intervals even when their packet
@@ -1117,7 +1117,7 @@ class KeesonController(BedController):
         """Move a motor and always run the protocol-specific release cleanup."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
-        repeat_count, repeat_delay_ms = self._motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
 
         try:
             if command:

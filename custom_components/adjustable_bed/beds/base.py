@@ -490,6 +490,13 @@ class BedController(ABC):
         """
         raise NotImplementedError("Subclass must implement _send_stop or override _move_with_stop")
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """Return the effective repeat count and delay for motor movement."""
+        return (
+            self._coordinator.motor_pulse_count,
+            self._coordinator.motor_pulse_delay_ms,
+        )
+
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command with guaranteed STOP at end.
 
@@ -501,8 +508,7 @@ class BedController(ABC):
             command: The movement command bytes to send repeatedly.
         """
         try:
-            pulse_count = self._coordinator.motor_pulse_count
-            pulse_delay = self._coordinator.motor_pulse_delay_ms
+            pulse_count, pulse_delay = self.motor_pulse_settings()
             await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
         finally:
             try:

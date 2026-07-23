@@ -1648,7 +1648,7 @@ class TestKsbt03cMotorLayout:
         coordinator._motor_count = motor_count
         controller = KeesonController(coordinator, variant=variant)
 
-        assert controller._motor_pulse_settings() == expected
+        assert controller.motor_pulse_settings() == expected
 
     def test_ksbt03c_uses_ergomotion_sync_motor_cadence(
         self,
@@ -1663,7 +1663,7 @@ class TestKsbt03cMotorLayout:
             device_name="KSBT03C300039050",
         )
 
-        assert controller._motor_pulse_settings() == (4, 300)
+        assert controller.motor_pulse_settings() == (4, 300)
 
     @pytest.mark.parametrize(
         ("motor_count", "expected"),
@@ -1684,7 +1684,7 @@ class TestKsbt03cMotorLayout:
         coordinator._motor_count = motor_count
         controller = KeesonController(coordinator, variant="base", betterliving_presets=True)
 
-        assert controller._motor_pulse_settings() == expected
+        assert controller.motor_pulse_settings() == expected
 
     async def test_custom_motor_cadence_is_preserved(
         self,
