@@ -64,6 +64,20 @@ def test_issue_445_name_routes_pq_to_lumbar() -> None:
     assert "auxiliary" not in profile.motors
 
 
+async def test_issue_468_short_panel_eight_keeps_home_preset() -> None:
+    """The reported short HHC PanelEight bed retains its working Home action."""
+    controller, client = _controller("HHC0120182CDEH")
+
+    assert controller.profile.profile_id == "power_bob_eight"
+    assert controller.supports_preset_flat is True
+
+    await controller.preset_flat()
+
+    client.write_gatt_char.assert_awaited_once_with(
+        MOTOSLEEP_CHAR_UUID, b"$O", response=False
+    )
+
+
 def test_power_bob_accepts_exact_length_name_containing_hhc() -> None:
     """Power Bob filters for a case-sensitive HHC substring, not a prefix."""
     profile = resolve_motosleep_profile("XXHHC000150000")
