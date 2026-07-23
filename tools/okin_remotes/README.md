@@ -8,8 +8,8 @@ This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid_remo
 
 DewertOkin's **FurniMove / OkinSmartComfort** app resolves each handset code
 against a live AWS backend at pairing time (the bundled `handsetlist.csv` is
-only a stale seed). The backend returns authoritative 32-bit keycodes and hold
-timing per remote code:
+only a stale seed). The backend returns authoritative 32-bit keycodes and
+timing metadata per remote code:
 
 - Base (production): `https://2df12gl0m0.execute-api.eu-central-1.amazonaws.com/prod`
 - `GET /mobile-data/button/{code}` — keycodes (the table we want)
@@ -46,6 +46,10 @@ uv run build_master.py        # -> master.json
 
 - **Flat is per-code.** Two codes in the same model family can use different
   Flat values, so the table stores each code's exact values (no family lumping).
+- **UBL timing is not a repeat count.** FurniMove repeats the light key only
+  while the user keeps touching it; the UBL path does not consult the backend's
+  `duration` or `frequency` fields. Generated light commands are therefore
+  single keycodes. Memory-save timing remains an explicit hold duration.
 - **Pruned codes.** ~87 codes the backend no longer serves inherit keycodes from
   a live code with the identical capability signature (`csv-inherit:<code>`), or
   are rebuilt from the universal keycode map (`csv-reconstruct`) when no sibling

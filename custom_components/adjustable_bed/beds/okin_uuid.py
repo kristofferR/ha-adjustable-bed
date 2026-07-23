@@ -100,7 +100,7 @@ class OkinUuidRemoteConfig:
     memory_4: int | None = None
     memory_save: int | OkinUuidComplexCommand | None = None
     # UBL (under-bed lights); None when the handset has no light key.
-    toggle_lights: int | OkinUuidComplexCommand | None = None
+    toggle_lights: int | None = None
     sync: int | None = None  # Re-sync both sides of a split base
     child_lock: int | None = None  # Toggle handset child lock
     zero_gravity: int | None = None  # Zero-gravity preset (rare)
@@ -119,10 +119,9 @@ class OkinUuidRemoteConfig:
 def _remote_config(kwargs: dict) -> OkinUuidRemoteConfig:
     """Build a remote config, expanding generated (keycode, count, delay) holds."""
     expanded: dict[str, Any] = dict(kwargs)
-    for key in ("memory_save", "toggle_lights"):
-        value = expanded.get(key)
-        if isinstance(value, tuple):
-            expanded[key] = OkinUuidComplexCommand(*value)
+    memory_save = expanded.get("memory_save")
+    if isinstance(memory_save, tuple):
+        expanded["memory_save"] = OkinUuidComplexCommand(*memory_save)
     return OkinUuidRemoteConfig(**expanded)
 
 

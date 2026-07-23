@@ -36,7 +36,7 @@ Several apps use this protocol:
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ |
-| Position Feedback | ✅ |
+| Position Feedback | Some receivers (FFE4 characteristic required) |
 | Memory Presets | ✅ (2-4 slots depending on remote) |
 | Massage | ✅ |
 | Under-bed Lights | ✅ |
@@ -48,7 +48,7 @@ Several apps use this protocol:
 >
 > | Bed Type | Format | Key Difference |
 > |----------|--------|----------------|
-> | **Okimat** | 6-byte | UUID-based writes, has position feedback |
+> | **Okimat** | 6-byte | UUID-based writes; some receivers also expose FFE4 position feedback |
 > | [Leggett & Platt Okin](leggett-platt.md) | 6-byte | Same protocol, different name detection |
 > | [Nectar](nectar.md) | 7-byte | Different command structure |
 > | [DewertOkin](dewertokin.md) | 6-byte | Handle-based writes (not UUID) |
@@ -84,22 +84,27 @@ Detection priority:
 
 ## Supported Remote Codes
 
-The integration ships **210 remote codes** covering the full DewertOkin RF
+The integration ships **210 remote codes** covering the captured DewertOkin RF
 handset range (RFS-ELLIPSE, RF-TOPLINE, RF-LITELINE, RF-FLASHLINE, RF-FREE-ELEC,
-RF-TOUCH, RF-TOUCHLINE, RF-STYLE, RF-ECO and their memory/massage variants). The
-entire 5-digit code space was swept against the backend, so the list is
-complete. The remote code is printed on
-the back of the handset; select it under **Protocol variant** in the
-integration options. If your exact code is not offered, pick any code with the
-same button layout — the motor keycodes are shared across the family.
+RF-TOUCH, RF-TOUCHLINE, RF-STYLE, RF-ECO and their memory/massage variants).
+The remote code is printed on the back of the handset; select it under
+**Protocol variant** in the integration options. The app accepts manually
+entered IDs, but its backend has no endpoint that enumerates every valid ID, so
+this table is a snapshot rather than a provably complete catalog. If an exact
+code is not offered, use a captured code only when its button layout and
+keycodes have been verified for that handset.
 
 ### Source of truth (important)
 
 The remote table is **generated from the DewertOkin FurniMove handset backend**
 (`GET /mobile-data/button/{code}`), which returns authoritative 32-bit keycodes
-(and timing) per remote code. For codes the backend no longer serves, keycodes
-are taken from the bundled `handsetlist.csv` capability flags by matching each
-pruned code to a live code with the identical capability signature. See
+and timing metadata per remote code. For codes the backend no longer serves,
+keycodes are inherited from a live code with the identical `handsetlist.csv`
+capability signature when one exists (`csv-inherit:<code>`). When no live
+sibling exists, they are rebuilt from the universal/modal keycode maps according
+to the CSV capability flags (`csv-reconstruct`). These reconstructed entries
+have lower assurance than backend or live-sibling values, and Flat may be
+approximate. See
 `beds/okin_uuid_remotes.py` for the generated table (each entry is tagged
 `backend`, `csv-inherit:<code>`, or `csv-reconstruct`) and
 `tools/okin_remotes/` for the regeneration pipeline.
@@ -126,7 +131,7 @@ values that earlier releases had wrong (e.g. 82620, 83489, 91246, 92591, 93306).
 | Feet motor | 38 | `0x40/0x80` (a few use `0x20` for feet-down) |
 | Memory presets | 99 | 1–4 slots depending on code |
 | Flat preset | 206 | A few basic RF-ECO remotes have no flat button |
-| Under-bed light | 172 | `0x20000`; single press on most handsets, a 5s hold (50×100ms) on 39; codes whose handset has no light key get no light entity |
+| Under-bed light | 172 | `0x20000`; one write per HA button press; codes whose handset has no light key get no light entity |
 | Memory save | 99 | Hold-to-save; per-code backend hold timing (2s/5s/8s @ 200ms) where the backend specifies it |
 | Sync both sides | 69 | Split-base re-sync (`0x100`, long hold released with STOP) |
 | Child lock | 53 | Handset lock toggle (`0x08000000`, long hold released with STOP) |
@@ -174,7 +179,9 @@ Different remotes use different values for the Flat preset:
 
 ## Position Feedback
 
-Okimat beds support position feedback via BLE notifications.
+Some Okimat receivers support position feedback via BLE notifications. The
+FFE4 characteristic must be present; it is not part of every controller's GATT
+layout.
 
 **Position Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
 **Notify Characteristic:** `0000ffe4-0000-1000-8000-00805f9b34fb`
@@ -194,13 +201,21 @@ Position notifications are 7+ bytes:
 
 Formula: `angle = (raw_value / max_raw) * max_angle`
 
+FurniMove 2.2.0 does not expose an alternate position path for receivers
+without FFE4. Its `62741625...` feedback parser reports only under-bed light,
+sync, and child-lock state, while notifications on `90311725...` are ignored.
+No reachable app path parses angle or current motor position from either
+channel.
+
 ## Command Timing
 
-From app disassembly analysis:
+From FurniMove 2.2.0 app analysis:
 
-- **Repeat Interval:** ~100-150ms
-- **Pattern:** Continuous while button held
-- **Stop Required:** Yes
+- **Repeat interval:** 100 ms after each successful write
+- **Pattern:** Continuous only while the touchscreen button remains held
+- **Release:** Send the zero/standby keycode and stop repeating
+- **UBL metadata:** The app does not use the backend UBL `duration` or
+  `frequency` fields to schedule writes; a light tap starts one press sequence
 
 ## Protocol Variants (from OKIN ComfortBed II-N app)
 

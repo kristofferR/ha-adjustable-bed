@@ -685,30 +685,32 @@ class TestOkinUuidLights:
 
         remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_82417]
         expected_cmd = coordinator.controller._build_command(remote.toggle_lights)
-        # Lights toggle sends multiple commands
+        # A Home Assistant button press is a single UBL key press.
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 1
 
-    async def test_lights_toggle_94238_backend_hold(
+    @pytest.mark.parametrize("variant", [OKIMAT_VARIANT_93332, OKIMAT_VARIANT_94238])
+    async def test_backend_ubl_timing_does_not_repeat_a_button_press(
         self,
         hass: HomeAssistant,
-        mock_okin_uuid_94238_config_entry,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        variant: str,
     ):
-        """94238 UBL is a hold-style light key: backend 5s hold (50 x 100ms)."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_94238_config_entry)
+        """Backend UBL timing describes a held touch, not 50 automatic writes."""
+        coordinator = _variant_coordinator(hass, variant)
         await coordinator.async_connect()
 
         await coordinator.controller.lights_toggle()
 
-        remote = OKIN_UUID_REMOTES[OKIMAT_VARIANT_94238]
-        assert remote.toggle_lights == OkinUuidComplexCommand(0x20000, 50, 100)
+        remote = OKIN_UUID_REMOTES[variant]
+        assert remote.toggle_lights == 0x20000
 
-        expected_cmd = coordinator.controller._build_command(remote.toggle_lights.data)
+        expected_cmd = coordinator.controller._build_command(remote.toggle_lights)
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
-        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 50
+        assert len(mock_bleak_client.write_gatt_char.call_args_list) == 1
 
     def test_lights_hidden_when_csv_says_no_ubl(self):
         """CSV codes with UBL=n (e.g. 63293) carry no light keycode."""

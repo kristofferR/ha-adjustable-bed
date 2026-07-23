@@ -107,7 +107,10 @@ def kwargs_of(c):
         if val:
             kv.append(f'"memory_{i}": {hex(h(val))}')
     if "ubl" in r:
-        kv.append(f'"toggle_lights": {timed(r, "ubl", "ubl_duration_ms", "ubl_frequency_ms")}')
+        # FurniMove repeats UBL only while the user keeps touching the button.
+        # Its UBL duration/frequency metadata is not consulted by that path, so
+        # a Home Assistant button press must remain a single keycode write.
+        kv.append(f'"toggle_lights": {hex(h(r["ubl"]))}')
     if r.get("massage"):
         mm = {MASSAGE_MAP[k]: hex(h(v)) for k, v in r["massage"].items() if k in MASSAGE_MAP}
         inner = ", ".join(f'"{k}": {v}' for k, v in sorted(mm.items()))
@@ -130,8 +133,10 @@ there for the full pipeline).
 Each entry is keyword arguments for ``OkinUuidRemoteConfig`` (see
 ``okin_uuid.py``). Keycodes are the 32-bit Okin command values; the standard
 controller wraps them as ``[0x04, 0x02, <4-byte big-endian>]``. ``memory_save``
-and ``toggle_lights`` may be ``(keycode, count, delay_ms)`` hold tuples when
-the backend specifies hold timing for that handset.
+may be a ``(keycode, count, delay_ms)`` hold tuple when the backend specifies
+hold timing for that handset. UBL/light commands are always single keycodes:
+FurniMove repeats them only for as long as the user keeps touching the button
+and does not consult the backend UBL duration/frequency metadata.
 
 Entries with ``"dot": True`` are "DOT PROTOCOL" handsets (RF1058/RF34/RF6707).
 Their boxes expose Nordic UART instead of the Okin 62741523 service and take
