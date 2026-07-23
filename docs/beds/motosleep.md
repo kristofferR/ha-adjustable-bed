@@ -52,6 +52,10 @@ index 8 and `5` at index 9, which selects the Power Bob A15 panel.
   WRS20ms, WRS16ms, WRC30Mms, WRS27ms, WRS20ms Swing, and WR219.
 - Advertised-name matching and model routing normalize letter case, including
   selector letters. Protocol command letters remain case-sensitive.
+- Short HHC names that select Power Bob Panel Eight retain Home as `$O`. A
+  user-confirmed device uses this shared command, matching the reachable
+  MotoSleep 5.1.5 PanelEight action even though Power Bob 2.0.3 does not render
+  that action on its separate Panel Eight.
 - Unmatched Power Bob selectors and malformed MOTO names receive no speculative
   controls. Legacy manual configurations without a usable advertised name keep
   a conservative two-axis fallback; current long HHC names retain the app's

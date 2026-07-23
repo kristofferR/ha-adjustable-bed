@@ -147,7 +147,7 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
         motors["auxiliary"] = ("P", "Q")
 
     explicit_stop = profile_id in {"four", "wr1140", "one", "two", "three", "nine", "six_zg"}
-    return _profile(
+    profile = _profile(
         f"power_bob_{profile_id}",
         MotoSleepTransport.POWER_BOB_ASCII,
         motors=motors,
@@ -157,6 +157,11 @@ def _power_bob_profile(profile_id: str) -> MotoSleepProfile:
         # Night configuration independently of the root motor panel.
         rgb_light=True,
     )
+    if profile_id == "eight":
+        # MotoSleep's PanelEight sends $O for Home, and issue #468 confirms it
+        # on a short-name HHC bed that otherwise follows Power Bob routing.
+        profile = replace(profile, presets=_frozen({**profile.presets, "flat": "O"}))
+    return profile
 
 
 def _resolve_power_bob(name: str) -> MotoSleepProfile:
