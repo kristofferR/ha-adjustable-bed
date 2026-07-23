@@ -80,8 +80,9 @@ _ERGOMOTION_SYNC_KSBT03C_PULSES = (4, 300)
 
 # The direct six-byte P2 protocol has no dedicated release/STOP frame. Current
 # SFD apps stop refreshing the held key and request status three times at 300 ms
-# intervals. Ergomotion Sync instead runs status queries on an independent
-# timer; movement release only stops its held-key refresh.
+# intervals. Complete clean-room analysis of Ergomotion Sync found no release
+# write: its independent status timer continues while release stops the held-key
+# refresh. Do not substitute an unverified zero-key frame for KSBT03C.
 _KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
 _KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
 _KSBT_RELEASE_QUERY_COUNT = 3
@@ -1168,6 +1169,8 @@ class KeesonController(BedController):
 
         if self._variant == KEESON_VARIANT_KSBT:
             if self._is_ksbt03c:
+                # Timer cessation is the app-proven KSBT03C stop mechanism. No
+                # release frame was found, and inventing one would be unsafe.
                 return
             if not delay:
                 # Direct P2 motion stops when the held-key refresh ends. The

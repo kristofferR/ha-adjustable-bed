@@ -117,7 +117,9 @@ characteristic write type unchanged. Android defaults a characteristic that
 advertises write-without-response to that mode, so detected `KSBT03C` beds use
 unacknowledged writes when the characteristic supports them. This prevents a
 BLE proxy acknowledgement round trip from stretching every refresh interval.
-Explicit per-device pulse settings remain authoritative.
+Explicit per-device pulse settings remain authoritative. No KSBT03C release
+frame was found in the complete clean-room analysis, so the integration does
+not guess or substitute a zero-key frame.
 
 Some Ergomotion-branded beds also use this variant. A confirmed Rio 6.0 support bundle advertises as `KSBT04...` and works correctly with the standard KSBT 6-byte protocol.
 Juna's `LVrestore` and `LVrelax` remotes also use this direct 6-byte framing rather than the JSON/A00A path.
@@ -131,6 +133,12 @@ also accepts a `KSBT03C` name but uses its separate explicit profile and exposes
 head, foot, tilt/EJ and lumbar controls.
 
 **Status:** the KSBT03C command values and 3-motor layout are APK-derived (Ergomotion Sync 1.0.2) and not yet confirmed on hardware; the Rio 5.0 report in issue #408 confirms the lumbar motor responds to `0x40`/`0x80` and that no tilt motor exists.
+
+The 300 ms cadence, unacknowledged write mode, and timer-cessation release are
+statically verified from Ergomotion Sync 1.0.5 but remain hardware-unverified.
+The timer cessation is intentional: no release packet exists in the analyzed
+app, and a replacement STOP frame must not be guessed without new protocol
+evidence or a hardware capture.
 
 **Fallback Service UUIDs:** Some KSBT devices use different service UUIDs. The integration automatically tries these if the primary isn't found:
 - `6e400020-b5a3-f393-e0a9-e50e24dcca9e` (characteristic: `6e400021`) - Extended Nordic UART, used by some Ergomotion/SFD beds

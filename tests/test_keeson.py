@@ -1783,7 +1783,7 @@ class TestKsbt03cMotorLayout:
         mock_bleak_client: MagicMock,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Test Rio 5 repeats at 300 ms and emits no release packet."""
+        """Test the clean-room KSBT03C cadence and timer-cessation release."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(
@@ -1816,7 +1816,7 @@ class TestKsbt03cMotorLayout:
         mock_bleak_client: MagicMock,
         monkeypatch: pytest.MonkeyPatch,
     ):
-        """Test cancelling the repeat timer stops Rio 5 without a release write."""
+        """Test coordinator cancellation ends refresh without a release frame."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(
