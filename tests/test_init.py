@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -52,6 +53,8 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
+    KEESON_KSBT_CHAR_UUID,
+    KEESON_VARIANT_KSBT,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     OKIN_HEAD_MAX_ANGLE,
@@ -1231,6 +1234,65 @@ class TestServices:
 
         assert mock_bleak_client.write_gatt_char.call_count >= 1
 
+    async def test_timed_move_uses_controller_effective_pulse_delay(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        mock_async_ble_device_from_address: MagicMock,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """Timed moves should retain the detected KSBT03C 300 ms cadence."""
+        mock_async_ble_device_from_address.return_value.name = "KSBT03C300039050"
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="KSBT03C Timed Move Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:11",
+                CONF_NAME: "KSBT03C Timed Move Bed",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_KSBT,
+            },
+            unique_id="AA:BB:CC:DD:EE:11",
+            entry_id="ksbt03c_timed_move_entry",
+        )
+        entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        from homeassistant.helpers import device_registry as dr
+
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        assert len(devices) == 1
+        device_id = devices[0].id
+        mock_bleak_client.write_gatt_char.reset_mock()
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_TIMED_MOVE,
+            {
+                "device_id": [device_id],
+                "motor": "head",
+                "direction": "up",
+                "duration_ms": 900,
+            },
+            blocking=True,
+        )
+
+        assert mock_bleak_client.write_gatt_char.await_args_list == [
+            call(
+                KEESON_KSBT_CHAR_UUID,
+                bytes.fromhex("040200000001"),
+                response=True,
+            )
+        ] * 4
+
     async def test_timed_move_service_accepts_okin_rf_eco_bt_stair(
         self,
         hass: HomeAssistant,
@@ -1287,6 +1349,7 @@ class TestServices:
 
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
         assert payloads == [
+            bytes.fromhex("040200000001"),
             bytes.fromhex("040200000001"),
             bytes.fromhex("040200000001"),
             bytes.fromhex("040200000000"),
@@ -1348,7 +1411,13 @@ class TestServices:
         move_packet = controller._build_packet([0x02, 0x70], [0x02])
         stop_packet = controller._build_packet([0x02, 0x73])
         payloads = [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list]
-        assert payloads == [move_packet, move_packet, stop_packet, stop_packet]
+        assert payloads == [
+            move_packet,
+            move_packet,
+            move_packet,
+            stop_packet,
+            stop_packet,
+        ]
 
     async def test_timed_move_service_rejects_bed_height_for_standard_layout(
         self,

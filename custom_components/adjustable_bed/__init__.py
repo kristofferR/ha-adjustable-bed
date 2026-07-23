@@ -1058,7 +1058,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             # Execute timed movement
             # Calculate repeat count: duration_ms / pulse_delay_ms
             # Example: 3500ms on Octo (350ms delay) = 10 repeats
-            pulse_delay_ms = coordinator.motor_pulse_delay_ms
+            _, pulse_delay_ms = controller.motor_pulse_settings()
             if pulse_delay_ms <= 0:
                 _LOGGER.warning(
                     "Invalid motor_pulse_delay_ms (%d) for device %s, using default 100ms",
@@ -1066,8 +1066,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     coordinator.name,
                 )
                 pulse_delay_ms = 100  # DEFAULT_MOTOR_PULSE_DELAY_MS
-            # Round up to honor requested duration as minimum
-            calculated_repeat_count = max(1, (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms)
+            # The first write is immediate, so one additional repeat is needed
+            # after the requested number of delay intervals.
+            calculated_repeat_count = max(
+                2,
+                (duration_ms + pulse_delay_ms - 1) // pulse_delay_ms + 1,
+            )
 
             _LOGGER.debug(
                 "Timed move: duration=%dms, pulse_delay=%dms, repeat_count=%d",
@@ -1076,8 +1080,9 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 calculated_repeat_count,
             )
 
-            # Store original pulse count to restore after
+            # Store original pulse settings to restore after
             original_pulse_count = coordinator.motor_pulse_count
+            original_pulse_delay_ms = coordinator.motor_pulse_delay_ms
 
             # Bind closure variables as defaults to avoid late-binding bugs
             async def timed_movement(
@@ -1087,19 +1092,23 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
                 _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
                 _calculated_repeat_count: int = calculated_repeat_count,
+                _pulse_delay_ms: int = pulse_delay_ms,
                 _original_pulse_count: int = original_pulse_count,
+                _original_pulse_delay_ms: int = original_pulse_delay_ms,
             ) -> None:
                 """Execute movement for specified duration, always sending stop."""
                 try:
-                    # Temporarily set pulse count to calculated value
+                    # Temporarily set the effective pulse settings
                     # This is safe because we're inside the command lock
                     _coordinator._motor_pulse_count = _calculated_repeat_count
+                    _coordinator._motor_pulse_delay_ms = _pulse_delay_ms
 
                     # Call the movement function (uses coordinator's pulse settings)
                     await _move_fn(ctrl)
                 finally:
-                    # Restore original pulse count
+                    # Restore original pulse settings
                     _coordinator._motor_pulse_count = _original_pulse_count
+                    _coordinator._motor_pulse_delay_ms = _original_pulse_delay_ms
 
                     # Always send stop command
                     await asyncio.shield(_stop_fn(ctrl))

@@ -76,11 +76,13 @@ _APP_MOTOR_PULSE_DEFAULTS: dict[str, tuple[int, int]] = {
 }
 
 _THREE_MOTOR_BETTERLIVING_PULSES = (5, 200)
+_ERGOMOTION_SYNC_KSBT03C_PULSES = (4, 300)
 
 # The direct six-byte P2 protocol has no dedicated release/STOP frame. Current
 # SFD apps stop refreshing the held key and request status three times at 300 ms
-# intervals. Member's Mark also stops by ceasing refreshes and keeps issuing the
-# same status query on its independent 400 ms timer.
+# intervals. Complete clean-room analysis of Ergomotion Sync found no release
+# write: its independent status timer continues while release stops the held-key
+# refresh. Do not substitute an unverified zero-key frame for KSBT03C.
 _KSBT_RELEASE_QUERY = bytes([0x00, 0xB0])
 _KSBT_RELEASE_QUERY_DELAY_SECONDS = 0.3
 _KSBT_RELEASE_QUERY_COUNT = 3
@@ -742,7 +744,7 @@ class KeesonController(BedController):
         return 6  # Keeson/Ergomotion use 0-6 scale
 
     def _refresh_write_mode(self) -> None:
-        """Resolve whether the selected characteristic prefers write-with-response."""
+        """Resolve the write mode required by the selected Keeson profile."""
         if self._write_mode_initialized:
             return
 
@@ -756,7 +758,15 @@ class KeesonController(BedController):
                     continue
 
                 props = {prop.lower() for prop in getattr(char, "properties", [])}
-                if "write" in props:
+                if self._is_ksbt03c and "write-without-response" in props:
+                    # Ergomotion Sync leaves the Android characteristic write
+                    # type unchanged. Android initializes dual-mode
+                    # characteristics to WRITE_TYPE_NO_RESPONSE, so mirror that
+                    # behavior for the identified KSBT03C profile. Waiting for
+                    # an acknowledgement here stretches every 300 ms refresh by
+                    # a full BLE/proxy round trip and makes motion stutter.
+                    self._write_with_response = False
+                elif "write" in props:
                     self._write_with_response = True
                 elif "write-without-response" in props:
                     self._write_with_response = False
@@ -1072,7 +1082,7 @@ class KeesonController(BedController):
             command += KeesonCommands.MOTOR_LUMBAR_DOWN
         return command
 
-    def _motor_pulse_settings(self) -> tuple[int, int]:
+    def motor_pulse_settings(self) -> tuple[int, int]:
         """Return the effective movement cadence for this controller.
 
         Keeson app families use different hold intervals even when their packet
@@ -1098,13 +1108,16 @@ class KeesonController(BedController):
             if self._coordinator.motor_count == 3:
                 return _THREE_MOTOR_BETTERLIVING_PULSES
 
+        if self._is_ksbt03c:
+            return _ERGOMOTION_SYNC_KSBT03C_PULSES
+
         return _APP_MOTOR_PULSE_DEFAULTS.get(self._variant, configured)
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it, always releasing at the end."""
+        """Move a motor and always run the protocol-specific release cleanup."""
         self._motor_state[motor] = direction
         command = self._get_move_command()
-        repeat_count, repeat_delay_ms = self._motor_pulse_settings()
+        repeat_count, repeat_delay_ms = self.motor_pulse_settings()
 
         try:
             if command:
@@ -1121,7 +1134,8 @@ class KeesonController(BedController):
                         repeat_delay_ms=repeat_delay_ms,
                     )
         finally:
-            # Always release with a fresh event so it is not affected by cancellation.
+            # Release writes use a fresh event so cancellation cannot suppress them.
+            # KSBT03C has no release write; ending the cancellable refresh is its stop.
             self._motor_state = {}
             await self._release_motion()
 
@@ -1129,11 +1143,12 @@ class KeesonController(BedController):
         """Send the protocol-specific motor release sequence.
 
         Direct six-byte KSBT/P2 remotes do not transmit a zero-key frame on
-        release. Current SFD apps stop the 100 ms key refresh and send status
-        query ``00 B0`` at +300, +600, and +900 ms. The Member's Mark app also
-        stops by ceasing refreshes and continues its independent ``00 B0`` query
-        timer. Other variants retain their explicit zero frame, whose packet
-        format is specific to that protocol family.
+        release. Ergomotion Sync stops KSBT03C motion solely by cancelling its
+        300 ms repeat timer, which observes the coordinator cancellation event
+        between writes; its ``00 B0`` status queries run independently.
+        Current SFD apps stop the 100 ms key refresh and send status query
+        ``00 B0`` at +300, +600, and +900 ms. Other variants retain their
+        explicit zero frame, whose packet format is specific to that family.
         """
         cancel_event = asyncio.Event()
         if self._variant == KEESON_VARIANT_PURPLE:
@@ -1153,6 +1168,10 @@ class KeesonController(BedController):
             return
 
         if self._variant == KEESON_VARIANT_KSBT:
+            if self._is_ksbt03c:
+                # Timer cessation is the app-proven KSBT03C stop mechanism. No
+                # release frame was found, and inventing one would be unsafe.
+                return
             if not delay:
                 # Direct P2 motion stops when the held-key refresh ends. The
                 # app's delayed 00 B0 frames are status queries, not STOP.
