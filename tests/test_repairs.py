@@ -127,9 +127,9 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     client.disconnect.assert_awaited_once()
 
 
-@pytest.mark.parametrize("connected", [True, False])
+@pytest.mark.parametrize("bonded", [True, False])
 async def test_leggett_gen2_repair_pairs_through_the_coordinator(
-    hass: HomeAssistant, connected: bool
+    hass: HomeAssistant, bonded: bool
 ) -> None:
     """The repair must reuse the coordinator's connection, not spend a new one.
 
@@ -152,7 +152,9 @@ async def test_leggett_gen2_repair_pairs_through_the_coordinator(
     entry.add_to_hass(hass)
 
     coordinator = MagicMock()
-    coordinator.async_connect = AsyncMock(return_value=connected)
+    # async_pair_now() reports whether the bond is confirmed, not merely whether
+    # a connection exists: the connect path deliberately keeps unbonded links.
+    coordinator.async_pair_now = AsyncMock(return_value=bonded)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
@@ -162,18 +164,21 @@ async def test_leggett_gen2_repair_pairs_through_the_coordinator(
         patch(BLEAK_DEVICE, return_value=MagicMock()),
         patch(ESTABLISH, new=AsyncMock()) as mock_establish,
     ):
-        assert await flow._async_try_pair() is connected
+        assert await flow._async_try_pair() is bonded
 
-    coordinator.async_connect.assert_awaited_once_with()
+    coordinator.async_pair_now.assert_awaited_once_with()
     mock_establish.assert_not_awaited()
-    # The stale marker is cleared first so the connect actually asks to bond.
-    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
 
 
-async def test_leggett_gen2_repair_pairs_after_service_discovery(
+async def test_leggett_gen2_repair_with_no_coordinator_reloads_the_entry(
     hass: HomeAssistant,
 ) -> None:
-    """The repair path must mirror the LP app's connect-then-bond ordering."""
+    """With no loaded coordinator the repair must reload, not open a client.
+
+    The pairing repair is raised from SETUP_RETRY, where setup has not stored a
+    coordinator yet. A standalone client would pair and then disconnect in its
+    finally block, and the reload could not obtain a second connection (#385).
+    """
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=TEST_NAME,
@@ -181,7 +186,7 @@ async def test_leggett_gen2_repair_pairs_after_service_discovery(
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
             CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
-            CONF_BLE_BOND_ESTABLISHED: False,
+            CONF_BLE_BOND_ESTABLISHED: True,
         },
         unique_id=TEST_ADDRESS,
         entry_id="repair_leggett_gen2_entry",
@@ -191,41 +196,32 @@ async def test_leggett_gen2_repair_pairs_after_service_discovery(
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
     flow.hass = hass
 
-    cleanup_order: list[str] = []
-
-    async def disconnect() -> None:
-        cleanup_order.append("disconnect")
-
-    async def reload_entry(_entry_id: str) -> None:
-        cleanup_order.append("reload")
-
-    client = MagicMock()
-    client.pair = AsyncMock()
-    client.read_gatt_char = AsyncMock(return_value=b"209-M001")
-    client.disconnect = AsyncMock(side_effect=disconnect)
+    async def reload(entry_id: str) -> None:
+        # Setup owns the single connection; simulate it confirming the bond.
+        target = hass.config_entries.async_get_entry(entry_id)
+        hass.config_entries.async_update_entry(
+            target, data={**target.data, CONF_BLE_BOND_ESTABLISHED: True}
+        )
 
     with (
         patch(BLEAK_DEVICE, return_value=MagicMock()),
-        patch(ESTABLISH, new=AsyncMock(return_value=client)) as mock_establish,
+        patch(ESTABLISH, new=AsyncMock()) as mock_establish,
         patch.object(
-            hass.config_entries,
-            "async_reload",
-            new=AsyncMock(side_effect=reload_entry),
-        ),
+            hass.config_entries, "async_reload", new=AsyncMock(side_effect=reload)
+        ) as mock_reload,
     ):
         assert await flow._async_try_pair() is True
 
-    assert mock_establish.await_args.kwargs["pair"] is False
-    assert mock_establish.await_args.kwargs["use_services_cache"] is False
-    client.pair.assert_awaited_once()
-    client.disconnect.assert_awaited_once()
-    assert cleanup_order == ["disconnect", "reload"]
+    mock_establish.assert_not_awaited()
+    mock_reload.assert_awaited_once_with(entry.entry_id)
+    # The stale marker is cleared first so setup actually requests the bond.
+    assert flow._bonded_now() is True
 
 
-async def test_leggett_gen2_repair_disconnects_when_pairing_fails(
+async def test_leggett_gen2_repair_reload_that_stays_unbonded_fails(
     hass: HomeAssistant,
 ) -> None:
-    """A failed post-discovery repair bond must release its connected client."""
+    """Connecting is not pairing: an unbonded reload must not resolve the issue."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=TEST_NAME,
@@ -236,42 +232,41 @@ async def test_leggett_gen2_repair_disconnects_when_pairing_fails(
             CONF_BLE_BOND_ESTABLISHED: False,
         },
         unique_id=TEST_ADDRESS,
-        entry_id="repair_leggett_gen2_failure_entry",
+        entry_id="repair_leggett_gen2_unbonded_entry",
     )
     entry.add_to_hass(hass)
 
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
     flow.hass = hass
-
-    client = MagicMock()
-    client.pair = AsyncMock(side_effect=BleakError("pairing rejected"))
-    client.disconnect = AsyncMock()
 
     with (
         patch(BLEAK_DEVICE, return_value=MagicMock()),
-        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+        patch(ESTABLISH, new=AsyncMock()) as mock_establish,
+        patch.object(hass.config_entries, "async_reload", new=AsyncMock()),
     ):
+        # The advisory connect path keeps an unbonded link, so the entry can load
+        # without a bond. That must still report the repair as unsuccessful.
         assert await flow._async_try_pair() is False
 
+    mock_establish.assert_not_awaited()
     assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
-    client.disconnect.assert_awaited_once_with()
 
 
-async def test_leggett_gen2_repair_disconnects_when_pairing_is_cancelled(
+async def test_repair_releases_its_client_when_verification_is_cancelled(
     hass: HomeAssistant,
 ) -> None:
-    """Cancelling post-discovery pairing must still release the live client."""
+    """Cancelling bond verification must still release the standalone client."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=TEST_NAME,
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+            CONF_BED_TYPE: "okimat",
             CONF_BLE_BOND_ESTABLISHED: False,
         },
         unique_id=TEST_ADDRESS,
-        entry_id="repair_leggett_gen2_cancelled_entry",
+        entry_id="repair_cancelled_entry",
     )
     entry.add_to_hass(hass)
 
@@ -279,7 +274,7 @@ async def test_leggett_gen2_repair_disconnects_when_pairing_is_cancelled(
     flow.hass = hass
 
     client = MagicMock()
-    client.pair = AsyncMock(side_effect=asyncio.CancelledError())
+    client.read_gatt_char = AsyncMock(side_effect=asyncio.CancelledError())
     client.disconnect = AsyncMock()
 
     with (
@@ -289,8 +284,46 @@ async def test_leggett_gen2_repair_disconnects_when_pairing_is_cancelled(
     ):
         await flow._async_try_pair()
 
-    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
     client.disconnect.assert_awaited_once_with()
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+
+
+async def test_repair_releases_its_client_when_verification_is_unauthenticated(
+    hass: HomeAssistant,
+) -> None:
+    """A still-unbonded link must fail the repair and release the client."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: "okimat",
+            CONF_BLE_BOND_ESTABLISHED: False,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_unauth_entry",
+    )
+    entry.add_to_hass(hass)
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+
+    client = MagicMock()
+    client.read_gatt_char = AsyncMock(
+        side_effect=BleakError("Insufficient authentication")
+    )
+    client.disconnect = AsyncMock()
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock(return_value=client)),
+    ):
+        assert await flow._async_try_pair() is False
+
+    client.disconnect.assert_awaited_once_with()
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+
 
 
 async def test_try_pair_treats_non_auth_read_error_as_success(hass: HomeAssistant) -> None:

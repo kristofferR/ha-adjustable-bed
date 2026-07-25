@@ -392,6 +392,62 @@ class TestCoordinatorConnection:
         assert pairing["ordering"] == "connect_discover_then_pair"
         assert pairing["connection_result"] == "pairing_connection_succeeded"
 
+    async def test_gen2_startup_auth_error_keeps_link_and_stops_retrying(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A startup auth failure must not undo the retained-link decision.
+
+        The handler deliberately keeps the link, but the outer failure handler
+        used to call _async_cleanup_failed_connection() unconditionally and
+        disconnect it anyway. Retrying cannot help either: every attempt begins
+        with close_stale_connections_by_address(), so it would destroy the link
+        the decision just protected (issue #385).
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+
+        client = MagicMock()
+        client.is_connected = True
+        client.disconnect = AsyncMock()
+        coordinator._client = client
+
+        await coordinator._async_handle_ble_authentication_error(
+            BleakError("Insufficient authentication"), holding_lock=True
+        )
+
+        client.disconnect.assert_not_awaited()
+        assert coordinator._client is client
+
+    async def test_connect_does_not_report_success_without_a_controller(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A retained link with no controller is not a usable connection.
+
+        Keeping the link after a failed startup makes "connected but no
+        controller" reachable, so the reuse shortcut must not call it success.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        client = MagicMock()
+        client.is_connected = True
+        coordinator._client = client
+        coordinator._controller = None
+
+        with (
+            patch.object(coordinator, "_reset_disconnect_timer") as reset_timer,
+            patch(
+                "custom_components.adjustable_bed.coordinator.select_adapter",
+                new_callable=AsyncMock,
+                side_effect=BleakError("stop here"),
+            ),
+        ):
+            # Falls through to a real attempt instead of returning True.
+            assert await coordinator._async_connect_locked() is False
+        reset_timer.assert_not_called()
+
     @pytest.mark.parametrize(
         ("pair_error", "max_retries", "pairing_supported"),
         [
@@ -1063,9 +1119,7 @@ class TestCoordinatorPositionSeek:
 
         assert result is True
         assert mock_establish_connection.await_args.kwargs["pair"] is False
-        pairing_attempt = coordinator.pairing_diagnostics["connection_attempts"][0][
-            "pairing"
-        ]
+        pairing_attempt = coordinator.pairing_diagnostics["connection_attempts"][0]["pairing"]
         assert pairing_attempt["decision"] == "bond_marker_present"
         assert pairing_attempt["bond_marker_before_attempt"] is True
         assert pairing_attempt["requested"] is False
@@ -2305,8 +2359,7 @@ class TestCoordinatorWriteCommand:
         assert True in pair_kwargs
         assert False in pair_kwargs
         pairing_attempts = [
-            attempt["pairing"]
-            for attempt in coordinator.pairing_diagnostics["connection_attempts"]
+            attempt["pairing"] for attempt in coordinator.pairing_diagnostics["connection_attempts"]
         ]
         assert any(
             attempt["requested"] is True
@@ -2315,8 +2368,7 @@ class TestCoordinatorWriteCommand:
             for attempt in pairing_attempts
         )
         assert any(
-            attempt["decision"] == "retry_without_pairing"
-            and attempt["requested"] is False
+            attempt["decision"] == "retry_without_pairing" and attempt["requested"] is False
             for attempt in pairing_attempts
         )
 
@@ -2419,12 +2471,8 @@ class TestCoordinatorWriteCommand:
         assert coordinator._ble_bond_established is True
         assert entry.data[CONF_BLE_BOND_ESTABLISHED] is True
         assert coordinator._skip_pair_next_attempt is False
-        assert (
-            coordinator.pairing_diagnostics["last_bond_verification"]["status"]
-            == "succeeded"
-        )
+        assert coordinator.pairing_diagnostics["last_bond_verification"]["status"] == "succeeded"
         mock_delete_issue.assert_awaited_once_with(hass, TEST_ADDRESS)
-
 
     async def test_verify_bonded_timeout_is_retryable_for_other_beds(
         self,
@@ -2469,8 +2517,7 @@ class TestCoordinatorWriteCommand:
             assert coordinator._bond_probe_timed_out is False
             assert client.read_gatt_char.await_count == 1
             assert (
-                coordinator.pairing_diagnostics["last_bond_verification"]["status"]
-                == "timed_out"
+                coordinator.pairing_diagnostics["last_bond_verification"]["status"] == "timed_out"
             )
 
             async with asyncio.timeout(5):
@@ -3382,7 +3429,6 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.motor_pulse_delay_ms == 200
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == 5
         assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 200
-
 
 
 class TestDeviceInfoCache:

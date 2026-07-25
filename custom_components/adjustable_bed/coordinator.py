@@ -917,6 +917,41 @@ class AdjustableBedCoordinator:
             return False
         return True
 
+    async def async_pair_now(self) -> bool:
+        """Re-run BLE pairing on demand and report whether the bond is live.
+
+        Drives the pairing repair for a bed that only grants one connection per
+        pairing window. Two things matter here:
+
+        * The cached bond marker must be cleared on the *runtime* coordinator,
+          not just in ``entry.data``. ``_ble_bond_established`` is read from the
+          entry once at construction, so editing entry data alone would leave
+          this connection still skipping ``pair=True``.
+        * When a link is already up, pair on that link. Reconnecting to "pair
+          properly" would spend the bed's single connection.
+
+        Returns True only when the bond is confirmed, so a repair cannot report
+        success while the link is still unbonded.
+        """
+        async with self._lock:
+            self._clear_ble_bond_established()
+            self._skip_pair_next_attempt = False
+            self._bond_probe_timed_out = False
+
+            if self._client is not None and self._client.is_connected:
+                pairing_details: dict[str, Any] = {}
+                if await self._async_pair_on_live_link(pairing_details):
+                    self._mark_ble_bond_established()
+                    await delete_pairing_required_issue(self.hass, self._address)
+                    return True
+                # The bond request failed but the link survived; the probe is
+                # the authority on whether we are nevertheless bonded.
+                return await self._async_verify_bonded() and self._ble_bond_established
+
+            if not await self._async_connect_locked():
+                return False
+            return self._ble_bond_established
+
     async def _async_verify_bonded(
         self, attempt_details: dict[str, Any] | None = None
     ) -> bool:
@@ -1456,7 +1491,11 @@ class AdjustableBedCoordinator:
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
         self._intentional_disconnect = False
 
-        if self._client is not None and self._client.is_connected:
+        if (
+            self._client is not None
+            and self._client.is_connected
+            and self._controller is not None
+        ):
             _LOGGER.debug("Already connected to %s, reusing connection", self._address)
             if reset_timer:
                 self._reset_disconnect_timer()
@@ -2332,11 +2371,11 @@ class AdjustableBedCoordinator:
                     # Authentication can first fail during controller startup,
                     # after a slow DIS probe was treated as inconclusive. Clear
                     # the stale marker here so the next retry requests pairing.
-                    # Keep this best-effort: the handler disconnects the client,
-                    # and disconnect cleanup can itself raise. Letting that escape
-                    # would replace the original authentication error and abort
-                    # the remaining retries. CancelledError is a BaseException, so
-                    # cancellation still propagates.
+                    # Keep this best-effort: the handler usually disconnects the
+                    # client, and disconnect cleanup can itself raise. Letting
+                    # that escape would replace the original authentication error
+                    # and abort the remaining retries. CancelledError is a
+                    # BaseException, so cancellation still propagates.
                     try:
                         await self._async_handle_ble_authentication_error(
                             err, holding_lock=True
@@ -2347,6 +2386,33 @@ class AdjustableBedCoordinator:
                             self._address,
                             exc_info=True,
                         )
+                    if self._client is not None and self._client.is_connected:
+                        # The handler deliberately kept this link because the bed
+                        # only grants one connection per pairing window. Retrying
+                        # would destroy it anyway: every attempt starts with
+                        # close_stale_connections_by_address(). Stop here with the
+                        # link intact instead of churning through the remaining
+                        # attempts. The repair issue the handler raised tells the
+                        # user to re-pair during a power-cycle window.
+                        _LOGGER.warning(
+                            "Authentication failed for %s during startup. Keeping "
+                            "the link and stopping reconnect attempts so the bed's "
+                            "single connection is not spent on a doomed retry.",
+                            self._address,
+                        )
+                        self._controller = None
+                        self._connecting = False
+                        attempt_details["total_elapsed_seconds"] = round(
+                            time.monotonic() - attempt_start, 3
+                        )
+                        attempt_details["result"] = "failed_link_retained"
+                        attempt_details["error"] = str(err)
+                        attempt_details["error_type"] = type(err).__name__
+                        attempt_details["error_category"] = "AUTHENTICATION"
+                        self._last_connection_error = str(err)
+                        self._last_connection_error_type = type(err).__name__
+                        self._connection_attempt_details.append(attempt_details)
+                        break
                 attempt_elapsed = time.monotonic() - attempt_start
                 attempt_details["total_elapsed_seconds"] = round(attempt_elapsed, 3)
                 attempt_details["result"] = "failed"

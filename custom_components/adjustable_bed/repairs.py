@@ -29,7 +29,6 @@ from .const import (
     DEVICE_INFO_CHARS,
     DOMAIN,
     grants_one_connection_per_pairing_window,
-    requires_pairing_after_service_discovery,
 )
 
 if TYPE_CHECKING:
@@ -100,18 +99,34 @@ class PairingRequiredRepairFlow(RepairsFlow):
                 return service_info.device
         return None
 
+    def _bonded_now(self) -> bool:
+        """Return True when the entry currently records a confirmed BLE bond."""
+        if self._entry_id is None:
+            return False
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        return bool(entry is not None and entry.data.get(CONF_BLE_BOND_ESTABLISHED))
+
     async def _async_pair_via_coordinator(self) -> bool | None:
-        """Pair by driving the entry's own coordinator connection.
+        """Pair without ever opening a throwaway connection.
 
-        Returns True/False once the coordinator has run, or None when this
-        repair must fall back to its own client (no entry, or the entry is not
-        loaded).
+        Returns True/False for a bed that grants one connection per pairing
+        window, or None when this repair may use its own client.
 
-        For a bed that grants one connection per pairing window, opening a
-        second client here would consume that connection and then close it, so
-        the reload afterwards would find the box refusing every reconnect. The
-        coordinator's own connect path performs the same connect -> discover ->
-        bond ordering and, crucially, *keeps* the link it establishes.
+        For such a bed, opening a second client here would consume the single
+        connection and then close it in ``finally``, so the reload afterwards
+        would find the box refusing every reconnect. Two routes avoid that:
+
+        * A loaded coordinator pairs on its own link via ``async_pair_now()``,
+          which bonds an already-live link instead of reconnecting.
+        * With no loaded coordinator the entry is typically in SETUP_RETRY (the
+          very state that raises this repair), so reloading it lets
+          ``async_setup_entry`` make exactly one connection that connects,
+          discovers, bonds and stays up.
+
+        Success is reported only when the bond is actually confirmed. Connecting
+        is not the same as pairing: the connect path deliberately keeps an
+        unbonded link, so treating a connection as success would resolve the
+        pairing issue while the bed is still unbonded.
         """
         if self._entry_id is None:
             return None
@@ -125,34 +140,47 @@ class PairingRequiredRepairFlow(RepairsFlow):
             return None
 
         coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry_id)
-        if coordinator is None:
-            return None
+        if coordinator is not None:
+            _LOGGER.info(
+                "Repair: pairing %s through the existing coordinator so the "
+                "bed's single connection is kept rather than spent",
+                self._address,
+            )
+            try:
+                # async_pair_now() clears the runtime bond marker itself, which
+                # editing entry.data alone would not do.
+                return bool(await coordinator.async_pair_now())
+            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+                _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
+                return False
 
-        # Clear any stale marker so the connect actually requests the bond.
+        # No coordinator: the entry failed setup and is retrying. Clear the bond
+        # marker so the next setup requests the bond, then let setup own the one
+        # connection instead of racing it with a client of our own.
         if entry.data.get(CONF_BLE_BOND_ESTABLISHED):
             self.hass.config_entries.async_update_entry(
                 entry,
                 data={**entry.data, CONF_BLE_BOND_ESTABLISHED: False},
             )
-
         _LOGGER.info(
-            "Repair: pairing %s through the existing coordinator so the bed's "
-            "single connection is kept rather than spent",
+            "Repair: reloading %s so its setup makes the single pairing "
+            "connection (no coordinator is loaded to drive)",
             self._address,
         )
         try:
-            connected = await coordinator.async_connect()
+            await self.hass.config_entries.async_reload(self._entry_id)
         except Exception as err:  # noqa: BLE001 - any failure means "not paired"
             _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
             return False
-        if not connected:
-            _LOGGER.warning(
-                "Repair: could not connect to %s to pair it", self._address
-            )
-        return bool(connected)
+        return self._bonded_now()
 
     async def _async_try_pair(self) -> bool:
-        """Create a bond with the controller-specific ordering and verify it."""
+        """Create a bond for beds that pair at connect time, and verify it.
+
+        Beds that must bond after service discovery never reach this path: they
+        are one-connection beds and are handled by _async_pair_via_coordinator,
+        which refuses to open a throwaway client at all.
+        """
         from bleak import BleakClient
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
@@ -169,87 +197,75 @@ class PairingRequiredRepairFlow(RepairsFlow):
             )
             return False
 
-        pair_after_service_discovery = False
-        if self._entry_id is not None:
-            entry = self.hass.config_entries.async_get_entry(self._entry_id)
-            if entry is not None:
-                bed_type = entry.data.get(CONF_BED_TYPE)
-                pair_after_service_discovery = bool(
-                    bed_type
-                    and requires_pairing_after_service_discovery(
-                        bed_type,
-                        entry.data.get(CONF_PROTOCOL_VARIANT),
-                    )
-                )
-
         client: BleakClient | None = None
         reload_entry_id: str | None = None
-        try:
+        # Hold the address lock for the whole client lifetime. Releasing it after
+        # the connect would let the disconnect below land inside another caller's
+        # connect attempt, where bleak's cleanup can abort it.
+        async with async_get_connect_lock(self.hass, self._address):
             try:
-                async with async_get_connect_lock(self.hass, self._address):
-                    client = await establish_connection(
-                        BleakClient,
-                        device,
-                        self._name,
-                        max_attempts=1,
-                        pair=not pair_after_service_discovery,
-                        use_services_cache=False,
-                    )
-                    if pair_after_service_discovery:
-                        await client.pair()
+                client = await establish_connection(
+                    BleakClient,
+                    device,
+                    self._name,
+                    max_attempts=1,
+                    pair=True,
+                    use_services_cache=False,
+                )
             except Exception as err:  # noqa: BLE001 - any failure means "not paired"
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
 
-            bonded = False
             try:
-                # Verify the bond by reading a known auth-gated characteristic. A
-                # still-unbonded link fails with GATT error=5; non-auth errors
-                # (e.g. the characteristic is absent) are inconclusive, not failures.
-                await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
-                bonded = True
-            except BleakError as err:
-                if is_ble_authentication_error(err):
-                    _LOGGER.warning(
-                        "Repair: bond verification failed for %s: %s",
-                        self._address,
-                        err,
-                    )
-                else:
+                bonded = False
+                try:
+                    # Verify the bond by reading a known auth-gated characteristic. A
+                    # still-unbonded link fails with GATT error=5; non-auth errors
+                    # (e.g. the characteristic is absent) are inconclusive, not failures.
+                    await client.read_gatt_char(DEVICE_INFO_CHARS["model_number"])
+                    bonded = True
+                except BleakError as err:
+                    if is_ble_authentication_error(err):
+                        _LOGGER.warning(
+                            "Repair: bond verification failed for %s: %s",
+                            self._address,
+                            err,
+                        )
+                    else:
+                        _LOGGER.debug(
+                            "Repair: bond verification inconclusive for %s: %s",
+                            self._address,
+                            err,
+                        )
+                        bonded = True
+                except Exception as err:  # noqa: BLE001
                     _LOGGER.debug(
                         "Repair: bond verification inconclusive for %s: %s",
                         self._address,
                         err,
                     )
                     bonded = True
-            except Exception as err:  # noqa: BLE001
-                _LOGGER.debug(
-                    "Repair: bond verification inconclusive for %s: %s",
-                    self._address,
-                    err,
-                )
-                bonded = True
 
-            if not bonded:
-                return False
+                if not bonded:
+                    return False
 
-            # Persist the confirmed bond and reload so the coordinator reuses it
-            # (and does not try to re-pair on top of the existing bond).
-            if self._entry_id is not None:
-                entry = self.hass.config_entries.async_get_entry(self._entry_id)
-                if entry is not None:
-                    if not entry.data.get(CONF_BLE_BOND_ESTABLISHED):
-                        self.hass.config_entries.async_update_entry(
-                            entry,
-                            data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
-                        )
-                    reload_entry_id = self._entry_id
-        finally:
-            if client is not None:
-                try:
-                    await client.disconnect()
-                except Exception:  # noqa: BLE001
-                    pass
+                # Persist the confirmed bond and reload so the coordinator reuses it
+                # (and does not try to re-pair on top of the existing bond).
+                if self._entry_id is not None:
+                    entry = self.hass.config_entries.async_get_entry(self._entry_id)
+                    if entry is not None:
+                        if not entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+                            self.hass.config_entries.async_update_entry(
+                                entry,
+                                data={**entry.data, CONF_BLE_BOND_ESTABLISHED: True},
+                            )
+                        reload_entry_id = self._entry_id
+            finally:
+                if client is not None:
+                    try:
+                        await client.disconnect()
+                    except Exception:  # noqa: BLE001
+                        pass
 
         if reload_entry_id is not None:
             await self.hass.config_entries.async_reload(reload_entry_id)
