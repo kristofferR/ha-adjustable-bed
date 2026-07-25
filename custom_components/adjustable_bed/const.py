@@ -1939,6 +1939,34 @@ def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None)
     return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
 
 
+def grants_one_connection_per_pairing_window(
+    bed_type: str, protocol_variant: str | None = None
+) -> bool:
+    """Return True when a live link must never be spent or thrown away.
+
+    LP Comfort Connect (Leggett & Platt Gen2) grants roughly one usable BLE
+    connection per bed power cycle: issue #385's support bundles record exactly
+    one completed connection followed by an unbroken run of connect timeouts
+    (3.3.0: ``connect_completed_total: 1`` at 39s after startup, then 41
+    consecutive failures, every one of them this bed) until the box is
+    unplugged again.
+
+    Two consequences follow for every code path that touches such a box:
+
+    1. Never open a throwaway connection. A probe or a standalone pairing
+       connect that disconnects in ``finally`` consumes the only connection the
+       coordinator was going to get.
+    2. Never trade a working link for a cleaner state. Reconnecting to "do it
+       properly" strands the bed until the user power-cycles it.
+
+    LP Control matches this: it connects once with ``autoConnect=true``, fires
+    ``createBond()`` after service discovery, never observes the result (the app
+    has no ``ACTION_BOND_STATE_CHANGED`` receiver and no bond retry anywhere),
+    and continues the session on that same link bonded or not.
+    """
+    return connection_gated_by_bond(bed_type, protocol_variant)
+
+
 # Bed types that support angle sensing (position feedback)
 BEDS_WITH_ANGLE_SENSING: Final = frozenset(
     {

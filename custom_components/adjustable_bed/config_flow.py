@@ -43,6 +43,7 @@ from .adapter import (
     read_ble_device_info,
     select_adapter,
 )
+from .address_lock import async_get_connect_lock
 from .const import (
     ADAPTER_AUTO,
     ALL_PROTOCOL_VARIANTS,
@@ -118,6 +119,7 @@ from .const import (
     bed_type_has_position_feedback,
     get_richmat_features,
     get_richmat_motor_count,
+    grants_one_connection_per_pairing_window,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
     requires_pairing_after_service_discovery,
@@ -2093,25 +2095,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             action = user_input.get("action")
 
             if action == "pair_now":
-                # Attempt pairing
-                address = self._manual_data.get(CONF_ADDRESS)
-                try:
-                    paired = await self._attempt_pairing(address)
-                    if paired:
-                        return self.async_create_entry(
-                            title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                            data=self._mark_ble_bond_established(self._manual_data),
-                        )
-                    else:
-                        errors["base"] = "pairing_failed"
-                except (NotImplementedError, TypeError) as err:
-                    # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
-                    # TypeError: older bleak-retry-connector doesn't have pair kwarg
-                    _LOGGER.warning("Pairing not supported: %s", err)
-                    errors["base"] = "pairing_not_supported"
-                except Exception as err:
-                    _LOGGER.warning("Pairing failed for %s: %s", address, err)
-                    errors["base"] = "pairing_failed"
+                result = await self._async_handle_pair_now(errors)
+                if result is not None:
+                    return result
 
             elif action == "skip_pairing":
                 return self._create_entry_for_existing_bond()
@@ -2156,25 +2142,9 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             action = user_input.get("action")
 
             if action == "pair_now":
-                # Attempt pairing
-                address = self._manual_data.get(CONF_ADDRESS)
-                try:
-                    paired = await self._attempt_pairing(address)
-                    if paired:
-                        return self.async_create_entry(
-                            title=self._manual_data.get(CONF_NAME, "Adjustable Bed"),
-                            data=self._mark_ble_bond_established(self._manual_data),
-                        )
-                    else:
-                        errors["base"] = "pairing_failed"
-                except (NotImplementedError, TypeError) as err:
-                    # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
-                    # TypeError: older bleak-retry-connector doesn't have pair kwarg
-                    _LOGGER.warning("Pairing not supported: %s", err)
-                    errors["base"] = "pairing_not_supported"
-                except Exception as err:
-                    _LOGGER.warning("Pairing failed for %s: %s", address, err)
-                    errors["base"] = "pairing_failed"
+                result = await self._async_handle_pair_now(errors)
+                if result is not None:
+                    return result
 
             elif action == "skip_pairing":
                 return self._create_entry_for_existing_bond()
@@ -2199,6 +2169,51 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders=description_placeholders,
         )
+
+    async def _async_handle_pair_now(
+        self, errors: dict[str, str]
+    ) -> ConfigFlowResult | None:
+        """Run the "Pair Now" action for the two pairing steps.
+
+        Returns the created entry, or None when the caller should redisplay its
+        form with ``errors`` populated.
+        """
+        assert self._manual_data is not None
+        address = self._manual_data.get(CONF_ADDRESS)
+        title = self._manual_data.get(CONF_NAME, "Adjustable Bed")
+
+        if grants_one_connection_per_pairing_window(
+            self._manual_data.get(CONF_BED_TYPE) or "",
+            self._manual_data.get(CONF_PROTOCOL_VARIANT),
+        ):
+            # Pairing here would open, bond, and then close a connection that
+            # the box will not grant a second time, leaving async_setup_entry
+            # with nothing to connect to (issue #385). Create the entry without
+            # a bond marker and let the coordinator's first connection do
+            # connect -> discover -> bond -> stay connected.
+            _LOGGER.info(
+                "Deferring the BLE bond for %s to the first coordinator "
+                "connection: this bed grants one connection per pairing window",
+                address,
+            )
+            return self.async_create_entry(title=title, data=self._manual_data)
+
+        try:
+            if await self._attempt_pairing(address):
+                return self.async_create_entry(
+                    title=title,
+                    data=self._mark_ble_bond_established(self._manual_data),
+                )
+            errors["base"] = "pairing_failed"
+        except (NotImplementedError, TypeError) as err:
+            # NotImplementedError: ESPHome < 2024.3.0 doesn't support pairing
+            # TypeError: older bleak-retry-connector doesn't have pair kwarg
+            _LOGGER.warning("Pairing not supported: %s", err)
+            errors["base"] = "pairing_not_supported"
+        except Exception as err:
+            _LOGGER.warning("Pairing failed for %s: %s", address, err)
+            errors["base"] = "pairing_failed"
+        return None
 
     async def _attempt_pairing(self, address: str | None) -> bool:
         """Attempt to pair using the protocol's required connection ordering.
@@ -2275,27 +2290,31 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         # LP Control first connects and discovers GATT, then asks Android to
         # create the bond. BlueZ's pair=True path calls Device1.Pair instead of
         # making the app's ordinary unbonded GATT connection first.
-        client = await establish_connection(
-            BleakClient,
-            device,
-            address,
-            max_attempts=1,
-            timeout=CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout,
-            pair=not pair_after_service_discovery,
-            use_services_cache=not pair_after_service_discovery,
-        )
-        try:
-            if pair_after_service_discovery:
-                _LOGGER.info(
-                    "Connected to %s and discovered services; creating the BLE bond now",
-                    address,
-                )
-                await client.pair()
+        # Hold the address lock for the whole client lifetime, not just the
+        # connect: the disconnect below must not land in the middle of another
+        # caller's connect attempt, where bleak's cleanup can abort it.
+        async with async_get_connect_lock(self.hass, address):
+            client = await establish_connection(
+                BleakClient,
+                device,
+                address,
+                max_attempts=1,
+                timeout=CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout,
+                pair=not pair_after_service_discovery,
+                use_services_cache=not pair_after_service_discovery,
+            )
+            try:
+                if pair_after_service_discovery:
+                    _LOGGER.info(
+                        "Connected to %s and discovered services; creating the BLE bond now",
+                        address,
+                    )
+                    await client.pair()
 
-            _LOGGER.info("Pairing successful for %s", address)
-            return True
-        finally:
-            await client.disconnect()
+                _LOGGER.info("Pairing successful for %s", address)
+                return True
+            finally:
+                await client.disconnect()
 
     def _verification_possible(self) -> bool:
         """Return True only when a connectable scanner exists to probe through.
@@ -2365,34 +2384,43 @@ class AdjustableBedConfigFlow(ConfigFlow, domain=DOMAIN):
         report.via_proxy = bool(selection.source and "esphome" in selection.source.lower())
 
         client: BleakClient | None = None
+        # Hold the address lock until the probe has fully released the client,
+        # so its disconnect cannot abort a connect attempt started elsewhere.
         try:
-            client = await establish_connection(
-                BleakClient,
-                device,
-                address,
-                max_attempts=1,
-                timeout=_PROBE_TIMEOUT_SECONDS,
-            )
-            report.connected = bool(client.is_connected)
-            await discover_services(client, address)
-            services = list(client.services) if client.services else []
-            report.service_count = len(services)
-            writable = 0
-            for service in services:
-                for char in service.characteristics:
-                    if "write" in char.properties or "write-without-response" in char.properties:
-                        writable += 1
-            report.writable_count = writable
-            report.manufacturer, report.model = await read_ble_device_info(client, address)
+            async with async_get_connect_lock(self.hass, address):
+                try:
+                    client = await establish_connection(
+                        BleakClient,
+                        device,
+                        address,
+                        max_attempts=1,
+                        timeout=_PROBE_TIMEOUT_SECONDS,
+                    )
+                    report.connected = bool(client.is_connected)
+                    await discover_services(client, address)
+                    services = list(client.services) if client.services else []
+                    report.service_count = len(services)
+                    writable = 0
+                    for service in services:
+                        for char in service.characteristics:
+                            if (
+                                "write" in char.properties
+                                or "write-without-response" in char.properties
+                            ):
+                                writable += 1
+                    report.writable_count = writable
+                    report.manufacturer, report.model = await read_ble_device_info(
+                        client, address
+                    )
+                finally:
+                    if client is not None:
+                        try:
+                            await client.disconnect()
+                        except Exception:  # noqa: BLE001 - cleanup must not raise
+                            pass
         except Exception as err:  # noqa: BLE001 - probe is best-effort
             report.error = str(err) or err.__class__.__name__
             _LOGGER.debug("Capability probe for %s failed: %s", address, err)
-        finally:
-            if client is not None:
-                try:
-                    await client.disconnect()
-                except Exception:  # noqa: BLE001 - cleanup must not raise
-                    pass
 
         return report
 

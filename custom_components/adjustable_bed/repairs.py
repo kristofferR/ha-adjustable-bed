@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
 from .adapter import get_discovered_service_info
+from .address_lock import async_get_connect_lock
 from .ble_auth import is_ble_authentication_error
 from .const import (
     ADAPTER_AUTO,
@@ -26,6 +27,8 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DEVICE_INFO_CHARS,
+    DOMAIN,
+    grants_one_connection_per_pairing_window,
     requires_pairing_after_service_discovery,
 )
 
@@ -97,11 +100,66 @@ class PairingRequiredRepairFlow(RepairsFlow):
                 return service_info.device
         return None
 
+    async def _async_pair_via_coordinator(self) -> bool | None:
+        """Pair by driving the entry's own coordinator connection.
+
+        Returns True/False once the coordinator has run, or None when this
+        repair must fall back to its own client (no entry, or the entry is not
+        loaded).
+
+        For a bed that grants one connection per pairing window, opening a
+        second client here would consume that connection and then close it, so
+        the reload afterwards would find the box refusing every reconnect. The
+        coordinator's own connect path performs the same connect -> discover ->
+        bond ordering and, crucially, *keeps* the link it establishes.
+        """
+        if self._entry_id is None:
+            return None
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        if entry is None:
+            return None
+        if not grants_one_connection_per_pairing_window(
+            entry.data.get(CONF_BED_TYPE) or "",
+            entry.data.get(CONF_PROTOCOL_VARIANT),
+        ):
+            return None
+
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry_id)
+        if coordinator is None:
+            return None
+
+        # Clear any stale marker so the connect actually requests the bond.
+        if entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+            self.hass.config_entries.async_update_entry(
+                entry,
+                data={**entry.data, CONF_BLE_BOND_ESTABLISHED: False},
+            )
+
+        _LOGGER.info(
+            "Repair: pairing %s through the existing coordinator so the bed's "
+            "single connection is kept rather than spent",
+            self._address,
+        )
+        try:
+            connected = await coordinator.async_connect()
+        except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
+            return False
+        if not connected:
+            _LOGGER.warning(
+                "Repair: could not connect to %s to pair it", self._address
+            )
+        return bool(connected)
+
     async def _async_try_pair(self) -> bool:
         """Create a bond with the controller-specific ordering and verify it."""
         from bleak import BleakClient
         from bleak.exc import BleakError
         from bleak_retry_connector import establish_connection
+
+        via_coordinator = await self._async_pair_via_coordinator()
+        if via_coordinator is not None:
+            return via_coordinator
 
         device = self._find_device()
         if device is None:
@@ -128,16 +186,17 @@ class PairingRequiredRepairFlow(RepairsFlow):
         reload_entry_id: str | None = None
         try:
             try:
-                client = await establish_connection(
-                    BleakClient,
-                    device,
-                    self._name,
-                    max_attempts=1,
-                    pair=not pair_after_service_discovery,
-                    use_services_cache=False,
-                )
-                if pair_after_service_discovery:
-                    await client.pair()
+                async with async_get_connect_lock(self.hass, self._address):
+                    client = await establish_connection(
+                        BleakClient,
+                        device,
+                        self._name,
+                        max_attempts=1,
+                        pair=not pair_after_service_discovery,
+                        use_services_cache=False,
+                    )
+                    if pair_after_service_discovery:
+                        await client.pair()
             except Exception as err:  # noqa: BLE001 - any failure means "not paired"
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False

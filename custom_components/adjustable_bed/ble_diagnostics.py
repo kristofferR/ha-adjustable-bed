@@ -24,6 +24,7 @@ from .adapter import (
     get_service_info_snapshots_by_address,
     select_adapter,
 )
+from .address_lock import async_get_connect_lock
 from .const import (
     ADAPTER_AUTO,
     CONF_PREFERRED_ADAPTER,
@@ -424,13 +425,17 @@ class BLEDiagnosticRunner:
 
             try:
                 connect_start = time.monotonic()
-                self._client = await establish_connection(
-                    BleakClient,
-                    device,
-                    f"diagnostic_{self.address}",
-                    max_attempts=1,
-                    timeout=CONNECTION_TIMEOUT,
-                )
+                # Wait for any coordinator/config-flow attempt on this address to
+                # finish rather than racing it into org.bluez.Error.InProgress,
+                # which used to make the capture fail in ~0.25s (issue #385).
+                async with async_get_connect_lock(self.hass, self.address):
+                    self._client = await establish_connection(
+                        BleakClient,
+                        device,
+                        f"diagnostic_{self.address}",
+                        max_attempts=1,
+                        timeout=CONNECTION_TIMEOUT,
+                    )
                 attempt_details["connect_elapsed_seconds"] = round(
                     time.monotonic() - connect_start, 3
                 )

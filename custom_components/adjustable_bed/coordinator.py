@@ -40,6 +40,7 @@ from .adapter import (
     read_ble_device_info,
     select_adapter,
 )
+from .address_lock import async_get_connect_lock
 from .ble_auth import is_ble_authentication_error
 from .const import (
     ADAPTER_AUTO,
@@ -136,6 +137,7 @@ from .const import (
     connection_gated_by_bond,
     get_richmat_features,
     get_richmat_motor_count,
+    grants_one_connection_per_pairing_window,
     passive_position_reconciliation_default_enabled,
     requires_pairing,
     requires_pairing_after_service_discovery,
@@ -832,10 +834,88 @@ class AdjustableBedCoordinator:
             )
 
         if self._client is not None and self._client.is_connected:
+            if grants_one_connection_per_pairing_window(
+                self._bed_type, self._protocol_variant
+            ):
+                # Disconnecting would cost us the box's single connection and
+                # the reconnect that "fixes" the bond can never happen. Leave
+                # the link up; the repair issue above tells the user to re-pair.
+                _LOGGER.warning(
+                    "Keeping the unbonded link to %s open: this bed grants one "
+                    "connection per pairing window, so disconnecting to re-pair "
+                    "would leave it unreachable until it is power-cycled.",
+                    self._address,
+                )
+                return
             if holding_lock:
                 await self._async_disconnect_locked(reason="authentication_failed")
             else:
                 await self.async_disconnect(reason="authentication_failed")
+
+    async def _async_pair_on_live_link(self, pairing_details: dict[str, Any]) -> bool:
+        """Create the BLE bond on an already-connected, service-discovered link.
+
+        Returns True when the bond was created, False when it failed and the bed
+        type tolerates staying unbonded.
+
+        For a bed that only grants one connection per pairing window, letting a
+        bond failure propagate is self-defeating: the caller tears the link down
+        and the box then refuses every reconnect until it is power-cycled. LP
+        Control never takes that risk — it fires ``createBond()`` and continues
+        on the same link without ever checking whether it succeeded — so mirror
+        that and keep the connection. Whether an unbonded link can actually
+        drive the motors is firmware behaviour the APK cannot prove, but a live
+        link can be tried while a dropped one is guaranteed useless.
+
+        This applies to a backend that cannot pair at all
+        (``NotImplementedError``/``TypeError``, e.g. ESPHome < 2024.3.0) just as
+        much as to a rejected bond: the caller's compatibility fallback would
+        reconnect with ``pair=False``, but the link we already hold was itself
+        made with ``pair=False``, so it would spend the bed's one connection to
+        obtain an identical one.
+        """
+        client = self._client
+        if client is None:
+            return False
+        advisory = grants_one_connection_per_pairing_window(
+            self._bed_type, self._protocol_variant
+        )
+        try:
+            await client.pair()
+        except (NotImplementedError, TypeError) as err:
+            if not advisory:
+                raise
+            self._pairing_supported = False
+            pairing_details["adapter_pairing_supported"] = False
+            _LOGGER.warning(
+                "Bluetooth backend for %s cannot create BLE bonds (%s). Keeping "
+                "the live connection and continuing unbonded. If you use an "
+                "ESPHome proxy, update it to 2024.3.0 or newer.",
+                self._address,
+                err,
+            )
+            pairing_details["error"] = str(err)
+            pairing_details["error_type"] = type(err).__name__
+            self._record_bond_verification("advisory_bond_unsupported", err)
+            return False
+        except (BleakError, TimeoutError, OSError) as err:
+            if not advisory:
+                raise
+            self._pairing_supported = True
+            pairing_details["adapter_pairing_supported"] = True
+            _LOGGER.warning(
+                "Could not create the BLE bond with %s (%s). Keeping the live "
+                "connection and continuing unbonded — this bed only accepts one "
+                "connection per pairing window, so dropping it now would strand "
+                "the bed until it is power-cycled.",
+                self._address,
+                err,
+            )
+            pairing_details["error"] = str(err)
+            pairing_details["error_type"] = type(err).__name__
+            self._record_bond_verification("advisory_bond_failed", err)
+            return False
+        return True
 
     async def _async_verify_bonded(
         self, attempt_details: dict[str, Any] | None = None
@@ -886,7 +966,13 @@ class AdjustableBedCoordinator:
                     holding_lock=True,
                     attempt_details=attempt_details,
                 )
-                return False
+                # For a one-connection-per-window bed the handler deliberately
+                # kept the link, so report success and let controller startup
+                # use it. Retrying "with pairing" would only spend the bed's
+                # single connection on a reconnect that cannot happen.
+                return grants_one_connection_per_pairing_window(
+                    self._bed_type, self._protocol_variant
+                )
             _LOGGER.debug(
                 "Bond verification read for %s was inconclusive (%s); proceeding.",
                 self._address,
@@ -1682,6 +1768,10 @@ class AdjustableBedCoordinator:
                 self._connecting = True
                 # Notify callbacks so binary sensor can show "connecting" state
                 self._notify_connection_state_change(False)
+                # Serialize with the config flow, repair flow and diagnostic so
+                # an overlapping attempt cannot abort this one (issue #385).
+                connect_lock = async_get_connect_lock(self.hass, self._address)
+                await connect_lock.acquire()
                 try:
                     # Use max_attempts=1 here since outer loop handles retries
                     # Disable the services cache to force fresh GATT discovery for
@@ -1715,19 +1805,29 @@ class AdjustableBedCoordinator:
                         # establish_connection() returns after Bleak has loaded
                         # the service collection, so pairing here preserves that
                         # proven application ordering on BlueZ as well.
+                        bond_created = True
                         if pair_after_service_discovery:
                             _LOGGER.info(
                                 "Connected to %s and discovered services; "
                                 "creating the BLE bond now",
                                 self._address,
                             )
-                            await self._client.pair()
+                            bond_created = await self._async_pair_on_live_link(
+                                pairing_details
+                            )
                         # If we get here with pairing enabled, mark it as supported
-                        if use_pairing:
+                        if use_pairing and bond_created:
                             self._pairing_supported = True
                             self._mark_ble_bond_established()
                             pairing_details["adapter_pairing_supported"] = True
                             pairing_details["connection_result"] = "pairing_connection_succeeded"
+                        elif use_pairing:
+                            # Advisory bond failed; the link is up and stays up.
+                            # _async_pair_on_live_link already recorded whether
+                            # the backend supports pairing at all.
+                            pairing_details["connection_result"] = (
+                                "advisory_bond_failed_link_retained"
+                            )
                         else:
                             pairing_details["connection_result"] = "connected_without_pairing"
                     except (NotImplementedError, TypeError) as pair_err:
@@ -1806,6 +1906,7 @@ class AdjustableBedCoordinator:
                             raise
                         raise
                 finally:
+                    connect_lock.release()
                     if not keep_connecting_through_startup:
                         self._connecting = False
                     # Don't notify here - the connect success/failure paths will notify

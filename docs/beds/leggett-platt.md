@@ -46,17 +46,38 @@ Leggett & Platt beds have three protocol variants with different detection metho
 
 > **Connection & bonding (LP Comfort Connect):** LP Control requests an Android
 > **BLE bond** for an unbonded Gen2 device, but only after service discovery
-> (`BLEConnectionViewModel`: bond state `BOND_NONE` + Gen2 → `createBond()`),
-> while the Gen2 controller concurrently configures its GATT receive paths.
+> (`BLEConnectionViewModel.java:210-218`: `SERVICES_DISCOVERED` + bond state
+> `BOND_NONE` + Gen2 → `createBond()`), while the Gen2 controller concurrently
+> configures its GATT receive paths.
 >
-> The issue #385 support bundles show the unbonded BlueZ connection timing out
-> before GATT discovery while the box remains visible. They do not reach a
-> pairing attempt, so the exact controller-side reason remains hardware
-> behavior that the APK cannot prove.
+> **The bond is advisory, not required.** That `createBond()` is the only one in
+> the whole app, there is no `ACTION_BOND_STATE_CHANGED` receiver and no bond
+> retry anywhere, and the call site deliberately falls through rather than
+> returning — so the app never learns whether the bond succeeded and simply
+> keeps using the same link either way. It also connects with
+> `connectGatt(ctx, autoConnect=true, cb, TRANSPORT_LE)`
+> (`BLEService.java:195`), i.e. an untimed background connection, and never
+> disconnects to "retry properly".
 >
-> The integration therefore mirrors the app's ordering on the first connection:
-> connect without a bond, discover the live GATT services, then create the BLE
-> bond while that link is active. This must happen during the pairing window:
+> **The box grants roughly one connection per power cycle.** The issue #385
+> bundles record exactly one completed connection followed by an unbroken run of
+> connect timeouts (3.3.0: `connect_completed_total: 1` at 39s after startup,
+> then 41 consecutive failures, every one of them this bed) until the base is
+> unplugged. Whether the firmware filters unbonded peers at the link layer or
+> stops advertising connectably is hardware behaviour the APK cannot prove.
+>
+> Both facts drive the same rule: **never spend or discard a live link.** The
+> integration therefore mirrors the app on the first connection — connect
+> without a bond, discover the live GATT services, then create the BLE bond
+> while that link is active — and if the bond fails it logs the failure, raises
+> the pairing repair, and *keeps the connection* rather than reconnecting.
+> For the same reason the setup capability probe, the config flow's "Pair Now"
+> step and the pairing repair flow do not open their own throwaway connection
+> for this bed type; the repair drives the coordinator instead. All connect
+> paths also share a per-address lock so two attempts cannot collide into
+> `org.bluez.Error.InProgress` and abort each other.
+>
+> Pairing should still happen during the pairing window:
 >
 > - **Entering pairing mode** (per the LP Control app): unplug the bed, remove
 >   any batteries from the power supply, plug it back in — a small chime plays
@@ -65,12 +86,19 @@ Leggett & Platt beds have three protocol variants with different detection metho
 >   A connected client can also re-open the window with the `PAIR ENABLE`
 >   serial command; for that "Pair Another Phone" flow, the app states that
 >   pairing mode remains active for 2 minutes.
-> - `DWIPE` is the app's Gen2 factory-reset command. Whether it specifically
->   clears the controller's bond table is firmware behavior and is not required
->   by this integration flow.
+> - `DWIPE` is the app's Gen2 factory-reset command, and its own dialog lists
+>   "Bluetooth Pairings" among what it erases. The app's take-ownership copy
+>   also tells the user to remove the bond from phone settings afterwards, so
+>   `DWIPE` does not clear the central-side bond. It needs an existing
+>   connection, so it is a recovery tool after connecting, not a way in.
+> - No per-box limit on how many phones can be paired appears anywhere in the
+>   app: an exhaustive search of the base string table and all shipped locale
+>   tables found no cap, no "already paired to another phone" error, and no
+>   eviction policy. That is absence of evidence in the app, not proof about the
+>   firmware.
 >
-> After BlueZ confirms the bond, the integration records it and reconnects
-> without trying to pair again. Hardware confirmation of the initial bond and
+> Once BlueZ confirms the bond the integration records it and skips `pair=True`
+> on later connections. Hardware confirmation of the initial bond and of a
 > subsequent reconnect remains pending. The integration holds the link open for
 > this bed type (no idle disconnect); LP Control's own UI warns that the remote
 > does not function while the app is connected.

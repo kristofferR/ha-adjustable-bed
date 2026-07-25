@@ -255,6 +255,31 @@ class TestPairingPersistence:
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["data"][CONF_BLE_BOND_ESTABLISHED] is True
 
+    @pytest.mark.parametrize(
+        "step", ["async_step_bluetooth_pairing", "async_step_manual_pairing"]
+    )
+    async def test_gen2_pair_now_defers_the_bond_to_setup(
+        self, hass: HomeAssistant, step: str
+    ) -> None:
+        """Pair Now must not spend LP Comfort Connect's one connection (#385).
+
+        Pairing here would connect, bond and then disconnect, leaving
+        async_setup_entry with a box that refuses every reconnect until it is
+        power-cycled. Create the entry and let the coordinator's first
+        connection carry the bond instead.
+        """
+        flow = self._new_pairing_flow(hass)
+        flow._manual_data[CONF_BED_TYPE] = BED_TYPE_LEGGETT_GEN2
+
+        attempt_pairing = AsyncMock(return_value=True)
+        with patch.object(flow, "_attempt_pairing", new=attempt_pairing):
+            result = await getattr(flow, step)({"action": "pair_now"})
+
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+        attempt_pairing.assert_not_awaited()
+        # No bond marker: the coordinator must still request the bond.
+        assert result["data"].get(CONF_BLE_BOND_ESTABLISHED) is not True
+
     async def test_bluetooth_skip_marks_existing_bond_as_established(
         self, hass: HomeAssistant
     ) -> None:

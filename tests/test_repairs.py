@@ -127,6 +127,49 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
     client.disconnect.assert_awaited_once()
 
 
+@pytest.mark.parametrize("connected", [True, False])
+async def test_leggett_gen2_repair_pairs_through_the_coordinator(
+    hass: HomeAssistant, connected: bool
+) -> None:
+    """The repair must reuse the coordinator's connection, not spend a new one.
+
+    LP Comfort Connect grants roughly one connection per pairing window (#385),
+    so opening a second client here and closing it in ``finally`` would leave
+    the reload with a box that refuses every reconnect.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=TEST_NAME,
+        data={
+            CONF_ADDRESS: TEST_ADDRESS,
+            CONF_NAME: TEST_NAME,
+            CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2,
+            CONF_BLE_BOND_ESTABLISHED: True,
+        },
+        unique_id=TEST_ADDRESS,
+        entry_id="repair_gen2_coordinator_entry",
+    )
+    entry.add_to_hass(hass)
+
+    coordinator = MagicMock()
+    coordinator.async_connect = AsyncMock(return_value=connected)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
+    flow.hass = hass
+
+    with (
+        patch(BLEAK_DEVICE, return_value=MagicMock()),
+        patch(ESTABLISH, new=AsyncMock()) as mock_establish,
+    ):
+        assert await flow._async_try_pair() is connected
+
+    coordinator.async_connect.assert_awaited_once_with()
+    mock_establish.assert_not_awaited()
+    # The stale marker is cleared first so the connect actually asks to bond.
+    assert entry.data[CONF_BLE_BOND_ESTABLISHED] is False
+
+
 async def test_leggett_gen2_repair_pairs_after_service_discovery(
     hass: HomeAssistant,
 ) -> None:
