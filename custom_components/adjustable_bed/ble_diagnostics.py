@@ -223,41 +223,47 @@ class BLEDiagnosticRunner:
             allow_non_connectable=True,
         )
 
-        try:
-            await self._connect()
+        # Hold the address lock for the whole capture, not just the connect.
+        # A concurrent setup retry would otherwise run
+        # close_stale_connections_by_address() and disconnect this client
+        # mid-capture (issue #385). The lock is released by leaving this
+        # block, so it cannot leak even if the capture raises.
+        async with async_get_connect_lock(self.hass, self.address):
+            try:
+                await self._connect()
 
-            if self._client and self._client.is_connected:
-                services_info = await self._enumerate_services()
-                device_information = await self._read_device_information()
+                if self._client and self._client.is_connected:
+                    services_info = await self._enumerate_services()
+                    device_information = await self._read_device_information()
 
-            if await self._ensure_connected():
-                try:
-                    await self._subscribe_to_notifications(services_info)
+                if await self._ensure_connected():
+                    try:
+                        await self._subscribe_to_notifications(services_info)
 
-                    _LOGGER.info(
-                        "Capturing notifications for %d seconds. "
-                        "Operate the physical remote to generate data.",
-                        self.capture_duration,
+                        _LOGGER.info(
+                            "Capturing notifications for %d seconds. "
+                            "Operate the physical remote to generate data.",
+                            self.capture_duration,
+                        )
+                        await asyncio.sleep(self.capture_duration)
+                    finally:
+                        await self._unsubscribe_from_notifications(services_info)
+                else:
+                    message = (
+                        "Skipped notification capture: connection lost and "
+                        "could not be re-established"
                     )
-                    await asyncio.sleep(self.capture_duration)
-                finally:
-                    await self._unsubscribe_from_notifications(services_info)
-            else:
-                message = (
-                    "Skipped notification capture: connection lost and "
-                    "could not be re-established"
-                )
-                _LOGGER.warning(message)
-                self._errors.append(message)
+                    _LOGGER.warning(message)
+                    self._errors.append(message)
 
-        except asyncio.CancelledError:
-            raise
-        except Exception as err:
-            error_msg = f"Diagnostic error: {err}"
-            _LOGGER.exception(error_msg)
-            self._errors.append(error_msg)
-        finally:
-            await self._disconnect()
+            except asyncio.CancelledError:
+                raise
+            except Exception as err:
+                error_msg = f"Diagnostic error: {err}"
+                _LOGGER.exception(error_msg)
+                self._errors.append(error_msg)
+            finally:
+                await self._disconnect()
 
         end_time = datetime.now(UTC)
         best_snapshot = self._best_snapshot()
@@ -425,17 +431,16 @@ class BLEDiagnosticRunner:
 
             try:
                 connect_start = time.monotonic()
-                # Wait for any coordinator/config-flow attempt on this address to
-                # finish rather than racing it into org.bluez.Error.InProgress,
-                # which used to make the capture fail in ~0.25s (issue #385).
-                async with async_get_connect_lock(self.hass, self.address):
-                    self._client = await establish_connection(
-                        BleakClient,
-                        device,
-                        f"diagnostic_{self.address}",
-                        max_attempts=1,
-                        timeout=CONNECTION_TIMEOUT,
-                    )
+                # run_diagnostics() already holds this address's connect lock for
+                # the whole capture; asyncio.Lock is not reentrant, so do not
+                # re-acquire it here.
+                self._client = await establish_connection(
+                    BleakClient,
+                    device,
+                    f"diagnostic_{self.address}",
+                    max_attempts=1,
+                    timeout=CONNECTION_TIMEOUT,
+                )
                 attempt_details["connect_elapsed_seconds"] = round(
                     time.monotonic() - connect_start, 3
                 )

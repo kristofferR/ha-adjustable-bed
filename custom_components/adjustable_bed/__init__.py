@@ -578,4 +578,13 @@ def _async_clear_stale_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options updates."""
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is not None and coordinator.consume_internal_entry_update(entry):
+        # The coordinator recorded its own BLE bond marker. Reloading for that
+        # would disconnect the bed, which is fatal for a bed that only grants
+        # one connection per pairing window (issue #385).
+        _LOGGER.debug(
+            "Skipping reload for %s: internal bond-marker update", entry.entry_id
+        )
+        return
     await hass.config_entries.async_reload(entry.entry_id)

@@ -46,6 +46,7 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DEFAULT_MOTOR_PULSE_COUNT,
     DEFAULT_MOTOR_PULSE_DELAY_MS,
+    DEVICE_INFO_CHARS,
     DOMAIN,
     LEGGETT_VARIANT_OKIN,
     NORDIC_DFU_SERVICE_UUID,
@@ -392,33 +393,51 @@ class TestCoordinatorConnection:
         assert pairing["ordering"] == "connect_discover_then_pair"
         assert pairing["connection_result"] == "pairing_connection_succeeded"
 
-    async def test_gen2_startup_auth_error_keeps_link_and_stops_retrying(
+    @pytest.mark.parametrize(
+        ("bed_type", "retain_link", "keeps_link"),
+        [
+            # The bond probe runs before controller startup, so its caller can
+            # still use the link: keep it (issue #385).
+            (BED_TYPE_LEGGETT_GEN2, True, True),
+            # Startup already failed. A link with no controller cannot drive the
+            # bed and would only block the physical remote.
+            (BED_TYPE_LEGGETT_GEN2, False, False),
+            # A bed that reconnects freely must always take the normal path;
+            # retain_link must not be read as "this is a one-connection bed".
+            (BED_TYPE_OKIN_CST, True, False),
+        ],
+    )
+    async def test_auth_error_retains_the_link_only_where_it_is_usable(
         self,
         hass: HomeAssistant,
         mock_config_entry,
+        bed_type: str,
+        retain_link: bool,
+        keeps_link: bool,
     ) -> None:
-        """A startup auth failure must not undo the retained-link decision.
-
-        The handler deliberately keeps the link, but the outer failure handler
-        used to call _async_cleanup_failed_connection() unconditionally and
-        disconnect it anyway. Retrying cannot help either: every attempt begins
-        with close_stale_connections_by_address(), so it would destroy the link
-        the decision just protected (issue #385).
-        """
+        """Only the probe path on a one-connection bed may keep an unbonded link."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
-        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+        coordinator._bed_type = bed_type
 
         client = MagicMock()
         client.is_connected = True
         client.disconnect = AsyncMock()
         coordinator._client = client
 
-        await coordinator._async_handle_ble_authentication_error(
-            BleakError("Insufficient authentication"), holding_lock=True
-        )
+        with patch.object(
+            coordinator, "_async_disconnect_locked", new_callable=AsyncMock
+        ) as disconnect_locked:
+            await coordinator._async_handle_ble_authentication_error(
+                BleakError("Insufficient authentication"),
+                holding_lock=True,
+                retain_link=retain_link,
+            )
 
-        client.disconnect.assert_not_awaited()
-        assert coordinator._client is client
+        if keeps_link:
+            disconnect_locked.assert_not_awaited()
+            assert coordinator._client is client
+        else:
+            disconnect_locked.assert_awaited_once()
 
     async def test_connect_does_not_report_success_without_a_controller(
         self,
@@ -566,6 +585,11 @@ class TestCoordinatorConnection:
 
         # The bond did not happen, so nothing may claim it did — and the
         # unauthenticated probe must not have torn the link down either.
+        # Assert the probe actually ran: a regression that skipped it would
+        # otherwise still satisfy every assertion below.
+        mock_bleak_client.read_gatt_char.assert_awaited_with(
+            DEVICE_INFO_CHARS["model_number"]
+        )
         assert entry.data.get(CONF_BLE_BOND_ESTABLISHED) is not True
         assert coordinator._client is not None
         assert coordinator._last_disconnect_reason != "authentication_failed"
