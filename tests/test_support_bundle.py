@@ -1471,6 +1471,24 @@ class TestSupportBundleLoggingWarning:
                 "homeassistant.components.persistent_notification.async_create",
                 _capture_notification,
             ),
+            # Pin the pre-capture probe: otherwise the ambient config dir
+            # decides whether a second (pre-capture) notification is raised, so
+            # this count would pass locally and fail in CI.
+            patch(
+                "custom_components.adjustable_bed.support_report.async_check_log_file",
+                AsyncMock(
+                    return_value={
+                        "available": True,
+                        "reason": None,
+                        "path": "/config/home-assistant.log",
+                        "error": None,
+                    }
+                ),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_dismiss",
+                lambda *a, **k: None,
+            ),
         ):
             await handle_generate_support_bundle(call)
 
@@ -1528,6 +1546,24 @@ class TestSupportBundleLoggingWarning:
             patch(
                 "homeassistant.components.persistent_notification.async_create",
                 lambda _hass, message, title=None, notification_id=None: created.append(message),
+            ),
+            # Pin the pre-capture probe: otherwise the ambient config dir
+            # decides whether a second (pre-capture) notification is raised, so
+            # this count would pass locally and fail in CI.
+            patch(
+                "custom_components.adjustable_bed.support_report.async_check_log_file",
+                AsyncMock(
+                    return_value={
+                        "available": True,
+                        "reason": None,
+                        "path": "/config/home-assistant.log",
+                        "error": None,
+                    }
+                ),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_dismiss",
+                lambda *a, **k: None,
             ),
         ):
             await handle_generate_support_bundle(call)
@@ -2051,80 +2087,6 @@ class TestSupportBundleLogProbeSafety:
         # It never raised a notice, so it owns nothing to retract.
         assert dismissed == []
 
-    async def test_only_the_current_owner_retracts_the_notice(self, hass):
-        """The first call to finish must not clear a newer capture's warning."""
-        from unittest.mock import AsyncMock, MagicMock, patch
-
-        from homeassistant.core import ServiceCall
-
-        from custom_components.adjustable_bed.services import (
-            _LOG_NOTICE_OWNERS,
-            handle_generate_support_bundle,
-        )
-
-        notice_id = "adjustable_bed_support_bundle_logs_aa_bb_cc_dd_ee_ff"
-        dismissed: list[str] = []
-        report = {
-            "notifications": [],
-            "evidence": {
-                "log_capture_status": "unavailable",
-                "log_capture_reason": "missing",
-                "log_capture_error": "boom",
-                "warnings": [],
-            },
-        }
-
-        async def _generate(*args, **kwargs):
-            # A concurrent capture re-raises the notice and takes ownership
-            # while this one is still running.
-            hass.data.setdefault(_LOG_NOTICE_OWNERS, {})[notice_id] = object()
-            return report
-
-        call = ServiceCall(
-            hass,
-            DOMAIN,
-            "generate_support_bundle",
-            {"target_address": "AA:BB:CC:DD:EE:FF", "capture_duration": 5},
-        )
-        with (
-            patch(
-                "custom_components.adjustable_bed.support_report.async_check_log_file",
-                AsyncMock(
-                    return_value={
-                        "available": False,
-                        "reason": "missing",
-                        "path": "/config/home-assistant.log",
-                        "error": "boom",
-                    }
-                ),
-            ),
-            patch(
-                "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
-                _generate,
-            ),
-            patch(
-                "custom_components.adjustable_bed.support_bundle.save_support_bundle",
-                MagicMock(return_value="/config/bundle.json"),
-            ),
-            patch(
-                "custom_components.adjustable_bed.download.register_download",
-                MagicMock(return_value="/api/download/bundle.json"),
-            ),
-            patch(
-                "homeassistant.components.persistent_notification.async_create",
-                lambda *a, **k: None,
-            ),
-            patch(
-                "homeassistant.components.persistent_notification.async_dismiss",
-                lambda _hass, nid: dismissed.append(nid),
-            ),
-        ):
-            await handle_generate_support_bundle(call)
-
-        # Ownership moved on, so this invocation must leave the notice up.
-        assert dismissed == []
-
-
     async def test_timed_out_probe_skips_the_capture_log_read(self, hass):
         """A wedged mount must not be opened twice, and must still explain itself."""
         import asyncio as _asyncio
@@ -2245,3 +2207,198 @@ class TestSupportBundleLogProbeSafety:
         ready = messages[-1]
         assert "contains no logs" in ready
         assert "Enable debug logging" in ready
+
+
+    async def test_skipped_read_records_the_reason_in_the_bundle(self, hass):
+        """The JSON is what reaches a maintainer, so the reason must live there."""
+        import asyncio as _asyncio
+        from unittest.mock import MagicMock, patch
+
+        from homeassistant.core import ServiceCall
+
+        from custom_components.adjustable_bed.services import (
+            handle_generate_support_bundle,
+        )
+
+        saved: dict = {}
+
+        async def _never_returns(_hass):
+            await _asyncio.sleep(3600)
+
+        async def _generate(*args, **kwargs):
+            return {"notifications": [], "evidence": {"warnings": []}}
+
+        def _save(_hass, report, _address):
+            saved.update(report)
+            return "/config/bundle.json"
+
+        call = ServiceCall(
+            hass,
+            DOMAIN,
+            "generate_support_bundle",
+            {"target_address": "AA:BB:CC:DD:EE:FF", "capture_duration": 5},
+        )
+        with (
+            patch("custom_components.adjustable_bed.services._LOG_PROBE_TIMEOUT", 0.01),
+            patch(
+                "custom_components.adjustable_bed.support_report.async_check_log_file",
+                _never_returns,
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
+                _generate,
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.save_support_bundle",
+                _save,
+            ),
+            patch(
+                "custom_components.adjustable_bed.download.register_download",
+                MagicMock(return_value="/api/download/bundle.json"),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create",
+                lambda *a, **k: None,
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_dismiss",
+                lambda *a, **k: None,
+            ),
+        ):
+            await handle_generate_support_bundle(call)
+
+        evidence = saved["evidence"]
+        assert evidence["log_capture_status"] == "unavailable"
+        assert "timed out" in evidence["log_capture_error"]
+        assert any("skipped" in w for w in evidence["warnings"])
+
+    async def test_logs_appearing_during_capture_are_not_called_missing(self, hass):
+        """The capture is the authority once it has actually read the file."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from homeassistant.core import ServiceCall
+
+        from custom_components.adjustable_bed.services import (
+            handle_generate_support_bundle,
+        )
+
+        messages: list[str] = []
+        report = {
+            "notifications": [],
+            "evidence": {"log_capture_status": "available", "warnings": []},
+        }
+        call = ServiceCall(
+            hass,
+            DOMAIN,
+            "generate_support_bundle",
+            {"target_address": "AA:BB:CC:DD:EE:FF", "capture_duration": 5},
+        )
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_report.async_check_log_file",
+                AsyncMock(
+                    return_value={
+                        "available": False,
+                        "reason": "missing",
+                        "path": "/config/home-assistant.log",
+                        "error": "gone",
+                    }
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
+                AsyncMock(return_value=report),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.save_support_bundle",
+                MagicMock(return_value="/config/bundle.json"),
+            ),
+            patch(
+                "custom_components.adjustable_bed.download.register_download",
+                MagicMock(return_value="/api/download/bundle.json"),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create",
+                lambda _h, message, **k: messages.append(message),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_dismiss",
+                lambda *a, **k: None,
+            ),
+        ):
+            await handle_generate_support_bundle(call)
+
+        # The log turned up during the window, so the Ready notice must not
+        # claim the bundle has none.
+        assert "contains no logs" not in messages[-1]
+
+    async def test_notice_survives_until_the_last_overlapping_capture(self, hass):
+        """A short capture finishing first must not strand a longer one."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from homeassistant.core import ServiceCall
+
+        from custom_components.adjustable_bed.services import (
+            _LOG_NOTICE_OWNERS,
+            handle_generate_support_bundle,
+        )
+
+        notice_id = "adjustable_bed_support_bundle_logs_aa_bb_cc_dd_ee_ff"
+        dismissed: list[str] = []
+        # A longer logless capture is already running and owns the notice.
+        other = object()
+        hass.data.setdefault(_LOG_NOTICE_OWNERS, {})[notice_id] = {other}
+
+        report = {
+            "notifications": [],
+            "evidence": {
+                "log_capture_status": "unavailable",
+                "log_capture_reason": "missing",
+                "log_capture_error": "gone",
+                "warnings": [],
+            },
+        }
+        call = ServiceCall(
+            hass,
+            DOMAIN,
+            "generate_support_bundle",
+            {"target_address": "AA:BB:CC:DD:EE:FF", "capture_duration": 5},
+        )
+        with (
+            patch(
+                "custom_components.adjustable_bed.support_report.async_check_log_file",
+                AsyncMock(
+                    return_value={
+                        "available": False,
+                        "reason": "missing",
+                        "path": "/config/home-assistant.log",
+                        "error": "gone",
+                    }
+                ),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.generate_support_bundle",
+                AsyncMock(return_value=report),
+            ),
+            patch(
+                "custom_components.adjustable_bed.support_bundle.save_support_bundle",
+                MagicMock(return_value="/config/bundle.json"),
+            ),
+            patch(
+                "custom_components.adjustable_bed.download.register_download",
+                MagicMock(return_value="/api/download/bundle.json"),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create",
+                lambda *a, **k: None,
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_dismiss",
+                lambda _hass, nid: dismissed.append(nid),
+            ),
+        ):
+            await handle_generate_support_bundle(call)
+
+        # The longer capture still owns it, so nothing was retracted.
+        assert dismissed == []
+        assert other in hass.data[_LOG_NOTICE_OWNERS][notice_id]

@@ -78,7 +78,7 @@ DEFAULT_CAPTURE_DURATION = 120
 # short enough that a stalled mount cannot delay the capture noticeably.
 _LOG_PROBE_TIMEOUT = 5.0
 
-# hass.data key: notification id -> token of the invocation that raised it.
+# hass.data key: notification id -> tokens of the invocations that raised it.
 _LOG_NOTICE_OWNERS = f"{DOMAIN}_log_notice_owners"
 MIN_CAPTURE_DURATION = 10
 MAX_CAPTURE_DURATION = 300
@@ -760,9 +760,9 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                     title="Adjustable Bed: this bundle will have no logs",
                     notification_id=log_notification_id,
                 )
-                hass.data.setdefault(_LOG_NOTICE_OWNERS, {})[log_notification_id] = (
-                    log_notice_token
-                )
+                hass.data.setdefault(_LOG_NOTICE_OWNERS, {}).setdefault(
+                    log_notification_id, set()
+                ).add(log_notice_token)
                 owns_log_notice = True
 
     try:
@@ -778,6 +778,19 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
             ),
             timeout=capture_duration + 120,
         )
+        if not read_logs and probe_reason is not None:
+            # The read was skipped, so the report would otherwise say
+            # "not_requested" even though logs *were* requested and the probe
+            # failed. The bundle is what gets shared with a maintainer, so the
+            # reason has to survive in it, not only in a transient notification.
+            report_evidence = report.setdefault("evidence", {})
+            report_evidence["log_capture_status"] = "unavailable"
+            report_evidence["log_capture_reason"] = probe_reason
+            report_evidence["log_capture_error"] = probe_error
+            report_evidence.setdefault("warnings", []).append(
+                f"Log collection was skipped: {probe_error}"
+            )
+
         filepath = await hass.async_add_executor_job(
             save_support_bundle,
             hass,
@@ -798,13 +811,20 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         # A bundle without logs usually cannot explain why a command failed, and
         # the user only learns that after a maintainer asks for a second one. Say
         # it up front, at the moment they still have the bed in front of them.
-        # The probe's verdict counts too. An empty log file makes the capture
-        # report "empty" rather than "unavailable", and a timed-out probe skips
-        # the read entirely, so relying on the capture's status alone would drop
-        # the guidance and then dismiss the only notice that carried it.
-        logs_missing = include_logs and (
-            evidence.get("log_capture_status") == "unavailable" or probe_reason is not None
-        )
+        log_status = evidence.get("log_capture_status")
+        if not read_logs:
+            # Nothing read it, so the report has no verdict of its own.
+            logs_missing = include_logs and probe_reason is not None
+        else:
+            # The capture is the authority once it has actually read: a log that
+            # appeared or filled up during the window really is usable, whatever
+            # the probe saw beforehand. The one carry-over is a file the probe
+            # measured as empty, which the capture reports as "empty" rather
+            # than "unavailable" but which is still unusable.
+            logs_missing = include_logs and (
+                log_status == "unavailable"
+                or (log_status == "empty" and probe_reason == "empty_file")
+            )
         logging_notice = ""
         if logs_missing:
             log_error = evidence.get("log_capture_error") or probe_error
@@ -860,10 +880,15 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         # covers cancellation: CancelledError inherits from BaseException, so an
         # automation stopped mid-capture would skip an except Exception handler
         # and strand the notice forever.
-        owners = hass.data.get(_LOG_NOTICE_OWNERS, {})
-        if owns_log_notice and owners.get(log_notification_id) is log_notice_token:
-            owners.pop(log_notification_id, None)
-            async_dismiss(hass, log_notification_id)
+        owners = hass.data.get(_LOG_NOTICE_OWNERS, {}).get(log_notification_id)
+        if owns_log_notice and owners is not None:
+            owners.discard(log_notice_token)
+            # Retract only once the last overlapping logless capture is done,
+            # so a short one finishing first cannot pull the notice out from
+            # under a longer one that is still running without logs.
+            if not owners:
+                hass.data[_LOG_NOTICE_OWNERS].pop(log_notification_id, None)
+                async_dismiss(hass, log_notification_id)
 
 async def async_register_services(hass: HomeAssistant) -> None:
     """Register the Adjustable Bed services (idempotent)."""
