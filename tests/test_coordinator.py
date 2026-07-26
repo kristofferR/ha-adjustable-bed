@@ -467,6 +467,37 @@ class TestCoordinatorConnection:
             assert await coordinator._async_connect_locked() is False
         reset_timer.assert_not_called()
 
+    async def test_advisory_bond_failure_raises_the_pairing_repair(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A failed advisory bond must always leave the user a guided fix.
+
+        The link is kept and controller startup can finish unbonded, and the
+        later bond probe only raises the repair on a *definitive* auth error -
+        a timeout or non-auth BleakError is treated as inconclusive. Without
+        raising it here the bond silently never happens (issue #385).
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+
+        client = MagicMock()
+        client.is_connected = True
+        client.pair = AsyncMock(side_effect=BleakError("pairing rejected"))
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ) as create_issue:
+            assert await coordinator._async_pair_on_live_link({}) is False
+
+        create_issue.assert_awaited_once()
+        # The link is still ours: raising the repair must not cost the bed its
+        # single connection.
+        assert coordinator._client is client
+
     @pytest.mark.parametrize(
         ("pair_error", "max_retries", "pairing_supported"),
         [

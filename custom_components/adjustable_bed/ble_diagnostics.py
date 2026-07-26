@@ -223,12 +223,23 @@ class BLEDiagnosticRunner:
             allow_non_connectable=True,
         )
 
-        # Hold the address lock for the whole capture, not just the connect.
-        # A concurrent setup retry would otherwise run
-        # close_stale_connections_by_address() and disconnect this client
-        # mid-capture (issue #385). The lock is released by leaving this
-        # block, so it cannot leak even if the capture raises.
-        async with async_get_connect_lock(self.hass, self.address):
+        # Hold the address lock for the whole capture only when this runner owns
+        # the connection. A concurrent setup retry would otherwise run
+        # close_stale_connections_by_address() and disconnect our client
+        # mid-capture (issue #385), and leaving the block always releases it.
+        #
+        # With a coordinator we must NOT hold it: if the shared link drops,
+        # _on_disconnect() schedules _async_auto_reconnect() in a *separate*
+        # task, and the lock is only reentrant within one task. Holding it for
+        # the capture would block that reconnect for the whole capture window,
+        # losing every later notification and leaving the bed offline until
+        # cleanup. The coordinator owns that link, so let it manage it; the
+        # standalone fallback inside _connect() still takes the lock narrowly.
+        async with contextlib.AsyncExitStack() as stack:
+            if self.coordinator is None:
+                await stack.enter_async_context(
+                    async_get_connect_lock(self.hass, self.address)
+                )
             try:
                 await self._connect()
 
@@ -431,16 +442,17 @@ class BLEDiagnosticRunner:
 
             try:
                 connect_start = time.monotonic()
-                # run_diagnostics() already holds this address's connect lock for
-                # the whole capture; asyncio.Lock is not reentrant, so do not
-                # re-acquire it here.
-                self._client = await establish_connection(
-                    BleakClient,
-                    device,
-                    f"diagnostic_{self.address}",
-                    max_attempts=1,
-                    timeout=CONNECTION_TIMEOUT,
-                )
+                # Narrow lock around our own connect. When run_diagnostics()
+                # already holds it for this capture, the reentrant lock makes
+                # this a no-op for the same task.
+                async with async_get_connect_lock(self.hass, self.address):
+                    self._client = await establish_connection(
+                        BleakClient,
+                        device,
+                        f"diagnostic_{self.address}",
+                        max_attempts=1,
+                        timeout=CONNECTION_TIMEOUT,
+                    )
                 attempt_details["connect_elapsed_seconds"] = round(
                     time.monotonic() - connect_start, 3
                 )

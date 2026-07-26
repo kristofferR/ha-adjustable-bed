@@ -870,16 +870,7 @@ class AdjustableBedCoordinator:
         self._bond_probe_timed_out = False
         self._clear_ble_bond_established()
 
-        try:
-            await create_pairing_required_issue(
-                self.hass, self._address, self._name, self.entry.entry_id
-            )
-        except Exception:
-            _LOGGER.debug(
-                "Failed to create pairing required repair issue for %s",
-                self._address,
-                exc_info=True,
-            )
+        await self._async_raise_pairing_issue()
 
         if self._client is not None and self._client.is_connected:
             if retain_link and grants_one_connection_per_pairing_window(
@@ -899,6 +890,19 @@ class AdjustableBedCoordinator:
                 await self._async_disconnect_locked(reason="authentication_failed")
             else:
                 await self.async_disconnect(reason="authentication_failed")
+
+    async def _async_raise_pairing_issue(self) -> None:
+        """Surface the guided pairing repair, best-effort."""
+        try:
+            await create_pairing_required_issue(
+                self.hass, self._address, self._name, self.entry.entry_id
+            )
+        except Exception:
+            _LOGGER.debug(
+                "Failed to create pairing required repair issue for %s",
+                self._address,
+                exc_info=True,
+            )
 
     async def _async_pair_on_live_link(self, pairing_details: dict[str, Any]) -> bool:
         """Create the BLE bond on an already-connected, service-discovered link.
@@ -945,6 +949,11 @@ class AdjustableBedCoordinator:
             pairing_details["error"] = str(err)
             pairing_details["error_type"] = type(err).__name__
             self._record_bond_verification("advisory_bond_unsupported", err)
+            # Startup can still finish on the unbonded link, and the later bond
+            # probe only raises the repair on a *definitive* auth error - a
+            # timeout or non-auth BleakError is treated as inconclusive. Raise
+            # it here so a failed bond always leaves the user a guided fix.
+            await self._async_raise_pairing_issue()
             return False
         except (BleakError, TimeoutError, OSError) as err:
             if not advisory:
@@ -962,6 +971,7 @@ class AdjustableBedCoordinator:
             pairing_details["error"] = str(err)
             pairing_details["error_type"] = type(err).__name__
             self._record_bond_verification("advisory_bond_failed", err)
+            await self._async_raise_pairing_issue()
             return False
         return True
 
