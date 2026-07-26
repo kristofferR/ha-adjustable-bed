@@ -770,7 +770,17 @@ class AdjustableBedCoordinator:
         "this link is not bonded" would tear down the link we just decided to
         keep, and a bed that grants one connection per pairing window would be
         unreachable until it is power-cycled (issue #385).
+
+        Only arm the marker when a listener can actually consume it. During
+        initial setup the bond is written before ``async_setup_entry`` registers
+        the update listener and stores this coordinator, so nothing would ever
+        clear it — and the next genuine options change, which keeps the same
+        bond value, would then be mistaken for this write and silently skip the
+        reload it needs.
         """
+        if self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id) is not self:
+            self._pending_internal_bond_marker = None
+            return
         self._pending_internal_bond_marker = bond_established
 
     def consume_internal_entry_update(self, entry: ConfigEntry) -> bool:
@@ -1735,26 +1745,6 @@ class AdjustableBedCoordinator:
                     self._connection_timeout,
                 )
 
-                # Best-effort BlueZ cleanup. Some failed attempts leave stale pending
-                # connections behind, which can cause repeated connect timeouts.
-                if close_stale_connections_by_address is not None:
-                    try:
-                        close_result = close_stale_connections_by_address(self._address)
-                        if inspect.isawaitable(close_result):
-                            await close_result
-                    except (OSError, BleakError) as err:
-                        _LOGGER.debug(
-                            "Could not close stale connections for %s: %s",
-                            self._address,
-                            err,
-                        )
-                    except Exception:
-                        _LOGGER.warning(
-                            "Unexpected error closing stale connections for %s",
-                            self._address,
-                            exc_info=True,
-                        )
-
                 # Always provide a callback so bleak-retry-connector can refresh the
                 # BLEDevice between retries. In auto mode this prevents using a stale
                 # device object from an older scan snapshot.
@@ -1847,10 +1837,37 @@ class AdjustableBedCoordinator:
                 # Notify callbacks so binary sensor can show "connecting" state
                 self._notify_connection_state_change(False)
                 # Serialize with the config flow, repair flow and diagnostic so
-                # an overlapping attempt cannot abort this one (issue #385).
+                # an overlapping attempt cannot abort this one (issue #385). The
+                # lock must cover the stale-connection cleanup below as well as
+                # the connect itself: that cleanup disconnects the address, so
+                # running it outside the lock would tear down a client another
+                # caller is holding under lock protection.
                 connect_lock = async_get_connect_lock(self.hass, self._address)
                 await connect_lock.acquire()
                 try:
+                    # Best-effort BlueZ cleanup. Some failed attempts leave stale
+                    # pending connections behind, which can cause repeated
+                    # connect timeouts.
+                    if close_stale_connections_by_address is not None:
+                        try:
+                            close_result = close_stale_connections_by_address(
+                                self._address
+                            )
+                            if inspect.isawaitable(close_result):
+                                await close_result
+                        except (OSError, BleakError) as err:
+                            _LOGGER.debug(
+                                "Could not close stale connections for %s: %s",
+                                self._address,
+                                err,
+                            )
+                        except Exception:
+                            _LOGGER.warning(
+                                "Unexpected error closing stale connections for %s",
+                                self._address,
+                                exc_info=True,
+                            )
+
                     # Use max_attempts=1 here since outer loop handles retries
                     # Disable the services cache to force fresh GATT discovery for
                     # every pairing-required bed, not just the pair=True attempt.
