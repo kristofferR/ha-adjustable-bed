@@ -1532,7 +1532,13 @@ class AdjustableBedCoordinator:
         _LOGGER.debug("Cleaning up failed connection attempt...")
         self._intentional_disconnect = True
         try:
-            await client.disconnect()
+            # Hold the address lock across the teardown. The connect attempt
+            # released it before this runs, so an unprotected disconnect here
+            # could land inside a competing caller's connect and abort it —
+            # the same hazard the lock was added to prevent (issue #385).
+            # Reentrant, so a caller that still holds it is unaffected.
+            async with async_get_connect_lock(self.hass, self._address):
+                await client.disconnect()
             _LOGGER.debug("Disconnect cleanup successful")
         except Exception as disconnect_err:
             _LOGGER.debug(

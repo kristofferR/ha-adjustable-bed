@@ -489,8 +489,14 @@ class BLEDiagnosticRunner:
                 self._connection_attempt_details.append(attempt_details)
 
                 if self._client is not None:
-                    with contextlib.suppress(Exception):
-                        await self._client.disconnect()
+                    # Take the address lock for the teardown too. With a
+                    # coordinator the capture deliberately does not hold it, so
+                    # an unprotected disconnect here could land inside a
+                    # competing caller's connect (issue #385). Reentrant, so it
+                    # is a no-op when the standalone capture already holds it.
+                    async with async_get_connect_lock(self.hass, self.address):
+                        with contextlib.suppress(Exception):
+                            await self._client.disconnect()
                     self._client = None
 
                 if attempt == 1:
