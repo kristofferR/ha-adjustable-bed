@@ -332,8 +332,21 @@ def _open_regular_file(log_path: str) -> int:
     for a writer, and ``fstat`` describes the object actually opened, so the
     type check cannot be raced by a path swapped after a bare ``stat``.
     """
+    # Check before opening as well as after. O_NONBLOCK keeps *us* from waiting
+    # on a FIFO, but opening its read end can release a writer that was blocked
+    # waiting for a reader, and closing again immediately can then hand that
+    # writer EPIPE - disrupting the very log stream this is inspecting. Refuse
+    # special files without touching them.
+    # stat, not lstat: a symlink pointing at a real log file is a legitimate
+    # setup and must be followed, while a symlink to a FIFO resolves to the FIFO
+    # and is refused on its own merits.
+    if not stat.S_ISREG(os.stat(log_path).st_mode):  # noqa: PTH116 - HA config path
+        raise _NotARegularFile(f"{log_path} is not a regular file")
+
     fd = os.open(log_path, os.O_RDONLY | os.O_NONBLOCK)
     try:
+        # Re-check on the descriptor: the pre-check above races with anything
+        # that could swap the path between the two calls.
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             raise _NotARegularFile(f"{log_path} is not a regular file")
     except BaseException:

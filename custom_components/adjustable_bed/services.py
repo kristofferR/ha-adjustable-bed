@@ -708,7 +708,6 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
     # comes back as "empty", not "unavailable") or never read the log at all.
     probe_reason: str | None = None
     probe_error: str | None = None
-    read_logs = include_logs
     if include_logs:
         try:
             # O_NONBLOCK does not make regular-file I/O asynchronous, so a
@@ -720,27 +719,25 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_check_log_file(hass), _LOG_PROBE_TIMEOUT
             )
         except TimeoutError:
-            log_path = hass.config.path("home-assistant.log")
+            # Inconclusive, not proof of a wedged path: Home Assistant's shared
+            # executor can be saturated enough that the job never started. Say
+            # nothing and change nothing - the capture performs its own read and
+            # reports what it actually found. Disabling logs here would drop them
+            # from a minutes-long capture over a five-second queue delay.
             _LOGGER.warning(
-                "Timed out checking whether %s is readable; capturing without logs",
-                log_path,
+                "Timed out checking whether %s is readable; capturing anyway",
+                hass.config.path("home-assistant.log"),
             )
-            # The path is wedged. Reading it again during the capture would
-            # strand a second shared worker on the same mount for no benefit,
-            # so skip the log read and say why.
-            read_logs = False
-            log_check = {
-                "available": False,
-                "reason": "unreadable",
-                "path": log_path,
-                "error": f"timed out after {_LOG_PROBE_TIMEOUT:g}s",
-            }
+            log_check = None
         if log_check is not None:
             if log_check["available"]:
-                # A previous run may have warned about missing logs. That warning is
-                # device-stable and would otherwise sit there contradicting a bundle
-                # that does contain logs.
-                async_dismiss(hass, log_notification_id)
+                # A previous run may have warned about missing logs, and that
+                # warning is address-stable, so it would otherwise sit there
+                # contradicting a bundle that does contain logs. Only clear it
+                # when no capture still owns it: another logless capture may be
+                # running right now and its warning is not stale.
+                if not hass.data.get(_LOG_NOTICE_OWNERS, {}).get(log_notification_id):
+                    async_dismiss(hass, log_notification_id)
             else:
                 probe_reason = log_check["reason"]
                 probe_error = log_check["error"]
@@ -771,26 +768,13 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 hass,
                 address=address,
                 capture_duration=capture_duration,
-                include_logs=read_logs,
+                include_logs=include_logs,
                 coordinator=coordinator,
                 entry=entry,
                 device_id=selected_device_id,
             ),
             timeout=capture_duration + 120,
         )
-        if not read_logs and probe_reason is not None:
-            # The read was skipped, so the report would otherwise say
-            # "not_requested" even though logs *were* requested and the probe
-            # failed. The bundle is what gets shared with a maintainer, so the
-            # reason has to survive in it, not only in a transient notification.
-            report_evidence = report.setdefault("evidence", {})
-            report_evidence["log_capture_status"] = "unavailable"
-            report_evidence["log_capture_reason"] = probe_reason
-            report_evidence["log_capture_error"] = probe_error
-            report_evidence.setdefault("warnings", []).append(
-                f"Log collection was skipped: {probe_error}"
-            )
-
         filepath = await hass.async_add_executor_job(
             save_support_bundle,
             hass,
@@ -811,20 +795,16 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         # A bundle without logs usually cannot explain why a command failed, and
         # the user only learns that after a maintainer asks for a second one. Say
         # it up front, at the moment they still have the bed in front of them.
+        # The capture is the authority: it actually read the file, so a log that
+        # appeared or filled up during the window really is usable whatever the
+        # probe saw beforehand. The one carry-over is a file the probe measured
+        # as empty, which the capture reports as "empty" rather than
+        # "unavailable" but which is still unusable.
         log_status = evidence.get("log_capture_status")
-        if not read_logs:
-            # Nothing read it, so the report has no verdict of its own.
-            logs_missing = include_logs and probe_reason is not None
-        else:
-            # The capture is the authority once it has actually read: a log that
-            # appeared or filled up during the window really is usable, whatever
-            # the probe saw beforehand. The one carry-over is a file the probe
-            # measured as empty, which the capture reports as "empty" rather
-            # than "unavailable" but which is still unusable.
-            logs_missing = include_logs and (
-                log_status == "unavailable"
-                or (log_status == "empty" and probe_reason == "empty_file")
-            )
+        logs_missing = include_logs and (
+            log_status == "unavailable"
+            or (log_status == "empty" and probe_reason == "empty_file")
+        )
         logging_notice = ""
         if logs_missing:
             log_error = evidence.get("log_capture_error") or probe_error
