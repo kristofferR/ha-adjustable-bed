@@ -448,10 +448,15 @@ class TestCoordinatorConnection:
 
         Keeping the link after a failed startup makes "connected but no
         controller" reachable, so the reuse shortcut must not call it success.
+        The orphaned client must also be released rather than leaked:
+        establish_connection() would overwrite self._client while the old link
+        stayed open, and close_stale_connections_by_address() is None on
+        non-BlueZ backends, so nothing else would ever close it.
         """
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         client = MagicMock()
         client.is_connected = True
+        client.disconnect = AsyncMock()
         coordinator._client = client
         coordinator._controller = None
 
@@ -466,6 +471,9 @@ class TestCoordinatorConnection:
             # Falls through to a real attempt instead of returning True.
             assert await coordinator._async_connect_locked() is False
         reset_timer.assert_not_called()
+        # The half-initialised link was released, not leaked.
+        client.disconnect.assert_awaited_once()
+        assert coordinator._client is None
 
     async def test_advisory_bond_failure_raises_the_pairing_repair(
         self,

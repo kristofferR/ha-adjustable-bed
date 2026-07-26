@@ -1556,15 +1556,24 @@ class AdjustableBedCoordinator:
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
         self._intentional_disconnect = False
 
-        if (
-            self._client is not None
-            and self._client.is_connected
-            and self._controller is not None
-        ):
-            _LOGGER.debug("Already connected to %s, reusing connection", self._address)
-            if reset_timer:
-                self._reset_disconnect_timer()
-            return True
+        if self._client is not None and self._client.is_connected:
+            if self._controller is not None:
+                _LOGGER.debug(
+                    "Already connected to %s, reusing connection", self._address
+                )
+                if reset_timer:
+                    self._reset_disconnect_timer()
+                return True
+            # Connected but half-initialised. Release the orphan before making a
+            # fresh attempt: establish_connection() would otherwise overwrite
+            # self._client and leak this still-live link, and the
+            # close_stale_connections_by_address() fallback is None on
+            # non-BlueZ backends, so nothing else would ever close it.
+            _LOGGER.debug(
+                "Releasing half-initialised connection to %s before reconnecting",
+                self._address,
+            )
+            await self._async_cleanup_failed_connection()
 
         # Routine reconnects after an intentional/idle disconnect are expected for
         # non-persistent beds and shouldn't spam the log. Only the first successful
