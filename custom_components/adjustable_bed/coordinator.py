@@ -41,7 +41,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
-from .ble_auth import is_ble_authentication_error, is_ble_pairing_rejected
+from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -1032,30 +1032,29 @@ class AdjustableBedCoordinator:
                 raise
             self._pairing_supported = True
             pairing_details["adapter_pairing_supported"] = True
-            if is_ble_pairing_rejected(err):
-                # The bed answered and refused, rather than timing out. Field
-                # evidence (issue #385) shows it then drops the link about a
-                # second later, so promising to keep the connection alive here
-                # would be untrue. The usual cause is key material the two sides
-                # disagree about: the bed still holds a bond for this adapter
-                # while the host no longer has the matching key, and clearing
-                # only one side cannot fix that.
+            if is_ble_pairing_auth_failure(err):
+                # The bond failed at the authentication stage. Field evidence
+                # (issue #385) shows the bed then drops the link about a second
+                # later, so promising to keep the connection alive here would be
+                # untrue. Suggest the remedy without asserting the cause:
+                # BlueZ's AuthenticationFailed is generic, so mismatched stored
+                # keys are a common explanation rather than a proven one.
                 _LOGGER.warning(
-                    "%s refused the BLE bond (%s). The bed usually drops the "
-                    "connection straight after this. It most likely still has a "
-                    "stored pairing for the adapter you are connecting from "
-                    "while that adapter no longer has the matching key, so "
-                    "clearing only one side will not help. Remove the stored "
-                    "pairing on the connecting adapter - on a Home Assistant "
-                    "host that is 'bluetoothctl remove %s', and on an ESPHome "
-                    "proxy the bond lives on the proxy and must be cleared "
-                    "there - then clear the bed's own stored pairings as its "
-                    "manufacturer documents and pair again.",
+                    "Could not authenticate the BLE bond with %s (%s). The bed "
+                    "usually drops the connection straight after this, so "
+                    "retrying unchanged rarely helps. One common cause is "
+                    "stored pairing keys that no longer match: if this keeps "
+                    "repeating, clear the stored pairing on the adapter you "
+                    "connect from - on a Home Assistant host that is "
+                    "'bluetoothctl remove %s', while on an ESPHome proxy the "
+                    "bond lives on the proxy and must be cleared there - and "
+                    "clear the bed's own stored pairings as its manufacturer "
+                    "documents, then pair again.",
                     self._address,
                     err,
                     self._address,
                 )
-                self._record_bond_verification("advisory_bond_rejected", err)
+                self._record_bond_verification("advisory_bond_auth_failed", err)
             else:
                 _LOGGER.warning(
                     "Could not create the BLE bond with %s (%s). Keeping the live "

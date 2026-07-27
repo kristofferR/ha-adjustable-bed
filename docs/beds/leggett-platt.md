@@ -91,10 +91,12 @@ Leggett & Platt beds have three protocol variants with different detection metho
 >   also tells the user to remove the bond from phone settings afterwards, so
 >   `DWIPE` does not clear the central-side bond. It needs an existing
 >   connection, so it is a recovery tool after connecting, not a way in.
-> - **A refused bond (`AuthenticationFailed` / `AuthenticationRejected`).** The
->   issue #385 logs show the box accepting an unbonded GATT link, refusing the
->   bond at the SMP layer, and dropping the connection about a second later,
->   repeatedly. The reading that fits the evidence is stale key material: the box
+> - **A bond that fails to authenticate (`AuthenticationFailed` /
+>   `AuthenticationRejected`).** The
+>   issue #385 logs show the box accepting an unbonded GATT link, failing the bond at the
+>   SMP authentication stage, and dropping the connection about a second later,
+>   repeatedly. BlueZ's `AuthenticationFailed` is generic, so the cause is not proven from
+>   the error alone. The reading that best fits the evidence is stale key material: the box
 >   still holds a pairing for the connecting adapter while that adapter no longer
 >   has the matching key, so neither side accepts the other and re-pairing alone
 >   changes nothing. `DWIPE`'s own dialog lists "Bluetooth Pairings" among what

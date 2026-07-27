@@ -7,7 +7,7 @@ from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
-    is_ble_pairing_rejected,
+    is_ble_pairing_auth_failure,
 )
 
 
@@ -21,9 +21,9 @@ from custom_components.adjustable_bed.ble_auth import (
         "org.bluez.Error.AuthenticationRejected",
     ],
 )
-def test_pairing_rejection_is_recognised(message: str) -> None:
-    """BlueZ reports an SMP-level refusal as AuthenticationFailed."""
-    assert is_ble_pairing_rejected(BleakError(message)) is True
+def test_authentication_stage_failures_are_recognised(message: str) -> None:
+    """Both BlueZ spellings mean the bond failed at the authentication stage."""
+    assert is_ble_pairing_auth_failure(BleakError(message)) is True
 
 
 @pytest.mark.parametrize(
@@ -34,29 +34,29 @@ def test_pairing_rejection_is_recognised(message: str) -> None:
         "error=5",
     ],
 )
-def test_gatt_auth_errors_are_not_pairing_rejections(message: str) -> None:
+def test_gatt_auth_errors_are_not_pairing_failures(message: str) -> None:
     """A link that needs encryption is a different problem from a refused bond.
 
     These mean the connection came up but a characteristic requires an
-    encrypted link. Treating them as a refusal would send the user off to
-    factory-reset the bed for something a re-pair fixes.
+    encrypted link. Treating them as a pairing failure would send the user off to
+    clear stored keys for something a re-pair fixes.
     """
     err = BleakError(message)
     assert is_ble_authentication_error(err) is True
-    assert is_ble_pairing_rejected(err) is False
+    assert is_ble_pairing_auth_failure(err) is False
 
 
-def test_a_refusal_is_not_reported_as_a_gatt_auth_error() -> None:
-    """And the reverse: a refused bond never reached the GATT layer."""
+def test_a_pairing_failure_is_not_reported_as_a_gatt_auth_error() -> None:
+    """And the reverse: a failed bond never reached the GATT layer."""
     err = BleakError("[org.bluez.Error.AuthenticationFailed] Authentication Failed")
-    assert is_ble_pairing_rejected(err) is True
+    assert is_ble_pairing_auth_failure(err) is True
     assert is_ble_authentication_error(err) is False
 
 
 def test_unrelated_errors_match_neither() -> None:
     """A plain timeout must not be blamed on authentication."""
     err = BleakError("[org.bluez.Error.NotConnected] Not Connected")
-    assert is_ble_pairing_rejected(err) is False
+    assert is_ble_pairing_auth_failure(err) is False
     assert is_ble_authentication_error(err) is False
 
 
@@ -101,3 +101,19 @@ def test_shared_repair_text_prescribes_no_bed_specific_reset() -> None:
 
     assert "factory reset" not in blob
     assert "dwipe" not in blob
+
+
+def test_repair_text_does_not_assert_an_unproven_cause() -> None:
+    """AuthenticationFailed is generic, so the cause must be offered, not asserted."""
+    import json
+    from pathlib import Path
+
+    strings = json.loads(
+        Path("custom_components/adjustable_bed/strings.json").read_text()
+    )
+    flow = strings["issues"]["pairing_required"]["fix_flow"]
+    description = flow["step"]["confirm"]["description"]
+
+    assert "One common cause" in description
+    # Not "the bed is refusing the bond": only AuthenticationRejected proves that.
+    assert "refusing the bond" not in description

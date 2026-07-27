@@ -530,13 +530,13 @@ class TestCoordinatorConnection:
         [
             (
                 BleakError("[org.bluez.Error.AuthenticationFailed] Authentication Failed"),
-                "advisory_bond_rejected",
+                "advisory_bond_auth_failed",
                 True,
             ),
             (BleakError("pairing rejected"), "advisory_bond_failed", False),
         ],
     )
-    async def test_a_refused_bond_is_reported_as_a_refusal(
+    async def test_an_auth_stage_bond_failure_gets_its_own_advice(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -545,12 +545,12 @@ class TestCoordinatorConnection:
         says_refused: bool,
         caplog,
     ) -> None:
-        """A bed that answers and says no needs different advice (issue #385).
+        """A bond that fails to authenticate needs different advice (issue #385).
 
-        The field logs show the bed dropping the link about a second after
-        refusing, so the generic message's promise to keep the connection alive
-        is untrue for this case, and the remedy is clearing stored pairings on
-        both sides rather than retrying.
+        The field logs show the bed dropping the link about a second later, so
+        the generic message's promise to keep the connection alive is untrue
+        here. BlueZ's AuthenticationFailed is generic, so the message offers
+        mismatched stored keys as a common cause rather than asserting it.
         """
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
@@ -570,10 +570,10 @@ class TestCoordinatorConnection:
         # The link is still ours either way: the bed drops it, we do not.
         assert coordinator._client is client
         if says_refused:
-            assert "refused the BLE bond" in caplog.text
-            # Names both sides, and does not assume the bond lives on the host:
-            # with a proxy it is stored on the proxy instead.
-            assert "clearing only one side will not help" in caplog.text
+            assert "Could not authenticate the BLE bond" in caplog.text
+            assert "One common cause" in caplog.text
+            # Does not assume the bond lives on the host: with a proxy it is
+            # stored on the proxy instead.
             assert "ESPHome" in caplog.text
         else:
             assert "Keeping the live connection" in caplog.text
