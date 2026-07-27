@@ -41,7 +41,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
-from .ble_auth import is_ble_authentication_error
+from .ble_auth import is_ble_authentication_error, is_ble_pairing_rejected
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -1032,17 +1032,40 @@ class AdjustableBedCoordinator:
                 raise
             self._pairing_supported = True
             pairing_details["adapter_pairing_supported"] = True
-            _LOGGER.warning(
-                "Could not create the BLE bond with %s (%s). Keeping the live "
-                "connection and continuing unbonded — this bed only accepts one "
-                "connection per pairing window, so dropping it now would strand "
-                "the bed until it is power-cycled.",
-                self._address,
-                err,
-            )
+            if is_ble_pairing_rejected(err):
+                # The bed answered and refused, rather than timing out. Field
+                # evidence (issue #385) shows it then drops the link about a
+                # second later, so promising to keep the connection alive here
+                # would be untrue. The usual cause is key material the two sides
+                # disagree about: the bed still holds a bond for this adapter
+                # while the host no longer has the matching key, and clearing
+                # only one side cannot fix that.
+                _LOGGER.warning(
+                    "%s refused the BLE bond (%s). The bed usually drops the "
+                    "connection straight after this. It most likely still has a "
+                    "stored pairing for this Bluetooth adapter while the adapter "
+                    "no longer has the matching key, so clear the pairing on "
+                    "BOTH sides: remove the bed from the host "
+                    "(bluetoothctl remove %s) and clear the bed's own stored "
+                    "pairings from its app or a factory reset, then pair again "
+                    "during the bed's pairing window.",
+                    self._address,
+                    err,
+                    self._address,
+                )
+                self._record_bond_verification("advisory_bond_rejected", err)
+            else:
+                _LOGGER.warning(
+                    "Could not create the BLE bond with %s (%s). Keeping the live "
+                    "connection and continuing unbonded — this bed only accepts one "
+                    "connection per pairing window, so dropping it now would strand "
+                    "the bed until it is power-cycled.",
+                    self._address,
+                    err,
+                )
+                self._record_bond_verification("advisory_bond_failed", err)
             pairing_details["error"] = str(err)
             pairing_details["error_type"] = type(err).__name__
-            self._record_bond_verification("advisory_bond_failed", err)
             await self._async_raise_pairing_issue()
             return False
         return True

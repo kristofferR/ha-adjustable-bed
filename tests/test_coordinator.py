@@ -525,6 +525,56 @@ class TestCoordinatorConnection:
         client.disconnect.assert_awaited_once()
         assert coordinator._client is None
 
+    @pytest.mark.parametrize(
+        ("error", "expected_status", "says_refused"),
+        [
+            (
+                BleakError("[org.bluez.Error.AuthenticationFailed] Authentication Failed"),
+                "advisory_bond_rejected",
+                True,
+            ),
+            (BleakError("pairing rejected"), "advisory_bond_failed", False),
+        ],
+    )
+    async def test_a_refused_bond_is_reported_as_a_refusal(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        error: BleakError,
+        expected_status: str,
+        says_refused: bool,
+        caplog,
+    ) -> None:
+        """A bed that answers and says no needs different advice (issue #385).
+
+        The field logs show the bed dropping the link about a second after
+        refusing, so the generic message's promise to keep the connection alive
+        is untrue for this case, and the remedy is clearing stored pairings on
+        both sides rather than retrying.
+        """
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._bed_type = BED_TYPE_LEGGETT_GEN2
+
+        client = MagicMock()
+        client.is_connected = True
+        client.pair = AsyncMock(side_effect=error)
+        coordinator._client = client
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.create_pairing_required_issue",
+            new_callable=AsyncMock,
+        ):
+            assert await coordinator._async_pair_on_live_link({}) is False
+
+        assert coordinator._last_bond_verification["status"] == expected_status
+        # The link is still ours either way: the bed drops it, we do not.
+        assert coordinator._client is client
+        if says_refused:
+            assert "refused the BLE bond" in caplog.text
+            assert "BOTH sides" in caplog.text
+        else:
+            assert "Keeping the live connection" in caplog.text
+
     async def test_advisory_bond_failure_raises_the_pairing_repair(
         self,
         hass: HomeAssistant,
