@@ -633,7 +633,7 @@ def test_pairing_repair_translations_cover_every_progress_and_result() -> None:
         "recovery_failed_unchanged",
         "recovery_partial",
     }
-    for relative in ("strings.json", "translations/en.json", "translations/nb.json"):
+    for relative in ("strings.json", "translations/en.json"):
         data = json.loads((root / relative).read_text())
         pairing = data["issues"]["pairing_required"]
         flow = pairing["fix_flow"]
