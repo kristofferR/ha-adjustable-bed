@@ -117,3 +117,36 @@ def test_repair_text_does_not_assert_an_unproven_cause() -> None:
     assert "One common cause" in description
     # Not "the bed is refusing the bond": only AuthenticationRejected proves that.
     assert "refusing the bond" not in description
+
+
+def test_translation_strings_contain_no_angle_brackets() -> None:
+    """hassfest rejects angle brackets in translations as HTML.
+
+    A placeholder written as `<address>` reads as an HTML tag and fails CI, so
+    catch it here instead: the strings already receive {address}.
+    """
+    import json
+    import re
+    from pathlib import Path
+
+    pattern = re.compile(r"<[^>]+>")
+    offenders: list[str] = []
+
+    def walk(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, str) and pattern.search(node):
+            offenders.append(path)
+
+    for name in (
+        "strings.json",
+        "translations/en.json",
+        "translations/nb.json",
+    ):
+        walk(
+            json.loads(Path("custom_components/adjustable_bed", name).read_text()),
+            name,
+        )
+
+    assert offenders == []
