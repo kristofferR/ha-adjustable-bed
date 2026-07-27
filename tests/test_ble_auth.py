@@ -139,14 +139,14 @@ def test_translation_strings_contain_no_angle_brackets() -> None:
         elif isinstance(node, str) and pattern.search(node):
             offenders.append(path)
 
-    for name in (
-        "strings.json",
-        "translations/en.json",
-        "translations/nb.json",
-    ):
-        walk(
-            json.loads(Path("custom_components/adjustable_bed", name).read_text()),
-            name,
-        )
+    # Discover the files rather than listing them: the set of shipped
+    # translations differs between branches, and a hardcoded list either breaks
+    # when one is missing or silently skips a new one.
+    root = Path("custom_components/adjustable_bed")
+    files = [root / "strings.json", *sorted(root.glob("translations/*.json"))]
+    assert files, "no translation files found"
+
+    for path in files:
+        walk(json.loads(path.read_text()), path.name)
 
     assert offenders == []
