@@ -41,7 +41,7 @@ from .adapter import (
     select_adapter,
 )
 from .address_lock import async_get_connect_lock
-from .ble_auth import is_ble_authentication_error
+from .ble_auth import is_ble_authentication_error, is_ble_pairing_auth_failure
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -1240,17 +1240,41 @@ class AdjustableBedCoordinator:
                 raise
             self._pairing_supported = True
             pairing_details["adapter_pairing_supported"] = True
-            _LOGGER.warning(
-                "Could not create the BLE bond with %s (%s). Keeping the live "
-                "connection and continuing unbonded — this bed only accepts one "
-                "connection per pairing window, so dropping it now would strand "
-                "the bed until it is power-cycled.",
-                self._address,
-                err,
-            )
+            if is_ble_pairing_auth_failure(err):
+                # The bond failed at the authentication stage. Field evidence
+                # (issue #385) shows the bed then drops the link about a second
+                # later, so promising to keep the connection alive here would be
+                # untrue. Suggest the remedy without asserting the cause:
+                # BlueZ's AuthenticationFailed is generic, so mismatched stored
+                # keys are a common explanation rather than a proven one.
+                _LOGGER.warning(
+                    "Could not authenticate the BLE bond with %s (%s). The bed "
+                    "usually drops the connection straight after this, so "
+                    "retrying unchanged rarely helps. One common cause is "
+                    "stored pairing keys that no longer match: if this keeps "
+                    "repeating, clear the stored pairing on the adapter you "
+                    "connect from - on a Home Assistant host that is "
+                    "'bluetoothctl remove %s', while on an ESPHome proxy the "
+                    "bond lives on the proxy and must be cleared there - and "
+                    "clear the bed's own stored pairings as its manufacturer "
+                    "documents, then pair again.",
+                    self._address,
+                    err,
+                    self._address,
+                )
+                self._record_bond_verification("advisory_bond_auth_failed", err)
+            else:
+                _LOGGER.warning(
+                    "Could not create the BLE bond with %s (%s). Keeping the live "
+                    "connection and continuing unbonded — this bed only accepts one "
+                    "connection per pairing window, so dropping it now would strand "
+                    "the bed until it is power-cycled.",
+                    self._address,
+                    err,
+                )
+                self._record_bond_verification("advisory_bond_failed", err)
             pairing_details["error"] = str(err)
             pairing_details["error_type"] = type(err).__name__
-            self._record_bond_verification("advisory_bond_failed", err)
             await self._async_raise_pairing_issue()
             return False
         return True
