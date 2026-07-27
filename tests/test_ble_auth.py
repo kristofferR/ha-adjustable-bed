@@ -16,6 +16,9 @@ from custom_components.adjustable_bed.ble_auth import (
     [
         "[org.bluez.Error.AuthenticationFailed] Authentication Failed",
         "org.bluez.Error.AuthenticationFailed",
+        # Device1.Pair() also has an explicit rejection result.
+        "[org.bluez.Error.AuthenticationRejected] Authentication Rejected",
+        "org.bluez.Error.AuthenticationRejected",
     ],
 )
 def test_pairing_rejection_is_recognised(message: str) -> None:
@@ -55,3 +58,46 @@ def test_unrelated_errors_match_neither() -> None:
     err = BleakError("[org.bluez.Error.NotConnected] Not Connected")
     assert is_ble_pairing_rejected(err) is False
     assert is_ble_authentication_error(err) is False
+
+
+def test_repair_text_does_not_assume_the_bond_lives_on_the_host() -> None:
+    """A proxy bond cannot be cleared with bluetoothctl on the Home Assistant host.
+
+    strings.json already states that Home Assistant cannot remove a bond that
+    lives on a proxy, so recovery guidance must not tell every user to run
+    bluetoothctl there.
+    """
+    import json
+    from pathlib import Path
+
+    strings = json.loads(
+        Path("custom_components/adjustable_bed/strings.json").read_text()
+    )
+    flow = strings["issues"]["pairing_required"]["fix_flow"]
+    description = flow["step"]["confirm"]["description"]
+
+    assert "ESPHome" in description
+    assert "stored on the proxy" in description
+    # Scoped to the errors that actually mean a refusal, so an ordinary
+    # missing-encryption failure is not sent down this path.
+    assert "AuthenticationFailed" in description
+    assert "AuthenticationRejected" in description
+
+
+def test_shared_repair_text_prescribes_no_bed_specific_reset() -> None:
+    """The pairing repair is shared by every pairing-required protocol.
+
+    Recovery steps inferred from one bed must not be presented to unrelated
+    beds as though they were verified for those protocols.
+    """
+    import json
+    from pathlib import Path
+
+    strings = json.loads(
+        Path("custom_components/adjustable_bed/strings.json").read_text()
+    )
+    flow = strings["issues"]["pairing_required"]["fix_flow"]
+    blob = json.dumps(flow).lower()
+
+    assert "factory reset" not in blob
+    assert "dwipe" not in blob

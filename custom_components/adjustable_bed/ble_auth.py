@@ -26,6 +26,10 @@ def is_ble_authentication_error(err: BaseException) -> bool:
 # up but a characteristic needs an encrypted link, whereas this means the
 # peripheral rejected the bond negotiation itself.
 _BLE_PAIRING_REJECTED_MARKERS: tuple[str, ...] = (
+    # Device1.Pair() reports a refusal either way: AuthenticationRejected is the
+    # explicit one, AuthenticationFailed the generic authentication result.
+    "authenticationrejected",
+    "authentication rejected",
     "authenticationfailed",
     "authentication failed",
 )

@@ -571,7 +571,10 @@ class TestCoordinatorConnection:
         assert coordinator._client is client
         if says_refused:
             assert "refused the BLE bond" in caplog.text
-            assert "BOTH sides" in caplog.text
+            # Names both sides, and does not assume the bond lives on the host:
+            # with a proxy it is stored on the proxy instead.
+            assert "clearing only one side will not help" in caplog.text
+            assert "ESPHome" in caplog.text
         else:
             assert "Keeping the live connection" in caplog.text
 

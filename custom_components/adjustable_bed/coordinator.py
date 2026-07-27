@@ -1043,12 +1043,14 @@ class AdjustableBedCoordinator:
                 _LOGGER.warning(
                     "%s refused the BLE bond (%s). The bed usually drops the "
                     "connection straight after this. It most likely still has a "
-                    "stored pairing for this Bluetooth adapter while the adapter "
-                    "no longer has the matching key, so clear the pairing on "
-                    "BOTH sides: remove the bed from the host "
-                    "(bluetoothctl remove %s) and clear the bed's own stored "
-                    "pairings from its app or a factory reset, then pair again "
-                    "during the bed's pairing window.",
+                    "stored pairing for the adapter you are connecting from "
+                    "while that adapter no longer has the matching key, so "
+                    "clearing only one side will not help. Remove the stored "
+                    "pairing on the connecting adapter - on a Home Assistant "
+                    "host that is 'bluetoothctl remove %s', and on an ESPHome "
+                    "proxy the bond lives on the proxy and must be cleared "
+                    "there - then clear the bed's own stored pairings as its "
+                    "manufacturer documents and pair again.",
                     self._address,
                     err,
                     self._address,
