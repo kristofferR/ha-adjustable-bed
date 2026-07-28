@@ -54,15 +54,24 @@ from .bond_verification import (
 from .const import (
     ADAPTER_AUTO,
     CONF_BED_TYPE,
+    CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DEVICE_INFO_CHARS,
     DOMAIN,
+    PAIR_SIDES,
+    RUNTIME_BOND_KEYS,
     grants_one_connection_per_pairing_window,
 )
-from .pairing import is_paired
+from .pairing import (
+    effective_child_data,
+    is_paired,
+    iter_children,
+    with_updated_child,
+)
 from .pairing_candidates import (
     active_pairing_candidates,
     build_pair_selection_schema,
@@ -254,26 +263,137 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             return None
         return self.hass.config_entries.async_get_entry(self._entry_id)
 
-    def _bed_type(self) -> tuple[str | None, str | None]:
-        """Return the bed type and protocol variant for this bed."""
+    def _target_side(self) -> str | None:
+        """Return the combined-bed side owning this repair's exact address."""
+        entry = self._entry()
+        if entry is None or not is_paired(entry.data) or entry.data.get(CONF_ADDRESS):
+            return None
+        address = self._address.upper()
+        children = iter_children(entry.data)
+        matches = []
+        for child in children:
+            child_address = child.get(CONF_ADDRESS)
+            if isinstance(child_address, str) and child_address.upper() == address:
+                matches.append(child)
+        if len(matches) != 1:
+            return None
+        side = matches[0].get(CONF_SIDE)
+        if side not in PAIR_SIDES:
+            return None
+        side_matches = [
+            child
+            for child in children
+            if child.get(CONF_SIDE) == side
+        ]
+        return side if len(side_matches) == 1 else None
+
+    def _target_data(self) -> dict[str, Any]:
+        """Return the standalone-equivalent data for the repair's one BLE link."""
         entry = self._entry()
         if entry is None:
-            return None, None
-        return entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
+            return {}
+        side = self._target_side()
+        if side is None:
+            return dict(entry.data)
+        return effective_child_data(entry.data, side, entry.options)
+
+    def _target_coordinator(self) -> Any | None:
+        """Return the coordinator that owns the target address and its locks."""
+        entry = self._entry()
+        if entry is None:
+            return None
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        side = self._target_side()
+        if coordinator is None or side is None:
+            return coordinator
+        child_for_side = getattr(coordinator, "child_for_side", None)
+        return child_for_side(side) if callable(child_for_side) else None
+
+    def _persist_target_bond_data(
+        self,
+        target_data: dict[str, Any],
+        *,
+        claim_internal_update: bool = False,
+    ) -> bool:
+        """Persist only this address's runtime bond state.
+
+        A combined pair stores these keys on its child descriptor. Ordinary and
+        single-address entries keep them at the top level. Returning whether a
+        write occurred lets one-connection paths avoid restating an unchanged
+        owner and triggering a needless reload.
+        """
+        entry = self._entry()
+        if entry is None:
+            return False
+        current = self._target_data()
+        if all(current.get(key) == target_data.get(key) for key in RUNTIME_BOND_KEYS):
+            return False
+
+        side = self._target_side()
+        if side is None:
+            new_entry_data = dict(entry.data)
+            for key in RUNTIME_BOND_KEYS:
+                if key in target_data:
+                    new_entry_data[key] = target_data[key]
+                else:
+                    new_entry_data.pop(key, None)
+        else:
+            patch: dict[str, Any] = {
+                key: target_data[key]
+                for key in RUNTIME_BOND_KEYS
+                if key in target_data
+            }
+            remove = {
+                key for key in RUNTIME_BOND_KEYS if key not in target_data
+            }
+            new_entry_data = with_updated_child(
+                entry.data,
+                side,
+                patch,
+                remove=remove,
+            )
+
+        coordinator = self._target_coordinator()
+        claim = getattr(coordinator, "begin_internal_bond_update", None)
+        if claim_internal_update and callable(claim):
+            claim(
+                bool(target_data.get(CONF_BLE_BOND_ESTABLISHED, False)),
+                marker_unreliable=bool(
+                    target_data.get(CONF_BLE_BOND_MARKER_UNRELIABLE, False)
+                ),
+            )
+        if side is not None:
+            child_entry = getattr(coordinator, "entry", None)
+            persist_child_data = getattr(child_entry, "persist_data", None)
+            if callable(persist_child_data):
+                persist_child_data(target_data, keys=RUNTIME_BOND_KEYS)
+                return True
+        self.hass.config_entries.async_update_entry(entry, data=new_entry_data)
+        return True
+
+    def _bed_type(self) -> tuple[str | None, str | None]:
+        """Return the bed type and protocol variant for this bed."""
+        data = self._target_data()
+        return data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
 
     def _is_combined_pair(self) -> bool:
         """Return True when this repair belongs to a combined Dual Bed entry.
 
         A combined pair is one entry with two sides, and each side keeps its own
-        address and bond state on a child descriptor. Nothing recovery needs is
-        at the top level: the bond markers it writes would land where no child
-        coordinator reads them, and the parent coordinator has no per-side
-        transport to serialize the remove-reconnect-pair sequence against.
-        Recovery is refused rather than performed into the void; the guided
-        pairing branch still applies.
+        address and bond state on a child descriptor. Recovery is allowed only
+        after the repair's address identifies exactly one descriptor; malformed
+        or legacy pair data remains on the non-destructive guided-pairing path.
         """
         entry = self._entry()
-        return entry is not None and is_paired(entry.data)
+        return bool(
+            entry is not None
+            and is_paired(entry.data)
+            and not entry.data.get(CONF_ADDRESS)
+        )
+
+    def _combined_target_is_resolved(self) -> bool:
+        """Return whether the repair maps to exactly one combined child."""
+        return not self._is_combined_pair() or self._target_side() is not None
 
     def _proxy_bond_recorded(self) -> bool:
         """Return True when this entry records a bond that a proxy made.
@@ -289,19 +409,21 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         Provenance is the independent signal, because it is only ever written
         from a verification that positively proved a bond.
         """
-        entry = self._entry()
-        if entry is None or not entry.data.get(CONF_BLE_BOND_ESTABLISHED):
+        data = self._target_data()
+        if not data.get(CONF_BLE_BOND_ESTABLISHED):
             return False
-        return bond_owner_from_entry(entry.data).transport is TransportClass.PROXY
+        return bond_owner_from_entry(data).transport is TransportClass.PROXY
 
     def _paired_entry_data(self, verified_owner: BondOwner | None) -> dict[str, Any] | None:
         """Return entry data for a repaired bond without stale ownership."""
-        entry = self._entry()
-        if entry is None:
+        if self._entry() is None:
             return None
 
-        data = {**entry.data, CONF_BLE_BOND_ESTABLISHED: True}
+        current = self._target_data()
+        data = {**current, CONF_BLE_BOND_ESTABLISHED: True}
+        data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
         if verified_owner is not None and verified_owner.transport is not TransportClass.UNKNOWN:
+            data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
             prior_status = (
                 str(self._evidence.status)
                 if self._evidence is not None
@@ -315,7 +437,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     observed_at=datetime.now(UTC).isoformat(),
                 )
             )
-            stored = entry.data.get(CONF_BLE_BOND_CONTEXT)
+            stored = current.get(CONF_BLE_BOND_CONTEXT)
             # A coordinator that proved the bond has already recorded the same
             # owner. Restating it with a fresh timestamp is still a real change
             # to the entry, and this write is not tagged as an internal
@@ -333,26 +455,21 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
     def _persist_repaired_bond(self, verified_owner: BondOwner | None) -> None:
         """Persist a successful repair and its freshly verified owner."""
-        entry = self._entry()
         data = self._paired_entry_data(verified_owner)
-        if entry is None or data is None or data == dict(entry.data):
+        if data is None:
             return
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry_id)
-        claim = getattr(coordinator, "begin_internal_bond_update", None)
-        if callable(claim):
-            # Let a loaded coordinator claim this as one of its own bond writes,
-            # so the update listener does not reload. That reload would drop the
-            # link this repair just paired on, and a bed that grants one
-            # connection per pairing window never offers another.
-            claim(bool(data.get(CONF_BLE_BOND_ESTABLISHED, False)))
-        self.hass.config_entries.async_update_entry(entry, data=data)
+        # Let a loaded coordinator claim this as one of its own bond writes, so
+        # the update listener does not reload. That reload would drop the link
+        # this repair just paired on, and a one-connection bed never offers
+        # another. For a combined bed the claim and write both target its child.
+        self._persist_target_bond_data(data, claim_internal_update=True)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Entry point — offer the branch that fits the evidence."""
         bed_type, variant = self._bed_type()
-        if self._is_combined_pair():
+        if not self._combined_target_is_resolved():
             self._offer = RecoveryOffer(
                 eligibility=RecoveryEligibility.COMBINED_PAIR
             )
@@ -435,7 +552,6 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         previous_offer = self._offer
         assert previous_offer is not None
         bed_type, variant = self._bed_type()
-        entry = self._entry()
         issue_id = f"pairing_required_{self._address.replace(':', '_').lower()}"
         issue = async_get_issue_registry(self.hass).async_get_issue(DOMAIN, issue_id)
         if issue is None:
@@ -463,11 +579,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             )
         self._offer = current_offer
 
-        coordinator = (
-            self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-            if entry is not None
-            else None
-        )
+        coordinator = self._target_coordinator()
         return await async_recover_local_bond(
             self.hass,
             address=self._address,
@@ -556,14 +668,15 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         entry = self._entry()
         if entry is None or result is None or result.payload is None:
             return
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coordinator = self._target_coordinator()
         data = {
-            **entry.data,
+            **self._target_data(),
             CONF_BLE_BOND_ESTABLISHED: True,
             CONF_BLE_BOND_CONTEXT: recovery_context(result.payload),
         }
         data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
-        self.hass.config_entries.async_update_entry(entry, data=data)
+        data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
+        self._persist_target_bond_data(data)
         if coordinator is None:
             # A loaded entry has an update listener which schedules the reload.
             # Setup-retry entries have no listener yet, so reload those here.
@@ -577,15 +690,12 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         the entry no longer claims a bond, so the next connection asks to pair
         instead of repeating the authentication failure on an unbonded device.
         """
-        entry = self._entry()
-        if entry is None:
+        if self._entry() is None:
             return
-        data = dict(entry.data)
-        data.pop(CONF_BLE_BOND_ESTABLISHED, None)
-        data.pop(CONF_BLE_BOND_CONTEXT, None)
-        data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
-        if data != dict(entry.data):
-            self.hass.config_entries.async_update_entry(entry, data=data)
+        data = self._target_data()
+        for key in RUNTIME_BOND_KEYS:
+            data.pop(key, None)
+        self._persist_target_bond_data(data)
 
     async def async_step_confirm(
         self, user_input: dict[str, Any] | None = None
@@ -617,7 +727,10 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         if self._entry_id is not None:
             entry = self.hass.config_entries.async_get_entry(self._entry_id)
             if entry is not None:
-                preferred = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
+                preferred = self._target_data().get(
+                    CONF_PREFERRED_ADAPTER,
+                    ADAPTER_AUTO,
+                )
 
         if not preferred or preferred == ADAPTER_AUTO:
             return bluetooth.async_ble_device_from_address(
@@ -639,7 +752,10 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         if self._entry_id is None:
             return False
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
-        return bool(entry is not None and entry.data.get(CONF_BLE_BOND_ESTABLISHED))
+        return bool(
+            entry is not None
+            and self._target_data().get(CONF_BLE_BOND_ESTABLISHED)
+        )
 
     async def _async_pair_via_coordinator(self) -> bool | None:
         """Pair without ever opening a throwaway connection.
@@ -668,13 +784,14 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
         if entry is None:
             return None
+        target_data = self._target_data()
         if not grants_one_connection_per_pairing_window(
-            entry.data.get(CONF_BED_TYPE) or "",
-            entry.data.get(CONF_PROTOCOL_VARIANT),
+            target_data.get(CONF_BED_TYPE) or "",
+            target_data.get(CONF_PROTOCOL_VARIANT),
         ):
             return None
 
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self._entry_id)
+        coordinator = self._target_coordinator()
         if coordinator is not None:
             _LOGGER.info(
                 "Repair: pairing %s through the existing coordinator so the "
@@ -707,11 +824,9 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         # No coordinator: the entry failed setup and is retrying. Clear the bond
         # marker so the next setup requests the bond, then let setup own the one
         # connection instead of racing it with a client of our own.
-        if entry.data.get(CONF_BLE_BOND_ESTABLISHED):
-            self.hass.config_entries.async_update_entry(
-                entry,
-                data={**entry.data, CONF_BLE_BOND_ESTABLISHED: False},
-            )
+        if target_data.get(CONF_BLE_BOND_ESTABLISHED):
+            target_data[CONF_BLE_BOND_ESTABLISHED] = False
+            self._persist_target_bond_data(target_data)
         _LOGGER.info(
             "Repair: reloading %s so its setup makes the single pairing "
             "connection (no coordinator is loaded to drive)",
@@ -728,7 +843,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             # context is the expected result of re-verifying the same adapter,
             # so ask the reloaded coordinator what it actually proved rather
             # than reading "unchanged" as "unproven".
-            reloaded = self.hass.data.get(DOMAIN, {}).get(self._entry_id)
+            reloaded = self._target_coordinator()
             evidence = getattr(reloaded, "last_bond_evidence", None)
             if isinstance(evidence, BondEvidence) and evidence.proves_bond:
                 self._persist_repaired_bond(evidence.owner)

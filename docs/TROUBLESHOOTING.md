@@ -289,9 +289,9 @@ adapter, or no access to the system D-Bus), the action refuses rather than
 guessing. If two adapters on the host are both bonded to the bed, set the bed's
 preferred adapter to the one you want cleared and try again.
 
-A bed combined from two entries does not offer this action: a bond belongs to
-one Bluetooth address, and a combined bed keeps its addresses on the two sides.
-Split it back into two beds first if you need to remove a side's bond.
+For a bed combined from two entries, the action first asks which side you mean.
+Each side keeps its own Bluetooth address and bond state, so only the selected
+side is disconnected and updated.
 
 ### Signs Pairing is Needed
 - Connection succeeds but no commands work

@@ -514,6 +514,13 @@
           "outcome_failed": "❌ The bond was not removed ({reason})."
         }
       },
+      "remove_bond_side": {
+        "title": "Choose a bed side",
+        "description": "A combined bed has a separate Bluetooth bond for each physical side. Choose the side whose bond you want to remove.",
+        "data": {
+          "side": "Bed side"
+        }
+      },
       "remove_bond_result": {
         "title": "Bluetooth bond",
         "description": "{outcome}"

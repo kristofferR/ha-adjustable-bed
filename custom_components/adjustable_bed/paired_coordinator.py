@@ -595,6 +595,22 @@ class PairedBedCoordinator:
             return_exceptions=True,
         )
 
+    def consume_internal_entry_update(self, entry: ConfigEntry) -> bool:
+        """Let the side that changed bond state claim the parent entry update.
+
+        A separate-address pair persists a child's runtime bond markers by
+        updating the one real parent entry. The update listener therefore sees
+        this wrapper, not the child that armed the internal-update marker.
+        Forwarding the check prevents a successful verification or confirmed
+        removal from unnecessarily reloading and disconnecting both sides.
+        """
+        # Each parent write queues its own listener invocation. Consume exactly
+        # one marker per pass so concurrent child writes can each claim theirs.
+        return any(
+            child.consume_internal_entry_update(entry)
+            for child in self._children.values()
+        )
+
     # --------------------------------------------------- connection-state relay
     def _wire_child_connection_callbacks(self) -> None:
         for child in self._children.values():
@@ -898,9 +914,17 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
         """Clear the bond state held by the coordinator that owns the link."""
         self._single_inner.apply_confirmed_bond_removal()
 
-    def begin_internal_bond_update(self, bond_established: bool) -> None:
+    def begin_internal_bond_update(
+        self,
+        bond_established: bool,
+        *,
+        marker_unreliable: bool | None = None,
+    ) -> None:
         """Tag the next bond write on the coordinator that owns the link."""
-        self._single_inner.begin_internal_bond_update(bond_established)
+        self._single_inner.begin_internal_bond_update(
+            bond_established,
+            marker_unreliable=marker_unreliable,
+        )
 
     async def async_shutdown(self) -> None:
         for unsub in self._child_unsubs:

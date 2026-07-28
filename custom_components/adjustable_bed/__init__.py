@@ -42,11 +42,8 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_PIN,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
-    CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
-    CONF_PAIR_SCHEMA_VERSION,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
@@ -55,6 +52,7 @@ from .const import (
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
+    RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
@@ -68,7 +66,9 @@ from .pairing import (
     KEY_ORIGIN_TITLE,
     KEY_ORIGIN_UNIQUE_ID,
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
+    effective_child_data,
     get_child,
+    inheritable_child_fields,
     is_paired,
     iter_children,
     single_data_from_child,
@@ -355,26 +355,9 @@ async def _async_setup_offline_diagnostic_entry(
     )
 
 
-# Entry-data keys that must NOT be inherited by a child coordinator: the pair's
-# own keys, plus per-side state like the BLE bond marker — inheriting a top-level
-# bond marker would poison BOTH sides (one repaired side must not flip the other
-# to "already bonded" and skip pairing).
-_PAIR_ONLY_KEYS = frozenset(
-    {
-        CONF_PAIR_ID,
-        CONF_PAIR_MODE,
-        CONF_PAIR_CHILDREN,
-        CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_SCHEMA_VERSION,
-        CONF_PAIR_CONNECTION_MODE,
-        CONF_BLE_BOND_ESTABLISHED,
-    }
-)
-
-
 def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
     """Parent-level config inherited by every child (each descriptor overrides)."""
-    return {key: value for key, value in parent_data.items() if key not in _PAIR_ONLY_KEYS}
+    return inheritable_child_fields(parent_data)
 
 
 def _make_child_persist_cb(
@@ -393,16 +376,27 @@ def _make_child_persist_cb(
         # Parent options now flow into the child view's `.data`; never write
         # those option-managed keys back into the per-side descriptor (they'd
         # become a stale per-side override that shadows future option edits).
-        option_keys = set(entry.options)
+        option_keys = set(inheritable_child_fields(entry.options))
         delta = {
             key: value
             for key, value in new_child_data.items()
             if current.get(key) != value and key not in option_keys
         }
-        if not delta:
+        removed_runtime_keys = {
+            key
+            for key in RUNTIME_BOND_KEYS
+            if key in current and key not in new_child_data
+        }
+        if not delta and not removed_runtime_keys:
             return
         hass.config_entries.async_update_entry(
-            entry, data=with_updated_child(entry.data, side, delta)
+            entry,
+            data=with_updated_child(
+                entry.data,
+                side,
+                delta,
+                remove=removed_runtime_keys,
+            ),
         )
 
     return persist
@@ -412,13 +406,12 @@ def _build_paired_children(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, AdjustableBedCoordinator]:
     """Build one child coordinator per side from the paired entry's descriptors."""
-    shared = _shared_child_fields(entry.data)
     children: dict[str, AdjustableBedCoordinator] = {}
     for side in PAIR_SIDES:
         descriptor = get_child(entry.data, side)
         if descriptor is None:
             continue
-        child_data: dict[str, Any] = {**shared, **descriptor}
+        child_data = effective_child_data(entry.data, side, entry.options)
         view = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
         # The view duck-types a ConfigEntry for the coordinator's purposes.
         children[side] = AdjustableBedCoordinator(hass, cast("ConfigEntry", view))

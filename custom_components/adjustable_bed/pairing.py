@@ -17,7 +17,7 @@ shared by the pairing wizard, paired coordinator, and lossless unpair path.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from typing import Any, Final, TypedDict, cast
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -84,6 +84,9 @@ class ChildDescriptor(TypedDict, total=False):
     capabilities: dict[str, Any]
     # Set once a BLE bond is established, so future connects skip pairing.
     ble_bond_established: bool
+    ble_bond_marker_unreliable: bool
+    ble_bond_context: dict[str, Any]
+    ble_bond_attempted_source: str
     # Provenance, used to revert an opt-in conversion (unpair) losslessly.
     absorbed_entry_id: str
     origin_unique_id: str
@@ -181,6 +184,48 @@ def get_child(entry_data: Mapping[str, Any], side: str) -> ChildDescriptor | Non
     return None
 
 
+CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
+    {
+        CONF_PAIR_ID,
+        CONF_PAIR_MODE,
+        CONF_PAIR_CHILDREN,
+        CONF_PAIR_MEMBER_ADDRESSES,
+        CONF_PAIR_SCHEMA_VERSION,
+        CONF_PAIR_CONNECTION_MODE,
+        *RUNTIME_BOND_KEYS,
+    }
+)
+
+
+def inheritable_child_fields(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return fields that may flow from a paired parent into a child view."""
+    return {
+        key: value
+        for key, value in data.items()
+        if key not in CHILD_INHERITANCE_EXCLUDED_KEYS
+    }
+
+
+def effective_child_data(
+    entry_data: Mapping[str, Any],
+    side: str,
+    options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the config a paired side reads through its child entry view.
+
+    Shared parent fields are inherited, the side descriptor overrides them, and
+    current parent options win last. Pair routing and top-level bond state are
+    deliberately excluded: a bond belongs to one BLE address and must never
+    bleed from the parent (or the other side) into this child.
+    """
+    descriptor = get_child(entry_data, side)
+    if descriptor is None:
+        raise ValueError(f"Paired entry has no child for side {side!r}")
+    shared = inheritable_child_fields(entry_data)
+    overrides = inheritable_child_fields(options or {})
+    return {**shared, **descriptor, **overrides}
+
+
 def pair_member_addresses(entry_data: Mapping[str, Any]) -> list[str]:
     """Return the normalized member MACs of a paired entry, order-stable.
 
@@ -208,14 +253,22 @@ def pair_member_addresses(entry_data: Mapping[str, Any]) -> list[str]:
 
 
 def with_updated_child(
-    entry_data: Mapping[str, Any], side: str, patch: Mapping[str, Any]
+    entry_data: Mapping[str, Any],
+    side: str,
+    patch: Mapping[str, Any],
+    *,
+    remove: Collection[str] = (),
 ) -> dict[str, Any]:
-    """Return a copy of ``entry.data`` with the ``side`` child merged with ``patch``.
+    """Return a copy of ``entry.data`` with one child updated.
 
     Pure: the caller persists the result with ``async_update_entry``. This is the
     single chokepoint for runtime per-side mutations (e.g. a bed-type/angle
     correction), so such updates always target the right descriptor instead of
     exploding into flat top-level keys.
+
+    Keys in ``remove`` are deleted after the patch is applied. Deletion support
+    matters for runtime bond state: a confirmed removal must not leave a stale
+    child marker that later suppresses pairing or reappears after splitting.
 
     Raises ``ValueError`` for an unknown side or a non-paired entry, so a
     mistargeted update fails loudly rather than silently writing nothing.
@@ -231,7 +284,10 @@ def with_updated_child(
     matched = False
     for child in children:
         if child.get(CONF_SIDE) == side:
-            updated.append({**child, **patch})
+            child_data = {**child, **patch}
+            for key in remove:
+                child_data.pop(key, None)
+            updated.append(child_data)
             matched = True
         else:
             updated.append({**child})

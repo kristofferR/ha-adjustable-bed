@@ -94,9 +94,9 @@ class RecoveryEligibility(StrEnum):
     KEEPS_FIRST_LINK = "keeps_first_link"
     NO_VERIFIER = "no_verifier"
     UNKNOWN_SOURCE = "unknown_source"
-    # A combined Dual Bed entry: per-side addresses and bond state live on the
-    # child descriptors, so nothing this module writes at entry level would
-    # reach the side that re-bonded. Decided by the caller, which owns the entry.
+    # A combined Dual Bed entry whose issue address could not be resolved to one
+    # child descriptor. The caller owns that mapping and refuses rather than
+    # guessing which side a destructive recovery should change.
     COMBINED_PAIR = "combined_pair"
 
 

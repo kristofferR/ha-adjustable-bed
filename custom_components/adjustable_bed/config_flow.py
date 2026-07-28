@@ -162,12 +162,14 @@ from .const import (
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTES,
+    RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     DetectionResult,
     bed_type_has_position_feedback,
@@ -198,6 +200,7 @@ from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     build_pair_entry_data,
     build_single_address_pair_entry_data,
+    effective_child_data,
     get_child,
     is_paired,
     iter_children,
@@ -462,6 +465,31 @@ def _every_route_holds_bond(
         if not selection.is_exact or selection.record != record:
             return False
     return True
+
+
+def _matching_local_bond_route(
+    prediction: PathPrediction,
+    inventory: LocalBondInventory,
+    record: LocalBondRecord,
+) -> ConnectionPath | None:
+    """Return one visible local route that owns ``record``.
+
+    This is not a prediction that the route will win. It only supplies the
+    source on which an existing bond can be checked. The verification path pins
+    discovery to that source and still rejects the result if Home Assistant's
+    eventual connection is re-routed elsewhere.
+    """
+    for path in prediction.paths:
+        if path.transport is not TransportClass.LOCAL:
+            continue
+        selection = select_local_bond(
+            inventory,
+            owner_source=path.source,
+            owner_adapter=path.adapter,
+        )
+        if selection.is_exact and selection.record == record:
+            return path
+    return None
 
 
 class NotAdvertisingError(Exception):
@@ -2875,10 +2903,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self.hass, address, self._manual_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
         )
         existing = inventory.sole_bond
-        # An existing bond is only offerable when it is on this host and there is
-        # exactly one of it. A proxy keeps its own bond store that the host
-        # cannot read, so claiming a bond exists there would be a guess.
-        over_proxy = (
+        # A proxy keeps its own bond store that the host cannot read. A proxy
+        # winning the prediction does not, however, erase a visible host route
+        # whose exact bond can be checked by connecting through that source.
+        chosen_over_proxy = (
             prediction.chosen is not None and prediction.chosen.transport is TransportClass.PROXY
         )
         # "Not a proxy" is not the same as "provably the host". An unknown or
@@ -2899,26 +2927,30 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if proven_local and prediction.chosen is not None
             else None
         )
-        can_use_existing = (
+        chosen_uses_existing = (
             existing is not None
-            and not over_proxy
+            and not chosen_over_proxy
             and existing_selection is not None
             and existing_selection.is_exact
             and existing_selection.record == existing
+        )
+        matching_local_route = (
+            _matching_local_bond_route(prediction, inventory, existing)
+            if existing is not None
+            else None
         )
         # Replacement is the destructive action, and it is only meaningful when
         # a pairing attempt follows it. A bed that grants one connection per
         # pairing window defers bonding to its first connection, so replacing
         # here would remove a bond and pair nothing.
         defers_pairing = grants_one_connection_per_pairing_window(bed_type or "", variant)
-        can_replace_existing = can_use_existing and not defers_pairing
+        can_replace_existing = chosen_uses_existing and not defers_pairing
         # Certifying means persisting the bond marker without connecting, so it
         # rests entirely on the predicted route, and a prediction is advisory by
         # design. It is only honest when no other route could win and turn the
         # assertion false.
         can_certify_existing = (
-            can_use_existing
-            and existing is not None
+            existing is not None
             and _every_route_holds_bond(prediction, inventory, existing)
         )
         # Verifying does not need that guarantee: it connects and records the
@@ -2927,7 +2959,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # pairing window cannot verify at all, though - spending the window is
         # the one thing this action exists to avoid - so for it the action would
         # be exactly the assertion above, and it is offered only when certain.
-        can_offer_existing = can_use_existing and (not defers_pairing or can_certify_existing)
+        can_offer_existing = existing is not None and (
+            (not defers_pairing and matching_local_route is not None)
+            or can_certify_existing
+        )
 
         if user_input is not None:
             action = user_input.get("action")
@@ -2950,7 +2985,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # this record above, so its source names the same adapter.
                 self._pairing_verify_source = (
                     (existing.adapter_address if existing else None)
-                    or (prediction.chosen.source if prediction.chosen else None)
+                    or (
+                        matching_local_route.source
+                        if matching_local_route is not None
+                        else None
+                    )
                 )
                 self._pairing_verify_record = existing
                 return await self._async_start_pairing_operation(address, prediction)
@@ -3000,9 +3039,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ),
                 "bond_state": await self._async_bond_state_note(
                     inventory,
-                    over_proxy,
-                    can_use_existing,
-                    route_uncertain=can_use_existing and not can_offer_existing,
+                    chosen_over_proxy and matching_local_route is None,
+                    matching_local_route is not None,
+                    route_uncertain=(
+                        matching_local_route is not None and not can_offer_existing
+                    ),
                 ),
             },
         )
@@ -4267,6 +4308,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         # replaying the confirmation's input into the result step.
         self._bond_removal_result_shown: bool = False
         self._bond_removal_state_applied: bool = False
+        # A separate-address pair has one bond per child. The side selection is
+        # held for the whole confirmation/removal transaction so every lookup,
+        # lock and persistence write targets the same address.
+        self._bond_removal_side: str | None = None
 
     @staticmethod
     def _variant_for_bed_type(bed_type: str, data: dict[str, Any]) -> str:
@@ -4401,10 +4446,10 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
         ):
             menu_options.append("pair_sides")
-        if data.get(CONF_ADDRESS):
-            # A bond belongs to one BLE address. A bed combined from two entries
-            # keeps its addresses on the children, so there is no single bond to
-            # offer here - only a dead action that could not do anything.
+        if data.get(CONF_ADDRESS) or (
+            data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS
+            and bool(iter_children(data))
+        ):
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 
@@ -5020,11 +5065,83 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
     # confirmed afterwards before anything is reported as done.
     # ------------------------------------------------------------------
 
+    def _bond_target_data(self) -> dict[str, Any]:
+        """Return the exact entry data backing the selected bond address."""
+        side = self._bond_removal_side
+        if side is None:
+            data = dict(self.config_entry.data)
+        else:
+            data = effective_child_data(
+                self.config_entry.data,
+                side,
+                self.config_entry.options,
+            )
+        address = data.get(CONF_ADDRESS)
+        if isinstance(address, str):
+            data[CONF_ADDRESS] = address.strip().upper()
+        return data
+
+    def _bond_target_coordinator(self) -> Any | None:
+        """Return the coordinator whose locks and runtime state own the target."""
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        side = self._bond_removal_side
+        if coordinator is None or side is None:
+            return coordinator
+        child_for_side = getattr(coordinator, "child_for_side", None)
+        return child_for_side(side) if callable(child_for_side) else None
+
+    async def async_step_remove_bond_side(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose one unambiguous child address from a combined bed."""
+        choices: dict[str, str] = {}
+        address_sides: dict[str, list[str]] = {}
+        for side in PAIR_SIDES:
+            child = get_child(self.config_entry.data, side)
+            if child is None:
+                continue
+            raw_address = child.get(CONF_ADDRESS)
+            address = raw_address.strip().upper() if isinstance(raw_address, str) else ""
+            if not address:
+                return self._async_abort_bond_removal(
+                    "ambiguous",
+                    self.config_entry.title,
+                    str(self.config_entry.data.get(CONF_ADDRESS, "")),
+                    BondOwner(),
+                )
+            address_sides.setdefault(address, []).append(side)
+            name = child.get(CONF_NAME) or side.title()
+            choices[side] = f"{side.title()}: {name} ({address})"
+
+        if not choices or any(len(sides) > 1 for sides in address_sides.values()):
+            return self._async_abort_bond_removal(
+                "ambiguous",
+                self.config_entry.title,
+                str(self.config_entry.data.get(CONF_ADDRESS, "")),
+                BondOwner(),
+            )
+
+        if len(choices) == 1:
+            self._bond_removal_side = next(iter(choices))
+            return await self.async_step_remove_bond()
+
+        if user_input is not None:
+            submitted_side = user_input.get("side")
+            if isinstance(submitted_side, str) and submitted_side in choices:
+                self._bond_removal_side = submitted_side
+                return await self.async_step_remove_bond()
+
+        return self.async_show_form(
+            step_id="remove_bond_side",
+            data_schema=vol.Schema({vol.Required("side"): vol.In(choices)}),
+        )
+
     async def _async_bond_situation(self) -> tuple[LocalBondInventory, BondOwner]:
         """Return the host's bond records and the owner we have on record."""
-        address = self.config_entry.data.get(CONF_ADDRESS, "")
+        data = self._bond_target_data()
+        address = data.get(CONF_ADDRESS, "")
         inventory = await async_read_local_bonds(address)
-        return inventory, bond_owner_from_entry(self.config_entry.data)
+        return inventory, bond_owner_from_entry(data)
 
     async def async_step_remove_bond(
         self, user_input: dict[str, Any] | None = None
@@ -5038,9 +5155,17 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         that changes BlueZ in between (another adapter pairing, a bond removed
         elsewhere) means removing something the user never saw.
         """
+        if (
+            self.config_entry.data.get(CONF_PAIR_MODE)
+            == PAIR_MODE_SEPARATE_ADDRESS
+            and self._bond_removal_side is None
+        ):
+            return await self.async_step_remove_bond_side(user_input)
+
+        target_data = self._bond_target_data()
         inventory, owner = await self._async_bond_situation()
-        name = self.config_entry.data.get(CONF_NAME) or self.config_entry.title
-        address = self.config_entry.data.get(CONF_ADDRESS, "")
+        name = target_data.get(CONF_NAME) or self.config_entry.title
+        address = target_data.get(CONF_ADDRESS, "")
 
         # Proxy-owned bonds are refused before anything else: the host cannot
         # reach them, and a destructive button that quietly does nothing to the
@@ -5060,7 +5185,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             prediction = async_predict_path(
                 self.hass,
                 address,
-                self.config_entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
+                target_data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
             )
             if (
                 prediction.chosen is not None
@@ -5156,7 +5281,7 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         record = self._bond_removal_record
         assert record is not None
 
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        coordinator = self._bond_target_coordinator()
         if coordinator is None:
             # No coordinator to quiesce, but the address still has to be held:
             # a config or repair flow could otherwise connect to this bed while
@@ -5203,14 +5328,33 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
         if not result.succeeded or self._bond_removal_state_applied:
             return
         self._bond_removal_state_applied = True
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        side = self._bond_removal_side
+        if side is not None:
+            parent = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+            child_for_side = getattr(parent, "child_for_side", None)
+            child = child_for_side(side) if callable(child_for_side) else None
+            apply_removal = getattr(child, "apply_confirmed_bond_removal", None)
+            if callable(apply_removal):
+                apply_removal()
+                return
+            data = with_updated_child(
+                self.config_entry.data,
+                side,
+                {},
+                remove=RUNTIME_BOND_KEYS,
+            )
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data=data,
+            )
+            return
+        coordinator = self._bond_target_coordinator()
         if coordinator is not None:
             coordinator.apply_confirmed_bond_removal()
             return
         data = dict(self.config_entry.data)
-        data.pop(CONF_BLE_BOND_ESTABLISHED, None)
-        data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
-        data.pop(CONF_BLE_BOND_CONTEXT, None)
+        for key in RUNTIME_BOND_KEYS:
+            data.pop(key, None)
         self.hass.config_entries.async_update_entry(self.config_entry, data=data)
 
     async def _async_bond_removal_outcome_note(self, succeeded: bool, detail: str | None) -> str:
@@ -5270,7 +5414,8 @@ class AdjustableBedOptionsFlow(BluetoothOperationMixin, OptionsFlowWithConfigEnt
             step_id="remove_bond_result",
             data_schema=vol.Schema({}),
             description_placeholders={
-                "name": self.config_entry.data.get(CONF_NAME) or self.config_entry.title,
+                "name": self._bond_target_data().get(CONF_NAME)
+                or self.config_entry.title,
                 "outcome": await self._async_bond_removal_outcome_note(succeeded, detail),
             },
         )

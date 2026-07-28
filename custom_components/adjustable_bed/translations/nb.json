@@ -136,6 +136,13 @@
           "outcome_failed": "❌ Koblingen ble ikke fjernet ({reason})."
         }
       },
+      "remove_bond_side": {
+        "title": "Velg sengeside",
+        "description": "En kombinert seng har en egen Bluetooth-kobling for hver fysiske side. Velg siden du vil fjerne koblingen for.",
+        "data": {
+          "side": "Sengeside"
+        }
+      },
       "remove_bond_result": {
         "title": "Bluetooth-kobling",
         "description": "{outcome}"

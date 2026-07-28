@@ -10,7 +10,7 @@ import random
 import time
 import traceback
 from collections import deque
-from collections.abc import AsyncIterator, Callable, Coroutine, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -121,6 +121,7 @@ from .const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONF_SIDE,
     CONNECTION_PROFILES,
     DEFAULT_BACK_MAX_ANGLE,
     DEFAULT_CONNECTION_PROFILE,
@@ -154,6 +155,7 @@ from .const import (
     POSITION_SEEK_TIMEOUT,
     REVERIE_BACK_MAX_ANGLE,
     RICHMAT_REMOTE_AUTO,
+    RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     connection_gated_by_bond,
     get_richmat_features,
@@ -177,7 +179,7 @@ from .detection import (
     refine_qrrm_protocol_from_device_info,
 )
 from .diagnostic_payloads import new_connection_attempt_details
-from .pairing import octo_snapshot_from_descriptor
+from .pairing import inheritable_child_fields, octo_snapshot_from_descriptor
 from .unsupported import (
     create_pairing_required_issue,
     delete_pairing_required_issue,
@@ -248,17 +250,36 @@ class ChildEntryView:
         # silently shadowed for settings the coordinator reads from `.data`.
         # Per-side identity (address/side/bond) isn't in options, so it's kept.
         if self._parent.options:
-            return {**self._child_data, **self._parent.options}
+            return {
+                **self._child_data,
+                **inheritable_child_fields(self._parent.options),
+            }
         return self._child_data
 
     @property
     def options(self) -> Mapping[str, Any]:
-        return self._parent.options
+        return inheritable_child_fields(self._parent.options)
 
-    def persist_data(self, new_data: Mapping[str, Any]) -> None:
-        """Update this side's config in place and route it to the parent."""
-        self._child_data = dict(new_data)
-        self._persist_cb(self._child_data)
+    def persist_data(
+        self,
+        new_data: Mapping[str, Any],
+        *,
+        keys: Collection[str] | None = None,
+    ) -> None:
+        """Update this side's config in place and route selected keys to the parent."""
+        if keys is None:
+            self._child_data = dict(new_data)
+            persisted_data = self._child_data
+        else:
+            for key in keys:
+                if key in new_data:
+                    self._child_data[key] = new_data[key]
+                else:
+                    self._child_data.pop(key, None)
+            persisted_data = {
+                key: self._child_data[key] for key in keys if key in self._child_data
+            }
+        self._persist_cb(persisted_data)
 
     def __getattr__(self, name: str) -> Any:
         # Anything not overridden above (entry_id, title, unique_id, version,
@@ -485,7 +506,12 @@ class AdjustableBedCoordinator:
             self._connection_profile,
         )
 
-    def _async_persist_config(self, new_data: dict[str, Any]) -> None:
+    def _async_persist_config(
+        self,
+        new_data: dict[str, Any],
+        *,
+        keys: Collection[str] | None = None,
+    ) -> None:
         """Persist a runtime config change to the correct backing store.
 
         For a paired child the entry is a ChildEntryView, which routes the update
@@ -494,7 +520,7 @@ class AdjustableBedCoordinator:
         """
         entry = self.entry
         if isinstance(entry, ChildEntryView):
-            entry.persist_data(new_data)
+            entry.persist_data(new_data, keys=keys)
         else:
             self.hass.config_entries.async_update_entry(entry, data=new_data)
 
@@ -1072,7 +1098,12 @@ class AdjustableBedCoordinator:
             # rather than the shared entry (issue #329).
             self._async_persist_config(data)
 
-    def begin_internal_bond_update(self, bond_established: bool) -> None:
+    def begin_internal_bond_update(
+        self,
+        bond_established: bool,
+        *,
+        marker_unreliable: bool | None = None,
+    ) -> None:
         """Claim the caller's next entry write as one of our own bond updates.
 
         A repair for a bed that grants one connection per pairing window runs on
@@ -1083,6 +1114,10 @@ class AdjustableBedCoordinator:
         tag does not land must still persist, and merely reload.
         """
         self._ble_bond_established = bond_established
+        if marker_unreliable is not None:
+            self._ble_bond_marker_unreliable = marker_unreliable
+            if not marker_unreliable:
+                self._latched_pairing_successes = 0
         self._begin_internal_entry_update(bond_established)
 
     def _record_bond_provenance(self) -> None:
@@ -1136,7 +1171,13 @@ class AdjustableBedCoordinator:
         bond value, would then be mistaken for this write and silently skip the
         reload it needs.
         """
-        if self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id) is not self:
+        loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        owns_loaded_child = False
+        if isinstance(self.entry, ChildEntryView) and loaded is not None:
+            child_for_side = getattr(loaded, "child_for_side", None)
+            side = self.entry.data.get(CONF_SIDE)
+            owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
+        if loaded is not self and not owns_loaded_child:
             self._pending_internal_bond_marker = None
             return
         self._pending_internal_bond_marker = bond_established
@@ -1151,7 +1192,8 @@ class AdjustableBedCoordinator:
         if pending is None:
             return False
         self._pending_internal_bond_marker = None
-        return bool(entry.data.get(CONF_BLE_BOND_ESTABLISHED, False)) is pending
+        current_data = self.entry.data if isinstance(self.entry, ChildEntryView) else entry.data
+        return bool(current_data.get(CONF_BLE_BOND_ESTABLISHED, False)) is pending
 
     def _mark_ble_bond_established(self) -> None:
         """Record that future connections should skip `pair=True`."""
@@ -1188,10 +1230,11 @@ class AdjustableBedCoordinator:
         data.pop(CONF_BLE_BOND_ESTABLISHED, None)
         data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
         data.pop(CONF_BLE_BOND_CONTEXT, None)
+        data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
         if data == dict(self.entry.data):
             return
         self._begin_internal_entry_update(False)
-        self.hass.config_entries.async_update_entry(self.entry, data=data)
+        self._async_persist_config(data, keys=RUNTIME_BOND_KEYS)
 
     def _log_bond_marker_unreliable(self) -> None:
         """Log the latch transition. The write itself is batched by the caller."""

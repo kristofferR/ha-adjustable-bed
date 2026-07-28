@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
+from unittest.mock import AsyncMock, patch
+
 import pytest
 import voluptuous as vol
 from homeassistant import config_entries
@@ -64,10 +67,12 @@ from custom_components.adjustable_bed.paired_coordinator import (
     SingleAddressPairedCoordinator,
 )
 from custom_components.adjustable_bed.pairing import (
+    effective_child_data,
     get_child,
     is_paired,
     octo_snapshot_from_descriptor,
     pair_member_addresses,
+    with_updated_child,
 )
 from custom_components.adjustable_bed.pairing_candidates import (
     CONF_PAIR_SELECTION,
@@ -309,7 +314,11 @@ class TestPairedSetup:
 
         result = await hass.config_entries.options.async_init(entry.entry_id)
         assert result["type"] == FlowResultType.MENU
-        assert set(result["menu_options"]) == {"settings", "unpair"}
+        assert set(result["menu_options"]) == {
+            "settings",
+            "unpair",
+            "remove_bond",
+        }
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"], {"next_step_id": "unpair"}
@@ -330,6 +339,166 @@ class TestPairedSetup:
             LEFT_ADDR,
             RIGHT_ADDR,
         }
+
+    async def test_combined_bed_selects_a_side_before_bond_removal(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """A combined parent never guesses which child address the action means."""
+        entry = _paired_entry(hass)
+
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            menu["flow_id"],
+            {"next_step_id": "remove_bond"},
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "remove_bond_side"
+        side_field = next(iter(result["data_schema"].schema))
+        choices = result["data_schema"].schema[side_field].container
+        assert set(choices) == {SIDE_LEFT, SIDE_RIGHT}
+        assert LEFT_ADDR in choices[SIDE_LEFT]
+        assert RIGHT_ADDR in choices[SIDE_RIGHT]
+
+    async def test_bond_removal_refuses_a_pair_without_resolvable_sides(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """Malformed child data must abort instead of rendering an empty selector."""
+        data = _paired_entry_data()
+        data[CONF_PAIR_CHILDREN] = [
+            {
+                CONF_SIDE: "middle",
+                CONF_ADDRESS: LEFT_ADDR,
+                CONF_NAME: "Unknown side",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+            }
+        ]
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Malformed pair",
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="malformed_pair_bond_removal",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            menu["flow_id"],
+            {"next_step_id": "remove_bond"},
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "remove_bond_ambiguous"
+
+    async def test_bond_removal_refuses_children_with_one_shared_address(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """One host bond cannot safely be removed for only one child."""
+        data = _paired_entry_data()
+        data[CONF_PAIR_CHILDREN][1][CONF_ADDRESS] = LEFT_ADDR.lower()
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Ambiguous pair",
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="ambiguous_pair_bond_removal",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            menu["flow_id"],
+            {"next_step_id": "remove_bond"},
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "remove_bond_ambiguous"
+
+    @pytest.mark.parametrize("invalid_address", [None, 123, "", "   "])
+    async def test_bond_removal_refuses_child_without_usable_address(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+        invalid_address: object,
+    ) -> None:
+        """Bond removal must not select a child whose address cannot be queried."""
+        data = _paired_entry_data()
+        data[CONF_PAIR_CHILDREN] = [data[CONF_PAIR_CHILDREN][0]]
+        data[CONF_PAIR_CHILDREN][0][CONF_ADDRESS] = invalid_address
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Malformed pair",
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="malformed_pair_address_bond_removal",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+
+        menu = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            menu["flow_id"],
+            {"next_step_id": "remove_bond"},
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "remove_bond_ambiguous"
+
+    async def test_bond_removal_auto_selects_the_only_child(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ) -> None:
+        """A one-child descriptor does not render a one-option selector."""
+        from custom_components.adjustable_bed.config_flow import (
+            AdjustableBedOptionsFlow,
+        )
+
+        data = _paired_entry_data()
+        data[CONF_PAIR_CHILDREN] = [data[CONF_PAIR_CHILDREN][0]]
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Partial pair",
+            data=data,
+            unique_id=PAIR_ID,
+            entry_id="partial_pair_bond_removal",
+            version=4,
+        )
+        entry.add_to_hass(hass)
+        original_remove_bond = AdjustableBedOptionsFlow.async_step_remove_bond
+        selected: list[str | None] = []
+
+        async def stop_after_selection(
+            flow: AdjustableBedOptionsFlow,
+            user_input: dict[str, Any] | None = None,
+        ):
+            if flow._bond_removal_side is None:
+                return await original_remove_bond(flow, user_input)
+            selected.append(flow._bond_removal_side)
+            return {"type": FlowResultType.FORM}
+
+        with patch.object(
+            AdjustableBedOptionsFlow,
+            "async_step_remove_bond",
+            new=stop_after_selection,
+        ):
+            menu = await hass.config_entries.options.async_init(entry.entry_id)
+            result = await hass.config_entries.options.async_configure(
+                menu["flow_id"],
+                {"next_step_id": "remove_bond"},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert selected == [SIDE_LEFT]
 
     async def test_unpair_rolls_back_if_second_single_cannot_be_added(
         self,
@@ -551,12 +720,39 @@ class TestPairedBuilders:
     """Unit tests for the child-construction helpers (no BLE)."""
 
     def test_shared_child_fields_excludes_pair_keys(self):
-        shared = _shared_child_fields(_paired_entry_data())
+        data = {
+            **_paired_entry_data(),
+            "ble_bond_established": True,
+            "ble_bond_marker_unreliable": True,
+            "ble_bond_context": {"transport": "local"},
+            "ble_bond_attempted_source": "hci0",
+        }
+        shared = _shared_child_fields(data)
         assert CONF_PAIR_ID not in shared
         assert CONF_PAIR_CHILDREN not in shared
         assert CONF_PAIR_MODE not in shared
+        assert "ble_bond_established" not in shared
+        assert "ble_bond_marker_unreliable" not in shared
+        assert "ble_bond_context" not in shared
+        assert "ble_bond_attempted_source" not in shared
         # shared, non-pair fields survive
         assert shared[CONF_BED_TYPE] == BED_TYPE_LINAK
+
+    def test_effective_child_data_filters_excluded_options(self):
+        data = _paired_entry_data()
+        child_data = effective_child_data(
+            data,
+            SIDE_LEFT,
+            {
+                CONF_PAIR_MODE: "invalid",
+                "ble_bond_established": True,
+                CONF_MOTOR_COUNT: 3,
+            },
+        )
+
+        assert CONF_PAIR_MODE not in child_data
+        assert "ble_bond_established" not in child_data
+        assert child_data[CONF_MOTOR_COUNT] == 3
 
     async def test_build_children_reads_per_side_descriptor(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
@@ -579,6 +775,24 @@ class TestPairedBuilders:
         assert left["ble_bond_established"] is True
         assert "ble_bond_established" not in right  # right untouched
 
+    async def test_excluded_option_does_not_block_child_bond_persistence(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        entry = _paired_entry(hass)
+        hass.config_entries.async_update_entry(
+            entry,
+            options={"ble_bond_established": False},
+        )
+        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
+
+        persist({**baseline, "ble_bond_established": True})
+
+        left = get_child(entry.data, SIDE_LEFT)
+        assert left is not None
+        assert left["ble_bond_established"] is True
+
     async def test_child_persist_noop_when_unchanged(self, hass: HomeAssistant):
         entry = _paired_entry(hass)
         before = entry.data
@@ -598,6 +812,100 @@ class TestPairedBuilders:
         assert get_child(entry.data, SIDE_LEFT)["ble_bond_established"] is True
         persist({**baseline, "ble_bond_established": False})
         assert get_child(entry.data, SIDE_LEFT)["ble_bond_established"] is False
+
+    async def test_child_persist_removes_runtime_bond_keys(self, hass: HomeAssistant):
+        """Confirmed removal must delete markers instead of leaving stale overrides."""
+        entry = _paired_entry(hass)
+        baseline = {**_shared_child_fields(entry.data), **_child(SIDE_LEFT, LEFT_ADDR)}
+        persist = _make_child_persist_cb(hass, entry, SIDE_LEFT)
+        persist(
+            {
+                **baseline,
+                "ble_bond_established": True,
+                "ble_bond_context": {
+                    "version": 1,
+                    "transport": "local",
+                    "source": "hci0",
+                },
+                "ble_bond_attempted_source": "hci0",
+            }
+        )
+
+        persist(dict(baseline))
+
+        left = get_child(entry.data, SIDE_LEFT)
+        right = get_child(entry.data, SIDE_RIGHT)
+        assert "ble_bond_established" not in left
+        assert "ble_bond_context" not in left
+        assert "ble_bond_attempted_source" not in left
+        assert "ble_bond_established" not in right
+
+    async def test_child_bond_removal_is_consumed_without_reloading_the_pair(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """The parent listener must recognize the child's internal state write."""
+        from custom_components.adjustable_bed import _async_update_listener
+
+        entry = _paired_entry(hass)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=with_updated_child(
+                {**entry.data, "connection_profile": "performance"},
+                SIDE_LEFT,
+                {
+                    "ble_bond_established": True,
+                    "ble_bond_context": {
+                        "version": 1,
+                        "transport": "local",
+                        "source": "hci0",
+                    },
+                },
+            ),
+        )
+        children = _build_paired_children(hass, entry)
+        coordinator = PairedBedCoordinator(hass, entry, children)
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+        remove_listener = entry.add_update_listener(_async_update_listener)
+
+        try:
+            with patch.object(
+                hass.config_entries,
+                "async_reload",
+                new_callable=AsyncMock,
+            ) as reload_entry:
+                children[SIDE_LEFT].apply_confirmed_bond_removal()
+                await hass.async_block_till_done()
+
+            reload_entry.assert_not_awaited()
+        finally:
+            remove_listener()
+            hass.data[DOMAIN].pop(entry.entry_id, None)
+
+        left = get_child(entry.data, SIDE_LEFT)
+        assert left is not None
+        assert "ble_bond_established" not in left
+        assert "ble_bond_context" not in left
+        assert "connection_profile" not in left
+
+    async def test_each_parent_listener_consumes_one_child_bond_update(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """Each queued parent write retains one matching child marker."""
+        entry = _paired_entry(hass)
+        children = _build_paired_children(hass, entry)
+        coordinator = PairedBedCoordinator(hass, entry, children)
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+        try:
+            children[SIDE_LEFT].begin_internal_bond_update(False)
+            children[SIDE_RIGHT].begin_internal_bond_update(False)
+            assert coordinator.consume_internal_entry_update(entry) is True
+            assert coordinator.consume_internal_entry_update(entry) is True
+            assert coordinator.consume_internal_entry_update(entry) is False
+        finally:
+            hass.data[DOMAIN].pop(entry.entry_id, None)
 
 
 class TestPairBedsConversion:

@@ -54,6 +54,7 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
+    AdjustableBedOptionsFlow,
     NotAdvertisingError,
     _default_motor_count,
     _is_valid_motor_count,
@@ -111,9 +112,14 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_MOTOR_PULSE_USER_SET,
     CONF_OCTO_PIN,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MEMBER_ADDRESSES,
+    CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
@@ -122,9 +128,12 @@ from custom_components.adjustable_bed.const import (
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    PAIR_MODE_SEPARATE_ADDRESS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RONDURE_VARIANT_SIDE_A,
     SBI_VARIANT_SIDE_B,
+    SIDE_LEFT,
+    SIDE_RIGHT,
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
@@ -139,6 +148,7 @@ from custom_components.adjustable_bed.kaidi_protocol import (
     KAIDI_ADV_TYPE_BROADCAST,
     KaidiAdvertisement,
 )
+from custom_components.adjustable_bed.pairing import get_child
 from custom_components.adjustable_bed.setup_operation import (
     OperationOutcome,
     OperationResult,
@@ -704,6 +714,58 @@ class TestPairingPersistence:
             "cannot read or remove a bond stored on a proxy"
             in (result["description_placeholders"]["bond_state"])
         )
+
+    async def test_a_proxy_winning_prediction_does_not_hide_a_visible_host_bond(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Verification pins the bonded host route and checks the actual route.
+
+        A proxy with the strongest signal may win the advisory prediction while
+        the bonded local adapter remains in range. That is enough to offer a
+        verification attempt, not enough to certify anything without connecting.
+        """
+        flow = self._new_pairing_flow(hass)
+        inventory = LocalBondInventory(
+            status=BluezReadStatus.OK,
+            records=(_bond_record(adapter_address=None),),
+        )
+        proxy = ConnectionPath(
+            source="bedroom-proxy",
+            transport=TransportClass.PROXY,
+        )
+        bonded = ConnectionPath(
+            source="11:22:33:44:55:66",
+            transport=TransportClass.LOCAL,
+            adapter="hci0",
+        )
+        prediction = patch(
+            "custom_components.adjustable_bed.config_flow.async_predict_path",
+            return_value=PathPrediction(
+                chosen=proxy,
+                paths=(proxy, bonded),
+            ),
+        )
+
+        with _patch_inventory(inventory), prediction:
+            result = await flow.async_step_bluetooth_pairing()
+
+        field = next(iter(result["data_schema"].schema))
+        options = result["data_schema"].schema[field].config["options"]
+        assert "use_existing_bond" in options
+        # Replacement still follows the selected route's separate safety gate.
+        assert "remove_bond_and_pair" not in options
+
+        with (
+            _patch_inventory(inventory),
+            prediction,
+            patch.object(flow, "_async_start_pairing_operation", AsyncMock()),
+        ):
+            await flow.async_step_bluetooth_pairing(
+                {"action": "use_existing_bond"}
+            )
+
+        assert flow._pairing_verify_source == "11:22:33:44:55:66"
+        assert flow._pairing_route_certain is False
 
     async def test_leggett_gen2_pairs_after_service_discovery(self, hass: HomeAssistant) -> None:
         """LP Comfort Connect must connect and discover GATT before bonding."""
@@ -3770,7 +3832,9 @@ async def test_abandoning_the_flow_mid_probe_leaves_no_connected_client(
 _BONDED_ADDRESS = "AA:BB:CC:DD:EE:FF"
 
 
-def _bond_record(adapter_address: str = "11:22:33:44:55:66") -> LocalBondRecord:
+def _bond_record(
+    adapter_address: str | None = "11:22:33:44:55:66",
+) -> LocalBondRecord:
     return LocalBondRecord(
         address=_BONDED_ADDRESS,
         device_path="/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF",
@@ -3868,6 +3932,175 @@ async def test_unpair_requires_confirmation_and_names_the_transport(
     placeholders = result["description_placeholders"]
     assert placeholders["address"] == _BONDED_ADDRESS
     assert placeholders["transport"] == "11:22:33:44:55:66"
+
+
+async def test_combined_bond_removal_targets_the_selected_child(
+    hass: HomeAssistant,
+    enable_custom_integrations,
+) -> None:
+    """The confirmation reads address and ownership from one child descriptor."""
+    stored_left_address = f"  {_BONDED_ADDRESS.lower()}  "
+    right_address = "AA:BB:CC:DD:EE:01"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Combined bed",
+        data={
+            CONF_NAME: "Combined bed",
+            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_PAIR_ID: "pair_bond_removal",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_MEMBER_ADDRESSES: [stored_left_address, right_address],
+            CONF_PAIR_CHILDREN: [
+                {
+                    CONF_SIDE: SIDE_LEFT,
+                    CONF_ADDRESS: stored_left_address,
+                    CONF_NAME: "Left side",
+                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BLE_BOND_ESTABLISHED: True,
+                    CONF_BLE_BOND_CONTEXT: {
+                        "version": 1,
+                        "transport": "local",
+                        "source": "11:22:33:44:55:66",
+                        "adapter": "hci0",
+                    },
+                },
+                {
+                    CONF_SIDE: SIDE_RIGHT,
+                    CONF_ADDRESS: right_address,
+                    CONF_NAME: "Right side",
+                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BLE_BOND_ESTABLISHED: True,
+                    CONF_BLE_BOND_CONTEXT: {
+                        "version": 1,
+                        "transport": "proxy",
+                        "source": "bedroom-proxy",
+                    },
+                },
+            ],
+        },
+        unique_id="pair_bond_removal",
+        entry_id="pair_bond_removal",
+    )
+    entry.add_to_hass(hass)
+    inventory = LocalBondInventory(
+        status=BluezReadStatus.OK,
+        records=(_bond_record(),),
+    )
+
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    side_form = await hass.config_entries.options.async_configure(
+        menu["flow_id"],
+        {"next_step_id": "remove_bond"},
+    )
+    with _patch_inventory(inventory) as read_bonds:
+        result = await hass.config_entries.options.async_configure(
+            side_form["flow_id"],
+            {"side": SIDE_LEFT},
+        )
+
+    read_bonds.assert_awaited_once_with(_BONDED_ADDRESS)
+    assert result["step_id"] == "remove_bond"
+    assert result["description_placeholders"]["name"] == "Left side"
+    assert result["description_placeholders"]["address"] == _BONDED_ADDRESS
+    assert result["description_placeholders"]["transport"] == "11:22:33:44:55:66"
+
+    removed = BondRemovalResult(
+        status=BondRemovalStatus.REMOVED,
+        record=_bond_record(),
+    )
+    child_coordinator, entered = _transport_coordinator()
+
+    def apply_child_removal() -> None:
+        children = []
+        for child in entry.data[CONF_PAIR_CHILDREN]:
+            child_data = dict(child)
+            if child_data.get(CONF_SIDE) == SIDE_LEFT:
+                child_data.pop(CONF_BLE_BOND_ESTABLISHED, None)
+                child_data.pop(CONF_BLE_BOND_CONTEXT, None)
+            children.append(child_data)
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_PAIR_CHILDREN: children},
+        )
+
+    child_coordinator.apply_confirmed_bond_removal.side_effect = apply_child_removal
+    parent_coordinator = MagicMock()
+    parent_coordinator.child_for_side.return_value = child_coordinator
+    with (
+        _stubbed_coordinator(hass, entry.entry_id, parent_coordinator),
+        _patch_inventory(inventory),
+        patch(
+            "custom_components.adjustable_bed.config_flow.async_remove_local_bond",
+            AsyncMock(return_value=removed),
+        ),
+    ):
+        progress = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {},
+        )
+        while progress["type"] == FlowResultType.SHOW_PROGRESS:
+            await hass.async_block_till_done()
+            progress = await hass.config_entries.options.async_configure(
+                progress["flow_id"]
+            )
+
+    assert entered == ["unpair"]
+    parent_coordinator.child_for_side.assert_any_call(SIDE_LEFT)
+    child_coordinator.apply_confirmed_bond_removal.assert_called_once_with()
+    left = get_child(entry.data, SIDE_LEFT)
+    right = get_child(entry.data, SIDE_RIGHT)
+    assert left is not None and right is not None
+    assert CONF_BLE_BOND_ESTABLISHED not in left
+    assert CONF_BLE_BOND_CONTEXT not in left
+    assert right[CONF_BLE_BOND_ESTABLISHED] is True
+    assert right[CONF_BLE_BOND_CONTEXT]["source"] == "bedroom-proxy"
+
+
+async def test_combined_bond_removal_does_not_fall_back_to_parent_coordinator(
+    hass: HomeAssistant,
+) -> None:
+    """A missing child must not make a side-specific removal lock the whole pair."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Combined bed",
+        data={
+            CONF_NAME: "Combined bed",
+            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_PAIR_ID: "pair_missing_child_coordinator",
+            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+            CONF_PAIR_MEMBER_ADDRESSES: [
+                _BONDED_ADDRESS,
+                "AA:BB:CC:DD:EE:01",
+            ],
+            CONF_PAIR_CHILDREN: [
+                {
+                    CONF_SIDE: SIDE_LEFT,
+                    CONF_ADDRESS: _BONDED_ADDRESS,
+                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                },
+                {
+                    CONF_SIDE: SIDE_RIGHT,
+                    CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                },
+            ],
+        },
+        unique_id="pair_missing_child_coordinator",
+        entry_id="pair_missing_child_coordinator",
+        version=4,
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    flow._bond_removal_side = SIDE_LEFT
+    parent_coordinator = MagicMock()
+    parent_coordinator.child_for_side.return_value = None
+
+    with _stubbed_coordinator(hass, entry.entry_id, parent_coordinator):
+        assert flow._bond_target_coordinator() is None
+
+    parent_coordinator.child_for_side.assert_called_once_with(SIDE_LEFT)
 
 
 async def test_cancelling_unpair_removes_nothing(

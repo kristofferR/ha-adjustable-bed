@@ -41,6 +41,35 @@ def test_parent_option_edits_win_over_descriptor():
     }
 
 
+def test_parent_options_cannot_override_child_routing_or_bond_state():
+    parent = SimpleNamespace(
+        entry_id="parent-id",
+        options={
+            "pair_mode": "invalid",
+            "ble_bond_established": True,
+            "motor_pulse_count": 15,
+        },
+        version=4,
+    )
+    view = ChildEntryView(
+        parent,
+        {
+            "address": "AA:BB",
+            "side": "left",
+            "ble_bond_established": False,
+        },
+        lambda _d: None,
+    )
+
+    assert view.data == {
+        "address": "AA:BB",
+        "side": "left",
+        "ble_bond_established": False,
+        "motor_pulse_count": 15,
+    }
+    assert view.options == {"motor_pulse_count": 15}
+
+
 def test_persist_updates_view_in_place_and_routes_to_callback():
     parent = SimpleNamespace(entry_id="parent-id", options={})
     routed: list[dict] = []
@@ -52,6 +81,24 @@ def test_persist_updates_view_in_place_and_routes_to_callback():
     assert view.data == {"a": 2, "b": 3}
     # ...and the change was routed to the parent-descriptor callback.
     assert routed == [{"a": 2, "b": 3}]
+
+
+def test_persist_selected_keys_preserves_other_child_data():
+    parent = SimpleNamespace(entry_id="parent-id", options={})
+    routed: list[dict] = []
+    view = ChildEntryView(
+        parent,
+        {"address": "AA:BB", "name": "Left", "bond": False, "context": "old"},
+        routed.append,
+    )
+
+    view.persist_data(
+        {"address": "changed", "name": "Changed", "bond": True},
+        keys={"bond", "context"},
+    )
+
+    assert view.data == {"address": "AA:BB", "name": "Left", "bond": True}
+    assert routed == [{"bond": True}]
 
 
 def test_data_is_isolated_copy():
