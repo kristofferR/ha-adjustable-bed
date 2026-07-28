@@ -2018,9 +2018,17 @@
       "title": "Combine two beds into one (Dual Bed)",
       "fix_flow": {
         "step": {
+          "init": {
+            "title": "Could any two be sides of one bed?",
+            "description": "Home Assistant found {count} standalone beds: {names}.\n\nIf any two entries control the independent sides of one physical bed, choose them as Left and Right. If none share a physical bed, mark the displayed beds as separate and this suggestion will not return while only those beds remain.",
+            "menu_options": {
+              "pair_beds": "Choose two sides to combine",
+              "separate_beds": "All are separate beds"
+            }
+          },
           "pair_beds": {
             "title": "Combine two beds",
-            "description": "Home Assistant found {count} active standalone beds: {names}. If two entries control the independent sides of one physical bed, choose which is Left and Right. Their entity IDs, history, names, areas, and dashboard references are preserved. If these are separate beds, close and dismiss this suggestion.",
+            "description": "Combine two existing beds into one paired device with Left, Right and combined controls. The two original beds are removed; their entity history follows. Pairing is for sides that move independently: if a sync cable already keeps both sides together, keep a single bed instead.",
             "data": {
               "pair_selection": "Left and Right sides",
               "name": "Name for the combined bed"
@@ -2040,7 +2048,9 @@
         "abort": {
           "not_enough_beds": "Fewer than two active standalone beds remain, so this suggestion no longer applies.",
           "already_configured": "These beds already belong to a paired Adjustable Bed entry.",
-          "pairing_flow_failed": "The Dual Bed setup flow could not be started. Reload Repairs and try again."
+          "pairing_flow_failed": "The Dual Bed setup flow could not be started. Reload Repairs and try again.",
+          "beds_changed": "The active standalone beds changed while this repair was open, so nothing was dismissed. Open the repair again to review the current set.",
+          "beds_are_separate": "Noted, the displayed beds are separate. The suggestion is gone and will not return while only those beds remain. If a new standalone bed is added, it may be suggested again."
         }
       }
     },

@@ -6,6 +6,7 @@ import asyncio
 import json
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
@@ -187,14 +188,22 @@ async def test_combine_suggestion_excludes_entries_claimed_by_pair(
 async def test_combine_repair_flow_shows_active_bed_picker(
     hass: HomeAssistant,
 ) -> None:
-    """The suggestion opens directly on the Left/Right selector."""
+    """Choosing to combine opens the Left/Right selector."""
     left = _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Left")
     right = _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Right")
     flow = CombineBedsRepairFlow()
     flow.hass = hass
 
     # RepairsFlowManager passes its internal issue payload to the init step.
-    result = await flow.async_step_init({"issue_id": COMBINE_BEDS_ISSUE_ID})
+    menu = await flow.async_step_init({"issue_id": COMBINE_BEDS_ISSUE_ID})
+    assert menu["type"] is FlowResultType.MENU
+    assert menu["menu_options"] == ["pair_beds", "separate_beds"]
+    assert menu["description_placeholders"] == {
+        "count": "2",
+        "names": "Left, Right",
+    }
+
+    result = await flow.async_step_pair_beds()
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "pair_beds"
@@ -212,6 +221,22 @@ async def test_combine_repair_flow_shows_active_bed_picker(
     )
 
 
+async def test_combine_repair_flow_aborts_when_issue_is_stale(
+    hass: HomeAssistant,
+) -> None:
+    """A stale issue cannot offer choices for fewer than two active beds."""
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Only bed")
+    async_refresh_combine_beds_issue(hass)
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+
+    result = await flow.async_step_init({"issue_id": COMBINE_BEDS_ISSUE_ID})
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "not_enough_beds"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+
+
 async def test_combine_repair_opens_through_repairs_manager(
     hass: HomeAssistant,
     enable_custom_integrations,
@@ -225,9 +250,14 @@ async def test_combine_repair_opens_through_repairs_manager(
     manager = repairs_flow_manager(hass)
     assert manager is not None
 
-    result = await manager.async_init(
+    menu = await manager.async_init(
         DOMAIN,
         data={"issue_id": COMBINE_BEDS_ISSUE_ID},
+    )
+    assert menu["type"] is FlowResultType.MENU
+
+    result = await manager.async_configure(
+        menu["flow_id"], {"next_step_id": "pair_beds"}
     )
 
     assert result["type"] is FlowResultType.FORM
@@ -1516,3 +1546,178 @@ async def test_a_one_connection_bed_with_a_proxy_bond_still_gets_proxy_guidance(
 
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "proxy_bond"
+
+
+async def test_the_combine_suggestion_can_be_answered_with_separate_beds(
+    hass: HomeAssistant,
+) -> None:
+    """A fixable Repairs issue gets no Ignore action from Home Assistant.
+
+    Without an answer inside the flow, someone who owns two genuinely separate
+    beds can only close the dialog, which leaves the suggestion in Repairs for
+    good.
+    """
+    from homeassistant.helpers.issue_registry import async_get as async_get_issue_registry
+
+    from custom_components.adjustable_bed.combine_suggestion import async_load_dismissal
+    from custom_components.adjustable_bed.repairs import (
+        CombineBedsRepairFlow,
+        async_refresh_combine_beds_issue,
+    )
+
+    for idx, address in enumerate(("AA:AA:AA:AA:AA:01", "AA:AA:AA:AA:AA:02")):
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: address, CONF_NAME: f"Bed {idx}", CONF_BED_TYPE: "linak"},
+            unique_id=address,
+            entry_id=f"separate_beds_{idx}",
+        )
+        entry.add_to_hass(hass)
+        entry.mock_state(hass, ConfigEntryState.LOADED)
+
+    await async_load_dismissal(hass)
+    async_refresh_combine_beds_issue(hass)
+    registry = async_get_issue_registry(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is not None
+
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+
+    menu = await flow.async_step_init()
+    assert menu["type"] == FlowResultType.MENU
+    assert "separate_beds" in menu["menu_options"]
+
+    done = await flow.async_step_separate_beds()
+    assert done["type"] == FlowResultType.ABORT
+    assert done["reason"] == "beds_are_separate"
+
+    # Gone, and it stays gone when the state is reconciled again.
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is None
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is None
+
+
+async def test_combine_repair_does_not_dismiss_candidates_that_changed(
+    hass: HomeAssistant,
+) -> None:
+    """The separate-beds answer applies only to the set shown in the menu."""
+    _bed_entry(hass, address="AA:AA:AA:AA:AA:01", name="Bed 1")
+    _bed_entry(hass, address="AA:AA:AA:AA:AA:02", name="Bed 2")
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+    await flow.async_step_init()
+
+    _bed_entry(hass, address="AA:AA:AA:AA:AA:03", name="Bed 3")
+
+    done = await flow.async_step_separate_beds()
+
+    assert done["type"] is FlowResultType.ABORT
+    assert done["reason"] == "beds_changed"
+    assert ir.async_get(hass).async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is not None
+
+
+async def test_a_new_bed_makes_the_combine_question_worth_asking_again(
+    hass: HomeAssistant,
+) -> None:
+    """Dismissal covers subsets, while a genuinely new bed asks again."""
+    from homeassistant.helpers.issue_registry import async_get as async_get_issue_registry
+
+    from custom_components.adjustable_bed.combine_suggestion import (
+        async_dismiss,
+        async_load_dismissal,
+    )
+    from custom_components.adjustable_bed.repairs import async_refresh_combine_beds_issue
+
+    addresses = ("BB:BB:BB:BB:BB:01", "BB:BB:BB:BB:BB:02")
+    for idx, address in enumerate(addresses):
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={CONF_ADDRESS: address, CONF_NAME: f"Bed {idx}", CONF_BED_TYPE: "linak"},
+            unique_id=address,
+            entry_id=f"regrouped_{idx}",
+        )
+        entry.add_to_hass(hass)
+        entry.mock_state(hass, ConfigEntryState.LOADED)
+
+    await async_load_dismissal(hass)
+    # Lower case on purpose: the comparison must not depend on formatting.
+    await async_dismiss(hass, [a.lower() for a in addresses])
+    async_refresh_combine_beds_issue(hass)
+    registry = async_get_issue_registry(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is None
+
+    third = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: "BB:BB:BB:BB:BB:03", CONF_NAME: "Bed 3", CONF_BED_TYPE: "linak"},
+        unique_id="BB:BB:BB:BB:BB:03",
+        entry_id="regrouped_3",
+    )
+    third.add_to_hass(hass)
+    third.mock_state(hass, ConfigEntryState.LOADED)
+
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is not None
+
+    await async_dismiss(hass, [*addresses, third.data[CONF_ADDRESS]])
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is None
+
+    third.mock_state(hass, ConfigEntryState.NOT_LOADED)
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, "combine_two_beds") is None
+
+
+async def test_dismissed_group_covers_a_remaining_subset(
+    hass: HomeAssistant,
+) -> None:
+    """Removing one dismissed separate bed does not recreate the suggestion."""
+    from custom_components.adjustable_bed.combine_suggestion import (
+        async_dismiss,
+        async_load_dismissal,
+    )
+    from custom_components.adjustable_bed.repairs import async_refresh_combine_beds_issue
+
+    entries = [
+        _bed_entry(hass, address=f"BB:BB:BB:BB:BB:0{idx}", name=f"Bed {idx}")
+        for idx in range(1, 4)
+    ]
+    await async_load_dismissal(hass)
+    await async_dismiss(hass, [entry.data[CONF_ADDRESS] for entry in entries])
+
+    entries[-1].mock_state(hass, ConfigEntryState.NOT_LOADED)
+    async_refresh_combine_beds_issue(hass)
+
+    assert (
+        ir.async_get(hass).async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+    )
+
+
+async def test_combine_dismissal_storage_migrates_single_address_set(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+) -> None:
+    """The v1 dismissal remains effective after migrating to history storage."""
+    from custom_components.adjustable_bed.combine_suggestion import (
+        KEY_DISMISSED,
+        LEGACY_KEY_DISMISSED,
+        STORAGE_KEY,
+        async_is_dismissed,
+        async_load_dismissal,
+    )
+
+    addresses = ["CC:CC:CC:CC:CC:01", "CC:CC:CC:CC:CC:02"]
+    hass_storage[STORAGE_KEY] = {
+        "version": 1,
+        "minor_version": 1,
+        "data": {LEGACY_KEY_DISMISSED: addresses},
+    }
+
+    await async_load_dismissal(hass)
+
+    assert async_is_dismissed(hass, addresses)
+    assert hass_storage[STORAGE_KEY] == {
+        "version": 2,
+        "minor_version": 1,
+        "key": STORAGE_KEY,
+        "data": {KEY_DISMISSED: [addresses]},
+    }

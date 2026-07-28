@@ -19,6 +19,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+from .combine_suggestion import async_load_dismissal
 from .const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
@@ -185,6 +186,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # Clear obsolete "unsupported BLE device" Repairs issues from older versions
     # that nagged about every discovered non-bed device (feature removed).
     async_clear_unsupported_device_issues(hass)
+    await async_load_dismissal(hass)
     async_setup_combine_beds_issue(hass)
 
     from .download import SupportBundleDownloadView
