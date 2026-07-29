@@ -2249,6 +2249,87 @@ DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
 DEFAULT_OCTO_PIN: Final = ""
 DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
 
+# Bed types whose controller has to hold the BLE link open for the entry's
+# lifetime. The coordinator already suppresses the post-command disconnect for
+# them (see _disconnect_after_operation_enabled), so defaulting the option on
+# would only advertise something the bed cannot do.
+BEDS_REQUIRING_PERSISTENT_CONNECTION: Final = frozenset(
+    {
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_SLEEP_NUMBER_MCR,
+    }
+)
+
+# These controllers track user-selected state in the connection-scoped
+# controller. They can reconnect on demand, but a new entry must retain the
+# controller by default so consecutive controls keep their intended state.
+BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
+    BEDS_REQUIRING_PERSISTENT_CONNECTION
+    | frozenset(
+        {
+            BED_TYPE_COMFORT_MOTION,
+            BED_TYPE_ERGOMOTION,
+            BED_TYPE_JENSEN,
+            BED_TYPE_JIECANG,
+            BED_TYPE_KAIDI,
+            BED_TYPE_LEGGETT_WILINKE,
+            BED_TYPE_LIMOSS,
+            BED_TYPE_OCTO,
+            BED_TYPE_OKIMAT,
+            BED_TYPE_OKIN_CB24,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_OKIN_ORE,
+            BED_TYPE_OKIN_UUID,
+            BED_TYPE_REVERIE,
+            BED_TYPE_REVERIE_NIGHTSTAND,
+            BED_TYPE_SLEEP_NUMBER,
+            BED_TYPE_SLEEPSTAR,
+            BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SUTA,
+            BED_TYPE_SVANE,
+            BED_TYPE_VIBRADORM,
+        }
+    )
+)
+
+
+def disconnect_after_command_default_enabled(
+    bed_type: str | None, protocol_variant: str | None = None
+) -> bool:
+    """Return whether a NEW entry should free the BLE link after each command.
+
+    These beds accept a single BLE connection at a time, so holding the link
+    locks the physical remote and the vendor app out until the idle timeout
+    expires. Handing the link straight back is the better default; beds that
+    need it held open keep the option off.
+
+    Legacy umbrella types with an auto variant stay conservative when a
+    connection-scoped controller cannot be ruled out before connecting.
+
+    Only new entries consult this. An existing entry already stores its own
+    value, which is left alone.
+    """
+    if not bed_type:
+        return DEFAULT_DISCONNECT_AFTER_COMMAND
+    resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
+    if bed_type == BED_TYPE_KEESON and protocol_variant in {
+        None,
+        "",
+        VARIANT_AUTO,
+        KEESON_VARIANT_ERGOMOTION,
+        KEESON_VARIANT_SINO,
+        "ore",
+    }:
+        return False
+    if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in {
+        None,
+        "",
+        VARIANT_AUTO,
+    }:
+        return False
+    return resolved not in BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED
+
+
 # Connection profiles
 CONNECTION_PROFILES: Final = {
     CONNECTION_PROFILE_BALANCED: ConnectionProfileSettings(

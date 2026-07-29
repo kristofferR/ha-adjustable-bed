@@ -105,6 +105,16 @@
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
         }
       },
+      "disconnect_after_command": {
+        "title": "Choose connection behavior",
+        "description": "The selected bed type has a different recommended connection behavior. Confirm whether Home Assistant should disconnect after each command.",
+        "data": {
+          "disconnect_after_command": "Disconnect after each command"
+        },
+        "data_description": {
+          "disconnect_after_command": "Disconnect immediately after each command to free the BLE connection for the physical remote. Leave disabled for beds that need to retain connection-scoped state."
+        }
+      },
       "manual": {
         "title": "Select Bed Manually - Select Device",
         "description": "Select a BLE device from the list or enter the address manually.",

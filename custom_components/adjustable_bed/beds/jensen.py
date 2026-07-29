@@ -38,6 +38,7 @@ FOOT_POS_FLAT = 1
 FOOT_POS_MAX = 30500
 
 _CONFIG_RESPONSE_TIMEOUT = 5.0
+_POSITION_RESPONSE_TIMEOUT = 5.0
 
 
 class JensenCommands:
@@ -142,6 +143,8 @@ class JensenController(BedController):
         # Config query state (used by query_config and _handle_notification)
         self._config_received: asyncio.Event | None = None
         self._config_data: bytes | None = None
+        self._position_received: asyncio.Event | None = None
+        self._position_query_lock = asyncio.Lock()
         # Note: Light and massage state is tracked locally. It may become out of sync
         # if the bed is controlled via remote or the app, or after HA restarts.
         # The Jensen protocol does not support querying actual state.
@@ -436,6 +439,9 @@ class JensenController(BedController):
                 foot_pos,
             )
 
+            if self._position_received is not None:
+                self._position_received.set()
+
             if self._notify_callback:
                 head_pct = self._raw_to_percentage(head_pos, "head")
                 foot_pct = self._raw_to_percentage(foot_pos, "foot")
@@ -509,9 +515,15 @@ class JensenController(BedController):
             # Jensen beds can ignore the first flat preset after reconnect unless they
             # see a 0x10 command first. Always send one READ_POSITION warm-up even when
             # angle sensing is disabled; with callback=None we still avoid state updates.
-            await self.read_positions()
+            # Wait for its response so it cannot satisfy a later position read.
+            try:
+                await self.read_positions()
+            except TimeoutError:
+                _LOGGER.warning(
+                    "Timeout waiting for Jensen warm-up position response, continuing"
+                )
 
-        except BleakError as err:
+        except (BleakError, ConnectionError) as err:
             _LOGGER.warning("Failed to start Jensen notifications: %s", err)
             # Log all available services for debugging
             self.log_discovered_services(level=logging.INFO)
@@ -528,19 +540,11 @@ class JensenController(BedController):
         except BleakError:
             pass
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
-        """Read current position via READ_POSITION command.
-
-        Sends the position query command. The response will be delivered
-        via the notification handler.
-
-        Args:
-            motor_count: Unused for Jensen (always reads both head and foot).
-        """
-        del motor_count  # Unused - Jensen always reads both motors
+    async def _send_position_query(self) -> bool:
+        """Send READ_POSITION and report whether the write succeeded."""
         if self.client is None or not self.client.is_connected:
             _LOGGER.debug("Cannot read positions: not connected")
-            return
+            return False
 
         try:
             await self._write_gatt_with_retry(
@@ -549,8 +553,32 @@ class JensenController(BedController):
                 response=self._write_with_response,
             )
             _LOGGER.debug("Sent READ_POSITION command to Jensen bed")
-        except BleakError as err:
+            return True
+        except (BleakError, ConnectionError) as err:
             _LOGGER.warning("Failed to send READ_POSITION command: %s", err)
+            return False
+
+    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+        """Read current position via its asynchronous notification response.
+
+        Args:
+            motor_count: Unused for Jensen (always reads both head and foot).
+        """
+        del motor_count  # Unused - Jensen always reads both motors
+        async with self._position_query_lock:
+            position_received = asyncio.Event()
+            self._position_received = position_received
+            try:
+                if not await self._send_position_query():
+                    raise ConnectionError("Failed to send Jensen position query")
+                # The GATT write only acknowledges the query. Keep notifications
+                # alive until the position response arrives, but do not hold the
+                # coordinator's serialized operation lock indefinitely.
+                async with asyncio.timeout(_POSITION_RESPONSE_TIMEOUT):
+                    await position_received.wait()
+            finally:
+                if self._position_received is position_received:
+                    self._position_received = None
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and always send STOP at the end."""

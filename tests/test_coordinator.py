@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.bluetooth_transport import (
 from custom_components.adjustable_bed.const import (
     BED_MOTOR_PULSE_DEFAULTS,
     BED_TYPE_BEDTECH,
+    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
@@ -34,6 +35,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
@@ -71,6 +73,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import (
     BOND_LATCH_RETEST_AFTER,
     AdjustableBedCoordinator,
+    NotConnectedError,
 )
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
@@ -826,6 +829,10 @@ class TestCoordinatorConnection:
 
         controller = MagicMock()
         controller.prepare_for_position_read = AsyncMock()
+        controller.position_number_specs = (
+            SimpleNamespace(position_key="back"),
+            SimpleNamespace(position_key="legs"),
+        )
         coordinator._controller = controller
 
         async def _read_positions() -> None:
@@ -855,6 +862,191 @@ class TestCoordinatorConnection:
 
         controller = MagicMock()
         controller.prepare_for_position_read = AsyncMock()
+        controller.position_number_specs = (
+            SimpleNamespace(position_key="back"),
+            SimpleNamespace(position_key="legs"),
+        )
+        coordinator._controller = controller
+
+        read_count = 0
+
+        async def _read_positions() -> None:
+            nonlocal read_count
+            assert coordinator._command_lock.locked()
+            read_count += 1
+            coordinator._position_data["legs"] = 9.6
+            if read_count >= 2:
+                coordinator._position_data["back"] = 0.0
+
+        async def _retry_sleep(_delay: float) -> None:
+            assert not coordinator._command_lock.locked()
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ) as mock_read_positions,
+            patch.object(coordinator, "_cancel_disconnect_timer") as cancel_timer,
+            patch.object(coordinator, "_reset_disconnect_timer") as reset_timer,
+            patch(
+                "custom_components.adjustable_bed.coordinator.asyncio.sleep",
+                new=AsyncMock(side_effect=_retry_sleep),
+            ) as mock_sleep,
+        ):
+            await coordinator.async_read_initial_positions()
+
+        assert mock_read_positions.await_count == 2
+        assert controller.prepare_for_position_read.await_count == 2
+        assert cancel_timer.call_count >= 1
+        assert reset_timer.call_count >= 1
+        mock_sleep.assert_awaited_once()
+
+    async def test_initial_position_read_is_preempted_while_waiting_for_command_lock(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A queued reconnect hydration must yield the lock to STOP."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock(is_connected=True)
+        controller = MagicMock(
+            position_number_specs=(SimpleNamespace(position_key="back"),)
+        )
+        controller.prepare_for_position_read = AsyncMock()
+        coordinator._controller = controller
+
+        await coordinator._command_lock.acquire()
+        hydration = asyncio.create_task(coordinator.async_read_initial_positions())
+        await asyncio.sleep(0)
+        coordinator.request_command_cancel()
+        coordinator._command_lock.release()
+
+        result = await asyncio.gather(hydration, return_exceptions=True)
+
+        assert isinstance(result[0], asyncio.CancelledError)
+        controller.prepare_for_position_read.assert_not_awaited()
+
+    async def test_queued_position_read_does_not_reconnect_after_command_refresh(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Fresh command feedback must cancel hydration queued behind that command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock(is_connected=True)
+        coordinator._position_connection_generation = 1
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
+        )
+
+        await coordinator._command_lock.acquire()
+        with patch.object(
+            coordinator,
+            "async_ensure_connected",
+            new_callable=AsyncMock,
+        ) as ensure_connected:
+            try:
+                hydration = asyncio.create_task(coordinator.async_read_initial_positions())
+                await asyncio.sleep(0)
+
+                coordinator._handle_position_update("back", 12.0)
+                coordinator._handle_position_update("legs", 4.0)
+            finally:
+                coordinator._command_lock.release()
+            await hydration
+
+        ensure_connected.assert_not_awaited()
+
+    async def test_queued_position_read_does_not_reconnect_after_command_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A command-released link must stay released while hydration is queued."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock(is_connected=True)
+        coordinator._position_connection_generation = 1
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
+        )
+
+        await coordinator._command_lock.acquire()
+        with patch.object(
+            coordinator,
+            "async_ensure_connected",
+            new_callable=AsyncMock,
+        ) as ensure_connected:
+            try:
+                hydration = asyncio.create_task(
+                    coordinator.async_read_initial_positions()
+                )
+                await asyncio.sleep(0)
+                coordinator._client.is_connected = False
+            finally:
+                coordinator._command_lock.release()
+            await hydration
+
+        ensure_connected.assert_not_awaited()
+
+    async def test_initial_position_read_has_overall_retry_deadline(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Per-attempt retries must still release a silent single-client bed."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock(is_connected=True)
+        controller = MagicMock(
+            position_number_specs=(SimpleNamespace(position_key="back"),)
+        )
+        controller.prepare_for_position_read = AsyncMock()
+        coordinator._controller = controller
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator."
+                "_INITIAL_POSITION_READ_TOTAL_TIMEOUT",
+                0.01,
+            ),
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=asyncio.Event().wait),
+            ),
+        ):
+            await coordinator.async_read_initial_positions()
+
+        controller.prepare_for_position_read.assert_awaited_once_with()
+        assert coordinator._position_hydration_running is False
+
+    async def test_initial_position_read_survives_a_failed_attempt(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """One slow or failing attempt must not consume the whole retry budget."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+
+        controller = MagicMock()
+        controller.prepare_for_position_read = AsyncMock()
+        controller.position_number_specs = (
+            SimpleNamespace(position_key="back"),
+            SimpleNamespace(position_key="legs"),
+        )
         coordinator._controller = controller
 
         read_count = 0
@@ -862,9 +1054,12 @@ class TestCoordinatorConnection:
         async def _read_positions() -> None:
             nonlocal read_count
             read_count += 1
-            coordinator._position_data["legs"] = 9.6
-            if read_count >= 2:
-                coordinator._position_data["back"] = 0.0
+            if read_count == 1:
+                raise TimeoutError
+            if read_count == 2:
+                raise BleakError("read failed")
+            coordinator._position_data["back"] = 12.0
+            coordinator._position_data["legs"] = 4.0
 
         with (
             patch.object(
@@ -875,13 +1070,135 @@ class TestCoordinatorConnection:
             patch(
                 "custom_components.adjustable_bed.coordinator.asyncio.sleep",
                 new=AsyncMock(),
-            ) as mock_sleep,
+            ),
         ):
             await coordinator.async_read_initial_positions()
 
-        assert mock_read_positions.await_count == 2
-        assert controller.prepare_for_position_read.await_count == 2
-        mock_sleep.assert_awaited_once()
+        assert mock_read_positions.await_count == 3
+        assert coordinator.position_data == {"back": 12.0, "legs": 4.0}
+
+    async def test_position_hydration_runs_once_per_connection(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Each BLE session refreshes axes once without duplicate startup reads."""
+        mock_config_entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = False
+        coordinator._position_connection_generation = 1
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
+        )
+
+        async def _read_positions() -> None:
+            coordinator._handle_position_update("back", 10.0)
+            coordinator._handle_position_update("legs", 5.0)
+
+        with patch.object(
+            coordinator,
+            "async_read_initial_positions",
+            new=AsyncMock(side_effect=_read_positions),
+        ) as mock_read:
+            coordinator._schedule_position_hydration()
+            assert coordinator._position_hydration_task is not None
+            await coordinator._position_hydration_task
+            mock_read.assert_awaited_once()
+
+            # Platform setup asks again after forwarding, but the same session
+            # has already hydrated and must not issue a second read.
+            coordinator._position_hydration_task = None
+            coordinator._schedule_position_hydration()
+            assert coordinator._position_hydration_task is None
+            assert mock_read.await_count == 1
+
+            # Retained values are stale after reconnect, so the next BLE session
+            # must refresh them even though both keys remain populated.
+            coordinator._position_connection_generation = 2
+            coordinator._schedule_position_hydration()
+            reconnect_hydration = cast(
+                asyncio.Task[None] | None,
+                coordinator._position_hydration_task,
+            )
+            assert reconnect_hydration is not None
+            await reconnect_hydration
+            assert mock_read.await_count == 2
+
+    async def test_position_hydration_skipped_when_angle_sensing_disabled(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Angle sensing off means no background reads at all."""
+        mock_config_entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._disable_angle_sensing = True
+
+        coordinator._schedule_position_hydration()
+
+        assert coordinator._position_hydration_task is None
+
+    async def test_position_hydration_skipped_without_position_feedback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ) -> None:
+        """Write-only position sliders must not trigger feedback hydration."""
+        mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_KAIDI
+        coordinator = AdjustableBedCoordinator(
+            hass,
+            MockConfigEntry(
+                domain=DOMAIN,
+                title=TEST_NAME,
+                data=mock_config_entry_data,
+                unique_id=TEST_ADDRESS,
+                entry_id="write_only_position_hydration",
+            ),
+        )
+        coordinator._disable_angle_sensing = False
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
+        )
+
+        coordinator._schedule_position_hydration()
+
+        assert coordinator._position_hydration_task is None
+
+    async def test_position_hydration_stays_paused_until_all_diagnostics_finish(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Overlapping diagnostics must not resume hydration after the first exit."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_cancel_position_hydration",
+                new_callable=AsyncMock,
+            ) as cancel_hydration,
+            patch.object(coordinator, "_schedule_position_hydration") as schedule_hydration,
+        ):
+            await coordinator.async_pause_position_hydration()
+            await coordinator.async_pause_position_hydration()
+
+            coordinator.resume_position_hydration()
+            schedule_hydration.assert_not_called()
+
+            coordinator.resume_position_hydration()
+
+        assert cancel_hydration.await_count == 2
+        schedule_hydration.assert_called_once_with()
+        assert coordinator._position_hydration_pause_count == 0
 
     async def test_cst_initial_position_axes_ignore_unreported_extra_motors(
         self,
@@ -900,6 +1217,39 @@ class TestCoordinatorConnection:
                 unique_id=TEST_ADDRESS,
                 entry_id="cst_expected_axes",
             ),
+        )
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
+        )
+
+        assert coordinator._expected_initial_position_axes() == {"back", "legs"}
+
+    async def test_expected_position_axes_follow_live_controller_specs(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+    ) -> None:
+        """Configured motors do not add axes the live controller cannot report."""
+        mock_config_entry_data[CONF_BED_TYPE] = BED_TYPE_SLEEP_NUMBER
+        mock_config_entry_data[CONF_MOTOR_COUNT] = 4
+        coordinator = AdjustableBedCoordinator(
+            hass,
+            MockConfigEntry(
+                domain=DOMAIN,
+                title=TEST_NAME,
+                data=mock_config_entry_data,
+                unique_id=TEST_ADDRESS,
+                entry_id="reportable_position_axes",
+            ),
+        )
+        coordinator._controller = make_controller_mock(
+            position_number_specs=(
+                SimpleNamespace(position_key="back"),
+                SimpleNamespace(position_key="legs"),
+            )
         )
 
         assert coordinator._expected_initial_position_axes() == {"back", "legs"}
@@ -1030,9 +1380,161 @@ class TestCoordinatorConnection:
         assert coordinator._passive_position_reconciliation_task is None
         mock_disconnect.assert_awaited_once_with()
 
+    async def test_async_shutdown_awaits_position_hydration_before_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Shutdown must stop an in-flight GATT hydration before disconnecting."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        hydration_started = asyncio.Event()
+
+        async def _hydrate() -> None:
+            hydration_started.set()
+            await asyncio.Event().wait()
+
+        task = hass.async_create_task(_hydrate())
+        coordinator._position_hydration_task = task
+        await hydration_started.wait()
+
+        async def _disconnect() -> None:
+            assert task.done()
+
+        with patch.object(
+            coordinator,
+            "async_disconnect",
+            new=AsyncMock(side_effect=_disconnect),
+        ) as mock_disconnect:
+            await coordinator.async_shutdown()
+
+        assert task.cancelled()
+        assert coordinator._position_hydration_task is None
+        mock_disconnect.assert_awaited_once_with()
+
+    async def test_async_shutdown_cancellation_finishes_cleanup(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Caller cancellation must not strand hydration or skip shutdown cleanup."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        hydration_started = asyncio.Event()
+        hydration_cancelled = asyncio.Event()
+
+        async def _hydrate() -> None:
+            hydration_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                hydration_cancelled.set()
+                await asyncio.Event().wait()
+
+        hydration_task = hass.async_create_task(_hydrate())
+        coordinator._position_hydration_task = hydration_task
+        passive_task = MagicMock()
+        coordinator._passive_position_reconciliation_task = passive_task
+        await hydration_started.wait()
+
+        with patch.object(
+            coordinator,
+            "async_disconnect",
+            new=AsyncMock(),
+        ) as mock_disconnect:
+            shutdown_task = hass.async_create_task(coordinator.async_shutdown())
+            await hydration_cancelled.wait()
+            shutdown_task.cancel()
+
+            with pytest.raises(asyncio.CancelledError):
+                await shutdown_task
+
+        assert hydration_task.cancelled()
+        assert coordinator._position_hydration_task is None
+        passive_task.cancel.assert_called_once_with()
+        assert coordinator._passive_position_reconciliation_task is None
+        mock_disconnect.assert_awaited_once_with()
+
 
 class TestCoordinatorPositionSeek:
     """Test coordinator position seeking behavior."""
+
+    async def test_seek_refreshes_stale_position_after_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """A last-known target match must not suppress a command on a new BLE session."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_connection_generation = 2
+        coordinator._position_data["back"] = 50.0
+        coordinator._position_data_generation["back"] = 1
+
+        controller = make_controller_mock()
+        controller.supports_direct_position_control = True
+        controller.angle_to_native_position.return_value = 50
+        controller.set_motor_position = AsyncMock()
+        coordinator._controller = controller
+
+        async def _refresh_position() -> None:
+            coordinator._handle_position_update("back", 20.0)
+
+        with patch.object(
+            coordinator,
+            "_async_read_positions",
+            new=AsyncMock(side_effect=_refresh_position),
+        ) as read_positions:
+            await coordinator.async_seek_position(
+                "back",
+                50.0,
+                AsyncMock(),
+                AsyncMock(),
+                AsyncMock(),
+            )
+
+        read_positions.assert_awaited_once_with()
+        controller.set_motor_position.assert_awaited_once_with("back", 50)
+        assert coordinator._position_data_generation["back"] == 2
+
+    async def test_notification_only_seek_rejects_retained_position_after_reconnect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Prior-session feedback must not choose a notification-only seek direction."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._position_connection_generation = 2
+        coordinator._position_data["back"] = 50.0
+        coordinator._position_data_generation["back"] = 1
+
+        controller = make_controller_mock()
+        coordinator._controller = controller
+        move_up = AsyncMock()
+        move_down = AsyncMock()
+        move_stop = AsyncMock()
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(),
+            ) as read_positions,
+            pytest.raises(NotConnectedError, match="no position data available"),
+        ):
+            await coordinator.async_seek_position(
+                "back",
+                50.0,
+                lambda c: move_up(c),
+                lambda c: move_down(c),
+                lambda c: move_stop(c),
+            )
+
+        read_positions.assert_awaited_once_with()
+        move_up.assert_not_awaited()
+        move_down.assert_not_awaited()
+        move_stop.assert_not_awaited()
 
     async def test_seek_stops_on_first_target_crossing_for_single_direction_controllers(
         self,
@@ -2459,6 +2961,30 @@ class TestDisconnectCommandSerialization:
         assert coordinator._disconnect_timer is not None
         assert coordinator._client is not None
 
+        await coordinator.async_disconnect()
+
+    async def test_idle_disconnect_skipped_during_position_hydration(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Hydration owns the connection across all attempts and retry backoffs."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        coordinator._position_hydration_running = True
+
+        with patch.object(
+            coordinator,
+            "_async_disconnect_locked",
+            new_callable=AsyncMock,
+        ) as disconnect:
+            await coordinator._async_idle_disconnect()
+
+        disconnect.assert_not_awaited()
+        assert coordinator._client is not None
+
+        coordinator._position_hydration_running = False
         await coordinator.async_disconnect()
 
 
@@ -4689,6 +5215,95 @@ class TestStopAfterCancel:
         # Counter should NOT have incremented
         assert coordinator._cancel_counter == initial_counter
 
+    async def test_non_preemptible_controller_query_finishes_before_new_command(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Diagnostic state cleanup must not be dropped by a newer command."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        cleanup_started = asyncio.Event()
+        release_cleanup = asyncio.Event()
+        cleanup_finished = False
+
+        async def cleanup(_controller):
+            nonlocal cleanup_finished
+            cleanup_started.set()
+            await release_cleanup.wait()
+            cleanup_finished = True
+
+        cleanup_task = asyncio.create_task(
+            coordinator.async_execute_controller_query(
+                cleanup,
+                cancel_running=False,
+                preemptible=False,
+            )
+        )
+        await cleanup_started.wait()
+
+        next_command = asyncio.create_task(
+            coordinator.async_execute_controller_command(
+                lambda _controller: asyncio.sleep(0)
+            )
+        )
+        await asyncio.sleep(0)
+        assert not cleanup_task.done()
+
+        release_cleanup.set()
+        await cleanup_task
+        await next_command
+
+        assert cleanup_finished
+
+    async def test_cancelling_non_preemptible_query_cancels_operation_before_unlock(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Caller cancellation propagates through the directly awaited GATT task."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        operation_started = asyncio.Event()
+        cancellation_cleanup_started = asyncio.Event()
+        release_cancellation_cleanup = asyncio.Event()
+        next_command_started = asyncio.Event()
+
+        async def query(_controller):
+            operation_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancellation_cleanup_started.set()
+                await release_cancellation_cleanup.wait()
+                raise
+
+        async def next_command(_controller):
+            next_command_started.set()
+
+        query_task = asyncio.create_task(
+            coordinator.async_execute_controller_query(query, preemptible=False)
+        )
+        await operation_started.wait()
+        query_task.cancel()
+        next_command_task = asyncio.create_task(
+            coordinator.async_execute_controller_command(
+                next_command,
+                cancel_running=False,
+            )
+        )
+
+        await cancellation_cleanup_started.wait()
+        await asyncio.sleep(0)
+        assert not next_command_started.is_set()
+        release_cancellation_cleanup.set()
+        with pytest.raises(asyncio.CancelledError):
+            await query_task
+        await next_command_task
+        assert next_command_started.is_set()
+
     async def test_execute_controller_command_skips_execution_if_cancelled_during_preparation(
         self,
         hass: HomeAssistant,
@@ -4849,6 +5464,61 @@ class TestStopAfterCancel:
 
         await task
         coordinator.async_disconnect.assert_not_awaited()
+
+    async def test_disconnect_after_command_reads_positions_before_disconnect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+    ) -> None:
+        """Speed-mode reads must finish while the command's BLE link still exists."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title=mock_config_entry.title,
+            data={
+                **mock_config_entry.data,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_DISCONNECT_AFTER_COMMAND: True,
+            },
+            unique_id=mock_config_entry.unique_id,
+            entry_id="disconnect_after_position_read_test",
+        )
+        entry.add_to_hass(hass)
+        coordinator = AdjustableBedCoordinator(hass, entry)
+        coordinator._client = MagicMock()
+        coordinator._client.is_connected = True
+        coordinator._controller = make_controller_mock(
+            allow_position_polling_during_commands=False
+        )
+        events: list[str] = []
+
+        async def _command(_controller) -> None:
+            events.append("command")
+
+        async def _read_positions() -> None:
+            events.append("read")
+
+        async def _disconnect() -> None:
+            events.append("disconnect")
+
+        with (
+            patch.object(
+                coordinator,
+                "_async_read_positions",
+                new=AsyncMock(side_effect=_read_positions),
+            ),
+            patch.object(
+                coordinator,
+                "async_disconnect",
+                new=AsyncMock(side_effect=_disconnect),
+            ),
+        ):
+            await coordinator.async_execute_controller_command(
+                _command,
+                cancel_running=False,
+            )
+
+        assert events == ["command", "read", "disconnect"]
+        assert coordinator._background_read_task is None
 
     async def test_preempted_command_skips_disconnect_until_replacement_finishes(
         self,

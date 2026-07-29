@@ -11,15 +11,18 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
 from custom_components.adjustable_bed.beds.sbi import SBIController
 from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIN_CB24,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -495,6 +498,10 @@ class SingleAddressInner:
         self.motor_pulse_count = 1
         self.motor_pulse_delay_ms = 1
         self.position_data = {}
+        self._position_callbacks = set()
+        self.cancelled_position_hydrations = 0
+        self.position_hydration_events: list[str] = []
+        self.position_hydration_pause_count = 0
 
     @property
     def client(self):
@@ -515,6 +522,19 @@ class SingleAddressInner:
     def register_connection_state_callback(self, _callback):
         return lambda: None
 
+    def register_position_callback(self, callback):
+        self._position_callbacks.add(callback)
+
+        def unregister():
+            self._position_callbacks.discard(callback)
+
+        return unregister
+
+    def update_positions(self, positions):
+        self.position_data.update(positions)
+        for callback in list(self._position_callbacks):
+            callback(self.position_data)
+
     async def async_connect(self):
         self.is_connected = True
         return True
@@ -525,13 +545,27 @@ class SingleAddressInner:
     async def async_shutdown(self):
         self.is_connected = False
 
+    async def _async_cancel_position_hydration(self):
+        self.cancelled_position_hydrations += 1
+        self.position_hydration_events.append("cancel")
+
+    async def async_pause_position_hydration(self):
+        self.position_hydration_pause_count += 1
+        await self._async_cancel_position_hydration()
+
+    def resume_position_hydration(self):
+        self.position_hydration_pause_count -= 1
+
 
 class TestSingleAddressCoordinator:
     def _coordinator(self, bed_type, controller_type):
         entry = SimpleNamespace(
-            data={CONF_PAIR_ID: "pair_single", "name": "Single", CONF_BED_TYPE: bed_type}
+            data={CONF_PAIR_ID: "pair_single", "name": "Single", CONF_BED_TYPE: bed_type},
+            entry_id="single_address",
+            async_create_background_task=lambda _hass, coro, **_kwargs: asyncio.create_task(coro),
         )
         inner = SingleAddressInner(controller_type)
+        inner.bed_type = bed_type
         return SingleAddressPairedCoordinator(None, entry, inner)
 
     async def test_sbi_uses_native_side_and_both_packets(self):
@@ -559,6 +593,197 @@ class TestSingleAddressCoordinator:
         await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
 
         assert sides == [SIDE_LEFT, SIDE_RIGHT]
+
+    async def test_sleep_number_reconnect_hydrates_each_logical_side(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        events = coordinator._single_inner.position_hydration_events
+
+        for side, child in coordinator.children.items():
+
+            async def hydrate(*, logical_side=side):
+                events.append(logical_side)
+
+            object.__setattr__(child, "async_read_initial_positions", hydrate)
+
+        coordinator._on_child_connection_change(True)
+        task = coordinator._single_position_hydration_task
+        assert task is not None
+        await task
+
+        assert events == ["cancel", SIDE_LEFT, SIDE_RIGHT]
+        assert coordinator._single_inner.cancelled_position_hydrations == 1
+
+    async def test_sleep_number_reconnect_replaces_inflight_hydration(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def hydrate():
+            started.set()
+            await release.wait()
+
+        for child in coordinator.children.values():
+            object.__setattr__(child, "async_read_initial_positions", hydrate)
+
+        coordinator._on_child_connection_change(True)
+        first_task = coordinator._single_position_hydration_task
+        assert first_task is not None
+        await started.wait()
+
+        coordinator._on_child_connection_change(True)
+        second_task = coordinator._single_position_hydration_task
+        assert second_task is not None
+        assert second_task is not first_task
+        release.set()
+        await asyncio.gather(first_task, return_exceptions=True)
+        await second_task
+
+        assert first_task.cancelled()
+        assert coordinator._single_inner.cancelled_position_hydrations == 2
+
+    async def test_sleep_number_diagnostics_pause_logical_hydration(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        side = coordinator.children[SIDE_LEFT]
+        hydrated = asyncio.Event()
+
+        async def hydrate():
+            hydrated.set()
+
+        for child in coordinator.children.values():
+            object.__setattr__(child, "async_read_initial_positions", hydrate)
+
+        await side.async_pause_position_hydration()
+        coordinator._on_child_connection_change(True)
+        await asyncio.sleep(0)
+
+        assert not hydrated.is_set()
+        assert coordinator._single_position_hydration_task is None
+        assert coordinator._single_inner.position_hydration_pause_count == 1
+
+        side.resume_position_hydration()
+        task = cast(
+            asyncio.Task[None], coordinator._single_position_hydration_task
+        )
+        await task
+
+        assert hydrated.is_set()
+        assert coordinator._single_inner.position_hydration_pause_count == 0
+
+    async def test_cancel_hydration_preserves_callers_cancellation(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        hydration_started = asyncio.Event()
+        hydration_cancelled = asyncio.Event()
+
+        async def hydrate():
+            hydration_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                hydration_cancelled.set()
+                await asyncio.Event().wait()
+
+        hydration_task = asyncio.create_task(hydrate())
+        coordinator._single_position_hydration_task = hydration_task
+        await hydration_started.wait()
+
+        cancel_task = asyncio.create_task(
+            coordinator._async_cancel_single_position_hydration()
+        )
+        await hydration_cancelled.wait()
+        cancel_task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await cancel_task
+        assert hydration_task.cancelled()
+        assert coordinator._single_position_hydration_task is None
+
+    async def test_shutdown_cancellation_finishes_single_address_cleanup(self):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        hydration_started = asyncio.Event()
+        hydration_cancelled = asyncio.Event()
+        inner_shutdown = asyncio.Event()
+
+        async def hydrate():
+            hydration_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                hydration_cancelled.set()
+                await asyncio.Event().wait()
+
+        async def shutdown_inner():
+            inner_shutdown.set()
+
+        hydration_task = asyncio.create_task(hydrate())
+        coordinator._single_position_hydration_task = hydration_task
+        object.__setattr__(
+            coordinator._single_inner,
+            "async_shutdown",
+            shutdown_inner,
+        )
+        await hydration_started.wait()
+
+        shutdown_task = asyncio.create_task(coordinator.async_shutdown())
+        await hydration_cancelled.wait()
+
+        coordinator._on_child_connection_change(True)
+        assert coordinator._single_position_hydration_task is hydration_task
+
+        shutdown_task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await shutdown_task
+
+        assert hydration_task.cancelled()
+        assert coordinator._single_position_hydration_task is None
+        assert coordinator._child_unsubs == []
+        assert coordinator._single_inner._position_callbacks == set()
+        assert inner_shutdown.is_set()
+
+    async def test_sleep_number_reconnect_stops_hydration_after_swallowed_cancel(
+        self,
+    ):
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        cancel_started = asyncio.Event()
+        cancel_calls = 0
+        hydration_calls = 0
+
+        async def cancel_inner_hydration():
+            nonlocal cancel_calls
+            cancel_calls += 1
+            if cancel_calls != 1:
+                return
+            cancel_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                # Model an inner cancellation helper consuming the parent
+                # hydration task's cancellation while awaiting its own task.
+                return
+
+        async def hydrate():
+            nonlocal hydration_calls
+            hydration_calls += 1
+
+        coordinator._single_inner._async_cancel_position_hydration = (
+            cancel_inner_hydration
+        )
+        for child in coordinator.children.values():
+            object.__setattr__(child, "async_read_initial_positions", hydrate)
+
+        coordinator._on_child_connection_change(True)
+        first_task = coordinator._single_position_hydration_task
+        assert first_task is not None
+        await cancel_started.wait()
+
+        coordinator._on_child_connection_change(True)
+        second_task = coordinator._single_position_hydration_task
+        assert second_task is not None
+        await asyncio.gather(first_task, return_exceptions=True)
+        await second_task
+
+        assert first_task.cancelled()
+        assert hydration_calls == 2
 
     async def test_bond_actions_reach_the_coordinator_that_owns_the_link(self):
         """This surface keeps the entry's address, so it is offered bond removal.
@@ -597,6 +822,53 @@ class TestSingleAddressCoordinator:
         assert coordinator.device_info["identifiers"] == {
             (DOMAIN, "AA:BB:CC:DD:EE:50")
         }
+
+    def test_shared_cb24_position_updates_relay_to_each_side(self):
+        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left_updates = []
+        right_updates = []
+        left.register_position_callback(left_updates.append)
+        right.register_position_callback(right_updates.append)
+
+        coordinator._single_inner.update_positions({"back": 42.0})
+
+        assert left.position_data == {"back": 42.0}
+        assert right.position_data == {"back": 42.0}
+        assert left_updates == [{"back": 42.0}]
+        assert right_updates == [{"back": 42.0}]
+
+    async def test_cb24_shutdown_unregisters_shared_position_relays(self):
+        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
+        inner = coordinator._single_inner
+
+        assert len(inner._position_callbacks) == 3
+
+        await coordinator.async_shutdown()
+
+        assert inner._position_callbacks == set()
+
+    async def test_sbi_position_updates_remain_side_scoped(self):
+        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        left = coordinator.children[SIDE_LEFT]
+        right = coordinator.children[SIDE_RIGHT]
+        left_updates = []
+        right_updates = []
+        left.register_position_callback(left_updates.append)
+        right.register_position_callback(right_updates.append)
+
+        async def update_position(_controller):
+            coordinator._single_inner.update_positions({"back": 42.0})
+
+        await coordinator.async_execute_controller_command(
+            update_position, side=SIDE_LEFT
+        )
+
+        assert left.position_data == {"back": 42.0}
+        assert right.position_data == {}
+        assert left_updates == [{"back": 42.0}]
+        assert right_updates == []
 
 
 class TestConnectionModeResolution:

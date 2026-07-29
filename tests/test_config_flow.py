@@ -96,6 +96,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
+    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
@@ -1321,6 +1322,252 @@ class TestBluetoothDiscoveryFlow:
         )
         assert motor_count_marker.default() == 1
 
+    def test_disconnect_after_command_default_per_bed_type(self):
+        """Beds that must hold the link open keep the option off; others get it on."""
+        from custom_components.adjustable_bed.const import (
+            BED_TYPE_COMFORT_MOTION,
+            BED_TYPE_JENSEN,
+            BED_TYPE_JIECANG,
+            BED_TYPE_KAIDI,
+            BED_TYPE_KEESON,
+            BED_TYPE_LEGGETT_GEN2,
+            BED_TYPE_LEGGETT_PLATT,
+            BED_TYPE_LEGGETT_WILINKE,
+            BED_TYPE_LIMOSS,
+            BED_TYPE_LINAK,
+            BED_TYPE_OCTO,
+            BED_TYPE_OKIN_CB24,
+            BED_TYPE_OKIN_CST,
+            BED_TYPE_OKIN_ORE,
+            BED_TYPE_OKIN_UUID,
+            BED_TYPE_REVERIE,
+            BED_TYPE_REVERIE_NIGHTSTAND,
+            BED_TYPE_SLEEP_NUMBER,
+            BED_TYPE_SLEEP_NUMBER_MCR,
+            BED_TYPE_SLEEPSTAR,
+            BED_TYPE_SLEEPYS_BOX25,
+            BED_TYPE_SUTA,
+            BED_TYPE_SVANE,
+            BED_TYPE_VIBRADORM,
+            KEESON_VARIANT_SINO,
+            LEGGETT_VARIANT_GEN2,
+            LEGGETT_VARIANT_MLRM,
+            VARIANT_AUTO,
+            disconnect_after_command_default_enabled,
+        )
+
+        assert disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO) is True
+        assert disconnect_after_command_default_enabled(BED_TYPE_ERGOMOTION, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_GEN2, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEP_NUMBER_MCR, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_COMFORT_MOTION, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_JENSEN, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_JIECANG, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_KAIDI, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_KEESON, VARIANT_AUTO) is False
+        assert (
+            disconnect_after_command_default_enabled(BED_TYPE_KEESON, KEESON_VARIANT_SINO)
+            is False
+        )
+        assert (
+            disconnect_after_command_default_enabled(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION)
+            is False
+        )
+        assert disconnect_after_command_default_enabled(BED_TYPE_LIMOSS, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OCTO, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_CB24, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_CST, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OKIMAT, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_ORE, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_UUID, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_REVERIE, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_REVERIE_NIGHTSTAND, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEP_NUMBER, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEPSTAR, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEPYS_BOX25, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SUTA, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_SVANE, None) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_VIBRADORM, None) is False
+        # An umbrella type resolves through its explicit variant.
+        assert (
+            disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2)
+            is False
+        )
+        assert (
+            disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM)
+            is False
+        )
+        assert disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO) is False
+        assert disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_WILINKE, None) is False
+        # No bed type chosen yet (auto-detect): keep the conservative default.
+        assert disconnect_after_command_default_enabled(None, None) is False
+
+    async def test_discovery_defaults_to_freeing_the_link_after_each_command(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """A Linak bed accepts one BLE link, so hand it back after each command."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        assert result["step_id"] == "bluetooth_confirm"
+        marker = next(
+            marker
+            for marker in result["data_schema"].schema
+            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
+        )
+        assert marker.default() is True
+
+    def test_ambiguous_disconnect_choice_is_confirmed_after_bed_type_change(self):
+        """A second form distinguishes the old default from an explicit choice."""
+        from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+        flow = AdjustableBedConfigFlow()
+
+        assert (
+            flow._disconnect_after_command_choice(
+                {CONF_DISCONNECT_AFTER_COMMAND: True},
+                BED_TYPE_LEGGETT_GEN2,
+                None,
+                True,
+            )
+            is None
+        )
+        assert (
+            flow._disconnect_after_command_choice(
+                {CONF_DISCONNECT_AFTER_COMMAND: False},
+                BED_TYPE_LINAK,
+                VARIANT_AUTO,
+                False,
+            )
+            is None
+        )
+
+        # Once the follow-up form has rendered the selected protocol's default,
+        # either old-default value is an unambiguous explicit choice.
+        flow._disconnect_choice_confirmed = True
+        assert (
+            flow._disconnect_after_command_choice(
+                {CONF_DISCONNECT_AFTER_COMMAND: True},
+                BED_TYPE_LEGGETT_GEN2,
+                None,
+                True,
+            )
+            is True
+        )
+        assert (
+            flow._disconnect_after_command_choice(
+                {CONF_DISCONNECT_AFTER_COMMAND: False},
+                BED_TYPE_LINAK,
+                VARIANT_AUTO,
+                False,
+            )
+            is False
+        )
+        flow._disconnect_choice_confirmed = False
+
+        # A value differing from the rendered default remains an explicit choice.
+        assert (
+            flow._disconnect_after_command_choice(
+                {CONF_DISCONNECT_AFTER_COMMAND: False},
+                BED_TYPE_LINAK,
+                VARIANT_AUTO,
+                True,
+            )
+            is False
+        )
+        # An absent value from direct callers follows the chosen bed type.
+        assert (
+            flow._disconnect_after_command_choice(
+                {},
+                BED_TYPE_LINAK,
+                VARIANT_AUTO,
+                False,
+            )
+            is True
+        )
+
+    async def test_manual_entry_without_preselected_type_confirms_ambiguous_choice(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """Raw manual entry keeps the option and confirms it for the selected bed."""
+        flow = AdjustableBedConfigFlow()
+        flow.hass = hass
+        flow.context = {"source": SOURCE_USER}
+
+        result = await flow.async_step_manual_entry()
+        disconnect_marker = next(
+            marker
+            for marker in result["data_schema"].schema
+            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
+        )
+        assert disconnect_marker.default() is False
+
+        result = await flow.async_step_manual_entry(
+            {
+                CONF_ADDRESS: "11:22:33:44:55:66",
+                CONF_BED_TYPE: BED_TYPE_LINAK,
+                CONF_NAME: "Manual Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_DISCONNECT_AFTER_COMMAND: False,
+            }
+        )
+        assert result["step_id"] == "disconnect_after_command"
+        confirm_marker = next(iter(result["data_schema"].schema))
+        assert confirm_marker.default() is True
+
+        with patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=False
+        ):
+            result = await flow.async_step_disconnect_after_command(
+                {CONF_DISCONNECT_AFTER_COMMAND: False}
+            )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is False
+
+    async def test_explicitly_unchecking_disconnect_after_command_is_kept(
+        self,
+        hass: HomeAssistant,
+        mock_bluetooth_service_info: BluetoothServiceInfoBleak,
+        enable_custom_integrations,
+    ):
+        """A value that differs from the rendered default is the user's choice."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_BLUETOOTH},
+            data=mock_bluetooth_service_info,
+        )
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "My Bed",
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_PREFERRED_ADAPTER: "auto",
+                CONF_DISCONNECT_AFTER_COMMAND: False,
+            },
+        )
+
+        result = await _advance_progress(hass, result)
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is False
+
     async def test_bluetooth_discovery_confirm(
         self,
         hass: HomeAssistant,
@@ -1843,6 +2090,14 @@ class TestBluetoothDiscoveryFlow:
         # Should proceed to confirm step with full bed type list available
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "bluetooth_confirm"
+        disconnect_marker = next(
+            marker
+            for marker in result["data_schema"].schema
+            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
+        )
+        # The low-confidence candidate would default this to True, but the form
+        # actually defaults to Auto-detect, whose conservative default is False.
+        assert disconnect_marker.default() is False
 
     async def test_bluetooth_disambiguate_creates_entry_with_selected_type(
         self,
@@ -2246,8 +2501,8 @@ class TestManualFlow:
                 user_input={CONF_ADDRESS: "manual"},
             )
 
-        # Now in manual_entry step, fill the form. No connectable scanner here,
-        # so the read-only verify step is skipped and the entry is created directly.
+        # The raw form starts with the conservative False default. Linak recommends
+        # True, so confirm the bed-specific value before the entry is created.
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -2261,12 +2516,19 @@ class TestManualFlow:
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
             )
+            assert result["step_id"] == "disconnect_after_command"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
+            )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == "Manual Bed"
         assert result["data"][CONF_ADDRESS] == "11:22:33:44:55:66"
         assert result["data"][CONF_BED_TYPE] == BED_TYPE_LINAK
         assert result["data"][CONF_MOTOR_COUNT] == 3
+        # The follow-up displayed Linak's recommendation and kept it enabled.
+        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is True
 
     async def test_manual_entry_malouf_collects_layout(
         self, hass: HomeAssistant, enable_custom_integrations
@@ -2306,8 +2568,14 @@ class TestManualFlow:
             },
         )
 
-        # Should route to the follow-up Malouf step, not create the entry yet.
+        # Confirm the selected protocol's connection default before collecting
+        # the protocol-specific layout.
         assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "disconnect_after_command"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
+        )
         assert result["step_id"] == "manual_malouf"
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
@@ -2441,6 +2709,11 @@ class TestManualFlow:
                     CONF_DISABLE_ANGLE_SENSING: True,
                     CONF_PREFERRED_ADAPTER: "auto",
                 },
+            )
+            assert result["step_id"] == "disconnect_after_command"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                user_input={CONF_DISCONNECT_AFTER_COMMAND: True},
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY

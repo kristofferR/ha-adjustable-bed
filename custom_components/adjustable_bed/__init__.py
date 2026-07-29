@@ -25,6 +25,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_VIBRADORM,
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_SERVICE_UUID,
@@ -320,11 +321,10 @@ async def _async_finish_entry_setup(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if schedule_initial_position_read:
-        entry.async_create_background_task(
-            hass,
-            coordinator.async_read_initial_positions(),
-            name=f"adjustable_bed_initial_position_read_{entry.entry_id}",
-        )
+        # The successful connect also requests hydration. Route both paths
+        # through the coordinator's session-aware deduplication so platform
+        # forwarding cannot race a second full read onto the same BLE link.
+        coordinator._schedule_position_hydration()
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
     return True
@@ -891,11 +891,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     # per-side covers don't sit at "unknown" until the first movement.
     for child in coordinator.children.values():
         if child.is_connected:
-            entry.async_create_background_task(
-                hass,
-                child.async_read_initial_positions(),
-                name=f"adjustable_bed_paired_initial_read_{child.address}",
-            )
+            child._schedule_position_hydration()
 
     _LOGGER.info("Paired bed setup complete for %s", entry.title)
     return True
@@ -940,12 +936,13 @@ async def _async_setup_single_address_paired_entry(
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-    for side, child in coordinator.children.items():
-        entry.async_create_background_task(
-            hass,
-            child.async_read_initial_positions(),
-            name=f"adjustable_bed_single_address_initial_read_{side}",
-        )
+    if inner.bed_type != BED_TYPE_SLEEP_NUMBER:
+        for side, child in coordinator.children.items():
+            entry.async_create_background_task(
+                hass,
+                child.async_read_initial_positions(),
+                name=f"adjustable_bed_single_address_initial_read_{side}",
+            )
     _LOGGER.info("Single-address paired bed setup complete for %s", entry.title)
     return True
 

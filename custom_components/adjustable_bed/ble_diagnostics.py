@@ -8,6 +8,7 @@ import functools
 import logging
 import time
 from collections import deque
+from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,7 @@ from .diagnostic_payloads import (
 from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 
 if TYPE_CHECKING:
+    from .beds.base import BedController
     from .coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,6 +55,7 @@ CONNECTION_TIMEOUT = 30.0
 DEFAULT_CAPTURE_DURATION = 120  # 2 minutes
 MAX_CAPTURED_NOTIFICATIONS = 5000
 MAX_RECONNECT_ATTEMPTS = 2
+MAX_DIAGNOSTIC_QUERY_PREEMPTIONS = 3
 
 _SKIPPED_READ_ERROR = "Skipped: connection lost during service enumeration"
 
@@ -240,14 +243,33 @@ class BLEDiagnosticRunner:
                 await stack.enter_async_context(
                     async_get_connect_lock(self.hass, self.address)
                 )
+            else:
+                stack.callback(self.coordinator.resume_position_hydration)
+                await self.coordinator.async_pause_position_hydration()
             try:
                 await self._connect()
 
                 if self._client and self._client.is_connected:
-                    services_info = await self._enumerate_services()
-                    device_information = await self._read_device_information()
+                    async def _collect_device_details() -> tuple[
+                        list[ServiceInfo], dict[str, str | None]
+                    ]:
+                        return (
+                            await self._enumerate_services(),
+                            await self._read_device_information(),
+                        )
 
-                if await self._ensure_connected():
+                    services_info, device_information = (
+                        await self._async_execute_diagnostic_query(
+                            _collect_device_details
+                        )
+                    )
+
+                async def _prepare_notification_capture() -> bool:
+                    return await self._ensure_connected()
+
+                if await self._async_execute_diagnostic_query(
+                    _prepare_notification_capture
+                ):
                     try:
                         await self._subscribe_to_notifications(services_info)
 
@@ -332,6 +354,66 @@ class BLEDiagnosticRunner:
             command_trace=command_trace,
             errors=self._errors,
         )
+
+    async def _async_execute_diagnostic_query[T](
+        self,
+        query: Callable[[], Awaitable[T]],
+    ) -> T:
+        """Serialize shared-client diagnostics with coordinator operations."""
+        coordinator = self.coordinator
+        if not self._using_coordinator_connection or coordinator is None:
+            return await query()
+
+        async def _execute(_controller: BedController) -> T:
+            # Preparation may have reconnected the coordinator after the runner
+            # last observed its client.
+            self._client = coordinator.client
+            return await query()
+
+        for attempt in range(MAX_DIAGNOSTIC_QUERY_PREEMPTIONS):
+            try:
+                try:
+                    return await coordinator.async_execute_controller_query(
+                        _execute,
+                        cancel_running=False,
+                        skip_disconnect=True,
+                        preemptible=True,
+                    )
+                except asyncio.CancelledError:
+                    current_task = asyncio.current_task()
+                    if current_task is not None and current_task.cancelling():
+                        raise
+                    if attempt + 1 == MAX_DIAGNOSTIC_QUERY_PREEMPTIONS:
+                        raise RuntimeError(
+                            "Diagnostic query was repeatedly preempted by commands"
+                        ) from None
+                    _LOGGER.debug(
+                        "Diagnostic query was preempted by a controller command; retrying"
+                    )
+            finally:
+                # Serialized queries normally restart the idle timer. Diagnostics
+                # own the shared link until _disconnect() resumes it after capture.
+                coordinator.pause_disconnect_timer()
+        raise RuntimeError("Diagnostic query preemption retry limit is invalid")
+
+    async def _async_execute_diagnostic_command(
+        self,
+        command: Callable[[BedController], Coroutine[Any, Any, None]],
+    ) -> None:
+        """Serialize a shared-client diagnostic state change."""
+        coordinator = self.coordinator
+        if not self._using_coordinator_connection or coordinator is None:
+            raise RuntimeError("Diagnostic command requires a coordinator connection")
+
+        try:
+            await coordinator.async_execute_controller_query(
+                command,
+                cancel_running=False,
+                skip_disconnect=True,
+                preemptible=False,
+            )
+        finally:
+            coordinator.pause_disconnect_timer()
 
     async def _connect(self) -> None:
         """Connect to the BLE device."""
@@ -750,21 +832,25 @@ class BLEDiagnosticRunner:
 
         if self._using_coordinator_connection:
             if self.coordinator is not None:
-                _LOGGER.debug("Registering raw notification callback with coordinator")
-                self.coordinator.set_raw_notify_callback(self._raw_notify_callback)
-                controller = self.coordinator.controller
-                requires_notify_channel = (
-                    controller is not None and controller.requires_notification_channel
-                )
-                if (
-                    self.coordinator.disable_angle_sensing
-                    and not requires_notify_channel
-                ):
-                    _LOGGER.info(
-                        "Angle sensing disabled - starting notifications for diagnostic capture"
+                coordinator = self.coordinator
+
+                async def _subscribe(controller: BedController) -> None:
+                    _LOGGER.debug(
+                        "Registering raw notification callback with coordinator"
                     )
-                    await self.coordinator.async_start_notify_for_diagnostics()
-                    self._diagnostic_notifications_started = True
+                    coordinator.set_raw_notify_callback(self._raw_notify_callback)
+                    if (
+                        coordinator.disable_angle_sensing
+                        and not controller.requires_notification_channel
+                    ):
+                        _LOGGER.info(
+                            "Angle sensing disabled - starting notifications "
+                            "for diagnostic capture"
+                        )
+                        await coordinator.async_start_notify_for_diagnostics()
+                        self._diagnostic_notifications_started = True
+
+                await self._async_execute_diagnostic_command(_subscribe)
 
             for service in services:
                 for char in service.characteristics:
@@ -826,17 +912,31 @@ class BLEDiagnosticRunner:
         """Unsubscribe from all notifiable characteristics."""
         if self._using_coordinator_connection:
             if self.coordinator is not None:
-                _LOGGER.debug("Clearing raw notification callback from coordinator")
-                self.coordinator.set_raw_notify_callback(None)
-                if (
-                    self._diagnostic_notifications_started
-                    and self.coordinator.controller is not None
-                    and self._client
-                    and self._client.is_connected
-                ):
-                    _LOGGER.debug("Stopping diagnostic notifications that were started for capture")
-                    await self.coordinator.controller.stop_notify()
-                self._diagnostic_notifications_started = False
+                coordinator = self.coordinator
+
+                async def _unsubscribe(controller: BedController) -> None:
+                    if (
+                        self._diagnostic_notifications_started
+                        and self._client
+                        and self._client.is_connected
+                    ):
+                        _LOGGER.debug(
+                            "Stopping diagnostic notifications that were "
+                            "started for capture"
+                        )
+                        await controller.stop_notify()
+
+                try:
+                    await self._async_execute_diagnostic_command(_unsubscribe)
+                finally:
+                    # Authentication or reconnect preparation can fail before
+                    # the serialized cleanup callback runs. Never leave the
+                    # diagnostic callback attached to a live controller.
+                    _LOGGER.debug(
+                        "Clearing raw notification callback from coordinator"
+                    )
+                    coordinator.set_raw_notify_callback(None)
+                    self._diagnostic_notifications_started = False
             return
 
         if not self._client or not self._client.is_connected:

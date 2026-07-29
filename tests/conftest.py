@@ -26,6 +26,7 @@ from pytest_homeassistant_custom_component.plugins import (  # noqa: E402
     enable_custom_integrations,  # noqa: F401
 )
 
+from custom_components.adjustable_bed.beds.jensen import JensenCommands  # noqa: E402
 from custom_components.adjustable_bed.const import (  # noqa: E402
     BED_TYPE_LINAK,
     BEDTECH_SERVICE_UUID,
@@ -35,6 +36,7 @@ from custom_components.adjustable_bed.const import (  # noqa: E402
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
+    JENSEN_CHAR_UUID,
     JENSEN_SERVICE_UUID,
     KEESON_BASE_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
@@ -396,6 +398,18 @@ def mock_bleak_client() -> MagicMock:
                 callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame[20:]))
                 return
             callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame))
+            return
+
+        if (
+            str(char_uuid).lower() == JENSEN_CHAR_UUID.lower()
+            and data == JensenCommands.READ_POSITION
+        ):
+            callback = notify_callbacks.get(char_uuid)
+            if callback is not None:
+                callback(
+                    MagicMock(),
+                    bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+                )
             return
 
         decoded_payload = _decode_sleep_number_payload(data)

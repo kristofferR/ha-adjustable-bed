@@ -84,7 +84,7 @@ L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
 |---------|-------|---------|-------------|
 | **Disable Angle Sensing** | On/Off | On | Disables position feedback to allow physical remote to work |
 | **Position Mode** | Speed / Accuracy | Speed | How position updates after commands |
-| **Disconnect After Command** | On/Off | Off | Disconnect immediately after each command |
+| **Disconnect After Command** | On/Off | On for most beds | Disconnect immediately after each command |
 | **Idle Disconnect Seconds** | 10-300 | 40 | Auto-disconnect timeout when idle |
 | **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
 
@@ -100,9 +100,10 @@ L600 is not a protocol name**: confirmed L600 hardware includes both OKIN CB24
 - **Accuracy**: Reads actual position after each command, slightly slower
 
 **Disconnect After Command**
-- Enable for beds that only support one BLE connection at a time
-- Frees up the connection immediately for your physical remote
-- May cause slightly slower response on rapid consecutive commands
+- On by default: these beds accept a single BLE connection, so holding it locks your physical remote and the vendor app out until the idle timeout expires
+- Off by default for beds whose protocol needs the link held open or whose controller must retain connection-scoped state between commands
+- Turn it off if you prefer faster response on rapid consecutive commands over handing the connection back right away
+- Changing it later only affects the bed whose options you edit; beds added before this became the default keep whatever they were set up with
 
 **Idle Disconnect Seconds**
 - How long to wait before automatically disconnecting when idle

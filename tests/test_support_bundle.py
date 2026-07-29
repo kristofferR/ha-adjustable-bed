@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -13,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.ble_diagnostics import (
+    MAX_DIAGNOSTIC_QUERY_PREEMPTIONS,
     BLEDiagnosticRunner,
     DiagnosticReport,
 )
@@ -160,6 +162,139 @@ def _build_diagnostic_client(services: _FakeServices) -> MagicMock:
 
 class TestBleDiagnosticsRunner:
     """Test enriched BLE diagnostics output."""
+
+    async def test_diagnostic_query_retries_after_command_preemption(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A responsive command must delay, not abort, support diagnostics."""
+        coordinator = MagicMock()
+        coordinator.client = MagicMock(is_connected=True)
+        coordinator.controller = MagicMock()
+        query_attempts = 0
+
+        async def _execute_query(query_fn, **_kwargs):
+            nonlocal query_attempts
+            query_attempts += 1
+            if query_attempts == 1:
+                operation_task = asyncio.create_task(query_fn(coordinator.controller))
+                operation_task.cancel()
+                return await operation_task
+            return await query_fn(coordinator.controller)
+
+        coordinator.async_execute_controller_query = AsyncMock(
+            side_effect=_execute_query
+        )
+        runner = BLEDiagnosticRunner(
+            hass,
+            "AA:BB:CC:DD:EE:FF",
+            capture_duration=0,
+            coordinator=coordinator,
+        )
+        runner._using_coordinator_connection = True
+
+        async def _query() -> str:
+            return "complete"
+
+        assert await runner._async_execute_diagnostic_query(_query) == "complete"
+        assert coordinator.async_execute_controller_query.await_count == 2
+        assert coordinator.pause_disconnect_timer.call_count == 2
+
+    async def test_diagnostic_query_bounds_repeated_command_preemption(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Repeated commands eventually return control to report cleanup."""
+        coordinator = MagicMock()
+        coordinator.client = MagicMock(is_connected=True)
+        coordinator.controller = MagicMock()
+
+        async def _preempt_query(query_fn, **_kwargs):
+            operation_task = asyncio.create_task(query_fn(coordinator.controller))
+            operation_task.cancel()
+            return await operation_task
+
+        coordinator.async_execute_controller_query = AsyncMock(
+            side_effect=_preempt_query
+        )
+        runner = BLEDiagnosticRunner(
+            hass,
+            "AA:BB:CC:DD:EE:FF",
+            capture_duration=0,
+            coordinator=coordinator,
+        )
+        runner._using_coordinator_connection = True
+
+        async def _query() -> None:
+            return None
+
+        with pytest.raises(RuntimeError, match="repeatedly preempted"):
+            await runner._async_execute_diagnostic_query(_query)
+
+        assert (
+            coordinator.async_execute_controller_query.await_count
+            == MAX_DIAGNOSTIC_QUERY_PREEMPTIONS
+        )
+        assert (
+            coordinator.pause_disconnect_timer.call_count
+            == MAX_DIAGNOSTIC_QUERY_PREEMPTIONS
+        )
+
+    async def test_run_diagnostics_resumes_hydration_when_pause_raises(
+        self,
+        hass: HomeAssistant,
+    ):
+        """A partial hydration pause must be unwound when pausing raises."""
+        coordinator = MagicMock()
+        coordinator.async_pause_position_hydration = AsyncMock(
+            side_effect=RuntimeError("pause failed")
+        )
+        coordinator.resume_position_hydration = MagicMock()
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.ble_diagnostics."
+                "get_service_info_snapshots_by_address",
+                return_value=[],
+            ),
+            pytest.raises(RuntimeError, match="pause failed"),
+        ):
+            await BLEDiagnosticRunner(
+                hass,
+                "AA:BB:CC:DD:EE:FF",
+                capture_duration=0,
+                coordinator=coordinator,
+            ).run_diagnostics()
+
+        coordinator.resume_position_hydration.assert_called_once_with()
+
+    async def test_notification_cleanup_always_clears_raw_callback(
+        self,
+        hass: HomeAssistant,
+    ):
+        """Failed serialized cleanup must not retain the diagnostic runner."""
+        coordinator = MagicMock()
+        runner = BLEDiagnosticRunner(
+            hass,
+            "AA:BB:CC:DD:EE:FF",
+            capture_duration=0,
+            coordinator=coordinator,
+        )
+        runner._using_coordinator_connection = True
+        runner._diagnostic_notifications_started = True
+
+        with (
+            patch.object(
+                runner,
+                "_async_execute_diagnostic_command",
+                new=AsyncMock(side_effect=RuntimeError("authentication failed")),
+            ),
+            pytest.raises(RuntimeError, match="authentication failed"),
+        ):
+            await runner._unsubscribe_from_notifications([])
+
+        coordinator.set_raw_notify_callback.assert_called_once_with(None)
+        assert runner._diagnostic_notifications_started is False
 
     async def test_run_diagnostics_enriches_detection_gatt_and_notifications(
         self,
@@ -670,6 +805,8 @@ class TestBleDiagnosticsRunner:
         client2 = _build_diagnostic_client(_FakeServices([service2]))
 
         coordinator = MagicMock()
+        coordinator.async_pause_position_hydration = AsyncMock()
+        coordinator.resume_position_hydration = MagicMock()
         coordinator.client = client1
         coordinator.is_connected = True
         coordinator.connection_source = "proxy_1"
@@ -679,6 +816,17 @@ class TestBleDiagnosticsRunner:
         coordinator.connection_history = {}
         coordinator.connection_attempt_details = []
         coordinator.command_trace = []
+
+        async def _execute_query(query_fn, **kwargs):
+            del kwargs
+            return await query_fn(coordinator.controller)
+
+        coordinator.async_execute_controller_query = AsyncMock(
+            side_effect=_execute_query
+        )
+        coordinator.async_execute_controller_command = AsyncMock(
+            side_effect=_execute_query
+        )
 
         async def _read_gatt_char_1(target):
             target_uuid = getattr(target, "uuid", target)
@@ -732,15 +880,25 @@ class TestBleDiagnosticsRunner:
         assert chars[1]["read_error"] == "BleakError"
         assert chars[2]["read_result"]["hex"] == "02"
         assert any("reconnecting" in error for error in report.errors)
-        coordinator.pause_disconnect_timer.assert_called_once()
+        coordinator.async_pause_position_hydration.assert_awaited_once_with()
+        coordinator.resume_position_hydration.assert_called_once_with()
+        assert coordinator.async_execute_controller_query.await_count == 4
+        assert [
+            call.kwargs["preemptible"]
+            for call in coordinator.async_execute_controller_query.await_args_list
+        ] == [True, True, False, False]
+        coordinator.async_execute_controller_command.assert_not_awaited()
+        assert coordinator.pause_disconnect_timer.call_count == 5
         coordinator.resume_disconnect_timer.assert_called_once()
         coordinator.set_raw_notify_callback.assert_called_with(None)
         client2.disconnect.assert_not_awaited()
 
+    @pytest.mark.parametrize("requires_notification_channel", [False, True])
     async def test_run_diagnostics_initially_connects_through_coordinator(
         self,
         hass: HomeAssistant,
         enable_custom_integrations,
+        requires_notification_channel: bool,
     ):
         """Configured diagnostics should use pairing and adapter logic from the coordinator."""
         service_info = _build_unknown_service_info(
@@ -750,6 +908,8 @@ class TestBleDiagnosticsRunner:
         )
         client = _build_diagnostic_client(_FakeServices([]))
         coordinator = MagicMock()
+        coordinator.async_pause_position_hydration = AsyncMock()
+        coordinator.resume_position_hydration = MagicMock()
         coordinator.client = None
         coordinator.is_connected = False
         coordinator.connection_source = None
@@ -759,8 +919,22 @@ class TestBleDiagnosticsRunner:
         coordinator.connection_history = {}
         coordinator.connection_attempt_details = []
         coordinator.command_trace = []
-        coordinator.controller = MagicMock(requires_notification_channel=True)
+        coordinator.controller = MagicMock(
+            requires_notification_channel=requires_notification_channel
+        )
+        coordinator.controller.stop_notify = AsyncMock()
         coordinator.async_start_notify_for_diagnostics = AsyncMock()
+
+        async def _execute_query(query_fn, **kwargs):
+            del kwargs
+            return await query_fn(coordinator.controller)
+
+        coordinator.async_execute_controller_query = AsyncMock(
+            side_effect=_execute_query
+        )
+        coordinator.async_execute_controller_command = AsyncMock(
+            side_effect=_execute_query
+        )
 
         async def _connect_through_coordinator(*, reset_timer):
             assert reset_timer is False
@@ -798,10 +972,22 @@ class TestBleDiagnosticsRunner:
         select_adapter.assert_not_called()
         assert report.device["connection_path"] == "coordinator_connected_for_diagnostics"
         assert report.device["actual_source"] == "proxy_1"
-        coordinator.pause_disconnect_timer.assert_called_once()
+        coordinator.async_pause_position_hydration.assert_awaited_once_with()
+        coordinator.resume_position_hydration.assert_called_once_with()
+        assert coordinator.async_execute_controller_query.await_count == 4
+        assert [
+            call.kwargs["preemptible"]
+            for call in coordinator.async_execute_controller_query.await_args_list
+        ] == [True, True, False, False]
+        coordinator.async_execute_controller_command.assert_not_awaited()
+        assert coordinator.pause_disconnect_timer.call_count == 5
         coordinator.resume_disconnect_timer.assert_called_once()
-        coordinator.async_start_notify_for_diagnostics.assert_not_called()
-        coordinator.controller.stop_notify.assert_not_called()
+        if requires_notification_channel:
+            coordinator.async_start_notify_for_diagnostics.assert_not_called()
+            coordinator.controller.stop_notify.assert_not_called()
+        else:
+            coordinator.async_start_notify_for_diagnostics.assert_awaited_once_with()
+            coordinator.controller.stop_notify.assert_awaited_once_with()
         client.disconnect.assert_not_awaited()
 
     async def test_coordinator_attempts_are_retained_before_standalone_fallback(
@@ -817,6 +1003,8 @@ class TestBleDiagnosticsRunner:
         )
         client = _build_diagnostic_client(_FakeServices([]))
         coordinator = MagicMock()
+        coordinator.async_pause_position_hydration = AsyncMock()
+        coordinator.resume_position_hydration = MagicMock()
         coordinator.client = None
         coordinator.is_connected = False
         coordinator.entry.data = {CONF_PREFERRED_ADAPTER: "proxy_1"}
@@ -873,6 +1061,8 @@ class TestBleDiagnosticsRunner:
             == "configured_coordinator"
         )
         assert fallback_attempt["result"] == "connected"
+        coordinator.async_pause_position_hydration.assert_awaited_once_with()
+        coordinator.resume_position_hydration.assert_called_once_with()
         assert (
             fallback_attempt["diagnostic_connection_path"]
             == "standalone_after_coordinator_failure"

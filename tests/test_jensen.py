@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
@@ -37,9 +38,13 @@ from .conftest import make_controller_mock
 
 @pytest.fixture
 def _shorten_mocked_config_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep mocked config-query timeouts while avoiding five-second waits."""
+    """Keep mocked response timeouts while avoiding five-second waits."""
     monkeypatch.setattr(
         "custom_components.adjustable_bed.beds.jensen._CONFIG_RESPONSE_TIMEOUT",
+        0.01,
+    )
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.jensen._POSITION_RESPONSE_TIMEOUT",
         0.01,
     )
 
@@ -349,6 +354,51 @@ class TestJensenNotificationStartup:
         assert calls[0].kwargs == {"response": True}
         assert calls[1].args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
         assert calls[1].kwargs == {"response": True}
+
+    async def test_start_notify_waits_for_read_position_response(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """No later operation can inherit the warm-up query's response."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char = AsyncMock()
+
+        notify_task = asyncio.create_task(coordinator.controller.start_notify(None))
+        await asyncio.sleep(0)
+
+        assert not notify_task.done()
+        assert mock_bleak_client.write_gatt_char.call_args_list[-1].args == (
+            JENSEN_CHAR_UUID,
+            JensenCommands.READ_POSITION,
+        )
+
+        coordinator.controller._handle_notification(
+            MagicMock(),
+            bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+        )
+        await notify_task
+
+    async def test_start_notify_continues_without_warmup_response(
+        self,
+        hass: HomeAssistant,
+        mock_jensen_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """A missing warm-up response must not prevent command startup."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        await coordinator.async_connect()
+        mock_bleak_client.write_gatt_char = AsyncMock()
+
+        await coordinator.controller.start_notify(None)
+
+        mock_bleak_client.start_notify.assert_awaited()
+        assert "Timeout waiting for Jensen warm-up position response" in caplog.text
 
     async def test_start_notify_none_keeps_position_updates_ignored(
         self,
@@ -872,6 +922,114 @@ class TestJensenFeatureDetection:
 
 class TestJensenPositionParsing:
     """Test Jensen position notification parsing."""
+
+    def test_notification_signals_waiter_before_callback(self):
+        """A callback failure must not hide a received position response."""
+        controller = JensenController(MagicMock())
+        controller._position_received = asyncio.Event()
+        controller._notify_callback = MagicMock(side_effect=RuntimeError("callback failed"))
+
+        with pytest.raises(RuntimeError, match="callback failed"):
+            controller._handle_notification(
+                MagicMock(),
+                bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+            )
+
+        assert controller._position_received.is_set()
+
+    async def test_read_positions_waits_for_notification_response(self):
+        """The query is incomplete until its asynchronous position frame arrives."""
+        controller = JensenController(MagicMock())
+        controller._notify_callback = MagicMock()
+        controller._write_gatt_with_retry = AsyncMock()
+
+        read_task = asyncio.create_task(controller.read_positions())
+        await asyncio.sleep(0)
+
+        controller._write_gatt_with_retry.assert_awaited_once()
+        assert not read_task.done()
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray(
+                [
+                    0x10,
+                    0x00,
+                    HEAD_POS_FLAT >> 8,
+                    HEAD_POS_FLAT & 0xFF,
+                    FOOT_POS_FLAT >> 8,
+                    FOOT_POS_FLAT & 0xFF,
+                ]
+            ),
+        )
+        await read_task
+
+        assert controller._position_received is None
+        assert controller._notify_callback.call_count == 2
+
+    async def test_read_positions_serializes_overlapping_queries(self):
+        """Each overlapping reader must wait for its own position response."""
+        controller = JensenController(MagicMock())
+        controller._send_position_query = AsyncMock(return_value=True)
+
+        first_read = asyncio.create_task(controller.read_positions())
+        await asyncio.sleep(0)
+        second_read = asyncio.create_task(controller.read_positions())
+        await asyncio.sleep(0)
+
+        controller._send_position_query.assert_awaited_once()
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+        )
+        await first_read
+        await asyncio.sleep(0)
+
+        assert controller._send_position_query.await_count == 2
+        assert not second_read.done()
+
+        controller._handle_notification(
+            MagicMock(),
+            bytearray([0x10, 0x00, 0x00, 0x01, 0x00, 0x01]),
+        )
+        await second_read
+
+        assert controller._position_received is None
+
+    async def test_read_positions_times_out_without_notification_response(
+        self,
+        _shorten_mocked_config_timeout: None,
+    ):
+        """A missing response must not block serialized controller operations."""
+        controller = JensenController(MagicMock())
+        controller._write_gatt_with_retry = AsyncMock()
+
+        with pytest.raises(TimeoutError):
+            await controller.read_positions()
+
+        assert controller._position_received is None
+
+    async def test_send_position_query_handles_disconnect_during_write(self):
+        """A disconnect race follows the explicit failed-query path."""
+        coordinator = MagicMock()
+        coordinator.client.is_connected = True
+        controller = JensenController(coordinator)
+        controller._write_gatt_with_retry = AsyncMock(
+            side_effect=ConnectionError("disconnected")
+        )
+
+        assert await controller._send_position_query() is False
+        controller._write_gatt_with_retry.assert_awaited_once()
+
+    async def test_read_positions_raises_when_query_fails(self):
+        """A failed query must not look like a successful position refresh."""
+        controller = JensenController(MagicMock())
+        controller._send_position_query = AsyncMock(return_value=False)
+
+        with pytest.raises(ConnectionError, match="Failed to send Jensen position query"):
+            await controller.read_positions()
+
+        assert controller._position_received is None
 
     def test_raw_to_percentage_head_flat(self):
         """Test head position at flat returns 0%."""

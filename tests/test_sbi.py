@@ -392,7 +392,6 @@ class TestSBIController:
 
         assert coordinator.controller.supports_position_feedback is True
 
-
 # -----------------------------------------------------------------------------
 # Movement Tests
 # -----------------------------------------------------------------------------
