@@ -825,7 +825,7 @@
         },
         "motor": {
           "name": "Motor",
-          "description": "The motor to move (back, legs, head, or feet)."
+          "description": "The motor to move (back, legs, head, feet, or lumbar)."
         },
         "position": {
           "name": "Position",

@@ -1453,13 +1453,13 @@ class TestServices:
                 blocking=True,
             )
 
-    async def test_set_position_service_accepts_box25_head_and_feet(
+    async def test_set_position_service_accepts_box25_head_feet_and_lumbar(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """BOX25 set_position should accept head and feet only."""
+        """BOX25 set_position should accept head, feet, and lumbar."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleepy's BOX25 Service Bed",
@@ -1515,8 +1515,18 @@ class TestServices:
             },
             blocking=True,
         )
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_POSITION,
+            {
+                "device_id": [device_id],
+                "motor": "lumbar",
+                "position": 30,
+            },
+            blocking=True,
+        )
 
-        assert coordinator.async_seek_position.await_count == 2
+        assert coordinator.async_seek_position.await_count == 3
 
     async def test_set_position_service_rejects_box25_back_and_legs(
         self,
@@ -1558,7 +1568,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head"):
+        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head, lumbar"):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
