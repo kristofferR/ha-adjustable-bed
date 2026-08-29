@@ -160,7 +160,7 @@ A5 5A 00 00 00 40 02
 
 **Integration motor surface:** `head`, `feet`, `lumbar`, `tilt`
 
-**Integration direct-position surface:** `head` and `feet` sliders/services. The protocol also reports lumbar position and accepts direct lumbar position commands, but neck tilt does not currently have a protocol-backed position zone.
+**Integration direct-position surface:** `head`, `feet`, and `lumbar` sliders; `head` and `feet` are also exposed through the `set_position` service (lumbar is not yet wired into that service). Neck tilt does not currently have a protocol-backed position zone.
 
 The Sleepy's app first classifies `Star25...` as BOX25, reads manufacturer name
 characteristic `2A29`, then promotes it to `BOX25_STAR` only when the decoded
