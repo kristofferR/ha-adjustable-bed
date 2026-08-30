@@ -613,13 +613,13 @@ class TestNumberEntities:
             is None
         )
 
-    async def test_box25_number_entities_include_head_feet_and_lumbar_position(
+    async def test_box25_number_entities_only_include_head_and_feet_position(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """BOX25 should create head/feet/lumbar position sliders, but not back/legs."""
+        """BOX25 should only create head_position and feet_position number entities."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Sleepy's BOX25 Numbers",
@@ -649,10 +649,6 @@ class TestNumberEntities:
         )
         assert (
             registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_feet_position")
-            is not None
-        )
-        assert (
-            registry.async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:27_lumbar_position")
             is not None
         )
         assert (

@@ -78,8 +78,6 @@ set_position:
               value: head
             - label: Feet
               value: feet
-            - label: Lumbar
-              value: lumbar
     position:
       name: Position
       description: Target position (0-68° for back/head, 0-45° for legs/feet, 0-100% for Keeson/Ergomotion/BOX25 Star).
