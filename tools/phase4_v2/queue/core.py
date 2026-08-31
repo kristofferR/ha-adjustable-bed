@@ -63,6 +63,10 @@ class CompletionConflictError(QueueError):
     """A unit already has a different formal completion."""
 
 
+class InputDigestMismatchError(QueueError):
+    """The accepted output was built from different immutable input."""
+
+
 class ExecutionMode(StrEnum):
     """Whether the v2 queue is allowed to execute a work unit."""
 
@@ -100,6 +104,13 @@ class FinishDisposition(StrEnum):
     TERMINAL_ONLY = "TERMINAL_ONLY"
 
 
+class InputCheckedFinishDisposition(StrEnum):
+    """Result of atomically comparing input while finishing accepted output."""
+
+    ACCEPTED = "ACCEPTED"
+    INPUT_MISMATCH = "INPUT_MISMATCH"
+
+
 @dataclass(frozen=True, slots=True)
 class Lease:
     """The complete capability needed to mutate one leased attempt."""
@@ -121,6 +132,14 @@ class FinishResult:
     unit_id: str
     attempt_id: str
     output_digest: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class InputCheckedFinishResult:
+    """Atomic accepted finish or preserved input-mismatch terminal."""
+
+    disposition: InputCheckedFinishDisposition
+    finish_result: FinishResult
 
 
 @dataclass(frozen=True, slots=True)
@@ -1144,6 +1163,7 @@ class Queue:
         *,
         output_digest: str | None = None,
         completion_revision: str | None = None,
+        expected_input_digest: str | None = None,
     ) -> FinishResult:
         """Record an immutable terminal and, for ACCEPTED, formal completion."""
         if outcome is TerminalOutcome.ACCEPTED:
@@ -1151,8 +1171,12 @@ class Queue:
                 raise ValueError("accepted attempts require output digest and revision")
             _validate_digest(output_digest, "output_digest")
             _validate_revision(completion_revision)
+            if expected_input_digest is not None:
+                _validate_digest(expected_input_digest, "expected_input_digest")
         elif output_digest is not None:
             _validate_digest(output_digest, "output_digest")
+        if outcome is not TerminalOutcome.ACCEPTED and expected_input_digest is not None:
+            raise ValueError("expected input digest is only valid for accepted attempts")
         if completion_revision is not None:
             _validate_revision(completion_revision)
 
@@ -1166,9 +1190,48 @@ class Queue:
                 outcome,
                 output_digest=output_digest,
                 completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+                terminalize_input_mismatch=False,
             )
         finally:
             os.close(guard)
+
+    def finish_accepted_if_input_matches(
+        self,
+        lease: Lease,
+        *,
+        expected_input_digest: str,
+        output_digest: str,
+        completion_revision: str,
+    ) -> InputCheckedFinishResult:
+        """Atomically accept matching input or preserve an INPUT_MISMATCH output."""
+        _validate_digest(expected_input_digest, "expected_input_digest")
+        _validate_digest(output_digest, "output_digest")
+        _validate_revision(completion_revision)
+
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+                terminalize_input_mismatch=True,
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
 
     def _finish_with_publication_guard(
         self,
@@ -1177,6 +1240,8 @@ class Queue:
         *,
         output_digest: str | None,
         completion_revision: str | None,
+        expected_input_digest: str | None,
+        terminalize_input_mismatch: bool,
     ) -> FinishResult:
         with self._immediate() as connection:
             terminal = connection.execute(
@@ -1187,6 +1252,19 @@ class Queue:
                 (lease.attempt_id,),
             ).fetchone()
             if terminal is not None:
+                if (
+                    terminalize_input_mismatch
+                    and terminal["outcome"] == TerminalOutcome.INPUT_MISMATCH.value
+                ):
+                    return self._repeat_finish(
+                        connection,
+                        lease,
+                        terminal,
+                        TerminalOutcome.INPUT_MISMATCH,
+                        output_digest,
+                        None,
+                        None,
+                    )
                 return self._repeat_finish(
                     connection,
                     lease,
@@ -1194,9 +1272,20 @@ class Queue:
                     outcome,
                     output_digest,
                     completion_revision,
+                    expected_input_digest,
                 )
 
             self._require_live_lease(connection, lease)
+            if outcome is TerminalOutcome.ACCEPTED and expected_input_digest is not None:
+                if not self._input_digests_match(
+                    connection, lease, expected_input_digest
+                ):
+                    if not terminalize_input_mismatch:
+                        raise InputDigestMismatchError(
+                            f"accepted output input changed: {lease.unit_id}"
+                        )
+                    outcome = TerminalOutcome.INPUT_MISMATCH
+                    completion_revision = None
             if outcome is TerminalOutcome.ACCEPTED and not self._dependencies_satisfied(
                 connection, lease.unit_id
             ):
@@ -1461,6 +1550,7 @@ class Queue:
         outcome: TerminalOutcome,
         output_digest: str | None,
         completion_revision: str | None,
+        expected_input_digest: str | None,
     ) -> FinishResult:
         attempt = connection.execute(
             """
@@ -1476,6 +1566,8 @@ class Queue:
             attempt["fencing_token"],
         ) != (lease.unit_id, lease.lease_id, lease.owner, lease.fencing_token):
             raise StaleLeaseError(f"attempt capability mismatch: {lease.unit_id}")
+        if outcome is TerminalOutcome.ACCEPTED and expected_input_digest is not None:
+            self._require_input_digest(connection, lease, expected_input_digest)
         observed = (
             terminal["outcome"],
             terminal["output_digest"],
@@ -1499,6 +1591,40 @@ class Queue:
             unit_id=lease.unit_id,
             attempt_id=lease.attempt_id,
             output_digest=output_digest,
+        )
+
+    @staticmethod
+    def _require_input_digest(
+        connection: sqlite3.Connection,
+        lease: Lease,
+        expected_input_digest: str,
+    ) -> None:
+        if not Queue._input_digests_match(connection, lease, expected_input_digest):
+            raise InputDigestMismatchError(
+                f"accepted output input changed: {lease.unit_id}"
+            )
+
+    @staticmethod
+    def _input_digests_match(
+        connection: sqlite3.Connection,
+        lease: Lease,
+        expected_input_digest: str,
+    ) -> bool:
+        row = connection.execute(
+            """
+            SELECT attempt.input_digest AS attempt_input_digest,
+                   unit.input_digest AS unit_input_digest
+            FROM attempts AS attempt
+            JOIN work_units AS unit ON unit.unit_id = attempt.unit_id
+            WHERE attempt.attempt_id = ? AND attempt.unit_id = ?
+            """,
+            (lease.attempt_id, lease.unit_id),
+        ).fetchone()
+        if row is None:
+            raise StaleLeaseError(f"attempt capability mismatch: {lease.unit_id}")
+        return not (
+            row["attempt_input_digest"] != expected_input_digest
+            or row["unit_input_digest"] != expected_input_digest
         )
 
     def _recover_expired(self, connection: sqlite3.Connection) -> int:
