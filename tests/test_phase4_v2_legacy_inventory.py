@@ -317,6 +317,42 @@ def test_inventory_bounds_analysis_report_metadata_parsing(
     assert any(item["operation"] == "parse_analysis_json" for item in diagnostics)
 
 
+def test_inventory_rejects_duplicate_analysis_metadata_keys(tmp_path: Path) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "analysis.json").write_text(
+        '{"status":"COMPLETE","status":"BLOCKED"}', encoding="utf-8"
+    )
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert _ndjson(output / "reports.ndjson") == []
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(
+        item["operation"] == "parse_analysis_json" and item["error"] == "ValueError"
+        for item in diagnostics
+    )
+
+
+def test_inventory_bounds_tree_entries_before_sorting(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    for name in ("one", "two", "three"):
+        (source / name).write_text(name, encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, "_MAX_TREE_ENTRIES", 2)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert (output / "INVENTORY.PARTIAL").is_file()
+    assert len(_ndjson(output / "entries.ndjson")) == 2
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(item["error"] == "entry_limit_exceeded" for item in diagnostics)
+
+
 def test_inventory_rejects_oversized_hash_manifests_before_reading(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -385,6 +421,26 @@ def test_inventory_marks_unreadable_metadata_as_partial(
         raise PermissionError
 
     monkeypatch.setattr(legacy_inventory, "_report_record", unreadable)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert (output / "INVENTORY.PARTIAL").is_file()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["coverage"]["opaque_path_list"] == ["analysis.json"]
+
+
+def test_inventory_marks_disappeared_metadata_as_partial(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    _write_report(source / "analysis.json")
+
+    def disappeared(*_args: object) -> legacy_inventory.ReportRecord:
+        raise FileNotFoundError
+
+    monkeypatch.setattr(legacy_inventory, "_report_record", disappeared)
 
     output = tmp_path / "inventory"
     build_inventory(source, output)

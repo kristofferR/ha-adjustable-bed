@@ -516,7 +516,7 @@ def test_package_profile_binds_each_authoritative_root_result_to_its_plan(
         "target_root_id": "a" * 64,
     }
     root_result = {
-        "result": {"status": "COMPLETE"},
+        "result": {"analysis": {"semantic_root_sha256": "c" * 64}, "status": "COMPLETE"},
         "route": "FULL_ANALYSIS",
         "target_occurrence_identity_sha256": "b" * 64,
         "target_root_id": "a" * 64,
@@ -529,6 +529,15 @@ def test_package_profile_binds_each_authoritative_root_result_to_its_plan(
         root_plans=[root_plan],
         root_results=[root_result],
     )
+    package_report = json.loads(members["analysis.json"])
+    package_report["package_local_domains"] = {
+        name: {"status": "COMPLETE"}
+        for name in package_report["package_local_domains"]
+    }
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
 
     assert _validate_package_bound(report, pins).accepted is True
 
@@ -628,6 +637,66 @@ def test_package_profile_rejects_placeholder_root_result(tmp_path: Path) -> None
         contract,
         root_plans=[root],
         root_results=[{**root, "result": {"placeholder": True}}],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize(
+    ("route", "result"),
+    [
+        ("EXACT_REUSE", {"status": "COMPLETE"}),
+        ("FULL_ANALYSIS", {"status": "COMPLETE"}),
+    ],
+)
+def test_package_profile_rejects_completed_root_without_substantive_result(
+    tmp_path: Path, route: str, result: dict[str, object]
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": route,
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    plan = {"route": route, "reuse": root} if route == "EXACT_REUSE" else root
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[plan],
+        root_results=[{**root, "result": result}],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_rejects_empty_domains_for_completed_root(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root],
+        root_results=[
+            {
+                **root,
+                "result": {
+                    "analysis": {"semantic_root_sha256": "c" * 64},
+                    "status": "COMPLETE",
+                },
+            }
+        ],
     )
 
     receipt = _validate_package_bound(report, pins)
@@ -1017,6 +1086,21 @@ def test_pinned_ir_must_cover_its_expected_action_universe(tmp_path: Path) -> No
 
     diagnostic = next(item for item in receipt.diagnostics if item.code == "PINNED_IR_INVALID")
     assert dict(diagnostic.context) == {"ir_code": "missing_binding"}
+
+
+def test_pinned_ir_requires_exact_semantic_evidence_coverage(tmp_path: Path) -> None:
+    report, members, pins, contract = _bound_bundle(tmp_path)
+    uncovered_ir = _empty_current_ir()
+    uncovered_ir["actions"] = {"raise": {"summary": "Raise"}}
+    pins = _replace_dependency(report, members, pins, contract, "ir", uncovered_ir)
+
+    receipt = _validate_bound(report, pins)
+
+    diagnostic = next(item for item in receipt.diagnostics if item.code == "PINNED_IR_INVALID")
+    assert dict(diagnostic.context) == {
+        "ir_code": "missing_evidence_binding",
+        "ir_path": "/actions/raise/@key",
+    }
 
 
 def test_pinned_schema_must_equal_current_structure(tmp_path: Path) -> None:

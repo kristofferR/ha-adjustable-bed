@@ -16,7 +16,11 @@ from tools.phase4_v2.ir import (
     schema_document,
     validate_universe,
 )
-from tools.phase4_v2.ir.model import _parse_ir_structure, _resolve_semantic_pointer
+from tools.phase4_v2.ir.model import (
+    _parse_ir_structure,
+    _resolve_semantic_pointer,
+    _validate_exact_evidence_coverage,
+)
 
 from .lineage import (
     EvidenceLineageTrust,
@@ -389,6 +393,8 @@ def _validate_current_ir_and_schema(
                         (("ir_code", first.code),),
                     )
                 )
+            else:
+                _validate_exact_evidence_coverage(parsed_ir)
         except IRValidationError as error:
             context: tuple[tuple[str, str], ...] = ()
             if error.diagnostics:
@@ -943,6 +949,14 @@ def _validate_package_report(
     ):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
         return
+    completed_routes = {
+        item[2]
+        for item in (_root_result_identity(result) for result in root_results)
+        if item is not None and item[2] != "BLOCKED"
+    }
+    if completed_routes and any(not domains[name] for name in required_domains):
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
     reported_roots = tuple(_root_result_identity(item) for item in root_results)
     if set(reported_roots) != set(planned_roots):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_ROOT_SET_MISMATCH", report_path))
@@ -1000,10 +1014,22 @@ def _root_result_identity(value: object) -> tuple[str, str, str] | None:
 
 
 def _valid_root_result(route: object, result: object) -> bool:
-    if not _is_exact_object(result, {"status"}):
+    if route == "BLOCKED":
+        return (
+            _is_exact_object(result, {"blockers", "status"})
+            and result["status"] == "BLOCKED"
+            and _canonical_string_list(result["blockers"], require_nonempty=True) is not None
+        )
+    if not isinstance(route, str):
         return False
-    expected_status = "BLOCKED" if route == "BLOCKED" else "COMPLETE"
-    return result["status"] == expected_status
+    payload_name = {"EXACT_REUSE": "reuse", "FULL_ANALYSIS": "analysis"}.get(route)
+    return (
+        payload_name is not None
+        and _is_exact_object(result, {payload_name, "status"})
+        and result["status"] == "COMPLETE"
+        and isinstance(result[payload_name], dict)
+        and bool(result[payload_name])
+    )
 
 
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:

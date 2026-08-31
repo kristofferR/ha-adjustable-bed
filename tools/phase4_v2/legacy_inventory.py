@@ -20,6 +20,7 @@ import tempfile
 from collections import Counter
 from collections.abc import Buffer, Collection, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
+from itertools import islice
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Protocol
 
@@ -33,6 +34,7 @@ _MAX_ANALYSIS_JSON_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_DIAGNOSTICS = 4_096
 _MAX_HASH_MANIFEST_DECLARATIONS = 4_096
+_MAX_TREE_ENTRIES = 250_000
 
 
 class InventoryError(RuntimeError):
@@ -357,6 +359,7 @@ def _walk(
         raise InventoryError(f"cannot stat source root {source_root}: {err}") from err
     root_entry = _entry_from_stat(PurePosixPath("."), root_stat, None, active_paths)
     yield root_entry, source_root
+    remaining_entries = max(_MAX_TREE_ENTRIES - 1, 0)
 
     directory_flags = (
         os.O_RDONLY
@@ -371,9 +374,10 @@ def _walk(
         directory: Path,
         relative_dir: PurePosixPath,
     ) -> Iterator[tuple[Entry, Path]]:
+        nonlocal remaining_entries
         try:
             with os.scandir(directory_fd) as scan:
-                children = sorted(scan, key=lambda child: child.name)
+                children = list(islice(scan, remaining_entries + 1))
         except OSError as err:
             diagnostics.append(
                 Diagnostic(
@@ -384,6 +388,18 @@ def _walk(
                 )
             )
             return
+        if len(children) > remaining_entries:
+            diagnostics.append(
+                Diagnostic(
+                    path=relative_dir.as_posix(),
+                    operation="scandir",
+                    error="entry_limit_exceeded",
+                    active_protected=_is_active(relative_dir, active_paths),
+                )
+            )
+            children.pop()
+        remaining_entries -= len(children)
+        children.sort(key=lambda child: child.name)
         for child in children:
             relative = (
                 relative_dir / child.name if relative_dir.parts else PurePosixPath(child.name)
@@ -558,7 +574,7 @@ def _report_record(entry: Entry, path: Path) -> ReportRecord:
         payload = report_file.read(_MAX_ANALYSIS_JSON_BYTES + 1)
     if len(payload) > _MAX_ANALYSIS_JSON_BYTES:
         raise ValueError("analysis.json exceeds the metadata parsing limit")
-    document = json.loads(payload)
+    document = json.loads(payload, object_pairs_hook=_reject_duplicate_json_keys)
     if not isinstance(document, dict):
         raise ValueError("top-level JSON value is not an object")
     artifact = document.get("artifact")
@@ -583,6 +599,15 @@ def _report_record(entry: Entry, path: Path) -> ReportRecord:
         roles=tuple(sorted(report_roles)),
         active_protected=entry.active_protected,
     )
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    document: dict[str, object] = {}
+    for key, value in pairs:
+        if key in document:
+            raise ValueError(f"duplicate JSON key: {key}")
+        document[key] = value
+    return document
 
 
 def _is_hash_manifest_name(name: str) -> bool:
@@ -742,7 +767,7 @@ def _declared_hashes(
             Diagnostic(
                 path=entry.path,
                 operation="read_declared_hashes",
-                error=type(err).__name__,
+                error="OSError" if isinstance(err, OSError) else type(err).__name__,
                 active_protected=entry.active_protected,
             )
         ]
@@ -1149,7 +1174,9 @@ def build_inventory(
                             Diagnostic(
                                 path=entry.path,
                                 operation="parse_analysis_json",
-                                error=type(err).__name__,
+                                error=(
+                                    "OSError" if isinstance(err, OSError) else type(err).__name__
+                                ),
                                 active_protected=entry.active_protected,
                             )
                         )
