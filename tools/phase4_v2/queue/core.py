@@ -16,15 +16,20 @@ import sqlite3
 import stat
 import time
 import uuid
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import islice
 from pathlib import Path
 
 SCHEMA_REVISION = 2
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_MAX_IDENTIFIER_LENGTH = 200
+_MAX_MATERIALIZED_PINS = 256
+_MIN_PRIORITY = -(2**31)
+_MAX_PRIORITY = 2**31 - 1
 _INTERNAL_EVENT_TYPES = frozenset(
     {
         "CLAIMED",
@@ -116,6 +121,24 @@ class FinishResult:
     unit_id: str
     attempt_id: str
     output_digest: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CapabilityPin:
+    """One exact immutable pipeline-capability requirement."""
+
+    capability: str
+    revision: str
+    digest: str
+
+
+@dataclass(frozen=True, slots=True)
+class CompletionDependencyPin:
+    """One exact immutable formal-completion dependency."""
+
+    parent_unit_id: str
+    revision: str
+    digest: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -523,6 +546,174 @@ class Queue:
                     input_digest,
                 ),
             )
+
+    def materialize_work_unit(
+        self,
+        unit_id: str,
+        *,
+        kind: str,
+        capability_pins: Iterable[CapabilityPin] = (),
+        dependency_pins: Iterable[CompletionDependencyPin] = (),
+        input_digest: str | None = None,
+        cluster_id: str | None = None,
+        priority: int = 0,
+        execution_mode: ExecutionMode = ExecutionMode.NORMAL,
+    ) -> str:
+        """Atomically publish one immutable work unit and its complete pin sets."""
+        _validate_identifier(unit_id, "unit_id")
+        _validate_identifier(kind, "kind")
+        if cluster_id is not None:
+            _validate_identifier(cluster_id, "cluster_id")
+        if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
+            raise ValueError("priority must be a bounded integer")
+        if not isinstance(execution_mode, ExecutionMode):
+            raise ValueError("execution_mode must be an ExecutionMode")
+
+        capabilities = _bounded_materialization_values(
+            capability_pins,
+            CapabilityPin,
+            "capability_pins",
+        )
+        dependencies = _bounded_materialization_values(
+            dependency_pins,
+            CompletionDependencyPin,
+            "dependency_pins",
+        )
+        for pin in capabilities:
+            _validate_identifier(pin.capability, "capability")
+            _validate_revision(pin.revision)
+            _validate_digest(pin.digest, "capability digest")
+        for pin in dependencies:
+            _validate_identifier(pin.parent_unit_id, "parent_unit_id")
+            if pin.parent_unit_id == unit_id:
+                raise ValueError("work unit cannot depend on itself")
+            _validate_revision(pin.revision)
+            _validate_digest(pin.digest, "dependency digest")
+
+        capabilities = tuple(sorted(capabilities, key=lambda pin: pin.capability))
+        dependencies = tuple(sorted(dependencies, key=lambda pin: pin.parent_unit_id))
+        _reject_duplicate_pin_keys(
+            (pin.capability for pin in capabilities),
+            "capability",
+        )
+        _reject_duplicate_pin_keys(
+            (pin.parent_unit_id for pin in dependencies),
+            "dependency",
+        )
+        if input_digest is None:
+            input_digest = _derive_materialized_input_digest(
+                unit_id=unit_id,
+                kind=kind,
+                cluster_id=cluster_id,
+                priority=priority,
+                execution_mode=execution_mode,
+                capabilities=capabilities,
+                dependencies=dependencies,
+            )
+        else:
+            _validate_digest(input_digest, "input_digest")
+
+        status = (
+            WorkUnitStatus.EXTERNAL_ACTIVE
+            if execution_mode is ExecutionMode.LEGACY_EXTERNAL_ACTIVE
+            else WorkUnitStatus.READY
+        )
+        definition = (
+            kind,
+            cluster_id,
+            priority,
+            execution_mode.value,
+            input_digest,
+        )
+        expected_capabilities = tuple(
+            (pin.capability, pin.revision, pin.digest) for pin in capabilities
+        )
+        expected_dependencies = tuple(
+            (pin.parent_unit_id, pin.revision, pin.digest) for pin in dependencies
+        )
+
+        with self._immediate() as connection:
+            existing = connection.execute(
+                """
+                SELECT kind, cluster_id, priority, execution_mode, input_digest
+                FROM work_units WHERE unit_id = ?
+                """,
+                (unit_id,),
+            ).fetchone()
+            if existing is not None:
+                observed_capabilities = tuple(
+                    tuple(row)
+                    for row in connection.execute(
+                        """
+                        SELECT capability, required_revision, required_digest
+                        FROM capability_requirements
+                        WHERE unit_id = ? ORDER BY capability
+                        """,
+                        (unit_id,),
+                    ).fetchall()
+                )
+                observed_dependencies = tuple(
+                    tuple(row)
+                    for row in connection.execute(
+                        """
+                        SELECT parent_unit_id, required_revision, required_digest
+                        FROM dependencies
+                        WHERE unit_id = ? ORDER BY parent_unit_id
+                        """,
+                        (unit_id,),
+                    ).fetchall()
+                )
+                if (
+                    tuple(existing) != definition
+                    or observed_capabilities != expected_capabilities
+                    or observed_dependencies != expected_dependencies
+                ):
+                    raise QueueConflictError(f"materialized work unit changed: {unit_id}")
+                return input_digest
+
+            ordinal_row = connection.execute(
+                "SELECT COALESCE(MAX(ordinal), 0) + 1 AS ordinal FROM work_units"
+            ).fetchone()
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO work_units(
+                        unit_id, kind, cluster_id, priority, ordinal,
+                        execution_mode, status, input_digest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        unit_id,
+                        kind,
+                        cluster_id,
+                        priority,
+                        int(ordinal_row["ordinal"]),
+                        execution_mode.value,
+                        status.value,
+                        input_digest,
+                    ),
+                )
+                connection.executemany(
+                    """
+                    INSERT INTO capability_requirements(
+                        unit_id, capability, required_revision, required_digest
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    ((unit_id, *pin) for pin in expected_capabilities),
+                )
+                connection.executemany(
+                    """
+                    INSERT INTO dependencies(
+                        unit_id, parent_unit_id, required_revision, required_digest
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    ((unit_id, *pin) for pin in expected_dependencies),
+                )
+            except sqlite3.IntegrityError as error:
+                raise QueueConflictError(
+                    f"could not materialize work unit: {unit_id}"
+                ) from error
+        return input_digest
 
     def register_capability(self, capability: str, revision: str, digest: str) -> None:
         """Register one immutable capability revision without activating it."""
@@ -1714,17 +1905,21 @@ class Queue:
 
 
 def _validate_identifier(value: str, label: str) -> None:
-    if _IDENTIFIER.fullmatch(value) is None:
+    if (
+        not isinstance(value, str)
+        or len(value) > _MAX_IDENTIFIER_LENGTH
+        or _IDENTIFIER.fullmatch(value) is None
+    ):
         raise ValueError(f"{label} must be a stable path-safe identifier")
 
 
 def _validate_digest(value: str, label: str) -> None:
-    if _DIGEST.fullmatch(value) is None:
+    if not isinstance(value, str) or _DIGEST.fullmatch(value) is None:
         raise ValueError(f"{label} must be a lowercase SHA-256 digest")
 
 
 def _validate_revision(value: str) -> None:
-    if not value or "\x00" in value or len(value) > 200:
+    if not isinstance(value, str) or not value or "\x00" in value or len(value) > 200:
         raise ValueError("revision must be a non-empty bounded string")
 
 
@@ -1736,3 +1931,56 @@ def _validate_owner(owner: str) -> None:
 def _validate_ttl(ttl_seconds: int) -> None:
     if ttl_seconds < 1:
         raise ValueError("ttl_seconds must be positive")
+
+
+def _bounded_materialization_values[PinT: (CapabilityPin, CompletionDependencyPin)](
+    values: Iterable[PinT],
+    expected_type: type[PinT],
+    label: str,
+) -> tuple[PinT, ...]:
+    try:
+        bounded = tuple(islice(iter(values), _MAX_MATERIALIZED_PINS + 1))
+    except TypeError as error:
+        raise ValueError(f"{label} must be an iterable of immutable pins") from error
+    if len(bounded) > _MAX_MATERIALIZED_PINS:
+        raise ValueError(f"{label} exceeds the {_MAX_MATERIALIZED_PINS}-pin limit")
+    if any(type(value) is not expected_type for value in bounded):
+        raise ValueError(f"{label} contains an invalid pin type")
+    return bounded
+
+
+def _reject_duplicate_pin_keys(keys: Iterator[str], label: str) -> None:
+    previous: str | None = None
+    for key in keys:
+        if key == previous:
+            raise ValueError(f"duplicate {label} pin: {key}")
+        previous = key
+
+
+def _derive_materialized_input_digest(
+    *,
+    unit_id: str,
+    kind: str,
+    cluster_id: str | None,
+    priority: int,
+    execution_mode: ExecutionMode,
+    capabilities: tuple[CapabilityPin, ...],
+    dependencies: tuple[CompletionDependencyPin, ...],
+) -> str:
+    payload = {
+        "capability_pins": [
+            [pin.capability, pin.revision, pin.digest] for pin in capabilities
+        ],
+        "cluster_id": cluster_id,
+        "dependency_pins": [
+            [pin.parent_unit_id, pin.revision, pin.digest] for pin in dependencies
+        ],
+        "execution_mode": execution_mode.value,
+        "kind": kind,
+        "priority": priority,
+        "schema": "phase4-v2-work-materialization-v1",
+        "unit_id": unit_id,
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()

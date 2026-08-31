@@ -1,7 +1,9 @@
 """Host-local queue primitives for the Phase 4 v2 pipeline."""
 
 from .core import (
+    CapabilityPin,
     CompletionConflictError,
+    CompletionDependencyPin,
     DependencyNotSatisfiedError,
     ExecutionMode,
     FinishDisposition,
@@ -36,7 +38,9 @@ from .tracker import (
 
 __all__ = [
     "AtomicIssueGateway",
+    "CapabilityPin",
     "CompletionConflictError",
+    "CompletionDependencyPin",
     "DependencyNotSatisfiedError",
     "ExecutionMode",
     "FinishDisposition",
