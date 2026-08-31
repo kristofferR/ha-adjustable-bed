@@ -173,6 +173,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         busy_timeout_ms=args.busy_timeout_ms,
     )
     try:
+        queue.verify_schema()
         if args.command == "claim":
             lease = queue.claim(args.owner, ttl_seconds=args.ttl_seconds)
             _emit({"claimed": lease is not None, "lease": _lease_dict(lease) if lease else None})

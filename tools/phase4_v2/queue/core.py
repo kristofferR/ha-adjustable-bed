@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-SCHEMA_REVISION = 1
+SCHEMA_REVISION = 2
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _INTERNAL_EVENT_TYPES = frozenset(
@@ -215,6 +215,20 @@ CREATE TABLE IF NOT EXISTS pipeline_capabilities (
     PRIMARY KEY (capability, revision)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS pipeline_capabilities_exact_pin
+    ON pipeline_capabilities(capability, revision, digest);
+
+CREATE TABLE IF NOT EXISTS pipeline_capability_activations (
+    activation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    capability TEXT NOT NULL,
+    revision TEXT NOT NULL,
+    digest TEXT NOT NULL CHECK (length(digest) = 64),
+    activated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    UNIQUE (capability, revision),
+    FOREIGN KEY (capability, revision, digest)
+        REFERENCES pipeline_capabilities(capability, revision, digest)
+);
+
 CREATE TABLE IF NOT EXISTS capability_requirements (
     unit_id TEXT NOT NULL REFERENCES work_units(unit_id),
     capability TEXT NOT NULL,
@@ -293,6 +307,8 @@ CREATE INDEX IF NOT EXISTS work_units_schedule
 CREATE INDEX IF NOT EXISTS dependencies_child ON dependencies(unit_id);
 CREATE INDEX IF NOT EXISTS capability_requirements_unit
     ON capability_requirements(unit_id);
+CREATE INDEX IF NOT EXISTS pipeline_capability_activations_head
+    ON pipeline_capability_activations(capability, activation_id DESC);
 
 CREATE TRIGGER IF NOT EXISTS attempts_no_update
 BEFORE UPDATE ON attempts BEGIN SELECT RAISE(ABORT, 'attempts are immutable'); END;
@@ -332,6 +348,21 @@ BEGIN SELECT RAISE(ABORT, 'pipeline capabilities are immutable'); END;
 CREATE TRIGGER IF NOT EXISTS pipeline_capabilities_no_delete
 BEFORE DELETE ON pipeline_capabilities
 BEGIN SELECT RAISE(ABORT, 'pipeline capabilities are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS pipeline_capability_activations_no_update
+BEFORE UPDATE ON pipeline_capability_activations
+BEGIN SELECT RAISE(ABORT, 'pipeline capability activations are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS pipeline_capability_activations_no_delete
+BEFORE DELETE ON pipeline_capability_activations
+BEGIN SELECT RAISE(ABORT, 'pipeline capability activations are immutable'); END;
+CREATE TRIGGER IF NOT EXISTS pipeline_capability_activations_exact_pin
+BEFORE INSERT ON pipeline_capability_activations
+WHEN NOT EXISTS (
+    SELECT 1 FROM pipeline_capabilities
+    WHERE capability = NEW.capability
+      AND revision = NEW.revision
+      AND digest = NEW.digest
+)
+BEGIN SELECT RAISE(ABORT, 'capability activation pin is not registered'); END;
 CREATE TRIGGER IF NOT EXISTS work_unit_definition_no_update
 BEFORE UPDATE OF
     unit_id, kind, cluster_id, priority, ordinal, execution_mode, input_digest
@@ -382,13 +413,25 @@ class Queue:
             root_stat = os.fstat(root_fd)
         finally:
             os.close(root_fd)
-        connection = self._connect()
+        connection = self._connect(require_schema=False, allow_create=True)
         try:
+            metadata_exists = connection.execute(
+                """
+                SELECT 1 FROM sqlite_master
+                WHERE type = 'table' AND name = 'schema_meta'
+                """
+            ).fetchone()
+            if metadata_exists is not None:
+                pinned = connection.execute(
+                    "SELECT revision FROM schema_meta WHERE singleton = 1"
+                ).fetchone()
+                if pinned is not None and int(pinned["revision"]) != SCHEMA_REVISION:
+                    raise QueueError(f"unsupported queue schema revision: {pinned['revision']}")
             self._enable_wal(connection)
             connection.executescript(_SCHEMA)
         finally:
             connection.close()
-        with self._immediate() as connection:
+        with self._immediate(require_schema=False) as connection:
             existing = connection.execute(
                 """
                 SELECT revision, attempts_root, attempts_device, attempts_inode
@@ -482,7 +525,7 @@ class Queue:
             )
 
     def register_capability(self, capability: str, revision: str, digest: str) -> None:
-        """Register one accepted immutable pipeline capability revision."""
+        """Register one immutable capability revision without activating it."""
         _validate_identifier(capability, "capability")
         _validate_revision(revision)
         _validate_digest(digest, "digest")
@@ -507,6 +550,94 @@ class Queue:
                     raise QueueConflictError(
                         f"capability revision changed: {capability}/{revision}"
                     ) from error
+
+    def activate_capability_from_absent(
+        self,
+        capability: str,
+        revision: str,
+        digest: str,
+    ) -> None:
+        """CAS an absent capability head to one exact registered pin."""
+        self._activate_capability(
+            capability,
+            revision,
+            digest,
+            expected_head=None,
+        )
+
+    def activate_capability(
+        self,
+        capability: str,
+        revision: str,
+        digest: str,
+        *,
+        expected_revision: str,
+        expected_digest: str,
+    ) -> None:
+        """CAS the active head from one exact pin to another registered pin."""
+        _validate_revision(expected_revision)
+        _validate_digest(expected_digest, "expected_digest")
+        self._activate_capability(
+            capability,
+            revision,
+            digest,
+            expected_head=(expected_revision, expected_digest),
+        )
+
+    def _activate_capability(
+        self,
+        capability: str,
+        revision: str,
+        digest: str,
+        *,
+        expected_head: tuple[str, str] | None,
+    ) -> None:
+        _validate_identifier(capability, "capability")
+        _validate_revision(revision)
+        _validate_digest(digest, "digest")
+        with self._immediate() as connection:
+            registered = connection.execute(
+                """
+                SELECT digest FROM pipeline_capabilities
+                WHERE capability = ? AND revision = ?
+                """,
+                (capability, revision),
+            ).fetchone()
+            if registered is None or registered["digest"] != digest:
+                raise QueueConflictError(
+                    f"capability activation is not registered: {capability}/{revision}"
+                )
+            head = connection.execute(
+                """
+                SELECT revision, digest
+                FROM pipeline_capability_activations
+                WHERE capability = ?
+                ORDER BY activation_id DESC LIMIT 1
+                """,
+                (capability,),
+            ).fetchone()
+            observed_head = tuple(head) if head is not None else (None, None)
+            target_head = (revision, digest)
+            if observed_head == target_head:
+                return
+            expected_observed = expected_head if expected_head is not None else (None, None)
+            if observed_head != expected_observed:
+                raise QueueConflictError(
+                    f"capability head changed before activation: {capability}"
+                )
+            previously_activated = connection.execute(
+                """
+                SELECT 1 FROM pipeline_capability_activations
+                WHERE capability = ? AND revision = ?
+                """,
+                (capability, revision),
+            ).fetchone()
+            if previously_activated is not None:
+                raise QueueConflictError(
+                    f"stale capability revision cannot be reactivated: "
+                    f"{capability}/{revision}"
+                )
+            self._insert_capability_activation(connection, capability, revision, digest)
 
     def require_capability(
         self,
@@ -587,6 +718,7 @@ class Queue:
         """Atomically claim the first eligible work unit."""
         _validate_owner(owner)
         _validate_ttl(ttl_seconds)
+        self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
             return None
@@ -622,12 +754,17 @@ class Queue:
                   AND NOT EXISTS (
                       SELECT 1
                       FROM capability_requirements AS requirement
-                      LEFT JOIN pipeline_capabilities AS capability
-                        ON capability.capability = requirement.capability
-                       AND capability.revision = requirement.required_revision
-                       AND capability.digest = requirement.required_digest
+                      LEFT JOIN pipeline_capability_activations AS activation
+                        ON activation.capability = requirement.capability
+                       AND activation.revision = requirement.required_revision
+                       AND activation.digest = requirement.required_digest
+                       AND activation.activation_id = (
+                           SELECT MAX(candidate.activation_id)
+                           FROM pipeline_capability_activations AS candidate
+                           WHERE candidate.capability = requirement.capability
+                       )
                       WHERE requirement.unit_id = unit.unit_id
-                        AND capability.capability IS NULL
+                        AND activation.capability IS NULL
                   )
                 ORDER BY unit.priority DESC, unit.ordinal, unit.unit_id
                 LIMIT 1
@@ -706,8 +843,33 @@ class Queue:
             if not isinstance(error, Exception):
                 raise
             raise QueueError(f"could not create attempt workspace: {workspace}") from error
+        dependencies_changed = False
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
+            if not self._dependencies_satisfied(connection, lease.unit_id):
+                connection.execute(
+                    """
+                    INSERT INTO attempt_terminals(attempt_id, outcome)
+                    VALUES (?, 'INPUT_MISMATCH')
+                    """,
+                    (lease.attempt_id,),
+                )
+                self._append_event(
+                    connection,
+                    lease.attempt_id,
+                    "FINISHED",
+                    {"outcome": TerminalOutcome.INPUT_MISMATCH},
+                )
+                connection.execute("DELETE FROM leases WHERE unit_id = ?", (lease.unit_id,))
+                connection.execute(
+                    "UPDATE work_units SET status = 'REPAIR_REQUIRED' WHERE unit_id = ?",
+                    (lease.unit_id,),
+                )
+                dependencies_changed = True
+        if dependencies_changed:
+            raise DependencyNotSatisfiedError(
+                f"dependencies changed during workspace publication: {lease.unit_id}"
+            )
         return lease
 
     def renew(self, lease: Lease, *, ttl_seconds: int = 1_800) -> Lease:
@@ -803,6 +965,7 @@ class Queue:
         if completion_revision is not None:
             _validate_revision(completion_revision)
 
+        self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
             raise QueueConflictError("tracker publication prevented attempt completion")
@@ -932,6 +1095,7 @@ class Queue:
 
     def recover(self) -> int:
         """Fence expired leases and return the number of recovered attempts."""
+        self.verify_schema()
         guard = self._try_acquire_publication_guard()
         if guard is None:
             return 0
@@ -946,6 +1110,7 @@ class Queue:
         connection = self._connect()
         try:
             connection.execute("BEGIN")
+            self._require_schema_compatible(connection)
             metadata = connection.execute(
                 "SELECT revision FROM schema_meta WHERE singleton = 1"
             ).fetchone()
@@ -968,6 +1133,16 @@ class Queue:
                         SELECT capability, revision, digest
                         FROM pipeline_capabilities
                         ORDER BY capability, revision
+                        """
+                    ).fetchall()
+                ],
+                "capability_activations": [
+                    tuple(row)
+                    for row in connection.execute(
+                        """
+                        SELECT capability, revision, digest
+                        FROM pipeline_capability_activations
+                        ORDER BY capability, activation_id
                         """
                     ).fetchall()
                 ],
@@ -1081,6 +1256,11 @@ class Queue:
             generation_id=generation_id,
             units=units,
         )
+
+    def verify_schema(self) -> None:
+        """Fail unless the database has the exact operational schema revision."""
+        connection = self._connect()
+        connection.close()
 
     def _repeat_finish(
         self,
@@ -1402,16 +1582,36 @@ class Queue:
             UNION ALL
             SELECT 1
             FROM capability_requirements AS requirement
-            LEFT JOIN pipeline_capabilities AS capability
-              ON capability.capability = requirement.capability
-             AND capability.revision = requirement.required_revision
-             AND capability.digest = requirement.required_digest
-            WHERE requirement.unit_id = ? AND capability.capability IS NULL
+            LEFT JOIN pipeline_capability_activations AS activation
+              ON activation.capability = requirement.capability
+             AND activation.revision = requirement.required_revision
+             AND activation.digest = requirement.required_digest
+             AND activation.activation_id = (
+                 SELECT MAX(candidate.activation_id)
+                 FROM pipeline_capability_activations AS candidate
+                 WHERE candidate.capability = requirement.capability
+             )
+            WHERE requirement.unit_id = ? AND activation.capability IS NULL
             LIMIT 1
             """,
             (unit_id, unit_id),
         ).fetchone()
         return missing is None
+
+    @staticmethod
+    def _insert_capability_activation(
+        connection: sqlite3.Connection,
+        capability: str,
+        revision: str,
+        digest: str,
+    ) -> None:
+        connection.execute(
+            """
+            INSERT INTO pipeline_capability_activations(capability, revision, digest)
+            VALUES (?, ?, ?)
+            """,
+            (capability, revision, digest),
+        )
 
     @staticmethod
     def _append_event(
@@ -1435,10 +1635,16 @@ class Queue:
         )
 
     @contextmanager
-    def _immediate(self) -> Iterator[sqlite3.Connection]:
-        connection = self._connect()
+    def _immediate(
+        self,
+        *,
+        require_schema: bool = True,
+    ) -> Iterator[sqlite3.Connection]:
+        connection = self._connect(require_schema=False)
         try:
             connection.execute("BEGIN IMMEDIATE")
+            if require_schema:
+                self._require_schema_compatible(connection)
             yield connection
             connection.commit()
         except BaseException:
@@ -1447,17 +1653,46 @@ class Queue:
         finally:
             connection.close()
 
-    def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(
-            self.database,
-            timeout=self.busy_timeout_ms / 1_000,
-            isolation_level=None,
-        )
+    def _connect(
+        self,
+        *,
+        require_schema: bool = True,
+        allow_create: bool = False,
+    ) -> sqlite3.Connection:
+        target = str(self.database) if allow_create else f"{self.database.as_uri()}?mode=rw"
+        try:
+            connection = sqlite3.connect(
+                target,
+                timeout=self.busy_timeout_ms / 1_000,
+                isolation_level=None,
+                uri=not allow_create,
+            )
+        except sqlite3.Error as error:
+            raise QueueError("queue database is missing or inaccessible") from error
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms}")
         connection.execute("PRAGMA synchronous = FULL")
+        if require_schema:
+            try:
+                self._require_schema_compatible(connection)
+            except BaseException:
+                connection.close()
+                raise
         return connection
+
+    @staticmethod
+    def _require_schema_compatible(connection: sqlite3.Connection) -> None:
+        try:
+            row = connection.execute(
+                "SELECT revision FROM schema_meta WHERE singleton = 1"
+            ).fetchone()
+        except sqlite3.DatabaseError as error:
+            raise QueueError("queue schema metadata is missing or unreadable") from error
+        if row is None:
+            raise QueueError("queue schema metadata is missing or unreadable")
+        if int(row["revision"]) != SCHEMA_REVISION:
+            raise QueueError(f"unsupported queue schema revision: {row['revision']}")
 
     def _enable_wal(self, connection: sqlite3.Connection) -> None:
         """Establish WAL mode despite concurrent first-time initializers."""

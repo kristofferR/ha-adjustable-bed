@@ -13,6 +13,7 @@ import pytest
 
 from tools.phase4_v2.queue import (
     CompletionConflictError,
+    DependencyNotSatisfiedError,
     ExecutionMode,
     FinishDisposition,
     Lease,
@@ -33,6 +34,46 @@ def _claim_in_process(database: str, attempts_root: str, owner: str) -> str | No
 
 def _initialize_in_process(database: str, attempts_root: str) -> None:
     Queue(Path(database), Path(attempts_root)).initialize()
+
+
+def _activate_in_process(
+    database: str,
+    attempts_root: str,
+    capability: str,
+    revision: str,
+    digest: str,
+    expected_revision: str,
+    expected_digest: str,
+) -> str:
+    try:
+        Queue(Path(database), Path(attempts_root)).activate_capability(
+            capability,
+            revision,
+            digest,
+            expected_revision=expected_revision,
+            expected_digest=expected_digest,
+        )
+    except QueueConflictError:
+        return f"conflict:{revision}"
+    return f"success:{revision}"
+
+
+def _activate_from_absent_in_process(
+    database: str,
+    attempts_root: str,
+    capability: str,
+    revision: str,
+    digest: str,
+) -> str:
+    try:
+        Queue(Path(database), Path(attempts_root)).activate_capability_from_absent(
+            capability,
+            revision,
+            digest,
+        )
+    except QueueConflictError:
+        return f"conflict:{revision}"
+    return f"success:{revision}"
 
 
 @pytest.fixture
@@ -66,7 +107,11 @@ def test_initialize_durably_publishes_attempt_root_before_database_pin(
         original_fsync(path)
         fsynced.append(path)
 
-    def assert_root_is_durable() -> sqlite3.Connection:
+    def assert_root_is_durable(
+        *,
+        require_schema: bool = True,
+        allow_create: bool = False,
+    ) -> sqlite3.Connection:
         assert {
             database_parent,
             database_parent.parent,
@@ -76,7 +121,10 @@ def test_initialize_durably_publishes_attempt_root_before_database_pin(
             attempts_parent.parent.parent,
             root,
         } <= set(fsynced)
-        return original_connect()
+        return original_connect(
+            require_schema=require_schema,
+            allow_create=allow_create,
+        )
 
     monkeypatch.setattr(instance, "_fsync_directory_path", record_fsync)
     monkeypatch.setattr(instance, "_connect", assert_root_is_durable)
@@ -125,6 +173,47 @@ def test_concurrent_initialization_pins_one_attempt_root(tmp_path: Path) -> None
     Queue(database, attempts_root).initialize()
 
 
+def test_schema_revision_two_is_pinned_and_v1_fails_before_schema_mutation(
+    queue: Queue,
+    tmp_path: Path,
+) -> None:
+    assert queue.snapshot().schema_revision == 2
+
+    database = tmp_path / "legacy" / "queue.sqlite3"
+    attempts_root = tmp_path / "legacy-attempts"
+    database.parent.mkdir()
+    attempts_root.mkdir()
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            """
+            CREATE TABLE schema_meta (
+                singleton INTEGER PRIMARY KEY,
+                revision INTEGER NOT NULL,
+                attempts_root TEXT NOT NULL,
+                attempts_device INTEGER NOT NULL,
+                attempts_inode INTEGER NOT NULL
+            )
+            """
+        )
+        root_stat = attempts_root.stat()
+        connection.execute(
+            "INSERT INTO schema_meta VALUES (1, 1, ?, ?, ?)",
+            (str(attempts_root.resolve()), root_stat.st_dev, root_stat.st_ino),
+        )
+
+    with pytest.raises(QueueError, match="unsupported queue schema revision: 1"):
+        Queue(database, attempts_root).initialize()
+
+    with closing(sqlite3.connect(database)) as connection:
+        activation_table = connection.execute(
+            """
+            SELECT 1 FROM sqlite_master
+            WHERE type = 'table' AND name = 'pipeline_capability_activations'
+            """
+        ).fetchone()
+    assert activation_table is None
+
+
 def test_expired_worker_is_fenced_after_recovery(queue: Queue) -> None:
     _enqueue(queue, "package-a")
     first = queue.claim("chat-a")
@@ -171,6 +260,7 @@ def test_live_lease_renews_with_database_time(queue: Queue) -> None:
 def test_attempt_history_and_completion_rows_are_immutable(queue: Queue) -> None:
     _enqueue(queue, "package-a")
     queue.register_capability("validator", "validator-v1", "c" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "c" * 64)
     queue.require_capability("package-a", "validator", revision="validator-v1", digest="c" * 64)
     lease = queue.claim("chat-a")
     assert lease is not None
@@ -294,6 +384,8 @@ def test_exact_dependency_and_capability_unlock_unit(queue: Queue) -> None:
     assert queue.claim("child-worker") is None
 
     queue.register_capability("validator", "validator-v1", "c" * 64)
+    assert queue.claim("child-worker") is None
+    queue.activate_capability_from_absent("validator", "validator-v1", "c" * 64)
     child = queue.claim("child-worker")
 
     assert child is not None
@@ -306,6 +398,292 @@ def test_capability_revision_cannot_be_rebound_to_another_digest(queue: Queue) -
 
     with pytest.raises(QueueConflictError, match="capability revision changed"):
         queue.register_capability("validator", "validator-v1", "b" * 64)
+
+
+def test_only_the_active_capability_head_is_eligible_for_claim(queue: Queue) -> None:
+    _enqueue(queue, "old-validator", priority=100)
+    _enqueue(queue, "new-validator", priority=90)
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "a" * 64)
+    queue.require_capability(
+        "old-validator",
+        "validator",
+        revision="validator-v1",
+        digest="a" * 64,
+    )
+    queue.require_capability(
+        "new-validator",
+        "validator",
+        revision="validator-v2",
+        digest="b" * 64,
+    )
+
+    queue.activate_capability(
+        "validator",
+        "validator-v2",
+        "b" * 64,
+        expected_revision="validator-v1",
+        expected_digest="a" * 64,
+    )
+    lease = queue.claim("worker")
+
+    assert lease is not None
+    assert lease.unit_id == "new-validator"
+    assert queue.status("old-validator") is WorkUnitStatus.READY
+
+
+def test_accepted_finish_is_fenced_when_capability_head_changes(queue: Queue) -> None:
+    _enqueue(queue, "package-a")
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "a" * 64)
+    queue.require_capability(
+        "package-a",
+        "validator",
+        revision="validator-v1",
+        digest="a" * 64,
+    )
+    lease = queue.claim("worker")
+    assert lease is not None
+
+    queue.activate_capability(
+        "validator",
+        "validator-v2",
+        "b" * 64,
+        expected_revision="validator-v1",
+        expected_digest="a" * 64,
+    )
+
+    with pytest.raises(
+        DependencyNotSatisfiedError,
+        match="dependencies changed before completion",
+    ):
+        queue.finish(
+            lease,
+            TerminalOutcome.ACCEPTED,
+            output_digest="c" * 64,
+            completion_revision="report-v1",
+        )
+    assert queue.status("package-a") is WorkUnitStatus.LEASED
+    with closing(sqlite3.connect(queue.database)) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM attempt_terminals").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM formal_completions").fetchone()[0] == 0
+    result = queue.finish(
+        lease,
+        TerminalOutcome.INPUT_MISMATCH,
+        output_digest="c" * 64,
+    )
+    assert result.disposition is FinishDisposition.TERMINAL_ONLY
+    assert queue.status("package-a") is WorkUnitStatus.REPAIR_REQUIRED
+    with closing(sqlite3.connect(queue.database)) as connection:
+        terminal = connection.execute(
+            """
+            SELECT outcome, output_digest, completion_revision
+            FROM attempt_terminals WHERE attempt_id = ?
+            """,
+            (lease.attempt_id,),
+        ).fetchone()
+    assert terminal == (TerminalOutcome.INPUT_MISMATCH.value, "c" * 64, None)
+
+
+def test_capability_activation_history_is_append_only_and_never_rolls_back(
+    queue: Queue,
+) -> None:
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "a" * 64)
+    queue.activate_capability(
+        "validator",
+        "validator-v2",
+        "b" * 64,
+        expected_revision="validator-v1",
+        expected_digest="a" * 64,
+    )
+    queue.activate_capability(
+        "validator",
+        "validator-v2",
+        "b" * 64,
+        expected_revision="validator-v1",
+        expected_digest="a" * 64,
+    )
+
+    with closing(sqlite3.connect(queue.database)) as connection:
+        activations = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            ORDER BY activation_id
+            """
+        ).fetchall()
+    assert activations == [("validator-v1", "a" * 64), ("validator-v2", "b" * 64)]
+
+    with pytest.raises(QueueConflictError, match="stale capability revision"):
+        queue.activate_capability(
+            "validator",
+            "validator-v1",
+            "a" * 64,
+            expected_revision="validator-v2",
+            expected_digest="b" * 64,
+        )
+    with pytest.raises(QueueConflictError, match="activation is not registered"):
+        queue.activate_capability(
+            "validator",
+            "validator-v3",
+            "c" * 64,
+            expected_revision="validator-v2",
+            expected_digest="b" * 64,
+        )
+    with pytest.raises(QueueConflictError, match="activation is not registered"):
+        queue.activate_capability(
+            "validator",
+            "validator-v2",
+            "c" * 64,
+            expected_revision="validator-v2",
+            expected_digest="b" * 64,
+        )
+
+    for statement in (
+        "UPDATE pipeline_capability_activations SET revision = 'other'",
+        "DELETE FROM pipeline_capability_activations",
+    ):
+        with (
+            sqlite3.connect(queue.database) as connection,
+            pytest.raises(sqlite3.IntegrityError, match="immutable"),
+        ):
+            connection.execute(statement)
+
+    with (
+        sqlite3.connect(queue.database) as connection,
+        pytest.raises(sqlite3.IntegrityError, match="activation pin is not registered"),
+    ):
+        connection.execute(
+            """
+            INSERT INTO pipeline_capability_activations(capability, revision, digest)
+            VALUES ('validator', 'validator-v2', ?)
+            """,
+            ("c" * 64,),
+        )
+
+
+def test_competing_capability_bootstraps_use_compare_and_swap(queue: Queue) -> None:
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    context = get_context("spawn")
+
+    with ProcessPoolExecutor(max_workers=2, mp_context=context) as executor:
+        outcomes = list(
+            executor.map(
+                _activate_from_absent_in_process,
+                [str(queue.database)] * 2,
+                [str(queue.attempts_root)] * 2,
+                ["validator"] * 2,
+                ["validator-v1", "validator-v2"],
+                ["a" * 64, "b" * 64],
+            )
+        )
+
+    successes = [outcome for outcome in outcomes if outcome.startswith("success:")]
+    conflicts = [outcome for outcome in outcomes if outcome.startswith("conflict:")]
+    assert len(successes) == 1
+    assert len(conflicts) == 1
+    winner = successes[0].removeprefix("success:")
+    loser = conflicts[0].removeprefix("conflict:")
+    digests = {"validator-v1": "a" * 64, "validator-v2": "b" * 64}
+
+    queue.activate_capability_from_absent("validator", winner, digests[winner])
+    with pytest.raises(QueueConflictError, match="head changed before activation"):
+        queue.activate_capability_from_absent("validator", loser, digests[loser])
+
+    with closing(sqlite3.connect(queue.database)) as connection:
+        activations = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            ORDER BY activation_id
+            """
+        ).fetchall()
+    assert activations == [(winner, digests[winner])]
+
+
+def test_competing_capability_activations_use_compare_and_swap(queue: Queue) -> None:
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    queue.register_capability("validator", "validator-v3", "c" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "a" * 64)
+    context = get_context("spawn")
+
+    with ProcessPoolExecutor(max_workers=2, mp_context=context) as executor:
+        outcomes = list(
+            executor.map(
+                _activate_in_process,
+                [str(queue.database)] * 2,
+                [str(queue.attempts_root)] * 2,
+                ["validator"] * 2,
+                ["validator-v2", "validator-v3"],
+                ["b" * 64, "c" * 64],
+                ["validator-v1"] * 2,
+                ["a" * 64] * 2,
+            )
+        )
+
+    successes = [
+        outcome.removeprefix("success:")
+        for outcome in outcomes
+        if outcome.startswith("success:")
+    ]
+    conflicts = [
+        outcome.removeprefix("conflict:")
+        for outcome in outcomes
+        if outcome.startswith("conflict:")
+    ]
+    assert len(successes) == 1
+    assert len(conflicts) == 1
+    winner = successes[0]
+    loser = conflicts[0]
+    digests = {"validator-v2": "b" * 64, "validator-v3": "c" * 64}
+
+    with closing(sqlite3.connect(queue.database)) as connection:
+        activations = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            ORDER BY activation_id
+            """
+        ).fetchall()
+    assert activations == [("validator-v1", "a" * 64), (winner, digests[winner])]
+
+    queue.activate_capability(
+        "validator",
+        winner,
+        digests[winner],
+        expected_revision="validator-v1",
+        expected_digest="a" * 64,
+    )
+    with pytest.raises(QueueConflictError, match="head changed before activation"):
+        queue.activate_capability(
+            "validator",
+            loser,
+            digests[loser],
+            expected_revision="validator-v1",
+            expected_digest="a" * 64,
+        )
+    queue.activate_capability(
+        "validator",
+        loser,
+        digests[loser],
+        expected_revision=winner,
+        expected_digest=digests[winner],
+    )
+    with closing(sqlite3.connect(queue.database)) as connection:
+        final_history = connection.execute(
+            """
+            SELECT revision, digest FROM pipeline_capability_activations
+            ORDER BY activation_id
+            """
+        ).fetchall()
+    assert final_history == [
+        ("validator-v1", "a" * 64),
+        (winner, digests[winner]),
+        (loser, digests[loser]),
+    ]
 
 
 def test_legacy_external_active_unit_is_visible_but_never_claimed(queue: Queue) -> None:
@@ -424,3 +802,58 @@ def test_claim_never_returns_lease_recovered_during_workspace_publication(
             "SELECT outcome FROM attempt_terminals ORDER BY finished_at"
         ).fetchall()
     assert attempts == [("ABANDONED",)]
+
+
+def test_claim_rejects_capability_change_during_workspace_publication(
+    monkeypatch: pytest.MonkeyPatch,
+    queue: Queue,
+) -> None:
+    _enqueue(queue, "package-a")
+    queue.register_capability("validator", "validator-v1", "a" * 64)
+    queue.register_capability("validator", "validator-v2", "b" * 64)
+    queue.activate_capability_from_absent("validator", "validator-v1", "a" * 64)
+    queue.require_capability(
+        "package-a",
+        "validator",
+        revision="validator-v1",
+        digest="a" * 64,
+    )
+    original_create = queue._create_workspace
+    published: list[Lease] = []
+
+    def change_head_after_publication(lease: Lease) -> None:
+        original_create(lease)
+        published.append(lease)
+        queue.activate_capability(
+            "validator",
+            "validator-v2",
+            "b" * 64,
+            expected_revision="validator-v1",
+            expected_digest="a" * 64,
+        )
+
+    monkeypatch.setattr(queue, "_create_workspace", change_head_after_publication)
+
+    with pytest.raises(
+        DependencyNotSatisfiedError,
+        match="dependencies changed during workspace publication",
+    ):
+        queue.claim("worker")
+
+    assert len(published) == 1
+    lease = published[0]
+    assert lease.workspace.is_dir()
+    assert queue.status("package-a") is WorkUnitStatus.REPAIR_REQUIRED
+    with closing(sqlite3.connect(queue.database)) as connection:
+        terminal = connection.execute(
+            """
+            SELECT outcome, output_digest, completion_revision
+            FROM attempt_terminals WHERE attempt_id = ?
+            """,
+            (lease.attempt_id,),
+        ).fetchone()
+        lease_count = connection.execute(
+            "SELECT COUNT(*) FROM leases WHERE unit_id = 'package-a'"
+        ).fetchone()[0]
+    assert terminal == (TerminalOutcome.INPUT_MISMATCH.value, None, None)
+    assert lease_count == 0

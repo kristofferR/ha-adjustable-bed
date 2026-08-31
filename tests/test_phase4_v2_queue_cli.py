@@ -12,6 +12,7 @@ import pytest
 from tools.phase4_v2.queue import (
     ExecutionMode,
     Queue,
+    QueueError,
     TerminalOutcome,
     WorkUnitStatus,
     managed_block_sha256,
@@ -80,7 +81,9 @@ def test_snapshot_and_renderers_share_one_deterministic_generation(queue: Queue)
     assert capability_changed.event_watermark == first.event_watermark
     assert capability_changed.scheduler_state_digest != first.scheduler_state_digest
     assert capability_changed.generation_id != first.generation_id
+    assert queue.claim("worker-a") is None
 
+    queue.activate_capability_from_absent("preflight", "preflight-v2", "c" * 64)
     lease = queue.claim("worker-a")
     assert lease is not None
     changed = queue.snapshot()
@@ -239,6 +242,11 @@ def test_cli_recover_and_unsafe_lease_file_fail_closed(
 
 
 def test_cli_refuses_to_create_missing_queue(tmp_path: Path) -> None:
+    missing = Queue(tmp_path / "missing.sqlite3", tmp_path / "missing-attempts")
+    with pytest.raises(QueueError, match="database is missing or inaccessible"):
+        missing.status("package-a")
+    assert not missing.database.exists()
+
     with pytest.raises(SystemExit):
         main(
             [
@@ -250,6 +258,64 @@ def test_cli_refuses_to_create_missing_queue(tmp_path: Path) -> None:
             ]
         )
     assert not (tmp_path / "missing.sqlite3").exists()
+
+
+@pytest.mark.parametrize("revision", [1, 3])
+def test_every_operation_rejects_incompatible_schema_without_mutation(
+    revision: int,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    database = tmp_path / f"schema-{revision}" / "queue.sqlite3"
+    attempts_root = tmp_path / f"attempts-{revision}"
+    database.parent.mkdir()
+    attempts_root.mkdir()
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            """
+            CREATE TABLE schema_meta (
+                singleton INTEGER PRIMARY KEY,
+                revision INTEGER NOT NULL,
+                attempts_root TEXT NOT NULL,
+                attempts_device INTEGER NOT NULL,
+                attempts_inode INTEGER NOT NULL
+            )
+            """
+        )
+        root_stat = attempts_root.stat()
+        connection.execute(
+            "INSERT INTO schema_meta VALUES (1, ?, ?, ?, ?)",
+            (
+                revision,
+                str(attempts_root.resolve()),
+                root_stat.st_dev,
+                root_stat.st_ino,
+            ),
+        )
+    incompatible = Queue(database, attempts_root)
+
+    with pytest.raises(QueueError, match=f"unsupported queue schema revision: {revision}"):
+        incompatible.status("package-a")
+    with pytest.raises(QueueError, match=f"unsupported queue schema revision: {revision}"):
+        incompatible.enqueue(
+            "package-a",
+            kind="package",
+            input_digest="a" * 64,
+        )
+
+    assert main(_args(incompatible, "claim", "--owner", "worker")) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert f"unsupported queue schema revision: {revision}" in captured.err
+    assert not database.with_name(database.name + ".tracker-publisher.lock").exists()
+    with closing(sqlite3.connect(database)) as connection:
+        tables = {
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+    assert tables == {"schema_meta"}
 
 
 def test_finish_snapshot_reports_latest_terminal(queue: Queue) -> None:
