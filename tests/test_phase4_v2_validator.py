@@ -15,9 +15,13 @@ import tools.phase4_v2.validator.binding as validator_binding
 import tools.phase4_v2.validator.bundle as validator_bundle
 from tools.phase4_v2.ir import SCHEMA_REVISION, bind_validator_receipt, schema_document
 from tools.phase4_v2.validator import (
+    BOUND_VALIDATION_PROFILE,
     CONTRACT_REVISION,
+    PACKAGE_BOUND_VALIDATION_PROFILE,
+    PACKAGE_CONTRACT_REVISION,
     DependencyPins,
     EvidenceLineageTrust,
+    PackageDependencyPins,
     TrustedProducer,
     load_json_strict,
     validate_report_bundle,
@@ -197,7 +201,46 @@ def _bound_bundle(
     return report, members, pins, contract
 
 
-def _trusted_lineage(pins: DependencyPins) -> EvidenceLineageTrust:
+def _package_bound_bundle(
+    tmp_path: Path,
+) -> tuple[Path, dict[str, bytes], PackageDependencyPins, dict[str, object]]:
+    report, members, pins, contract = _bound_bundle(tmp_path)
+    package_inputs = {
+        "inputs/execution_plan.json": _json_bytes(
+            {"schema": "phase4-v2-execution-plan-v1", "steps": []}
+        ),
+        "inputs/report_schema.json": _json_bytes(
+            {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object"}
+        ),
+    }
+    for relative, data in package_inputs.items():
+        destination = report / relative
+        destination.write_bytes(data)
+        members[relative] = data
+    package_pins = PackageDependencyPins(
+        preflight_sha256=pins.preflight_sha256,
+        ir_sha256=pins.ir_sha256,
+        schema_sha256=pins.schema_sha256,
+        corpus_sha256=pins.corpus_sha256,
+        execution_plan_sha256=hashlib.sha256(
+            package_inputs["inputs/execution_plan.json"]
+        ).hexdigest(),
+        report_schema_sha256=hashlib.sha256(
+            package_inputs["inputs/report_schema.json"]
+        ).hexdigest(),
+    )
+    contract["contract_revision"] = PACKAGE_CONTRACT_REVISION
+    contract["dependencies"] = {
+        name: {"member": f"inputs/{name}.json", "sha256": digest}
+        for name, digest in package_pins.as_pairs()
+    }
+    _write_contract(report, members, contract)
+    return report, members, package_pins, contract
+
+
+def _trusted_lineage(
+    pins: DependencyPins | PackageDependencyPins,
+) -> EvidenceLineageTrust:
     artifact_digest = _preflight_digest(
         "artifact", [{"name": "base.apk", "size": 1, "sha256": "f" * 64}]
     )
@@ -257,6 +300,14 @@ def _validate_bound(report: Path, pins: DependencyPins):
     )
 
 
+def _validate_package_bound(report: Path, pins: PackageDependencyPins):
+    return validate_report_bundle(
+        report,
+        expected_dependencies=pins,
+        expected_evidence_lineage=_trusted_lineage(pins),
+    )
+
+
 def _codes(report: Path) -> tuple[str, ...]:
     return tuple(
         item.code for item in validate_report_bundle(report, allow_unbound=True).diagnostics
@@ -292,7 +343,7 @@ def test_pinned_dependencies_and_evidence_anchors_are_reproduced(tmp_path: Path)
         ("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),
     )
     assert first.evidence_anchors_checked == 2
-    assert first.validation_profile == "BOUND_V4"
+    assert first.validation_profile == BOUND_VALIDATION_PROFILE
     assert first.contract_revision == CONTRACT_REVISION
     assert first.validated_artifact_identity is not None
     assert first.validated_artifact_identity.package_name == "example.package"
@@ -316,6 +367,175 @@ def test_pinned_dependencies_and_evidence_anchors_are_reproduced(tmp_path: Path)
         ).hexdigest()
     )
     assert first.to_json() == second.to_json()
+
+
+def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+
+    first = _validate_package_bound(report, pins)
+    second = _validate_package_bound(report, pins)
+
+    assert first.accepted is True
+    assert first.source_unchanged is True
+    assert first.diagnostics == ()
+    assert first.validator_revision == validator_bundle.VALIDATOR_REVISION
+    assert first.validation_profile == PACKAGE_BOUND_VALIDATION_PROFILE
+    assert first.contract_revision == PACKAGE_CONTRACT_REVISION
+    assert first.dependency_digests == pins.as_pairs() + (
+        ("evidence_lineage", _trusted_lineage(pins).expected_manifest_sha256),
+    )
+    assert dict(first.dependency_digests)["execution_plan"] == pins.execution_plan_sha256
+    assert dict(first.dependency_digests)["report_schema"] == pins.report_schema_sha256
+    assert first.validated_artifact_identity is not None
+    assert first.validated_artifact_identity.package_name == "example.package"
+    assert first.evidence_anchors_checked == 2
+    assert first.to_json() == second.to_json()
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "preflight_sha256",
+        "ir_sha256",
+        "schema_sha256",
+        "corpus_sha256",
+        "execution_plan_sha256",
+        "report_schema_sha256",
+    ],
+)
+def test_each_package_dependency_pin_is_fail_closed(tmp_path: Path, field: str) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+
+    receipt = _validate_package_bound(report, replace(pins, **{field: "f" * 64}))
+
+    assert receipt.accepted is False
+    assert "DEPENDENCY_PIN_MISMATCH" in {item.code for item in receipt.diagnostics}
+    assert receipt.validation_profile == PACKAGE_BOUND_VALIDATION_PROFILE
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra"])
+def test_package_dependency_set_is_exact(tmp_path: Path, mutation: str) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    dependencies = contract["dependencies"]
+    assert isinstance(dependencies, dict)
+    if mutation == "missing":
+        del dependencies["execution_plan"]
+    else:
+        dependencies["unexpected"] = {
+            "member": "inputs/execution_plan.json",
+            "sha256": pins.execution_plan_sha256,
+        }
+    _write_contract(report, members, contract)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "DEPENDENCY_SET_MISMATCH" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_dependency_substitution_is_rejected(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    dependencies = contract["dependencies"]
+    assert isinstance(dependencies, dict)
+    dependencies["execution_plan"] = {
+        "member": "inputs/report_schema.json",
+        "sha256": pins.report_schema_sha256,
+    }
+    _write_contract(report, members, contract)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "DEPENDENCY_PIN_MISMATCH" in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize(
+    ("name", "field", "code"),
+    [
+        (
+            "execution_plan",
+            "execution_plan_sha256",
+            "PINNED_EXECUTION_PLAN_INVALID",
+        ),
+        ("report_schema", "report_schema_sha256", "PINNED_REPORT_SCHEMA_INVALID"),
+    ],
+)
+def test_package_profile_rejects_non_json_package_dependencies(
+    tmp_path: Path,
+    name: str,
+    field: str,
+    code: str,
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    invalid = b"not-json\n"
+    member = f"inputs/{name}.json"
+    (report / member).write_bytes(invalid)
+    members[member] = invalid
+    digest = hashlib.sha256(invalid).hexdigest()
+    dependencies = contract["dependencies"]
+    assert isinstance(dependencies, dict)
+    dependency = dependencies[name]
+    assert isinstance(dependency, dict)
+    dependency["sha256"] = digest
+    _write_contract(report, members, contract)
+
+    receipt = _validate_package_bound(
+        report,
+        replace(pins, **{field: digest}),
+    )
+
+    assert {item.code for item in receipt.diagnostics} >= {
+        "JSON_NOT_STRICT",
+        code,
+    }
+
+
+@pytest.mark.parametrize("name", ["execution_plan", "report_schema"])
+def test_package_dependency_member_must_exist(tmp_path: Path, name: str) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+    (report / "inputs" / f"{name}.json").unlink()
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "DEPENDENCY_MEMBER_MISSING" in {item.code for item in receipt.diagnostics}
+
+
+def test_bound_profiles_reject_contract_and_pin_type_confusion(tmp_path: Path) -> None:
+    v4_report, _, v4_pins, _ = _bound_bundle(tmp_path / "v4")
+    v5_report, _, v5_pins, _ = _package_bound_bundle(tmp_path / "v5")
+    package_pins_for_v4 = PackageDependencyPins(
+        preflight_sha256=v4_pins.preflight_sha256,
+        ir_sha256=v4_pins.ir_sha256,
+        schema_sha256=v4_pins.schema_sha256,
+        corpus_sha256=v4_pins.corpus_sha256,
+        execution_plan_sha256="a" * 64,
+        report_schema_sha256="b" * 64,
+    )
+
+    v4_as_v5 = validate_report_bundle(
+        v4_report,
+        expected_dependencies=package_pins_for_v4,
+        expected_evidence_lineage=_trusted_lineage(package_pins_for_v4),
+    )
+    v5_as_v4 = validate_report_bundle(
+        v5_report,
+        expected_dependencies=DependencyPins(
+            preflight_sha256=v5_pins.preflight_sha256,
+            ir_sha256=v5_pins.ir_sha256,
+            schema_sha256=v5_pins.schema_sha256,
+            corpus_sha256=v5_pins.corpus_sha256,
+        ),
+        expected_evidence_lineage=_trusted_lineage(v5_pins),
+    )
+
+    assert v4_as_v5.validation_profile == PACKAGE_BOUND_VALIDATION_PROFILE
+    assert v5_as_v4.validation_profile == BOUND_VALIDATION_PROFILE
+    assert {item.code for item in v4_as_v5.diagnostics} >= {
+        "DEPENDENCY_SET_MISMATCH",
+        "VALIDATION_CONTRACT_REVISION_MISMATCH",
+    }
+    assert {item.code for item in v5_as_v4.diagnostics} >= {
+        "DEPENDENCY_SET_MISMATCH",
+        "VALIDATION_CONTRACT_REVISION_MISMATCH",
+    }
 
 
 def test_canonical_receipt_binds_through_current_ir_boundary(tmp_path: Path) -> None:
@@ -407,6 +627,50 @@ def test_cli_receipt_output_binds_without_newline_rewriting(
         trusted_receipt_sha256=receipt_sha256,
     )
     assert bound.validation_receipt_sha256 == receipt_sha256
+
+
+def test_cli_selects_package_profile_only_with_both_package_pins(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+    lineage = _trusted_lineage(pins)
+    lineage_path = tmp_path / "trusted-lineage.json"
+    lineage_path.write_bytes(lineage.payload)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "phase4-validator",
+            str(report),
+            "--preflight-sha256",
+            pins.preflight_sha256,
+            "--ir-sha256",
+            pins.ir_sha256,
+            "--schema-sha256",
+            pins.schema_sha256,
+            "--corpus-sha256",
+            pins.corpus_sha256,
+            "--execution-plan-sha256",
+            pins.execution_plan_sha256,
+            "--report-schema-sha256",
+            pins.report_schema_sha256,
+            "--evidence-lineage",
+            str(lineage_path),
+            "--evidence-lineage-sha256",
+            lineage.expected_manifest_sha256,
+            "--trusted-producer",
+            f"{_LINEAGE_PRODUCER.pipeline_revision},{_LINEAGE_PRODUCER.route},"
+            f"{_LINEAGE_PRODUCER.tool_sha256}",
+        ],
+    )
+
+    assert validator_main.main() == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["validation_profile"] == PACKAGE_BOUND_VALIDATION_PROFILE
+    assert receipt["contract_revision"] == PACKAGE_CONTRACT_REVISION
+    assert receipt["dependency_digests"]["execution_plan"] == pins.execution_plan_sha256
+    assert receipt["dependency_digests"]["report_schema"] == pins.report_schema_sha256
 
 
 def test_pinned_ir_must_parse_with_current_ir_parser(tmp_path: Path) -> None:

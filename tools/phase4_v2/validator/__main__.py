@@ -8,7 +8,7 @@ import stat
 import sys
 from pathlib import Path
 
-from .binding import DependencyPins
+from .binding import DependencyPins, PackageDependencyPins
 from .bundle import validate_report_bundle
 from .lineage import EvidenceLineageTrust, TrustedProducer
 
@@ -25,6 +25,8 @@ def main() -> int:
     parser.add_argument("--ir-sha256")
     parser.add_argument("--schema-sha256")
     parser.add_argument("--corpus-sha256")
+    parser.add_argument("--execution-plan-sha256")
+    parser.add_argument("--report-schema-sha256")
     parser.add_argument("--evidence-lineage", type=Path)
     parser.add_argument("--evidence-lineage-sha256")
     parser.add_argument(
@@ -43,16 +45,29 @@ def main() -> int:
     )
     if any(supplied) and not all(supplied):
         parser.error("all four dependency digests must be supplied together")
-    pins = (
-        DependencyPins(
+    package_supplied = (args.execution_plan_sha256, args.report_schema_sha256)
+    if any(package_supplied) and not all(package_supplied):
+        parser.error("both package dependency digests must be supplied together")
+    if any(package_supplied) and not all(supplied):
+        parser.error("package dependency digests require all four base dependency digests")
+    if all(supplied) and all(package_supplied):
+        pins: DependencyPins | PackageDependencyPins | None = PackageDependencyPins(
+            preflight_sha256=args.preflight_sha256,
+            ir_sha256=args.ir_sha256,
+            schema_sha256=args.schema_sha256,
+            corpus_sha256=args.corpus_sha256,
+            execution_plan_sha256=args.execution_plan_sha256,
+            report_schema_sha256=args.report_schema_sha256,
+        )
+    elif all(supplied):
+        pins = DependencyPins(
             preflight_sha256=args.preflight_sha256,
             ir_sha256=args.ir_sha256,
             schema_sha256=args.schema_sha256,
             corpus_sha256=args.corpus_sha256,
         )
-        if all(supplied)
-        else None
-    )
+    else:
+        pins = None
     lineage_arguments = (
         args.evidence_lineage,
         args.evidence_lineage_sha256,

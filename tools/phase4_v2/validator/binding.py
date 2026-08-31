@@ -24,10 +24,19 @@ from .lineage import (
 )
 
 CONTRACT_REVISION = "phase4-v2-validation-input-v3"
+PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v1"
 PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 _LEGACY_PREFLIGHT_SCHEMA = "phase4-v2-preflight-v2"
 VALIDATION_INPUT = "validation-input.json"
 _DEPENDENCY_NAMES = ("corpus", "ir", "preflight", "schema")
+_PACKAGE_DEPENDENCY_NAMES = (
+    "corpus",
+    "execution_plan",
+    "ir",
+    "preflight",
+    "report_schema",
+    "schema",
+)
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _PACKAGE_NAME = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
 _MAX_ANCHOR_COUNT = 4_096
@@ -78,6 +87,32 @@ class DependencyPins:
             ("preflight", self.preflight_sha256),
             ("schema", self.schema_sha256),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class PackageDependencyPins:
+    """Trusted identities for a validated package-output work product."""
+
+    preflight_sha256: str
+    ir_sha256: str
+    schema_sha256: str
+    corpus_sha256: str
+    execution_plan_sha256: str
+    report_schema_sha256: str
+
+    def as_pairs(self) -> tuple[tuple[str, str], ...]:
+        """Return the exact stable package dependency set."""
+        return (
+            ("corpus", self.corpus_sha256),
+            ("execution_plan", self.execution_plan_sha256),
+            ("ir", self.ir_sha256),
+            ("preflight", self.preflight_sha256),
+            ("report_schema", self.report_schema_sha256),
+            ("schema", self.schema_sha256),
+        )
+
+
+type ExpectedDependencyPins = DependencyPins | PackageDependencyPins
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,10 +200,18 @@ type RangeReader = Callable[[str, int, int], bytes]
 type PathValidator = Callable[[str], bool]
 
 
+def _dependency_contract(
+    pins: ExpectedDependencyPins,
+) -> tuple[str, tuple[str, ...]]:
+    if isinstance(pins, PackageDependencyPins):
+        return PACKAGE_CONTRACT_REVISION, _PACKAGE_DEPENDENCY_NAMES
+    return CONTRACT_REVISION, _DEPENDENCY_NAMES
+
+
 def validate_binding_contract(
     document: object,
     *,
-    expected_dependencies: DependencyPins,
+    expected_dependencies: ExpectedDependencyPins,
     expected_evidence_lineage: EvidenceLineageTrust | None,
     nodes: Mapping[str, MemberNode],
     json_documents: Mapping[str, object],
@@ -176,6 +219,9 @@ def validate_binding_contract(
     read_range: RangeReader,
 ) -> BindingResult:
     """Validate one closed, protocol-neutral provenance contract."""
+    expected_contract_revision, dependency_names = _dependency_contract(
+        expected_dependencies
+    )
     pins = expected_dependencies.as_pairs() + (
         (("evidence_lineage", expected_evidence_lineage.expected_manifest_sha256),)
         if expected_evidence_lineage is not None
@@ -225,7 +271,7 @@ def validate_binding_contract(
             (),
             (),
         )
-    if document["contract_revision"] != CONTRACT_REVISION:
+    if document["contract_revision"] != expected_contract_revision:
         diagnostics.append(
             BindingDiagnostic(
                 "VALIDATION_CONTRACT_REVISION_MISMATCH",
@@ -237,7 +283,7 @@ def validate_binding_contract(
     )
 
     dependencies = document["dependencies"]
-    if not isinstance(dependencies, dict) or set(dependencies) != set(_DEPENDENCY_NAMES):
+    if not isinstance(dependencies, dict) or set(dependencies) != set(dependency_names):
         diagnostics.append(BindingDiagnostic("DEPENDENCY_SET_MISMATCH", VALIDATION_INPUT))
     else:
         _validate_dependencies(
@@ -246,6 +292,7 @@ def validate_binding_contract(
             nodes,
             path_is_safe,
             diagnostics,
+            dependency_names,
         )
     ir_document = _dependency_document(dependencies, "ir", json_documents)
     schema = _dependency_document(dependencies, "schema", json_documents)
@@ -264,12 +311,14 @@ def validate_binding_contract(
         path_is_safe,
         diagnostics,
     )
+    if isinstance(expected_dependencies, PackageDependencyPins):
+        _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
 
     owners, validated_members = _validate_evidence_members(
         document["evidence_members"],
         artifact_identity.artifact_digest if artifact_identity is not None else "",
         trusted_evidence,
-        frozenset(_dependency_members(dependencies)),
+        frozenset(_dependency_members(dependencies, dependency_names)),
         nodes,
         path_is_safe,
         diagnostics,
@@ -599,8 +648,9 @@ def _validate_dependencies(
     nodes: Mapping[str, MemberNode],
     path_is_safe: PathValidator,
     diagnostics: list[BindingDiagnostic],
+    dependency_names: tuple[str, ...],
 ) -> None:
-    for name in _DEPENDENCY_NAMES:
+    for name in dependency_names:
         value = dependencies[name]
         if not _is_exact_object(value, {"member", "sha256"}):
             diagnostics.append(
@@ -668,7 +718,7 @@ def _validate_dependencies(
 
 def _validate_evidence_lineage(
     trust: EvidenceLineageTrust | None,
-    expected_dependencies: DependencyPins,
+    expected_dependencies: ExpectedDependencyPins,
     artifact_identity: ArtifactIdentityAttestation | None,
     preflight_document: object | None,
     path_is_safe: PathValidator,
@@ -764,6 +814,20 @@ def _validate_evidence_lineage(
     return trusted
 
 
+def _validate_package_dependency_documents(
+    dependencies: object,
+    json_documents: Mapping[str, object],
+    diagnostics: list[BindingDiagnostic],
+) -> None:
+    for name, code in (
+        ("execution_plan", "PINNED_EXECUTION_PLAN_INVALID"),
+        ("report_schema", "PINNED_REPORT_SCHEMA_INVALID"),
+    ):
+        member = _dependency_member(dependencies, name)
+        if member not in json_documents:
+            diagnostics.append(BindingDiagnostic(code, member))
+
+
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:
     if not isinstance(document, dict):
         return None
@@ -799,8 +863,11 @@ def _preflight_member_routes(
     return result
 
 
-def _dependency_members(dependencies: object) -> tuple[str, ...]:
-    return tuple(_dependency_member(dependencies, name) for name in _DEPENDENCY_NAMES)
+def _dependency_members(
+    dependencies: object,
+    dependency_names: tuple[str, ...],
+) -> tuple[str, ...]:
+    return tuple(_dependency_member(dependencies, name) for name in dependency_names)
 
 
 def _validate_evidence_members(

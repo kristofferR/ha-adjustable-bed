@@ -1,7 +1,15 @@
 """Deterministic integrity validation for frozen Phase 4 report bundles."""
 
-from .binding import CONTRACT_REVISION, VALIDATION_INPUT, DependencyPins
+from .binding import (
+    CONTRACT_REVISION,
+    PACKAGE_CONTRACT_REVISION,
+    VALIDATION_INPUT,
+    DependencyPins,
+    PackageDependencyPins,
+)
 from .bundle import (
+    BOUND_VALIDATION_PROFILE,
+    PACKAGE_BOUND_VALIDATION_PROFILE,
     VALIDATOR_REVISION,
     Diagnostic,
     StrictJsonError,
@@ -22,7 +30,11 @@ __all__ = [
     "VALIDATOR_REVISION",
     "Diagnostic",
     "DependencyPins",
+    "PackageDependencyPins",
     "CONTRACT_REVISION",
+    "PACKAGE_CONTRACT_REVISION",
+    "BOUND_VALIDATION_PROFILE",
+    "PACKAGE_BOUND_VALIDATION_PROFILE",
     "StrictJsonError",
     "ValidationReceipt",
     "VALIDATION_INPUT",

@@ -25,11 +25,14 @@ from .binding import (
     DependencyPins,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
+    PackageDependencyPins,
     validate_binding_contract,
 )
 from .lineage import EvidenceLineageTrust
 
 VALIDATOR_REVISION = "phase4-v2-bundle-validator-v4"
+BOUND_VALIDATION_PROFILE = "BOUND_V4"
+PACKAGE_BOUND_VALIDATION_PROFILE = "BOUND_V5"
 REPORT_MANIFEST = "REPORT.SHA256"
 _MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^\x00\r\n]+)$")
 _READ_SIZE = 1024 * 1024
@@ -751,11 +754,12 @@ def _canonical_receipt_bytes(value: object) -> bytes:
 def validate_report_bundle(
     report_root: Path,
     *,
-    expected_dependencies: DependencyPins | None = None,
+    expected_dependencies: DependencyPins | PackageDependencyPins | None = None,
     expected_evidence_lineage: EvidenceLineageTrust | None = None,
     allow_unbound: bool = False,
 ) -> ValidationReceipt:
     """Validate a report directory without modifying or executing anything in it."""
+    validation_profile = _validation_profile(expected_dependencies)
     diagnostics: list[Diagnostic] = []
     try:
         before = capture_tree_snapshot(report_root)
@@ -771,9 +775,7 @@ def validate_report_bundle(
                 discovered_members=0,
                 declared_members=0,
                 diagnostics=(diagnostic,),
-                validation_profile=(
-                    "BOUND_V4" if expected_dependencies is not None else "FILESYSTEM_ONLY"
-                ),
+                validation_profile=validation_profile,
             )
         )
 
@@ -917,15 +919,23 @@ def validate_report_bundle(
             diagnostics=ordered_diagnostics,
             dependency_digests=dependency_digests,
             evidence_anchors_checked=evidence_anchors_checked,
-            validation_profile=(
-                "BOUND_V4" if expected_dependencies is not None else "FILESYSTEM_ONLY"
-            ),
+            validation_profile=validation_profile,
             contract_revision=contract_revision,
             validated_artifact_identity=validated_artifact_identity,
             validated_evidence_members=validated_evidence_members,
             validated_evidence_anchors=validated_evidence_anchors,
         )
     )
+
+
+def _validation_profile(
+    expected_dependencies: DependencyPins | PackageDependencyPins | None,
+) -> str:
+    if isinstance(expected_dependencies, PackageDependencyPins):
+        return PACKAGE_BOUND_VALIDATION_PROFILE
+    if expected_dependencies is not None:
+        return BOUND_VALIDATION_PROFILE
+    return "FILESYSTEM_ONLY"
 
 
 def _binding_diagnostic(item: BindingDiagnostic) -> Diagnostic:
