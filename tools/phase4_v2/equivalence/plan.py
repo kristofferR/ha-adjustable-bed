@@ -915,35 +915,40 @@ def _root_key(value: RootExecutionPlan) -> tuple[str, str, str]:
 
 def _merge_capabilities(values: Iterable[CapabilityPin]) -> tuple[CapabilityPin, ...]:
     indexed: dict[str, CapabilityPin] = {}
-    byte_budget = 0
-    for index, value in enumerate(values):
-        if index >= _MAX_GLOBAL_REQUIREMENTS:
-            _fail("global capability requirement count exceeds its limit")
+    for value in values:
         copied = _capability(value, "aggregate capability")
-        byte_budget += len(copied.name) + len(copied.revision) + len(copied.digest)
-        if byte_budget > _MAX_GLOBAL_REQUIREMENT_BYTES:
-            _fail("global capability requirement byte budget exceeded")
         previous = indexed.get(copied.name)
         if previous is not None and previous != copied:
             _fail(f"conflicting capability pins for {copied.name!r}")
         indexed[copied.name] = copied
+    if len(indexed) > _MAX_GLOBAL_REQUIREMENTS:
+        _fail("global capability requirement count exceeds its limit")
+    if (
+        sum(len(item.name) + len(item.revision) + len(item.digest) for item in indexed.values())
+        > _MAX_GLOBAL_REQUIREMENT_BYTES
+    ):
+        _fail("global capability requirement byte budget exceeded")
     return tuple(sorted(indexed.values(), key=lambda item: item.name))
 
 
 def _merge_completions(values: Iterable[CompletionPin]) -> tuple[CompletionPin, ...]:
     indexed: dict[str, CompletionPin] = {}
-    byte_budget = 0
-    for index, value in enumerate(values):
-        if index >= _MAX_GLOBAL_REQUIREMENTS:
-            _fail("global completion requirement count exceeds its limit")
+    for value in values:
         copied = _completion(value, "aggregate completion")
-        byte_budget += len(copied.parent_unit_id) + len(copied.revision) + len(copied.digest)
-        if byte_budget > _MAX_GLOBAL_REQUIREMENT_BYTES:
-            _fail("global completion requirement byte budget exceeded")
         previous = indexed.get(copied.parent_unit_id)
         if previous is not None and previous != copied:
             _fail(f"conflicting completion pins for {copied.parent_unit_id!r}")
         indexed[copied.parent_unit_id] = copied
+    if len(indexed) > _MAX_GLOBAL_REQUIREMENTS:
+        _fail("global completion requirement count exceeds its limit")
+    if (
+        sum(
+            len(item.parent_unit_id) + len(item.revision) + len(item.digest)
+            for item in indexed.values()
+        )
+        > _MAX_GLOBAL_REQUIREMENT_BYTES
+    ):
+        _fail("global completion requirement byte budget exceeded")
     return tuple(sorted(indexed.values(), key=lambda item: item.parent_unit_id))
 
 

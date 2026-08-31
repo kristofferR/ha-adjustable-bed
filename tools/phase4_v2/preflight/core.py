@@ -33,6 +33,8 @@ _MAX_CACHE_MANIFEST_BYTES = 16 * 1024**2
 _MAX_ZIP_COMMENT_BYTES = 65_535
 _ZIP_EOCD_BYTES = 22
 _ZIP_EOCD_SIGNATURE = b"PK\x05\x06"
+_ZIP_CENTRAL_DIRECTORY_SIGNATURE = b"PK\x01\x02"
+_ZIP_CENTRAL_DIRECTORY_HEADER_BYTES = 46
 _STATUS_REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _BADGING_PACKAGE = re.compile(r"^package:(?: [A-Za-z][A-Za-z0-9]*='[^']*')+$")
 _BADGING_ATTRIBUTE = re.compile(r" ([A-Za-z][A-Za-z0-9]*)='([^']*)'")
@@ -465,6 +467,46 @@ def _preflight_zip_directory(stream: IO[bytes], limits: PreflightLimits) -> None
         eocd_offset = file_size - tail_size + marker
         if central_offset + central_size > eocd_offset:
             raise SafetyError("archive central-directory bounds are invalid")
+        stream.seek(central_offset)
+        remaining = central_size
+        central_entries = 0
+        while remaining:
+            if remaining < _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES:
+                raise SafetyError("archive central-directory structure is invalid")
+            header = stream.read(_ZIP_CENTRAL_DIRECTORY_HEADER_BYTES)
+            if len(header) != _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES:
+                raise SafetyError("archive central-directory structure is invalid")
+            (
+                signature,
+                _made_by,
+                _extract_version,
+                _flags,
+                _compression,
+                _modified_time,
+                _modified_date,
+                _crc,
+                _compressed_size,
+                _uncompressed_size,
+                name_size,
+                extra_size,
+                comment_size,
+                _disk_start,
+                _internal_attributes,
+                _external_attributes,
+                _local_header_offset,
+            ) = struct.unpack("<4s6H3L5H2L", header)
+            if signature != _ZIP_CENTRAL_DIRECTORY_SIGNATURE:
+                raise SafetyError("archive central-directory structure is invalid")
+            record_size = _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES + name_size + extra_size + comment_size
+            if record_size > remaining:
+                raise SafetyError("archive central-directory structure is invalid")
+            stream.seek(record_size - _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES, os.SEEK_CUR)
+            remaining -= record_size
+            central_entries += 1
+            if central_entries > limits.max_archive_members:
+                raise SafetyError("archive member-count limit exceeded before ZIP parsing")
+        if central_entries != entry_count:
+            raise SafetyError("archive central-directory entry count is invalid")
     except OSError as error:
         raise SafetyError("ZIP directory preflight failed") from error
     finally:

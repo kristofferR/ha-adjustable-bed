@@ -763,6 +763,22 @@ def test_zip_member_limit_is_checked_before_zipfile_construction(
         preflight_delivery([artifact], limits=PreflightLimits(max_archive_members=0))
 
 
+def test_zip_preflight_rejects_an_understated_central_directory_entry_count(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    payload = bytearray(artifact.read_bytes())
+    eocd = payload.rfind(b"PK\x05\x06")
+    assert eocd >= 0
+    payload[eocd + 8 : eocd + 12] = (0).to_bytes(4, "little")
+    artifact.write_bytes(payload)
+
+    with (
+        pytest.raises(SafetyError, match="central-directory entry count"),
+        legacy_preflight._open_zip_path(artifact),
+    ):
+        pass
+
+
 def test_preflight_does_not_change_source_access_time(tmp_path: Path) -> None:
     artifact = tmp_path / "base.apk"
     _native_apk(artifact)

@@ -358,6 +358,74 @@ def test_inventory_bounds_hash_manifest_diagnostics(
     ]
 
 
+def test_inventory_bounds_hash_manifest_declarations(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "REPORT.SHA256").write_text(f"{'0' * 64}\n" * 10, encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_MANIFEST_DECLARATIONS", 3)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert len(_ndjson(output / "declared_hashes.ndjson")) == 3
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(item["error"] == "declaration_limit_exceeded" for item in diagnostics)
+
+
+def test_inventory_marks_unreadable_metadata_as_partial(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    _write_report(source / "analysis.json")
+
+    def unreadable(*_args: object) -> legacy_inventory.ReportRecord:
+        raise PermissionError
+
+    monkeypatch.setattr(legacy_inventory, "_report_record", unreadable)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert (output / "INVENTORY.PARTIAL").is_file()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["coverage"]["opaque_path_list"] == ["analysis.json"]
+
+
+def test_inventory_syncs_payloads_before_completion_marker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    temporary = tmp_path / "temporary"
+    temporary.mkdir()
+    (temporary / "payload.json").write_text("payload", encoding="utf-8")
+    (temporary / "INVENTORY.COMPLETE").write_text("complete", encoding="utf-8")
+    destination = tmp_path / "destination"
+    synced: list[str] = []
+
+    monkeypatch.setattr(
+        legacy_inventory,
+        "_fsync_path",
+        lambda path: synced.append(f"file:{path.name}"),
+    )
+    monkeypatch.setattr(
+        legacy_inventory,
+        "_fsync_directory",
+        lambda path: synced.append(f"directory:{path.name}"),
+    )
+
+    legacy_inventory._publish_without_replace(temporary, destination)
+
+    assert synced == [
+        "file:payload.json",
+        "directory:destination",
+        "file:INVENTORY.COMPLETE",
+        "directory:destination",
+        f"directory:{tmp_path.name}",
+    ]
+
+
 def test_hash_manifest_metadata_is_rechecked_after_parsing(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

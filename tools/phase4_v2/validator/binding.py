@@ -29,6 +29,7 @@ PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v1"
 PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 _LEGACY_PREFLIGHT_SCHEMA = "phase4-v2-preflight-v2"
 VALIDATION_INPUT = "validation-input.json"
+_REQUIRED_FROZEN_REPORT_MEMBERS = frozenset({"ANALYSIS.md", "SEARCH_LOG.md", "analysis.json"})
 _DEPENDENCY_NAMES = ("corpus", "ir", "preflight", "schema")
 _PACKAGE_DEPENDENCY_NAMES = (
     "corpus",
@@ -313,6 +314,7 @@ def validate_binding_contract(
         diagnostics,
     )
     if isinstance(expected_dependencies, PackageDependencyPins):
+        _validate_frozen_report_members(nodes, diagnostics)
         _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
         _validate_package_report(
             dependencies,
@@ -348,6 +350,20 @@ def validate_binding_contract(
         validated_members,
         validated_anchors,
     )
+
+
+def _validate_frozen_report_members(
+    nodes: Mapping[str, MemberNode], diagnostics: list[BindingDiagnostic]
+) -> None:
+    for member in sorted(_REQUIRED_FROZEN_REPORT_MEMBERS):
+        node = nodes.get(member)
+        if node is None or node.kind != "file" or node.sha256 is None:
+            diagnostics.append(BindingDiagnostic("FROZEN_REPORT_MEMBER_MISSING", member))
+    if not any(
+        member.startswith("reproducers/") and node.kind == "file" and node.sha256 is not None
+        for member, node in nodes.items()
+    ):
+        diagnostics.append(BindingDiagnostic("FROZEN_REPORT_REPRODUCER_MISSING", "reproducers"))
 
 
 def _validate_current_ir_and_schema(

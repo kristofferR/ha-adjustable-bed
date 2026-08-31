@@ -8,6 +8,7 @@ is imported or executed.
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import math
 import os
@@ -39,6 +40,8 @@ _READ_SIZE = 1024 * 1024
 _MAX_MANIFEST_BYTES = 64 * 1024**2
 _MAX_MANIFEST_DIAGNOSTICS = 4_096
 _MAX_JSON_BYTES = 64 * 1024**2
+_MAX_PARSED_JSON_BYTES = 256 * 1024**2
+_MAX_PARSED_JSON_NODES = 8_000_000
 _MAX_RECEIPT_BYTES = 64 * 1024**2
 _MAX_JSON_DEPTH = 128
 _MAX_JSON_NODES = 2_000_000
@@ -375,7 +378,12 @@ def _scan_directory(directory_fd: int, prefix: PurePosixPath, budget: _ScanBudge
     nodes: list[_Node] = []
     try:
         with os.scandir(directory_fd) as iterator:
-            entries = sorted(iterator, key=lambda entry: os.fsencode(entry.name))
+            remaining_entries = _MAX_TREE_ENTRIES - budget.entries
+            entries = list(itertools.islice(iterator, remaining_entries + 1))
+            if len(entries) > remaining_entries:
+                relative = prefix.as_posix() if prefix.parts else "."
+                raise _SnapshotError("entry_limit_exceeded", relative)
+            entries.sort(key=lambda entry: os.fsencode(entry.name))
     except OSError as error:
         relative = prefix.as_posix() if prefix.parts else "."
         raise _SnapshotError("scan_directory", relative, error) from error
@@ -741,22 +749,23 @@ def _sorted_diagnostics(diagnostics: list[Diagnostic]) -> tuple[Diagnostic, ...]
 
 
 def _with_receipt_identity(receipt: ValidationReceipt) -> ValidationReceipt:
+    if _receipt_exceeds_limit(receipt.to_dict()):
+        return _compact_receipt(receipt)
     payload = _canonical_receipt_bytes(receipt.identity_payload())
     identified = replace(
         receipt,
         validation_receipt_sha256=hashlib.sha256(payload).hexdigest(),
     )
-    if (
-        not identified.accepted
-        or len(_canonical_receipt_bytes(identified.to_dict())) <= _MAX_RECEIPT_BYTES
-    ):
+    if not _receipt_exceeds_limit(identified.to_dict()):
         return identified
+    return _compact_receipt(receipt)
+
+
+def _compact_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
     compact = replace(
         receipt,
         accepted=False,
-        diagnostics=_sorted_diagnostics(
-            [*receipt.diagnostics, Diagnostic("RECEIPT_SIZE_LIMIT_EXCEEDED", ".")]
-        ),
+        diagnostics=(Diagnostic("RECEIPT_SIZE_LIMIT_EXCEEDED", "."),),
         evidence_anchors_checked=0,
         validated_evidence_members=(),
         validated_evidence_anchors=(),
@@ -767,6 +776,41 @@ def _with_receipt_identity(receipt: ValidationReceipt) -> ValidationReceipt:
         compact,
         validation_receipt_sha256=hashlib.sha256(compact_payload).hexdigest(),
     )
+
+
+def _receipt_exceeds_limit(value: object) -> bool:
+    def exceeds(*, ensure_ascii: bool) -> bool:
+        size = 0
+        encoder = json.JSONEncoder(
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=ensure_ascii,
+            allow_nan=False,
+        )
+        for fragment in encoder.iterencode(value):
+            size += len(fragment.encode("utf-8"))
+            if size > _MAX_RECEIPT_BYTES:
+                return True
+        return False
+
+    try:
+        return exceeds(ensure_ascii=False)
+    except UnicodeEncodeError:
+        return exceeds(ensure_ascii=True)
+
+
+def _json_node_count(value: JsonValue) -> int:
+    pending = [value]
+    count = 0
+    while pending:
+        current = pending.pop()
+        count += 1
+        if isinstance(current, list):
+            pending.extend(current)
+        elif isinstance(current, dict):
+            pending.extend(current.values())
+            pending.extend(current)
+    return count
 
 
 def _canonical_receipt_bytes(value: object) -> bytes:
@@ -837,6 +881,8 @@ def validate_report_bundle(
     manifest_digest: str | None = None
     manifest_entries: list[_ManifestEntry] = []
     parsed_json: dict[str, JsonValue] = {}
+    parsed_json_bytes = 0
+    parsed_json_nodes = 0
     if manifest_node is None:
         diagnostics.append(Diagnostic("MANIFEST_MISSING", REPORT_MANIFEST))
     elif manifest_node.kind != "file":
@@ -879,6 +925,10 @@ def validate_report_bundle(
     for path in sorted(regular_members, key=os.fsencode):
         if not path.lower().endswith(".json"):
             continue
+        node = nodes[path]
+        if parsed_json_bytes + node.size > _MAX_PARSED_JSON_BYTES:
+            diagnostics.append(Diagnostic("JSON_AGGREGATE_LIMIT_EXCEEDED", path))
+            continue
         try:
             data = _read_member(
                 report_root,
@@ -886,7 +936,14 @@ def validate_report_bundle(
                 snapshot_nodes,
                 max_bytes=_MAX_JSON_BYTES,
             )
-            parsed_json[path] = load_json_strict(data)
+            parsed = load_json_strict(data)
+            node_count = _json_node_count(parsed)
+            if parsed_json_nodes + node_count > _MAX_PARSED_JSON_NODES:
+                diagnostics.append(Diagnostic("JSON_AGGREGATE_LIMIT_EXCEEDED", path))
+                continue
+            parsed_json[path] = parsed
+            parsed_json_bytes += len(data)
+            parsed_json_nodes += node_count
         except StrictJsonError as error:
             json_context: tuple[tuple[str, str], ...] = (("reason", error.reason),)
             if error.key is not None:

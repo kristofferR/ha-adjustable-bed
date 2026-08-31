@@ -32,6 +32,7 @@ _HASH_MANIFEST_NAMES = frozenset({"sha256sums", "sha256sum"})
 _MAX_ANALYSIS_JSON_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_DIAGNOSTICS = 4_096
+_MAX_HASH_MANIFEST_DECLARATIONS = 4_096
 
 
 class InventoryError(RuntimeError):
@@ -798,6 +799,16 @@ def _parse_declared_hash_lines(
                 )
                 continue
             target, digest = bsd_match.groups()
+        if len(declarations) >= _MAX_HASH_MANIFEST_DECLARATIONS:
+            diagnostics.append(
+                Diagnostic(
+                    path=entry.path,
+                    operation="parse_declared_hashes",
+                    error="declaration_limit_exceeded",
+                    active_protected=entry.active_protected,
+                )
+            )
+            break
         verification, actual_digest, resolved_target = _verify_declared_hash(
             source_root, path, target, digest, digest_cache
         )
@@ -853,13 +864,35 @@ def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
         temp_dir.iterdir(), key=lambda path: (path.name.startswith("INVENTORY."), path.name)
     )
     try:
-        for child in children:
+        marker = next((child for child in children if child.name.startswith("INVENTORY.")), None)
+        payloads = [child for child in children if child != marker]
+        for child in payloads:
+            _fsync_path(child)
             child.rename(destination / child.name)
+        _fsync_directory(destination)
+        if marker is not None:
+            _fsync_path(marker)
+            marker.rename(destination / marker.name)
+            _fsync_directory(destination)
+        _fsync_directory(destination.parent)
         temp_dir.rmdir()
     except OSError as err:
         raise InventoryError(
             f"publication was interrupted; incomplete output retained at {destination}"
         ) from err
+
+
+def _fsync_path(path: Path) -> None:
+    with path.open("rb") as file:
+        os.fsync(file.fileno())
+
+
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -1197,6 +1230,12 @@ def build_inventory(
             for diagnostic in traversal_diagnostics
             if diagnostic.operation in {"scandir", "lstat"}
         }
+        opaque_paths.update(
+            diagnostic.path
+            for diagnostic in diagnostics
+            if diagnostic.operation in {"parse_analysis_json", "read_declared_hashes"}
+            and diagnostic.error in {"OSError", "PermissionError", "ObservedFileChangedError"}
+        )
         manifest: dict[str, object] = {
             "schema": MANIFEST_SCHEMA,
             "scanner_version": SCANNER_VERSION,

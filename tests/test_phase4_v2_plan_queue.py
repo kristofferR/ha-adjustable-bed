@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+import tools.phase4_v2.equivalence.plan as plan_module
 import tools.phase4_v2.equivalence.queue as plan_queue_module
 from tools.phase4_v2.equivalence.core import (
     EQUIVALENCE_SCHEMA_REVISION,
@@ -76,6 +77,12 @@ SHA_E = "e" * 64
 SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
+
+
+def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
+    completion = CompletionPin("shared", "fixture-v1", SHA_A)
+
+    assert plan_module._merge_completions([completion] * 300) == (completion,)
 
 
 def _local_plan(*, requirements_sha256: str = SHA_C) -> PackageLocalPlan:

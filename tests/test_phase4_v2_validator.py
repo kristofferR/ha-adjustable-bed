@@ -465,6 +465,25 @@ def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -
     assert first.to_json() == second.to_json()
 
 
+@pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md", "reproducers/vector.py"])
+def test_package_profile_requires_every_frozen_report_artifact(
+    tmp_path: Path, member: str
+) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    del members[member]
+    (report / member).unlink()
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    expected = (
+        "FROZEN_REPORT_REPRODUCER_MISSING"
+        if member.startswith("reproducers/")
+        else "FROZEN_REPORT_MEMBER_MISSING"
+    )
+    assert expected in {item.code for item in receipt.diagnostics}
+
+
 @pytest.mark.parametrize(
     "missing",
     ["target_package_identity", "package_local_domains", "authoritative_root_results"],
@@ -1736,6 +1755,30 @@ def test_accepted_receipt_must_fit_ir_boundary(
     assert "RECEIPT_SIZE_LIMIT_EXCEEDED" in {item.code for item in receipt.diagnostics}
 
 
+def test_rejected_receipt_is_compacted_to_its_size_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(validator_bundle, "_MAX_RECEIPT_BYTES", 1_024)
+    receipt = validator_bundle.ValidationReceipt(
+        validator_revision="fixture-v1",
+        accepted=False,
+        source_unchanged=True,
+        bundle_sha256=None,
+        report_manifest_sha256=None,
+        discovered_members=0,
+        declared_members=0,
+        diagnostics=tuple(
+            validator_bundle.Diagnostic("FAILURE", f"path-{index}-{'x' * 100}")
+            for index in range(10)
+        ),
+    )
+
+    compact = validator_bundle._with_receipt_identity(receipt)
+
+    assert compact.diagnostics == (validator_bundle.Diagnostic("RECEIPT_SIZE_LIMIT_EXCEEDED", "."),)
+    assert len(compact.to_json().encode()) <= validator_bundle._MAX_RECEIPT_BYTES
+
+
 def test_validator_detects_concurrent_source_mutation(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1770,6 +1813,40 @@ def test_validator_never_executes_report_scripts(tmp_path: Path) -> None:
 
     assert _validate_unbound(report).accepted is True
     assert marker.exists() is False
+
+
+def test_validator_limits_aggregate_retained_json(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    report, members = _valid_bundle(tmp_path)
+    extra = b"{}\n"
+    (report / "extra.json").write_bytes(extra)
+    members["extra.json"] = extra
+    _write_manifest(report, members)
+    monkeypatch.setattr(
+        validator_bundle,
+        "_MAX_PARSED_JSON_BYTES",
+        len(members["analysis.json"]),
+    )
+
+    receipt = _validate_unbound(report)
+
+    assert "JSON_AGGREGATE_LIMIT_EXCEEDED" in {item.code for item in receipt.diagnostics}
+
+
+def test_validator_checks_tree_limit_before_sorting_every_entry(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    report = tmp_path / "report"
+    report.mkdir()
+    (report / "one").write_text("one", encoding="utf-8")
+    (report / "two").write_text("two", encoding="utf-8")
+    monkeypatch.setattr(validator_bundle, "_MAX_TREE_ENTRIES", 2)
+
+    receipt = _validate_unbound(report)
+
+    assert tuple(item.code for item in receipt.diagnostics) == ("SOURCE_SNAPSHOT_FAILED",)
+    assert receipt.diagnostics[0].to_dict()["context"] == {"operation": "entry_limit_exceeded"}
 
 
 def test_member_read_is_bound_to_initial_snapshot(tmp_path: Path) -> None:
