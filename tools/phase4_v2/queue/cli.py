@@ -21,7 +21,6 @@ _READ_FLAGS = (
     | getattr(os, "O_CLOEXEC", 0)
     | getattr(os, "O_NOFOLLOW", 0)
     | getattr(os, "O_NONBLOCK", 0)
-    | getattr(os, "O_NOATIME", 0)
 )
 
 
@@ -154,6 +153,8 @@ def _parser() -> argparse.ArgumentParser:
     finish.add_argument("--completion-revision")
 
     commands.add_parser("recover")
+    retry = commands.add_parser("retry-repaired")
+    retry.add_argument("--unit-id", required=True)
     status = commands.add_parser("status")
     status.add_argument("--unit-id")
     render = commands.add_parser("render")
@@ -198,6 +199,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             _emit(asdict(result))
         elif args.command == "recover":
             _emit({"recovered": queue.recover()})
+        elif args.command == "retry-repaired":
+            queue.retry_repaired(args.unit_id)
+            _emit({"retried": True, "unit_id": args.unit_id})
         elif args.command == "status":
             if args.unit_id is None:
                 _emit(queue.snapshot().as_dict())

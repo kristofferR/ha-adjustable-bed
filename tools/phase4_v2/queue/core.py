@@ -36,6 +36,7 @@ _INTERNAL_EVENT_TYPES = frozenset(
         "FINISHED",
         "LEASE_EXPIRED",
         "RENEWED",
+        "REPAIR_REQUEUED",
         "TRACKER_ALREADY_CURRENT",
         "TRACKER_PUBLISHED",
         "WORKSPACE_ALLOCATION_FAILED",
@@ -1372,6 +1373,45 @@ class Queue:
         if row is None:
             raise QueueError(f"unknown work unit: {unit_id}")
         return WorkUnitStatus(row["status"])
+
+    def retry_repaired(self, unit_id: str) -> None:
+        """Return an explicitly repaired failed unit to the ready queue."""
+        _validate_identifier(unit_id, "unit_id")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented repaired-unit retry")
+        try:
+            with self._immediate() as connection:
+                row = connection.execute(
+                    """
+                    SELECT unit.status, latest.attempt_id
+                    FROM work_units AS unit
+                    LEFT JOIN attempts AS latest
+                      ON latest.unit_id = unit.unit_id
+                     AND latest.fencing_token = (
+                        SELECT MAX(candidate.fencing_token)
+                        FROM attempts AS candidate
+                        WHERE candidate.unit_id = unit.unit_id
+                     )
+                    WHERE unit.unit_id = ?
+                    """,
+                    (unit_id,),
+                ).fetchone()
+                if row is None:
+                    raise QueueError(f"unknown work unit: {unit_id}")
+                if WorkUnitStatus(row["status"]) is not WorkUnitStatus.REPAIR_REQUIRED:
+                    raise QueueConflictError(f"work unit is not repair-required: {unit_id}")
+                attempt_id = row["attempt_id"]
+                if attempt_id is None:
+                    raise QueueError(f"repair-required unit has no recorded attempt: {unit_id}")
+                self._append_event(connection, str(attempt_id), "REPAIR_REQUEUED", {})
+                connection.execute(
+                    "UPDATE work_units SET status = 'READY' WHERE unit_id = ?",
+                    (unit_id,),
+                )
+        finally:
+            os.close(guard)
 
     def recover(self) -> int:
         """Fence expired leases and return the number of recovered attempts."""

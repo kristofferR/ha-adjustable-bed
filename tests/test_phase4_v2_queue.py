@@ -716,6 +716,39 @@ def test_attempt_workspaces_are_unique_and_never_removed(queue: Queue) -> None:
     assert queue.claim("another-worker") is None
 
 
+def test_repaired_unit_can_be_requeued_without_losing_attempt_history(queue: Queue) -> None:
+    _enqueue(queue, "package-a")
+    first = queue.claim("chat-a")
+    assert first is not None
+    queue.finish(first, TerminalOutcome.PARTIAL, output_digest="a" * 64)
+
+    queue.retry_repaired("package-a")
+    second = queue.claim("chat-b")
+
+    assert second is not None
+    assert second.unit_id == "package-a"
+    assert second.fencing_token == first.fencing_token + 1
+    assert first.workspace.is_dir()
+    assert second.workspace.is_dir()
+    with closing(sqlite3.connect(queue.database)) as connection:
+        outcomes = connection.execute(
+            "SELECT outcome FROM attempt_terminals ORDER BY rowid"
+        ).fetchall()
+        events = connection.execute(
+            "SELECT event_type FROM events WHERE attempt_id = ? ORDER BY event_id",
+            (first.attempt_id,),
+        ).fetchall()
+    assert outcomes == [(TerminalOutcome.PARTIAL.value,)]
+    assert ("REPAIR_REQUEUED",) in events
+
+
+def test_only_repair_required_units_can_be_requeued(queue: Queue) -> None:
+    _enqueue(queue, "package-a")
+
+    with pytest.raises(QueueConflictError, match="not repair-required"):
+        queue.retry_repaired("package-a")
+
+
 def test_workspace_allocation_failure_is_recorded_without_untracked_attempt(
     monkeypatch: pytest.MonkeyPatch, queue: Queue
 ) -> None:

@@ -68,12 +68,13 @@ _STACK_ROUTES: Mapping[str, tuple[str, ...]] = MappingProxyType({
 })
 _AT_FDCWD = -100
 _RENAME_NOREPLACE = 1
+_O_NOATIME = getattr(os, "O_NOATIME", 0)
 _READ_FLAGS = (
     os.O_RDONLY
     | getattr(os, "O_CLOEXEC", 0)
     | getattr(os, "O_NOFOLLOW", 0)
     | getattr(os, "O_NONBLOCK", 0)
-    | getattr(os, "O_NOATIME", 0)
+    | _O_NOATIME
 )
 _DIRECTORY_FLAGS = (
     os.O_RDONLY
@@ -284,6 +285,16 @@ def _identity(node: os.stat_result) -> tuple[int, int, int, int, int]:
     return (node.st_dev, node.st_ino, node.st_size, node.st_mtime_ns, node.st_ctime_ns)
 
 
+def _open_readonly(path: os.PathLike[str] | str, *, dir_fd: int | None = None) -> int:
+    """Open safely, falling back when Linux denies the optional no-atime hint."""
+    try:
+        return os.open(path, _READ_FLAGS, dir_fd=dir_fd)
+    except OSError as error:
+        if not _O_NOATIME or error.errno != errno.EPERM:
+            raise
+        return os.open(path, _READ_FLAGS & ~_O_NOATIME, dir_fd=dir_fd)
+
+
 def _hash_stream(stream: IO[bytes], *, expected_size: int) -> tuple[str, int]:
     digest = hashlib.sha256()
     size = 0
@@ -332,7 +343,7 @@ def _copy_fd_exact(source_fd: int, destination_fd: int, *, expected_size: int) -
 
 def _seal_delivery_file(source: Path, destination: Path, limits: PreflightLimits) -> DeliveryFile:
     before = _regular_file(source, max_bytes=limits.max_delivery_file_bytes)
-    source_fd = os.open(source, _READ_FLAGS)
+    source_fd = _open_readonly(source)
     destination_fd = -1
     try:
         opened = os.fstat(source_fd)
@@ -358,7 +369,7 @@ def _seal_delivery_file(source: Path, destination: Path, limits: PreflightLimits
 
 
 def _safe_member_name(name: str) -> str:
-    if not name or "\x00" in name or "\\" in name:
+    if not name or "\x00" in name or "\r" in name or "\n" in name or "\\" in name:
         raise SafetyError(f"unsafe archive member name: {name!r}")
     path = PurePosixPath(name)
     if path.is_absolute() or ".." in path.parts or any(part in {"", "."} for part in path.parts):
@@ -461,7 +472,7 @@ def _preflight_zip_directory(stream: IO[bytes], limits: PreflightLimits) -> None
 @contextmanager
 def _open_zip_path(path: Path, limits: PreflightLimits | None = None) -> Iterator[zipfile.ZipFile]:
     expected = _regular_file(path)
-    descriptor = os.open(path, _READ_FLAGS)
+    descriptor = _open_readonly(path)
     stream: IO[bytes] | None = None
     try:
         if _identity(os.fstat(descriptor)) != _identity(expected):
@@ -903,7 +914,7 @@ def _write_file_at(directory_fd: int, name: str, payload: bytes) -> None:
 
 
 def _read_file_at(directory_fd: int, name: str, *, max_bytes: int) -> bytes:
-    descriptor = os.open(name, _READ_FLAGS, dir_fd=directory_fd)
+    descriptor = _open_readonly(name, dir_fd=directory_fd)
     try:
         node = os.fstat(descriptor)
         if not stat.S_ISREG(node.st_mode) or node.st_size > max_bytes:
@@ -1006,7 +1017,7 @@ class ArtifactCache:
                 records: list[CachedMember] = []
                 for index, member in enumerate(result.artifact_members):
                     stored_name = f"{index:04d}-{member.name}"
-                    source_fd = os.open(member._sealed_path, _READ_FLAGS)
+                    source_fd = _open_readonly(member._sealed_path)
                     try:
                         target_fd = os.open(
                             stored_name,
@@ -1104,12 +1115,13 @@ class ArtifactCache:
                 )
             except (UnicodeError, ValueError, json.JSONDecodeError, RecursionError) as err:
                 raise CacheIntegrityError("cache manifest is invalid") from err
-            if (
-                not isinstance(raw, dict)
-                or set(raw) != {"schema", "artifact_digest", "members"}
-                or raw.get("schema") != CACHE_SCHEMA
-                or raw.get("artifact_digest") != artifact_digest
-            ):
+            if not isinstance(raw, dict) or set(raw) != {
+                "schema",
+                "artifact_digest",
+                "members",
+            }:
+                raise CacheIntegrityError("cache manifest is invalid")
+            if raw.get("schema") != CACHE_SCHEMA or raw.get("artifact_digest") != artifact_digest:
                 raise CacheIntegrityError("cache artifact identity mismatch")
             raw_members = raw.get("members")
             if not isinstance(raw_members, list):
@@ -1131,7 +1143,7 @@ class ArtifactCache:
                 logical: list[dict[str, object]] = []
                 for member in members:
                     try:
-                        descriptor = os.open(member["stored_name"], _READ_FLAGS, dir_fd=members_fd)
+                        descriptor = _open_readonly(member["stored_name"], dir_fd=members_fd)
                     except OSError as err:
                         raise CacheIntegrityError("cache member is missing or unsafe") from err
                     try:
@@ -1271,7 +1283,7 @@ class ArtifactCache:
             members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             destination_fd = os.open(temporary, _DIRECTORY_FLAGS)
             for member in manifest["members"]:
-                source_fd = os.open(member["stored_name"], _READ_FLAGS, dir_fd=members_fd)
+                source_fd = _open_readonly(member["stored_name"], dir_fd=members_fd)
                 try:
                     copied_fd = os.open(
                         member["stored_name"],

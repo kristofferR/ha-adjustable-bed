@@ -107,9 +107,7 @@ def _parse_producers(
     return tuple(parsed)
 
 
-def _read_external_lineage(
-    parser: argparse.ArgumentParser, report_root: Path, path: Path
-) -> bytes:
+def _read_external_lineage(parser: argparse.ArgumentParser, report_root: Path, path: Path) -> bytes:
     flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(path, flags)
@@ -117,7 +115,7 @@ def _read_external_lineage(
         parser.error(f"cannot open external evidence lineage: {error}")
     try:
         before = os.fstat(descriptor)
-        opened_path = Path(f"/proc/self/fd/{descriptor}").resolve()
+        opened_path = _opened_descriptor_path(parser, descriptor)
         report_path = report_root.resolve()
         if opened_path == report_path or opened_path.is_relative_to(report_path):
             parser.error("evidence lineage must be outside the report workspace")
@@ -154,6 +152,16 @@ def _read_external_lineage(
         return payload
     finally:
         os.close(descriptor)
+
+
+def _opened_descriptor_path(parser: argparse.ArgumentParser, descriptor: int) -> Path:
+    for descriptor_root in (Path("/proc/self/fd"), Path("/dev/fd")):
+        descriptor_path = descriptor_root / str(descriptor)
+        try:
+            return descriptor_path.resolve(strict=True)
+        except OSError:
+            continue
+    parser.error("cannot resolve the opened evidence-lineage descriptor")
 
 
 if __name__ == "__main__":

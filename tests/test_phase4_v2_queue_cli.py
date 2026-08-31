@@ -241,6 +241,23 @@ def test_cli_recover_and_unsafe_lease_file_fail_closed(
     assert "unsafe or inaccessible" in capsys.readouterr().err
 
 
+def test_cli_requeues_an_explicitly_repaired_unit(
+    queue: Queue, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _enqueue(queue, "package-a")
+    lease = queue.claim("worker-a")
+    assert lease is not None
+    queue.finish(lease, TerminalOutcome.FAILED)
+
+    assert main(_args(queue, "retry-repaired", "--unit-id", "package-a")) == 0
+
+    assert json.loads(capsys.readouterr().out) == {
+        "retried": True,
+        "unit_id": "package-a",
+    }
+    assert queue.status("package-a") is WorkUnitStatus.READY
+
+
 def test_cli_refuses_to_create_missing_queue(tmp_path: Path) -> None:
     missing = Queue(tmp_path / "missing.sqlite3", tmp_path / "missing-attempts")
     with pytest.raises(QueueError, match="database is missing or inaccessible"):

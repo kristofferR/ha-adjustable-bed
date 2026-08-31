@@ -28,6 +28,7 @@ _CLUSTER = re.compile(r"cluster-\d+", re.IGNORECASE)
 _SHA256SUM = re.compile(r"^([0-9a-fA-F]{64})(?:\s+[*]?(.+?))?\s*$")
 _BSD_SHA256 = re.compile(r"^SHA256 \((.+)\) = ([0-9a-fA-F]{64})$")
 _HASH_MANIFEST_NAMES = frozenset({"sha256sums", "sha256sum"})
+_MAX_ANALYSIS_JSON_BYTES = 16 * 1024**2
 
 
 class InventoryError(RuntimeError):
@@ -478,8 +479,13 @@ def _open_observed_text(entry: Entry, path: Path) -> TextIO:
 
 
 def _report_record(entry: Entry, path: Path) -> ReportRecord:
-    with _open_observed_text(entry, path) as report_file:
-        document = json.load(report_file)
+    if entry.size > _MAX_ANALYSIS_JSON_BYTES:
+        raise ValueError("analysis.json exceeds the metadata parsing limit")
+    with _open_observed_binary(entry, path) as report_file:
+        payload = report_file.read(_MAX_ANALYSIS_JSON_BYTES + 1)
+    if len(payload) > _MAX_ANALYSIS_JSON_BYTES:
+        raise ValueError("analysis.json exceeds the metadata parsing limit")
+    document = json.loads(payload)
     if not isinstance(document, dict):
         raise ValueError("top-level JSON value is not an object")
     artifact = document.get("artifact")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -14,6 +15,7 @@ import tools.phase4_v2.validator.__main__ as validator_main
 import tools.phase4_v2.validator.binding as validator_binding
 import tools.phase4_v2.validator.bundle as validator_bundle
 from tools.phase4_v2.ir import SCHEMA_REVISION, bind_validator_receipt, schema_document
+from tools.phase4_v2.ir.model import _resolve_json_pointer
 from tools.phase4_v2.validator import (
     BOUND_VALIDATION_PROFILE,
     CONTRACT_REVISION,
@@ -205,12 +207,51 @@ def _package_bound_bundle(
     tmp_path: Path,
 ) -> tuple[Path, dict[str, bytes], PackageDependencyPins, dict[str, object]]:
     report, members, pins, contract = _bound_bundle(tmp_path)
+    package_domains = (
+        "configuration",
+        "lifecycle",
+        "negative_closure",
+        "reachability",
+        "resources",
+        "selectors",
+    )
+    preflight = json.loads(members["inputs/preflight.json"])
+    members["analysis.json"] = _json_bytes(
+        {
+            "authoritative_root_results": [],
+            "package_local_domains": {name: {} for name in package_domains},
+            "report_revision": "phase4-v2-package-report-v1",
+            "target_package_identity": {
+                "artifact_digest": preflight["artifact_digest"],
+                "package_name": preflight["package_identity"]["package_name"],
+                "version_code": preflight["package_identity"]["version_code"],
+                "version_name": preflight["package_identity"]["version_name"],
+            },
+        }
+    )
+    (report / "analysis.json").write_bytes(members["analysis.json"])
     package_inputs = {
         "inputs/execution_plan.json": _json_bytes(
-            {"schema": "phase4-v2-execution-plan-v1", "steps": []}
+            {
+                "authoritative_root_count": 0,
+                "package_local": {
+                    "mandatory_domains": list(package_domains),
+                    "package_name": preflight["package_identity"]["package_name"],
+                    "target_artifact_digest": preflight["artifact_digest"],
+                    "version_code": preflight["package_identity"]["version_code"],
+                    "version_name": preflight["package_identity"]["version_name"],
+                },
+                "revision": "phase4-v2-package-execution-plan-v2",
+            }
         ),
         "inputs/report_schema.json": _json_bytes(
-            {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object"}
+            {
+                "report_revision": "phase4-v2-package-report-v1",
+                "required_package_local_domains": list(package_domains),
+                "requires_authoritative_root_result_set": True,
+                "requires_target_package_identity": True,
+                "schema_revision": "phase4-v2-package-report-schema-v1",
+            }
         ),
     }
     for relative, data in package_inputs.items():
@@ -390,6 +431,38 @@ def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -
     assert first.validated_artifact_identity.package_name == "example.package"
     assert first.evidence_anchors_checked == 2
     assert first.to_json() == second.to_json()
+
+
+@pytest.mark.parametrize(
+    "missing",
+    ["target_package_identity", "package_local_domains", "authoritative_root_results"],
+)
+def test_package_profile_requires_the_package_report_contract(tmp_path: Path, missing: str) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    package_report = json.loads(members["analysis.json"])
+    del package_report[missing]
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_binds_report_to_preflight_identity(tmp_path: Path) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    package_report = json.loads(members["analysis.json"])
+    package_report["target_package_identity"]["version_code"] = "different"
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_IDENTITY_MISMATCH" in {item.code for item in receipt.diagnostics}
 
 
 @pytest.mark.parametrize(
@@ -671,6 +744,19 @@ def test_cli_selects_package_profile_only_with_both_package_pins(
     assert receipt["contract_revision"] == PACKAGE_CONTRACT_REVISION
     assert receipt["dependency_digests"]["execution_plan"] == pins.execution_plan_sha256
     assert receipt["dependency_digests"]["report_schema"] == pins.report_schema_sha256
+
+
+def test_lineage_descriptor_resolution_fails_closed_without_descriptor_fs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unavailable(_path: Path, *, strict: bool = False) -> Path:
+        del strict
+        raise FileNotFoundError
+
+    monkeypatch.setattr(Path, "resolve", unavailable)
+
+    with pytest.raises(SystemExit):
+        validator_main._opened_descriptor_path(argparse.ArgumentParser(), 7)
 
 
 def test_pinned_ir_must_parse_with_current_ir_parser(tmp_path: Path) -> None:
@@ -1036,6 +1122,43 @@ def test_validator_json_depth_and_integer_bounds_are_fail_closed() -> None:
         load_json_strict(_json_bytes(nested))
     with pytest.raises(validator_bundle.StrictJsonError, match="integer_out_of_range"):
         load_json_strict(_json_bytes({"value": 2**63}))
+
+
+@pytest.mark.parametrize("token", ["+1", "-1", " 1", "1_0", "01"])
+def test_ir_pointer_rejects_noncanonical_array_indices(token: str) -> None:
+    with pytest.raises(IndexError):
+        _resolve_json_pointer(["zero", "one"], f"/{token}")
+
+
+def test_evidence_pointer_index_error_becomes_a_diagnostic(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    report, _, pins, _ = _bound_bundle(tmp_path)
+
+    def reject_pointer(_document: object, _pointer: str) -> object:
+        raise IndexError("out of range")
+
+    monkeypatch.setattr(validator_binding, "_resolve_semantic_pointer", reject_pointer)
+
+    receipt = _validate_bound(report, pins)
+
+    assert "EVIDENCE_IR_POINTER_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_source_snapshot_comparison_ignores_only_access_time(tmp_path: Path) -> None:
+    report, _ = _valid_bundle(tmp_path)
+    before = validator_bundle.capture_tree_snapshot(report)
+    after = replace(
+        before,
+        nodes=tuple(replace(node, atime_ns=node.atime_ns + 1) for node in before.nodes),
+    )
+
+    assert validator_bundle._source_snapshots_match(before, after) is True
+    changed = replace(
+        after,
+        nodes=(replace(after.nodes[0], mtime_ns=after.nodes[0].mtime_ns + 1), *after.nodes[1:]),
+    )
+    assert validator_bundle._source_snapshots_match(before, changed) is False
 
 
 @pytest.mark.parametrize("member", ["inputs/ir.json", "analysis.json"])

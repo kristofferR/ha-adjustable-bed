@@ -365,7 +365,10 @@ def test_explicit_sealing_directory_and_result_cleanup(tmp_path: Path) -> None:
     assert not sealed.exists()
 
 
-@pytest.mark.parametrize("unsafe_name", ["../escape.apk", "/absolute.apk", "bad\\name.apk"])
+@pytest.mark.parametrize(
+    "unsafe_name",
+    ["../escape.apk", "/absolute.apk", "bad\\name.apk", "bad\rname.apk", "bad\nname.apk"],
+)
 def test_container_rejects_unsafe_member_names(tmp_path: Path, unsafe_name: str) -> None:
     inner = tmp_path / "inner.apk"
     _native_apk(inner)
@@ -482,6 +485,17 @@ def test_delivery_rejects_symlink_input(tmp_path: Path) -> None:
 
 def test_delivery_rejects_unsafe_direct_apk_name(tmp_path: Path) -> None:
     artifact = tmp_path / "unsafe\\name.apk"
+    _native_apk(artifact)
+
+    with pytest.raises(SafetyError, match="unsafe archive member name"):
+        preflight_delivery([artifact])
+
+
+@pytest.mark.parametrize("control", ["\r", "\n"])
+def test_delivery_rejects_control_characters_in_direct_apk_name(
+    tmp_path: Path, control: str
+) -> None:
+    artifact = tmp_path / f"unsafe{control}name.apk"
     _native_apk(artifact)
 
     with pytest.raises(SafetyError, match="unsafe archive member name"):

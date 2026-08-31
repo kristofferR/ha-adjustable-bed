@@ -2297,7 +2297,7 @@ def _resolve_json_pointer(root: object, pointer: str) -> object:
         if isinstance(current, dict):
             current = current[token]
         elif isinstance(current, list):
-            if token != "0" and token.startswith("0"):
+            if not token.isdecimal() or (token != "0" and token.startswith("0")):
                 raise IndexError(token)
             current = current[int(token)]
         else:

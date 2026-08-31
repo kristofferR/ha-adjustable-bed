@@ -260,6 +260,22 @@ def test_inventory_records_active_status_and_malformed_history(tmp_path: Path) -
     assert (rejected / "analysis.json").read_text(encoding="utf-8") == "{not json"
 
 
+def test_inventory_bounds_analysis_report_metadata_parsing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    report = source / "example.fixture-1.0" / "report"
+    report.mkdir(parents=True)
+    (report / "analysis.json").write_text('{"status":"COMPLETE"}', encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, "_MAX_ANALYSIS_JSON_BYTES", 1)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(item["operation"] == "parse_analysis_json" for item in diagnostics)
+
+
 def test_snapshot_detects_same_size_content_change_with_restored_mtime(tmp_path: Path) -> None:
     source = tmp_path / "legacy"
     source.mkdir()

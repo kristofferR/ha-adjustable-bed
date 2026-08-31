@@ -144,6 +144,26 @@ def test_publisher_reports_post_write_queue_drift_for_retry(
     assert "<!-- phase4-v2-tracker:start" in gateway.body
 
 
+def test_publisher_wraps_post_write_checkpoint_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    publisher_queue: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher_queue
+    gateway = _MemoryGateway()
+
+    def fail_checkpoint(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("synthetic checkpoint failure")
+
+    monkeypatch.setattr(queue, "_checkpoint_internal", fail_checkpoint)
+
+    with pytest.raises(
+        PublisherPostWriteConflictError,
+        match="publication event could not be recorded",
+    ):
+        publish_tracker(queue, lease, gateway, 542)
+    assert "<!-- phase4-v2-tracker:start" in gateway.body
+
+
 def test_public_checkpoint_cannot_hide_internal_event_names(
     publisher_queue: tuple[Queue, Lease],
 ) -> None:
@@ -218,6 +238,21 @@ def test_publication_guard_prevents_attempt_completion_during_write(
 
     assert len(blocked) == 1
     competing_queue.finish(lease, TerminalOutcome.PARTIAL)
+    assert queue.status(lease.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
+
+
+def test_publication_guard_prevents_repaired_unit_retry(
+    publisher_queue: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher_queue
+    queue.finish(lease, TerminalOutcome.PARTIAL)
+    competing_queue = Queue(queue.database, queue.attempts_root, busy_timeout_ms=1)
+
+    with queue_publisher._publication_guard(queue), pytest.raises(
+        QueueConflictError, match="publication"
+    ):
+        competing_queue.retry_repaired(lease.unit_id)
+
     assert queue.status(lease.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
 
 

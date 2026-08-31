@@ -313,6 +313,12 @@ def validate_binding_contract(
     )
     if isinstance(expected_dependencies, PackageDependencyPins):
         _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
+        _validate_package_report(
+            dependencies,
+            json_documents,
+            artifact_identity,
+            diagnostics,
+        )
 
     owners, validated_members = _validate_evidence_members(
         document["evidence_members"],
@@ -828,6 +834,93 @@ def _validate_package_dependency_documents(
             diagnostics.append(BindingDiagnostic(code, member))
 
 
+def _validate_package_report(
+    dependencies: object,
+    json_documents: Mapping[str, object],
+    artifact_identity: ArtifactIdentityAttestation | None,
+    diagnostics: list[BindingDiagnostic],
+) -> None:
+    schema_member = _dependency_member(dependencies, "report_schema")
+    schema = _dependency_document(dependencies, "report_schema", json_documents)
+    if not isinstance(schema, dict) or set(schema) != {
+        "report_revision",
+        "required_package_local_domains",
+        "requires_authoritative_root_result_set",
+        "requires_target_package_identity",
+        "schema_revision",
+    }:
+        diagnostics.append(BindingDiagnostic("PINNED_REPORT_SCHEMA_INVALID", schema_member))
+        return
+    report_revision = schema.get("report_revision")
+    schema_revision = schema.get("schema_revision")
+    required_domains = _canonical_string_list(
+        schema.get("required_package_local_domains"), require_nonempty=True
+    )
+    if (
+        not isinstance(report_revision, str)
+        or not report_revision
+        or not isinstance(schema_revision, str)
+        or not schema_revision
+        or required_domains is None
+        or schema.get("requires_authoritative_root_result_set") is not True
+        or schema.get("requires_target_package_identity") is not True
+    ):
+        diagnostics.append(BindingDiagnostic("PINNED_REPORT_SCHEMA_INVALID", schema_member))
+        return
+
+    report_path = "analysis.json"
+    report = json_documents.get(report_path)
+    execution_plan = _dependency_document(dependencies, "execution_plan", json_documents)
+    execution_plan_member = _dependency_member(dependencies, "execution_plan")
+    package_local = (
+        execution_plan.get("package_local") if isinstance(execution_plan, dict) else None
+    )
+    root_count = (
+        execution_plan.get("authoritative_root_count") if isinstance(execution_plan, dict) else None
+    )
+    if (
+        not isinstance(package_local, dict)
+        or type(root_count) is not int
+        or root_count < 0
+        or package_local.get("mandatory_domains") != list(required_domains)
+    ):
+        diagnostics.append(
+            BindingDiagnostic("PINNED_EXECUTION_PLAN_INVALID", execution_plan_member)
+        )
+        return
+    if not isinstance(report, dict):
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
+    identity = report.get("target_package_identity")
+    domains = report.get("package_local_domains")
+    root_results = report.get("authoritative_root_results")
+    if (
+        report.get("report_revision") != report_revision
+        or not isinstance(identity, dict)
+        or set(identity) != {"artifact_digest", "package_name", "version_code", "version_name"}
+        or not isinstance(domains, dict)
+        or set(domains) != set(required_domains)
+        or not isinstance(root_results, list)
+        or any(not isinstance(domains[name], dict) for name in required_domains)
+        or len(root_results) != root_count
+        or any(not isinstance(item, dict) for item in root_results)
+    ):
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
+    plan_identity = {
+        "artifact_digest": package_local.get("target_artifact_digest"),
+        "package_name": package_local.get("package_name"),
+        "version_code": package_local.get("version_code"),
+        "version_name": package_local.get("version_name"),
+    }
+    if (
+        artifact_identity is None
+        or identity != artifact_identity.to_dict()
+        or identity != plan_identity
+    ):
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_IDENTITY_MISMATCH", report_path))
+
+
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:
     if not isinstance(document, dict):
         return None
@@ -1077,7 +1170,7 @@ def _validate_anchors(
                 continue
         try:
             expected_value = _resolve_semantic_pointer(ir_document, ir_pointer)
-        except KeyError, TypeError, ValueError:
+        except IndexError, KeyError, TypeError, ValueError:
             diagnostics.append(
                 BindingDiagnostic(
                     "EVIDENCE_IR_POINTER_INVALID",
@@ -1179,43 +1272,6 @@ def _dependency_member(dependencies: object, name: str) -> str:
             if isinstance(member, str):
                 return member
     return VALIDATION_INPUT
-
-
-def _resolve_json_pointer(document: object | None, pointer: str) -> object:
-    if document is None or not pointer.startswith("/"):
-        raise ValueError("IR document or absolute pointer is missing")
-    current = document
-    for encoded in pointer[1:].split("/"):
-        token = _decode_pointer_token(encoded)
-        if isinstance(current, dict):
-            if token not in current:
-                raise KeyError(token)
-            current = current[token]
-        elif isinstance(current, list):
-            if not token.isdecimal() or (len(token) > 1 and token.startswith("0")):
-                raise ValueError("array index is not canonical")
-            index = int(token)
-            if index >= len(current):
-                raise KeyError(token)
-            current = current[index]
-        else:
-            raise TypeError("pointer traverses a scalar")
-    return current
-
-
-def _decode_pointer_token(token: str) -> str:
-    decoded: list[str] = []
-    index = 0
-    while index < len(token):
-        if token[index] != "~":
-            decoded.append(token[index])
-            index += 1
-            continue
-        if index + 1 >= len(token) or token[index + 1] not in {"0", "1"}:
-            raise ValueError("invalid JSON pointer escape")
-        decoded.append("~" if token[index + 1] == "0" else "/")
-        index += 2
-    return "".join(decoded)
 
 
 def _result(

@@ -14,7 +14,7 @@ import os
 import re
 import stat
 from dataclasses import asdict, dataclass, replace
-from errno import EFBIG, EIO
+from errno import EFBIG, EIO, EPERM
 from pathlib import Path, PurePosixPath
 from typing import cast
 
@@ -294,7 +294,6 @@ def _stat_identity(node_stat: os.stat_result) -> tuple[int, ...]:
         node_stat.st_gid,
         node_stat.st_size,
         node_stat.st_nlink,
-        node_stat.st_atime_ns,
         node_stat.st_mtime_ns,
         node_stat.st_ctime_ns,
     )
@@ -331,7 +330,22 @@ def _open_root(root: Path) -> int:
         flags |= os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
-    return os.open(root, flags)
+    return _open_with_noatime_fallback(root, flags)
+
+
+def _open_with_noatime_fallback(
+    path: os.PathLike[str] | str,
+    flags: int,
+    *,
+    dir_fd: int | None = None,
+) -> int:
+    noatime = getattr(os, "O_NOATIME", 0)
+    try:
+        return os.open(path, flags, dir_fd=dir_fd)
+    except OSError as error:
+        if not noatime or error.errno != EPERM or not flags & noatime:
+            raise
+        return os.open(path, flags & ~noatime, dir_fd=dir_fd)
 
 
 def _hash_regular_at(directory_fd: int, name: str, expected: os.stat_result) -> str:
@@ -340,7 +354,7 @@ def _hash_regular_at(directory_fd: int, name: str, expected: os.stat_result) -> 
         flags |= os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
-    file_fd = os.open(name, flags, dir_fd=directory_fd)
+    file_fd = _open_with_noatime_fallback(name, flags, dir_fd=directory_fd)
     try:
         opened = os.fstat(file_fd)
         if not stat.S_ISREG(opened.st_mode) or _stat_identity(opened) != _stat_identity(expected):
@@ -399,7 +413,7 @@ def _scan_directory(directory_fd: int, prefix: PurePosixPath, budget: _ScanBudge
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
             try:
-                child_fd = os.open(entry.name, flags, dir_fd=directory_fd)
+                child_fd = _open_with_noatime_fallback(entry.name, flags, dir_fd=directory_fd)
             except OSError as error:
                 raise _SnapshotError("open_directory", relative, error) from error
             try:
@@ -435,6 +449,16 @@ def capture_tree_snapshot(root: Path) -> _TreeSnapshot:
     return _TreeSnapshot(nodes=ordered, digest=digest.hexdigest())
 
 
+def _source_snapshots_match(before: _TreeSnapshot, after: _TreeSnapshot) -> bool:
+    """Compare source state while ignoring access-time changes caused by reads."""
+    if len(before.nodes) != len(after.nodes):
+        return False
+    return all(
+        replace(left, atime_ns=0) == replace(right, atime_ns=0)
+        for left, right in zip(before.nodes, after.nodes, strict=True)
+    )
+
+
 def _safe_member_path(raw: str) -> PurePosixPath | None:
     if not raw or "\\" in raw or "\x00" in raw:
         return None
@@ -456,7 +480,6 @@ def _node_identity(node: _Node) -> tuple[int, ...]:
         node.gid,
         node.size,
         node.link_count,
-        node.atime_ns,
         node.mtime_ns,
         node.ctime_ns,
     )
@@ -512,7 +535,7 @@ def _read_member(
                 flags |= os.O_CLOEXEC
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
-            next_fd = os.open(part, flags, dir_fd=current_fd)
+            next_fd = _open_with_noatime_fallback(part, flags, dir_fd=current_fd)
             if current_fd != root_fd:
                 os.close(current_fd)
             current_fd = next_fd
@@ -522,7 +545,7 @@ def _read_member(
             flags |= os.O_CLOEXEC
         if hasattr(os, "O_NOFOLLOW"):
             flags |= os.O_NOFOLLOW
-        file_fd = os.open(member.parts[-1], flags, dir_fd=current_fd)
+        file_fd = _open_with_noatime_fallback(member.parts[-1], flags, dir_fd=current_fd)
         try:
             file_stat = os.fstat(file_fd)
             _assert_opened_node(member.as_posix(), file_stat, expected_member)
@@ -587,7 +610,7 @@ def _read_member_range(
                 flags |= os.O_CLOEXEC
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
-            next_fd = os.open(part, flags, dir_fd=current_fd)
+            next_fd = _open_with_noatime_fallback(part, flags, dir_fd=current_fd)
             if current_fd != root_fd:
                 os.close(current_fd)
             current_fd = next_fd
@@ -598,7 +621,7 @@ def _read_member_range(
             flags |= os.O_CLOEXEC
         if hasattr(os, "O_NOFOLLOW"):
             flags |= os.O_NOFOLLOW
-        file_fd = os.open(member.parts[-1], flags, dir_fd=current_fd)
+        file_fd = _open_with_noatime_fallback(member.parts[-1], flags, dir_fd=current_fd)
         try:
             _assert_opened_node(member.as_posix(), os.fstat(file_fd), expected_member)
             data = bytearray()
@@ -902,7 +925,7 @@ def validate_report_bundle(
         diagnostics.append(_diagnostic_for_snapshot(error))
         source_unchanged = False
     else:
-        source_unchanged = before == after
+        source_unchanged = _source_snapshots_match(before, after)
         if not source_unchanged:
             diagnostics.append(Diagnostic("SOURCE_TREE_MUTATED", "."))
 
