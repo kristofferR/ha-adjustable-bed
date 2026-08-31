@@ -37,6 +37,7 @@ REPORT_MANIFEST = "REPORT.SHA256"
 _MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^\x00\r\n]+)$")
 _READ_SIZE = 1024 * 1024
 _MAX_MANIFEST_BYTES = 64 * 1024**2
+_MAX_MANIFEST_DIAGNOSTICS = 4_096
 _MAX_JSON_BYTES = 64 * 1024**2
 _MAX_RECEIPT_BYTES = 64 * 1024**2
 _MAX_JSON_DEPTH = 128
@@ -654,7 +655,22 @@ def _parse_manifest(data: bytes) -> tuple[list[_ManifestEntry], list[Diagnostic]
         diagnostics.append(Diagnostic("MANIFEST_MISSING_FINAL_NEWLINE", REPORT_MANIFEST))
     entries: list[_ManifestEntry] = []
     seen: set[str] = set()
-    for line_number, line in enumerate(text.splitlines(), start=1):
+    line_start = 0
+    line_number = 0
+    while line_start < len(text):
+        line_number += 1
+        if len(diagnostics) >= _MAX_MANIFEST_DIAGNOSTICS - 1:
+            diagnostics.append(Diagnostic("MANIFEST_DIAGNOSTIC_LIMIT_EXCEEDED", REPORT_MANIFEST))
+            break
+        line_end = text.find("\n", line_start)
+        if line_end < 0:
+            line = text[line_start:]
+            line_start = len(text)
+        else:
+            line = text[line_start:line_end]
+            line_start = line_end + 1
+        if line.endswith("\r"):
+            line = line[:-1]
         match = _MANIFEST_LINE.fullmatch(line)
         if match is None:
             diagnostics.append(

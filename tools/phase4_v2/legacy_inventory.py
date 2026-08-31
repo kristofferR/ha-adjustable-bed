@@ -9,6 +9,7 @@ an interrupted publication may leave a partial destination without that marker.
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import json
 import os
@@ -20,7 +21,7 @@ from collections import Counter
 from collections.abc import Buffer, Collection, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Protocol, TextIO
+from typing import BinaryIO, Protocol
 
 MANIFEST_SCHEMA = "phase4-v2-legacy-inventory-v1"
 SCANNER_VERSION = "1"
@@ -29,6 +30,8 @@ _SHA256SUM = re.compile(r"^([0-9a-fA-F]{64})(?:\s+[*]?(.+?))?\s*$")
 _BSD_SHA256 = re.compile(r"^SHA256 \((.+)\) = ([0-9a-fA-F]{64})$")
 _HASH_MANIFEST_NAMES = frozenset({"sha256sums", "sha256sum"})
 _MAX_ANALYSIS_JSON_BYTES = 16 * 1024**2
+_MAX_HASH_MANIFEST_BYTES = 16 * 1024**2
+_MAX_HASH_MANIFEST_DIAGNOSTICS = 4_096
 
 
 class InventoryError(RuntimeError):
@@ -503,17 +506,23 @@ def _collect_named_strings(value: object, key: str) -> tuple[str, ...]:
 
 
 def _open_observed_descriptor(entry: Entry, path: Path) -> int:
+    noatime = getattr(os, "O_NOATIME", 0)
     flags = (
         os.O_RDONLY
         | getattr(os, "O_CLOEXEC", 0)
         | getattr(os, "O_NOFOLLOW", 0)
         | getattr(os, "O_NONBLOCK", 0)
+        | noatime
     )
-    descriptor = os.open(path, flags)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as err:
+        if not noatime or err.errno != errno.EPERM:
+            raise
+        descriptor = os.open(path, flags & ~noatime)
     try:
         opened_stat = os.fstat(descriptor)
-        identity = (opened_stat.st_dev, opened_stat.st_ino)
-        if not stat.S_ISREG(opened_stat.st_mode) or identity != (entry.device, entry.inode):
+        if not _matches_observed_entry(opened_stat, entry):
             raise ObservedFileChangedError(f"observed file identity changed: {entry.path}")
     except BaseException:
         os.close(descriptor)
@@ -521,12 +530,24 @@ def _open_observed_descriptor(entry: Entry, path: Path) -> int:
     return descriptor
 
 
+def _matches_observed_entry(node: os.stat_result, entry: Entry) -> bool:
+    return stat.S_ISREG(node.st_mode) and (
+        node.st_dev,
+        node.st_ino,
+        node.st_size,
+        node.st_mtime_ns,
+        node.st_ctime_ns,
+    ) == (
+        entry.device,
+        entry.inode,
+        entry.size,
+        entry.mtime_ns,
+        entry.ctime_ns,
+    )
+
+
 def _open_observed_binary(entry: Entry, path: Path) -> BinaryIO:
     return os.fdopen(_open_observed_descriptor(entry, path), "rb")
-
-
-def _open_observed_text(entry: Entry, path: Path) -> TextIO:
-    return os.fdopen(_open_observed_descriptor(entry, path), "r", encoding="utf-8")
 
 
 def _report_record(entry: Entry, path: Path) -> ReportRecord:
@@ -686,13 +707,37 @@ def _declared_hashes(
     source_root: Path,
     digest_cache: dict[tuple[int, int, int, int, int], str],
 ) -> tuple[list[DeclaredHash], list[Diagnostic]]:
-    declarations: list[DeclaredHash] = []
-    diagnostics: list[Diagnostic] = []
+    if entry.size > _MAX_HASH_MANIFEST_BYTES:
+        return [], [
+            Diagnostic(
+                path=entry.path,
+                operation="read_declared_hashes",
+                error="manifest_too_large",
+                active_protected=entry.active_protected,
+            )
+        ]
     try:
-        with _open_observed_text(entry, path) as manifest_file:
-            lines = manifest_file.read().splitlines()
+        with _open_observed_binary(entry, path) as manifest_file:
+            payload = manifest_file.read(_MAX_HASH_MANIFEST_BYTES + 1)
+            if len(payload) != entry.size:
+                raise ObservedFileChangedError(
+                    f"observed file size changed while reading: {entry.path}"
+                )
+            text = payload.decode("utf-8")
+            result = _parse_declared_hash_lines(
+                text,
+                entry,
+                path,
+                source_root,
+                digest_cache,
+            )
+            if not _matches_observed_entry(os.fstat(manifest_file.fileno()), entry):
+                raise ObservedFileChangedError(
+                    f"observed file metadata changed while reading: {entry.path}"
+                )
+            return result
     except (OSError, UnicodeError, ObservedFileChangedError) as err:
-        return declarations, [
+        return [], [
             Diagnostic(
                 path=entry.path,
                 operation="read_declared_hashes",
@@ -700,7 +745,40 @@ def _declared_hashes(
                 active_protected=entry.active_protected,
             )
         ]
-    for line_number, line in enumerate(lines, start=1):
+
+
+def _parse_declared_hash_lines(
+    text: str,
+    entry: Entry,
+    path: Path,
+    source_root: Path,
+    digest_cache: dict[tuple[int, int, int, int, int], str],
+) -> tuple[list[DeclaredHash], list[Diagnostic]]:
+    declarations: list[DeclaredHash] = []
+    diagnostics: list[Diagnostic] = []
+    line_start = 0
+    line_number = 0
+    while line_start < len(text):
+        line_number += 1
+        if len(diagnostics) >= _MAX_HASH_MANIFEST_DIAGNOSTICS - 1:
+            diagnostics.append(
+                Diagnostic(
+                    path=entry.path,
+                    operation="parse_declared_hashes",
+                    error="diagnostic_limit_exceeded",
+                    active_protected=entry.active_protected,
+                )
+            )
+            break
+        line_end = text.find("\n", line_start)
+        if line_end < 0:
+            line = text[line_start:]
+            line_start = len(text)
+        else:
+            line = text[line_start:line_end]
+            line_start = line_end + 1
+        if line.endswith("\r"):
+            line = line[:-1]
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue

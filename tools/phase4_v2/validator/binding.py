@@ -14,6 +14,7 @@ from tools.phase4_v2.ir import (
     SCHEMA_REVISION,
     IRValidationError,
     schema_document,
+    validate_universe,
 )
 from tools.phase4_v2.ir.model import _parse_ir_structure, _resolve_semantic_pointer
 
@@ -361,7 +362,17 @@ def _validate_current_ir_and_schema(
         diagnostics.append(BindingDiagnostic("PINNED_IR_INVALID", ir_member))
     else:
         try:
-            _parse_ir_structure(ir_document)
+            parsed_ir = _parse_ir_structure(ir_document)
+            universe = validate_universe(parsed_ir)
+            if universe.issues:
+                first = universe.issues[0]
+                diagnostics.append(
+                    BindingDiagnostic(
+                        "PINNED_IR_INVALID",
+                        ir_member,
+                        (("ir_code", first.code),),
+                    )
+                )
         except IRValidationError as error:
             context: tuple[tuple[str, str], ...] = ()
             if error.diagnostics:
@@ -959,18 +970,24 @@ def _root_result_identity(value: object) -> tuple[str, str, str] | None:
     }:
         return None
     result = value.get("result")
-    if not isinstance(result, dict) or not result:
-        return None
     route = value.get("route")
     root_id = value.get("target_root_id")
     occurrence = value.get("target_occurrence_identity_sha256")
     if (
         route not in {"BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"}
+        or not _valid_root_result(route, result)
         or not _is_digest(root_id)
         or not _is_digest(occurrence)
     ):
         return None
     return cast(str, root_id), cast(str, occurrence), cast(str, route)
+
+
+def _valid_root_result(route: object, result: object) -> bool:
+    if not _is_exact_object(result, {"status"}):
+        return False
+    expected_status = "BLOCKED" if route == "BLOCKED" else "COMPLETE"
+    return result["status"] == expected_status
 
 
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:

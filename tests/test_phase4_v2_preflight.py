@@ -473,6 +473,25 @@ def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> Non
     assert "classification" not in cache.verify(result.artifact_digest)
 
 
+def test_cache_uses_bounded_names_for_long_logical_apk_members(tmp_path: Path) -> None:
+    inner = tmp_path / "base.apk"
+    _native_apk(inner)
+    logical_name = f"{'a' * 300}.apk"
+    delivery = tmp_path / "delivery.xapk"
+    with zipfile.ZipFile(delivery, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr(logical_name, inner.read_bytes())
+
+    result = preflight_delivery([delivery])
+    cache = ArtifactCache(tmp_path / "cache")
+    object_dir = cache.store(result)
+    manifest = cache.verify(result.artifact_digest)
+    member = manifest["members"][0]
+
+    assert member["name"] == logical_name
+    assert len(member["stored_name"]) <= 255
+    assert (object_dir / "members" / member["stored_name"]).is_file()
+
+
 def test_archive_without_apk_members_has_a_dedicated_blocker(tmp_path: Path) -> None:
     delivery = tmp_path / "empty.xapk"
     with zipfile.ZipFile(delivery, "w") as archive:

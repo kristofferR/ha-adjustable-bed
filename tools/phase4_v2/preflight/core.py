@@ -1054,7 +1054,7 @@ class ArtifactCache:
             try:
                 records: list[CachedMember] = []
                 for index, member in enumerate(result.artifact_members):
-                    stored_name = f"{index:04d}-{member.name}"
+                    stored_name = f"{index:04d}-{member.sha256}.apk"
                     source_fd = _open_readonly(member._sealed_path)
                     try:
                         target_fd = os.open(

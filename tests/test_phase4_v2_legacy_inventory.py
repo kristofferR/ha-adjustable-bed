@@ -8,7 +8,7 @@ import os
 import stat
 from collections.abc import Iterator
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -315,6 +315,110 @@ def test_inventory_bounds_analysis_report_metadata_parsing(
 
     diagnostics = _ndjson(output / "diagnostics.ndjson")
     assert any(item["operation"] == "parse_analysis_json" for item in diagnostics)
+
+
+def test_inventory_rejects_oversized_hash_manifests_before_reading(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    report = source / "example.fixture-1.0" / "report"
+    report.mkdir(parents=True)
+    (report / "REPORT.SHA256").write_text(f"{'0' * 64}  evidence.bin\n", encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_MANIFEST_BYTES", 1)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(
+        item["operation"] == "read_declared_hashes" and item["error"] == "manifest_too_large"
+        for item in diagnostics
+    )
+
+
+def test_inventory_bounds_hash_manifest_diagnostics(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "REPORT.SHA256").write_text("invalid\n" * 10, encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_MANIFEST_DIAGNOSTICS", 3)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    hash_diagnostics = [
+        item for item in diagnostics if item["operation"].startswith("parse_declared_hash")
+    ]
+    assert [item["error"] for item in hash_diagnostics] == [
+        "unrecognised_format",
+        "unrecognised_format",
+        "diagnostic_limit_exceeded",
+    ]
+
+
+def test_hash_manifest_metadata_is_rechecked_after_parsing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    manifest = source / "REPORT.SHA256"
+    manifest.write_text("invalid\n", encoding="utf-8")
+    entry = legacy_inventory._entry_from_stat(
+        PurePosixPath("REPORT.SHA256"), manifest.lstat(), None, ()
+    )
+    original_parse = legacy_inventory._parse_declared_hash_lines
+
+    def mutate_after_parse(
+        text: str,
+        parsed_entry: legacy_inventory.Entry,
+        parsed_path: Path,
+        parsed_source_root: Path,
+        digest_cache: dict[tuple[int, int, int, int, int], str],
+    ) -> tuple[list[legacy_inventory.DeclaredHash], list[legacy_inventory.Diagnostic]]:
+        result = original_parse(
+            text,
+            parsed_entry,
+            parsed_path,
+            parsed_source_root,
+            digest_cache,
+        )
+        manifest.write_text("changed\n", encoding="utf-8")
+        changed = manifest.stat()
+        os.utime(manifest, ns=(changed.st_atime_ns, entry.mtime_ns + 1_000_000_000))
+        return result
+
+    monkeypatch.setattr(legacy_inventory, "_parse_declared_hash_lines", mutate_after_parse)
+
+    declarations, diagnostics = legacy_inventory._declared_hashes(entry, manifest, source, {})
+
+    assert declarations == []
+    assert [item.error for item in diagnostics] == ["ObservedFileChangedError"]
+
+
+def test_inventory_content_reads_preserve_source_access_times(tmp_path: Path) -> None:
+    source = tmp_path / "legacy"
+    report = source / "example.fixture-1.0" / "report"
+    report.mkdir(parents=True)
+    analysis = report / "analysis.json"
+    _write_report(analysis)
+    evidence = report / "evidence.bin"
+    evidence.write_bytes(b"evidence")
+    manifest = report / "REPORT.SHA256"
+    manifest.write_text(
+        f"{hashlib.sha256(evidence.read_bytes()).hexdigest()}  evidence.bin\n",
+        encoding="utf-8",
+    )
+    observed = (analysis, evidence, manifest)
+    old_atime = 1_600_000_000_000_000_000
+    for path in observed:
+        node = path.stat()
+        os.utime(path, ns=(old_atime, node.st_mtime_ns))
+
+    build_inventory(source, tmp_path / "inventory")
+
+    assert {path.stat().st_atime_ns for path in observed} == {old_atime}
 
 
 def test_snapshot_detects_same_size_content_change_with_restored_mtime(tmp_path: Path) -> None:

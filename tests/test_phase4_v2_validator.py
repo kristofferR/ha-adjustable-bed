@@ -312,14 +312,14 @@ def _trusted_lineage(
     )
 
 
-def _replace_dependency(
+def _replace_dependency[PinT: DependencyPins | PackageDependencyPins](
     report: Path,
     members: dict[str, bytes],
-    pins: DependencyPins,
+    pins: PinT,
     contract: dict[str, object],
     name: str,
     document: object,
-) -> DependencyPins:
+) -> PinT:
     member = f"inputs/{name}.json"
     encoded = _json_bytes(document)
     (report / member).write_bytes(encoded)
@@ -551,6 +551,68 @@ def test_package_profile_rejects_unstructured_root_result(tmp_path: Path) -> Non
     )
 
     receipt = _validate_package_bound(report, pins)
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize(
+    ("route", "status"),
+    [("BLOCKED", "COMPLETE"), ("EXACT_REUSE", "BLOCKED"), ("FULL_ANALYSIS", "BLOCKED")],
+)
+def test_package_profile_rejects_root_result_status_for_wrong_route(
+    tmp_path: Path, route: str, status: str
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root_plan = {
+        "route": route,
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    if route == "EXACT_REUSE":
+        root_plan = {
+            "reuse": {
+                "target_occurrence_identity_sha256": "b" * 64,
+                "target_root_id": "a" * 64,
+            },
+            "route": route,
+        }
+    root_result = {
+        "result": {"status": status},
+        "route": route,
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root_plan],
+        root_results=[root_result],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_rejects_placeholder_root_result(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root],
+        root_results=[{**root, "result": {"placeholder": True}}],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
     assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
 
 
@@ -913,6 +975,31 @@ def test_pinned_ir_must_parse_with_current_ir_parser(tmp_path: Path) -> None:
     assert "PINNED_IR_INVALID" in {item.code for item in receipt.diagnostics}
 
 
+def test_pinned_ir_must_cover_its_expected_action_universe(tmp_path: Path) -> None:
+    report, members, pins, contract = _bound_bundle(tmp_path)
+    incomplete_ir = _empty_current_ir()
+    incomplete_ir.update(
+        {
+            "actions": {"raise": {"summary": "Raise"}},
+            "expected_action_rules": {
+                "expect_raise": {
+                    "action": "raise",
+                    "protocol": "primary",
+                    "when": {"op": "always"},
+                }
+            },
+            "protocols": {"primary": {"variant_space": "default"}},
+            "variant_spaces": {"default": {"constraints": [], "dimensions": {}}},
+        }
+    )
+    pins = _replace_dependency(report, members, pins, contract, "ir", incomplete_ir)
+
+    receipt = _validate_bound(report, pins)
+
+    diagnostic = next(item for item in receipt.diagnostics if item.code == "PINNED_IR_INVALID")
+    assert dict(diagnostic.context) == {"ir_code": "missing_binding"}
+
+
 def test_pinned_schema_must_equal_current_structure(tmp_path: Path) -> None:
     report, members, pins, contract = _bound_bundle(tmp_path)
     stale_schema = schema_document()
@@ -1233,6 +1320,20 @@ def test_duplicate_json_key_is_rejected(tmp_path: Path) -> None:
 def test_non_finite_json_number_is_rejected(constant: bytes) -> None:
     with pytest.raises(validator_bundle.StrictJsonError, match="non_finite_number"):
         load_json_strict(b'{"value":' + constant + b"}")
+
+
+def test_manifest_parser_bounds_invalid_line_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(validator_bundle, "_MAX_MANIFEST_DIAGNOSTICS", 3)
+
+    _entries, diagnostics = validator_bundle._parse_manifest(b"invalid\n" * 10)
+
+    assert [item.code for item in diagnostics] == [
+        "MANIFEST_INVALID_LINE",
+        "MANIFEST_INVALID_LINE",
+        "MANIFEST_DIAGNOSTIC_LIMIT_EXCEEDED",
+    ]
 
 
 @pytest.mark.parametrize(
