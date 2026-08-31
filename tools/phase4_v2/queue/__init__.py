@@ -16,15 +16,37 @@ from .core import (
     WorkUnitSnapshot,
     WorkUnitStatus,
 )
-from .tracker import managed_block_sha256, render_html, render_markdown, replace_managed_block
+from .heartbeat import run_heartbeat
+from .publisher import (
+    AtomicIssueGateway,
+    IssueDocument,
+    PublisherConflictError,
+    PublisherPostWriteConflictError,
+    PublisherReadbackError,
+    PublishReceipt,
+    publish_tracker,
+)
+from .tracker import (
+    managed_block_generation,
+    managed_block_sha256,
+    render_html,
+    render_markdown,
+    replace_managed_block,
+)
 
 __all__ = [
+    "AtomicIssueGateway",
     "CompletionConflictError",
     "DependencyNotSatisfiedError",
     "ExecutionMode",
     "FinishDisposition",
     "FinishResult",
     "Lease",
+    "IssueDocument",
+    "PublishReceipt",
+    "PublisherConflictError",
+    "PublisherPostWriteConflictError",
+    "PublisherReadbackError",
     "Queue",
     "QueueConflictError",
     "QueueError",
@@ -33,8 +55,11 @@ __all__ = [
     "TerminalOutcome",
     "WorkUnitStatus",
     "WorkUnitSnapshot",
+    "managed_block_generation",
     "managed_block_sha256",
+    "publish_tracker",
     "render_html",
     "render_markdown",
     "replace_managed_block",
+    "run_heartbeat",
 ]

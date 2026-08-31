@@ -7,11 +7,13 @@ an expired worker from publishing after another worker recovers its unit.
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
 import re
 import sqlite3
+import stat
 import time
 import uuid
 from collections.abc import Iterator, Mapping
@@ -23,6 +25,17 @@ from pathlib import Path
 SCHEMA_REVISION = 1
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_INTERNAL_EVENT_TYPES = frozenset(
+    {
+        "CLAIMED",
+        "FINISHED",
+        "LEASE_EXPIRED",
+        "RENEWED",
+        "TRACKER_ALREADY_CURRENT",
+        "TRACKER_PUBLISHED",
+        "WORKSPACE_ALLOCATION_FAILED",
+    }
+)
 
 
 class QueueError(RuntimeError):
@@ -574,6 +587,15 @@ class Queue:
         """Atomically claim the first eligible work unit."""
         _validate_owner(owner)
         _validate_ttl(ttl_seconds)
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            return None
+        try:
+            return self._claim_with_publication_guard(owner, ttl_seconds)
+        finally:
+            os.close(guard)
+
+    def _claim_with_publication_guard(self, owner: str, ttl_seconds: int) -> Lease | None:
         with self._immediate() as connection:
             self._recover_expired(connection)
             row = connection.execute(
@@ -744,9 +766,23 @@ class Queue:
     ) -> None:
         """Append a milestone for a live fenced attempt."""
         _validate_identifier(event_type, "event_type")
+        if event_type in _INTERNAL_EVENT_TYPES:
+            raise ValueError(f"event type is reserved for queue internals: {event_type}")
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
             self._append_event(connection, lease.attempt_id, event_type, payload or {})
+
+    def _checkpoint_internal(
+        self,
+        lease: Lease,
+        event_type: str,
+        payload: Mapping[str, object],
+    ) -> None:
+        if event_type not in _INTERNAL_EVENT_TYPES:
+            raise ValueError(f"event type is not reserved for queue internals: {event_type}")
+        with self._immediate() as connection:
+            self._require_live_lease(connection, lease)
+            self._append_event(connection, lease.attempt_id, event_type, payload)
 
     def finish(
         self,
@@ -767,6 +803,27 @@ class Queue:
         if completion_revision is not None:
             _validate_revision(completion_revision)
 
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            return self._finish_with_publication_guard(
+                lease,
+                outcome,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+            )
+        finally:
+            os.close(guard)
+
+    def _finish_with_publication_guard(
+        self,
+        lease: Lease,
+        outcome: TerminalOutcome,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+    ) -> FinishResult:
         with self._immediate() as connection:
             terminal = connection.execute(
                 """
@@ -875,8 +932,14 @@ class Queue:
 
     def recover(self) -> int:
         """Fence expired leases and return the number of recovered attempts."""
-        with self._immediate() as connection:
-            return self._recover_expired(connection)
+        guard = self._try_acquire_publication_guard()
+        if guard is None:
+            return 0
+        try:
+            with self._immediate() as connection:
+                return self._recover_expired(connection)
+        finally:
+            os.close(guard)
 
     def snapshot(self) -> QueueSnapshot:
         """Read deterministic tracker state in one consistent transaction."""
@@ -889,7 +952,13 @@ class Queue:
             if metadata is None:
                 raise QueueError("queue is not initialized")
             watermark_row = connection.execute(
-                "SELECT COALESCE(MAX(event_id), 0) AS watermark FROM events"
+                """
+                SELECT COALESCE(MAX(event_id), 0) AS watermark
+                FROM events
+                WHERE event_type NOT IN (
+                    'RENEWED', 'TRACKER_PUBLISHED', 'TRACKER_ALREADY_CURRENT'
+                )
+                """
             ).fetchone()
             scheduler_state = {
                 "capabilities": [
@@ -1191,6 +1260,43 @@ class Queue:
             os.close(descriptor)
             raise QueueError("queue attempt root identity changed")
         return descriptor
+
+    def _try_acquire_publication_guard(self, *, wait: bool = False) -> int | None:
+        """Acquire the process-scoped guard ordered before queue recovery."""
+        path = self.database.with_name(self.database.name + ".tracker-publisher.lock")
+        flags = (
+            os.O_RDWR
+            | os.O_CREAT
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
+        )
+        try:
+            descriptor = os.open(path, flags, 0o600)
+        except OSError as error:
+            raise QueueError("publisher guard is unsafe or inaccessible") from error
+        try:
+            node = os.fstat(descriptor)
+            if not stat.S_ISREG(node.st_mode) or node.st_nlink != 1:
+                raise QueueError("publisher guard is not a private regular file")
+            deadline = time.monotonic() + self.busy_timeout_ms / 1_000
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if not wait:
+                        os.close(descriptor)
+                        return None
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        os.close(descriptor)
+                        return None
+                    time.sleep(min(0.01, remaining))
+            return descriptor
+        except BaseException:
+            os.close(descriptor)
+            raise
 
     @staticmethod
     def _open_directory_path(path: Path) -> int:

@@ -405,7 +405,7 @@ def test_claim_never_returns_lease_recovered_during_workspace_publication(
                 SET expires_at = CAST(unixepoch('subsec') * 1000 AS INTEGER) - 1
                 """
             )
-        second_queue = Queue(queue.database, queue.attempts_root)
+        second_queue = Queue(queue.database, queue.attempts_root, busy_timeout_ms=1)
         recovered.append(second_queue.claim("chat-b"))
 
     monkeypatch.setattr(queue, "_create_workspace", recover_after_publication)
@@ -413,7 +413,9 @@ def test_claim_never_returns_lease_recovered_during_workspace_publication(
     with pytest.raises(StaleLeaseError):
         queue.claim("chat-a")
 
-    second = recovered[0]
+    assert recovered == [None]
+    second_queue = Queue(queue.database, queue.attempts_root)
+    second = second_queue.claim("chat-b")
     assert second is not None
     assert second.fencing_token == 2
     assert second.workspace.is_dir()

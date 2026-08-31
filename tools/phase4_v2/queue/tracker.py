@@ -121,6 +121,12 @@ def managed_block_sha256(body: str) -> str | None:
     return hashlib.sha256(block[3].encode()).hexdigest() if block is not None else None
 
 
+def managed_block_generation(body: str) -> str | None:
+    """Return the managed block generation, if one exists."""
+    block = _managed_block(body)
+    return block[2] if block is not None else None
+
+
 def replace_managed_block(
     body: str,
     rendered: str,
