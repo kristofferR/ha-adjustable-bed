@@ -242,6 +242,7 @@ def _package_bound_bundle(
                     "version_name": preflight["package_identity"]["version_name"],
                 },
                 "revision": "phase4-v2-package-execution-plan-v2",
+                "root_plans": [],
             }
         ),
         "inputs/report_schema.json": _json_bytes(
@@ -331,6 +332,37 @@ def _replace_dependency(
     dependency["sha256"] = digest
     _write_contract(report, members, contract)
     return replace(pins, **{f"{name}_sha256": digest})
+
+
+def _set_package_roots(
+    report: Path,
+    members: dict[str, bytes],
+    pins: PackageDependencyPins,
+    contract: dict[str, object],
+    *,
+    root_plans: list[dict[str, object]],
+    root_results: list[dict[str, object]],
+) -> PackageDependencyPins:
+    execution_plan = json.loads(members["inputs/execution_plan.json"])
+    execution_plan["authoritative_root_count"] = len(root_plans)
+    execution_plan["root_plans"] = root_plans
+    plan_bytes = _json_bytes(execution_plan)
+    (report / "inputs/execution_plan.json").write_bytes(plan_bytes)
+    members["inputs/execution_plan.json"] = plan_bytes
+    plan_digest = hashlib.sha256(plan_bytes).hexdigest()
+    dependencies = contract["dependencies"]
+    assert isinstance(dependencies, dict)
+    plan_dependency = dependencies["execution_plan"]
+    assert isinstance(plan_dependency, dict)
+    plan_dependency["sha256"] = plan_digest
+
+    package_report = json.loads(members["analysis.json"])
+    package_report["authoritative_root_results"] = root_results
+    report_bytes = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(report_bytes)
+    members["analysis.json"] = report_bytes
+    _write_contract(report, members, contract)
+    return replace(pins, execution_plan_sha256=plan_digest)
 
 
 def _validate_bound(report: Path, pins: DependencyPins):
@@ -449,6 +481,98 @@ def test_package_profile_requires_the_package_report_contract(tmp_path: Path, mi
     receipt = _validate_package_bound(report, pins)
 
     assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_binds_each_authoritative_root_result_to_its_plan(
+    tmp_path: Path,
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root_plan = {
+        "analysis_capabilities": [],
+        "analysis_dependencies": [],
+        "reason": "fixture",
+        "revision": "phase4-v2-root-execution-plan-v2",
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    root_result = {
+        "result": {"status": "COMPLETE"},
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root_plan],
+        root_results=[root_result],
+    )
+
+    assert _validate_package_bound(report, pins).accepted is True
+
+    root_result["target_root_id"] = "c" * 64
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root_plan],
+        root_results=[root_result],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
+def test_package_profile_rejects_unstructured_root_result(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[
+            {
+                "analysis_capabilities": [],
+                "analysis_dependencies": [],
+                "reason": "fixture",
+                "revision": "phase4-v2-root-execution-plan-v2",
+                "route": "FULL_ANALYSIS",
+                "target_occurrence_identity_sha256": "b" * 64,
+                "target_root_id": "a" * 64,
+            }
+        ],
+        root_results=[{}],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_requires_explicit_root_plan_set(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    execution_plan = json.loads(members["inputs/execution_plan.json"])
+    del execution_plan["root_plans"]
+
+    updated_pins = _replace_dependency(
+        report,
+        members,
+        pins,
+        contract,
+        "execution_plan",
+        execution_plan,
+    )
+    assert isinstance(updated_pins, PackageDependencyPins)
+    receipt = _validate_package_bound(report, updated_pins)
+
+    assert "PINNED_EXECUTION_PLAN_INVALID" in {
+        item.code for item in receipt.diagnostics
+    }
 
 
 def test_package_profile_binds_report_to_preflight_identity(tmp_path: Path) -> None:
@@ -700,6 +824,16 @@ def test_cli_receipt_output_binds_without_newline_rewriting(
         trusted_receipt_sha256=receipt_sha256,
     )
     assert bound.validation_receipt_sha256 == receipt_sha256
+
+
+def test_external_lineage_fifo_is_rejected_without_blocking(tmp_path: Path) -> None:
+    report = tmp_path / "report"
+    report.mkdir()
+    fifo = tmp_path / "lineage.fifo"
+    os.mkfifo(fifo)
+
+    with pytest.raises(SystemExit):
+        validator_main._read_external_lineage(argparse.ArgumentParser(), report, fifo)
 
 
 def test_cli_selects_package_profile_only_with_both_package_pins(
@@ -1124,7 +1258,7 @@ def test_validator_json_depth_and_integer_bounds_are_fail_closed() -> None:
         load_json_strict(_json_bytes({"value": 2**63}))
 
 
-@pytest.mark.parametrize("token", ["+1", "-1", " 1", "1_0", "01"])
+@pytest.mark.parametrize("token", ["+1", "-1", " 1", "1_0", "01", "١"])
 def test_ir_pointer_rejects_noncanonical_array_indices(token: str) -> None:
     with pytest.raises(IndexError):
         _resolve_json_pointer(["zero", "one"], f"/{token}")

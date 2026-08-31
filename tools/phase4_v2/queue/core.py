@@ -122,6 +122,7 @@ class Lease:
     owner: str
     fencing_token: int
     expires_at: int
+    input_digest: str
     workspace: Path
 
 
@@ -903,6 +904,23 @@ class Queue:
         _validate_digest(digest, "digest")
         with self._immediate() as connection:
             self._require_unstarted(connection, unit_id)
+            cyclic = connection.execute(
+                """
+                WITH RECURSIVE reachable(unit_id) AS (
+                    VALUES (?)
+                    UNION
+                    SELECT dependency.parent_unit_id
+                    FROM dependencies AS dependency
+                    JOIN reachable ON dependency.unit_id = reachable.unit_id
+                )
+                SELECT 1 FROM reachable WHERE unit_id = ? LIMIT 1
+                """,
+                (parent_unit_id, unit_id),
+            ).fetchone()
+            if cyclic is not None:
+                raise QueueConflictError(
+                    f"dependency would create a cycle: {unit_id}/{parent_unit_id}"
+                )
             try:
                 connection.execute(
                     """
@@ -1042,6 +1060,7 @@ class Queue:
                 owner=owner,
                 fencing_token=fencing_token,
                 expires_at=expires_at,
+                input_digest=str(row["input_digest"]),
                 workspace=workspace,
             )
         try:
@@ -1128,6 +1147,7 @@ class Queue:
                 owner=lease.owner,
                 fencing_token=lease.fencing_token,
                 expires_at=expires_at,
+                input_digest=lease.input_digest,
                 workspace=lease.workspace,
             )
 
@@ -1734,6 +1754,7 @@ class Queue:
                     {
                         "attempt_id": lease.attempt_id,
                         "fencing_token": lease.fencing_token,
+                        "input_digest": lease.input_digest,
                         "lease_id": lease.lease_id,
                         "owner": lease.owner,
                         "unit_id": lease.unit_id,

@@ -161,6 +161,11 @@ def test_cli_claim_checkpoint_finish_status_and_render(
     assert main(_args(queue, "claim", "--owner", "worker-a")) == 0
     claimed = json.loads(capsys.readouterr().out)
     assert claimed["claimed"] is True
+    assert claimed["lease"]["input_digest"] == "7061636b6167652d610000000000000000000000000000000000000000000000"
+    marker = json.loads(
+        (Path(claimed["lease"]["workspace"]) / "ATTEMPT.READY").read_text(encoding="utf-8")
+    )
+    assert marker["input_digest"] == claimed["lease"]["input_digest"]
     lease_file = tmp_path / "lease.json"
     lease_file.write_text(json.dumps(claimed["lease"]), encoding="utf-8")
     payload_file = tmp_path / "payload.json"
@@ -191,6 +196,8 @@ def test_cli_claim_checkpoint_finish_status_and_render(
                 str(lease_file),
                 "--outcome",
                 "ACCEPTED",
+                "--expected-input-digest",
+                claimed["lease"]["input_digest"],
                 "--output-digest",
                 "a" * 64,
                 "--completion-revision",
@@ -199,7 +206,9 @@ def test_cli_claim_checkpoint_finish_status_and_render(
         )
         == 0
     )
-    assert json.loads(capsys.readouterr().out)["disposition"] == "COMPLETED"
+    finish_result = json.loads(capsys.readouterr().out)
+    assert finish_result["disposition"] == "COMPLETED"
+    assert finish_result["input_check"] == "ACCEPTED"
 
     assert main(_args(queue, "status", "--unit-id", "package-a")) == 0
     assert json.loads(capsys.readouterr().out) == {
@@ -208,6 +217,41 @@ def test_cli_claim_checkpoint_finish_status_and_render(
     }
     assert main(_args(queue, "render", "--format", "markdown")) == 0
     assert "<!-- phase4-v2-tracker:start" in capsys.readouterr().out
+
+
+def test_cli_accepted_finish_fails_closed_on_input_digest_mismatch(
+    queue: Queue, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _enqueue(queue, "package-a")
+    assert main(_args(queue, "claim", "--owner", "worker-a")) == 0
+    claimed = json.loads(capsys.readouterr().out)
+    lease_file = tmp_path / "lease.json"
+    lease_file.write_text(json.dumps(claimed["lease"]), encoding="utf-8")
+
+    assert (
+        main(
+            _args(
+                queue,
+                "finish",
+                "--lease-file",
+                str(lease_file),
+                "--outcome",
+                "ACCEPTED",
+                "--expected-input-digest",
+                "f" * 64,
+                "--output-digest",
+                "a" * 64,
+                "--completion-revision",
+                "report-v1",
+            )
+        )
+        == 0
+    )
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["disposition"] == "TERMINAL_ONLY"
+    assert result["input_check"] == "INPUT_MISMATCH"
+    assert queue.status("package-a") is WorkUnitStatus.REPAIR_REQUIRED
 
 
 def test_cli_recover_and_unsafe_lease_file_fail_closed(

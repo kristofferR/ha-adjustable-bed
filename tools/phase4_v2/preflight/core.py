@@ -9,11 +9,13 @@ import hashlib
 import json
 import os
 import re
+import selectors
 import shutil
 import stat
 import struct
 import subprocess
 import tempfile
+import time
 import zipfile
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -553,25 +555,61 @@ def _run_identity_tool(arguments: Sequence[str], *, label: str) -> tuple[str | N
     executable = shutil.which(arguments[0])
     if executable is None:
         return None, f"identity_tool_unavailable:{arguments[0]}"
+    process: subprocess.Popen[bytes] | None = None
+    output = bytearray()
+    output_limit = 4 * 1024**2
     try:
-        completed = subprocess.run(  # noqa: S603 - fixed executable and sealed private path
+        process = subprocess.Popen(  # noqa: S603 - fixed executable and sealed private path
             [executable, *arguments[1:]],
-            check=False,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            timeout=60,
         )
-    except OSError, subprocess.TimeoutExpired:
+        assert process.stdout is not None
+        deadline = time.monotonic() + 60
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(arguments, 60)
+                if not selector.select(remaining):
+                    raise subprocess.TimeoutExpired(arguments, 60)
+                chunk = os.read(
+                    process.stdout.fileno(),
+                    min(64 * 1024, output_limit + 1 - len(output)),
+                )
+                if not chunk:
+                    process.wait(timeout=max(0.0, deadline - time.monotonic()))
+                    break
+                output.extend(chunk)
+                if len(output) > output_limit:
+                    _terminate_identity_tool(process)
+                    return None, f"identity_tool_output_limit:{arguments[0]}:{label}"
+    except (OSError, subprocess.TimeoutExpired):
+        if process is not None:
+            _terminate_identity_tool(process)
         return None, f"identity_tool_failed:{arguments[0]}:{label}"
-    if len(completed.stdout) > 4 * 1024**2:
-        return None, f"identity_tool_output_limit:{arguments[0]}:{label}"
-    if completed.returncode != 0:
+    finally:
+        if process is not None and process.stdout is not None:
+            process.stdout.close()
+    if process.returncode != 0:
         return None, f"identity_verification_failed:{arguments[0]}:{label}"
     try:
-        return completed.stdout.decode("utf-8", errors="strict"), None
+        return output.decode("utf-8", errors="strict"), None
     except UnicodeDecodeError:
         return None, f"identity_tool_non_utf8:{arguments[0]}:{label}"
+
+
+def _terminate_identity_tool(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
 
 
 def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, tuple[str, ...]]:

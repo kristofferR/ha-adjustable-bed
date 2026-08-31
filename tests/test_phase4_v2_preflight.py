@@ -74,6 +74,27 @@ def _mock_identity_tools(
     monkeypatch.setattr(legacy_preflight, "_run_identity_tool", run)
 
 
+def test_identity_tool_output_is_bounded_while_streaming(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    tool = tmp_path / "noisy-tool"
+    tool.write_text(
+        f"#!{sys.executable}\n"
+        "import os\n"
+        "chunk = b'x' * (64 * 1024)\n"
+        "for _ in range(100):\n"
+        "    os.write(1, chunk)\n",
+        encoding="utf-8",
+    )
+    tool.chmod(0o700)
+    monkeypatch.setattr(legacy_preflight.shutil, "which", lambda _name: str(tool))
+
+    output, error = legacy_preflight._run_identity_tool(("noisy-tool",), label="base.apk")
+
+    assert output is None
+    assert error == "identity_tool_output_limit:noisy-tool:base.apk"
+
+
 def test_authoritative_identity_is_deterministic_for_coherent_complete_set(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

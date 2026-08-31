@@ -376,6 +376,21 @@ def test_universe_distinguishes_partially_overlapping_bindings() -> None:
     assert overlaps[0].binding_ids == ("bind_raise", "bind_raise_alpha")
 
 
+def test_universe_groups_duplicate_bindings_without_pairwise_expansion() -> None:
+    data = _document()
+    bindings = data["command_bindings"]
+    assert isinstance(bindings, dict)
+    original = bindings["bind_raise"]
+    for index in range(100):
+        bindings[f"bind_raise_duplicate_{index:03d}"] = copy.deepcopy(original)
+
+    result = validate_universe(_load(data))
+
+    duplicates = [issue for issue in result.issues if issue.code == "duplicate_binding_coverage"]
+    assert len(duplicates) == 1
+    assert len(duplicates[0].binding_ids) == 101
+
+
 def test_loader_is_strict_and_rejects_duplicate_definition_ids() -> None:
     payload = json.dumps(_document())
     payload = payload.replace(

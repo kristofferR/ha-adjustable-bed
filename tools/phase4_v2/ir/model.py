@@ -825,32 +825,37 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
     for key in sorted(actual - expected, key=_universe_sort_key):
         issues.append(UniverseIssue("extra_binding", key, tuple(sorted(actual_sources[key]))))
 
-    binding_ids = sorted(binding_coverage)
-    for left_index, left_id in enumerate(binding_ids):
-        left = binding_coverage[left_id]
-        if not left:
-            issues.append(UniverseIssue("empty_binding", None, (left_id,)))
-        for right_id in binding_ids[left_index + 1 :]:
-            right = binding_coverage[right_id]
-            overlap = left & right
-            if not overlap:
-                continue
-            if left == right:
-                issues.append(
-                    UniverseIssue(
-                        "duplicate_binding_coverage",
-                        min(overlap, key=_universe_sort_key),
-                        (left_id, right_id),
-                    )
+    coverage_groups: defaultdict[frozenset[UniverseKey], list[str]] = defaultdict(list)
+    for binding_id, coverage in binding_coverage.items():
+        if not coverage:
+            issues.append(UniverseIssue("empty_binding", None, (binding_id,)))
+        else:
+            coverage_groups[coverage].append(binding_id)
+
+    for coverage, binding_ids in coverage_groups.items():
+        if len(binding_ids) > 1:
+            issues.append(
+                UniverseIssue(
+                    "duplicate_binding_coverage",
+                    min(coverage, key=_universe_sort_key),
+                    tuple(sorted(binding_ids)),
                 )
-            else:
-                issues.append(
-                    UniverseIssue(
-                        "overlapping_binding_coverage",
-                        min(overlap, key=_universe_sort_key),
-                        (left_id, right_id),
-                    )
-                )
+            )
+
+    overlap_keys: defaultdict[tuple[str, ...], list[UniverseKey]] = defaultdict(list)
+    for key, binding_ids in actual_sources.items():
+        coverage_sets = {binding_coverage[binding_id] for binding_id in binding_ids}
+        overlap_group = tuple(sorted(binding_ids))
+        if len(coverage_sets) > 1:
+            overlap_keys[overlap_group].append(key)
+    for overlap_group, keys in overlap_keys.items():
+        issues.append(
+            UniverseIssue(
+                "overlapping_binding_coverage",
+                min(keys, key=_universe_sort_key),
+                overlap_group,
+            )
+        )
 
     issues.sort(
         key=lambda issue: (
@@ -2297,7 +2302,11 @@ def _resolve_json_pointer(root: object, pointer: str) -> object:
         if isinstance(current, dict):
             current = current[token]
         elif isinstance(current, list):
-            if not token.isdecimal() or (token != "0" and token.startswith("0")):
+            if (
+                not token.isascii()
+                or not token.isdecimal()
+                or (token != "0" and token.startswith("0"))
+            ):
                 raise IndexError(token)
             current = current[int(token)]
         else:

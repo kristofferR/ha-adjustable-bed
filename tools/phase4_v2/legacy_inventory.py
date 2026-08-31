@@ -354,9 +354,21 @@ def _walk(
     root_entry = _entry_from_stat(PurePosixPath("."), root_stat, None, active_paths)
     yield root_entry, source_root
 
-    def descend(directory: Path, relative_dir: PurePosixPath) -> Iterator[tuple[Entry, Path]]:
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
+
+    def descend(
+        directory_fd: int,
+        directory: Path,
+        relative_dir: PurePosixPath,
+    ) -> Iterator[tuple[Entry, Path]]:
         try:
-            with os.scandir(directory) as scan:
+            with os.scandir(directory_fd) as scan:
                 children = sorted(scan, key=lambda child: child.name)
         except OSError as err:
             diagnostics.append(
@@ -372,10 +384,14 @@ def _walk(
             relative = (
                 relative_dir / child.name if relative_dir.parts else PurePosixPath(child.name)
             )
-            child_path = Path(child.path)
+            child_path = directory / child.name
             try:
                 node_stat = child.stat(follow_symlinks=False)
-                link_target = os.readlink(child.path) if stat.S_ISLNK(node_stat.st_mode) else None
+                link_target = (
+                    os.readlink(child.name, dir_fd=directory_fd)
+                    if stat.S_ISLNK(node_stat.st_mode)
+                    else None
+                )
             except OSError as err:
                 diagnostics.append(
                     Diagnostic(
@@ -389,9 +405,44 @@ def _walk(
             entry = _entry_from_stat(relative, node_stat, link_target, active_paths)
             yield entry, child_path
             if entry.kind == "directory":
-                yield from descend(child_path, relative)
+                child_fd = -1
+                try:
+                    child_fd = os.open(child.name, directory_flags, dir_fd=directory_fd)
+                    opened_stat = os.fstat(child_fd)
+                    if (
+                        not stat.S_ISDIR(opened_stat.st_mode)
+                        or (opened_stat.st_dev, opened_stat.st_ino)
+                        != (node_stat.st_dev, node_stat.st_ino)
+                    ):
+                        raise ObservedFileChangedError(
+                            f"observed directory identity changed: {relative.as_posix()}"
+                        )
+                    yield from descend(child_fd, child_path, relative)
+                except (OSError, ObservedFileChangedError) as err:
+                    diagnostics.append(
+                        Diagnostic(
+                            path=relative.as_posix(),
+                            operation="scandir",
+                            error=f"{type(err).__name__}:{getattr(err, 'errno', None)}",
+                            active_protected=_is_active(relative, active_paths),
+                        )
+                    )
+                finally:
+                    if child_fd >= 0:
+                        os.close(child_fd)
 
-    yield from descend(source_root, PurePosixPath())
+    root_fd = -1
+    try:
+        root_fd = os.open(source_root, directory_flags)
+        opened_root = os.fstat(root_fd)
+        if (opened_root.st_dev, opened_root.st_ino) != (root_stat.st_dev, root_stat.st_ino):
+            raise InventoryError(f"source root changed while opening: {source_root}")
+        yield from descend(root_fd, source_root, PurePosixPath())
+    except OSError as err:
+        raise InventoryError(f"cannot open source root {source_root}: {err}") from err
+    finally:
+        if root_fd >= 0:
+            os.close(root_fd)
 
 
 def capture_tree_snapshot(

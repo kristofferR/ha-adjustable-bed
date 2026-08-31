@@ -363,6 +363,21 @@ def test_dependency_revision_and_digest_are_fail_closed(queue: Queue) -> None:
     assert queue.status("child") is WorkUnitStatus.READY
 
 
+def test_dependency_cycles_are_rejected_before_insertion(queue: Queue) -> None:
+    for unit_id in ("first", "second", "third"):
+        _enqueue(queue, unit_id)
+    queue.add_dependency("second", "first", revision="report-v1", digest="a" * 64)
+    queue.add_dependency("third", "second", revision="report-v1", digest="b" * 64)
+
+    with pytest.raises(QueueConflictError, match="create a cycle"):
+        queue.add_dependency("first", "third", revision="report-v1", digest="c" * 64)
+    with pytest.raises(QueueConflictError, match="create a cycle"):
+        queue.add_dependency("first", "first", revision="report-v1", digest="d" * 64)
+
+    with sqlite3.connect(queue.database) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM dependencies").fetchone()[0] == 2
+
+
 def test_exact_dependency_and_capability_unlock_unit(queue: Queue) -> None:
     _enqueue(queue, "parent")
     _enqueue(queue, "child", priority=100)

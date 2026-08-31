@@ -878,12 +878,21 @@ def _validate_package_report(
     root_count = (
         execution_plan.get("authoritative_root_count") if isinstance(execution_plan, dict) else None
     )
+    root_plans = execution_plan.get("root_plans") if isinstance(execution_plan, dict) else None
     if (
         not isinstance(package_local, dict)
         or type(root_count) is not int
         or root_count < 0
         or package_local.get("mandatory_domains") != list(required_domains)
+        or not isinstance(root_plans, list)
+        or len(root_plans) != root_count
     ):
+        diagnostics.append(
+            BindingDiagnostic("PINNED_EXECUTION_PLAN_INVALID", execution_plan_member)
+        )
+        return
+    planned_roots = tuple(_root_plan_identity(item) for item in root_plans)
+    if any(item is None for item in planned_roots) or len(set(planned_roots)) != root_count:
         diagnostics.append(
             BindingDiagnostic("PINNED_EXECUTION_PLAN_INVALID", execution_plan_member)
         )
@@ -903,9 +912,13 @@ def _validate_package_report(
         or not isinstance(root_results, list)
         or any(not isinstance(domains[name], dict) for name in required_domains)
         or len(root_results) != root_count
-        or any(not isinstance(item, dict) for item in root_results)
+        or any(_root_result_identity(item) is None for item in root_results)
     ):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
+    reported_roots = tuple(_root_result_identity(item) for item in root_results)
+    if set(reported_roots) != set(planned_roots):
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_ROOT_SET_MISMATCH", report_path))
         return
     plan_identity = {
         "artifact_digest": package_local.get("target_artifact_digest"),
@@ -919,6 +932,45 @@ def _validate_package_report(
         or identity != plan_identity
     ):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_IDENTITY_MISMATCH", report_path))
+
+
+def _root_plan_identity(value: object) -> tuple[str, str, str] | None:
+    if not isinstance(value, dict):
+        return None
+    route = value.get("route")
+    identity = value.get("reuse") if route == "EXACT_REUSE" else value
+    if route not in {"BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"} or not isinstance(
+        identity, dict
+    ):
+        return None
+    root_id = identity.get("target_root_id")
+    occurrence = identity.get("target_occurrence_identity_sha256")
+    if not _is_digest(root_id) or not _is_digest(occurrence):
+        return None
+    return cast(str, root_id), cast(str, occurrence), cast(str, route)
+
+
+def _root_result_identity(value: object) -> tuple[str, str, str] | None:
+    if not isinstance(value, dict) or set(value) != {
+        "result",
+        "route",
+        "target_occurrence_identity_sha256",
+        "target_root_id",
+    }:
+        return None
+    result = value.get("result")
+    if not isinstance(result, dict) or not result:
+        return None
+    route = value.get("route")
+    root_id = value.get("target_root_id")
+    occurrence = value.get("target_occurrence_identity_sha256")
+    if (
+        route not in {"BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"}
+        or not _is_digest(root_id)
+        or not _is_digest(occurrence)
+    ):
+        return None
+    return cast(str, root_id), cast(str, occurrence), cast(str, route)
 
 
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:

@@ -196,6 +196,47 @@ def test_inventory_has_deterministic_dfs_order_and_does_not_follow_symlinks(
     assert external_link["link_target"] == str(external)
 
 
+def test_inventory_does_not_follow_directory_replaced_after_stat(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    victim = source / "victim"
+    victim.mkdir(parents=True)
+    external = tmp_path / "external"
+    external.mkdir()
+    (external / "secret").write_text("outside", encoding="utf-8")
+    original_open = os.open
+    replaced = False
+
+    def replace_before_open(
+        path: os.PathLike[str] | str,
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal replaced
+        if path == "victim" and dir_fd is not None and not replaced:
+            replaced = True
+            victim.rmdir()
+            victim.symlink_to(external, target_is_directory=True)
+        return original_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "open", replace_before_open)
+    diagnostics: list[legacy_inventory.Diagnostic] = []
+    entries = list(
+        legacy_inventory._walk(
+            source,
+            (legacy_inventory.PurePosixPath("victim"),),
+            diagnostics,
+        )
+    )
+
+    assert replaced is True
+    assert "victim/secret" not in {entry.path for entry, _path in entries}
+    assert any(item.path == "victim" and item.operation == "scandir" for item in diagnostics)
+
+
 def test_inventory_records_fifo_without_opening_it(tmp_path: Path) -> None:
     source = tmp_path / "legacy"
     source.mkdir()

@@ -96,11 +96,19 @@ def _lease_from_file(path: Path) -> Lease:
         "owner",
         "fencing_token",
         "expires_at",
+        "input_digest",
         "workspace",
     }
     if not isinstance(raw, dict) or set(raw) != expected:
         raise ValueError("lease file has unexpected fields")
-    strings = ("unit_id", "attempt_id", "lease_id", "owner", "workspace")
+    strings = (
+        "unit_id",
+        "attempt_id",
+        "lease_id",
+        "owner",
+        "input_digest",
+        "workspace",
+    )
     if any(not isinstance(raw[field], str) for field in strings):
         raise ValueError("lease file string field is invalid")
     if type(raw["fencing_token"]) is not int or type(raw["expires_at"]) is not int:
@@ -112,6 +120,7 @@ def _lease_from_file(path: Path) -> Lease:
         owner=raw["owner"],
         fencing_token=raw["fencing_token"],
         expires_at=raw["expires_at"],
+        input_digest=raw["input_digest"],
         workspace=Path(raw["workspace"]),
     )
 
@@ -151,6 +160,7 @@ def _parser() -> argparse.ArgumentParser:
     finish.add_argument("--outcome", choices=tuple(TerminalOutcome), required=True)
     finish.add_argument("--output-digest")
     finish.add_argument("--completion-revision")
+    finish.add_argument("--expected-input-digest")
 
     commands.add_parser("recover")
     retry = commands.add_parser("retry-repaired")
@@ -190,13 +200,38 @@ def main(argv: Sequence[str] | None = None) -> int:
             queue.checkpoint(_lease_from_file(args.lease_file), args.event_type, payload)
             _emit({"checkpointed": True})
         elif args.command == "finish":
-            result = queue.finish(
-                _lease_from_file(args.lease_file),
-                TerminalOutcome(args.outcome),
-                output_digest=args.output_digest,
-                completion_revision=args.completion_revision,
-            )
-            _emit(asdict(result))
+            lease = _lease_from_file(args.lease_file)
+            outcome = TerminalOutcome(args.outcome)
+            if outcome is TerminalOutcome.ACCEPTED:
+                if (
+                    args.output_digest is None
+                    or args.completion_revision is None
+                    or args.expected_input_digest is None
+                ):
+                    raise ValueError(
+                        "accepted attempts require expected input digest, output digest, and revision"
+                    )
+                checked = queue.finish_accepted_if_input_matches(
+                    lease,
+                    expected_input_digest=args.expected_input_digest,
+                    output_digest=args.output_digest,
+                    completion_revision=args.completion_revision,
+                )
+                result = checked.finish_result
+                emitted = {"input_check": checked.disposition, **asdict(result)}
+            else:
+                if args.expected_input_digest is not None:
+                    raise ValueError(
+                        "expected input digest is only valid for accepted attempts"
+                    )
+                result = queue.finish(
+                    lease,
+                    outcome,
+                    output_digest=args.output_digest,
+                    completion_revision=args.completion_revision,
+                )
+                emitted = asdict(result)
+            _emit(emitted)
         elif args.command == "recover":
             _emit({"recovered": queue.recover()})
         elif args.command == "retry-repaired":
