@@ -19,9 +19,10 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
+from types import MappingProxyType
 from typing import IO, Literal, TypedDict, cast
 
-PREFLIGHT_SCHEMA = "phase4-v2-preflight-v2"
+PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 CACHE_SCHEMA = "phase4-v2-artifact-cache-v1"
 _DELIVERY_ARCHIVES = frozenset({".apks", ".xapk", ".zip"})
 _APK_SUFFIX = ".apk"
@@ -36,6 +37,35 @@ _BADGING_ATTRIBUTE = re.compile(r" ([A-Za-z][A-Za-z0-9]*)='([^']*)'")
 _BADGING_SPLIT = re.compile(r"^split='([^']+)'$")
 _BADGING_USES_SPLIT = re.compile(r"^uses-split(?:-not-required)?:'([^']+)'$")
 _SIGNER_DIGEST = re.compile(r"^Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]{64})$")
+_PACKAGE_NAME = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
+_DEX_MEMBER = re.compile(r"^classes(?:[1-9][0-9]*)?\.dex$")
+_SHIPPED_CODE_SUFFIXES = (
+    ".bc",
+    ".cjs",
+    ".dex",
+    ".dll",
+    ".js",
+    ".jsc",
+    ".lua",
+    ".luac",
+    ".mjs",
+    ".pck",
+    ".py",
+    ".pyc",
+    ".wasm",
+)
+_EMBEDDED_ARCHIVE_SUFFIXES = (".aar", ".apk", ".apks", ".jar", ".xapk", ".zip")
+_STACK_ROUTES: Mapping[str, tuple[str, ...]] = MappingProxyType({
+    "air": ("ffdec",),
+    "android": ("apktool",),
+    "android_dex": ("jadx",),
+    "embedded_archive": ("embedded-archive-inventory",),
+    "flutter": ("blutter",),
+    "hermes": ("hermes-bundle",),
+    "native": ("native-library-inventory",),
+    "react_native": ("react-native-bundle",),
+    "shipped_bundle": ("shipped-bundle",),
+})
 _AT_FDCWD = -100
 _RENAME_NOREPLACE = 1
 _READ_FLAGS = (
@@ -145,11 +175,23 @@ class PackageIdentity:
 
 
 @dataclass(frozen=True, slots=True)
+class MemberClassification:
+    """Canonical application-stack routing for one logical APK member."""
+
+    name: str
+    stacks: tuple[str, ...]
+    routes: tuple[str, ...]
+    status: Literal["READY", "BLOCKED"]
+    blockers: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class StackDecision:
     stacks: tuple[str, ...]
     routes: tuple[str, ...]
-    status: Literal["BLOCKED"]
+    status: Literal["READY", "BLOCKED"]
     blockers: tuple[str, ...]
+    members: tuple[MemberClassification, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,6 +242,13 @@ class _ApkIdentity:
     split_name: str | None
     required_splits: tuple[str, ...]
     signer_sha256: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _ApkObservation:
+    member: str
+    stacks: tuple[str, ...]
+    blockers: tuple[str, ...]
 
 
 def _canonical_json(value: object) -> bytes:
@@ -325,13 +374,18 @@ def _archive_entries(
         raise SafetyError("archive member-count limit exceeded")
     entries: list[_ArchiveEntry] = []
     seen: set[str] = set()
+    seen_casefold: set[str] = set()
     expanded_total = 0
     compressed_total = 0
     for info in infos:
         name = _safe_member_name(info.filename.rstrip("/"))
         if name in seen:
             raise SafetyError(f"duplicate archive member: {name}")
+        folded_name = name.casefold()
+        if folded_name in seen_casefold:
+            raise SafetyError(f"case-ambiguous archive member: {name}")
         seen.add(name)
+        seen_casefold.add(folded_name)
         if info.flag_bits & 0x1:
             raise SafetyError(f"encrypted archive member is unsupported: {name}")
         unix_mode = info.external_attr >> 16
@@ -437,16 +491,21 @@ def _logical_apk_name(name: str) -> str:
     return logical
 
 
-def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> set[str]:
+def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObservation:
     try:
         with _open_zip_path(path, limits) as apk:
             entries = _archive_entries(apk, limits)
     except SafetyError as err:
-        raise SafetyError(f"invalid APK member: {label}") from err
-    names = {entry.name.lower() for entry in entries}
+        raise SafetyError(f"invalid APK member {label}: {err}") from err
+    names = {entry.name.casefold() for entry in entries}
     stacks: set[str] = set()
+    blockers: set[str] = set()
     if "androidmanifest.xml" in names:
         stacks.add("android")
+    else:
+        blockers.add(f"android_manifest_missing:{label}")
+    if any(_DEX_MEMBER.fullmatch(name) for name in names):
+        stacks.add("android_dex")
     if "assets/flutter_assets/kernel_blob.bin" in names or any(
         name.startswith("lib/") and name.endswith("/libapp.so") for name in names
     ):
@@ -459,7 +518,24 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> set[str]:
         name.endswith(".swf") for name in names
     ):
         stacks.add("air")
-    return stacks
+    if any(name.endswith(".so") for name in names):
+        stacks.add("native")
+    if any(name.endswith(_EMBEDDED_ARCHIVE_SUFFIXES) for name in names):
+        stacks.add("embedded_archive")
+    known_react_native_bundles = {
+        "assets/index.android.bundle",
+        "assets/index.android.bundle.hbc",
+    }
+    if any(
+        name not in known_react_native_bundles
+        and (name.endswith(_SHIPPED_CODE_SUFFIXES) or name.endswith(".bundle"))
+        and _DEX_MEMBER.fullmatch(name) is None
+        for name in names
+    ):
+        stacks.add("shipped_bundle")
+    if not stacks:
+        blockers.add(f"unknown_application_stack:{label}")
+    return _ApkObservation(label, tuple(sorted(stacks)), tuple(sorted(blockers)))
 
 
 def _run_identity_tool(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
@@ -499,7 +575,8 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
     if badging is None or signer is None:
         return None, blockers
     package_lines = [line for line in badging.splitlines() if _BADGING_PACKAGE.fullmatch(line)]
-    package_attributes = [dict(_BADGING_ATTRIBUTE.findall(line)) for line in package_lines]
+    package_attribute_pairs = [_BADGING_ATTRIBUTE.findall(line) for line in package_lines]
+    package_attributes = [dict(pairs) for pairs in package_attribute_pairs]
     split_matches = [
         match.group(1) for line in badging.splitlines() if (match := _BADGING_SPLIT.fullmatch(line))
     ]
@@ -516,6 +593,8 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
         )
     )
     parse_blockers: list[str] = []
+    if any(len(pairs) != len({key for key, _value in pairs}) for pairs in package_attribute_pairs):
+        parse_blockers.append(f"package_identity_ambiguous:{member.name}")
     if len(package_attributes) != 1 or not {
         "name",
         "versionCode",
@@ -526,6 +605,16 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
         parse_blockers.append(f"split_identity_ambiguous:{member.name}")
     if not signer_digests:
         parse_blockers.append(f"signer_identity_missing:{member.name}")
+    if package_attributes:
+        package = package_attributes[0]
+        if (
+            _PACKAGE_NAME.fullmatch(package.get("name", "")) is None
+            or not package.get("versionCode")
+            or len(package.get("versionCode", "")) > 256
+            or not package.get("versionName")
+            or len(package.get("versionName", "")) > 256
+        ):
+            parse_blockers.append(f"package_identity_invalid:{member.name}")
     if parse_blockers:
         return None, tuple(parse_blockers)
     package = package_attributes[0]
@@ -608,29 +697,31 @@ def _derive_package_identity(
 
 def _suggested_routes(stacks: Iterable[str]) -> tuple[str, ...]:
     observed = set(stacks)
-    routes = {"apktool", "jadx"} if observed else set()
-    if "flutter" in observed:
-        routes.add("blutter")
-    if "hermes" in observed:
-        routes.add("hermes-bundle")
-    if "react_native" in observed:
-        routes.add("react-native-bundle")
-    if "air" in observed:
-        routes.add("ffdec")
-    return tuple(sorted(routes))
+    unknown = observed - _STACK_ROUTES.keys()
+    if unknown:
+        raise PreflightError(f"stack route mapping is incomplete: {sorted(unknown)}")
+    return tuple(sorted({route for stack in observed for route in _STACK_ROUTES[stack]}))
 
 
 def _decision(
-    stacks: Iterable[str],
-    unknown_members: Iterable[str],
+    observations: Iterable[_ApkObservation],
     *,
     identity_verified: bool = False,
     extra_blockers: Iterable[str] = (),
 ) -> StackDecision:
-    observed = tuple(sorted(set(stacks)))
-    blockers = {
-        "stack_detection_not_exhaustive",
-    }
+    ordered_observations = tuple(sorted(observations, key=lambda item: item.member.casefold()))
+    members = tuple(
+        MemberClassification(
+            observation.member,
+            observation.stacks,
+            _suggested_routes(observation.stacks),
+            "READY" if not observation.blockers else "BLOCKED",
+            observation.blockers,
+        )
+        for observation in ordered_observations
+    )
+    observed = tuple(sorted({stack for member in members for stack in member.stacks}))
+    blockers = {blocker for member in members for blocker in member.blockers}
     if not identity_verified:
         blockers.update(
             {
@@ -640,9 +731,16 @@ def _decision(
                 "split_coherence_not_verified",
             }
         )
-    blockers.update(f"unknown_application_stack:{name}" for name in unknown_members)
     blockers.update(extra_blockers)
-    return StackDecision(observed, _suggested_routes(observed), "BLOCKED", tuple(sorted(blockers)))
+    ordered_blockers = tuple(sorted(blockers))
+    status: Literal["READY", "BLOCKED"] = "READY" if not ordered_blockers else "BLOCKED"
+    return StackDecision(
+        observed,
+        _suggested_routes(observed),
+        status,
+        ordered_blockers,
+        members,
+    )
 
 
 def _seal_archive_member(
@@ -691,8 +789,7 @@ def preflight_delivery(
     owner = _SealedOwner(sealing_directory)
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
-    stacks: set[str] = set()
-    unknown: list[str] = []
+    observations: list[_ApkObservation] = []
     try:
         for delivery_index, source in enumerate(
             sorted(supplied, key=lambda item: item.name.casefold())
@@ -704,10 +801,7 @@ def preflight_delivery(
                 if delivery.size > active_limits.max_member_bytes:
                     raise SafetyError(f"artifact member size limit exceeded: {source.name}")
                 logical = _logical_apk_name(source.name)
-                observed = _classify_apk(sealed_delivery, logical, active_limits)
-                stacks.update(observed)
-                if not observed:
-                    unknown.append(logical)
+                observations.append(_classify_apk(sealed_delivery, logical, active_limits))
                 artifacts.append(
                     ArtifactMember(logical, delivery.size, delivery.sha256, sealed_delivery)
                 )
@@ -723,10 +817,9 @@ def preflight_delivery(
                             owner.path / f"artifact-{delivery_index:04d}-{member_index:04d}"
                         )
                         digest, size = _seal_archive_member(archive, entry, sealed_member)
-                        observed = _classify_apk(sealed_member, logical, active_limits)
-                        stacks.update(observed)
-                        if not observed:
-                            unknown.append(logical)
+                        observations.append(
+                            _classify_apk(sealed_member, logical, active_limits)
+                        )
                         artifacts.append(ArtifactMember(logical, size, digest, sealed_member))
             else:
                 raise SafetyError(f"unsupported delivery file type: {source.name}")
@@ -745,8 +838,7 @@ def preflight_delivery(
             tuple(artifacts),
             package_identity,
             _decision(
-                stacks,
-                unknown,
+                observations,
                 identity_verified=package_identity is not None,
                 extra_blockers=(*extra_blockers, *identity_blockers),
             ),

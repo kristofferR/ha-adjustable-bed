@@ -13,17 +13,33 @@ import math
 import os
 import re
 import stat
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from errno import EFBIG, EIO
 from pathlib import Path, PurePosixPath
 from typing import cast
 
-VALIDATOR_REVISION = "phase4-v2-bundle-validator-v1"
+from .binding import (
+    VALIDATION_INPUT,
+    ArtifactIdentityAttestation,
+    BindingDiagnostic,
+    DependencyPins,
+    EvidenceAnchorAttestation,
+    EvidenceMemberAttestation,
+    validate_binding_contract,
+)
+from .lineage import EvidenceLineageTrust
+
+VALIDATOR_REVISION = "phase4-v2-bundle-validator-v4"
 REPORT_MANIFEST = "REPORT.SHA256"
 _MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^\x00\r\n]+)$")
 _READ_SIZE = 1024 * 1024
 _MAX_MANIFEST_BYTES = 64 * 1024**2
-_MAX_JSON_BYTES = 256 * 1024**2
+_MAX_JSON_BYTES = 64 * 1024**2
+_MAX_RECEIPT_BYTES = 64 * 1024**2
+_MAX_JSON_DEPTH = 128
+_MAX_JSON_NODES = 2_000_000
+_MIN_JSON_INTEGER = -(2**63)
+_MAX_JSON_INTEGER = 2**63 - 1
 _MAX_TREE_ENTRIES = 250_000
 _MAX_TREE_DEPTH = 128
 _MAX_REGULAR_FILE_BYTES = 2 * 1024**3
@@ -79,23 +95,53 @@ class ValidationReceipt:
     discovered_members: int
     declared_members: int
     diagnostics: tuple[Diagnostic, ...]
+    dependency_digests: tuple[tuple[str, str], ...] = ()
+    evidence_anchors_checked: int = 0
+    validation_profile: str = "FILESYSTEM_ONLY"
+    contract_revision: str | None = None
+    validated_artifact_identity: ArtifactIdentityAttestation | None = None
+    validated_evidence_members: tuple[EvidenceMemberAttestation, ...] = ()
+    validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...] = ()
+    validation_receipt_sha256: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Return a canonical JSON-compatible representation."""
         return {
             "accepted": self.accepted,
             "bundle_sha256": self.bundle_sha256,
+            "contract_revision": self.contract_revision,
             "declared_members": self.declared_members,
+            "dependency_digests": dict(self.dependency_digests),
             "diagnostics": [item.to_dict() for item in self.diagnostics],
             "discovered_members": self.discovered_members,
+            "evidence_anchors_checked": self.evidence_anchors_checked,
             "report_manifest_sha256": self.report_manifest_sha256,
             "source_unchanged": self.source_unchanged,
+            "validated_artifact_identity": (
+                self.validated_artifact_identity.to_dict()
+                if self.validated_artifact_identity is not None
+                else None
+            ),
+            "validation_profile": self.validation_profile,
+            "validation_receipt_sha256": self.validation_receipt_sha256,
+            "validated_evidence_anchors": [
+                item.to_dict() for item in self.validated_evidence_anchors
+            ],
+            "validated_evidence_members": [
+                item.to_dict() for item in self.validated_evidence_members
+            ],
             "validator_revision": self.validator_revision,
         }
 
     def to_json(self) -> str:
         """Return the deterministic single-line receipt."""
-        return json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
+        return _canonical_receipt_bytes(self.to_dict()).decode("utf-8")
+
+    def identity_payload(self) -> dict[str, object]:
+        """Return the exact canonical data covered by the receipt identity."""
+        payload = self.to_dict()
+        del payload["validation_receipt_sha256"]
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,7 +231,7 @@ def load_json_strict(data: bytes) -> JsonValue:
                 parse_float=_parse_finite_float,
             ),
         )
-        _validate_json_unicode(parsed)
+        _validate_json_bounds(parsed)
         return parsed
     except StrictJsonError:
         raise
@@ -193,20 +239,28 @@ def load_json_strict(data: bytes) -> JsonValue:
         raise StrictJsonError("invalid_json") from error
 
 
-def _validate_json_unicode(value: JsonValue) -> None:
-    pending: list[JsonValue] = [value]
+def _validate_json_bounds(value: JsonValue) -> None:
+    pending: list[tuple[JsonValue, int]] = [(value, 0)]
+    nodes = 0
     while pending:
-        current = pending.pop()
+        current, depth = pending.pop()
+        nodes += 1
+        if nodes > _MAX_JSON_NODES:
+            raise StrictJsonError("json_too_large")
+        if depth > _MAX_JSON_DEPTH:
+            raise StrictJsonError("json_too_deep")
         if isinstance(current, str):
             try:
                 current.encode("utf-8")
             except UnicodeEncodeError as error:
                 raise StrictJsonError("invalid_unicode") from error
         elif isinstance(current, list):
-            pending.extend(current)
+            pending.extend((item, depth + 1) for item in current)
         elif isinstance(current, dict):
-            pending.extend(current.values())
-            pending.extend(current.keys())
+            pending.extend((item, depth + 1) for item in current.values())
+            pending.extend((key, depth + 1) for key in current)
+        elif type(current) is int and not _MIN_JSON_INTEGER <= current <= _MAX_JSON_INTEGER:
+            raise StrictJsonError("integer_out_of_range")
 
 
 def _kind(mode: int) -> str:
@@ -495,6 +549,75 @@ def _read_member(
         os.close(root_fd)
 
 
+def _read_member_range(
+    root: Path,
+    member: PurePosixPath,
+    snapshot_nodes: dict[str, _Node],
+    start: int,
+    end: int,
+) -> bytes:
+    """Read only an exact byte range from a member bound to the first snapshot."""
+    expected_root = snapshot_nodes["."]
+    expected_member = snapshot_nodes.get(member.as_posix())
+    if expected_member is None or expected_member.kind != "file":
+        raise OSError(EIO, "member is absent or not a snapshotted regular file", member.as_posix())
+    if start < 0 or end <= start or end > expected_member.size:
+        raise OSError(EIO, "range is outside snapshotted member", member.as_posix())
+
+    root_fd = _open_root(root)
+    current_fd = root_fd
+    try:
+        _assert_opened_node(".", os.fstat(root_fd), expected_root)
+        prefix = PurePosixPath()
+        for part in member.parts[:-1]:
+            prefix /= part
+            expected_directory = snapshot_nodes.get(prefix.as_posix())
+            if expected_directory is None or expected_directory.kind != "directory":
+                raise OSError(EIO, "directory changed since initial snapshot", prefix.as_posix())
+            flags = (
+                os.O_RDONLY
+                | os.O_DIRECTORY
+                | getattr(os, "O_NONBLOCK", 0)
+                | getattr(os, "O_NOATIME", 0)
+            )
+            if hasattr(os, "O_CLOEXEC"):
+                flags |= os.O_CLOEXEC
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            next_fd = os.open(part, flags, dir_fd=current_fd)
+            if current_fd != root_fd:
+                os.close(current_fd)
+            current_fd = next_fd
+            _assert_opened_node(prefix.as_posix(), os.fstat(current_fd), expected_directory)
+
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOATIME", 0)
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        file_fd = os.open(member.parts[-1], flags, dir_fd=current_fd)
+        try:
+            _assert_opened_node(member.as_posix(), os.fstat(file_fd), expected_member)
+            data = bytearray()
+            offset = start
+            remaining = end - start
+            while remaining:
+                chunk = os.pread(file_fd, min(_READ_SIZE, remaining), offset)
+                if not chunk:
+                    raise OSError(EIO, "member ended before requested range", member.as_posix())
+                data.extend(chunk)
+                offset += len(chunk)
+                remaining -= len(chunk)
+            _assert_opened_node(member.as_posix(), os.fstat(file_fd), expected_member)
+            return bytes(data)
+        finally:
+            os.close(file_fd)
+    finally:
+        if current_fd != root_fd:
+            os.close(current_fd)
+        os.close(root_fd)
+
+
 def _parse_manifest(data: bytes) -> tuple[list[_ManifestEntry], list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
     try:
@@ -575,22 +698,83 @@ def _sorted_diagnostics(diagnostics: list[Diagnostic]) -> tuple[Diagnostic, ...]
     )
 
 
-def validate_report_bundle(report_root: Path) -> ValidationReceipt:
+def _with_receipt_identity(receipt: ValidationReceipt) -> ValidationReceipt:
+    payload = _canonical_receipt_bytes(receipt.identity_payload())
+    identified = replace(
+        receipt,
+        validation_receipt_sha256=hashlib.sha256(payload).hexdigest(),
+    )
+    if (
+        not identified.accepted
+        or len(_canonical_receipt_bytes(identified.to_dict())) <= _MAX_RECEIPT_BYTES
+    ):
+        return identified
+    compact = replace(
+        receipt,
+        accepted=False,
+        diagnostics=_sorted_diagnostics(
+            [*receipt.diagnostics, Diagnostic("RECEIPT_SIZE_LIMIT_EXCEEDED", ".")]
+        ),
+        evidence_anchors_checked=0,
+        validated_evidence_members=(),
+        validated_evidence_anchors=(),
+        validation_receipt_sha256=None,
+    )
+    compact_payload = _canonical_receipt_bytes(compact.identity_payload())
+    return replace(
+        compact,
+        validation_receipt_sha256=hashlib.sha256(compact_payload).hexdigest(),
+    )
+
+
+def _canonical_receipt_bytes(value: object) -> bytes:
+    try:
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    except UnicodeEncodeError:
+        # Rejected hostile filesystem names can contain surrogateescaped bytes.
+        # Keep their receipts deterministic; accepted BOUND_V4 inputs are strict UTF-8.
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("utf-8")
+
+
+def validate_report_bundle(
+    report_root: Path,
+    *,
+    expected_dependencies: DependencyPins | None = None,
+    expected_evidence_lineage: EvidenceLineageTrust | None = None,
+    allow_unbound: bool = False,
+) -> ValidationReceipt:
     """Validate a report directory without modifying or executing anything in it."""
     diagnostics: list[Diagnostic] = []
     try:
         before = capture_tree_snapshot(report_root)
     except _SnapshotError as error:
         diagnostic = _diagnostic_for_snapshot(error)
-        return ValidationReceipt(
-            validator_revision=VALIDATOR_REVISION,
-            accepted=False,
-            source_unchanged=False,
-            bundle_sha256=None,
-            report_manifest_sha256=None,
-            discovered_members=0,
-            declared_members=0,
-            diagnostics=(diagnostic,),
+        return _with_receipt_identity(
+            ValidationReceipt(
+                validator_revision=VALIDATOR_REVISION,
+                accepted=False,
+                source_unchanged=False,
+                bundle_sha256=None,
+                report_manifest_sha256=None,
+                discovered_members=0,
+                declared_members=0,
+                diagnostics=(diagnostic,),
+                validation_profile=(
+                    "BOUND_V4" if expected_dependencies is not None else "FILESYSTEM_ONLY"
+                ),
+            )
         )
 
     snapshot_nodes = {node.path: node for node in before.nodes}
@@ -611,6 +795,7 @@ def validate_report_bundle(report_root: Path) -> ValidationReceipt:
     manifest_node = nodes.get(REPORT_MANIFEST)
     manifest_digest: str | None = None
     manifest_entries: list[_ManifestEntry] = []
+    parsed_json: dict[str, JsonValue] = {}
     if manifest_node is None:
         diagnostics.append(Diagnostic("MANIFEST_MISSING", REPORT_MANIFEST))
     elif manifest_node.kind != "file":
@@ -660,7 +845,7 @@ def validate_report_bundle(report_root: Path) -> ValidationReceipt:
                 snapshot_nodes,
                 max_bytes=_MAX_JSON_BYTES,
             )
-            load_json_strict(data)
+            parsed_json[path] = load_json_strict(data)
         except StrictJsonError as error:
             json_context: tuple[tuple[str, str], ...] = (("reason", error.reason),)
             if error.key is not None:
@@ -669,6 +854,45 @@ def validate_report_bundle(report_root: Path) -> ValidationReceipt:
         except OSError as error:
             member_context = (("errno", str(error.errno)),) if error.errno is not None else ()
             diagnostics.append(Diagnostic("MEMBER_UNREADABLE", path, member_context))
+
+    dependency_digests = (
+        expected_dependencies.as_pairs() if expected_dependencies is not None else ()
+    )
+    evidence_anchors_checked = 0
+    contract_revision: str | None = None
+    validated_artifact_identity: ArtifactIdentityAttestation | None = None
+    validated_evidence_members: tuple[EvidenceMemberAttestation, ...] = ()
+    validated_evidence_anchors: tuple[EvidenceAnchorAttestation, ...] = ()
+    if expected_dependencies is None:
+        if not allow_unbound or VALIDATION_INPUT in nodes:
+            diagnostics.append(Diagnostic("DEPENDENCY_PINS_REQUIRED", VALIDATION_INPUT))
+    elif VALIDATION_INPUT not in nodes:
+        diagnostics.append(Diagnostic("VALIDATION_INPUT_MISSING", VALIDATION_INPUT))
+    elif VALIDATION_INPUT not in parsed_json:
+        diagnostics.append(Diagnostic("VALIDATION_INPUT_INVALID", VALIDATION_INPUT))
+    elif VALIDATION_INPUT in parsed_json:
+        binding = validate_binding_contract(
+            parsed_json[VALIDATION_INPUT],
+            expected_dependencies=expected_dependencies,
+            expected_evidence_lineage=expected_evidence_lineage,
+            nodes=nodes,
+            json_documents=parsed_json,
+            path_is_safe=lambda raw: _safe_member_path(raw) is not None,
+            read_range=lambda member, start, end: _read_member_range(
+                report_root,
+                PurePosixPath(member),
+                snapshot_nodes,
+                start,
+                end,
+            ),
+        )
+        diagnostics.extend(_binding_diagnostic(item) for item in binding.diagnostics)
+        dependency_digests = binding.dependency_digests
+        evidence_anchors_checked = binding.anchors_checked
+        contract_revision = binding.contract_revision
+        validated_artifact_identity = binding.validated_artifact_identity
+        validated_evidence_members = binding.validated_evidence_members
+        validated_evidence_anchors = binding.validated_evidence_anchors
 
     try:
         after = capture_tree_snapshot(report_root)
@@ -681,13 +905,28 @@ def validate_report_bundle(report_root: Path) -> ValidationReceipt:
             diagnostics.append(Diagnostic("SOURCE_TREE_MUTATED", "."))
 
     ordered_diagnostics = _sorted_diagnostics(diagnostics)
-    return ValidationReceipt(
-        validator_revision=VALIDATOR_REVISION,
-        accepted=not ordered_diagnostics,
-        source_unchanged=source_unchanged,
-        bundle_sha256=_bundle_digest(snapshot_nodes),
-        report_manifest_sha256=manifest_digest,
-        discovered_members=len(regular_members),
-        declared_members=len(declared),
-        diagnostics=ordered_diagnostics,
+    return _with_receipt_identity(
+        ValidationReceipt(
+            validator_revision=VALIDATOR_REVISION,
+            accepted=not ordered_diagnostics,
+            source_unchanged=source_unchanged,
+            bundle_sha256=_bundle_digest(snapshot_nodes),
+            report_manifest_sha256=manifest_digest,
+            discovered_members=len(regular_members),
+            declared_members=len(declared),
+            diagnostics=ordered_diagnostics,
+            dependency_digests=dependency_digests,
+            evidence_anchors_checked=evidence_anchors_checked,
+            validation_profile=(
+                "BOUND_V4" if expected_dependencies is not None else "FILESYSTEM_ONLY"
+            ),
+            contract_revision=contract_revision,
+            validated_artifact_identity=validated_artifact_identity,
+            validated_evidence_members=validated_evidence_members,
+            validated_evidence_anchors=validated_evidence_anchors,
+        )
     )
+
+
+def _binding_diagnostic(item: BindingDiagnostic) -> Diagnostic:
+    return Diagnostic(item.code, item.path, item.context)

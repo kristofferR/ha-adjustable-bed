@@ -96,14 +96,139 @@ def test_authoritative_identity_is_deterministic_for_coherent_complete_set(
     assert result.package_identity is not None
     assert result.package_identity.package_name == "org.example.bed"
     assert result.package_identity.split_members == (("config.arm64", "config.apk"),)
-    assert result.manifest()["schema"] == "phase4-v2-preflight-v2"
+    assert result.manifest()["schema"] == "phase4-v2-preflight-v3"
     assert not {
         "package_identity_not_verified",
         "version_identity_not_verified",
         "signer_coherence_not_verified",
         "split_coherence_not_verified",
     }.intersection(result.decision.blockers)
-    assert result.decision.blockers == ("stack_detection_not_exhaustive",)
+    assert result.decision.status == "READY"
+    assert result.decision.blockers == ()
+    assert tuple(member.name for member in result.decision.members) == ("base.apk", "config.apk")
+    assert all(member.status == "READY" for member in result.decision.members)
+
+
+def test_ready_classifies_every_apk_once_and_routes_resource_only_split(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "base.apk"
+    resources = tmp_path / "resources.apk"
+    _native_apk(base)
+    _apk(resources, "AndroidManifest.xml", "res/drawable/icon.png")
+    _mock_identity_tools(
+        monkeypatch,
+        {
+            "base.apk": ("org.example.bed", "42", "4.2", None, (), "a" * 64),
+            "resources.apk": (
+                "org.example.bed",
+                "42",
+                "4.2",
+                "config.resources",
+                (),
+                "a" * 64,
+            ),
+        },
+    )
+
+    result = preflight_delivery([resources, base])
+
+    assert result.decision.status == "READY"
+    assert result.decision.stacks == ("android", "android_dex")
+    assert result.decision.routes == ("apktool", "jadx")
+    assert tuple(member.name for member in result.decision.members) == (
+        "base.apk",
+        "resources.apk",
+    )
+    assert result.decision.members[0].stacks == ("android", "android_dex")
+    assert result.decision.members[0].routes == ("apktool", "jadx")
+    assert result.decision.members[1].stacks == ("android",)
+    assert result.decision.members[1].routes == ("apktool",)
+    assert {
+        member.name for member in result.decision.members
+    } == {member.name for member in result.artifact_members}
+
+
+def test_ready_routes_all_protocol_neutral_application_substrates(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "base.apk"
+    _native_apk(
+        base,
+        "lib/arm64-v8a/libbed.so",
+        "assets/runtime.js",
+        "assets/embedded.zip",
+    )
+    _mock_identity_tools(
+        monkeypatch,
+        {"base.apk": ("org.example.bed", "42", "4.2", None, (), "a" * 64)},
+    )
+
+    result = preflight_delivery([base])
+
+    assert result.decision.status == "READY"
+    assert result.decision.stacks == (
+        "android",
+        "android_dex",
+        "embedded_archive",
+        "native",
+        "shipped_bundle",
+    )
+    assert result.decision.routes == (
+        "apktool",
+        "embedded-archive-inventory",
+        "jadx",
+        "native-library-inventory",
+        "shipped-bundle",
+    )
+
+
+def test_verified_identity_cannot_make_unclassified_member_ready(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "base.apk"
+    _apk(base, "classes.dex")
+    _mock_identity_tools(
+        monkeypatch,
+        {"base.apk": ("org.example.bed", "42", "4.2", None, (), "a" * 64)},
+    )
+
+    result = preflight_delivery([base])
+
+    assert result.package_identity is not None
+    assert result.decision.status == "BLOCKED"
+    assert result.decision.members[0].status == "BLOCKED"
+    assert result.decision.members[0].blockers == ("android_manifest_missing:base.apk",)
+    assert "android_manifest_missing:base.apk" in result.decision.blockers
+
+
+@pytest.mark.parametrize(
+    ("package", "code", "version"),
+    [
+        ("single", "42", "4.2"),
+        ("org.example.bed", "", "4.2"),
+        ("org.example.bed", "42", ""),
+    ],
+)
+def test_invalid_authoritative_identity_cannot_reach_ready(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    package: str,
+    code: str,
+    version: str,
+) -> None:
+    base = tmp_path / "base.apk"
+    _native_apk(base)
+    _mock_identity_tools(
+        monkeypatch,
+        {"base.apk": (package, code, version, None, (), "a" * 64)},
+    )
+
+    result = preflight_delivery([base])
+
+    assert result.package_identity is None
+    assert result.decision.status == "BLOCKED"
+    assert "package_identity_invalid:base.apk" in result.decision.blockers
 
 
 @pytest.mark.parametrize(
@@ -204,7 +329,6 @@ def test_split_delivery_identity_is_order_independent_and_read_only(tmp_path: Pa
         "package_identity_not_verified",
         "version_identity_not_verified",
         "signer_coherence_not_verified",
-        "stack_detection_not_exhaustive",
     }.issubset(first.decision.blockers)
     assert _snapshot([base, split]) == before
 
@@ -274,6 +398,16 @@ def test_container_rejects_symlink_and_duplicate_members(tmp_path: Path) -> None
         preflight_delivery([duplicate_delivery])
 
 
+def test_apk_rejects_case_ambiguous_members(tmp_path: Path) -> None:
+    artifact = tmp_path / "ambiguous.apk"
+    with zipfile.ZipFile(artifact, "w") as archive:
+        archive.writestr("AndroidManifest.xml", b"first")
+        archive.writestr("androidmanifest.xml", b"second")
+
+    with pytest.raises(SafetyError, match="invalid APK member"):
+        preflight_delivery([artifact])
+
+
 @pytest.mark.parametrize(
     ("marker", "stack", "route"),
     [
@@ -283,7 +417,7 @@ def test_container_rejects_symlink_and_duplicate_members(tmp_path: Path) -> None
         ("assets/META-INF/AIR/application.xml", "air", "ffdec"),
     ],
 )
-def test_specialized_stack_routes_are_suggested_but_fail_closed(
+def test_specialized_stack_routes_are_canonical_while_identity_fails_closed(
     tmp_path: Path,
     marker: str,
     stack: str,
@@ -297,7 +431,8 @@ def test_specialized_stack_routes_are_suggested_but_fail_closed(
     assert {"android", stack}.issubset(result.decision.stacks)
     assert {"apktool", "jadx", route}.issubset(result.decision.routes)
     assert result.decision.status == "BLOCKED"
-    assert "stack_detection_not_exhaustive" in result.decision.blockers
+    assert result.decision.members[0].status == "READY"
+    assert "package_identity_not_verified" in result.decision.blockers
 
 
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:
@@ -479,6 +614,7 @@ def test_cache_object_is_independent_of_classification(tmp_path: Path) -> None:
             routes=("future-route",),
             status="BLOCKED",
             blockers=("future_gate",),
+            members=result.decision.members,
         ),
     )
     cache = ArtifactCache(tmp_path / "cache")
