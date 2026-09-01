@@ -550,6 +550,25 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queu
     assert finished.output.validation_receipt_sha256 == receipt.validation_receipt_sha256
 
 
+def test_validated_package_output_rejects_generic_completion(queue: Queue) -> None:
+    plan = _full_plan()
+    _publish_prerequisites(queue, plan)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
+
+    with pytest.raises(QueueConflictError, match="trusted publication adapter"):
+        queue.finish_accepted_if_input_matches(
+            lease,
+            expected_input_digest=materialized.input_digest,
+            output_digest=SHA_A,
+            completion_revision="caller-selected-v1",
+        )
+
+    assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
+
+
 def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) -> None:
     original = _full_plan()
     changed = _full_plan(reason="changed_routing_evidence")

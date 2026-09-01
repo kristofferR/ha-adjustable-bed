@@ -23,17 +23,19 @@ from tools.phase4_v2.validator import ValidationReceipt
 
 from .core import FrozenPackageRef
 from .plan import (
-    VALIDATED_PACKAGE_OUTPUT_REVISION,
+    PACKAGE_QUEUE_UNIT_KIND,
     PackageExecutionPlan,
     PackagePlanStatus,
     ValidatedPackageOutput,
     build_validated_package_output,
     freeze_package_execution_plan,
+    package_queue_unit_id,
     package_validation_receipt_completion,
 )
+from .plan import (
+    PACKAGE_QUEUE_UNIT_PREFIX as PACKAGE_QUEUE_UNIT_PREFIX,
+)
 
-PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
-PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND = "trusted-package-validation-receipt"
 
 
@@ -74,11 +76,6 @@ class PackagePlanInputMismatchError(InputDigestMismatchError):
         super().__init__(message)
         self.output = output
         self.queue_result = queue_result
-
-
-def package_queue_unit_id(target_package_ref_id: str) -> str:
-    """Return the stable aggregate unit ID for one immutable package reference."""
-    return f"{PACKAGE_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
 
 
 def materialize_package_validation_receipt(
@@ -187,11 +184,11 @@ def finish_package_execution_plan(
             queue_result=result,
         )
 
-    checked = queue.finish_accepted_if_input_matches(
+    trusted_output, checked = queue.finish_validated_package_output(
         lease,
-        output_digest=output.content_id,
-        completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
-        expected_input_digest=frozen.digest,
+        execution_plan=execution_plan,
+        receipt=receipt,
+        trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
     )
     result = checked.finish_result
     if checked.disposition is InputCheckedFinishDisposition.INPUT_MISMATCH:
@@ -200,4 +197,4 @@ def finish_package_execution_plan(
             output=output,
             queue_result=result,
         )
-    return FinishedPackageWork(output=output, queue_result=result)
+    return FinishedPackageWork(output=trusted_output, queue_result=result)

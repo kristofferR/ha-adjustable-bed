@@ -43,6 +43,8 @@ EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v2"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v2"
+PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
+PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
 PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
@@ -95,6 +97,12 @@ def _fail(message: str) -> Never:
 def _sha(value: str, field: str) -> None:
     if type(value) is not str or _SHA.fullmatch(value) is None:
         _fail(f"{field} must be a lowercase SHA-256 digest")
+
+
+def package_queue_unit_id(target_package_ref_id: str) -> str:
+    """Return the reserved queue unit ID for one immutable package reference."""
+    _sha(target_package_ref_id, "target_package_ref_id")
+    return f"{PACKAGE_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
 
 
 def _token(value: str, field: str) -> None:

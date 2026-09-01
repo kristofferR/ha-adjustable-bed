@@ -26,6 +26,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tools.phase4_v2.equivalence.core import FrozenPackageRef
+    from tools.phase4_v2.equivalence.plan import (
+        PackageExecutionPlan,
+        ValidatedPackageOutput,
+    )
+    from tools.phase4_v2.validator import ValidationReceipt
 
 SCHEMA_REVISION = 2
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -518,6 +523,11 @@ class _PackageReceiptPublication:
     trusted_contract_revision: str
     trusted_dependency_digests: Mapping[str, str]
     trusted_receipt_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _ValidatedPackageOutputPublication:
+    output: object
 
 
 class Queue:
@@ -1406,6 +1416,52 @@ class Queue:
         finally:
             os.close(guard)
 
+    def finish_validated_package_output(
+        self,
+        lease: Lease,
+        *,
+        execution_plan: PackageExecutionPlan,
+        receipt: ValidationReceipt,
+        trusted_validation_receipt_sha256: str,
+    ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
+        """Build and publish one reserved validated package output."""
+        from tools.phase4_v2.equivalence.plan import (
+            VALIDATED_PACKAGE_OUTPUT_REVISION,
+            build_validated_package_output,
+            freeze_package_execution_plan,
+        )
+
+        output = build_validated_package_output(
+            execution_plan=execution_plan,
+            receipt=receipt,
+            trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
+        )
+        frozen = freeze_package_execution_plan(execution_plan)
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=output.content_id,
+                completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
+                expected_input_digest=frozen.digest,
+                terminalize_input_mismatch=True,
+                trusted_publication=_ValidatedPackageOutputPublication(output),
+            )
+        finally:
+            os.close(guard)
+        return output, InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
     def _finish_with_publication_guard(
         self,
         lease: Lease,
@@ -1415,10 +1471,20 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
         terminalize_input_mismatch: bool,
-        trusted_publication: _PackageReceiptPublication | None,
+        trusted_publication: (
+            _PackageReceiptPublication | _ValidatedPackageOutputPublication | None
+        ),
     ) -> FinishResult:
-        if trusted_publication is not None:
+        if isinstance(trusted_publication, _PackageReceiptPublication):
             self._validate_package_receipt_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
+        elif isinstance(trusted_publication, _ValidatedPackageOutputPublication):
+            self._validate_package_output_publication(
                 lease,
                 trusted_publication,
                 output_digest=output_digest,
@@ -1432,7 +1498,9 @@ class Queue:
             ).fetchone()
             if unit is None:
                 raise QueueError(f"unknown work unit: {lease.unit_id}")
-            reserved = str(unit["kind"]).startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
+            reserved = _requires_trusted_completion_adapter(
+                lease.unit_id, str(unit["kind"])
+            )
             if outcome is TerminalOutcome.ACCEPTED and reserved != (
                 trusted_publication is not None
             ):
@@ -1597,6 +1665,32 @@ class Queue:
             or dependencies.get("preflight") != package_ref.preflight_sha256
         ):
             raise QueueConflictError("validated receipt does not bind the frozen package reference")
+
+    @staticmethod
+    def _validate_package_output_publication(
+        lease: Lease,
+        publication: _ValidatedPackageOutputPublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.plan import (
+            VALIDATED_PACKAGE_OUTPUT_REVISION,
+            ValidatedPackageOutput,
+            package_queue_unit_id,
+        )
+
+        output = publication.output
+        if type(output) is not ValidatedPackageOutput or (
+            lease.unit_id != package_queue_unit_id(output.target_package_ref_id)
+            or output_digest != output.content_id
+            or completion_revision != VALIDATED_PACKAGE_OUTPUT_REVISION
+            or expected_input_digest != output.execution_plan_id
+        ):
+            raise QueueConflictError(
+                "publication does not belong to the validated package output"
+            )
 
     def status(self, unit_id: str) -> WorkUnitStatus:
         """Return the materialized status of one unit."""
@@ -2326,13 +2420,32 @@ def _validate_identifier(value: str, label: str) -> None:
 
 
 def _validate_reserved_unit_kind(unit_id: str, kind: str) -> None:
-    for prefix, reserved_kind in _RESERVED_UNIT_KINDS.items():
+    reserved_kinds = _reserved_unit_kinds()
+    for prefix, reserved_kind in reserved_kinds.items():
         if unit_id.startswith(prefix):
             if kind != reserved_kind:
                 raise ValueError(f"reserved work unit requires kind {reserved_kind!r}")
             return
     if kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX):
         raise ValueError("trusted completion kinds require a reserved work unit ID")
+
+
+def _reserved_unit_kinds() -> dict[str, str]:
+    from tools.phase4_v2.equivalence.plan import (
+        PACKAGE_QUEUE_UNIT_KIND,
+        PACKAGE_QUEUE_UNIT_PREFIX,
+    )
+
+    return {
+        **_RESERVED_UNIT_KINDS,
+        f"{PACKAGE_QUEUE_UNIT_PREFIX}:": PACKAGE_QUEUE_UNIT_KIND,
+    }
+
+
+def _requires_trusted_completion_adapter(unit_id: str, kind: str) -> bool:
+    return kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX) or any(
+        unit_id.startswith(prefix) for prefix in _reserved_unit_kinds()
+    )
 
 
 def _validate_digest(value: str, label: str) -> None:

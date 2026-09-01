@@ -1244,7 +1244,7 @@ def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
     )
 
 
-def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
+def _open_status_directory(status_root: Path, pipeline_revision: str) -> tuple[int, int]:
     status_root_fd = os.open(status_root, _DIRECTORY_FLAGS)
     try:
         try:
@@ -1252,9 +1252,11 @@ def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
         except FileExistsError:
             pass
         os.fsync(status_root_fd)
-        return os.open(pipeline_revision, _DIRECTORY_FLAGS, dir_fd=status_root_fd)
-    finally:
+        revision_fd = os.open(pipeline_revision, _DIRECTORY_FLAGS, dir_fd=status_root_fd)
+    except BaseException:
         os.close(status_root_fd)
+        raise
+    return status_root_fd, revision_fd
 
 
 def _write_file_at(directory_fd: int, name: str, payload: bytes) -> None:
@@ -1640,10 +1642,14 @@ class ArtifactCache:
         status_root.mkdir(exist_ok=True)
         status_dir = status_root / pipeline_revision
         _fsync_directory(self.root)
-        status_fd = _open_status_directory(status_root, pipeline_revision)
-        fcntl.flock(status_fd, fcntl.LOCK_EX)
+        status_root_fd, status_fd = _open_status_directory(status_root, pipeline_revision)
         target_name = f"{artifact_digest}.json"
         try:
+            fcntl.flock(status_fd, fcntl.LOCK_EX)
+            if not _directory_descriptor_matches_path(
+                status_root_fd, status_root
+            ) or not _directory_descriptor_matches_path(status_fd, status_dir):
+                raise CacheIntegrityError("cache status directory was replaced")
             try:
                 previous = _read_file_at(status_fd, target_name, max_bytes=1024 * 1024)
             except FileNotFoundError:
@@ -1698,6 +1704,10 @@ class ArtifactCache:
                     dst_dir_fd=status_fd,
                 )
                 os.fsync(status_fd)
+                if not _directory_descriptor_matches_path(
+                    status_root_fd, status_root
+                ) or not _directory_descriptor_matches_path(status_fd, status_dir):
+                    raise CacheIntegrityError("cache status directory was replaced")
             finally:
                 try:
                     os.unlink(temporary_name, dir_fd=status_fd)
@@ -1705,6 +1715,7 @@ class ArtifactCache:
                     pass
         finally:
             os.close(status_fd)
+            os.close(status_root_fd)
         return status_dir / target_name
 
     def materialize(self, artifact_digest: str, destination: Path | str) -> Path:

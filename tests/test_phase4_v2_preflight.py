@@ -1108,7 +1108,7 @@ def test_status_requires_object_and_enforces_terminal_transitions(tmp_path: Path
         cache.write_status(result.artifact_digest, "READY", pipeline_revision="pipeline-v3")
 
 
-def test_status_write_stays_in_pinned_root_during_path_replacement(
+def test_status_write_rejects_pinned_root_path_replacement(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     artifact = tmp_path / "base.apk"
@@ -1141,11 +1141,83 @@ def test_status_write_stays_in_pinned_root_during_path_replacement(
 
     monkeypatch.setattr(legacy_preflight.os, "open", replace_after_open)
 
-    cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
 
     target_name = f"{result.artifact_digest}.json"
-    assert (displaced_root / revision / target_name).is_file()
+    assert not (displaced_root / revision / target_name).exists()
     assert not (outside_root / revision / target_name).exists()
+
+
+def test_status_write_rejects_revision_path_replacement_before_publish(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    revision = "pipeline-v1"
+    status_dir = cache.root / "status" / revision
+    displaced_dir = cache.root / "status" / "pipeline-v1-displaced"
+    original_flock = legacy_preflight.fcntl.flock
+    replaced = False
+
+    def replace_before_lock(descriptor: int, operation: int) -> None:
+        nonlocal replaced
+        original_flock(descriptor, operation)
+        if not replaced:
+            replaced = True
+            status_dir.rename(displaced_dir)
+            status_dir.mkdir()
+
+    monkeypatch.setattr(legacy_preflight.fcntl, "flock", replace_before_lock)
+
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+
+    target_name = f"{result.artifact_digest}.json"
+    assert not (displaced_dir / target_name).exists()
+    assert not (status_dir / target_name).exists()
+
+
+def test_status_write_rejects_revision_path_replacement_after_publish(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    revision = "pipeline-v1"
+    status_dir = cache.root / "status" / revision
+    displaced_dir = cache.root / "status" / "pipeline-v1-displaced"
+    original_replace = legacy_preflight.os.replace
+
+    def replace_then_displace(
+        source: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        destination: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        original_replace(
+            source,
+            destination,
+            src_dir_fd=src_dir_fd,
+            dst_dir_fd=dst_dir_fd,
+        )
+        status_dir.rename(displaced_dir)
+        status_dir.mkdir()
+
+    monkeypatch.setattr(legacy_preflight.os, "replace", replace_then_displace)
+
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+
+    target_name = f"{result.artifact_digest}.json"
+    assert (displaced_dir / target_name).is_file()
+    assert not (status_dir / target_name).exists()
 
 
 def test_preflight_rejects_delivery_compressed_size_before_read(tmp_path: Path) -> None:
