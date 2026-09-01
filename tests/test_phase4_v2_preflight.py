@@ -9,6 +9,7 @@ import stat
 import sys
 import zipfile
 from collections.abc import Mapping, Sequence
+from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
 
@@ -933,6 +934,21 @@ def test_cache_verify_rechecks_exact_membership_after_hashing(
 
     with pytest.raises(CacheIntegrityError, match="changed while verifying"):
         cache.verify(result.artifact_digest)
+
+
+def test_cache_directory_enumeration_stops_after_first_unexpected_entry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entries = iter(
+        type("Entry", (), {"name": name})()
+        for name in ("OBJECT.COMPLETE", "manifest.json", "members", "unexpected", "unread")
+    )
+    monkeypatch.setattr(legacy_preflight.os, "scandir", lambda _fd: nullcontext(entries))
+
+    assert not legacy_preflight._directory_names_match(
+        1, {"OBJECT.COMPLETE", "manifest.json", "members"}
+    )
+    assert next(entries).name == "unread"
 
 
 def test_cache_verify_rechecks_membership_after_logical_digest(

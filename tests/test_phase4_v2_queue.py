@@ -214,6 +214,43 @@ def test_schema_revision_two_is_pinned_and_v1_fails_before_schema_mutation(
     assert activation_table is None
 
 
+def test_verify_schema_rejects_revision_two_database_missing_operational_schema(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "truncated" / "queue.sqlite3"
+    attempts_root = tmp_path / "truncated-attempts"
+    database.parent.mkdir()
+    attempts_root.mkdir()
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            """
+            CREATE TABLE schema_meta (
+                singleton INTEGER PRIMARY KEY,
+                revision INTEGER NOT NULL,
+                attempts_root TEXT NOT NULL,
+                attempts_device INTEGER NOT NULL,
+                attempts_inode INTEGER NOT NULL
+            )
+            """
+        )
+        root_stat = attempts_root.stat()
+        connection.execute(
+            "INSERT INTO schema_meta VALUES (1, 2, ?, ?, ?)",
+            (str(attempts_root.resolve()), root_stat.st_dev, root_stat.st_ino),
+        )
+
+    with pytest.raises(QueueError, match="schema objects are incomplete"):
+        Queue(database, attempts_root).verify_schema()
+
+
+def test_verify_schema_rejects_missing_immutability_trigger(queue: Queue) -> None:
+    with closing(sqlite3.connect(queue.database)) as connection, connection:
+        connection.execute("DROP TRIGGER events_no_update")
+
+    with pytest.raises(QueueError, match="schema objects are incomplete"):
+        queue.verify_schema()
+
+
 def test_expired_worker_is_fenced_after_recovery(queue: Queue) -> None:
     _enqueue(queue, "package-a")
     first = queue.claim("chat-a")

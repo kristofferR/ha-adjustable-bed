@@ -20,6 +20,7 @@ import zipfile
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
+from itertools import islice
 from pathlib import Path, PurePosixPath
 from types import MappingProxyType
 from typing import IO, Literal, TypedDict, cast
@@ -1059,6 +1060,12 @@ def _read_file_at(directory_fd: int, name: str, *, max_bytes: int) -> bytes:
         os.close(descriptor)
 
 
+def _directory_names_match(directory_fd: int, expected_names: set[str]) -> bool:
+    with os.scandir(directory_fd) as entries:
+        names = {entry.name for entry in islice(entries, len(expected_names) + 1)}
+    return names == expected_names
+
+
 def _hash_fd_exact(descriptor: int, expected_size: int) -> tuple[str, int]:
     try:
         with os.fdopen(os.dup(descriptor), "rb") as stream:
@@ -1217,7 +1224,7 @@ class ArtifactCache:
         try:
             object_identity = _identity(os.fstat(object_fd))
             expected_object_names = {"OBJECT.COMPLETE", "manifest.json", "members"}
-            if set(os.listdir(object_fd)) != expected_object_names:
+            if not _directory_names_match(object_fd, expected_object_names):
                 raise CacheIntegrityError("cache object contains unexpected payloads")
             marker = _read_file_at(object_fd, "OBJECT.COMPLETE", max_bytes=256)
             try:
@@ -1259,10 +1266,10 @@ class ArtifactCache:
                 raise CacheIntegrityError("cache member directory is missing or unsafe") from err
             try:
                 members_identity = _identity(os.fstat(members_fd))
-                expected_names = [member["stored_name"] for member in members]
-                if len(set(expected_names)) != len(expected_names) or set(
-                    os.listdir(members_fd)
-                ) != set(expected_names):
+                expected_names = {member["stored_name"] for member in members}
+                if len(expected_names) != len(members) or not _directory_names_match(
+                    members_fd, expected_names
+                ):
                     raise CacheIntegrityError("cache member directory payload set is invalid")
                 logical: list[dict[str, object]] = []
                 for member in members:
@@ -1286,15 +1293,15 @@ class ArtifactCache:
                     )
                 if _digest_manifest("artifact", logical) != artifact_digest:
                     raise CacheIntegrityError("cache logical artifact digest mismatch")
-                if _identity(os.fstat(members_fd)) != members_identity or set(
-                    os.listdir(members_fd)
-                ) != set(expected_names):
+                if _identity(
+                    os.fstat(members_fd)
+                ) != members_identity or not _directory_names_match(members_fd, expected_names):
                     raise CacheIntegrityError("cache member directory changed while verifying")
             finally:
                 os.close(members_fd)
             if (
                 _identity(os.fstat(object_fd)) != object_identity
-                or set(os.listdir(object_fd)) != expected_object_names
+                or not _directory_names_match(object_fd, expected_object_names)
             ):
                 raise CacheIntegrityError("cache object changed while verifying")
             return cast(CacheManifest, raw)

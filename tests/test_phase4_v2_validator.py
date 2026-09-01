@@ -484,6 +484,19 @@ def test_package_profile_requires_every_frozen_report_artifact(
     assert expected in {item.code for item in receipt.diagnostics}
 
 
+def test_package_profile_rejects_empty_reproducer_artifact(tmp_path: Path) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    (report / "reproducers" / "vector.py").write_bytes(b"")
+    members["reproducers/vector.py"] = b""
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "FROZEN_REPORT_REPRODUCER_MISSING" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
 @pytest.mark.parametrize(
     "missing",
     ["target_package_identity", "package_local_domains", "authoritative_root_results"],

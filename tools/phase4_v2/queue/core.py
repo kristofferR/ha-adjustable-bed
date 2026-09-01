@@ -424,6 +424,29 @@ BEGIN SELECT RAISE(ABORT, 'schema metadata is immutable'); END;
 """
 
 
+def _schema_objects(connection: sqlite3.Connection) -> frozenset[tuple[str, str, str]]:
+    return frozenset(
+        (str(item[0]), str(item[1]), str(item[2]))
+        for item in connection.execute(
+            """
+            SELECT type, name, sql FROM sqlite_master
+            WHERE type IN ('table', 'index', 'trigger')
+              AND name NOT LIKE 'sqlite_%'
+              AND sql IS NOT NULL
+            """
+        )
+    )
+
+
+def _required_schema_objects() -> frozenset[tuple[str, str, str]]:
+    with sqlite3.connect(":memory:") as connection:
+        connection.executescript(_SCHEMA)
+        return _schema_objects(connection)
+
+
+_REQUIRED_SCHEMA_OBJECTS = _required_schema_objects()
+
+
 class Queue:
     """A host-local, process-safe queue backed by one explicit SQLite path."""
 
@@ -2065,12 +2088,15 @@ class Queue:
             row = connection.execute(
                 "SELECT revision FROM schema_meta WHERE singleton = 1"
             ).fetchone()
+            schema_objects = _schema_objects(connection)
         except sqlite3.DatabaseError as error:
             raise QueueError("queue schema metadata is missing or unreadable") from error
         if row is None:
             raise QueueError("queue schema metadata is missing or unreadable")
         if int(row["revision"]) != SCHEMA_REVISION:
             raise QueueError(f"unsupported queue schema revision: {row['revision']}")
+        if schema_objects != _REQUIRED_SCHEMA_OBJECTS:
+            raise QueueError("queue schema objects are incomplete, unexpected, or altered")
 
     def _enable_wal(self, connection: sqlite3.Connection) -> None:
         """Establish WAL mode despite concurrent first-time initializers."""

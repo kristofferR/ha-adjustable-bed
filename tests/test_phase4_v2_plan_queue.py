@@ -479,11 +479,16 @@ def test_finish_requires_matching_attempt_and_work_unit_input_digests(queue: Que
     lease = queue.claim("worker")
     assert lease is not None
     with sqlite3.connect(queue.database) as connection:
+        trigger_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = 'attempts_no_update'"
+        ).fetchone()[0]
+        assert isinstance(trigger_sql, str)
         connection.execute("DROP TRIGGER attempts_no_update")
         connection.execute(
             "UPDATE attempts SET input_digest = ? WHERE attempt_id = ?",
             (SHA_B, lease.attempt_id),
         )
+        connection.execute(trigger_sql)
         connection.commit()
 
     with pytest.raises(InputDigestMismatchError):
