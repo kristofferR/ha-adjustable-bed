@@ -823,6 +823,24 @@ def test_inventory_rejects_replaced_output_parent(
     assert not (replacement / "inventory").exists()
 
 
+def test_inventory_reports_unavailable_descriptor_filesystem(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    monkeypatch.setattr(
+        legacy_inventory,
+        "_DESCRIPTOR_ROOTS",
+        (tmp_path / "missing-proc", tmp_path / "missing-dev"),
+    )
+
+    with pytest.raises(InventoryError, match="descriptor filesystem is unavailable"):
+        build_inventory(source, tmp_path / "inventory")
+
+    assert not (tmp_path / "inventory").exists()
+    assert not list(tmp_path.glob(".inventory.tmp-*"))
+
+
 def test_top_level_files_are_not_workspaces(tmp_path: Path) -> None:
     source = tmp_path / "legacy"
     source.mkdir()

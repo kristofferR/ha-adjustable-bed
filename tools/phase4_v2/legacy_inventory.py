@@ -37,6 +37,7 @@ _MAX_HASH_MANIFEST_DECLARATIONS = 4_096
 _MAX_HASH_TARGET_BYTES = 2 * 1024**3
 _MAX_HASH_VERIFICATION_BYTES = 16 * 1024**3
 _MAX_TREE_ENTRIES = 250_000
+_DESCRIPTOR_ROOTS = (Path("/proc/self/fd"), Path("/dev/fd"))
 
 
 class InventoryError(RuntimeError):
@@ -1013,6 +1014,25 @@ def _make_private_directory_at(directory_fd: int, prefix: str) -> str:
     raise InventoryError("could not create a unique inventory temporary directory")
 
 
+def _descriptor_directory_path(descriptor: int) -> Path:
+    opened = os.fstat(descriptor)
+    for root in _DESCRIPTOR_ROOTS:
+        candidate = root / str(descriptor)
+        try:
+            current = candidate.stat()
+        except OSError:
+            continue
+        if stat.S_ISDIR(current.st_mode) and (current.st_dev, current.st_ino) == (
+            opened.st_dev,
+            opened.st_ino,
+        ):
+            return candidate
+    raise InventoryError(
+        "descriptor filesystem is unavailable; inventory creation requires "
+        "/proc/self/fd or /dev/fd"
+    )
+
+
 def _open_output_parent(destination: Path) -> int:
     try:
         descriptor = os.open(
@@ -1323,8 +1343,15 @@ def build_inventory(
     _validate_active_paths(root, active)
     destination = _validate_output(root, output_dir)
     output_parent_descriptor = _open_output_parent(destination)
-    temp_name = _make_private_directory_at(output_parent_descriptor, f".{destination.name}.tmp-")
-    temp_dir = Path(f"/proc/self/fd/{output_parent_descriptor}") / temp_name
+    try:
+        descriptor_parent = _descriptor_directory_path(output_parent_descriptor)
+        temp_name = _make_private_directory_at(
+            output_parent_descriptor, f".{destination.name}.tmp-"
+        )
+    except BaseException:
+        os.close(output_parent_descriptor)
+        raise
+    temp_dir = descriptor_parent / temp_name
     raw_entries_path = temp_dir / "entries.raw.ndjson"
     entries_path = temp_dir / "entries.ndjson"
     hashes_path = temp_dir / "declared_hashes.ndjson"

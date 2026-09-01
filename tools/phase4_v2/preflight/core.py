@@ -103,6 +103,10 @@ class CacheIntegrityError(PreflightError):
     """Raised when a content-addressed cache object fails verification."""
 
 
+class CacheLimitError(PreflightError):
+    """Raised when a cache object exceeds the configured resource limits."""
+
+
 class CachedMember(TypedDict):
     name: str
     stored_name: str
@@ -1182,6 +1186,14 @@ class ArtifactCache:
             raise PreflightError("invalid artifact digest")
         return self.root / "objects" / CACHE_SCHEMA / digest
 
+    def _check_limits(self, sizes: Sequence[int]) -> None:
+        if len(sizes) > self.limits.max_archive_members:
+            raise CacheLimitError("cache member count exceeds the configured limit")
+        if any(size > self.limits.max_member_bytes for size in sizes):
+            raise CacheLimitError("cache member exceeds the configured size limit")
+        if sum(sizes) > self.limits.max_archive_bytes:
+            raise CacheLimitError("cache member bytes exceed the configured limit")
+
     def store(self, result: PreflightResult) -> Path:
         """Atomically store sealed bytes regardless of provisional routing state."""
         if not result.artifact_members:
@@ -1189,6 +1201,7 @@ class ArtifactCache:
         logical_members = [member.public_dict() for member in result.artifact_members]
         if _digest_manifest("artifact", logical_members) != result.artifact_digest:
             raise PreflightError("preflight result artifact digest does not match its members")
+        self._check_limits([member.size for member in result.artifact_members])
         self.root.mkdir(parents=True, exist_ok=True)
         _fsync_directory(self.root.parent)
         objects = self.root / "objects"
@@ -1387,12 +1400,7 @@ class ArtifactCache:
             if not isinstance(raw_members, list) or not raw_members:
                 raise CacheIntegrityError("cache member manifest is invalid")
             members = [_validate_cached_member(member) for member in raw_members]
-            if len(members) > self.limits.max_archive_members:
-                raise CacheIntegrityError("cache member count exceeds the configured limit")
-            if any(member["size"] > self.limits.max_member_bytes for member in members):
-                raise CacheIntegrityError("cache member exceeds the configured size limit")
-            if sum(member["size"] for member in members) > self.limits.max_archive_bytes:
-                raise CacheIntegrityError("cache member bytes exceed the configured limit")
+            self._check_limits([member["size"] for member in members])
             try:
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             except OSError as err:

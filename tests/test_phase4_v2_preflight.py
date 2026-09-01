@@ -22,6 +22,7 @@ import tools.phase4_v2.preflight.core as legacy_preflight
 from tools.phase4_v2.preflight import (
     ArtifactCache,
     CacheIntegrityError,
+    CacheLimitError,
     PreflightError,
     PreflightLimits,
     SafetyError,
@@ -682,8 +683,23 @@ def test_cache_rejects_members_exceeding_the_aggregate_byte_limit(tmp_path: Path
         limits=PreflightLimits(max_archive_bytes=artifact.stat().st_size - 1),
     )
 
-    with pytest.raises(CacheIntegrityError, match="member bytes exceed"):
+    with pytest.raises(CacheLimitError, match="member bytes exceed"):
         constrained_cache.verify(result.artifact_digest)
+
+
+def test_cache_rejects_over_limit_members_before_publication(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(
+        tmp_path / "cache",
+        limits=PreflightLimits(max_archive_bytes=artifact.stat().st_size - 1),
+    )
+
+    with pytest.raises(CacheLimitError, match="member bytes exceed"):
+        cache.store(result)
+
+    assert not cache.root.exists()
 
 
 def test_preflight_rejects_delivery_wide_artifact_count_and_bytes(tmp_path: Path) -> None:
