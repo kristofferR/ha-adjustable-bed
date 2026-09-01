@@ -403,6 +403,13 @@ def _trusted_lineage(
         "artifact_digest": artifact_digest,
         "members": [
             {
+                "authoritative_root_analyses": [
+                    {
+                        "semantic_root_sha256": _EVIDENCE_DIGEST,
+                        "target_occurrence_identity_sha256": "b" * 64,
+                        "target_root_id": "a" * 64,
+                    }
+                ],
                 "package_local_domains": (
                     list(_PACKAGE_DOMAINS)
                     if isinstance(pins, PackageDependencyPins)
@@ -766,6 +773,75 @@ def test_package_profile_rejects_unattested_full_analysis_semantic_root(
                 **root,
                 "result": {
                     "analysis": {"semantic_root_sha256": "c" * 64},
+                    "status": "COMPLETE",
+                },
+            }
+        ],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {
+        item.code for item in receipt.diagnostics
+    }
+    assert receipt.accepted is False
+
+
+def test_package_profile_rejects_anchor_hash_as_full_analysis_semantic_root(
+    tmp_path: Path,
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    anchor_digest = hashlib.sha256(SCHEMA_REVISION.encode()).hexdigest()
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root],
+        root_results=[
+            {
+                **root,
+                "result": {
+                    "analysis": {"semantic_root_sha256": anchor_digest},
+                    "status": "COMPLETE",
+                },
+            }
+        ],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED" in {
+        item.code for item in receipt.diagnostics
+    }
+    assert receipt.accepted is False
+
+
+def test_package_profile_rejects_semantic_root_attested_for_another_root(
+    tmp_path: Path,
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "FULL_ANALYSIS",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "c" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[root],
+        root_results=[
+            {
+                **root,
+                "result": {
+                    "analysis": {"semantic_root_sha256": _EVIDENCE_DIGEST},
                     "status": "COMPLETE",
                 },
             }
@@ -2100,6 +2176,7 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
         "artifact_digest": artifact_digest,
         "members": [
             {
+                "authoritative_root_analyses": [],
                 "package_local_domains": [],
                 "producer": {
                     "invocation_sha256": "8" * 64,

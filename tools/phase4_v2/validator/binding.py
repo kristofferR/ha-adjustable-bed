@@ -331,7 +331,7 @@ def validate_binding_contract(
         _dependency_member(dependencies, "preflight"),
         diagnostics,
     )
-    trusted_evidence, trusted_evidence_scopes = _validate_evidence_lineage(
+    trusted_evidence, trusted_evidence_scopes, trusted_root_analyses = _validate_evidence_lineage(
         expected_evidence_lineage,
         expected_dependencies,
         artifact_identity,
@@ -379,10 +379,7 @@ def validate_binding_contract(
             artifact_identity,
             trusted_evidence,
             evidence_scopes,
-            frozenset(
-                [item.sha256 for item in validated_members]
-                + [item.value_sha256 for item in validated_anchors]
-            ),
+            trusted_root_analyses,
             diagnostics,
         )
     return _result(
@@ -833,18 +830,22 @@ def _validate_evidence_lineage(
     nodes: Mapping[str, MemberNode],
     path_is_safe: PathValidator,
     diagnostics: list[BindingDiagnostic],
-) -> tuple[dict[str, str], dict[str, frozenset[str]]]:
+) -> tuple[
+    dict[str, str],
+    dict[str, frozenset[str]],
+    dict[tuple[str, str], frozenset[str]],
+]:
     if trust is None:
         diagnostics.append(
             BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_REQUIRED", VALIDATION_INPUT)
         )
-        return {}, {}
+        return {}, {}, {}
     if artifact_identity is None:
-        return {}, {}
+        return {}, {}, {}
     artifact_sources = _preflight_artifact_sources(preflight_document)
     member_routes = _preflight_member_routes(preflight_document)
     if artifact_sources is None or member_routes is None:
-        return {}, {}
+        return {}, {}, {}
     try:
         value = bind_evidence_lineage(
             trust.payload,
@@ -865,7 +866,7 @@ def _validate_evidence_lineage(
                 ),
             )
         )
-        return {}, {}
+        return {}, {}, {}
     covered_routes: set[tuple[str, str]] = set()
     for item in value.members:
         node = nodes.get(item.report_member)
@@ -881,7 +882,7 @@ def _validate_evidence_lineage(
                     item.report_member,
                 )
             )
-            return {}, {}
+            return {}, {}, {}
         if any(
             item.producer.route not in member_routes.get(source.name, frozenset())
             for source in item.source_artifact_members
@@ -891,7 +892,7 @@ def _validate_evidence_lineage(
                     "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH", item.report_member
                 )
             )
-            return {}, {}
+            return {}, {}, {}
         covered_routes.update(
             (source.name, item.producer.route) for source in item.source_artifact_members
         )
@@ -904,7 +905,7 @@ def _validate_evidence_lineage(
                     "TRUSTED_EVIDENCE_LINEAGE_SOURCE_MISMATCH", item.report_member
                 )
             )
-            return {}, {}
+            return {}, {}, {}
     required_routes = {
         (member, route) for member, routes in member_routes.items() for route in routes
     }
@@ -918,14 +919,15 @@ def _validate_evidence_lineage(
                 (("member", missing_member), ("route", missing_route)),
             )
         )
-        return {}, {}
+        return {}, {}, {}
     if len(value.members) > _MAX_EVIDENCE_MEMBER_COUNT:
         diagnostics.append(
             BindingDiagnostic("TRUSTED_EVIDENCE_MEMBER_LIMIT_EXCEEDED", VALIDATION_INPUT)
         )
-        return {}, {}
+        return {}, {}, {}
     trusted: dict[str, str] = {}
     scopes: dict[str, frozenset[str]] = {}
+    root_analyses: dict[tuple[str, str], set[str]] = {}
     for member, digest in value.member_digests:
         if not isinstance(member, str) or not path_is_safe(member) or not _is_digest(digest):
             diagnostics.append(
@@ -941,7 +943,20 @@ def _validate_evidence_lineage(
         for item in value.members
         if item.report_member in trusted
     )
-    return trusted, scopes
+    for item in value.members:
+        if item.report_member not in trusted:
+            continue
+        for attestation in item.authoritative_root_analyses:
+            identity = (
+                attestation.target_root_id,
+                attestation.target_occurrence_identity_sha256,
+            )
+            root_analyses.setdefault(identity, set()).add(attestation.semantic_root_sha256)
+    return (
+        trusted,
+        scopes,
+        {identity: frozenset(values) for identity, values in root_analyses.items()},
+    )
 
 
 def _validate_package_dependency_documents(
@@ -964,7 +979,7 @@ def _validate_package_report(
     artifact_identity: ArtifactIdentityAttestation | None,
     trusted_evidence: Mapping[str, str],
     evidence_scopes: Mapping[str, frozenset[str]],
-    trusted_semantic_roots: frozenset[str],
+    trusted_root_analyses: Mapping[tuple[str, str], frozenset[str]],
     diagnostics: list[BindingDiagnostic],
 ) -> None:
     schema_member = _dependency_member(dependencies, "report_schema")
@@ -1061,7 +1076,11 @@ def _validate_package_report(
         result = cast(dict[str, object], root_result["result"])
         analysis = cast(dict[str, object], result["analysis"])
         semantic_root = cast(str, analysis["semantic_root_sha256"])
-        if semantic_root not in trusted_semantic_roots:
+        root_identity = (
+            cast(str, root_result["target_root_id"]),
+            cast(str, root_result["target_occurrence_identity_sha256"]),
+        )
+        if semantic_root not in trusted_root_analyses.get(root_identity, frozenset()):
             diagnostics.append(
                 BindingDiagnostic(
                     "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED",

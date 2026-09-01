@@ -32,6 +32,7 @@ def _manifest(*, member_digest: str = "1" * 64) -> dict[str, object]:
         "artifact_digest": _ARTIFACT_DIGEST,
         "members": [
             {
+                "authoritative_root_analyses": [],
                 "package_local_domains": [],
                 "producer": {
                     "invocation_sha256": _INVOCATION_SHA256,
@@ -108,6 +109,58 @@ def test_canonical_manifest_binds_to_external_trust_roots() -> None:
     assert result.to_data() == value
     with pytest.raises(FrozenInstanceError):
         result.artifact_digest = "0" * 64  # type: ignore[misc]
+
+
+def test_manifest_binds_authoritative_root_analysis_to_its_exact_identity() -> None:
+    value = _manifest()
+    members = value["members"]
+    assert isinstance(members, list)
+    member = members[0]
+    assert isinstance(member, dict)
+    member["authoritative_root_analyses"] = [
+        {
+            "semantic_root_sha256": "1" * 64,
+            "target_occurrence_identity_sha256": "2" * 64,
+            "target_root_id": "3" * 64,
+        }
+    ]
+
+    [attestation] = _bind(value).members[0].authoritative_root_analyses
+
+    assert attestation.semantic_root_sha256 == "1" * 64
+    assert attestation.target_occurrence_identity_sha256 == "2" * 64
+    assert attestation.target_root_id == "3" * 64
+
+
+def test_manifest_rejects_conflicting_root_analyses_across_members() -> None:
+    value = _manifest()
+    members = value["members"]
+    assert isinstance(members, list)
+    first = members[0]
+    assert isinstance(first, dict)
+    second = copy.deepcopy(first)
+    first["authoritative_root_analyses"] = [
+        {
+            "semantic_root_sha256": "1" * 64,
+            "target_occurrence_identity_sha256": "2" * 64,
+            "target_root_id": "3" * 64,
+        }
+    ]
+    second["authoritative_root_analyses"] = [
+        {
+            "semantic_root_sha256": "4" * 64,
+            "target_occurrence_identity_sha256": "2" * 64,
+            "target_root_id": "3" * 64,
+        }
+    ]
+    second["report_member"] = "evidence/sha256/" + "5" * 64
+    second["sha256"] = "5" * 64
+    members.append(second)
+
+    with pytest.raises(LineageValidationError) as caught:
+        _bind(value)
+
+    assert _code(caught) == "conflicting_authoritative_root_analysis"
 
 
 def test_manifest_requires_exact_external_digest() -> None:

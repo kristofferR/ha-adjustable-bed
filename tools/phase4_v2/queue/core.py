@@ -22,6 +22,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 from itertools import islice
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tools.phase4_v2.equivalence.core import FrozenPackageRef
 
 SCHEMA_REVISION = 2
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -504,6 +508,16 @@ _TRUSTED_COMPLETION_KIND_PREFIX = "trusted-"
 _RESERVED_UNIT_KINDS = {
     "package-validation-receipt:": "trusted-package-validation-receipt",
 }
+
+
+@dataclass(frozen=True, slots=True)
+class _PackageReceiptPublication:
+    package_ref: FrozenPackageRef
+    receipt_payload: str | bytes
+    trusted_validator_revision: str
+    trusted_contract_revision: str
+    trusted_dependency_digests: Mapping[str, str]
+    trusted_receipt_sha256: str
 
 
 class Queue:
@@ -1307,7 +1321,7 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
                 terminalize_input_mismatch=False,
-                trusted_publication=False,
+                trusted_publication=None,
             )
         finally:
             os.close(guard)
@@ -1337,7 +1351,7 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
                 terminalize_input_mismatch=True,
-                trusted_publication=False,
+                trusted_publication=None,
             )
         finally:
             os.close(guard)
@@ -1350,18 +1364,24 @@ class Queue:
             finish_result=result,
         )
 
-    def _finish_trusted_completion(
+    def finish_package_validation_receipt(
         self,
         lease: Lease,
         *,
-        output_digest: str,
-        completion_revision: str,
-        expected_input_digest: str,
+        package_ref: FrozenPackageRef,
+        receipt_payload: str | bytes,
+        trusted_validator_revision: str,
+        trusted_contract_revision: str,
+        trusted_dependency_digests: Mapping[str, str],
+        trusted_receipt_sha256: str,
     ) -> FinishResult:
-        """Publish a reserved completion after a domain adapter verifies its evidence."""
-        _validate_digest(output_digest, "output_digest")
-        _validate_revision(completion_revision)
-        _validate_digest(expected_input_digest, "expected_input_digest")
+        """Validate and publish one reserved package receipt as a single operation."""
+        from tools.phase4_v2.equivalence.plan import (
+            PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+            package_validation_receipt_completion,
+        )
+
+        completion = package_validation_receipt_completion(package_ref)
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
@@ -1370,11 +1390,18 @@ class Queue:
             return self._finish_with_publication_guard(
                 lease,
                 TerminalOutcome.ACCEPTED,
-                output_digest=output_digest,
-                completion_revision=completion_revision,
-                expected_input_digest=expected_input_digest,
+                output_digest=completion.digest,
+                completion_revision=PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+                expected_input_digest=completion.digest,
                 terminalize_input_mismatch=False,
-                trusted_publication=True,
+                trusted_publication=_PackageReceiptPublication(
+                    package_ref=package_ref,
+                    receipt_payload=receipt_payload,
+                    trusted_validator_revision=trusted_validator_revision,
+                    trusted_contract_revision=trusted_contract_revision,
+                    trusted_dependency_digests=trusted_dependency_digests,
+                    trusted_receipt_sha256=trusted_receipt_sha256,
+                ),
             )
         finally:
             os.close(guard)
@@ -1388,8 +1415,16 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
         terminalize_input_mismatch: bool,
-        trusted_publication: bool,
+        trusted_publication: _PackageReceiptPublication | None,
     ) -> FinishResult:
+        if trusted_publication is not None:
+            self._validate_package_receipt_publication(
+                lease,
+                trusted_publication,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+            )
         with self._immediate() as connection:
             unit = connection.execute(
                 "SELECT kind FROM work_units WHERE unit_id = ?",
@@ -1398,7 +1433,9 @@ class Queue:
             if unit is None:
                 raise QueueError(f"unknown work unit: {lease.unit_id}")
             reserved = str(unit["kind"]).startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
-            if outcome is TerminalOutcome.ACCEPTED and reserved != trusted_publication:
+            if outcome is TerminalOutcome.ACCEPTED and reserved != (
+                trusted_publication is not None
+            ):
                 raise QueueConflictError(
                     "reserved completion must use its trusted publication adapter"
                 )
@@ -1516,6 +1553,50 @@ class Queue:
                 attempt_id=lease.attempt_id,
                 output_digest=output_digest,
             )
+
+    @staticmethod
+    def _validate_package_receipt_publication(
+        lease: Lease,
+        publication: _PackageReceiptPublication,
+        *,
+        output_digest: str | None,
+        completion_revision: str | None,
+        expected_input_digest: str | None,
+    ) -> None:
+        from tools.phase4_v2.equivalence.plan import (
+            PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+            package_validation_receipt_completion,
+        )
+        from tools.phase4_v2.ir import bind_validator_receipt
+
+        package_ref = publication.package_ref
+        completion = package_validation_receipt_completion(package_ref)
+        if (
+            lease.unit_id != completion.parent_unit_id
+            or output_digest != completion.digest
+            or completion_revision != PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION
+            or expected_input_digest != completion.digest
+        ):
+            raise QueueConflictError(
+                "publication does not belong to the package validation receipt"
+            )
+        report = bind_validator_receipt(
+            publication.receipt_payload,
+            trusted_validator_revision=publication.trusted_validator_revision,
+            trusted_contract_revision=publication.trusted_contract_revision,
+            trusted_dependency_digests=publication.trusted_dependency_digests,
+            trusted_receipt_sha256=publication.trusted_receipt_sha256,
+        )
+        identity = report.validated_artifact_identity
+        dependencies = dict(report.dependency_digests)
+        if (
+            report.validation_receipt_sha256 != package_ref.validation_receipt_sha256
+            or identity.package_name != package_ref.package_name
+            or identity.version_code != package_ref.version_code
+            or identity.artifact_digest != package_ref.artifact_digest
+            or dependencies.get("preflight") != package_ref.preflight_sha256
+        ):
+            raise QueueConflictError("validated receipt does not bind the frozen package reference")
 
     def status(self, unit_id: str) -> WorkUnitStatus:
         """Return the materialized status of one unit."""

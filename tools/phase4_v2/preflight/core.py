@@ -15,7 +15,9 @@ import shutil
 import stat
 import struct
 import subprocess
+import tempfile
 import time
+import weakref
 import zipfile
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -143,12 +145,12 @@ class DeliveryFile:
 
 class _SealedOwner:
     def __init__(self, directory: Path | str | None = None) -> None:
-        supplied = directory if directory is not None else "/tmp"
+        supplied = directory if directory is not None else tempfile.gettempdir()
         self._parent_fd = -1
         self._directory_fd = -1
         self._name = ""
+        parent_path = Path(os.path.abspath(os.fspath(supplied)))
         try:
-            parent_path = Path(os.path.abspath(os.fspath(supplied)))
             self._parent_fd = _open_directory_path_pinned(parent_path)
             self._name = _make_private_directory_at(
                 self._parent_fd, "phase4-v2-preflight-"
@@ -164,7 +166,7 @@ class _SealedOwner:
                     pass
             if self._parent_fd >= 0:
                 os.close(self._parent_fd)
-            raise PreflightError(f"sealing directory is inaccessible: {directory}") from err
+            raise PreflightError(f"sealing directory is inaccessible: {parent_path}") from err
         self.path = parent_path / self._name
         self._member_fds: list[int] = []
         self._member_names: set[str] = set()
@@ -260,7 +262,7 @@ class StackDecision:
     members: tuple[MemberClassification, ...]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, weakref_slot=True)
 class PreflightResult:
     delivery_digest: str
     artifact_digest: str
@@ -269,6 +271,10 @@ class PreflightResult:
     package_identity: PackageIdentity | None
     decision: StackDecision
     _owner: _SealedOwner = field(repr=False, compare=False)
+    _finalizer: weakref.finalize = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_finalizer", weakref.finalize(self, self._owner.close))
 
     def manifest(self) -> dict[str, object]:
         return {
@@ -284,7 +290,7 @@ class PreflightResult:
         }
 
     def close(self) -> None:
-        self._owner.close()
+        self._finalizer()
 
     def __enter__(self) -> PreflightResult:
         return self
@@ -1704,15 +1710,9 @@ class ArtifactCache:
     def materialize(self, artifact_digest: str, destination: Path | str) -> Path:
         manifest = self.verify(artifact_digest)
         target = Path(os.path.abspath(os.fspath(destination)))
+        parent = target.parent
         try:
-            parent = target.parent.resolve(strict=True)
-        except OSError as err:
-            raise PreflightError(
-                f"materialization parent is inaccessible: {target.parent}"
-            ) from err
-        target = parent / target.name
-        try:
-            parent_fd = os.open(parent, _DIRECTORY_FLAGS)
+            parent_fd = _open_directory_path_pinned(parent)
         except OSError as err:
             raise PreflightError(f"materialization parent is inaccessible: {parent}") from err
         try:

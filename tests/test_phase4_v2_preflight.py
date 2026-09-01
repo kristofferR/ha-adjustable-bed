@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import gc
 import hashlib
 import json
 import os
 import stat
 import sys
+import tempfile
 import zipfile
 from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
@@ -425,6 +427,34 @@ def test_explicit_sealing_directory_and_result_cleanup(tmp_path: Path) -> None:
         assert sealed.is_file()
 
     assert not sealed.exists()
+
+
+def test_sealed_result_cleanup_is_automatic(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "persistent-sealing"
+    sealing_root.mkdir()
+    result = preflight_delivery([artifact], sealing_directory=sealing_root)
+    sealed = result.artifact_members[0]._sealed_path
+
+    del result
+    gc.collect()
+
+    assert not sealed.exists()
+
+
+def test_default_sealing_directory_honors_tmpdir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "configured-tmpdir"
+    sealing_root.mkdir()
+    monkeypatch.setenv("TMPDIR", os.fspath(sealing_root))
+    monkeypatch.setattr(tempfile, "tempdir", None)
+
+    with preflight_delivery([artifact]) as result:
+        assert sealing_root in result.artifact_members[0]._sealed_path.parents
 
 
 def test_sealing_stays_in_pinned_parent_when_supplied_path_is_replaced(
@@ -1379,3 +1409,18 @@ def test_materialization_stays_in_pinned_parent_after_path_is_replaced(
 
     assert (moved_parent / "materialized" / "MATERIALIZED.COMPLETE").is_file()
     assert not (replacement / "materialized").exists()
+
+
+def test_materialization_rejects_symlinked_parent_ancestor(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    actual_parent = tmp_path / "actual" / "output"
+    actual_parent.mkdir(parents=True)
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(tmp_path / "actual", target_is_directory=True)
+
+    with pytest.raises(PreflightError, match="materialization parent is inaccessible"):
+        cache.materialize(result.artifact_digest, linked_parent / "output" / "materialized")
