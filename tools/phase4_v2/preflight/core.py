@@ -258,6 +258,7 @@ class _ApkObservation:
     member: str
     stacks: tuple[str, ...]
     blockers: tuple[str, ...]
+    expanded_bytes: int
 
 
 def _canonical_json(value: object) -> bytes:
@@ -554,18 +555,17 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
     try:
         with _open_zip_path(path, limits) as apk:
             entries = _archive_entries(apk, limits)
-            standard_bundle = next(
-                (
-                    entry
-                    for entry in entries
-                    if entry.name.casefold() == "assets/index.android.bundle"
-                ),
-                None,
+            candidate_bundles = tuple(
+                entry
+                for entry in entries
+                if entry.name.casefold().startswith("assets/")
+                and entry.name.casefold().endswith((".bundle", ".hermes", ".hbc"))
             )
-            standard_bundle_prefix = None
-            if standard_bundle is not None:
-                with apk.open(standard_bundle.info) as stream:
-                    standard_bundle_prefix = stream.read(len(_HERMES_BYTECODE_MAGIC))
+            hermes_bundle_names: set[str] = set()
+            for bundle in candidate_bundles:
+                with apk.open(bundle.info) as stream:
+                    if stream.read(len(_HERMES_BYTECODE_MAGIC)) == _HERMES_BYTECODE_MAGIC:
+                        hermes_bundle_names.add(bundle.name.casefold())
     except (OSError, RuntimeError, ValueError, zipfile.BadZipFile, SafetyError) as err:
         raise SafetyError(f"invalid APK member {label}: {err}") from err
     names = {entry.name.casefold() for entry in entries}
@@ -587,8 +587,10 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
     }
     if names.intersection(react_native_bundle_names):
         stacks.add("react_native")
-    standard_bundle_is_hermes = standard_bundle_prefix == _HERMES_BYTECODE_MAGIC
-    if standard_bundle_is_hermes or any(
+    bundle_is_hermes = bool(hermes_bundle_names)
+    if bundle_is_hermes:
+        stacks.add("react_native")
+    if bundle_is_hermes or any(
         name.endswith(".hermes") or name.endswith(".hbc") for name in names
     ):
         stacks.add("hermes")
@@ -602,6 +604,7 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         stacks.add("embedded_archive")
     if any(
         name not in react_native_bundle_names
+        and name not in hermes_bundle_names
         and (name.endswith(_SHIPPED_CODE_SUFFIXES) or name.endswith(".bundle"))
         and _DEX_MEMBER.fullmatch(name) is None
         for name in names
@@ -609,7 +612,12 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         stacks.add("shipped_bundle")
     if not stacks:
         blockers.add(f"unknown_application_stack:{label}")
-    return _ApkObservation(label, tuple(sorted(stacks)), tuple(sorted(blockers)))
+    return _ApkObservation(
+        label,
+        tuple(sorted(stacks)),
+        tuple(sorted(blockers)),
+        sum(entry.info.file_size for entry in entries),
+    )
 
 
 def _run_identity_tool(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
@@ -911,6 +919,8 @@ def preflight_delivery(
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
     observations: list[_ApkObservation] = []
+    artifact_bytes = 0
+    artifact_expanded_bytes = 0
     try:
         for delivery_index, source in enumerate(
             sorted(supplied, key=lambda item: item.name.casefold())
@@ -922,7 +932,16 @@ def preflight_delivery(
                 if delivery.size > active_limits.max_member_bytes:
                     raise SafetyError(f"artifact member size limit exceeded: {source.name}")
                 logical = _logical_apk_name(source.name)
-                observations.append(_classify_apk(sealed_delivery, logical, active_limits))
+                observation = _classify_apk(sealed_delivery, logical, active_limits)
+                if len(artifacts) >= active_limits.max_archive_members:
+                    raise SafetyError("delivery artifact member-count limit exceeded")
+                artifact_bytes += delivery.size
+                if artifact_bytes > active_limits.max_archive_bytes:
+                    raise SafetyError("delivery artifact byte-size limit exceeded")
+                artifact_expanded_bytes += observation.expanded_bytes
+                if artifact_expanded_bytes > active_limits.max_archive_bytes:
+                    raise SafetyError("delivery artifact expanded-size limit exceeded")
+                observations.append(observation)
                 artifacts.append(
                     ArtifactMember(logical, delivery.size, delivery.sha256, sealed_delivery)
                 )
@@ -933,14 +952,24 @@ def preflight_delivery(
                         entry for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)
                     ]
                     for member_index, entry in enumerate(apk_entries):
+                        if len(artifacts) >= active_limits.max_archive_members:
+                            raise SafetyError("delivery artifact member-count limit exceeded")
+                        if (
+                            artifact_bytes + entry.info.file_size
+                            > active_limits.max_archive_bytes
+                        ):
+                            raise SafetyError("delivery artifact byte-size limit exceeded")
                         logical = _logical_apk_name(entry.name)
                         sealed_member = (
                             owner.path / f"artifact-{delivery_index:04d}-{member_index:04d}"
                         )
                         digest, size = _seal_archive_member(archive, entry, sealed_member)
-                        observations.append(
-                            _classify_apk(sealed_member, logical, active_limits)
-                        )
+                        observation = _classify_apk(sealed_member, logical, active_limits)
+                        artifact_bytes += size
+                        artifact_expanded_bytes += observation.expanded_bytes
+                        if artifact_expanded_bytes > active_limits.max_archive_bytes:
+                            raise SafetyError("delivery artifact expanded-size limit exceeded")
+                        observations.append(observation)
                         artifacts.append(ArtifactMember(logical, size, digest, sealed_member))
             else:
                 raise SafetyError(f"unsupported delivery file type: {source.name}")

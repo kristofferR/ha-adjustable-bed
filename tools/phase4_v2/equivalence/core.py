@@ -826,7 +826,17 @@ class AppendOnlyLedger:
         ):
             _fail("decision does not reproduce from the trusted target inventory receipt")
         expected_proof: ByteIdentityProof | None = None
-        if not replay:
+        if replay and decision.route is not Route.EXACT_REUSE:
+            expected, _ = _route_application_root_validated(
+                target,
+                (),
+                pins=self._pins,
+                audits=self._trusted_direct_audits,
+                inventory_receipts=self._trusted_inventory_receipts,
+            )
+            if decision != expected:
+                _fail("decision does not reproduce from the pinned target routing inputs")
+        elif not replay:
             eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
             if eligible_sources and eligible_sources[0].content_id == target.content_id:
                 candidate_roots = eligible_sources[1:2]

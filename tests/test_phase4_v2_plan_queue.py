@@ -32,6 +32,7 @@ from tools.phase4_v2.equivalence.plan import (
     BlockedRootPlan,
     CapabilityPin,
     CompletionPin,
+    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
@@ -79,6 +80,15 @@ SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 
+TARGET_PACKAGE_REF = FrozenPackageRef(
+    package_name="org.example.target",
+    version_code="17",
+    artifact_digest=SHA_B,
+    preflight_sha256=SHA_C,
+    validation_receipt_sha256=SHA_D,
+)
+TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+
 
 def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
     completion = CompletionPin("shared", "fixture-v1", SHA_A)
@@ -88,7 +98,7 @@ def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
 
 def _local_plan(*, requirements_sha256: str = SHA_C) -> PackageLocalPlan:
     return PackageLocalPlan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
         version_code="17",
         version_name="1.7",
@@ -106,7 +116,7 @@ def _accepted_inventory(
     *pairs: tuple[str, str],
 ) -> AcceptedTargetRootInventory:
     inventory = TargetRootInventory(
-        SHA_A,
+        TARGET_PACKAGE_REF_ID,
         tuple(
             sorted(
                 (TargetRootOccurrence(root, occurrence) for root, occurrence in pairs),
@@ -127,7 +137,8 @@ def _accepted_inventory(
 def _full_plan(*, requirements_sha256: str = SHA_C) -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(requirements_sha256=requirements_sha256),
         accepted_target_inventory=accepted,
         root_plans=(
@@ -145,7 +156,8 @@ def _full_plan(*, requirements_sha256: str = SHA_C) -> PackageExecutionPlan:
 def _blocked_plan() -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(BlockedRootPlan(SHA_E, SHA_F, ("missing_authoritative_root",)),),
@@ -210,7 +222,8 @@ def _reuse_plan() -> PackageExecutionPlan:
         ),
     )
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(build_exact_reuse_root_plan(audit),),
@@ -301,7 +314,7 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
 
     assert first == second
     assert first is not None
-    assert first.unit_id == package_queue_unit_id(SHA_A)
+    assert first.unit_id == package_queue_unit_id(TARGET_PACKAGE_REF_ID)
     assert first.input_digest == frozen.digest
     with sqlite3.connect(queue.database) as connection:
         unit = connection.execute(

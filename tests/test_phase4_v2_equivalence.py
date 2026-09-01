@@ -1078,3 +1078,29 @@ def test_ledger_replay_preserves_historical_route_when_a_source_is_added() -> No
     )
 
     assert replayed.entries == (entry,)
+
+
+def test_ledger_replay_rejects_route_ineligible_for_the_target() -> None:
+    package_ref = package()
+    extractor = capability()
+    target = root(package_ref, extractor, complete=False)
+    dishonest = LedgerDecision(
+        target_root_id=target.content_id,
+        route=Route.FULL_ANALYSIS,
+        reason="no_exact_executable_identity",
+        target_inventory_receipt_sha256=SHA_E,
+    )
+    entry = LedgerEntry(0, None, dishonest)
+
+    with pytest.raises(EquivalenceError, match="pinned target routing inputs"):
+        AppendOnlyLedger(
+            packages=[package_ref],
+            capabilities=[extractor],
+            roots=[target],
+            proofs=[],
+            pins=RoutingPins(),
+            trusted_direct_audits={},
+            trusted_inventory_receipts={target.content_id: SHA_E},
+            entries=[entry],
+            expected_head_id=entry.content_id,
+        )

@@ -507,6 +507,24 @@ def test_standard_react_native_bundle_uses_hermes_header_for_routing(tmp_path: P
 
     assert {"react_native", "hermes"}.issubset(result.decision.stacks)
     assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
+    assert "shipped_bundle" not in result.decision.stacks
+    assert "shipped-bundle" not in result.decision.routes
+
+
+def test_nonstandard_react_native_bundle_uses_hermes_header_for_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "hermes.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr(
+            "assets/main.bundle",
+            legacy_preflight._HERMES_BYTECODE_MAGIC + b"fixture",
+        )
+
+    result = preflight_delivery([artifact])
+
+    assert {"react_native", "hermes"}.issubset(result.decision.stacks)
+    assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
 
 
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:
@@ -666,6 +684,40 @@ def test_cache_rejects_members_exceeding_the_aggregate_byte_limit(tmp_path: Path
 
     with pytest.raises(CacheIntegrityError, match="member bytes exceed"):
         constrained_cache.verify(result.artifact_digest)
+
+
+def test_preflight_rejects_delivery_wide_artifact_count_and_bytes(tmp_path: Path) -> None:
+    first = tmp_path / "base.apk"
+    second = tmp_path / "split.apk"
+    for artifact in (first, second):
+        with zipfile.ZipFile(artifact, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"manifest")
+
+    with pytest.raises(SafetyError, match="delivery artifact member-count limit"):
+        preflight_delivery(
+            [first, second],
+            limits=PreflightLimits(max_archive_members=1),
+        )
+
+    with pytest.raises(SafetyError, match="delivery artifact byte-size limit"):
+        preflight_delivery(
+            [first, second],
+            limits=PreflightLimits(
+                max_archive_bytes=first.stat().st_size + second.stat().st_size - 1
+            ),
+        )
+
+    compressed = (tmp_path / "compressed-base.apk", tmp_path / "compressed-split.apk")
+    for artifact in compressed:
+        with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("AndroidManifest.xml", b"manifest")
+            archive.writestr("assets/payload.js", b"x" * 2_048)
+
+    with pytest.raises(SafetyError, match="delivery artifact expanded-size limit"):
+        preflight_delivery(
+            list(compressed),
+            limits=PreflightLimits(max_archive_bytes=3_000),
+        )
 
 
 def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> None:

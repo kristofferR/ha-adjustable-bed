@@ -31,6 +31,7 @@ from .core import (
     ApplicationRoot,
     EquivalenceError,
     ExtractorCapability,
+    FrozenPackageRef,
     LedgerDecision,
     Route,
 )
@@ -1068,6 +1069,7 @@ class PackageExecutionPlan:
     """Mutable-boundary input; freeze it before treating it as a trust proof."""
 
     target_package_ref_id: str
+    target_package_ref: FrozenPackageRef
     package_local: PackageLocalPlan
     accepted_target_inventory: AcceptedTargetRootInventory
     root_plans: tuple[RootExecutionPlan, ...]
@@ -1075,8 +1077,30 @@ class PackageExecutionPlan:
 
     def __post_init__(self) -> None:
         _sha(self.target_package_ref_id, "plan.target_package_ref_id")
+        if type(self.target_package_ref) is not FrozenPackageRef:
+            _fail("plan requires an exact FrozenPackageRef")
+        target_package_ref = FrozenPackageRef(
+            self.target_package_ref.package_name,
+            self.target_package_ref.version_code,
+            self.target_package_ref.artifact_digest,
+            self.target_package_ref.preflight_sha256,
+            self.target_package_ref.validation_receipt_sha256,
+            self.target_package_ref.revision,
+        )
         local = _local(self.package_local)
         accepted = _accepted_inventory(self.accepted_target_inventory)
+        if target_package_ref.content_id != self.target_package_ref_id:
+            _fail("frozen package reference does not reproduce the target package ID")
+        if (
+            target_package_ref.package_name,
+            target_package_ref.version_code,
+            target_package_ref.artifact_digest,
+        ) != (
+            local.package_name,
+            local.version_code,
+            local.target_artifact_digest,
+        ):
+            _fail("package-local plan does not match the frozen package artifact identity")
         if local.target_package_ref_id != self.target_package_ref_id:
             _fail("package-local plan targets a different package")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:
@@ -1099,6 +1123,7 @@ class PackageExecutionPlan:
                 item.reuse.target_inventory_completion != accepted.completion
             ):
                 _fail("exact reuse pins a transplanted target inventory completion")
+        object.__setattr__(self, "target_package_ref", target_package_ref)
         object.__setattr__(self, "package_local", local)
         object.__setattr__(self, "accepted_target_inventory", accepted)
         object.__setattr__(self, "root_plans", roots)
@@ -1375,6 +1400,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
         _fail("plan snapshot requires an exact PackageExecutionPlan")
     frozen = PackageExecutionPlan(
         value.target_package_ref_id,
+        value.target_package_ref,
         value.package_local,
         value.accepted_target_inventory,
         value.root_plans,
@@ -1414,6 +1440,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
 def build_package_execution_plan(
     *,
     target_package_ref_id: str,
+    target_package_ref: FrozenPackageRef,
     package_local: PackageLocalPlan,
     accepted_target_inventory: AcceptedTargetRootInventory,
     root_plans: Iterable[RootExecutionPlan],
@@ -1425,6 +1452,7 @@ def build_package_execution_plan(
         roots.append(_root(item))
     return PackageExecutionPlan(
         target_package_ref_id,
+        target_package_ref,
         package_local,
         accepted_target_inventory,
         tuple(sorted(roots, key=_root_key)),
