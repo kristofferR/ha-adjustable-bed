@@ -831,6 +831,24 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
         protocol_id: profiles_by_space[protocol.variant_space]
         for protocol_id, protocol in document.protocols
     }
+    profile_expansions = (
+        profile_references
+        + sum(
+            len(profiles_by_protocol[rule.protocol])
+            for _rule_id, rule in document.expected_action_rules
+        )
+        + sum(
+            len(profiles_by_protocol[binding.protocol])
+            for _binding_id, binding in document.command_bindings
+        )
+    )
+    if profile_expansions > _MAX_UNIVERSE_PROFILE_REFERENCES:
+        _fail(
+            "universe_too_large",
+            "$",
+            f"universe validation has {profile_expansions} profile expansions; "
+            f"limit is {_MAX_UNIVERSE_PROFILE_REFERENCES}",
+        )
 
     expected: set[UniverseKey] = set()
     for _rule_id, rule in document.expected_action_rules:

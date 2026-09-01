@@ -579,7 +579,7 @@ def test_frozen_snapshot_is_stable_but_fresh_snapshot_observes_mutation() -> Non
         for item in plan.required_completions
     )
 
-    object.__setattr__(plan.package_local, "requirements_sha256", SHA_F)
+    object.__setattr__(plan.package_local, "version_name", "1.8")
     fresh = freeze_package_execution_plan(plan)
     assert frozen.digest != fresh.digest
     assert frozen.target_artifact_digest == SHA_B
@@ -608,6 +608,15 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
             target_package_ref_id=other_artifact.content_id,
             target_package_ref=other_artifact,
             package_local=local_plan(),
+            accepted_target_inventory=accepted,
+            root_plans=roots,
+        )
+
+    with pytest.raises(EquivalenceError, match="frozen package preflight"):
+        build_package_execution_plan(
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
+            package_local=replace(local_plan(), requirements_sha256=SHA_E),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )

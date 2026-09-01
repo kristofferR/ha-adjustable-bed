@@ -1101,6 +1101,8 @@ class PackageExecutionPlan:
             local.target_artifact_digest,
         ):
             _fail("package-local plan does not match the frozen package artifact identity")
+        if local.requirements_sha256 != target_package_ref.preflight_sha256:
+            _fail("package-local requirements do not match the frozen package preflight")
         if local.target_package_ref_id != self.target_package_ref_id:
             _fail("package-local plan targets a different package")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:

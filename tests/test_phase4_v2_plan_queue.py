@@ -96,14 +96,14 @@ def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
     assert plan_module._merge_completions([completion] * 300) == (completion,)
 
 
-def _local_plan(*, requirements_sha256: str = SHA_C) -> PackageLocalPlan:
+def _local_plan(*, version_name: str = "1.7") -> PackageLocalPlan:
     return PackageLocalPlan(
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
         version_code="17",
-        version_name="1.7",
+        version_name=version_name,
         target_artifact_digest=SHA_B,
-        requirements_sha256=requirements_sha256,
+        requirements_sha256=SHA_C,
         pipeline_capability=CapabilityPin(
             PACKAGE_PIPELINE_CAPABILITY,
             PACKAGE_EXECUTION_PLAN_REVISION,
@@ -134,18 +134,18 @@ def _accepted_inventory(
     )
 
 
-def _full_plan(*, requirements_sha256: str = SHA_C) -> PackageExecutionPlan:
+def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
-        package_local=_local_plan(requirements_sha256=requirements_sha256),
+        package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(
             FullAnalysisRootPlan(
                 SHA_E,
                 SHA_F,
-                "no_exact_identity",
+                reason,
                 (CapabilityPin("analyzer:full", "full-implementation-1", SHA_A),),
                 (CompletionPin("analysis-input", "analysis-input-v1", SHA_D),),
             ),
@@ -347,7 +347,7 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
 
 def test_same_package_reference_with_changed_plan_conflicts(queue: Queue) -> None:
     original = _full_plan()
-    changed = _full_plan(requirements_sha256=SHA_D)
+    changed = _full_plan(reason="changed_routing_evidence")
     for pin in freeze_package_execution_plan(original).required_completions:
         queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
     materialize_package_execution_plan(queue, original)
@@ -397,7 +397,7 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queu
 
 def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) -> None:
     original = _full_plan()
-    changed = _full_plan(requirements_sha256=SHA_D)
+    changed = _full_plan(reason="changed_routing_evidence")
     _publish_prerequisites(queue, original)
     materialized = materialize_package_execution_plan(queue, original)
     assert materialized is not None
@@ -457,7 +457,7 @@ def test_finish_fences_plan_mutation_while_output_is_built(
             receipt=receipt,
             trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
         )
-        object.__setattr__(plan, "package_local", _local_plan(requirements_sha256=SHA_D))
+        object.__setattr__(plan, "package_local", _local_plan(version_name="1.8"))
         return output
 
     monkeypatch.setattr(
@@ -607,7 +607,7 @@ def test_wrong_lease_is_untouched_when_plan_mutates_during_output_build(
             receipt=receipt,
             trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
         )
-        object.__setattr__(plan, "package_local", _local_plan(requirements_sha256=SHA_D))
+        object.__setattr__(plan, "package_local", _local_plan(version_name="1.8"))
         return output
 
     monkeypatch.setattr(
