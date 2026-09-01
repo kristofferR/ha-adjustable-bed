@@ -30,9 +30,9 @@ if TYPE_CHECKING:
         PackageExecutionPlan,
         ValidatedPackageOutput,
     )
-    from tools.phase4_v2.validator import DependencyPins, EvidenceLineageTrust
+    from tools.phase4_v2.validator import DependencyPins
 
-SCHEMA_REVISION = 2
+SCHEMA_REVISION = 3
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _MAX_IDENTIFIER_LENGTH = 200
@@ -49,6 +49,7 @@ _INTERNAL_EVENT_TYPES = frozenset(
         "FINISHED",
         "LEASE_EXPIRED",
         "RENEWED",
+        "BLOCKER_REQUEUED",
         "REPAIR_REQUEUED",
         "TRACKER_ALREADY_CURRENT",
         "TRACKER_PUBLISHED",
@@ -79,6 +80,13 @@ class CompletionConflictError(QueueError):
 
 class InputDigestMismatchError(QueueError):
     """The accepted output was built from different immutable input."""
+
+
+def _unsupported_schema_revision(revision: object) -> QueueError:
+    message = f"unsupported queue schema revision: {revision}"
+    if revision == 2:
+        message += "; regenerate the queue from orchestration inputs at a new path"
+    return QueueError(message)
 
 
 def _encode_event_payload(payload: Mapping[str, object]) -> str:
@@ -576,7 +584,7 @@ class Queue:
                     "SELECT revision FROM schema_meta WHERE singleton = 1"
                 ).fetchone()
                 if pinned is not None and int(pinned["revision"]) != SCHEMA_REVISION:
-                    raise QueueError(f"unsupported queue schema revision: {pinned['revision']}")
+                    raise _unsupported_schema_revision(pinned["revision"])
             self._enable_wal(connection)
             connection.executescript(_SCHEMA)
         finally:
@@ -603,7 +611,7 @@ class Queue:
                     ),
                 )
             elif int(existing["revision"]) != SCHEMA_REVISION:
-                raise QueueError(f"unsupported queue schema revision: {existing['revision']}")
+                raise _unsupported_schema_revision(existing["revision"])
             elif (
                 existing["attempts_root"],
                 existing["attempts_device"],
@@ -1423,7 +1431,7 @@ class Queue:
         execution_plan: PackageExecutionPlan,
         report_root: Path,
         trusted_dependencies: DependencyPins,
-        trusted_evidence_lineage: EvidenceLineageTrust,
+        evidence_lineage_payload: bytes,
     ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
         """Validate report bytes, then publish one reserved package output."""
         from tools.phase4_v2.equivalence.plan import (
@@ -1434,7 +1442,9 @@ class Queue:
         )
         from tools.phase4_v2.validator import (
             DependencyPins,
+            EvidenceLineageTrust,
             PackageDependencyPins,
+            TrustedProducer,
             validate_report_bundle,
         )
 
@@ -1446,6 +1456,26 @@ class Queue:
             raise QueueConflictError(
                 "trusted preflight does not match the package execution plan"
             )
+        if type(evidence_lineage_payload) is not bytes:
+            raise QueueConflictError("evidence lineage payload must be exact immutable bytes")
+        lineage_digest = self._trusted_receipt_dependency(
+            lease,
+            lease.input_digest,
+            execution_plan.target_package_ref.validation_receipt_sha256,
+            "evidence_lineage",
+        )
+        producer_pins = {
+            (capability.revision, capability.name, capability.digest)
+            for capability in frozen.required_capabilities
+        }
+        trusted_evidence_lineage = EvidenceLineageTrust(
+            payload=evidence_lineage_payload,
+            expected_manifest_sha256=lineage_digest,
+            trusted_producers=tuple(
+                TrustedProducer(revision, route, digest)
+                for revision, route, digest in sorted(producer_pins)
+            ),
+        )
         receipt = validate_report_bundle(
             report_root,
             expected_dependencies=PackageDependencyPins(
@@ -1501,6 +1531,63 @@ class Queue:
             finish_result=result,
         )
 
+    def _trusted_receipt_dependency(
+        self,
+        lease: Lease,
+        expected_input_digest: str,
+        expected_receipt_sha256: str,
+        dependency_name: str,
+    ) -> str:
+        """Read one trust root from the exact receipt completion pinned to a lease."""
+        from tools.phase4_v2.equivalence.plan import (
+            PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+        )
+
+        with self._connect() as connection:
+            self._require_live_lease(connection, lease)
+            if not self._input_digests_match(connection, lease, expected_input_digest):
+                raise InputDigestMismatchError(
+                    f"package plan does not match the leased queue input: {lease.unit_id}"
+                )
+            row = connection.execute(
+                """
+                SELECT event.payload_json
+                FROM dependencies AS dependency
+                JOIN work_units AS parent
+                  ON parent.unit_id = dependency.parent_unit_id
+                JOIN formal_completions AS completion
+                  ON completion.unit_id = dependency.parent_unit_id
+                 AND completion.completion_revision = dependency.required_revision
+                 AND completion.output_digest = dependency.required_digest
+                JOIN events AS event
+                  ON event.attempt_id = completion.attempt_id
+                 AND event.event_type = 'FINISHED'
+                WHERE dependency.unit_id = ?
+                  AND parent.kind = 'trusted-package-validation-receipt'
+                  AND dependency.required_revision = ?
+                  AND dependency.required_digest = ?
+                """,
+                (
+                    lease.unit_id,
+                    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+                    expected_receipt_sha256,
+                ),
+            ).fetchone()
+        if row is None:
+            raise DependencyNotSatisfiedError(
+                "package validation receipt trust roots are not pinned"
+            )
+        try:
+            payload = json.loads(str(row["payload_json"]))
+            dependencies = payload["trusted_dependency_digests"]
+            digest = dependencies[dependency_name]
+        except (KeyError, TypeError, ValueError) as error:
+            raise QueueConflictError(
+                "package validation receipt trust roots are unavailable"
+            ) from error
+        _validate_digest(digest, dependency_name)
+        return str(digest)
+
     def _finish_with_publication_guard(
         self,
         lease: Lease,
@@ -1514,8 +1601,9 @@ class Queue:
             _PackageReceiptPublication | _ValidatedPackageOutputPublication | None
         ),
     ) -> FinishResult:
+        trusted_receipt_dependencies: dict[str, str] | None = None
         if isinstance(trusted_publication, _PackageReceiptPublication):
-            self._validate_package_receipt_publication(
+            trusted_receipt_dependencies = self._validate_package_receipt_publication(
                 lease,
                 trusted_publication,
                 output_digest=output_digest,
@@ -1608,7 +1696,15 @@ class Queue:
                     completion_revision,
                 ),
             )
-            self._append_event(connection, lease.attempt_id, "FINISHED", {"outcome": outcome})
+            event_payload: dict[str, object] = {"outcome": outcome}
+            if (
+                outcome is TerminalOutcome.ACCEPTED
+                and trusted_receipt_dependencies is not None
+            ):
+                event_payload["trusted_dependency_digests"] = dict(
+                    sorted(trusted_receipt_dependencies.items())
+                )
+            self._append_event(connection, lease.attempt_id, "FINISHED", event_payload)
 
             disposition = FinishDisposition.TERMINAL_ONLY
             if outcome is TerminalOutcome.ACCEPTED:
@@ -1669,7 +1765,7 @@ class Queue:
         output_digest: str | None,
         completion_revision: str | None,
         expected_input_digest: str | None,
-    ) -> None:
+    ) -> dict[str, str]:
         from tools.phase4_v2.equivalence.plan import (
             PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
             package_validation_receipt_completion,
@@ -1704,6 +1800,7 @@ class Queue:
             or dependencies.get("preflight") != package_ref.preflight_sha256
         ):
             raise QueueConflictError("validated receipt does not bind the frozen package reference")
+        return dependencies
 
     @staticmethod
     def _validate_package_output_publication(
@@ -1777,6 +1874,45 @@ class Queue:
                 if attempt_id is None:
                     raise QueueError(f"repair-required unit has no recorded attempt: {unit_id}")
                 self._append_event(connection, str(attempt_id), "REPAIR_REQUEUED", {})
+                connection.execute(
+                    "UPDATE work_units SET status = 'READY' WHERE unit_id = ?",
+                    (unit_id,),
+                )
+        finally:
+            os.close(guard)
+
+    def retry_blocked(self, unit_id: str) -> None:
+        """Return a unit whose external blocker was resolved to the ready queue."""
+        _validate_identifier(unit_id, "unit_id")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented blocked-unit retry")
+        try:
+            with self._immediate() as connection:
+                row = connection.execute(
+                    """
+                    SELECT unit.status, latest.attempt_id
+                    FROM work_units AS unit
+                    LEFT JOIN attempts AS latest
+                      ON latest.unit_id = unit.unit_id
+                     AND latest.fencing_token = (
+                        SELECT MAX(candidate.fencing_token)
+                        FROM attempts AS candidate
+                        WHERE candidate.unit_id = unit.unit_id
+                     )
+                    WHERE unit.unit_id = ?
+                    """,
+                    (unit_id,),
+                ).fetchone()
+                if row is None:
+                    raise QueueError(f"unknown work unit: {unit_id}")
+                if WorkUnitStatus(row["status"]) is not WorkUnitStatus.BLOCKED:
+                    raise QueueConflictError(f"work unit is not blocked: {unit_id}")
+                attempt_id = row["attempt_id"]
+                if attempt_id is None:
+                    raise QueueError(f"blocked unit has no recorded attempt: {unit_id}")
+                self._append_event(connection, str(attempt_id), "BLOCKER_REQUEUED", {})
                 connection.execute(
                     "UPDATE work_units SET status = 'READY' WHERE unit_id = ?",
                     (unit_id,),
@@ -2426,7 +2562,7 @@ class Queue:
         if row is None:
             raise QueueError("queue schema metadata is missing or unreadable")
         if int(row["revision"]) != SCHEMA_REVISION:
-            raise QueueError(f"unsupported queue schema revision: {row['revision']}")
+            raise _unsupported_schema_revision(row["revision"])
         if schema_objects != _REQUIRED_SCHEMA_OBJECTS:
             raise QueueError("queue schema objects are incomplete, unexpected, or altered")
 

@@ -379,7 +379,10 @@ def _stub_valid_report(
             execution_plan_sha256=freeze_package_execution_plan(plan).digest,
             report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
         )
-        assert expected_evidence_lineage is TRUSTED_EVIDENCE_LINEAGE
+        assert expected_evidence_lineage is not None
+        assert expected_evidence_lineage.payload == TRUSTED_EVIDENCE_LINEAGE.payload
+        assert expected_evidence_lineage.expected_manifest_sha256 == SHA_0
+        assert expected_evidence_lineage.trusted_producers
         assert allow_unbound is False
         return receipt
 
@@ -596,7 +599,7 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(
         execution_plan=plan,
         report_root=report_root,
         trusted_dependencies=TRUSTED_DEPENDENCIES,
-        trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+        evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
     )
 
     assert finished.queue_result.disposition is FinishDisposition.COMPLETED
@@ -642,7 +645,7 @@ def test_finish_rejects_missing_report_before_publication(
             execution_plan=plan,
             report_root=tmp_path / "missing-report",
             trusted_dependencies=TRUSTED_DEPENDENCIES,
-            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
@@ -675,7 +678,7 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(
             execution_plan=changed,
             report_root=report_root,
             trusted_dependencies=TRUSTED_DEPENDENCIES,
-            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
     assert raised.value.output.execution_plan_id == freeze_package_execution_plan(changed).digest
@@ -737,7 +740,7 @@ def test_finish_fences_plan_mutation_while_output_is_built(
             execution_plan=plan,
             report_root=report_root,
             trusted_dependencies=TRUSTED_DEPENDENCIES,
-            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
@@ -842,7 +845,7 @@ def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None
             execution_plan=plan,
             report_root=Path("unused"),
             trusted_dependencies=TRUSTED_DEPENDENCIES,
-            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
 
@@ -867,7 +870,7 @@ def test_wrong_lease_is_untouched_before_report_validation(
             execution_plan=plan,
             report_root=Path("unused"),
             trusted_dependencies=TRUSTED_DEPENDENCIES,
-            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+            evidence_lineage_payload=TRUSTED_EVIDENCE_LINEAGE.payload,
         )
 
     assert queue.status("unrelated") is WorkUnitStatus.LEASED

@@ -314,7 +314,17 @@ def test_inventory_bounds_analysis_report_metadata_parsing(
     build_inventory(source, output)
 
     diagnostics = _ndjson(output / "diagnostics.ndjson")
-    assert any(item["operation"] == "parse_analysis_json" for item in diagnostics)
+    assert any(
+        item["operation"] == "parse_analysis_json"
+        and item["error"] == "manifest_too_large"
+        for item in diagnostics
+    )
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["coverage"]["status"] == "OPAQUE_PATHS_RECORDED"
+    assert manifest["coverage"]["opaque_path_list"] == [
+        "example.fixture-1.0/report/analysis.json"
+    ]
+    assert (output / "INVENTORY.PARTIAL").is_file()
 
 
 def test_inventory_rejects_duplicate_analysis_metadata_keys(tmp_path: Path) -> None:

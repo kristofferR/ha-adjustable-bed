@@ -14,6 +14,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
+from typing import overload
 
 import pytest
 
@@ -263,6 +264,29 @@ def test_invalid_authoritative_identity_cannot_reach_ready(
     assert result.package_identity is None
     assert result.decision.status == "BLOCKED"
     assert "package_identity_invalid:base.apk" in result.decision.blockers
+
+
+def test_empty_split_identity_cannot_reach_ready(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "base.apk"
+    split = tmp_path / "split.apk"
+    _native_apk(base)
+    _native_apk(split)
+    signer = "a" * 64
+    _mock_identity_tools(
+        monkeypatch,
+        {
+            "base.apk": ("org.example.bed", "42", "4.2", None, (), signer),
+            "split.apk": ("org.example.bed", "42", "4.2", "", (), signer),
+        },
+    )
+
+    result = preflight_delivery([base, split])
+
+    assert result.package_identity is None
+    assert result.decision.status == "BLOCKED"
+    assert "split_identity_empty:split.apk" in result.decision.blockers
 
 
 @pytest.mark.parametrize(
@@ -954,6 +978,30 @@ def test_cache_rejects_noncanonical_logical_member_sets(
         cache.verify(tampered_digest)
 
 
+def test_cache_rejects_noncanonical_stored_member_name(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    object_dir = cache.store(result)
+    manifest = json.loads((object_dir / "manifest.json").read_bytes())
+    member = manifest["members"][0]
+    original_name = member["stored_name"]
+    member["stored_name"] = "MATERIALIZED.COMPLETE"
+    (object_dir / "members" / original_name).rename(
+        object_dir / "members" / member["stored_name"]
+    )
+    manifest_bytes = legacy_preflight._canonical_json(manifest)
+    (object_dir / "manifest.json").write_bytes(manifest_bytes)
+    (object_dir / "OBJECT.COMPLETE").write_text(
+        f"{hashlib.sha256(manifest_bytes).hexdigest()}  manifest.json\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CacheIntegrityError, match="stored member names are not canonical"):
+        cache.verify(result.artifact_digest)
+
+
 def test_cache_object_is_published_by_atomic_directory_rename(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1240,6 +1288,38 @@ def test_preflight_rejects_delivery_wide_file_count_and_bytes(tmp_path: Path) ->
     with pytest.raises(SafetyError, match="delivery file-count limit"):
         preflight_delivery(
             list(deliveries),
+            limits=PreflightLimits(max_delivery_files=1),
+        )
+
+
+def test_preflight_bounds_iteration_when_sequence_understates_its_length(
+    tmp_path: Path,
+) -> None:
+    deliveries = (tmp_path / "first.xapk", tmp_path / "second.xapk")
+    for delivery in deliveries:
+        with zipfile.ZipFile(delivery, "w") as archive:
+            archive.writestr("metadata.json", b"{}")
+
+    class UnderstatedSequence(Sequence[Path]):
+        def __len__(self) -> int:
+            return 1
+
+        @overload
+        def __getitem__(self, index: int) -> Path: ...
+
+        @overload
+        def __getitem__(self, index: slice) -> Sequence[Path]: ...
+
+        def __getitem__(self, index: int | slice) -> Path | Sequence[Path]:
+            return deliveries[index]
+
+        def __iter__(self):
+            yield from deliveries
+            pytest.fail("preflight consumed past max_delivery_files + 1")
+
+    with pytest.raises(SafetyError, match="delivery file-count limit"):
+        preflight_delivery(
+            UnderstatedSequence(),
             limits=PreflightLimits(max_delivery_files=1),
         )
 

@@ -50,6 +50,10 @@ class InventoryError(RuntimeError):
     """Raised when an inventory cannot be created safely."""
 
 
+class _AnalysisMetadataTooLargeError(ValueError):
+    """The analysis metadata cannot be parsed within its bounded read budget."""
+
+
 class SourceTreeChangedError(InventoryError):
     """Raised when stable source metadata changes during inventory creation."""
 
@@ -658,11 +662,15 @@ def _open_declared_descriptor(source_descriptor: int, target: PurePosixPath) -> 
 
 def _report_record(entry: Entry, path: Path) -> ReportRecord:
     if entry.size > _MAX_ANALYSIS_JSON_BYTES:
-        raise ValueError("analysis.json exceeds the metadata parsing limit")
+        raise _AnalysisMetadataTooLargeError(
+            "analysis.json exceeds the metadata parsing limit"
+        )
     with _open_observed_binary(entry, path) as report_file:
         payload = report_file.read(_MAX_ANALYSIS_JSON_BYTES + 1)
     if len(payload) > _MAX_ANALYSIS_JSON_BYTES:
-        raise ValueError("analysis.json exceeds the metadata parsing limit")
+        raise _AnalysisMetadataTooLargeError(
+            "analysis.json exceeds the metadata parsing limit"
+        )
     document = json.loads(payload, object_pairs_hook=_reject_duplicate_json_keys)
     if not isinstance(document, dict):
         raise ValueError("top-level JSON value is not an object")
@@ -1496,7 +1504,13 @@ def build_inventory(
                                 path=entry.path,
                                 operation="parse_analysis_json",
                                 error=(
-                                    "OSError" if isinstance(err, OSError) else type(err).__name__
+                                    "OSError"
+                                    if isinstance(err, OSError)
+                                    else (
+                                        "manifest_too_large"
+                                        if isinstance(err, _AnalysisMetadataTooLargeError)
+                                        else type(err).__name__
+                                    )
                                 ),
                                 active_protected=entry.active_protected,
                             )

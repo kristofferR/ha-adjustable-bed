@@ -165,6 +165,8 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("recover")
     retry = commands.add_parser("retry-repaired")
     retry.add_argument("--unit-id", required=True)
+    retry_blocked = commands.add_parser("retry-blocked")
+    retry_blocked.add_argument("--unit-id", required=True)
     status = commands.add_parser("status")
     status.add_argument("--unit-id")
     render = commands.add_parser("render")
@@ -236,6 +238,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             _emit({"recovered": queue.recover()})
         elif args.command == "retry-repaired":
             queue.retry_repaired(args.unit_id)
+            _emit({"retried": True, "unit_id": args.unit_id})
+        elif args.command == "retry-blocked":
+            queue.retry_blocked(args.unit_id)
             _emit({"retried": True, "unit_id": args.unit_id})
         elif args.command == "status":
             if args.unit_id is None:

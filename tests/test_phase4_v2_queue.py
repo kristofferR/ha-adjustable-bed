@@ -198,11 +198,11 @@ def test_concurrent_initialization_pins_one_attempt_root(tmp_path: Path) -> None
     Queue(database, attempts_root).initialize()
 
 
-def test_schema_revision_two_is_pinned_and_v1_fails_before_schema_mutation(
+def test_schema_revision_three_is_pinned_and_v1_fails_before_schema_mutation(
     queue: Queue,
     tmp_path: Path,
 ) -> None:
-    assert queue.snapshot().schema_revision == 2
+    assert queue.snapshot().schema_revision == 3
 
     database = tmp_path / "legacy" / "queue.sqlite3"
     attempts_root = tmp_path / "legacy-attempts"
@@ -239,7 +239,34 @@ def test_schema_revision_two_is_pinned_and_v1_fails_before_schema_mutation(
     assert activation_table is None
 
 
-def test_verify_schema_rejects_revision_two_database_missing_operational_schema(
+def test_schema_revision_two_requires_regeneration(tmp_path: Path) -> None:
+    database = tmp_path / "legacy-v2" / "queue.sqlite3"
+    attempts_root = tmp_path / "legacy-v2-attempts"
+    database.parent.mkdir()
+    attempts_root.mkdir()
+    with closing(sqlite3.connect(database)) as connection, connection:
+        connection.execute(
+            """
+            CREATE TABLE schema_meta (
+                singleton INTEGER PRIMARY KEY,
+                revision INTEGER NOT NULL,
+                attempts_root TEXT NOT NULL,
+                attempts_device INTEGER NOT NULL,
+                attempts_inode INTEGER NOT NULL
+            )
+            """
+        )
+        root_stat = attempts_root.stat()
+        connection.execute(
+            "INSERT INTO schema_meta VALUES (1, 2, ?, ?, ?)",
+            (str(attempts_root.resolve()), root_stat.st_dev, root_stat.st_ino),
+        )
+
+    with pytest.raises(QueueError, match="regenerate the queue from orchestration inputs"):
+        Queue(database, attempts_root).initialize()
+
+
+def test_verify_schema_rejects_revision_three_database_missing_operational_schema(
     tmp_path: Path,
 ) -> None:
     database = tmp_path / "truncated" / "queue.sqlite3"
@@ -260,7 +287,7 @@ def test_verify_schema_rejects_revision_two_database_missing_operational_schema(
         )
         root_stat = attempts_root.stat()
         connection.execute(
-            "INSERT INTO schema_meta VALUES (1, 2, ?, ?, ?)",
+            "INSERT INTO schema_meta VALUES (1, 3, ?, ?, ?)",
             (str(attempts_root.resolve()), root_stat.st_dev, root_stat.st_ino),
         )
 
@@ -869,6 +896,33 @@ def test_only_repair_required_units_can_be_requeued(queue: Queue) -> None:
 
     with pytest.raises(QueueConflictError, match="not repair-required"):
         queue.retry_repaired("package-a")
+
+
+def test_blocked_unit_can_be_requeued_after_its_blocker_is_resolved(queue: Queue) -> None:
+    _enqueue(queue, "package-a")
+    first = queue.claim("chat-a")
+    assert first is not None
+    queue.finish(first, TerminalOutcome.BLOCKED)
+
+    queue.retry_blocked("package-a")
+    second = queue.claim("chat-b")
+
+    assert second is not None
+    assert second.unit_id == "package-a"
+    assert second.fencing_token == first.fencing_token + 1
+    with closing(sqlite3.connect(queue.database)) as connection:
+        events = connection.execute(
+            "SELECT event_type FROM events WHERE attempt_id = ? ORDER BY event_id",
+            (first.attempt_id,),
+        ).fetchall()
+    assert ("BLOCKER_REQUEUED",) in events
+
+
+def test_only_blocked_units_can_use_blocker_retry(queue: Queue) -> None:
+    _enqueue(queue, "package-a")
+
+    with pytest.raises(QueueConflictError, match="not blocked"):
+        queue.retry_blocked("package-a")
 
 
 def test_workspace_allocation_failure_is_recorded_without_untracked_attempt(

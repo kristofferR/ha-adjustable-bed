@@ -22,6 +22,7 @@ _DEPENDENCY_NAMES = ("corpus", "evidence_lineage", "ir", "preflight", "schema")
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _PACKAGE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
+_MAX_VARIANT_PROFILE_CANDIDATES = 100_000
 _MAX_VARIANT_PROFILES = 100_000
 _MAX_UNIVERSE_PROFILE_REFERENCES = 1_000_000
 _MAX_VARIANT_DIMENSIONS = 128
@@ -307,19 +308,35 @@ class VariantSpace:
     dimensions: tuple[tuple[str, tuple[JsonScalar, ...]], ...]
     constraints: tuple[Predicate, ...]
 
-    def profiles(self) -> tuple[Profile, ...]:
-        """Enumerate valid profiles transiently without storing a Cartesian table."""
-
+    def iter_profiles(self) -> Iterator[Profile]:
+        """Yield valid profiles without storing a Cartesian table."""
         names = tuple(name for name, _values in self.dimensions)
         domains = tuple(values for _name, values in self.dimensions)
         combinations = itertools.product(*domains) if domains else ((),)
-        profiles: list[Profile] = []
-        for combination in combinations:
+        accepted_profiles = 0
+        for candidate_profiles, combination in enumerate(combinations, start=1):
+            if candidate_profiles > _MAX_VARIANT_PROFILE_CANDIDATES:
+                _fail(
+                    "variant_space_too_large",
+                    "$.variant_spaces",
+                    "variant space exceeds "
+                    f"{_MAX_VARIANT_PROFILE_CANDIDATES} candidate profiles",
+                )
             profile = tuple(zip(names, combination, strict=True))
             profile_map = dict(profile)
             if all(constraint.matches(profile_map) for constraint in self.constraints):
-                profiles.append(profile)
-        return tuple(profiles)
+                accepted_profiles += 1
+                if accepted_profiles > _MAX_VARIANT_PROFILES:
+                    _fail(
+                        "variant_space_too_large",
+                        "$.variant_spaces",
+                        f"variant space exceeds {_MAX_VARIANT_PROFILES} valid profiles",
+                    )
+                yield profile
+
+    def profiles(self) -> tuple[Profile, ...]:
+        """Enumerate all valid profiles for one bounded variant space."""
+        return tuple(self.iter_profiles())
 
     def to_data(self) -> dict[str, object]:
         return {
@@ -813,9 +830,20 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
     referenced_space_ids = {
         protocol.variant_space for _protocol_id, protocol in document.protocols
     }
-    profiles_by_space = {
-        space_id: spaces[space_id].profiles() for space_id in referenced_space_ids
-    }
+    profiles_by_space: dict[str, tuple[Profile, ...]] = {}
+    materialized_profiles = 0
+    for space_id in sorted(referenced_space_ids):
+        profiles: list[Profile] = []
+        for profile in spaces[space_id].iter_profiles():
+            materialized_profiles += 1
+            if materialized_profiles > _MAX_UNIVERSE_PROFILE_REFERENCES:
+                _fail(
+                    "universe_too_large",
+                    "$.variant_spaces",
+                    f"variant expansion exceeds {_MAX_UNIVERSE_PROFILE_REFERENCES} profiles",
+                )
+            profiles.append(profile)
+        profiles_by_space[space_id] = tuple(profiles)
     profile_references = sum(
         len(profiles_by_space[protocol.variant_space])
         for _protocol_id, protocol in document.protocols
@@ -2039,13 +2067,13 @@ def _validate_references_and_predicates(document: ProtocolIRDocument) -> None:
             )
         diagnostics.extend(space_diagnostics)
         profile_count = math.prod(len(values) for values in dimensions.values())
-        if profile_count > _MAX_VARIANT_PROFILES:
+        if profile_count > _MAX_VARIANT_PROFILE_CANDIDATES:
             diagnostics.append(
                 IRDiagnostic(
                     "variant_space_too_large",
                     f"$.variant_spaces.{space_id}",
                     f"declared Cartesian space has {profile_count} profiles; "
-                    f"limit is {_MAX_VARIANT_PROFILES}",
+                    f"limit is {_MAX_VARIANT_PROFILE_CANDIDATES}",
                 )
             )
         elif not space_diagnostics and not space.profiles():

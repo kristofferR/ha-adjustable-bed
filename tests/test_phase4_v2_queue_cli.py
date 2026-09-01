@@ -324,6 +324,23 @@ def test_cli_requeues_an_explicitly_repaired_unit(
     assert queue.status("package-a") is WorkUnitStatus.READY
 
 
+def test_cli_requeues_a_unit_with_a_resolved_blocker(
+    queue: Queue, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _enqueue(queue, "package-a")
+    lease = queue.claim("worker-a")
+    assert lease is not None
+    queue.finish(lease, TerminalOutcome.BLOCKED)
+
+    assert main(_args(queue, "retry-blocked", "--unit-id", "package-a")) == 0
+
+    assert json.loads(capsys.readouterr().out) == {
+        "retried": True,
+        "unit_id": "package-a",
+    }
+    assert queue.status("package-a") is WorkUnitStatus.READY
+
+
 def test_cli_refuses_to_create_missing_queue(tmp_path: Path) -> None:
     missing = Queue(tmp_path / "missing.sqlite3", tmp_path / "missing-attempts")
     with pytest.raises(QueueError, match="database is missing or inaccessible"):
@@ -343,7 +360,7 @@ def test_cli_refuses_to_create_missing_queue(tmp_path: Path) -> None:
     assert not (tmp_path / "missing.sqlite3").exists()
 
 
-@pytest.mark.parametrize("revision", [1, 3])
+@pytest.mark.parametrize("revision", [1, 4])
 def test_every_operation_rejects_incompatible_schema_without_mutation(
     revision: int,
     tmp_path: Path,

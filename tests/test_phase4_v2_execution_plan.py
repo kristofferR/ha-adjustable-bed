@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import replace
 from typing import cast
 
@@ -724,6 +725,30 @@ def test_per_root_duplicates_and_global_requirement_limit_fail_closed(
     monkeypatch.setattr(plan_module, "_MAX_GLOBAL_REQUIREMENTS", 2)
     with pytest.raises(EquivalenceError, match="global capability requirement count"):
         freeze_package_execution_plan(plan)
+
+
+def test_global_requirement_limit_stops_consuming_new_pins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(plan_module, "_MAX_GLOBAL_REQUIREMENTS", 2)
+
+    def capabilities() -> Iterable[CapabilityPin]:
+        yield CapabilityPin("one", "v1", SHA_A)
+        yield CapabilityPin("two", "v1", SHA_B)
+        yield CapabilityPin("three", "v1", SHA_C)
+        pytest.fail("capability aggregation consumed past the rejecting pin")
+
+    with pytest.raises(EquivalenceError, match="global capability requirement count"):
+        plan_module._merge_capabilities(capabilities())
+
+    def completions() -> Iterable[CompletionPin]:
+        yield CompletionPin("one", "v1", SHA_A)
+        yield CompletionPin("two", "v1", SHA_B)
+        yield CompletionPin("three", "v1", SHA_C)
+        pytest.fail("completion aggregation consumed past the rejecting pin")
+
+    with pytest.raises(EquivalenceError, match="global completion requirement count"):
+        plan_module._merge_completions(completions())
 
 
 def test_nested_inputs_are_copied_and_content_id_survives_caller_mutation() -> None:

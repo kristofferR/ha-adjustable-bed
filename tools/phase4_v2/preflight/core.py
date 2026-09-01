@@ -42,7 +42,7 @@ _ZIP_CENTRAL_DIRECTORY_HEADER_BYTES = 46
 _STATUS_REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _BADGING_PACKAGE = re.compile(r"^package:(?: [A-Za-z][A-Za-z0-9]*='[^']*')+$")
 _BADGING_ATTRIBUTE = re.compile(r" ([A-Za-z][A-Za-z0-9]*)='([^']*)'")
-_BADGING_SPLIT = re.compile(r"^split='([^']+)'$")
+_BADGING_SPLIT = re.compile(r"^split='([^']*)'$")
 _BADGING_USES_SPLIT = re.compile(r"^uses-split(?:-not-required)?:'([^']+)'$")
 _SIGNER_DIGEST = re.compile(r"^Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]{64})$")
 _PACKAGE_NAME = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
@@ -853,6 +853,8 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
         parse_blockers.append(f"package_identity_ambiguous:{member.name}")
     if len(split_matches) > 1:
         parse_blockers.append(f"split_identity_ambiguous:{member.name}")
+    if split_matches == [""]:
+        parse_blockers.append(f"split_identity_empty:{member.name}")
     if not signer_digests:
         parse_blockers.append(f"signer_identity_missing:{member.name}")
     if package_attributes:
@@ -1047,12 +1049,13 @@ def preflight_delivery(
     sealing_directory: Path | str | None = None,
 ) -> PreflightResult:
     """Seal each delivery once, then derive all results from sealed bytes."""
-    if not paths:
-        raise PreflightError("delivery must contain at least one file")
     active_limits = limits or PreflightLimits()
-    if len(paths) > active_limits.max_delivery_files:
+    bounded_paths = list(islice(iter(paths), active_limits.max_delivery_files + 1))
+    if not bounded_paths:
+        raise PreflightError("delivery must contain at least one file")
+    if len(bounded_paths) > active_limits.max_delivery_files:
         raise SafetyError("delivery file-count limit exceeded")
-    supplied = [Path(os.path.abspath(os.fspath(path))) for path in paths]
+    supplied = [Path(os.path.abspath(os.fspath(path))) for path in bounded_paths]
     if len({path.name.casefold() for path in supplied}) != len(supplied):
         raise SafetyError("delivery contains duplicate file names")
     owner = _SealedOwner(sealing_directory)
@@ -1579,6 +1582,11 @@ class ArtifactCache:
                 raise CacheIntegrityError("cache logical member names are not unique")
             if logical_names != sorted(logical_names, key=str.casefold):
                 raise CacheIntegrityError("cache logical member names are not canonical")
+            if any(
+                member["stored_name"] != f"{index:04d}-{member['sha256']}.apk"
+                for index, member in enumerate(members)
+            ):
+                raise CacheIntegrityError("cache stored member names are not canonical")
             try:
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             except OSError as err:

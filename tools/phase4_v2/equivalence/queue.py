@@ -19,7 +19,7 @@ from tools.phase4_v2.queue import (
     Queue,
     QueueConflictError,
 )
-from tools.phase4_v2.validator import DependencyPins, EvidenceLineageTrust
+from tools.phase4_v2.validator import DependencyPins
 
 from .core import FrozenPackageRef
 from .plan import (
@@ -160,7 +160,7 @@ def finish_package_execution_plan(
     execution_plan: PackageExecutionPlan,
     report_root: Path,
     trusted_dependencies: DependencyPins,
-    trusted_evidence_lineage: EvidenceLineageTrust,
+    evidence_lineage_payload: bytes,
 ) -> FinishedPackageWork:
     """Validate and publish a package report from live trusted inputs."""
     frozen = freeze_package_execution_plan(execution_plan)
@@ -173,7 +173,7 @@ def finish_package_execution_plan(
         execution_plan=execution_plan,
         report_root=report_root,
         trusted_dependencies=trusted_dependencies,
-        trusted_evidence_lineage=trusted_evidence_lineage,
+        evidence_lineage_payload=evidence_lineage_payload,
     )
     result = checked.finish_result
     if checked.disposition is InputCheckedFinishDisposition.INPUT_MISMATCH:

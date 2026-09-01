@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+from collections.abc import Iterator
 
 import pytest
 
@@ -433,14 +434,14 @@ def test_universe_caches_shared_spaces_and_bounds_aggregate_expansion(
     protocols["secondary"] = {"variant_space": "variants"}
     document = _load(data)
     profile_calls = 0
-    original_profiles = ir_model.VariantSpace.profiles
+    original_iter_profiles = ir_model.VariantSpace.iter_profiles
 
-    def counted_profiles(space: ir_model.VariantSpace) -> tuple[ir_model.Profile, ...]:
+    def counted_profiles(space: ir_model.VariantSpace) -> Iterator[ir_model.Profile]:
         nonlocal profile_calls
         profile_calls += 1
-        return original_profiles(space)
+        return original_iter_profiles(space)
 
-    monkeypatch.setattr(ir_model.VariantSpace, "profiles", counted_profiles)
+    monkeypatch.setattr(ir_model.VariantSpace, "iter_profiles", counted_profiles)
     monkeypatch.setattr(ir_model, "_MAX_UNIVERSE_PROFILE_REFERENCES", 7)
 
     with pytest.raises(IRValidationError) as caught:
@@ -448,6 +449,61 @@ def test_universe_caches_shared_spaces_and_bounds_aggregate_expansion(
 
     assert caught.value.diagnostics[0].code == "universe_too_large"
     assert profile_calls == 1
+
+
+def test_universe_stops_materializing_distinct_spaces_at_aggregate_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = _document()
+    spaces = data["variant_spaces"]
+    protocols = data["protocols"]
+    assert isinstance(spaces, dict)
+    assert isinstance(protocols, dict)
+    spaces["variants_b"] = copy.deepcopy(spaces["variants"])
+    spaces["variants_c"] = copy.deepcopy(spaces["variants"])
+    protocols["secondary"] = {"variant_space": "variants_b"}
+    protocols["tertiary"] = {"variant_space": "variants_c"}
+    document = _load(data)
+    profile_calls = 0
+    original_iter_profiles = ir_model.VariantSpace.iter_profiles
+
+    def counted_profiles(space: ir_model.VariantSpace) -> Iterator[ir_model.Profile]:
+        nonlocal profile_calls
+        profile_calls += 1
+        return original_iter_profiles(space)
+
+    monkeypatch.setattr(ir_model.VariantSpace, "iter_profiles", counted_profiles)
+    monkeypatch.setattr(ir_model, "_MAX_UNIVERSE_PROFILE_REFERENCES", 7)
+
+    with pytest.raises(IRValidationError) as caught:
+        validate_universe(document)
+
+    assert caught.value.diagnostics[0].code == "universe_too_large"
+    assert profile_calls == 2
+
+
+def test_variant_space_iterator_rejects_100001_valid_profiles() -> None:
+    space = ir_model.VariantSpace(
+        (("variant", tuple(range(100_001))),),
+        (),
+    )
+
+    with pytest.raises(IRValidationError) as caught:
+        tuple(space.iter_profiles())
+
+    assert caught.value.diagnostics[0].code == "variant_space_too_large"
+
+
+def test_variant_space_iterator_rejects_100001_candidates_before_filtering() -> None:
+    space = ir_model.VariantSpace(
+        (("variant", tuple(range(100_001))),),
+        (ir_model.Predicate("never"),),
+    )
+
+    with pytest.raises(IRValidationError) as caught:
+        tuple(space.iter_profiles())
+
+    assert caught.value.diagnostics[0].code == "variant_space_too_large"
 
 
 def test_universe_bounds_rule_and_binding_profile_expansion(
