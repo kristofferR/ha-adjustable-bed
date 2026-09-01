@@ -39,6 +39,7 @@ _MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^\x00\r\n]+)$")
 _READ_SIZE = 1024 * 1024
 _MAX_MANIFEST_BYTES = 64 * 1024**2
 _MAX_MANIFEST_DIAGNOSTICS = 4_096
+_MAX_MANIFEST_DECLARATIONS = 4_096
 _MAX_JSON_BYTES = 64 * 1024**2
 _MAX_PARSED_JSON_BYTES = 256 * 1024**2
 _MAX_PARSED_JSON_NODES = 8_000_000
@@ -701,6 +702,9 @@ def _parse_manifest(data: bytes) -> tuple[list[_ManifestEntry], list[Diagnostic]
         if canonical in seen:
             diagnostics.append(Diagnostic("MANIFEST_DUPLICATE_MEMBER", canonical))
             continue
+        if len(entries) >= _MAX_MANIFEST_DECLARATIONS:
+            diagnostics.append(Diagnostic("MANIFEST_DECLARATION_LIMIT_EXCEEDED", REPORT_MANIFEST))
+            break
         seen.add(canonical)
         entries.append(_ManifestEntry(path=canonical, sha256=digest))
     return entries, diagnostics

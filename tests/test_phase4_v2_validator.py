@@ -1785,6 +1785,16 @@ def test_manifest_parser_bounds_invalid_line_diagnostics(
     ]
 
 
+def test_manifest_parser_bounds_valid_declarations(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(validator_bundle, "_MAX_MANIFEST_DECLARATIONS", 2)
+    manifest = "".join(f"{'0' * 64}  member-{index}\n" for index in range(5)).encode()
+
+    entries, diagnostics = validator_bundle._parse_manifest(manifest)
+
+    assert [entry.path for entry in entries] == ["member-0", "member-1"]
+    assert [item.code for item in diagnostics] == ["MANIFEST_DECLARATION_LIMIT_EXCEEDED"]
+
+
 @pytest.mark.parametrize(
     ("payload", "reason"),
     [

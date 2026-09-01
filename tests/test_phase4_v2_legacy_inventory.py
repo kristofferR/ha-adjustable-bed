@@ -577,6 +577,8 @@ def test_hash_manifest_metadata_is_rechecked_after_parsing(
         parsed_path: Path,
         parsed_source_root: Path,
         digest_cache: dict[tuple[int, int, int, int, int], str],
+        source_descriptor: int,
+        verification_budget: legacy_inventory._HashVerificationBudget,
     ) -> tuple[list[legacy_inventory.DeclaredHash], list[legacy_inventory.Diagnostic]]:
         result = original_parse(
             text,
@@ -584,6 +586,8 @@ def test_hash_manifest_metadata_is_rechecked_after_parsing(
             parsed_path,
             parsed_source_root,
             digest_cache,
+            source_descriptor,
+            verification_budget,
         )
         manifest.write_text("changed\n", encoding="utf-8")
         changed = manifest.stat()
@@ -596,6 +600,122 @@ def test_hash_manifest_metadata_is_rechecked_after_parsing(
 
     assert declarations == []
     assert [item.error for item in diagnostics] == ["ObservedFileChangedError"]
+
+
+def test_declared_hash_target_cannot_escape_via_replaced_ancestor(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    active = source / "active"
+    active.mkdir(parents=True)
+    (active / "target.bin").write_bytes(b"inside")
+    manifest = source / "REPORT.SHA256"
+    manifest.write_text("", encoding="utf-8")
+    external = tmp_path / "external"
+    external.mkdir()
+    external_target = external / "target.bin"
+    external_target.write_bytes(b"outside")
+    declared = hashlib.sha256(external_target.read_bytes()).hexdigest()
+    source_descriptor = legacy_inventory._open_source_descriptor(source)
+    original_open = os.open
+    replaced = False
+
+    def replace_before_open(
+        path: os.PathLike[str] | str,
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal replaced
+        if path == "active" and dir_fd is not None and not replaced:
+            replaced = True
+            active.rename(source / "displaced")
+            active.symlink_to(external, target_is_directory=True)
+        return original_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "open", replace_before_open)
+    try:
+        verification, actual, _resolved = legacy_inventory._verify_declared_hash(
+            source,
+            source_descriptor,
+            manifest,
+            "active/target.bin",
+            declared,
+            {},
+            legacy_inventory._HashVerificationBudget(),
+        )
+    finally:
+        os.close(source_descriptor)
+
+    assert replaced is True
+    assert verification == "filesystem_error:NotADirectoryError"
+    assert actual is None
+
+
+def test_inventory_bounds_declared_hash_verification_bytes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    targets = {"first.bin": b"first", "second.bin": b"other"}
+    for name, payload in targets.items():
+        (source / name).write_bytes(payload)
+    (source / "REPORT.SHA256").write_text(
+        "".join(
+            f"{hashlib.sha256(payload).hexdigest()}  {name}\n"
+            for name, payload in targets.items()
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_TARGET_BYTES", 5)
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_VERIFICATION_BYTES", 5)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    declarations = _ndjson(output / "declared_hashes.ndjson")
+    assert [item["verification"] for item in declarations] == [
+        "match",
+        "verification_byte_limit_exceeded",
+    ]
+    assert (output / "INVENTORY.PARTIAL").is_file()
+
+
+def test_inventory_bounds_individual_declared_hash_targets(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    target = source / "target.bin"
+    target.write_bytes(b"oversized")
+    (source / "REPORT.SHA256").write_text(
+        f"{hashlib.sha256(target.read_bytes()).hexdigest()}  target.bin\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(legacy_inventory, "_MAX_HASH_TARGET_BYTES", target.stat().st_size - 1)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    declarations = _ndjson(output / "declared_hashes.ndjson")
+    assert [item["verification"] for item in declarations] == ["target_too_large"]
+    assert (output / "INVENTORY.PARTIAL").is_file()
+
+
+def test_inventory_wraps_source_pinning_errors(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+
+    def fail_to_pin(_source_root: Path) -> int:
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(legacy_inventory, "_open_source_descriptor", fail_to_pin)
+
+    with pytest.raises(InventoryError, match="cannot pin source root"):
+        build_inventory(source, tmp_path / "inventory")
 
 
 def test_inventory_content_reads_preserve_source_access_times(tmp_path: Path) -> None:

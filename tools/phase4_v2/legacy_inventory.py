@@ -19,6 +19,7 @@ import stat
 import tempfile
 from collections import Counter
 from collections.abc import Buffer, Collection, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from itertools import islice
 from pathlib import Path, PurePosixPath
@@ -34,6 +35,8 @@ _MAX_ANALYSIS_JSON_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_BYTES = 16 * 1024**2
 _MAX_HASH_MANIFEST_DIAGNOSTICS = 4_096
 _MAX_HASH_MANIFEST_DECLARATIONS = 4_096
+_MAX_HASH_TARGET_BYTES = 2 * 1024**3
+_MAX_HASH_VERIFICATION_BYTES = 16 * 1024**3
 _MAX_TREE_ENTRIES = 250_000
 
 
@@ -167,6 +170,11 @@ class _WorkspaceState:
     schema_revisions: set[str] = field(default_factory=set)
     roles: set[str] = field(default_factory=set)
     active_protected: bool = False
+
+
+@dataclass(slots=True)
+class _HashVerificationBudget:
+    bytes_read: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -567,6 +575,81 @@ def _open_observed_binary(entry: Entry, path: Path) -> BinaryIO:
     return os.fdopen(_open_observed_descriptor(entry, path), "rb")
 
 
+def _open_source_descriptor(source_root: Path) -> int:
+    expected = source_root.lstat()
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
+    descriptor = os.open(source_root, flags)
+    try:
+        opened = os.fstat(descriptor)
+        if not stat.S_ISDIR(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
+            expected.st_dev,
+            expected.st_ino,
+        ):
+            raise ObservedFileChangedError("source root changed while opening")
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+@contextmanager
+def _pinned_source_descriptor(source_root: Path) -> Iterator[int]:
+    try:
+        descriptor = _open_source_descriptor(source_root)
+    except OSError as err:
+        raise InventoryError(f"cannot pin source root {source_root}: {err}") from err
+    try:
+        yield descriptor
+    finally:
+        os.close(descriptor)
+
+
+def _open_declared_descriptor(source_descriptor: int, target: PurePosixPath) -> int:
+    if not target.parts:
+        raise ValueError("non_regular_target")
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
+    current_descriptor = os.dup(source_descriptor)
+    try:
+        for component in target.parts[:-1]:
+            next_descriptor = os.open(component, directory_flags, dir_fd=current_descriptor)
+            os.close(current_descriptor)
+            current_descriptor = next_descriptor
+        file_flags = (
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
+            | getattr(os, "O_NOATIME", 0)
+        )
+        noatime = getattr(os, "O_NOATIME", 0)
+        try:
+            descriptor = os.open(target.parts[-1], file_flags, dir_fd=current_descriptor)
+        except OSError as err:
+            if not noatime or err.errno != errno.EPERM:
+                raise
+            descriptor = os.open(
+                target.parts[-1], file_flags & ~noatime, dir_fd=current_descriptor
+            )
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            os.close(descriptor)
+            raise ValueError("non_regular_target")
+        return descriptor
+    finally:
+        os.close(current_descriptor)
+
+
 def _report_record(entry: Entry, path: Path) -> ReportRecord:
     if entry.size > _MAX_ANALYSIS_JSON_BYTES:
         raise ValueError("analysis.json exceeds the metadata parsing limit")
@@ -619,29 +702,14 @@ def _is_hash_manifest(path: Path) -> bool:
     return _is_hash_manifest_name(path.name)
 
 
-def _safe_declared_target(source_root: Path, candidate: Path) -> Path:
-    if not candidate.is_relative_to(source_root):
-        raise ValueError("outside_source")
-    if candidate == source_root:
-        raise ValueError("non_regular_target")
-    current = source_root
-    for component in candidate.relative_to(source_root).parts:
-        current /= component
-        node_stat = current.lstat()
-        if stat.S_ISLNK(node_stat.st_mode):
-            raise ValueError("symlink_target")
-    target_stat = candidate.lstat()
-    if not stat.S_ISREG(target_stat.st_mode):
-        raise ValueError("non_regular_target")
-    return candidate
-
-
 def _verify_declared_hash(
     source_root: Path,
+    source_descriptor: int,
     manifest: Path,
     target: str | None,
     declared: str,
     digest_cache: dict[tuple[int, int, int, int, int], str],
+    verification_budget: _HashVerificationBudget,
 ) -> tuple[str, str | None, str | None]:
     if target is None:
         return "no_target", None, None
@@ -659,46 +727,58 @@ def _verify_declared_hash(
     mismatches: list[tuple[str, str]] = []
     for candidate in candidates:
         try:
-            safe_candidate = _safe_declared_target(source_root, candidate)
-            before = safe_candidate.lstat()
-            cache_key = (
-                before.st_dev,
-                before.st_ino,
-                before.st_size,
-                before.st_mtime_ns,
-                before.st_ctime_ns,
-            )
-            cached_digest = digest_cache.get(cache_key)
-            if cached_digest is not None:
-                resolved = safe_candidate.relative_to(source_root).as_posix()
-                if cached_digest == declared.lower():
-                    return "match", cached_digest, resolved
-                mismatches.append((cached_digest, resolved))
-                continue
-            target_entry = _entry_from_stat(
-                PurePosixPath(safe_candidate.relative_to(source_root).as_posix()), before, None, ()
-            )
-            digest = hashlib.sha256()
-            with _open_observed_binary(target_entry, safe_candidate) as target_file:
-                for chunk in iter(lambda: target_file.read(1024 * 1024), b""):
+            if not candidate.is_relative_to(source_root):
+                raise ValueError("outside_source")
+            relative_target = PurePosixPath(candidate.relative_to(source_root).as_posix())
+            descriptor = _open_declared_descriptor(source_descriptor, relative_target)
+            with os.fdopen(descriptor, "rb") as target_file:
+                before = os.fstat(descriptor)
+                cache_key = (
+                    before.st_dev,
+                    before.st_ino,
+                    before.st_size,
+                    before.st_mtime_ns,
+                    before.st_ctime_ns,
+                )
+                cached_digest = digest_cache.get(cache_key)
+                if cached_digest is not None:
+                    resolved = relative_target.as_posix()
+                    if cached_digest == declared.lower():
+                        return "match", cached_digest, resolved
+                    mismatches.append((cached_digest, resolved))
+                    continue
+                if before.st_size > _MAX_HASH_TARGET_BYTES:
+                    errors.append("target_too_large")
+                    continue
+                if verification_budget.bytes_read + before.st_size > _MAX_HASH_VERIFICATION_BYTES:
+                    errors.append("verification_byte_limit_exceeded")
+                    continue
+                verification_budget.bytes_read += before.st_size
+                digest = hashlib.sha256()
+                remaining = before.st_size
+                while remaining:
+                    chunk = target_file.read(min(1024 * 1024, remaining))
+                    if not chunk:
+                        raise ObservedFileChangedError("declared target ended during read")
                     digest.update(chunk)
-            after = safe_candidate.lstat()
-            if (
-                before.st_dev,
-                before.st_ino,
-                before.st_size,
-                before.st_mtime_ns,
-                before.st_ctime_ns,
-            ) != (
-                after.st_dev,
-                after.st_ino,
-                after.st_size,
-                after.st_mtime_ns,
-                after.st_ctime_ns,
-            ):
-                errors.append("changed_during_read")
-                continue
-            digest_cache[cache_key] = digest.hexdigest()
+                    remaining -= len(chunk)
+                after = os.fstat(target_file.fileno())
+                if (
+                    before.st_dev,
+                    before.st_ino,
+                    before.st_size,
+                    before.st_mtime_ns,
+                    before.st_ctime_ns,
+                ) != (
+                    after.st_dev,
+                    after.st_ino,
+                    after.st_size,
+                    after.st_mtime_ns,
+                    after.st_ctime_ns,
+                ):
+                    errors.append("changed_during_read")
+                    continue
+                digest_cache[cache_key] = digest.hexdigest()
         except FileNotFoundError:
             errors.append("missing_target")
             continue
@@ -715,11 +795,21 @@ def _verify_declared_hash(
             errors.append(str(err))
             continue
         actual = digest.hexdigest()
-        resolved = safe_candidate.relative_to(source_root).as_posix()
+        resolved = relative_target.as_posix()
         if actual == declared.lower():
             return "match", actual, resolved
         mismatches.append((actual, resolved))
 
+    limit_error = next(
+        (
+            item
+            for item in errors
+            if item in {"target_too_large", "verification_byte_limit_exceeded"}
+        ),
+        None,
+    )
+    if limit_error is not None:
+        return limit_error, None, None
     if mismatches:
         actual, resolved = mismatches[0]
         return "mismatch", actual, resolved
@@ -732,6 +822,8 @@ def _declared_hashes(
     path: Path,
     source_root: Path,
     digest_cache: dict[tuple[int, int, int, int, int], str],
+    source_descriptor: int | None = None,
+    verification_budget: _HashVerificationBudget | None = None,
 ) -> tuple[list[DeclaredHash], list[Diagnostic]]:
     if entry.size > _MAX_HASH_MANIFEST_BYTES:
         return [], [
@@ -742,7 +834,12 @@ def _declared_hashes(
                 active_protected=entry.active_protected,
             )
         ]
+    owned_source_descriptor = source_descriptor is None
     try:
+        if source_descriptor is None:
+            source_descriptor = _open_source_descriptor(source_root)
+        if verification_budget is None:
+            verification_budget = _HashVerificationBudget()
         with _open_observed_binary(entry, path) as manifest_file:
             payload = manifest_file.read(_MAX_HASH_MANIFEST_BYTES + 1)
             if len(payload) != entry.size:
@@ -756,6 +853,8 @@ def _declared_hashes(
                 path,
                 source_root,
                 digest_cache,
+                source_descriptor,
+                verification_budget,
             )
             if not _matches_observed_entry(os.fstat(manifest_file.fileno()), entry):
                 raise ObservedFileChangedError(
@@ -771,6 +870,9 @@ def _declared_hashes(
                 active_protected=entry.active_protected,
             )
         ]
+    finally:
+        if owned_source_descriptor and source_descriptor is not None:
+            os.close(source_descriptor)
 
 
 def _parse_declared_hash_lines(
@@ -779,6 +881,8 @@ def _parse_declared_hash_lines(
     path: Path,
     source_root: Path,
     digest_cache: dict[tuple[int, int, int, int, int], str],
+    source_descriptor: int,
+    verification_budget: _HashVerificationBudget,
 ) -> tuple[list[DeclaredHash], list[Diagnostic]]:
     declarations: list[DeclaredHash] = []
     diagnostics: list[Diagnostic] = []
@@ -835,7 +939,13 @@ def _parse_declared_hash_lines(
             )
             break
         verification, actual_digest, resolved_target = _verify_declared_hash(
-            source_root, path, target, digest, digest_cache
+            source_root,
+            source_descriptor,
+            path,
+            target,
+            digest,
+            digest_cache,
+            verification_budget,
         )
         declarations.append(
             DeclaredHash(
@@ -1177,10 +1287,12 @@ def build_inventory(
     workspace_states: dict[str, _WorkspaceState] = {}
     report_records: list[ReportRecord] = []
     digest_cache: dict[tuple[int, int, int, int, int], str] = {}
+    verification_budget = _HashVerificationBudget()
     report_count = 0
     hash_count = 0
     try:
         with (
+            _pinned_source_descriptor(root) as source_descriptor,
             raw_entries_path.open("w", encoding="utf-8", newline="\n") as entries_file,
             hashes_path.open("w", encoding="utf-8", newline="\n") as hashes_file,
             reports_path.open("w", encoding="utf-8", newline="\n") as reports_file,
@@ -1223,7 +1335,12 @@ def build_inventory(
                         status_counts[record.status or "UNKNOWN"] += 1
                 if _is_hash_manifest(absolute_path):
                     declarations, hash_diagnostics = _declared_hashes(
-                        entry, absolute_path, root, digest_cache
+                        entry,
+                        absolute_path,
+                        root,
+                        digest_cache,
+                        source_descriptor,
+                        verification_budget,
                     )
                     for declaration in declarations:
                         hashes_file.write(declaration.to_json() + "\n")
@@ -1307,7 +1424,12 @@ def build_inventory(
             or (
                 diagnostic.operation.startswith("verify_declared_hash_line:")
                 and (
-                    diagnostic.error == "unreadable_target"
+                    diagnostic.error
+                    in {
+                        "target_too_large",
+                        "unreadable_target",
+                        "verification_byte_limit_exceeded",
+                    }
                     or diagnostic.error.startswith("filesystem_error:")
                 )
             )
