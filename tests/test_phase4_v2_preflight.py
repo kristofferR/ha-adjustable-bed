@@ -962,6 +962,27 @@ def test_preflight_rejects_delivery_compressed_size_before_read(tmp_path: Path) 
         )
 
 
+def test_preflight_rejects_delivery_wide_file_count_and_bytes(tmp_path: Path) -> None:
+    deliveries = (tmp_path / "first.xapk", tmp_path / "second.xapk")
+    for delivery in deliveries:
+        with zipfile.ZipFile(delivery, "w") as archive:
+            archive.writestr("metadata.json", b"{}")
+
+    with pytest.raises(SafetyError, match="delivery file-count limit"):
+        preflight_delivery(
+            list(deliveries),
+            limits=PreflightLimits(max_delivery_files=1),
+        )
+
+    with pytest.raises(SafetyError, match="delivery byte-size limit"):
+        preflight_delivery(
+            list(deliveries),
+            limits=PreflightLimits(
+                max_delivery_bytes=sum(path.stat().st_size for path in deliveries) - 1
+            ),
+        )
+
+
 def test_preflight_applies_artifact_member_limit_to_direct_apk(tmp_path: Path) -> None:
     artifact = tmp_path / "base.apk"
     _native_apk(artifact)

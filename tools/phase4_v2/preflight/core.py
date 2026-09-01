@@ -124,7 +124,9 @@ class CacheManifest(TypedDict):
 class PreflightLimits:
     """Limits enforced before archive content is expanded."""
 
+    max_delivery_files: int = 100_000
     max_delivery_file_bytes: int = 4 * 1024**3
+    max_delivery_bytes: int = 8 * 1024**3
     max_archive_members: int = 100_000
     max_member_bytes: int = 2 * 1024**3
     max_archive_bytes: int = 8 * 1024**3
@@ -354,8 +356,16 @@ def _copy_fd_exact(source_fd: int, destination_fd: int, *, expected_size: int) -
     return digest.hexdigest(), copied
 
 
-def _seal_delivery_file(source: Path, destination: Path, limits: PreflightLimits) -> DeliveryFile:
+def _seal_delivery_file(
+    source: Path,
+    destination: Path,
+    limits: PreflightLimits,
+    *,
+    remaining_delivery_bytes: int,
+) -> DeliveryFile:
     before = _regular_file(source, max_bytes=limits.max_delivery_file_bytes)
+    if before.st_size > remaining_delivery_bytes:
+        raise SafetyError("delivery byte-size limit exceeded")
     source_fd = _open_readonly(source)
     destination_fd = -1
     try:
@@ -916,6 +926,8 @@ def preflight_delivery(
     if not paths:
         raise PreflightError("delivery must contain at least one file")
     active_limits = limits or PreflightLimits()
+    if len(paths) > active_limits.max_delivery_files:
+        raise SafetyError("delivery file-count limit exceeded")
     supplied = [Path(os.path.abspath(os.fspath(path))) for path in paths]
     if len({path.name.casefold() for path in supplied}) != len(supplied):
         raise SafetyError("delivery contains duplicate file names")
@@ -923,6 +935,7 @@ def preflight_delivery(
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
     observations: list[_ApkObservation] = []
+    delivery_bytes = 0
     artifact_bytes = 0
     artifact_expanded_bytes = 0
     try:
@@ -930,7 +943,13 @@ def preflight_delivery(
             sorted(supplied, key=lambda item: item.name.casefold())
         ):
             sealed_delivery = owner.path / f"delivery-{delivery_index:04d}"
-            delivery = _seal_delivery_file(source, sealed_delivery, active_limits)
+            delivery = _seal_delivery_file(
+                source,
+                sealed_delivery,
+                active_limits,
+                remaining_delivery_bytes=active_limits.max_delivery_bytes - delivery_bytes,
+            )
+            delivery_bytes += delivery.size
             deliveries.append(delivery)
             if source.suffix.lower() == _APK_SUFFIX:
                 if delivery.size > active_limits.max_member_bytes:
