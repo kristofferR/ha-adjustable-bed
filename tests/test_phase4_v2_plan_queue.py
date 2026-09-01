@@ -11,11 +11,12 @@ from pathlib import Path
 import pytest
 
 import tools.phase4_v2.equivalence.plan as plan_module
-import tools.phase4_v2.equivalence.queue as plan_queue_module
+import tools.phase4_v2.validator as validator_module
 from tools.phase4_v2.equivalence.core import (
     EQUIVALENCE_SCHEMA_REVISION,
     LEDGER_DECISION_REVISION,
     ApplicationRoot,
+    EquivalenceError,
     ExtractorCapability,
     LedgerDecision,
     Route,
@@ -32,6 +33,7 @@ from tools.phase4_v2.equivalence.plan import (
     BlockedRootPlan,
     CapabilityPin,
     CompletionPin,
+    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
@@ -44,12 +46,15 @@ from tools.phase4_v2.equivalence.plan import (
     build_semantic_root_audit,
     build_semantic_root_completion,
     freeze_package_execution_plan,
+    package_validation_receipt_completion,
 )
 from tools.phase4_v2.equivalence.queue import (
     PACKAGE_QUEUE_UNIT_KIND,
     PackagePlanInputMismatchError,
     finish_package_execution_plan,
+    finish_package_validation_receipt,
     materialize_package_execution_plan,
+    materialize_package_validation_receipt,
     package_queue_unit_id,
 )
 from tools.phase4_v2.queue import (
@@ -63,12 +68,21 @@ from tools.phase4_v2.queue import (
     WorkUnitStatus,
 )
 from tools.phase4_v2.validator import (
+    BOUND_VALIDATION_PROFILE,
+    CONTRACT_REVISION,
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
     VALIDATOR_REVISION,
+    DependencyPins,
+    EvidenceLineageTrust,
+    PackageDependencyPins,
     ValidationReceipt,
 )
-from tools.phase4_v2.validator.binding import ArtifactIdentityAttestation
+from tools.phase4_v2.validator.binding import (
+    ArtifactIdentityAttestation,
+    EvidenceAnchorAttestation,
+    EvidenceMemberAttestation,
+)
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -79,6 +93,72 @@ SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 
+SOURCE_RECEIPT_DEPENDENCIES = {
+    "corpus": SHA_A,
+    "evidence_lineage": SHA_0,
+    "ir": SHA_B,
+    "preflight": SHA_C,
+    "schema": SHA_E,
+}
+_SOURCE_RECEIPT_WITHOUT_IDENTITY = ValidationReceipt(
+    validator_revision=VALIDATOR_REVISION,
+    accepted=True,
+    source_unchanged=True,
+    bundle_sha256=SHA_F,
+    report_manifest_sha256=SHA_E,
+    discovered_members=4,
+    declared_members=4,
+    diagnostics=(),
+    dependency_digests=tuple(sorted(SOURCE_RECEIPT_DEPENDENCIES.items())),
+    validation_profile=BOUND_VALIDATION_PROFILE,
+    contract_revision=CONTRACT_REVISION,
+    validated_artifact_identity=ArtifactIdentityAttestation(
+        package_name="org.example.target",
+        version_code="17",
+        version_name="1.7",
+        artifact_digest=SHA_B,
+    ),
+    evidence_anchors_checked=1,
+    validated_evidence_members=(
+        EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_F),
+    ),
+    validated_evidence_anchors=(
+        EvidenceAnchorAttestation(
+            "source",
+            SHA_B,
+            "evidence/source.txt",
+            SHA_F,
+            0,
+            1,
+            "/schema_revision",
+            "utf8",
+            SHA_A,
+        ),
+    ),
+)
+SOURCE_RECEIPT = replace(
+    _SOURCE_RECEIPT_WITHOUT_IDENTITY,
+    validation_receipt_sha256=hashlib.sha256(
+        json.dumps(
+            _SOURCE_RECEIPT_WITHOUT_IDENTITY.identity_payload(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode()
+    ).hexdigest(),
+)
+assert SOURCE_RECEIPT.validation_receipt_sha256 is not None
+
+TARGET_PACKAGE_REF = FrozenPackageRef(
+    package_name="org.example.target",
+    version_code="17",
+    artifact_digest=SHA_B,
+    preflight_sha256=SHA_C,
+    validation_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+)
+TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+
 
 def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
     completion = CompletionPin("shared", "fixture-v1", SHA_A)
@@ -86,14 +166,14 @@ def test_completion_limit_applies_after_exact_pin_deduplication() -> None:
     assert plan_module._merge_completions([completion] * 300) == (completion,)
 
 
-def _local_plan(*, requirements_sha256: str = SHA_C) -> PackageLocalPlan:
+def _local_plan(*, version_name: str = "1.7") -> PackageLocalPlan:
     return PackageLocalPlan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
         version_code="17",
-        version_name="1.7",
+        version_name=version_name,
         target_artifact_digest=SHA_B,
-        requirements_sha256=requirements_sha256,
+        requirements_sha256=SHA_C,
         pipeline_capability=CapabilityPin(
             PACKAGE_PIPELINE_CAPABILITY,
             PACKAGE_EXECUTION_PLAN_REVISION,
@@ -106,7 +186,7 @@ def _accepted_inventory(
     *pairs: tuple[str, str],
 ) -> AcceptedTargetRootInventory:
     inventory = TargetRootInventory(
-        SHA_A,
+        TARGET_PACKAGE_REF_ID,
         tuple(
             sorted(
                 (TargetRootOccurrence(root, occurrence) for root, occurrence in pairs),
@@ -124,17 +204,18 @@ def _accepted_inventory(
     )
 
 
-def _full_plan(*, requirements_sha256: str = SHA_C) -> PackageExecutionPlan:
+def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
-        package_local=_local_plan(requirements_sha256=requirements_sha256),
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
+        package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(
             FullAnalysisRootPlan(
                 SHA_E,
                 SHA_F,
-                "no_exact_identity",
+                reason,
                 (CapabilityPin("analyzer:full", "full-implementation-1", SHA_A),),
                 (CompletionPin("analysis-input", "analysis-input-v1", SHA_D),),
             ),
@@ -145,7 +226,8 @@ def _full_plan(*, requirements_sha256: str = SHA_C) -> PackageExecutionPlan:
 def _blocked_plan() -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(BlockedRootPlan(SHA_E, SHA_F, ("missing_authoritative_root",)),),
@@ -210,7 +292,8 @@ def _reuse_plan() -> PackageExecutionPlan:
         ),
     )
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(build_exact_reuse_root_plan(audit),),
@@ -258,6 +341,52 @@ def _receipt(plan: PackageExecutionPlan, *, bundle_sha256: str = SHA_D) -> Valid
     )
 
 
+TRUSTED_DEPENDENCIES = DependencyPins(
+    preflight_sha256=SHA_C,
+    ir_sha256=SHA_B,
+    schema_sha256=SHA_E,
+    corpus_sha256=SHA_A,
+)
+TRUSTED_EVIDENCE_LINEAGE = EvidenceLineageTrust(
+    payload=b"{}",
+    expected_manifest_sha256=SHA_0,
+    trusted_producers=(),
+)
+
+
+def _stub_valid_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    plan: PackageExecutionPlan,
+) -> tuple[Path, ValidationReceipt]:
+    report_root = tmp_path / "report"
+    report_root.mkdir(exist_ok=True)
+    receipt = _receipt(plan)
+
+    def validate(
+        received_root: Path,
+        *,
+        expected_dependencies: DependencyPins | PackageDependencyPins | None = None,
+        expected_evidence_lineage: EvidenceLineageTrust | None = None,
+        allow_unbound: bool = False,
+    ) -> ValidationReceipt:
+        assert received_root == report_root
+        assert expected_dependencies == PackageDependencyPins(
+            preflight_sha256=SHA_C,
+            ir_sha256=SHA_B,
+            schema_sha256=SHA_E,
+            corpus_sha256=SHA_A,
+            execution_plan_sha256=freeze_package_execution_plan(plan).digest,
+            report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
+        )
+        assert expected_evidence_lineage is TRUSTED_EVIDENCE_LINEAGE
+        assert allow_unbound is False
+        return receipt
+
+    monkeypatch.setattr(validator_module, "validate_report_bundle", validate)
+    return report_root, receipt
+
+
 @pytest.fixture
 def queue(tmp_path: Path) -> Queue:
     instance = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
@@ -267,7 +396,23 @@ def queue(tmp_path: Path) -> Queue:
 
 def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
     frozen = freeze_package_execution_plan(plan)
+    receipt_completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
     for pin in frozen.required_completions:
+        if pin.parent_unit_id == receipt_completion.parent_unit_id:
+            materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+            lease = queue.claim("trusted-receipt-importer")
+            assert lease is not None and lease.unit_id == pin.parent_unit_id
+            finish_package_validation_receipt(
+                queue,
+                lease,
+                package_ref=TARGET_PACKAGE_REF,
+                receipt_payload=SOURCE_RECEIPT.to_json(),
+                trusted_validator_revision=VALIDATOR_REVISION,
+                trusted_contract_revision=CONTRACT_REVISION,
+                trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
+                trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+            )
+            continue
         queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
         lease = queue.claim("prerequisite-publisher")
         assert lease is not None and lease.unit_id == pin.parent_unit_id
@@ -282,6 +427,16 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
         queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
 
 
+def _materialize_prerequisite(queue: Queue, pin: CompletionPin) -> None:
+    if pin.parent_unit_id == package_validation_receipt_completion(
+        TARGET_PACKAGE_REF
+    ).parent_unit_id:
+        work = materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+        assert work.unit_id == pin.parent_unit_id
+        return
+    queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+
+
 def test_blocked_plan_creates_no_queue_or_workspace(tmp_path: Path) -> None:
     queue = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
 
@@ -294,14 +449,14 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
     plan = _full_plan()
     frozen = freeze_package_execution_plan(plan)
     for pin in frozen.required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
 
     first = materialize_package_execution_plan(queue, plan, priority=17)
     second = materialize_package_execution_plan(queue, plan, priority=17)
 
     assert first == second
     assert first is not None
-    assert first.unit_id == package_queue_unit_id(SHA_A)
+    assert first.unit_id == package_queue_unit_id(TARGET_PACKAGE_REF_ID)
     assert first.input_digest == frozen.digest
     with sqlite3.connect(queue.database) as connection:
         unit = connection.execute(
@@ -332,11 +487,74 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
     ]
 
 
+def test_materialization_waits_for_the_frozen_package_validation_receipt(
+    queue: Queue,
+) -> None:
+    plan = _full_plan()
+    frozen = freeze_package_execution_plan(plan)
+    receipt_completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
+    for pin in frozen.required_completions:
+        if pin.parent_unit_id != receipt_completion.parent_unit_id:
+            queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+            lease = queue.claim("prerequisite-publisher")
+            assert lease is not None and lease.unit_id == pin.parent_unit_id
+            queue.finish(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=pin.digest,
+                completion_revision=pin.revision,
+            )
+    for pin in frozen.required_capabilities:
+        queue.register_capability(pin.name, pin.revision, pin.digest)
+        queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
+
+    with pytest.raises(QueueConflictError, match="could not materialize"):
+        materialize_package_execution_plan(queue, plan)
+
+    with pytest.raises(ValueError, match="reserved work unit"):
+        queue.enqueue(
+            receipt_completion.parent_unit_id,
+            kind="prerequisite",
+            input_digest=receipt_completion.digest,
+        )
+    with pytest.raises(ValueError, match="trusted completion kinds require"):
+        queue.enqueue(
+            "ordinary-unit",
+            kind="trusted-package-validation-receipt",
+            input_digest=receipt_completion.digest,
+        )
+    materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("receipt-publisher")
+    assert lease is not None and lease.unit_id == receipt_completion.parent_unit_id
+    with pytest.raises(QueueConflictError, match="trusted publication adapter"):
+        queue.finish(
+            lease,
+            TerminalOutcome.ACCEPTED,
+            output_digest=receipt_completion.digest,
+            completion_revision=receipt_completion.revision,
+        )
+    finish_package_validation_receipt(
+        queue,
+        lease,
+        package_ref=TARGET_PACKAGE_REF,
+        receipt_payload=SOURCE_RECEIPT.to_json(),
+        trusted_validator_revision=VALIDATOR_REVISION,
+        trusted_contract_revision=CONTRACT_REVISION,
+        trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
+        trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+    )
+
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
+
+
 def test_same_package_reference_with_changed_plan_conflicts(queue: Queue) -> None:
     original = _full_plan()
-    changed = _full_plan(requirements_sha256=SHA_D)
+    changed = _full_plan(reason="changed_routing_evidence")
     for pin in freeze_package_execution_plan(original).required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
     materialize_package_execution_plan(queue, original)
 
     with pytest.raises(QueueConflictError, match="materialized work unit changed"):
@@ -347,7 +565,7 @@ def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> Non
     plan = _reuse_plan()
     frozen = freeze_package_execution_plan(plan)
     for pin in frozen.required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
 
     materialized = materialize_package_execution_plan(queue, plan)
 
@@ -358,9 +576,13 @@ def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> Non
     assert queue.status(materialized.unit_id) is WorkUnitStatus.READY
 
 
-def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queue) -> None:
+def test_finish_builds_bound_output_and_publishes_its_exact_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, plan)
     assert receipt.validation_receipt_sha256 is not None
     _publish_prerequisites(queue, plan)
     materialized = materialize_package_execution_plan(queue, plan)
@@ -372,8 +594,9 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queu
         queue,
         lease,
         execution_plan=plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+        report_root=report_root,
+        trusted_dependencies=TRUSTED_DEPENDENCIES,
+        trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
     )
 
     assert finished.queue_result.disposition is FinishDisposition.COMPLETED
@@ -382,17 +605,67 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queu
     assert finished.output.validation_receipt_sha256 == receipt.validation_receipt_sha256
 
 
-def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) -> None:
+def test_validated_package_output_rejects_generic_completion(queue: Queue) -> None:
+    plan = _full_plan()
+    _publish_prerequisites(queue, plan)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
+
+    with pytest.raises(QueueConflictError, match="trusted publication adapter"):
+        queue.finish_accepted_if_input_matches(
+            lease,
+            expected_input_digest=materialized.input_digest,
+            output_digest=SHA_A,
+            completion_revision="caller-selected-v1",
+        )
+
+    assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
+
+
+def test_finish_rejects_missing_report_before_publication(
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
+    plan = _full_plan()
+    _publish_prerequisites(queue, plan)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
+
+    with pytest.raises(EquivalenceError, match="validated artifact identity"):
+        finish_package_execution_plan(
+            queue,
+            lease,
+            execution_plan=plan,
+            report_root=tmp_path / "missing-report",
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+        )
+
+    assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
+    with sqlite3.connect(queue.database) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
+            (lease.unit_id,),
+        ).fetchone()[0] == 0
+
+
+def test_finish_rejects_plan_drift_without_an_accepted_completion(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
     original = _full_plan()
-    changed = _full_plan(requirements_sha256=SHA_D)
+    changed = _full_plan(reason="changed_routing_evidence")
+    report_root, _ = _stub_valid_report(monkeypatch, tmp_path, changed)
     _publish_prerequisites(queue, original)
     materialized = materialize_package_execution_plan(queue, original)
     assert materialized is not None
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
-    receipt = _receipt(changed)
-    assert receipt.validation_receipt_sha256 is not None
-
     with pytest.raises(
         PackagePlanInputMismatchError, match="does not match the leased queue input"
     ) as raised:
@@ -400,8 +673,9 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) 
             queue,
             lease,
             execution_plan=changed,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=report_root,
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert raised.value.output.execution_plan_id == freeze_package_execution_plan(changed).digest
@@ -421,17 +695,18 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) 
 
 def test_finish_fences_plan_mutation_while_output_is_built(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
     queue: Queue,
 ) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, plan)
     assert receipt.validation_receipt_sha256 is not None
     _publish_prerequisites(queue, plan)
     materialized = materialize_package_execution_plan(queue, plan)
     assert materialized is not None
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
-    original_builder = plan_queue_module.build_validated_package_output
+    original_builder = plan_module.build_validated_package_output
 
     def build_then_mutate(
         *,
@@ -444,24 +719,25 @@ def test_finish_fences_plan_mutation_while_output_is_built(
             receipt=receipt,
             trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
         )
-        object.__setattr__(plan, "package_local", _local_plan(requirements_sha256=SHA_D))
+        object.__setattr__(plan, "package_local", _local_plan(version_name="1.8"))
         return output
 
     monkeypatch.setattr(
-        plan_queue_module,
+        plan_module,
         "build_validated_package_output",
         build_then_mutate,
     )
 
     with pytest.raises(
-        PackagePlanInputMismatchError, match="changed while its output was being built"
+        PackagePlanInputMismatchError, match="does not match the leased queue input"
     ) as raised:
         finish_package_execution_plan(
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=report_root,
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
@@ -555,8 +831,6 @@ def test_atomic_input_checked_finish_has_no_recovery_window(
 
 def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
-    assert receipt.validation_receipt_sha256 is not None
     queue.enqueue("unrelated", kind="test", input_digest=SHA_A)
     lease = queue.claim("worker")
     assert lease is not None
@@ -566,50 +840,34 @@ def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=Path("unused"),
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
 
-def test_wrong_lease_is_untouched_when_plan_mutates_during_output_build(
+def test_wrong_lease_is_untouched_before_report_validation(
     monkeypatch: pytest.MonkeyPatch,
     queue: Queue,
 ) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
-    assert receipt.validation_receipt_sha256 is not None
     queue.enqueue("unrelated", kind="test", input_digest=SHA_A)
     lease = queue.claim("worker")
     assert lease is not None
-    original_builder = plan_queue_module.build_validated_package_output
 
-    def build_then_mutate(
-        *,
-        execution_plan: PackageExecutionPlan,
-        receipt: ValidationReceipt,
-        trusted_validation_receipt_sha256: str,
-    ) -> ValidatedPackageOutput:
-        output = original_builder(
-            execution_plan=execution_plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
-        )
-        object.__setattr__(plan, "package_local", _local_plan(requirements_sha256=SHA_D))
-        return output
+    def unexpected_validation(*args: object, **kwargs: object) -> ValidationReceipt:
+        pytest.fail("wrong lease reached report validation")
 
-    monkeypatch.setattr(
-        plan_queue_module,
-        "build_validated_package_output",
-        build_then_mutate,
-    )
+    monkeypatch.setattr(validator_module, "validate_report_bundle", unexpected_validation)
 
     with pytest.raises(QueueConflictError, match="lease does not belong"):
         finish_package_execution_plan(
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=Path("unused"),
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert queue.status("unrelated") is WorkUnitStatus.LEASED

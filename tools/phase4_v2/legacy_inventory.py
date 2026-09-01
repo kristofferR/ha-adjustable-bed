@@ -1036,7 +1036,9 @@ def _publish_without_replace(
     published = False
     try:
         if not _directory_descriptor_matches_path(parent_descriptor, destination.parent):
-            raise InventoryError(f"output parent directory changed: {destination.parent}")
+            raise InventoryError(
+                f"output parent directory changed during scan: {destination.parent}"
+            )
         try:
             os.mkdir(destination.name, dir_fd=parent_descriptor)
         except FileExistsError as err:

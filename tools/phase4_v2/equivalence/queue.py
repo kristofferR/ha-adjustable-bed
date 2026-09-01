@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from tools.phase4_v2.queue import (
     CapabilityPin as QueueCapabilityPin,
@@ -16,21 +18,24 @@ from tools.phase4_v2.queue import (
     Lease,
     Queue,
     QueueConflictError,
-    TerminalOutcome,
 )
-from tools.phase4_v2.validator import ValidationReceipt
+from tools.phase4_v2.validator import DependencyPins, EvidenceLineageTrust
 
+from .core import FrozenPackageRef
 from .plan import (
-    VALIDATED_PACKAGE_OUTPUT_REVISION,
+    PACKAGE_QUEUE_UNIT_KIND,
     PackageExecutionPlan,
     PackagePlanStatus,
     ValidatedPackageOutput,
-    build_validated_package_output,
     freeze_package_execution_plan,
+    package_queue_unit_id,
+    package_validation_receipt_completion,
+)
+from .plan import (
+    PACKAGE_QUEUE_UNIT_PREFIX as PACKAGE_QUEUE_UNIT_PREFIX,
 )
 
-PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
-PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
+PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND = "trusted-package-validation-receipt"
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +54,14 @@ class FinishedPackageWork:
     queue_result: FinishResult
 
 
+@dataclass(frozen=True, slots=True)
+class MaterializedPackageReceiptWork:
+    """Identity of one receipt import that only the trusted adapter may complete."""
+
+    unit_id: str
+    input_digest: str
+
+
 class PackagePlanInputMismatchError(InputDigestMismatchError):
     """A produced output was preserved but not accepted for changed input."""
 
@@ -64,9 +77,44 @@ class PackagePlanInputMismatchError(InputDigestMismatchError):
         self.queue_result = queue_result
 
 
-def package_queue_unit_id(target_package_ref_id: str) -> str:
-    """Return the stable aggregate unit ID for one immutable package reference."""
-    return f"{PACKAGE_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
+def materialize_package_validation_receipt(
+    queue: Queue,
+    package_ref: FrozenPackageRef,
+    *,
+    priority: int = 0,
+) -> MaterializedPackageReceiptWork:
+    """Materialize the reserved import unit for one frozen package receipt."""
+    completion = package_validation_receipt_completion(package_ref)
+    queue.materialize_work_unit(
+        completion.parent_unit_id,
+        kind=PACKAGE_VALIDATION_RECEIPT_QUEUE_UNIT_KIND,
+        input_digest=completion.digest,
+        priority=priority,
+    )
+    return MaterializedPackageReceiptWork(completion.parent_unit_id, completion.digest)
+
+
+def finish_package_validation_receipt(
+    queue: Queue,
+    lease: Lease,
+    *,
+    package_ref: FrozenPackageRef,
+    receipt_payload: str | bytes,
+    trusted_validator_revision: str,
+    trusted_contract_revision: str,
+    trusted_dependency_digests: Mapping[str, str],
+    trusted_receipt_sha256: str,
+) -> FinishResult:
+    """Verify and publish a canonical package-local validator receipt."""
+    return queue.finish_package_validation_receipt(
+        lease,
+        package_ref=package_ref,
+        receipt_payload=receipt_payload,
+        trusted_validator_revision=trusted_validator_revision,
+        trusted_contract_revision=trusted_contract_revision,
+        trusted_dependency_digests=trusted_dependency_digests,
+        trusted_receipt_sha256=trusted_receipt_sha256,
+    )
 
 
 def materialize_package_execution_plan(
@@ -110,36 +158,22 @@ def finish_package_execution_plan(
     lease: Lease,
     *,
     execution_plan: PackageExecutionPlan,
-    receipt: ValidationReceipt,
-    trusted_validation_receipt_sha256: str,
+    report_root: Path,
+    trusted_dependencies: DependencyPins,
+    trusted_evidence_lineage: EvidenceLineageTrust,
 ) -> FinishedPackageWork:
-    """Build and publish an accepted package output from live trusted inputs."""
-    output = build_validated_package_output(
-        execution_plan=execution_plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
-    )
-    expected_unit_id = package_queue_unit_id(output.target_package_ref_id)
+    """Validate and publish a package report from live trusted inputs."""
+    frozen = freeze_package_execution_plan(execution_plan)
+    expected_unit_id = package_queue_unit_id(frozen.target_package_ref_id)
     if lease.unit_id != expected_unit_id:
         raise QueueConflictError("lease does not belong to the package execution plan")
-    frozen = freeze_package_execution_plan(execution_plan)
-    if output.execution_plan_id != frozen.digest:
-        result = queue.finish(
-            lease,
-            TerminalOutcome.INPUT_MISMATCH,
-            output_digest=output.content_id,
-        )
-        raise PackagePlanInputMismatchError(
-            "package plan changed while its output was being built",
-            output=output,
-            queue_result=result,
-        )
 
-    checked = queue.finish_accepted_if_input_matches(
+    output, checked = queue.finish_validated_package_output(
         lease,
-        output_digest=output.content_id,
-        completion_revision=VALIDATED_PACKAGE_OUTPUT_REVISION,
-        expected_input_digest=frozen.digest,
+        execution_plan=execution_plan,
+        report_root=report_root,
+        trusted_dependencies=trusted_dependencies,
+        trusted_evidence_lineage=trusted_evidence_lineage,
     )
     result = checked.finish_result
     if checked.disposition is InputCheckedFinishDisposition.INPUT_MISMATCH:

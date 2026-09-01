@@ -11,7 +11,9 @@ from typing import Protocol
 
 from .core import Lease, Queue
 from .tracker import (
+    GITHUB_ISSUE_BODY_MAX_CHARS,
     managed_block_generation,
+    managed_block_length,
     managed_block_sha256,
     render_markdown,
     replace_managed_block,
@@ -81,13 +83,28 @@ def publish_tracker(
         before_digest = _sha256(before.body)
         current_generation = managed_block_generation(before.body)
         current_block_digest = managed_block_sha256(before.body)
-        rendered = render_markdown(snapshot)
+        separator_length = (
+            0
+            if current_generation is not None or not before.body or before.body.endswith("\n\n")
+            else 2
+        )
+        tracker_budget = (
+            GITHUB_ISSUE_BODY_MAX_CHARS
+            - (len(before.body) - managed_block_length(before.body) + separator_length)
+        )
+        rendered_budget = tracker_budget + (1 if current_generation is not None else 0)
+        try:
+            rendered = render_markdown(snapshot, max_characters=rendered_budget)
+        except ValueError as error:
+            raise PublisherConflictError("issue body leaves no room for the tracker") from error
         updated = replace_managed_block(
             before.body,
             rendered,
             expected_generation=current_generation,
             expected_block_sha256=current_block_digest,
         )
+        if len(updated) > GITHUB_ISSUE_BODY_MAX_CHARS:
+            raise PublisherConflictError("tracker update exceeds GitHub's issue-body limit")
         after_digest = _sha256(updated)
         if updated == before.body:
             _require_current(queue, lease, snapshot.generation_id, post_write=False)

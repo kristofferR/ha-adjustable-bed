@@ -874,6 +874,31 @@ def test_inventory_refuses_to_replace_existing_output(tmp_path: Path) -> None:
     assert sentinel.read_text(encoding="utf-8") == "untouched"
 
 
+def test_inventory_rejects_replaced_output_parent(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    replacement = tmp_path / "replacement"
+    replacement.mkdir()
+    displaced = tmp_path / "displaced"
+    original_create = legacy_inventory._make_private_directory_at
+
+    def replace_parent(directory_fd: int, prefix: str) -> str:
+        parent.rename(displaced)
+        parent.symlink_to(replacement, target_is_directory=True)
+        return original_create(directory_fd, prefix)
+
+    monkeypatch.setattr(legacy_inventory, "_make_private_directory_at", replace_parent)
+
+    with pytest.raises(InventoryError, match="output parent directory changed during scan"):
+        build_inventory(source, parent / "inventory")
+
+    assert not (replacement / "inventory").exists()
+
+
 def test_top_level_files_are_not_workspaces(tmp_path: Path) -> None:
     source = tmp_path / "legacy"
     source.mkdir()

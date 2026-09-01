@@ -1135,4 +1135,60 @@ def test_ledger_replay_uses_preindexed_exact_reuse_sources(
     )
 
     assert len(replayed.entries) == len(roots)
-    assert candidate_counts == [1] * len(roots)
+    assert candidate_counts == []
+
+
+def test_ledger_replay_preserves_historical_route_when_a_source_is_added() -> None:
+    package_ref = package()
+    extractor = capability()
+    target = root(package_ref, extractor, occurrence=SHA_A)
+    original_decision, proof = route_application_root(
+        target,
+        [],
+        pins=RoutingPins(),
+        trusted_direct_audits={},
+        trusted_inventory_receipts={target.content_id: SHA_E},
+    )
+    assert proof is None
+    entry = LedgerEntry(0, None, original_decision)
+    source = root(package_ref, extractor, occurrence=SHA_B)
+
+    replayed = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=[target, source],
+        proofs=[],
+        pins=RoutingPins(),
+        trusted_direct_audits={source.content_id: SHA_D},
+        trusted_inventory_receipts={target.content_id: SHA_E, source.content_id: SHA_E},
+        entries=[entry],
+        expected_head_id=entry.content_id,
+    )
+
+    assert replayed.entries == (entry,)
+
+
+def test_ledger_replay_rejects_route_ineligible_for_the_target() -> None:
+    package_ref = package()
+    extractor = capability()
+    target = root(package_ref, extractor, complete=False)
+    dishonest = LedgerDecision(
+        target_root_id=target.content_id,
+        route=Route.FULL_ANALYSIS,
+        reason="no_exact_executable_identity",
+        target_inventory_receipt_sha256=SHA_E,
+    )
+    entry = LedgerEntry(0, None, dishonest)
+
+    with pytest.raises(EquivalenceError, match="pinned target routing inputs"):
+        AppendOnlyLedger(
+            packages=[package_ref],
+            capabilities=[extractor],
+            roots=[target],
+            proofs=[],
+            pins=RoutingPins(),
+            trusted_direct_audits={},
+            trusted_inventory_receipts={target.content_id: SHA_E},
+            entries=[entry],
+            expected_head_id=entry.content_id,
+        )

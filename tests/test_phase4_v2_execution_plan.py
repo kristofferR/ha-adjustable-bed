@@ -25,6 +25,7 @@ from tools.phase4_v2.equivalence import (
     EquivalenceError,
     ExactReusePins,
     ExactReuseRootPlan,
+    FrozenPackageRef,
     FullAnalysisRootPlan,
     PackageExecutionPlan,
     PackageLocalPlan,
@@ -50,8 +51,10 @@ from tools.phase4_v2.equivalence.core import (
     RoutingPins,
 )
 from tools.phase4_v2.equivalence.plan import (
+    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
     TARGET_ROOT_INVENTORY_REVISION,
+    package_validation_receipt_completion,
 )
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
@@ -76,10 +79,19 @@ SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 SHA_2 = "2" * 64
 
+TARGET_PACKAGE_REF = FrozenPackageRef(
+    package_name="org.example.target",
+    version_code="17",
+    artifact_digest=SHA_B,
+    preflight_sha256=SHA_C,
+    validation_receipt_sha256=SHA_D,
+)
+TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
+
 
 def local_plan() -> PackageLocalPlan:
     return PackageLocalPlan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
         package_name="org.example.target",
         version_code="17",
         version_name="1.7",
@@ -95,7 +107,7 @@ def accepted_inventory(
     *pairs: tuple[str, str], unit_id: str = "inventory:target"
 ) -> AcceptedTargetRootInventory:
     inventory = TargetRootInventory(
-        SHA_A,
+        TARGET_PACKAGE_REF_ID,
         tuple(
             sorted(
                 (TargetRootOccurrence(root, occurrence) for root, occurrence in pairs),
@@ -217,7 +229,8 @@ def full_root(
 def mixed_plan() -> PackageExecutionPlan:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
     return build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(
@@ -407,7 +420,8 @@ def test_semantic_root_completion_binds_the_audited_source_root() -> None:
 def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
     plan = build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(
@@ -435,6 +449,7 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         "analyzer:full",
     }
     assert {item.parent_unit_id for item in plan.required_completions} == {
+        f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
         "inventory:target",
         "ledger:target",
         "audit:source",
@@ -447,7 +462,8 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
     exact = exact_root(accepted)
     with pytest.raises(EquivalenceError, match="conflicting capability"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(
@@ -460,7 +476,8 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
         )
     with pytest.raises(EquivalenceError, match="conflicting completion"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(
@@ -479,14 +496,16 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
 
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(exact,),
         )
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(exact, full, full_root(SHA_2, SHA_B)),
@@ -496,7 +515,8 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
     transplanted = exact_root(other)
     with pytest.raises(EquivalenceError, match="transplanted"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(transplanted, full),
@@ -506,7 +526,8 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
 def test_any_blocked_root_blocks_package_and_output() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     plan = build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
         accepted_target_inventory=accepted,
         root_plans=(BlockedRootPlan(SHA_C, SHA_D, ("missing_tool",)),),
@@ -528,7 +549,8 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
 ) -> None:
     plan = mixed_plan()
     reverse = build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
         accepted_target_inventory=plan.accepted_target_inventory,
         root_plans=reversed(plan.root_plans),
@@ -538,7 +560,8 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
     monkeypatch.setattr(plan_module, "_MAX_ROOTS", 2)
     with pytest.raises(EquivalenceError, match="exceeds 2 roots"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=plan.accepted_target_inventory,
             root_plans=(item for item in (*plan.root_plans, plan.root_plans[0])),
@@ -559,7 +582,7 @@ def test_frozen_snapshot_is_stable_but_fresh_snapshot_observes_mutation() -> Non
         for item in plan.required_completions
     )
 
-    object.__setattr__(plan.package_local, "target_artifact_digest", SHA_F)
+    object.__setattr__(plan.package_local, "version_name", "1.8")
     fresh = freeze_package_execution_plan(plan)
     assert frozen.digest != fresh.digest
     assert frozen.target_artifact_digest == SHA_B
@@ -567,6 +590,39 @@ def test_frozen_snapshot_is_stable_but_fresh_snapshot_observes_mutation() -> Non
     object.__setattr__(plan, "root_plans", list(plan.root_plans))
     with pytest.raises(EquivalenceError, match="exact supported concrete|requires at least"):
         freeze_package_execution_plan(plan)
+
+
+def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
+    accepted = accepted_inventory((SHA_E, SHA_F))
+    roots = (full_root(),)
+
+    with pytest.raises(EquivalenceError, match="reproduce the target package ID"):
+        build_package_execution_plan(
+            target_package_ref_id=SHA_A,
+            target_package_ref=TARGET_PACKAGE_REF,
+            package_local=local_plan(),
+            accepted_target_inventory=accepted,
+            root_plans=roots,
+        )
+
+    other_artifact = replace(TARGET_PACKAGE_REF, artifact_digest=SHA_E)
+    with pytest.raises(EquivalenceError, match="frozen package artifact identity"):
+        build_package_execution_plan(
+            target_package_ref_id=other_artifact.content_id,
+            target_package_ref=other_artifact,
+            package_local=local_plan(),
+            accepted_target_inventory=accepted,
+            root_plans=roots,
+        )
+
+    with pytest.raises(EquivalenceError, match="frozen package preflight"):
+        build_package_execution_plan(
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
+            package_local=replace(local_plan(), requirements_sha256=SHA_E),
+            accepted_target_inventory=accepted,
+            root_plans=roots,
+        )
 
 
 def test_frozen_snapshot_is_factory_only_and_pins_are_structurally_immutable() -> None:
@@ -620,16 +676,27 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             root_index += 1
         accepted = accepted_inventory(*inventory_pairs)
         return build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=roots,
         )
 
-    at_limit = large_plan(255)
+    at_limit = large_plan(254)
     assert len(freeze_package_execution_plan(at_limit).required_completions) == 256
     with pytest.raises(EquivalenceError, match="global completion requirement count"):
-        freeze_package_execution_plan(large_plan(256))
+        freeze_package_execution_plan(large_plan(255))
+
+
+def test_package_validation_receipt_is_an_external_queue_dependency() -> None:
+    completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
+
+    assert completion == CompletionPin(
+        f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
+        PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+        TARGET_PACKAGE_REF.validation_receipt_sha256,
+    )
 
 
 def test_per_root_duplicates_and_global_requirement_limit_fail_closed(
@@ -665,7 +732,8 @@ def test_nested_inputs_are_copied_and_content_id_survives_caller_mutation() -> N
     root = exact_root(accepted)
     extractor_digest = root.reuse.extractor_capability.digest
     plan = build_package_execution_plan(
-        target_package_ref_id=SHA_A,
+        target_package_ref_id=TARGET_PACKAGE_REF_ID,
+        target_package_ref=TARGET_PACKAGE_REF,
         package_local=local,
         accepted_target_inventory=accepted,
         root_plans=(root,),
@@ -689,7 +757,8 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     with pytest.raises(EquivalenceError, match="exact mandatory tuple"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local,
             accepted_target_inventory=accepted,
             root_plans=(exact_root(accepted),),
@@ -704,7 +773,8 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     object.__setattr__(blocked, "blockers", ["blocked"])
     with pytest.raises(EquivalenceError, match="at least one blocker"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted_inventory((SHA_C, SHA_D)),
             root_plans=(blocked,),
@@ -730,7 +800,8 @@ def test_subclasses_are_rejected_at_every_trust_boundary() -> None:
 
     with pytest.raises(EquivalenceError, match="exact supported concrete type"):
         build_package_execution_plan(
-            target_package_ref_id=SHA_A,
+            target_package_ref_id=TARGET_PACKAGE_REF_ID,
+            target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
             accepted_target_inventory=accepted,
             root_plans=(

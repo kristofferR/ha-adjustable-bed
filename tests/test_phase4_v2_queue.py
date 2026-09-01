@@ -319,6 +319,22 @@ def test_live_lease_renews_with_database_time(queue: Queue) -> None:
     queue.checkpoint(renewed, "REPORT_STARTED")
 
 
+def test_renew_restores_immutable_attempt_metadata(queue: Queue, tmp_path: Path) -> None:
+    _enqueue(queue, "package-a")
+    lease = queue.claim("chat-a")
+    assert lease is not None
+    tampered = replace(
+        lease,
+        input_digest="f" * 64,
+        workspace=tmp_path / "escaped",
+    )
+
+    renewed = queue.renew(tampered)
+
+    assert renewed.input_digest == lease.input_digest
+    assert renewed.workspace == lease.workspace
+
+
 @pytest.mark.parametrize(
     ("payload", "message"),
     [

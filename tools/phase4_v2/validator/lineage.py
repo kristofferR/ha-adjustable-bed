@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Literal, Never, cast
 
-LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v2"
+LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v4"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _ROUTE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
@@ -23,6 +23,7 @@ _MAX_TOTAL_SOURCES = 65_536
 _MAX_TRUSTED_PRODUCERS = 256
 _MAX_ARTIFACT_MEMBERS = 4_096
 _MAX_ARTIFACT_MEMBER_LENGTH = 4_096
+_MAX_ROOT_ANALYSES_PER_MEMBER = 256
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,17 +99,39 @@ class SourceArtifactMember:
 
 
 @dataclass(frozen=True, slots=True)
+class AuthoritativeRootAnalysisAttestation:
+    """One trusted root-analysis result produced with an evidence member."""
+
+    target_root_id: str
+    target_occurrence_identity_sha256: str
+    semantic_root_sha256: str
+
+    def to_data(self) -> dict[str, str]:
+        return {
+            "semantic_root_sha256": self.semantic_root_sha256,
+            "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
+            "target_root_id": self.target_root_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceLineageMember:
     """One content-addressed report member with artifact and producer lineage."""
 
     report_member: str
     sha256: str
+    package_local_domains: tuple[str, ...]
+    authoritative_root_analyses: tuple[AuthoritativeRootAnalysisAttestation, ...]
     source_artifact_members: tuple[SourceArtifactMember, ...]
     producer: EvidenceProducer
 
     def to_data(self) -> dict[str, object]:
         return {
+            "authoritative_root_analyses": [
+                item.to_data() for item in self.authoritative_root_analyses
+            ],
             "producer": self.producer.to_data(),
+            "package_local_domains": list(self.package_local_domains),
             "report_member": self.report_member,
             "sha256": self.sha256,
             "source_artifact_members": [item.to_data() for item in self.source_artifact_members],
@@ -218,14 +241,14 @@ def _parse_expected_source_artifacts(value: Mapping[str, str]) -> dict[str, str]
             "$.trust.source_artifacts",
             "validated preflight must supply at least one APK member",
         )
-    if len(value) > _MAX_ARTIFACT_MEMBERS:
-        _fail(
-            "trusted_source_artifact_limit_exceeded",
-            "$.trust.source_artifacts",
-            f"source artifact count exceeds {_MAX_ARTIFACT_MEMBERS}",
-        )
     parsed: dict[str, str] = {}
-    for name, digest in value.items():
+    for index, (name, digest) in enumerate(value.items()):
+        if index >= _MAX_ARTIFACT_MEMBERS:
+            _fail(
+                "trusted_source_artifact_limit_exceeded",
+                "$.trust.source_artifacts",
+                f"source artifact count exceeds {_MAX_ARTIFACT_MEMBERS}",
+            )
         parsed_name = _expect_artifact_member_name(name, "$.trust.source_artifacts")
         parsed_digest = _expect_sha256(digest, f"$.trust.source_artifacts.{parsed_name}")
         parsed[parsed_name] = parsed_digest
@@ -300,6 +323,21 @@ def _parse_members(
             "$.members",
             f"total source references exceed {_MAX_TOTAL_SOURCES}",
         )
+    root_analyses: dict[tuple[str, str], str] = {}
+    for member in members:
+        for attestation in member.authoritative_root_analyses:
+            identity = (
+                attestation.target_root_id,
+                attestation.target_occurrence_identity_sha256,
+            )
+            if identity in root_analyses:
+                code = (
+                    "duplicate_authoritative_root_analysis"
+                    if root_analyses[identity] == attestation.semantic_root_sha256
+                    else "conflicting_authoritative_root_analysis"
+                )
+                _fail(code, "$.members", "each root identity must have one semantic result")
+            root_analyses[identity] = attestation.semantic_root_sha256
     return members
 
 
@@ -313,7 +351,14 @@ def _parse_member(
     _expect_keys(
         value,
         path=path,
-        required={"report_member", "sha256", "source_artifact_members", "producer"},
+        required={
+            "authoritative_root_analyses",
+            "package_local_domains",
+            "producer",
+            "report_member",
+            "sha256",
+            "source_artifact_members",
+        },
     )
     digest = _expect_sha256(value["sha256"], f"{path}.sha256")
     report_member = _expect_string(value["report_member"], f"{path}.report_member", maximum=96)
@@ -325,6 +370,12 @@ def _parse_member(
             f"expected {expected_report_member!r}",
         )
     sources = _parse_sources(value["source_artifact_members"], f"{path}.source_artifact_members")
+    package_local_domains = _parse_package_local_domains(
+        value["package_local_domains"], f"{path}.package_local_domains"
+    )
+    root_analyses = _parse_authoritative_root_analyses(
+        value["authoritative_root_analyses"], f"{path}.authoritative_root_analyses"
+    )
     for source in sources:
         if expected_sources.get(source.name) != source.sha256:
             _fail(
@@ -339,7 +390,82 @@ def _parse_member(
             f"{path}.producer",
             "producer pipeline, route, and tool digest are not authorized",
         )
-    return EvidenceLineageMember(report_member, digest, sources, producer)
+    return EvidenceLineageMember(
+        report_member=report_member,
+        sha256=digest,
+        package_local_domains=package_local_domains,
+        authoritative_root_analyses=root_analyses,
+        source_artifact_members=sources,
+        producer=producer,
+    )
+
+
+def _parse_authoritative_root_analyses(
+    raw: object, path: str
+) -> tuple[AuthoritativeRootAnalysisAttestation, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > _MAX_ROOT_ANALYSES_PER_MEMBER:
+        _fail(
+            "authoritative_root_analysis_limit_exceeded",
+            path,
+            f"root analysis count exceeds {_MAX_ROOT_ANALYSES_PER_MEMBER}",
+        )
+    attestations: list[AuthoritativeRootAnalysisAttestation] = []
+    for index, item in enumerate(values):
+        location = f"{path}[{index}]"
+        value = _expect_object(item, location)
+        _expect_keys(
+            value,
+            path=location,
+            required={
+                "semantic_root_sha256",
+                "target_occurrence_identity_sha256",
+                "target_root_id",
+            },
+        )
+        attestations.append(
+            AuthoritativeRootAnalysisAttestation(
+                target_root_id=_expect_sha256(
+                    value["target_root_id"], f"{location}.target_root_id"
+                ),
+                target_occurrence_identity_sha256=_expect_sha256(
+                    value["target_occurrence_identity_sha256"],
+                    f"{location}.target_occurrence_identity_sha256",
+                ),
+                semantic_root_sha256=_expect_sha256(
+                    value["semantic_root_sha256"], f"{location}.semantic_root_sha256"
+                ),
+            )
+        )
+    keys = [
+        (
+            item.target_root_id,
+            item.target_occurrence_identity_sha256,
+            item.semantic_root_sha256,
+        )
+        for item in attestations
+    ]
+    if keys != sorted(keys):
+        _fail(
+            "authoritative_root_analyses_not_sorted",
+            path,
+            "root analyses must use canonical digest ordering",
+        )
+    return tuple(attestations)
+
+
+def _parse_package_local_domains(raw: object, path: str) -> tuple[str, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > 256:
+        _fail("package_local_domain_limit_exceeded", path, "domain count exceeds 256")
+    domains = tuple(
+        _expect_revision(item, f"{path}[{index}]") for index, item in enumerate(values)
+    )
+    if len(set(domains)) != len(domains):
+        _fail("duplicate_package_local_domain", path, "domains must be unique")
+    if list(domains) != sorted(domains, key=lambda item: item.encode("utf-8")):
+        _fail("package_local_domains_not_sorted", path, "domains must use canonical byte ordering")
+    return domains
 
 
 def _parse_sources(raw: object, path: str) -> tuple[SourceArtifactMember, ...]:

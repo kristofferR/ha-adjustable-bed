@@ -12,10 +12,15 @@ from .core import QueueSnapshot, WorkUnitStatus
 _START = "<!-- phase4-v2-tracker:start"
 _END = "<!-- phase4-v2-tracker:end -->"
 _HEADER = re.compile(r"<!-- phase4-v2-tracker:start generation=([0-9a-f]{64}) -->")
+GITHUB_ISSUE_BODY_MAX_CHARS = 65_536
 
 
-def render_markdown(snapshot: QueueSnapshot) -> str:
+def render_markdown(
+    snapshot: QueueSnapshot, *, max_characters: int = GITHUB_ISSUE_BODY_MAX_CHARS
+) -> str:
     """Render a replaceable GitHub issue-body block."""
+    if max_characters < 1:
+        raise ValueError("tracker output budget must be positive")
     counts = Counter(unit.status for unit in snapshot.units)
     lines = [
         f"{_START} generation={snapshot.generation_id} -->",
@@ -36,8 +41,9 @@ def render_markdown(snapshot: QueueSnapshot) -> str:
             "| ---: | --- | --- | --- | --- | ---: | --- |",
         ]
     )
+    unit_lines = []
     for unit in snapshot.units:
-        lines.append(
+        unit_lines.append(
             "| "
             + " | ".join(
                 (
@@ -51,9 +57,29 @@ def render_markdown(snapshot: QueueSnapshot) -> str:
                 )
             )
             + " |"
-        )
-    lines.extend(("", _END))
-    return "\n".join(lines) + "\n"
+    )
+    suffix = ["", _END]
+    included = 0
+    for index, line in enumerate(unit_lines):
+        remaining = len(unit_lines) - index - 1
+        omitted = [f"| … | | | | | | {remaining} additional units omitted |"] if remaining else []
+        rendered = "\n".join([*lines, line, *omitted, *suffix]) + "\n"
+        if len(rendered) > max_characters:
+            break
+        lines.append(line)
+        included += 1
+    else:
+        rendered = "\n".join([*lines, *suffix]) + "\n"
+        if len(rendered) <= max_characters:
+            return rendered
+
+    omitted = len(unit_lines) - included
+    if omitted:
+        lines.append(f"| … | | | | | | {omitted} additional units omitted |")
+    rendered = "\n".join([*lines, *suffix]) + "\n"
+    if len(rendered) > max_characters:
+        raise ValueError("tracker output budget cannot fit its summary")
+    return rendered
 
 
 def render_html(snapshot: QueueSnapshot) -> str:
@@ -125,6 +151,12 @@ def managed_block_generation(body: str) -> str | None:
     """Return the managed block generation, if one exists."""
     block = _managed_block(body)
     return block[2] if block is not None else None
+
+
+def managed_block_length(body: str) -> int:
+    """Return the current managed-block length, if one exists."""
+    block = _managed_block(body)
+    return len(block[3]) if block is not None else 0
 
 
 def replace_managed_block(

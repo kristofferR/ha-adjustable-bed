@@ -450,6 +450,18 @@ def test_universe_caches_shared_spaces_and_bounds_aggregate_expansion(
     assert profile_calls == 1
 
 
+def test_universe_bounds_rule_and_binding_profile_expansion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _load(_document())
+    monkeypatch.setattr(ir_model, "_MAX_UNIVERSE_PROFILE_REFERENCES", 19)
+
+    with pytest.raises(IRValidationError) as caught:
+        validate_universe(document)
+
+    assert caught.value.diagnostics[0].code == "universe_too_large"
+
+
 def test_loader_is_strict_and_rejects_duplicate_definition_ids() -> None:
     payload = json.dumps(_document())
     payload = payload.replace(

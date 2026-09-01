@@ -18,6 +18,7 @@ from tools.phase4_v2.validator import (
     ValidationReceipt,
 )
 from tools.phase4_v2.validator.binding import (
+    PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
@@ -31,6 +32,7 @@ from .core import (
     ApplicationRoot,
     EquivalenceError,
     ExtractorCapability,
+    FrozenPackageRef,
     LedgerDecision,
     Route,
 )
@@ -41,15 +43,19 @@ EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v2"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v2"
+PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
+PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
+PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
 PACKAGE_PIPELINE_CAPABILITY = "phase4-v2-package-analysis"
 SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v1"
 PACKAGE_REPORT_REVISION = "phase4-v2-package-report-v1"
-PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v1"
+PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v2"
 PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES = json.dumps(
     {
         "report_revision": PACKAGE_REPORT_REVISION,
+        "package_local_domain_result_schema": PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
         "required_package_local_domains": list(LOCAL_ONLY_DOMAINS),
         "requires_authoritative_root_result_set": True,
         "requires_target_package_identity": True,
@@ -91,6 +97,12 @@ def _fail(message: str) -> Never:
 def _sha(value: str, field: str) -> None:
     if type(value) is not str or _SHA.fullmatch(value) is None:
         _fail(f"{field} must be a lowercase SHA-256 digest")
+
+
+def package_queue_unit_id(target_package_ref_id: str) -> str:
+    """Return the reserved queue unit ID for one immutable package reference."""
+    _sha(target_package_ref_id, "target_package_ref_id")
+    return f"{PACKAGE_QUEUE_UNIT_PREFIX}:{target_package_ref_id}"
 
 
 def _token(value: str, field: str) -> None:
@@ -259,6 +271,25 @@ def _completion(value: CompletionPin, field: str) -> CompletionPin:
     if type(value) is not CompletionPin:
         _fail(f"{field} must be an exact CompletionPin")
     return CompletionPin(value.parent_unit_id, value.revision, value.digest)
+
+
+def package_validation_receipt_completion(package_ref: FrozenPackageRef) -> CompletionPin:
+    """Return the completion that externally attests a frozen package receipt."""
+    if type(package_ref) is not FrozenPackageRef:
+        _fail("package validation receipt requires an exact FrozenPackageRef")
+    frozen = FrozenPackageRef(
+        package_ref.package_name,
+        package_ref.version_code,
+        package_ref.artifact_digest,
+        package_ref.preflight_sha256,
+        package_ref.validation_receipt_sha256,
+        package_ref.revision,
+    )
+    return CompletionPin(
+        f"package-validation-receipt:{frozen.content_id}",
+        PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+        frozen.validation_receipt_sha256,
+    )
 
 
 def _capability_tuple(
@@ -1068,6 +1099,7 @@ class PackageExecutionPlan:
     """Mutable-boundary input; freeze it before treating it as a trust proof."""
 
     target_package_ref_id: str
+    target_package_ref: FrozenPackageRef
     package_local: PackageLocalPlan
     accepted_target_inventory: AcceptedTargetRootInventory
     root_plans: tuple[RootExecutionPlan, ...]
@@ -1075,8 +1107,32 @@ class PackageExecutionPlan:
 
     def __post_init__(self) -> None:
         _sha(self.target_package_ref_id, "plan.target_package_ref_id")
+        if type(self.target_package_ref) is not FrozenPackageRef:
+            _fail("plan requires an exact FrozenPackageRef")
+        target_package_ref = FrozenPackageRef(
+            self.target_package_ref.package_name,
+            self.target_package_ref.version_code,
+            self.target_package_ref.artifact_digest,
+            self.target_package_ref.preflight_sha256,
+            self.target_package_ref.validation_receipt_sha256,
+            self.target_package_ref.revision,
+        )
         local = _local(self.package_local)
         accepted = _accepted_inventory(self.accepted_target_inventory)
+        if target_package_ref.content_id != self.target_package_ref_id:
+            _fail("frozen package reference does not reproduce the target package ID")
+        if (
+            target_package_ref.package_name,
+            target_package_ref.version_code,
+            target_package_ref.artifact_digest,
+        ) != (
+            local.package_name,
+            local.version_code,
+            local.target_artifact_digest,
+        ):
+            _fail("package-local plan does not match the frozen package artifact identity")
+        if local.requirements_sha256 != target_package_ref.preflight_sha256:
+            _fail("package-local requirements do not match the frozen package preflight")
         if local.target_package_ref_id != self.target_package_ref_id:
             _fail("package-local plan targets a different package")
         if accepted.inventory.target_package_ref_id != self.target_package_ref_id:
@@ -1099,6 +1155,7 @@ class PackageExecutionPlan:
                 item.reuse.target_inventory_completion != accepted.completion
             ):
                 _fail("exact reuse pins a transplanted target inventory completion")
+        object.__setattr__(self, "target_package_ref", target_package_ref)
         object.__setattr__(self, "package_local", local)
         object.__setattr__(self, "accepted_target_inventory", accepted)
         object.__setattr__(self, "root_plans", roots)
@@ -1144,6 +1201,7 @@ class PackageExecutionPlan:
     @property
     def required_completions(self) -> tuple[CompletionPin, ...]:
         def values() -> Iterable[CompletionPin]:
+            yield package_validation_receipt_completion(self.target_package_ref)
             yield self.accepted_target_inventory.completion
             for item in self.root_plans:
                 if type(item) is ExactReuseRootPlan:
@@ -1375,6 +1433,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
         _fail("plan snapshot requires an exact PackageExecutionPlan")
     frozen = PackageExecutionPlan(
         value.target_package_ref_id,
+        value.target_package_ref,
         value.package_local,
         value.accepted_target_inventory,
         value.root_plans,
@@ -1414,6 +1473,7 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
 def build_package_execution_plan(
     *,
     target_package_ref_id: str,
+    target_package_ref: FrozenPackageRef,
     package_local: PackageLocalPlan,
     accepted_target_inventory: AcceptedTargetRootInventory,
     root_plans: Iterable[RootExecutionPlan],
@@ -1425,6 +1485,7 @@ def build_package_execution_plan(
         roots.append(_root(item))
     return PackageExecutionPlan(
         target_package_ref_id,
+        target_package_ref,
         package_local,
         accepted_target_inventory,
         tuple(sorted(roots, key=_root_key)),

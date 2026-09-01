@@ -17,6 +17,7 @@ import struct
 import subprocess
 import tempfile
 import time
+import weakref
 import zipfile
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -103,6 +104,10 @@ class CacheIntegrityError(PreflightError):
     """Raised when a content-addressed cache object fails verification."""
 
 
+class CacheLimitError(PreflightError):
+    """Raised when a cache object exceeds the configured resource limits."""
+
+
 class CachedMember(TypedDict):
     name: str
     stored_name: str
@@ -120,7 +125,9 @@ class CacheManifest(TypedDict):
 class PreflightLimits:
     """Limits enforced before archive content is expanded."""
 
+    max_delivery_files: int = 100_000
     max_delivery_file_bytes: int = 4 * 1024**3
+    max_delivery_bytes: int = 8 * 1024**3
     max_archive_members: int = 100_000
     max_member_bytes: int = 2 * 1024**3
     max_archive_bytes: int = 8 * 1024**3
@@ -138,20 +145,72 @@ class DeliveryFile:
 
 class _SealedOwner:
     def __init__(self, directory: Path | str | None = None) -> None:
-        parent: str | None = None
-        if directory is not None:
-            try:
-                resolved = Path(directory).resolve(strict=True)
-            except OSError as err:
-                raise PreflightError(f"sealing directory is inaccessible: {directory}") from err
-            if not resolved.is_dir():
-                raise PreflightError(f"sealing directory is not a directory: {resolved}")
-            parent = os.fspath(resolved)
-        self._temporary = tempfile.TemporaryDirectory(prefix="phase4-v2-preflight-", dir=parent)
-        self.path = Path(self._temporary.name)
+        supplied = directory if directory is not None else tempfile.gettempdir()
+        self._parent_fd = -1
+        self._directory_fd = -1
+        self._name = ""
+        parent_path = Path(os.path.abspath(os.fspath(supplied)))
+        try:
+            self._parent_fd = _open_directory_path_pinned(parent_path)
+            self._name = _make_private_directory_at(
+                self._parent_fd, "phase4-v2-preflight-"
+            )
+            self._directory_fd = os.open(
+                self._name, _DIRECTORY_FLAGS, dir_fd=self._parent_fd
+            )
+        except OSError as err:
+            if self._name and self._parent_fd >= 0:
+                try:
+                    os.rmdir(self._name, dir_fd=self._parent_fd)
+                except OSError:
+                    pass
+            if self._parent_fd >= 0:
+                os.close(self._parent_fd)
+            raise PreflightError(f"sealing directory is inaccessible: {parent_path}") from err
+        self.path = parent_path / self._name
+        self._member_fds: list[int] = []
+        self._member_names: set[str] = set()
+        self._closed = False
+
+    @property
+    def directory_fd(self) -> int:
+        return self._directory_fd
+
+    def open_member(self, name: str) -> int:
+        descriptor = _open_readonly(name, dir_fd=self._directory_fd)
+        self._member_fds.append(descriptor)
+        self._member_names.add(name)
+        return descriptor
 
     def close(self) -> None:
-        self._temporary.cleanup()
+        if self._closed:
+            return
+        self._closed = True
+        for descriptor in self._member_fds:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+        self._member_fds.clear()
+        try:
+            with os.scandir(self._directory_fd) as entries:
+                names = [entry.name for entry in entries]
+        except OSError:
+            names = list(self._member_names)
+        for name in names:
+            try:
+                os.unlink(name, dir_fd=self._directory_fd)
+            except OSError:
+                pass
+        self._member_names.clear()
+        try:
+            os.close(self._directory_fd)
+        finally:
+            try:
+                os.rmdir(self._name, dir_fd=self._parent_fd)
+            except OSError:
+                pass
+            os.close(self._parent_fd)
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,6 +220,7 @@ class ArtifactMember:
     name: str
     size: int
     sha256: str
+    _sealed_fd: int = field(repr=False, compare=False)
     _sealed_path: Path = field(repr=False, compare=False)
 
     def public_dict(self) -> dict[str, object]:
@@ -202,7 +262,7 @@ class StackDecision:
     members: tuple[MemberClassification, ...]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, weakref_slot=True)
 class PreflightResult:
     delivery_digest: str
     artifact_digest: str
@@ -211,6 +271,10 @@ class PreflightResult:
     package_identity: PackageIdentity | None
     decision: StackDecision
     _owner: _SealedOwner = field(repr=False, compare=False)
+    _finalizer: weakref.finalize = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_finalizer", weakref.finalize(self, self._owner.close))
 
     def manifest(self) -> dict[str, object]:
         return {
@@ -226,7 +290,7 @@ class PreflightResult:
         }
 
     def close(self) -> None:
-        self._owner.close()
+        self._finalizer()
 
     def __enter__(self) -> PreflightResult:
         return self
@@ -258,6 +322,7 @@ class _ApkObservation:
     member: str
     stacks: tuple[str, ...]
     blockers: tuple[str, ...]
+    expanded_bytes: int
 
 
 def _canonical_json(value: object) -> bytes:
@@ -301,6 +366,34 @@ def _open_readonly(path: os.PathLike[str] | str, *, dir_fd: int | None = None) -
         if not _O_NOATIME or error.errno != errno.EPERM:
             raise
         return os.open(path, _READ_FLAGS & ~_O_NOATIME, dir_fd=dir_fd)
+
+
+def _reopen_pinned_file(descriptor: int) -> int:
+    """Open a retained file description with an independent offset."""
+    path = f"/proc/self/fd/{descriptor}"
+    flags = _READ_FLAGS & ~getattr(os, "O_NOFOLLOW", 0)
+    try:
+        return os.open(path, flags)
+    except OSError as error:
+        if not _O_NOATIME or error.errno != errno.EPERM:
+            raise
+        return os.open(path, flags & ~_O_NOATIME)
+
+
+def _open_directory_path_pinned(path: Path) -> int:
+    """Open an absolute directory one no-follow component at a time."""
+    if not path.is_absolute():
+        raise ValueError("pinned directory path must be absolute")
+    descriptor = os.open("/", _DIRECTORY_FLAGS)
+    try:
+        for component in path.parts[1:]:
+            next_descriptor = os.open(component, _DIRECTORY_FLAGS, dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = next_descriptor
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
 
 
 def _hash_stream(stream: IO[bytes], *, expected_size: int) -> tuple[str, int]:
@@ -349,8 +442,17 @@ def _copy_fd_exact(source_fd: int, destination_fd: int, *, expected_size: int) -
     return digest.hexdigest(), copied
 
 
-def _seal_delivery_file(source: Path, destination: Path, limits: PreflightLimits) -> DeliveryFile:
+def _seal_delivery_file(
+    source: Path,
+    destination: str,
+    destination_dir_fd: int,
+    limits: PreflightLimits,
+    *,
+    remaining_delivery_bytes: int,
+) -> DeliveryFile:
     before = _regular_file(source, max_bytes=limits.max_delivery_file_bytes)
+    if before.st_size > remaining_delivery_bytes:
+        raise SafetyError("delivery byte-size limit exceeded")
     source_fd = _open_readonly(source)
     destination_fd = -1
     try:
@@ -358,7 +460,10 @@ def _seal_delivery_file(source: Path, destination: Path, limits: PreflightLimits
         if not stat.S_ISREG(opened.st_mode) or _identity(opened) != _identity(before):
             raise SafetyError(f"delivery file changed before sealing: {source}")
         destination_fd = os.open(
-            destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0), 0o600
+            destination,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+            0o600,
+            dir_fd=destination_dir_fd,
         )
         digest, size = _copy_fd_exact(source_fd, destination_fd, expected_size=before.st_size)
         os.fsync(destination_fd)
@@ -518,20 +623,24 @@ def _preflight_zip_directory(stream: IO[bytes], limits: PreflightLimits) -> None
 
 
 @contextmanager
-def _open_zip_path(path: Path, limits: PreflightLimits | None = None) -> Iterator[zipfile.ZipFile]:
-    expected = _regular_file(path)
-    descriptor = _open_readonly(path)
+def _open_zip_descriptor(
+    descriptor: int,
+    label: str,
+    limits: PreflightLimits | None = None,
+) -> Iterator[zipfile.ZipFile]:
+    duplicate = os.dup(descriptor)
     stream: IO[bytes] | None = None
     try:
-        if _identity(os.fstat(descriptor)) != _identity(expected):
-            raise SafetyError(f"sealed ZIP identity changed: {path.name}")
-        stream = os.fdopen(descriptor, "rb")
-        descriptor = -1
+        node = os.fstat(duplicate)
+        if not stat.S_ISREG(node.st_mode):
+            raise SafetyError(f"sealed ZIP is not a regular file: {label}")
+        stream = os.fdopen(duplicate, "rb")
+        duplicate = -1
         try:
             _preflight_zip_directory(stream, limits or PreflightLimits())
             archive = zipfile.ZipFile(stream, "r")
         except (OSError, zipfile.BadZipFile) as err:
-            raise SafetyError(f"invalid ZIP delivery or APK: {path.name}") from err
+            raise SafetyError(f"invalid ZIP delivery or APK: {label}") from err
         try:
             yield archive
         finally:
@@ -539,8 +648,21 @@ def _open_zip_path(path: Path, limits: PreflightLimits | None = None) -> Iterato
     finally:
         if stream is not None:
             stream.close()
-        if descriptor >= 0:
-            os.close(descriptor)
+        if duplicate >= 0:
+            os.close(duplicate)
+
+
+@contextmanager
+def _open_zip_path(path: Path, limits: PreflightLimits | None = None) -> Iterator[zipfile.ZipFile]:
+    expected = _regular_file(path)
+    descriptor = _open_readonly(path)
+    try:
+        if _identity(os.fstat(descriptor)) != _identity(expected):
+            raise SafetyError(f"ZIP identity changed: {path.name}")
+        with _open_zip_descriptor(descriptor, path.name, limits) as archive:
+            yield archive
+    finally:
+        os.close(descriptor)
 
 
 def _logical_apk_name(name: str) -> str:
@@ -550,22 +672,21 @@ def _logical_apk_name(name: str) -> str:
     return logical
 
 
-def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObservation:
+def _classify_apk(descriptor: int, label: str, limits: PreflightLimits) -> _ApkObservation:
     try:
-        with _open_zip_path(path, limits) as apk:
+        with _open_zip_descriptor(descriptor, label, limits) as apk:
             entries = _archive_entries(apk, limits)
-            standard_bundle = next(
-                (
-                    entry
-                    for entry in entries
-                    if entry.name.casefold() == "assets/index.android.bundle"
-                ),
-                None,
+            candidate_bundles = tuple(
+                entry
+                for entry in entries
+                if entry.name.casefold().startswith("assets/")
+                and entry.info.file_size >= len(_HERMES_BYTECODE_MAGIC)
             )
-            standard_bundle_prefix = None
-            if standard_bundle is not None:
-                with apk.open(standard_bundle.info) as stream:
-                    standard_bundle_prefix = stream.read(len(_HERMES_BYTECODE_MAGIC))
+            hermes_bundle_names: set[str] = set()
+            for bundle in candidate_bundles:
+                with apk.open(bundle.info) as stream:
+                    if stream.read(len(_HERMES_BYTECODE_MAGIC)) == _HERMES_BYTECODE_MAGIC:
+                        hermes_bundle_names.add(bundle.name.casefold())
     except (OSError, RuntimeError, ValueError, zipfile.BadZipFile, SafetyError) as err:
         raise SafetyError(f"invalid APK member {label}: {err}") from err
     names = {entry.name.casefold() for entry in entries}
@@ -584,11 +705,14 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
     react_native_bundle_names = {
         "assets/index.android.bundle",
         "assets/index.android.bundle.hbc",
+        *(name for name in names if name.startswith("assets/") and name.endswith(".jsbundle")),
     }
     if names.intersection(react_native_bundle_names):
         stacks.add("react_native")
-    standard_bundle_is_hermes = standard_bundle_prefix == _HERMES_BYTECODE_MAGIC
-    if standard_bundle_is_hermes or any(
+    bundle_is_hermes = bool(hermes_bundle_names)
+    if bundle_is_hermes:
+        stacks.add("react_native")
+    if bundle_is_hermes or any(
         name.endswith(".hermes") or name.endswith(".hbc") for name in names
     ):
         stacks.add("hermes")
@@ -602,6 +726,7 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         stacks.add("embedded_archive")
     if any(
         name not in react_native_bundle_names
+        and name not in hermes_bundle_names
         and (name.endswith(_SHIPPED_CODE_SUFFIXES) or name.endswith(".bundle"))
         and _DEX_MEMBER.fullmatch(name) is None
         for name in names
@@ -609,10 +734,20 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         stacks.add("shipped_bundle")
     if not stacks:
         blockers.add(f"unknown_application_stack:{label}")
-    return _ApkObservation(label, tuple(sorted(stacks)), tuple(sorted(blockers)))
+    return _ApkObservation(
+        label,
+        tuple(sorted(stacks)),
+        tuple(sorted(blockers)),
+        sum(entry.info.file_size for entry in entries),
+    )
 
 
-def _run_identity_tool(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
+def _run_identity_tool(
+    arguments: Sequence[str],
+    *,
+    label: str,
+    pass_fds: tuple[int, ...] = (),
+) -> tuple[str | None, str | None]:
     executable = shutil.which(arguments[0])
     if executable is None:
         return None, f"identity_tool_unavailable:{arguments[0]}"
@@ -625,6 +760,7 @@ def _run_identity_tool(arguments: Sequence[str], *, label: str) -> tuple[str | N
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            pass_fds=pass_fds,
         )
         assert process.stdout is not None
         deadline = time.monotonic() + 60
@@ -674,12 +810,16 @@ def _terminate_identity_tool(process: subprocess.Popen[bytes]) -> None:
 
 
 def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, tuple[str, ...]]:
+    sealed_descriptor_path = f"/proc/self/fd/{member._sealed_fd}"
     badging, badging_error = _run_identity_tool(
-        ("aapt2", "dump", "badging", os.fspath(member._sealed_path)), label=member.name
+        ("aapt2", "dump", "badging", sealed_descriptor_path),
+        label=member.name,
+        pass_fds=(member._sealed_fd,),
     )
     signer, signer_error = _run_identity_tool(
-        ("apksigner", "verify", "--print-certs", os.fspath(member._sealed_path)),
+        ("apksigner", "verify", "--print-certs", sealed_descriptor_path),
         label=member.name,
+        pass_fds=(member._sealed_fd,),
     )
     blockers = tuple(error for error in (badging_error, signer_error) if error is not None)
     if badging is None or signer is None:
@@ -865,10 +1005,16 @@ def _decision(
 
 
 def _seal_archive_member(
-    archive: zipfile.ZipFile, entry: _ArchiveEntry, destination: Path
+    archive: zipfile.ZipFile,
+    entry: _ArchiveEntry,
+    destination: str,
+    destination_dir_fd: int,
 ) -> tuple[str, int]:
     destination_fd = os.open(
-        destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0), 0o600
+        destination,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+        0o600,
+        dir_fd=destination_dir_fd,
     )
     try:
         digest = hashlib.sha256()
@@ -904,6 +1050,8 @@ def preflight_delivery(
     if not paths:
         raise PreflightError("delivery must contain at least one file")
     active_limits = limits or PreflightLimits()
+    if len(paths) > active_limits.max_delivery_files:
+        raise SafetyError("delivery file-count limit exceeded")
     supplied = [Path(os.path.abspath(os.fspath(path))) for path in paths]
     if len({path.name.casefold() for path in supplied}) != len(supplied):
         raise SafetyError("delivery contains duplicate file names")
@@ -911,37 +1059,93 @@ def preflight_delivery(
     deliveries: list[DeliveryFile] = []
     artifacts: list[ArtifactMember] = []
     observations: list[_ApkObservation] = []
+    delivery_bytes = 0
+    artifact_bytes = 0
+    artifact_expanded_bytes = 0
     try:
         for delivery_index, source in enumerate(
             sorted(supplied, key=lambda item: item.name.casefold())
         ):
-            sealed_delivery = owner.path / f"delivery-{delivery_index:04d}"
-            delivery = _seal_delivery_file(source, sealed_delivery, active_limits)
+            sealed_delivery_name = f"delivery-{delivery_index:04d}"
+            sealed_delivery_path = owner.path / sealed_delivery_name
+            delivery = _seal_delivery_file(
+                source,
+                sealed_delivery_name,
+                owner.directory_fd,
+                active_limits,
+                remaining_delivery_bytes=active_limits.max_delivery_bytes - delivery_bytes,
+            )
+            sealed_delivery_fd = owner.open_member(sealed_delivery_name)
+            delivery_bytes += delivery.size
             deliveries.append(delivery)
             if source.suffix.lower() == _APK_SUFFIX:
                 if delivery.size > active_limits.max_member_bytes:
                     raise SafetyError(f"artifact member size limit exceeded: {source.name}")
                 logical = _logical_apk_name(source.name)
-                observations.append(_classify_apk(sealed_delivery, logical, active_limits))
+                observation = _classify_apk(sealed_delivery_fd, logical, active_limits)
+                if len(artifacts) >= active_limits.max_archive_members:
+                    raise SafetyError("delivery artifact member-count limit exceeded")
+                artifact_bytes += delivery.size
+                if artifact_bytes > active_limits.max_archive_bytes:
+                    raise SafetyError("delivery artifact byte-size limit exceeded")
+                artifact_expanded_bytes += observation.expanded_bytes
+                if artifact_expanded_bytes > active_limits.max_archive_bytes:
+                    raise SafetyError("delivery artifact expanded-size limit exceeded")
+                observations.append(observation)
                 artifacts.append(
-                    ArtifactMember(logical, delivery.size, delivery.sha256, sealed_delivery)
+                    ArtifactMember(
+                        logical,
+                        delivery.size,
+                        delivery.sha256,
+                        sealed_delivery_fd,
+                        sealed_delivery_path,
+                    )
                 )
             elif source.suffix.lower() in _DELIVERY_ARCHIVES:
-                with _open_zip_path(sealed_delivery, active_limits) as archive:
+                with _open_zip_descriptor(
+                    sealed_delivery_fd, source.name, active_limits
+                ) as archive:
                     entries = _archive_entries(archive, active_limits)
                     apk_entries = [
                         entry for entry in entries if entry.name.lower().endswith(_APK_SUFFIX)
                     ]
                     for member_index, entry in enumerate(apk_entries):
+                        if len(artifacts) >= active_limits.max_archive_members:
+                            raise SafetyError("delivery artifact member-count limit exceeded")
+                        if (
+                            artifact_bytes + entry.info.file_size
+                            > active_limits.max_archive_bytes
+                        ):
+                            raise SafetyError("delivery artifact byte-size limit exceeded")
                         logical = _logical_apk_name(entry.name)
-                        sealed_member = (
-                            owner.path / f"artifact-{delivery_index:04d}-{member_index:04d}"
+                        sealed_member_name = (
+                            f"artifact-{delivery_index:04d}-{member_index:04d}"
                         )
-                        digest, size = _seal_archive_member(archive, entry, sealed_member)
-                        observations.append(
-                            _classify_apk(sealed_member, logical, active_limits)
+                        sealed_member_path = owner.path / sealed_member_name
+                        digest, size = _seal_archive_member(
+                            archive,
+                            entry,
+                            sealed_member_name,
+                            owner.directory_fd,
                         )
-                        artifacts.append(ArtifactMember(logical, size, digest, sealed_member))
+                        sealed_member_fd = owner.open_member(sealed_member_name)
+                        observation = _classify_apk(
+                            sealed_member_fd, logical, active_limits
+                        )
+                        artifact_bytes += size
+                        artifact_expanded_bytes += observation.expanded_bytes
+                        if artifact_expanded_bytes > active_limits.max_archive_bytes:
+                            raise SafetyError("delivery artifact expanded-size limit exceeded")
+                        observations.append(observation)
+                        artifacts.append(
+                            ArtifactMember(
+                                logical,
+                                size,
+                                digest,
+                                sealed_member_fd,
+                                sealed_member_path,
+                            )
+                        )
             else:
                 raise SafetyError(f"unsupported delivery file type: {source.name}")
         extra_blockers = () if artifacts else ("delivery_contains_no_apk_members",)
@@ -1034,10 +1238,13 @@ def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
         current = path.lstat()
     except OSError:
         return False
-    return stat.S_ISDIR(current.st_mode) and _identity(opened) == _identity(current)
+    return stat.S_ISDIR(current.st_mode) and (opened.st_dev, opened.st_ino) == (
+        current.st_dev,
+        current.st_ino,
+    )
 
 
-def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
+def _open_status_directory(status_root: Path, pipeline_revision: str) -> tuple[int, int]:
     status_root_fd = os.open(status_root, _DIRECTORY_FLAGS)
     try:
         try:
@@ -1045,9 +1252,11 @@ def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
         except FileExistsError:
             pass
         os.fsync(status_root_fd)
-        return os.open(pipeline_revision, _DIRECTORY_FLAGS, dir_fd=status_root_fd)
-    finally:
+        revision_fd = os.open(pipeline_revision, _DIRECTORY_FLAGS, dir_fd=status_root_fd)
+    except BaseException:
         os.close(status_root_fd)
+        raise
+    return status_root_fd, revision_fd
 
 
 def _write_file_at(directory_fd: int, name: str, payload: bytes) -> None:
@@ -1150,6 +1359,14 @@ class ArtifactCache:
             raise PreflightError("invalid artifact digest")
         return self.root / "objects" / CACHE_SCHEMA / digest
 
+    def _check_limits(self, sizes: Sequence[int]) -> None:
+        if len(sizes) > self.limits.max_archive_members:
+            raise CacheLimitError("cache member count exceeds the configured limit")
+        if any(size > self.limits.max_member_bytes for size in sizes):
+            raise CacheLimitError("cache member exceeds the configured size limit")
+        if sum(sizes) > self.limits.max_archive_bytes:
+            raise CacheLimitError("cache member bytes exceed the configured limit")
+
     def store(self, result: PreflightResult) -> Path:
         """Atomically store sealed bytes regardless of provisional routing state."""
         if not result.artifact_members:
@@ -1157,6 +1374,7 @@ class ArtifactCache:
         logical_members = [member.public_dict() for member in result.artifact_members]
         if _digest_manifest("artifact", logical_members) != result.artifact_digest:
             raise PreflightError("preflight result artifact digest does not match its members")
+        self._check_limits([member.size for member in result.artifact_members])
         self.root.mkdir(parents=True, exist_ok=True)
         _fsync_directory(self.root.parent)
         objects = self.root / "objects"
@@ -1213,7 +1431,7 @@ class ArtifactCache:
                     records: list[CachedMember] = []
                     for index, member in enumerate(result.artifact_members):
                         stored_name = f"{index:04d}-{member.sha256}.apk"
-                        source_fd = _open_readonly(member._sealed_path)
+                        source_fd = _reopen_pinned_file(member._sealed_fd)
                         try:
                             target_fd = os.open(
                                 stored_name,
@@ -1355,12 +1573,12 @@ class ArtifactCache:
             if not isinstance(raw_members, list) or not raw_members:
                 raise CacheIntegrityError("cache member manifest is invalid")
             members = [_validate_cached_member(member) for member in raw_members]
-            if len(members) > self.limits.max_archive_members:
-                raise CacheIntegrityError("cache member count exceeds the configured limit")
-            if any(member["size"] > self.limits.max_member_bytes for member in members):
-                raise CacheIntegrityError("cache member exceeds the configured size limit")
-            if sum(member["size"] for member in members) > self.limits.max_archive_bytes:
-                raise CacheIntegrityError("cache members exceed the configured aggregate size limit")
+            self._check_limits([member["size"] for member in members])
+            logical_names = [member["name"] for member in members]
+            if len({name.casefold() for name in logical_names}) != len(logical_names):
+                raise CacheIntegrityError("cache logical member names are not unique")
+            if logical_names != sorted(logical_names, key=str.casefold):
+                raise CacheIntegrityError("cache logical member names are not canonical")
             try:
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             except OSError as err:
@@ -1424,10 +1642,14 @@ class ArtifactCache:
         status_root.mkdir(exist_ok=True)
         status_dir = status_root / pipeline_revision
         _fsync_directory(self.root)
-        status_fd = _open_status_directory(status_root, pipeline_revision)
-        fcntl.flock(status_fd, fcntl.LOCK_EX)
+        status_root_fd, status_fd = _open_status_directory(status_root, pipeline_revision)
         target_name = f"{artifact_digest}.json"
         try:
+            fcntl.flock(status_fd, fcntl.LOCK_EX)
+            if not _directory_descriptor_matches_path(
+                status_root_fd, status_root
+            ) or not _directory_descriptor_matches_path(status_fd, status_dir):
+                raise CacheIntegrityError("cache status directory was replaced")
             try:
                 previous = _read_file_at(status_fd, target_name, max_bytes=1024 * 1024)
             except FileNotFoundError:
@@ -1482,6 +1704,10 @@ class ArtifactCache:
                     dst_dir_fd=status_fd,
                 )
                 os.fsync(status_fd)
+                if not _directory_descriptor_matches_path(
+                    status_root_fd, status_root
+                ) or not _directory_descriptor_matches_path(status_fd, status_dir):
+                    raise CacheIntegrityError("cache status directory was replaced")
             finally:
                 try:
                     os.unlink(temporary_name, dir_fd=status_fd)
@@ -1489,20 +1715,15 @@ class ArtifactCache:
                     pass
         finally:
             os.close(status_fd)
+            os.close(status_root_fd)
         return status_dir / target_name
 
     def materialize(self, artifact_digest: str, destination: Path | str) -> Path:
         manifest = self.verify(artifact_digest)
         target = Path(os.path.abspath(os.fspath(destination)))
+        parent = target.parent
         try:
-            parent = target.parent.resolve(strict=True)
-        except OSError as err:
-            raise PreflightError(
-                f"materialization parent is inaccessible: {target.parent}"
-            ) from err
-        target = parent / target.name
-        try:
-            parent_fd = os.open(parent, _DIRECTORY_FLAGS)
+            parent_fd = _open_directory_path_pinned(parent)
         except OSError as err:
             raise PreflightError(f"materialization parent is inaccessible: {parent}") from err
         try:

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import gc
 import hashlib
 import json
 import os
 import stat
 import sys
+import tempfile
 import zipfile
 from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
@@ -22,6 +24,7 @@ import tools.phase4_v2.preflight.core as legacy_preflight
 from tools.phase4_v2.preflight import (
     ArtifactCache,
     CacheIntegrityError,
+    CacheLimitError,
     PreflightError,
     PreflightLimits,
     SafetyError,
@@ -60,7 +63,13 @@ def _mock_identity_tools(
     split_as_package_attribute: bool = False,
     config_for_splits: Mapping[str, str] | None = None,
 ) -> None:
-    def run(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
+    def run(
+        arguments: Sequence[str],
+        *,
+        label: str,
+        pass_fds: tuple[int, ...] = (),
+    ) -> tuple[str | None, str | None]:
+        assert all(descriptor >= 0 for descriptor in pass_fds)
         package, code, version, split, required, signer = identities[label]
         if arguments[0] == "apksigner":
             return f"Signer #1 certificate SHA-256 digest: {signer}\n", None
@@ -420,6 +429,123 @@ def test_explicit_sealing_directory_and_result_cleanup(tmp_path: Path) -> None:
     assert not sealed.exists()
 
 
+def test_sealed_result_cleanup_is_automatic(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "persistent-sealing"
+    sealing_root.mkdir()
+    result = preflight_delivery([artifact], sealing_directory=sealing_root)
+    sealed = result.artifact_members[0]._sealed_path
+
+    del result
+    gc.collect()
+
+    assert not sealed.exists()
+
+
+def test_default_sealing_directory_honors_tmpdir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "configured-tmpdir"
+    sealing_root.mkdir()
+    monkeypatch.setenv("TMPDIR", os.fspath(sealing_root))
+    monkeypatch.setattr(tempfile, "tempdir", None)
+
+    with preflight_delivery([artifact]) as result:
+        assert sealing_root in result.artifact_members[0]._sealed_path.parents
+
+
+def test_sealing_stays_in_pinned_parent_when_supplied_path_is_replaced(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+    displaced = tmp_path / "sealing-displaced"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_create = legacy_preflight._make_private_directory_at
+
+    def replace_parent(directory_fd: int, prefix: str) -> str:
+        sealing_root.rename(displaced)
+        sealing_root.symlink_to(outside, target_is_directory=True)
+        return original_create(directory_fd, prefix)
+
+    monkeypatch.setattr(legacy_preflight, "_make_private_directory_at", replace_parent)
+
+    with preflight_delivery([artifact], sealing_directory=sealing_root) as result:
+        member = result.artifact_members[0]
+        assert os.fstat(member._sealed_fd).st_size == artifact.stat().st_size
+        assert len(list(displaced.iterdir())) == 1
+        assert list(outside.iterdir()) == []
+
+    assert list(displaced.iterdir()) == []
+
+
+def test_sealed_reads_survive_workspace_path_replacement(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+    displaced_workspace = tmp_path / "workspace-displaced"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_seal = legacy_preflight._seal_delivery_file
+
+    def replace_workspace(
+        source: Path,
+        destination: str,
+        destination_dir_fd: int,
+        limits: PreflightLimits,
+        *,
+        remaining_delivery_bytes: int,
+    ) -> legacy_preflight.DeliveryFile:
+        delivery = original_seal(
+            source,
+            destination,
+            destination_dir_fd,
+            limits,
+            remaining_delivery_bytes=remaining_delivery_bytes,
+        )
+        [workspace] = sealing_root.iterdir()
+        workspace.rename(displaced_workspace)
+        workspace.symlink_to(outside, target_is_directory=True)
+        return delivery
+
+    monkeypatch.setattr(legacy_preflight, "_seal_delivery_file", replace_workspace)
+
+    with preflight_delivery([artifact], sealing_directory=sealing_root) as result:
+        member = result.artifact_members[0]
+        assert os.fstat(member._sealed_fd).st_size == artifact.stat().st_size
+        assert list(outside.iterdir()) == []
+
+    assert list(displaced_workspace.iterdir()) == []
+
+
+def test_sealing_cleanup_removes_file_when_descriptor_registration_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+
+    def fail_open(_owner: object, _name: str) -> int:
+        raise OSError("descriptor registration failed")
+
+    monkeypatch.setattr(legacy_preflight._SealedOwner, "open_member", fail_open)
+
+    with pytest.raises(OSError, match="descriptor registration failed"):
+        preflight_delivery([artifact], sealing_directory=sealing_root)
+
+    assert list(sealing_root.iterdir()) == []
+
+
 @pytest.mark.parametrize(
     "unsafe_name",
     ["../escape.apk", "/absolute.apk", "bad\\name.apk", "bad\rname.apk", "bad\nname.apk"],
@@ -507,6 +633,55 @@ def test_standard_react_native_bundle_uses_hermes_header_for_routing(tmp_path: P
 
     assert {"react_native", "hermes"}.issubset(result.decision.stacks)
     assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
+    assert "shipped_bundle" not in result.decision.stacks
+    assert "shipped-bundle" not in result.decision.routes
+
+
+def test_nonstandard_react_native_bundle_uses_hermes_header_for_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "hermes.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr(
+            "assets/main.bundle",
+            legacy_preflight._HERMES_BYTECODE_MAGIC + b"fixture",
+        )
+
+    result = preflight_delivery([artifact])
+
+    assert {"react_native", "hermes"}.issubset(result.decision.stacks)
+    assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
+
+
+def test_jsbundle_asset_uses_hermes_header_for_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "hermes.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr(
+            "assets/main.jsbundle",
+            legacy_preflight._HERMES_BYTECODE_MAGIC + b"fixture",
+        )
+
+    result = preflight_delivery([artifact])
+
+    assert {"react_native", "hermes"}.issubset(result.decision.stacks)
+    assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
+
+
+def test_plain_jsbundle_asset_uses_react_native_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "react-native.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr("assets/main.jsbundle", b"plain JavaScript fixture")
+
+    result = preflight_delivery([artifact])
+
+    assert "react_native" in result.decision.stacks
+    assert "react-native-bundle" in result.decision.routes
+    assert "hermes" not in result.decision.stacks
+    assert "shipped_bundle" not in result.decision.stacks
 
 
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:
@@ -653,6 +828,70 @@ def test_cache_detects_member_corruption(tmp_path: Path) -> None:
         cache.verify(result.artifact_digest)
 
 
+def test_cache_rejects_members_exceeding_the_aggregate_byte_limit(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    constrained_cache = ArtifactCache(
+        cache.root,
+        limits=PreflightLimits(max_archive_bytes=artifact.stat().st_size - 1),
+    )
+
+    with pytest.raises(CacheLimitError, match="member bytes exceed"):
+        constrained_cache.verify(result.artifact_digest)
+
+
+def test_cache_rejects_over_limit_members_before_publication(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(
+        tmp_path / "cache",
+        limits=PreflightLimits(max_archive_bytes=artifact.stat().st_size - 1),
+    )
+
+    with pytest.raises(CacheLimitError, match="member bytes exceed"):
+        cache.store(result)
+
+    assert not cache.root.exists()
+
+
+def test_preflight_rejects_delivery_wide_artifact_count_and_bytes(tmp_path: Path) -> None:
+    first = tmp_path / "base.apk"
+    second = tmp_path / "split.apk"
+    for artifact in (first, second):
+        with zipfile.ZipFile(artifact, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"manifest")
+
+    with pytest.raises(SafetyError, match="delivery artifact member-count limit"):
+        preflight_delivery(
+            [first, second],
+            limits=PreflightLimits(max_archive_members=1),
+        )
+
+    with pytest.raises(SafetyError, match="delivery artifact byte-size limit"):
+        preflight_delivery(
+            [first, second],
+            limits=PreflightLimits(
+                max_archive_bytes=first.stat().st_size + second.stat().st_size - 1
+            ),
+        )
+
+    compressed = (tmp_path / "compressed-base.apk", tmp_path / "compressed-split.apk")
+    for artifact in compressed:
+        with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("AndroidManifest.xml", b"manifest")
+            archive.writestr("assets/payload.js", b"x" * 2_048)
+
+    with pytest.raises(SafetyError, match="delivery artifact expanded-size limit"):
+        preflight_delivery(
+            list(compressed),
+            limits=PreflightLimits(max_archive_bytes=3_000),
+        )
+
+
 def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> None:
     artifact = tmp_path / "base.apk"
     _native_apk(artifact)
@@ -674,42 +913,45 @@ def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> No
         cache.verify(result.artifact_digest)
 
 
-def test_cache_verify_bounds_manifest_member_count_before_hashing(tmp_path: Path) -> None:
-    artifact = tmp_path / "base.apk"
-    _native_apk(artifact)
-    result = preflight_delivery([artifact])
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda members: members[1].update(name=members[0]["name"]), "not unique"),
+        (lambda members: members.reverse(), "not canonical"),
+    ],
+)
+def test_cache_rejects_noncanonical_logical_member_sets(
+    tmp_path: Path, mutate: object, message: str
+) -> None:
+    first = tmp_path / "base.apk"
+    second = tmp_path / "split.apk"
+    _native_apk(first)
+    _native_apk(second, "assets/split.js")
+    result = preflight_delivery([first, second])
     cache = ArtifactCache(tmp_path / "cache")
     object_dir = cache.store(result)
     manifest = json.loads((object_dir / "manifest.json").read_bytes())
-    duplicate = dict(manifest["members"][0])
-    duplicate["name"] = "second.apk"
-    duplicate["stored_name"] = "second.apk"
-    manifest["members"].append(duplicate)
+    members = manifest["members"]
+    assert isinstance(members, list)
+    assert callable(mutate)
+    mutate(members)
+    logical = [
+        {"name": member["name"], "size": member["size"], "sha256": member["sha256"]}
+        for member in members
+    ]
+    tampered_digest = legacy_preflight._digest_manifest("artifact", logical)
+    manifest["artifact_digest"] = tampered_digest
     manifest_bytes = legacy_preflight._canonical_json(manifest)
     (object_dir / "manifest.json").write_bytes(manifest_bytes)
     (object_dir / "OBJECT.COMPLETE").write_text(
         f"{hashlib.sha256(manifest_bytes).hexdigest()}  manifest.json\n",
         encoding="utf-8",
     )
-    limited = ArtifactCache(tmp_path / "cache", limits=PreflightLimits(max_archive_members=1))
+    tampered_dir = object_dir.with_name(tampered_digest)
+    object_dir.rename(tampered_dir)
 
-    with pytest.raises(CacheIntegrityError, match="member count"):
-        limited.verify(result.artifact_digest)
-
-
-def test_cache_verify_bounds_aggregate_member_bytes_before_hashing(tmp_path: Path) -> None:
-    artifact = tmp_path / "base.apk"
-    _native_apk(artifact)
-    result = preflight_delivery([artifact])
-    cache = ArtifactCache(tmp_path / "cache")
-    cache.store(result)
-    limited = ArtifactCache(
-        tmp_path / "cache",
-        limits=PreflightLimits(max_archive_bytes=result.artifact_members[0].size - 1),
-    )
-
-    with pytest.raises(CacheIntegrityError, match="aggregate size"):
-        limited.verify(result.artifact_digest)
+    with pytest.raises(CacheIntegrityError, match=message):
+        cache.verify(tampered_digest)
 
 
 def test_cache_object_is_published_by_atomic_directory_rename(
@@ -866,7 +1108,7 @@ def test_status_requires_object_and_enforces_terminal_transitions(tmp_path: Path
         cache.write_status(result.artifact_digest, "READY", pipeline_revision="pipeline-v3")
 
 
-def test_status_write_stays_in_pinned_root_during_path_replacement(
+def test_status_write_rejects_pinned_root_path_replacement(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     artifact = tmp_path / "base.apk"
@@ -899,11 +1141,83 @@ def test_status_write_stays_in_pinned_root_during_path_replacement(
 
     monkeypatch.setattr(legacy_preflight.os, "open", replace_after_open)
 
-    cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
 
     target_name = f"{result.artifact_digest}.json"
-    assert (displaced_root / revision / target_name).is_file()
+    assert not (displaced_root / revision / target_name).exists()
     assert not (outside_root / revision / target_name).exists()
+
+
+def test_status_write_rejects_revision_path_replacement_before_publish(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    revision = "pipeline-v1"
+    status_dir = cache.root / "status" / revision
+    displaced_dir = cache.root / "status" / "pipeline-v1-displaced"
+    original_flock = legacy_preflight.fcntl.flock
+    replaced = False
+
+    def replace_before_lock(descriptor: int, operation: int) -> None:
+        nonlocal replaced
+        original_flock(descriptor, operation)
+        if not replaced:
+            replaced = True
+            status_dir.rename(displaced_dir)
+            status_dir.mkdir()
+
+    monkeypatch.setattr(legacy_preflight.fcntl, "flock", replace_before_lock)
+
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+
+    target_name = f"{result.artifact_digest}.json"
+    assert not (displaced_dir / target_name).exists()
+    assert not (status_dir / target_name).exists()
+
+
+def test_status_write_rejects_revision_path_replacement_after_publish(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    revision = "pipeline-v1"
+    status_dir = cache.root / "status" / revision
+    displaced_dir = cache.root / "status" / "pipeline-v1-displaced"
+    original_replace = legacy_preflight.os.replace
+
+    def replace_then_displace(
+        source: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        destination: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        original_replace(
+            source,
+            destination,
+            src_dir_fd=src_dir_fd,
+            dst_dir_fd=dst_dir_fd,
+        )
+        status_dir.rename(displaced_dir)
+        status_dir.mkdir()
+
+    monkeypatch.setattr(legacy_preflight.os, "replace", replace_then_displace)
+
+    with pytest.raises(CacheIntegrityError, match="status directory was replaced"):
+        cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+
+    target_name = f"{result.artifact_digest}.json"
+    assert (displaced_dir / target_name).is_file()
+    assert not (status_dir / target_name).exists()
 
 
 def test_preflight_rejects_delivery_compressed_size_before_read(tmp_path: Path) -> None:
@@ -914,6 +1228,27 @@ def test_preflight_rejects_delivery_compressed_size_before_read(tmp_path: Path) 
         preflight_delivery(
             [artifact],
             limits=PreflightLimits(max_delivery_file_bytes=artifact.stat().st_size - 1),
+        )
+
+
+def test_preflight_rejects_delivery_wide_file_count_and_bytes(tmp_path: Path) -> None:
+    deliveries = (tmp_path / "first.xapk", tmp_path / "second.xapk")
+    for delivery in deliveries:
+        with zipfile.ZipFile(delivery, "w") as archive:
+            archive.writestr("metadata.json", b"{}")
+
+    with pytest.raises(SafetyError, match="delivery file-count limit"):
+        preflight_delivery(
+            list(deliveries),
+            limits=PreflightLimits(max_delivery_files=1),
+        )
+
+    with pytest.raises(SafetyError, match="delivery byte-size limit"):
+        preflight_delivery(
+            list(deliveries),
+            limits=PreflightLimits(
+                max_delivery_bytes=sum(path.stat().st_size for path in deliveries) - 1
+            ),
         )
 
 
@@ -1146,3 +1481,18 @@ def test_materialization_stays_in_pinned_parent_after_path_is_replaced(
 
     assert (moved_parent / "materialized" / "MATERIALIZED.COMPLETE").is_file()
     assert not (replacement / "materialized").exists()
+
+
+def test_materialization_rejects_symlinked_parent_ancestor(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    actual_parent = tmp_path / "actual" / "output"
+    actual_parent.mkdir(parents=True)
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(tmp_path / "actual", target_is_directory=True)
+
+    with pytest.raises(PreflightError, match="materialization parent is inaccessible"):
+        cache.materialize(result.artifact_digest, linked_parent / "output" / "materialized")
