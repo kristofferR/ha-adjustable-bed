@@ -500,6 +500,10 @@ def _required_schema_objects() -> frozenset[tuple[str, str, str]]:
 
 
 _REQUIRED_SCHEMA_OBJECTS = _required_schema_objects()
+_TRUSTED_COMPLETION_KIND_PREFIX = "trusted-"
+_RESERVED_UNIT_KINDS = {
+    "package-validation-receipt:": "trusted-package-validation-receipt",
+}
 
 
 class Queue:
@@ -596,6 +600,7 @@ class Queue:
         """Add an immutable work definition, idempotently when identical."""
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
+        _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
         _validate_digest(input_digest, "input_digest")
@@ -663,6 +668,7 @@ class Queue:
         """Atomically publish one immutable work unit and its complete pin sets."""
         _validate_identifier(unit_id, "unit_id")
         _validate_identifier(kind, "kind")
+        _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
         if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
@@ -1301,6 +1307,7 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
                 terminalize_input_mismatch=False,
+                trusted_publication=False,
             )
         finally:
             os.close(guard)
@@ -1330,6 +1337,7 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
                 terminalize_input_mismatch=True,
+                trusted_publication=False,
             )
         finally:
             os.close(guard)
@@ -1342,6 +1350,35 @@ class Queue:
             finish_result=result,
         )
 
+    def _finish_trusted_completion(
+        self,
+        lease: Lease,
+        *,
+        output_digest: str,
+        completion_revision: str,
+        expected_input_digest: str,
+    ) -> FinishResult:
+        """Publish a reserved completion after a domain adapter verifies its evidence."""
+        _validate_digest(output_digest, "output_digest")
+        _validate_revision(completion_revision)
+        _validate_digest(expected_input_digest, "expected_input_digest")
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            return self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+                terminalize_input_mismatch=False,
+                trusted_publication=True,
+            )
+        finally:
+            os.close(guard)
+
     def _finish_with_publication_guard(
         self,
         lease: Lease,
@@ -1351,8 +1388,20 @@ class Queue:
         completion_revision: str | None,
         expected_input_digest: str | None,
         terminalize_input_mismatch: bool,
+        trusted_publication: bool,
     ) -> FinishResult:
         with self._immediate() as connection:
+            unit = connection.execute(
+                "SELECT kind FROM work_units WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()
+            if unit is None:
+                raise QueueError(f"unknown work unit: {lease.unit_id}")
+            reserved = str(unit["kind"]).startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
+            if outcome is TerminalOutcome.ACCEPTED and reserved != trusted_publication:
+                raise QueueConflictError(
+                    "reserved completion must use its trusted publication adapter"
+                )
             terminal = connection.execute(
                 """
                 SELECT outcome, output_digest, completion_revision
@@ -2193,6 +2242,16 @@ def _validate_identifier(value: str, label: str) -> None:
         or _IDENTIFIER.fullmatch(value) is None
     ):
         raise ValueError(f"{label} must be a stable path-safe identifier")
+
+
+def _validate_reserved_unit_kind(unit_id: str, kind: str) -> None:
+    for prefix, reserved_kind in _RESERVED_UNIT_KINDS.items():
+        if unit_id.startswith(prefix):
+            if kind != reserved_kind:
+                raise ValueError(f"reserved work unit requires kind {reserved_kind!r}")
+            return
+    if kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX):
+        raise ValueError("trusted completion kinds require a reserved work unit ID")
 
 
 def _validate_digest(value: str, label: str) -> None:

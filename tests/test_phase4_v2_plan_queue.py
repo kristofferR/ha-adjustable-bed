@@ -51,7 +51,9 @@ from tools.phase4_v2.equivalence.queue import (
     PACKAGE_QUEUE_UNIT_KIND,
     PackagePlanInputMismatchError,
     finish_package_execution_plan,
+    finish_package_validation_receipt,
     materialize_package_execution_plan,
+    materialize_package_validation_receipt,
     package_queue_unit_id,
 )
 from tools.phase4_v2.queue import (
@@ -65,12 +67,18 @@ from tools.phase4_v2.queue import (
     WorkUnitStatus,
 )
 from tools.phase4_v2.validator import (
+    BOUND_VALIDATION_PROFILE,
+    CONTRACT_REVISION,
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
     VALIDATOR_REVISION,
     ValidationReceipt,
 )
-from tools.phase4_v2.validator.binding import ArtifactIdentityAttestation
+from tools.phase4_v2.validator.binding import (
+    ArtifactIdentityAttestation,
+    EvidenceAnchorAttestation,
+    EvidenceMemberAttestation,
+)
 
 SHA_A = "a" * 64
 SHA_B = "b" * 64
@@ -81,12 +89,69 @@ SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 
+SOURCE_RECEIPT_DEPENDENCIES = {
+    "corpus": SHA_A,
+    "evidence_lineage": SHA_0,
+    "ir": SHA_B,
+    "preflight": SHA_C,
+    "schema": SHA_E,
+}
+_SOURCE_RECEIPT_WITHOUT_IDENTITY = ValidationReceipt(
+    validator_revision=VALIDATOR_REVISION,
+    accepted=True,
+    source_unchanged=True,
+    bundle_sha256=SHA_F,
+    report_manifest_sha256=SHA_E,
+    discovered_members=4,
+    declared_members=4,
+    diagnostics=(),
+    dependency_digests=tuple(sorted(SOURCE_RECEIPT_DEPENDENCIES.items())),
+    validation_profile=BOUND_VALIDATION_PROFILE,
+    contract_revision=CONTRACT_REVISION,
+    validated_artifact_identity=ArtifactIdentityAttestation(
+        package_name="org.example.target",
+        version_code="17",
+        version_name="1.7",
+        artifact_digest=SHA_B,
+    ),
+    evidence_anchors_checked=1,
+    validated_evidence_members=(
+        EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_F),
+    ),
+    validated_evidence_anchors=(
+        EvidenceAnchorAttestation(
+            "source",
+            SHA_B,
+            "evidence/source.txt",
+            SHA_F,
+            0,
+            1,
+            "/schema_revision",
+            "utf8",
+            SHA_A,
+        ),
+    ),
+)
+SOURCE_RECEIPT = replace(
+    _SOURCE_RECEIPT_WITHOUT_IDENTITY,
+    validation_receipt_sha256=hashlib.sha256(
+        json.dumps(
+            _SOURCE_RECEIPT_WITHOUT_IDENTITY.identity_payload(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode()
+    ).hexdigest(),
+)
+assert SOURCE_RECEIPT.validation_receipt_sha256 is not None
+
 TARGET_PACKAGE_REF = FrozenPackageRef(
     package_name="org.example.target",
     version_code="17",
     artifact_digest=SHA_B,
     preflight_sha256=SHA_C,
-    validation_receipt_sha256=SHA_D,
+    validation_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
 )
 TARGET_PACKAGE_REF_ID = TARGET_PACKAGE_REF.content_id
 
@@ -281,7 +346,23 @@ def queue(tmp_path: Path) -> Queue:
 
 def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
     frozen = freeze_package_execution_plan(plan)
+    receipt_completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
     for pin in frozen.required_completions:
+        if pin.parent_unit_id == receipt_completion.parent_unit_id:
+            materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+            lease = queue.claim("trusted-receipt-importer")
+            assert lease is not None and lease.unit_id == pin.parent_unit_id
+            finish_package_validation_receipt(
+                queue,
+                lease,
+                package_ref=TARGET_PACKAGE_REF,
+                receipt_payload=SOURCE_RECEIPT.to_json(),
+                trusted_validator_revision=VALIDATOR_REVISION,
+                trusted_contract_revision=CONTRACT_REVISION,
+                trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
+                trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
+            )
+            continue
         queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
         lease = queue.claim("prerequisite-publisher")
         assert lease is not None and lease.unit_id == pin.parent_unit_id
@@ -296,6 +377,16 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
         queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
 
 
+def _materialize_prerequisite(queue: Queue, pin: CompletionPin) -> None:
+    if pin.parent_unit_id == package_validation_receipt_completion(
+        TARGET_PACKAGE_REF
+    ).parent_unit_id:
+        work = materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
+        assert work.unit_id == pin.parent_unit_id
+        return
+    queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+
+
 def test_blocked_plan_creates_no_queue_or_workspace(tmp_path: Path) -> None:
     queue = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
 
@@ -308,7 +399,7 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
     plan = _full_plan()
     frozen = freeze_package_execution_plan(plan)
     for pin in frozen.required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
 
     first = materialize_package_execution_plan(queue, plan, priority=17)
     second = materialize_package_execution_plan(queue, plan, priority=17)
@@ -370,20 +461,39 @@ def test_materialization_waits_for_the_frozen_package_validation_receipt(
     with pytest.raises(QueueConflictError, match="could not materialize"):
         materialize_package_execution_plan(queue, plan)
 
-    queue.enqueue(
-        receipt_completion.parent_unit_id,
-        kind="prerequisite",
-        input_digest=receipt_completion.digest,
-    )
+    with pytest.raises(ValueError, match="reserved work unit"):
+        queue.enqueue(
+            receipt_completion.parent_unit_id,
+            kind="prerequisite",
+            input_digest=receipt_completion.digest,
+        )
+    with pytest.raises(ValueError, match="trusted completion kinds require"):
+        queue.enqueue(
+            "ordinary-unit",
+            kind="trusted-package-validation-receipt",
+            input_digest=receipt_completion.digest,
+        )
+    materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
     materialized = materialize_package_execution_plan(queue, plan)
     assert materialized is not None
     lease = queue.claim("receipt-publisher")
     assert lease is not None and lease.unit_id == receipt_completion.parent_unit_id
-    queue.finish(
+    with pytest.raises(QueueConflictError, match="trusted publication adapter"):
+        queue.finish(
+            lease,
+            TerminalOutcome.ACCEPTED,
+            output_digest=receipt_completion.digest,
+            completion_revision=receipt_completion.revision,
+        )
+    finish_package_validation_receipt(
+        queue,
         lease,
-        TerminalOutcome.ACCEPTED,
-        output_digest=receipt_completion.digest,
-        completion_revision=receipt_completion.revision,
+        package_ref=TARGET_PACKAGE_REF,
+        receipt_payload=SOURCE_RECEIPT.to_json(),
+        trusted_validator_revision=VALIDATOR_REVISION,
+        trusted_contract_revision=CONTRACT_REVISION,
+        trusted_dependency_digests=SOURCE_RECEIPT_DEPENDENCIES,
+        trusted_receipt_sha256=SOURCE_RECEIPT.validation_receipt_sha256,
     )
 
     lease = queue.claim("package-worker")
@@ -394,7 +504,7 @@ def test_same_package_reference_with_changed_plan_conflicts(queue: Queue) -> Non
     original = _full_plan()
     changed = _full_plan(reason="changed_routing_evidence")
     for pin in freeze_package_execution_plan(original).required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
     materialize_package_execution_plan(queue, original)
 
     with pytest.raises(QueueConflictError, match="materialized work unit changed"):
@@ -405,7 +515,7 @@ def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> Non
     plan = _reuse_plan()
     frozen = freeze_package_execution_plan(plan)
     for pin in frozen.required_completions:
-        queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+        _materialize_prerequisite(queue, pin)
 
     materialized = materialize_package_execution_plan(queue, plan)
 

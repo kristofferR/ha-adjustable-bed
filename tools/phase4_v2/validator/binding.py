@@ -363,15 +363,6 @@ def validate_binding_contract(
         package_domains=package_domains,
         trusted_scopes=trusted_evidence_scopes,
     )
-    if package_contract:
-        _validate_package_report(
-            dependencies,
-            json_documents,
-            artifact_identity,
-            trusted_evidence,
-            evidence_scopes,
-            diagnostics,
-        )
     validated_anchors = _validate_anchors(
         document["anchors"],
         owners,
@@ -381,6 +372,19 @@ def validate_binding_contract(
         read_range,
         diagnostics,
     )
+    if package_contract:
+        _validate_package_report(
+            dependencies,
+            json_documents,
+            artifact_identity,
+            trusted_evidence,
+            evidence_scopes,
+            frozenset(
+                [item.sha256 for item in validated_members]
+                + [item.value_sha256 for item in validated_anchors]
+            ),
+            diagnostics,
+        )
     return _result(
         diagnostics,
         pins,
@@ -960,6 +964,7 @@ def _validate_package_report(
     artifact_identity: ArtifactIdentityAttestation | None,
     trusted_evidence: Mapping[str, str],
     evidence_scopes: Mapping[str, frozenset[str]],
+    trusted_semantic_roots: frozenset[str],
     diagnostics: list[BindingDiagnostic],
 ) -> None:
     schema_member = _dependency_member(dependencies, "report_schema")
@@ -1050,6 +1055,19 @@ def _validate_package_report(
     if set(reported_roots) != set(planned_roots):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_ROOT_SET_MISMATCH", report_path))
         return
+    for index, root_result in enumerate(root_results):
+        if not isinstance(root_result, dict) or root_result.get("route") != "FULL_ANALYSIS":
+            continue
+        result = cast(dict[str, object], root_result["result"])
+        analysis = cast(dict[str, object], result["analysis"])
+        semantic_root = cast(str, analysis["semantic_root_sha256"])
+        if semantic_root not in trusted_semantic_roots:
+            diagnostics.append(
+                BindingDiagnostic(
+                    "PACKAGE_REPORT_FULL_ANALYSIS_UNATTESTED",
+                    f"{report_path}#/authoritative_root_results/{index}",
+                )
+            )
     plan_identity = {
         "artifact_digest": package_local.get("target_artifact_digest"),
         "package_name": package_local.get("package_name"),

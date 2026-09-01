@@ -61,7 +61,13 @@ def _mock_identity_tools(
     split_as_package_attribute: bool = False,
     config_for_splits: Mapping[str, str] | None = None,
 ) -> None:
-    def run(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
+    def run(
+        arguments: Sequence[str],
+        *,
+        label: str,
+        pass_fds: tuple[int, ...] = (),
+    ) -> tuple[str | None, str | None]:
+        assert all(descriptor >= 0 for descriptor in pass_fds)
         package, code, version, split, required, signer = identities[label]
         if arguments[0] == "apksigner":
             return f"Signer #1 certificate SHA-256 digest: {signer}\n", None
@@ -419,6 +425,95 @@ def test_explicit_sealing_directory_and_result_cleanup(tmp_path: Path) -> None:
         assert sealed.is_file()
 
     assert not sealed.exists()
+
+
+def test_sealing_stays_in_pinned_parent_when_supplied_path_is_replaced(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+    displaced = tmp_path / "sealing-displaced"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_create = legacy_preflight._make_private_directory_at
+
+    def replace_parent(directory_fd: int, prefix: str) -> str:
+        sealing_root.rename(displaced)
+        sealing_root.symlink_to(outside, target_is_directory=True)
+        return original_create(directory_fd, prefix)
+
+    monkeypatch.setattr(legacy_preflight, "_make_private_directory_at", replace_parent)
+
+    with preflight_delivery([artifact], sealing_directory=sealing_root) as result:
+        member = result.artifact_members[0]
+        assert os.fstat(member._sealed_fd).st_size == artifact.stat().st_size
+        assert len(list(displaced.iterdir())) == 1
+        assert list(outside.iterdir()) == []
+
+    assert list(displaced.iterdir()) == []
+
+
+def test_sealed_reads_survive_workspace_path_replacement(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+    displaced_workspace = tmp_path / "workspace-displaced"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_seal = legacy_preflight._seal_delivery_file
+
+    def replace_workspace(
+        source: Path,
+        destination: str,
+        destination_dir_fd: int,
+        limits: PreflightLimits,
+        *,
+        remaining_delivery_bytes: int,
+    ) -> legacy_preflight.DeliveryFile:
+        delivery = original_seal(
+            source,
+            destination,
+            destination_dir_fd,
+            limits,
+            remaining_delivery_bytes=remaining_delivery_bytes,
+        )
+        [workspace] = sealing_root.iterdir()
+        workspace.rename(displaced_workspace)
+        workspace.symlink_to(outside, target_is_directory=True)
+        return delivery
+
+    monkeypatch.setattr(legacy_preflight, "_seal_delivery_file", replace_workspace)
+
+    with preflight_delivery([artifact], sealing_directory=sealing_root) as result:
+        member = result.artifact_members[0]
+        assert os.fstat(member._sealed_fd).st_size == artifact.stat().st_size
+        assert list(outside.iterdir()) == []
+
+    assert list(displaced_workspace.iterdir()) == []
+
+
+def test_sealing_cleanup_removes_file_when_descriptor_registration_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    sealing_root = tmp_path / "sealing"
+    sealing_root.mkdir()
+
+    def fail_open(_owner: object, _name: str) -> int:
+        raise OSError("descriptor registration failed")
+
+    monkeypatch.setattr(legacy_preflight._SealedOwner, "open_member", fail_open)
+
+    with pytest.raises(OSError, match="descriptor registration failed"):
+        preflight_delivery([artifact], sealing_directory=sealing_root)
+
+    assert list(sealing_root.iterdir()) == []
 
 
 @pytest.mark.parametrize(
