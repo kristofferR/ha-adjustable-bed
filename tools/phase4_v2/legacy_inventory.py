@@ -660,6 +660,7 @@ def _report_record(entry: Entry, path: Path) -> ReportRecord:
     document = json.loads(payload, object_pairs_hook=_reject_duplicate_json_keys)
     if not isinstance(document, dict):
         raise ValueError("top-level JSON value is not an object")
+    _validate_utf8_strings(document)
     artifact = document.get("artifact")
     artifact_dict = artifact if isinstance(artifact, dict) else {}
     status = _string(document.get("status"))
@@ -691,6 +692,19 @@ def _reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, ob
             raise ValueError(f"duplicate JSON key: {key}")
         document[key] = value
     return document
+
+
+def _validate_utf8_strings(value: object) -> None:
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        if isinstance(current, str):
+            current.encode("utf-8")
+        elif isinstance(current, dict):
+            stack.extend(current.keys())
+            stack.extend(current.values())
+        elif isinstance(current, list):
+            stack.extend(current)
 
 
 def _is_hash_manifest_name(name: str) -> bool:

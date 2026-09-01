@@ -335,6 +335,25 @@ def test_inventory_rejects_duplicate_analysis_metadata_keys(tmp_path: Path) -> N
     )
 
 
+def test_inventory_rejects_unpaired_surrogate_analysis_metadata(tmp_path: Path) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "analysis.json").write_text(
+        '{"status":"\\ud800"}', encoding="utf-8"
+    )
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert _ndjson(output / "reports.ndjson") == []
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(
+        item["operation"] == "parse_analysis_json"
+        and item["error"] == "UnicodeEncodeError"
+        for item in diagnostics
+    )
+
+
 def test_inventory_retains_analysis_metadata_on_parser_recursion_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

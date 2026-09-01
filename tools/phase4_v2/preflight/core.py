@@ -1028,6 +1028,15 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
+    opened = os.fstat(descriptor)
+    try:
+        current = path.lstat()
+    except OSError:
+        return False
+    return stat.S_ISDIR(current.st_mode) and _identity(opened) == _identity(current)
+
+
 def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
     status_root_fd = os.open(status_root, _DIRECTORY_FLAGS)
     try:
@@ -1151,73 +1160,105 @@ class ArtifactCache:
         self.root.mkdir(parents=True, exist_ok=True)
         _fsync_directory(self.root.parent)
         objects = self.root / "objects"
-        objects.mkdir(exist_ok=True)
         schema_objects = objects / CACHE_SCHEMA
-        schema_objects.mkdir(exist_ok=True)
-        _fsync_directory(self.root)
-        _fsync_directory(objects)
-        _fsync_directory(schema_objects)
         destination = self._object(result.artifact_digest)
-        if destination.exists() or destination.is_symlink():
-            self.verify(result.artifact_digest)
-            return destination
-        temporary = Path(
-            tempfile.mkdtemp(prefix=f".{result.artifact_digest}.tmp-", dir=schema_objects)
-        )
+        root_fd = os.open(self.root, _DIRECTORY_FLAGS)
+        objects_fd = -1
+        schema_objects_fd = -1
+        try:
+            try:
+                os.mkdir("objects", dir_fd=root_fd)
+            except FileExistsError:
+                pass
+            os.fsync(root_fd)
+            objects_fd = os.open("objects", _DIRECTORY_FLAGS, dir_fd=root_fd)
+            try:
+                os.mkdir(CACHE_SCHEMA, dir_fd=objects_fd)
+            except FileExistsError:
+                pass
+            os.fsync(objects_fd)
+            schema_objects_fd = os.open(CACHE_SCHEMA, _DIRECTORY_FLAGS, dir_fd=objects_fd)
+        finally:
+            if objects_fd >= 0:
+                os.close(objects_fd)
+            os.close(root_fd)
+        temporary_name = ""
         published = False
         try:
-            members_path = temporary / "members"
-            members_path.mkdir(mode=0o700)
-            members_fd = os.open(members_path, _DIRECTORY_FLAGS)
+            os.fsync(schema_objects_fd)
             try:
-                records: list[CachedMember] = []
-                for index, member in enumerate(result.artifact_members):
-                    stored_name = f"{index:04d}-{member.sha256}.apk"
-                    source_fd = _open_readonly(member._sealed_path)
-                    try:
-                        target_fd = os.open(
-                            stored_name,
-                            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
-                            0o600,
-                            dir_fd=members_fd,
-                        )
+                existing_fd = os.open(
+                    result.artifact_digest, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                try:
+                    self._verify_object_fd(result.artifact_digest, existing_fd)
+                finally:
+                    os.close(existing_fd)
+                if not _directory_descriptor_matches_path(schema_objects_fd, schema_objects):
+                    raise SafetyError("cache object directory changed during store")
+                return destination
+            temporary_name = _make_private_directory_at(
+                schema_objects_fd, f".{result.artifact_digest}.tmp-"
+            )
+            temporary_fd = os.open(
+                temporary_name, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
+            )
+            try:
+                os.mkdir("members", mode=0o700, dir_fd=temporary_fd)
+                members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=temporary_fd)
+                try:
+                    records: list[CachedMember] = []
+                    for index, member in enumerate(result.artifact_members):
+                        stored_name = f"{index:04d}-{member.sha256}.apk"
+                        source_fd = _open_readonly(member._sealed_path)
                         try:
-                            source_stat = os.fstat(source_fd)
-                            if (
-                                not stat.S_ISREG(source_stat.st_mode)
-                                or source_stat.st_size != member.size
-                            ):
-                                raise SafetyError(
-                                    f"sealed artifact member is unavailable: {member.name}"
-                                )
-                            digest, size = _copy_fd_exact(
-                                source_fd, target_fd, expected_size=member.size
+                            target_fd = os.open(
+                                stored_name,
+                                os.O_WRONLY
+                                | os.O_CREAT
+                                | os.O_EXCL
+                                | getattr(os, "O_CLOEXEC", 0),
+                                0o600,
+                                dir_fd=members_fd,
                             )
-                            os.fsync(target_fd)
+                            try:
+                                source_stat = os.fstat(source_fd)
+                                if (
+                                    not stat.S_ISREG(source_stat.st_mode)
+                                    or source_stat.st_size != member.size
+                                ):
+                                    raise SafetyError(
+                                        f"sealed artifact member is unavailable: {member.name}"
+                                    )
+                                digest, size = _copy_fd_exact(
+                                    source_fd, target_fd, expected_size=member.size
+                                )
+                                os.fsync(target_fd)
+                            finally:
+                                os.close(target_fd)
                         finally:
-                            os.close(target_fd)
-                    finally:
-                        os.close(source_fd)
-                    if (digest, size) != (member.sha256, member.size):
-                        raise SafetyError(f"sealed artifact member changed: {member.name}")
-                    records.append(
-                        {
-                            "name": member.name,
-                            "stored_name": stored_name,
-                            "size": member.size,
-                            "sha256": member.sha256,
-                        }
-                    )
-                os.fsync(members_fd)
-            finally:
-                os.close(members_fd)
-            manifest: CacheManifest = {
-                "schema": CACHE_SCHEMA,
-                "artifact_digest": result.artifact_digest,
-                "members": records,
-            }
-            temporary_fd = os.open(temporary, _DIRECTORY_FLAGS)
-            try:
+                            os.close(source_fd)
+                        if (digest, size) != (member.sha256, member.size):
+                            raise SafetyError(f"sealed artifact member changed: {member.name}")
+                        records.append(
+                            {
+                                "name": member.name,
+                                "stored_name": stored_name,
+                                "size": member.size,
+                                "sha256": member.sha256,
+                            }
+                        )
+                    os.fsync(members_fd)
+                finally:
+                    os.close(members_fd)
+                manifest: CacheManifest = {
+                    "schema": CACHE_SCHEMA,
+                    "artifact_digest": result.artifact_digest,
+                    "members": records,
+                }
                 manifest_bytes = _canonical_json(manifest)
                 _write_file_at(temporary_fd, "manifest.json", manifest_bytes)
                 manifest_sha = hashlib.sha256(manifest_bytes).hexdigest()
@@ -1227,18 +1268,42 @@ class ArtifactCache:
                 os.fsync(temporary_fd)
             finally:
                 os.close(temporary_fd)
+            if not _directory_descriptor_matches_path(schema_objects_fd, schema_objects):
+                raise SafetyError("cache object directory changed during store")
             try:
-                _rename_noreplace(temporary, destination)
+                _rename_noreplace_at(
+                    schema_objects_fd,
+                    os.fsencode(temporary_name),
+                    schema_objects_fd,
+                    os.fsencode(result.artifact_digest),
+                )
                 published = True
-                _fsync_directory(schema_objects)
+                os.fsync(schema_objects_fd)
             except FileExistsError:
-                self.verify(result.artifact_digest)
+                existing_fd = os.open(
+                    result.artifact_digest, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
+                )
+                try:
+                    self._verify_object_fd(result.artifact_digest, existing_fd)
+                finally:
+                    os.close(existing_fd)
+                if not _directory_descriptor_matches_path(schema_objects_fd, schema_objects):
+                    raise SafetyError("cache object directory changed during store") from None
                 return destination
+            object_fd = os.open(
+                result.artifact_digest, _DIRECTORY_FLAGS, dir_fd=schema_objects_fd
+            )
+            try:
+                self._verify_object_fd(result.artifact_digest, object_fd)
+            finally:
+                os.close(object_fd)
+            if not _directory_descriptor_matches_path(schema_objects_fd, schema_objects):
+                raise SafetyError("cache object directory changed during store")
+            return destination
         finally:
-            if not published:
-                shutil.rmtree(temporary, ignore_errors=True)
-        self.verify(result.artifact_digest)
-        return destination
+            if temporary_name and not published:
+                shutil.rmtree(temporary_name, ignore_errors=True, dir_fd=schema_objects_fd)
+            os.close(schema_objects_fd)
 
     def verify(self, artifact_digest: str) -> CacheManifest:
         object_path = self._object(artifact_digest)
@@ -1246,6 +1311,13 @@ class ArtifactCache:
             object_fd = os.open(object_path, _DIRECTORY_FLAGS)
         except OSError as err:
             raise CacheIntegrityError(f"cache object is missing: {artifact_digest}") from err
+        try:
+            return self._verify_object_fd(artifact_digest, object_fd)
+        finally:
+            os.close(object_fd)
+
+    def _verify_object_fd(self, artifact_digest: str, object_fd: int) -> CacheManifest:
+        """Verify an object through a descriptor pinned by the caller."""
         try:
             object_identity = _identity(os.fstat(object_fd))
             expected_object_names = {"OBJECT.COMPLETE", "manifest.json", "members"}
@@ -1330,8 +1402,8 @@ class ArtifactCache:
             ):
                 raise CacheIntegrityError("cache object changed while verifying")
             return cast(CacheManifest, raw)
-        finally:
-            os.close(object_fd)
+        except OSError as err:
+            raise CacheIntegrityError(f"cache object is unsafe: {artifact_digest}") from err
 
     def write_status(
         self,

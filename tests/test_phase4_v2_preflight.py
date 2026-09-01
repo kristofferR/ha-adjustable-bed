@@ -681,23 +681,55 @@ def test_cache_object_is_published_by_atomic_directory_rename(
     _native_apk(artifact)
     result = preflight_delivery([artifact])
     cache = ArtifactCache(tmp_path / "cache")
-    original_rename = legacy_preflight._rename_noreplace
-    publications: list[tuple[Path, Path]] = []
+    original_rename = legacy_preflight._rename_noreplace_at
+    publications: list[tuple[int, bytes, int, bytes]] = []
 
-    def record_rename(source: Path, destination: Path) -> None:
-        publications.append((source, destination))
-        original_rename(source, destination)
+    def record_rename(
+        source_dir_fd: int,
+        source: bytes,
+        destination_dir_fd: int,
+        destination: bytes,
+    ) -> None:
+        publications.append((source_dir_fd, source, destination_dir_fd, destination))
+        original_rename(source_dir_fd, source, destination_dir_fd, destination)
 
-    monkeypatch.setattr(legacy_preflight, "_rename_noreplace", record_rename)
+    monkeypatch.setattr(legacy_preflight, "_rename_noreplace_at", record_rename)
 
     object_dir = cache.store(result)
 
-    assert len(publications) == 1
-    temporary, published = publications[0]
-    assert published == object_dir
-    assert temporary.parent == object_dir.parent
-    assert temporary.name.startswith(f".{result.artifact_digest}.tmp-")
+    [(source_fd, temporary, destination_fd, published)] = publications
+    assert source_fd == destination_fd
+    assert source_fd != legacy_preflight._AT_FDCWD
+    assert os.fsdecode(temporary).startswith(f".{result.artifact_digest}.tmp-")
+    assert os.fsdecode(published) == result.artifact_digest
     assert (object_dir / "OBJECT.COMPLETE").is_file()
+
+
+def test_cache_store_rejects_replaced_object_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    schema_objects = cache.root / "objects" / legacy_preflight.CACHE_SCHEMA
+    displaced = cache.root / "objects" / "displaced"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_create = legacy_preflight._make_private_directory_at
+
+    def replace_parent(directory_fd: int, prefix: str) -> str:
+        schema_objects.rename(displaced)
+        schema_objects.symlink_to(outside, target_is_directory=True)
+        return original_create(directory_fd, prefix)
+
+    monkeypatch.setattr(legacy_preflight, "_make_private_directory_at", replace_parent)
+
+    with pytest.raises(SafetyError, match="cache object directory changed"):
+        cache.store(result)
+
+    assert not (outside / result.artifact_digest).exists()
+    assert list(displaced.iterdir()) == []
 
 
 def test_cache_rejects_inconsistent_artifact_identity_before_publication(tmp_path: Path) -> None:
