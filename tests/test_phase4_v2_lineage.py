@@ -33,6 +33,8 @@ def _manifest(*, member_digest: str = "1" * 64) -> dict[str, object]:
             {
                 "producer": {
                     "invocation_sha256": _INVOCATION_SHA256,
+                    "outcome": "SUCCEEDED",
+                    "output_size": 128,
                     "pipeline_revision": _PRODUCER.pipeline_revision,
                     "route": _PRODUCER.route,
                     "tool_sha256": _PRODUCER.tool_sha256,
@@ -195,6 +197,30 @@ def test_untrusted_producer_is_rejected() -> None:
         _bind(value)
 
     assert _code(caught) == "untrusted_producer"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "code"),
+    [
+        ("outcome", "FAILED", "producer_not_successful"),
+        ("output_size", 0, "invalid_output_size"),
+        ("output_size", True, "invalid_output_size"),
+    ],
+)
+def test_producer_completion_must_attest_successful_substantive_output(
+    field: str, value: object, code: str
+) -> None:
+    manifest = _manifest()
+    member = manifest["members"][0]  # type: ignore[index]
+    assert isinstance(member, dict)
+    producer = member["producer"]
+    assert isinstance(producer, dict)
+    producer[field] = value
+
+    with pytest.raises(LineageValidationError) as caught:
+        _bind(manifest)
+
+    assert _code(caught) == code
 
 
 def test_members_must_be_sorted_and_unique() -> None:

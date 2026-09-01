@@ -1297,7 +1297,12 @@ def build_inventory(
             if (
                 diagnostic.operation in {"parse_analysis_json", "read_declared_hashes"}
                 and diagnostic.error
-                in {"OSError", "PermissionError", "ObservedFileChangedError"}
+                in {
+                    "OSError",
+                    "PermissionError",
+                    "ObservedFileChangedError",
+                    "manifest_too_large",
+                }
             )
             or (
                 diagnostic.operation.startswith("verify_declared_hash_line:")

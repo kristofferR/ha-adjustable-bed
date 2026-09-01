@@ -322,6 +322,7 @@ def validate_binding_contract(
         expected_dependencies,
         artifact_identity,
         preflight_document,
+        nodes,
         path_is_safe,
         diagnostics,
     )
@@ -802,6 +803,7 @@ def _validate_evidence_lineage(
     expected_dependencies: ExpectedDependencyPins,
     artifact_identity: ArtifactIdentityAttestation | None,
     preflight_document: object | None,
+    nodes: Mapping[str, MemberNode],
     path_is_safe: PathValidator,
     diagnostics: list[BindingDiagnostic],
 ) -> dict[str, str]:
@@ -839,6 +841,20 @@ def _validate_evidence_lineage(
         return {}
     covered_routes: set[tuple[str, str]] = set()
     for item in value.members:
+        node = nodes.get(item.report_member)
+        if (
+            node is None
+            or node.kind != "file"
+            or node.sha256 != item.sha256
+            or node.size != item.producer.output_size
+        ):
+            diagnostics.append(
+                BindingDiagnostic(
+                    "TRUSTED_EVIDENCE_LINEAGE_COMPLETION_OUTPUT_INVALID",
+                    item.report_member,
+                )
+            )
+            return {}
         if any(
             item.producer.route not in member_routes.get(source.name, frozenset())
             for source in item.source_artifact_members

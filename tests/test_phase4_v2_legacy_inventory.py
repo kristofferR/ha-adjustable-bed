@@ -393,6 +393,12 @@ def test_inventory_rejects_oversized_hash_manifests_before_reading(
         item["operation"] == "read_declared_hashes" and item["error"] == "manifest_too_large"
         for item in diagnostics
     )
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["coverage"]["status"] == "OPAQUE_PATHS_RECORDED"
+    assert manifest["coverage"]["opaque_path_list"] == [
+        "example.fixture-1.0/report/REPORT.SHA256"
+    ]
+    assert (output / "INVENTORY.PARTIAL").is_file()
 
 
 def test_inventory_bounds_hash_manifest_diagnostics(

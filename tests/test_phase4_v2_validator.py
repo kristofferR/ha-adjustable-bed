@@ -19,6 +19,7 @@ from tools.phase4_v2.ir.model import _resolve_json_pointer
 from tools.phase4_v2.validator import (
     BOUND_VALIDATION_PROFILE,
     CONTRACT_REVISION,
+    LINEAGE_SCHEMA_REVISION,
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
     DependencyPins,
@@ -392,6 +393,8 @@ def _trusted_lineage(
             {
                 "producer": {
                     "invocation_sha256": "8" * 64,
+                    "outcome": "SUCCEEDED",
+                    "output_size": len(_EVIDENCE),
                     "pipeline_revision": _LINEAGE_PRODUCER.pipeline_revision,
                     "route": _LINEAGE_PRODUCER.route,
                     "tool_sha256": _LINEAGE_PRODUCER.tool_sha256,
@@ -402,7 +405,7 @@ def _trusted_lineage(
             }
         ],
         "preflight_sha256": pins.preflight_sha256,
-        "schema": "phase4-v2-evidence-lineage-v1",
+        "schema": LINEAGE_SCHEMA_REVISION,
     }
     payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
     return EvidenceLineageTrust(
@@ -1956,6 +1959,31 @@ def test_lineage_producer_route_must_be_required_by_preflight(tmp_path: Path) ->
     }
 
 
+def test_lineage_completion_size_must_match_substantive_bundle_output(tmp_path: Path) -> None:
+    report, _, pins, _ = _bound_bundle(tmp_path)
+    trust = _trusted_lineage(pins)
+    document = json.loads(trust.payload)
+    producer_data = document["members"][0]["producer"]
+    assert isinstance(producer_data, dict)
+    producer_data["output_size"] = len(_EVIDENCE) + 1
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
+    forged = replace(
+        trust,
+        payload=payload,
+        expected_manifest_sha256=hashlib.sha256(payload).hexdigest(),
+    )
+
+    receipt = validate_report_bundle(
+        report,
+        expected_dependencies=pins,
+        expected_evidence_lineage=forged,
+    )
+
+    assert "TRUSTED_EVIDENCE_LINEAGE_COMPLETION_OUTPUT_INVALID" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
 def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path) -> None:
     report, members, pins, contract = _bound_bundle(tmp_path)
     preflight = json.loads(members["inputs/preflight.json"])
@@ -2007,6 +2035,8 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
             {
                 "producer": {
                     "invocation_sha256": "8" * 64,
+                    "outcome": "SUCCEEDED",
+                    "output_size": len(_EVIDENCE),
                     "pipeline_revision": producer.pipeline_revision,
                     "route": producer.route,
                     "tool_sha256": producer.tool_sha256,
@@ -2019,7 +2049,7 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
             }
         ],
         "preflight_sha256": changed_pins.preflight_sha256,
-        "schema": "phase4-v2-evidence-lineage-v1",
+        "schema": LINEAGE_SCHEMA_REVISION,
     }
     lineage_payload = json.dumps(
         lineage_document, sort_keys=True, separators=(",", ":")

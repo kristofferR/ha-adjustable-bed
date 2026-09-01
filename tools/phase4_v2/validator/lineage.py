@@ -8,9 +8,9 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Never, cast
+from typing import Literal, Never, cast
 
-LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v1"
+LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v2"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _ROUTE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
@@ -68,14 +68,18 @@ class EvidenceProducer:
     route: str
     tool_sha256: str
     invocation_sha256: str
+    outcome: Literal["SUCCEEDED"]
+    output_size: int
 
     @property
     def trust_identity(self) -> TrustedProducer:
         return TrustedProducer(self.pipeline_revision, self.route, self.tool_sha256)
 
-    def to_data(self) -> dict[str, str]:
+    def to_data(self) -> dict[str, str | int]:
         return {
             "invocation_sha256": self.invocation_sha256,
+            "outcome": self.outcome,
+            "output_size": self.output_size,
             "pipeline_revision": self.pipeline_revision,
             "route": self.route,
             "tool_sha256": self.tool_sha256,
@@ -372,13 +376,22 @@ def _parse_producer(raw: object, path: str) -> EvidenceProducer:
     _expect_keys(
         value,
         path=path,
-        required={"pipeline_revision", "route", "tool_sha256", "invocation_sha256"},
+        required={
+            "pipeline_revision",
+            "route",
+            "tool_sha256",
+            "invocation_sha256",
+            "outcome",
+            "output_size",
+        },
     )
     return EvidenceProducer(
         pipeline_revision=_expect_revision(value["pipeline_revision"], f"{path}.pipeline_revision"),
         route=_expect_route(value["route"], f"{path}.route"),
         tool_sha256=_expect_sha256(value["tool_sha256"], f"{path}.tool_sha256"),
         invocation_sha256=_expect_sha256(value["invocation_sha256"], f"{path}.invocation_sha256"),
+        outcome=_expect_success(value["outcome"], f"{path}.outcome"),
+        output_size=_expect_positive_integer(value["output_size"], f"{path}.output_size"),
     )
 
 
@@ -500,6 +513,18 @@ def _expect_route(raw: object, path: str) -> str:
     if _ROUTE.fullmatch(value) is None:
         _fail("invalid_producer_route", path, "producer route is not canonical")
     return value
+
+
+def _expect_success(raw: object, path: str) -> Literal["SUCCEEDED"]:
+    if raw != "SUCCEEDED":
+        _fail("producer_not_successful", path, "producer outcome must be 'SUCCEEDED'")
+    return raw
+
+
+def _expect_positive_integer(raw: object, path: str) -> int:
+    if type(raw) is not int or not 0 < raw <= 2**63 - 1:
+        _fail("invalid_output_size", path, "output size must be a positive 64-bit integer")
+    return raw
 
 
 def _expect_artifact_member_name(raw: object, path: str) -> str:
