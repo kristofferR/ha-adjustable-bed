@@ -31,7 +31,7 @@ from .lineage import (
 )
 
 CONTRACT_REVISION = "phase4-v2-validation-input-v3"
-PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v1"
+PACKAGE_CONTRACT_REVISION = "phase4-v2-package-validation-input-v2"
 PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 _LEGACY_PREFLIGHT_SCHEMA = "phase4-v2-preflight-v2"
 VALIDATION_INPUT = "validation-input.json"
@@ -52,6 +52,20 @@ _MAX_EVIDENCE_MEMBER_COUNT = 4_096
 _MAX_ANCHOR_BYTES = 64 * 1024**2
 _MAX_ANCHOR_ID_LENGTH = 256
 _MAX_JSON_POINTER_LENGTH = 8_192
+PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA: dict[str, object] = {
+    "additionalProperties": False,
+    "properties": {
+        "evidence": {
+            "items": {"minLength": 1, "type": "string"},
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": True,
+        },
+        "status": {"const": "COMPLETE"},
+    },
+    "required": ["evidence", "status"],
+    "type": "object",
+}
 _STACK_ROUTES: dict[str, tuple[str, ...]] = {
     "air": ("ffdec",),
     "android": ("apktool",),
@@ -317,7 +331,7 @@ def validate_binding_contract(
         _dependency_member(dependencies, "preflight"),
         diagnostics,
     )
-    trusted_evidence = _validate_evidence_lineage(
+    trusted_evidence, trusted_evidence_scopes = _validate_evidence_lineage(
         expected_evidence_lineage,
         expected_dependencies,
         artifact_identity,
@@ -327,20 +341,18 @@ def validate_binding_contract(
         diagnostics,
     )
     _validate_frozen_report_members(nodes, diagnostics)
-    if isinstance(expected_dependencies, PackageDependencyPins):
+    package_contract = isinstance(expected_dependencies, PackageDependencyPins)
+    if package_contract:
         _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
-        _validate_package_report(
-            dependencies,
-            json_documents,
-            artifact_identity,
-            diagnostics,
-        )
     else:
         _validate_frozen_analysis_report(
             json_documents.get("analysis.json"), artifact_identity, diagnostics
         )
 
-    owners, validated_members = _validate_evidence_members(
+    package_domains = (
+        _package_required_domains(dependencies, json_documents) if package_contract else None
+    )
+    owners, validated_members, evidence_scopes = _validate_evidence_members(
         document["evidence_members"],
         artifact_identity.artifact_digest if artifact_identity is not None else "",
         trusted_evidence,
@@ -348,7 +360,18 @@ def validate_binding_contract(
         nodes,
         path_is_safe,
         diagnostics,
+        package_domains=package_domains,
+        trusted_scopes=trusted_evidence_scopes,
     )
+    if package_contract:
+        _validate_package_report(
+            dependencies,
+            json_documents,
+            artifact_identity,
+            trusted_evidence,
+            evidence_scopes,
+            diagnostics,
+        )
     validated_anchors = _validate_anchors(
         document["anchors"],
         owners,
@@ -806,18 +829,18 @@ def _validate_evidence_lineage(
     nodes: Mapping[str, MemberNode],
     path_is_safe: PathValidator,
     diagnostics: list[BindingDiagnostic],
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict[str, frozenset[str]]]:
     if trust is None:
         diagnostics.append(
             BindingDiagnostic("TRUSTED_EVIDENCE_LINEAGE_REQUIRED", VALIDATION_INPUT)
         )
-        return {}
+        return {}, {}
     if artifact_identity is None:
-        return {}
+        return {}, {}
     artifact_sources = _preflight_artifact_sources(preflight_document)
     member_routes = _preflight_member_routes(preflight_document)
     if artifact_sources is None or member_routes is None:
-        return {}
+        return {}, {}
     try:
         value = bind_evidence_lineage(
             trust.payload,
@@ -838,7 +861,7 @@ def _validate_evidence_lineage(
                 ),
             )
         )
-        return {}
+        return {}, {}
     covered_routes: set[tuple[str, str]] = set()
     for item in value.members:
         node = nodes.get(item.report_member)
@@ -854,7 +877,7 @@ def _validate_evidence_lineage(
                     item.report_member,
                 )
             )
-            return {}
+            return {}, {}
         if any(
             item.producer.route not in member_routes.get(source.name, frozenset())
             for source in item.source_artifact_members
@@ -864,7 +887,7 @@ def _validate_evidence_lineage(
                     "TRUSTED_EVIDENCE_LINEAGE_ROUTE_MISMATCH", item.report_member
                 )
             )
-            return {}
+            return {}, {}
         covered_routes.update(
             (source.name, item.producer.route) for source in item.source_artifact_members
         )
@@ -877,7 +900,7 @@ def _validate_evidence_lineage(
                     "TRUSTED_EVIDENCE_LINEAGE_SOURCE_MISMATCH", item.report_member
                 )
             )
-            return {}
+            return {}, {}
     required_routes = {
         (member, route) for member, routes in member_routes.items() for route in routes
     }
@@ -891,13 +914,14 @@ def _validate_evidence_lineage(
                 (("member", missing_member), ("route", missing_route)),
             )
         )
-        return {}
+        return {}, {}
     if len(value.members) > _MAX_EVIDENCE_MEMBER_COUNT:
         diagnostics.append(
             BindingDiagnostic("TRUSTED_EVIDENCE_MEMBER_LIMIT_EXCEEDED", VALIDATION_INPUT)
         )
-        return {}
+        return {}, {}
     trusted: dict[str, str] = {}
+    scopes: dict[str, frozenset[str]] = {}
     for member, digest in value.member_digests:
         if not isinstance(member, str) or not path_is_safe(member) or not _is_digest(digest):
             diagnostics.append(
@@ -908,7 +932,12 @@ def _validate_evidence_lineage(
             diagnostics.append(BindingDiagnostic("TRUSTED_EVIDENCE_NAMESPACE_INVALID", member))
             continue
         trusted[member] = digest
-    return trusted
+    scopes.update(
+        (item.report_member, frozenset(item.package_local_domains))
+        for item in value.members
+        if item.report_member in trusted
+    )
+    return trusted, scopes
 
 
 def _validate_package_dependency_documents(
@@ -929,12 +958,15 @@ def _validate_package_report(
     dependencies: object,
     json_documents: Mapping[str, object],
     artifact_identity: ArtifactIdentityAttestation | None,
+    trusted_evidence: Mapping[str, str],
+    evidence_scopes: Mapping[str, frozenset[str]],
     diagnostics: list[BindingDiagnostic],
 ) -> None:
     schema_member = _dependency_member(dependencies, "report_schema")
     schema = _dependency_document(dependencies, "report_schema", json_documents)
     if not isinstance(schema, dict) or set(schema) != {
         "report_revision",
+        "package_local_domain_result_schema",
         "required_package_local_domains",
         "requires_authoritative_root_result_set",
         "requires_target_package_identity",
@@ -952,6 +984,8 @@ def _validate_package_report(
         or not report_revision
         or not isinstance(schema_revision, str)
         or not schema_revision
+        or schema.get("package_local_domain_result_schema")
+        != PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA
         or required_domains is None
         or schema.get("requires_authoritative_root_result_set") is not True
         or schema.get("requires_target_package_identity") is not True
@@ -1001,18 +1035,15 @@ def _validate_package_report(
         or not isinstance(domains, dict)
         or set(domains) != set(required_domains)
         or not isinstance(root_results, list)
-        or any(not isinstance(domains[name], dict) for name in required_domains)
+        or any(
+            not _valid_package_local_domain_result(
+                name, domains[name], trusted_evidence, evidence_scopes
+            )
+            for name in required_domains
+        )
         or len(root_results) != root_count
         or any(_root_result_identity(item) is None for item in root_results)
     ):
-        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
-        return
-    completed_routes = {
-        item[2]
-        for item in (_root_result_identity(result) for result in root_results)
-        if item is not None and item[2] != "BLOCKED"
-    }
-    if completed_routes and any(not domains[name] for name in required_domains):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
         return
     reported_roots = tuple(_root_result_identity(item) for item in root_results)
@@ -1031,6 +1062,33 @@ def _validate_package_report(
         or identity != plan_identity
     ):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_IDENTITY_MISMATCH", report_path))
+
+
+def _valid_package_local_domain_result(
+    domain: str,
+    value: object,
+    trusted_evidence: Mapping[str, str],
+    evidence_scopes: Mapping[str, frozenset[str]],
+) -> bool:
+    if not _is_exact_object(value, {"evidence", "status"}) or value["status"] != "COMPLETE":
+        return False
+    evidence = _canonical_string_list(value["evidence"], require_nonempty=True)
+    return evidence is not None and all(
+        member in trusted_evidence and domain in evidence_scopes.get(member, frozenset())
+        for member in evidence
+    )
+
+
+def _package_required_domains(
+    dependencies: object, json_documents: Mapping[str, object]
+) -> frozenset[str]:
+    schema = _dependency_document(dependencies, "report_schema", json_documents)
+    if not isinstance(schema, dict):
+        return frozenset()
+    domains = _canonical_string_list(
+        schema.get("required_package_local_domains"), require_nonempty=True
+    )
+    return frozenset(domains or ())
 
 
 def _root_plan_identity(
@@ -1179,15 +1237,23 @@ def _validate_evidence_members(
     nodes: Mapping[str, MemberNode],
     path_is_safe: PathValidator,
     diagnostics: list[BindingDiagnostic],
-) -> tuple[dict[str, str], tuple[EvidenceMemberAttestation, ...]]:
+    *,
+    package_domains: frozenset[str] | None,
+    trusted_scopes: Mapping[str, frozenset[str]],
+) -> tuple[
+    dict[str, str],
+    tuple[EvidenceMemberAttestation, ...],
+    dict[str, frozenset[str]],
+]:
     owners: dict[str, str] = {}
+    scopes: dict[str, frozenset[str]] = {}
     validated: list[EvidenceMemberAttestation] = []
     if not isinstance(value, list):
         diagnostics.append(BindingDiagnostic("EVIDENCE_MEMBERS_INVALID", VALIDATION_INPUT))
-        return owners, ()
+        return owners, (), scopes
     if len(value) > _MAX_EVIDENCE_MEMBER_COUNT:
         diagnostics.append(BindingDiagnostic("EVIDENCE_MEMBER_LIMIT_EXCEEDED", VALIDATION_INPUT))
-        return owners, ()
+        return owners, (), scopes
     declared_members = {
         entry.get("member")
         for entry in value
@@ -1197,7 +1263,10 @@ def _validate_evidence_members(
         diagnostics.append(BindingDiagnostic("EVIDENCE_MEMBER_SET_MISMATCH", VALIDATION_INPUT))
     for index, entry in enumerate(value):
         location = f"{VALIDATION_INPUT}#/evidence_members/{index}"
-        if not _is_exact_object(entry, {"member", "owner", "sha256"}):
+        required_keys = {"member", "owner", "sha256"}
+        if package_domains is not None:
+            required_keys.add("package_local_domains")
+        if not _is_exact_object(entry, required_keys):
             diagnostics.append(BindingDiagnostic("EVIDENCE_MEMBER_INVALID", location))
             continue
         member = entry["member"]
@@ -1218,6 +1287,18 @@ def _validate_evidence_members(
             continue
         owners[member] = owner
         member_valid = True
+        member_scopes: frozenset[str] = frozenset()
+        if package_domains is not None:
+            declared_scopes = _canonical_string_list(entry["package_local_domains"])
+            if (
+                declared_scopes is None
+                or not set(declared_scopes).issubset(package_domains)
+                or frozenset(declared_scopes) != trusted_scopes.get(member)
+            ):
+                diagnostics.append(BindingDiagnostic("EVIDENCE_MEMBER_INVALID", location))
+                member_valid = False
+            else:
+                member_scopes = frozenset(declared_scopes)
         if not member.startswith("evidence/") or member == "evidence/":
             diagnostics.append(BindingDiagnostic("EVIDENCE_NAMESPACE_INVALID", member))
             member_valid = False
@@ -1242,7 +1323,8 @@ def _validate_evidence_members(
             member_valid = False
         if member_valid:
             validated.append(EvidenceMemberAttestation(member, owner, digest))
-    return owners, tuple(sorted(validated, key=lambda item: item.member.encode()))
+            scopes[member] = member_scopes
+    return owners, tuple(sorted(validated, key=lambda item: item.member.encode())), scopes
 
 
 def _validate_anchors(

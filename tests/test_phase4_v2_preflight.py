@@ -544,6 +544,21 @@ def test_jsbundle_asset_uses_hermes_header_for_routing(tmp_path: Path) -> None:
     assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
 
 
+def test_plain_jsbundle_asset_uses_react_native_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "react-native.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr("assets/main.jsbundle", b"plain JavaScript fixture")
+
+    result = preflight_delivery([artifact])
+
+    assert "react_native" in result.decision.stacks
+    assert "react-native-bundle" in result.decision.routes
+    assert "hermes" not in result.decision.stacks
+    assert "shipped_bundle" not in result.decision.stacks
+
+
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:
     artifact = tmp_path / "unknown.apk"
     _apk(artifact, "assets/unidentified.payload")

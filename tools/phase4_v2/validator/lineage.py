@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Literal, Never, cast
 
-LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v2"
+LINEAGE_SCHEMA_REVISION = "phase4-v2-evidence-lineage-v3"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _ROUTE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,99}$")
@@ -103,12 +103,14 @@ class EvidenceLineageMember:
 
     report_member: str
     sha256: str
+    package_local_domains: tuple[str, ...]
     source_artifact_members: tuple[SourceArtifactMember, ...]
     producer: EvidenceProducer
 
     def to_data(self) -> dict[str, object]:
         return {
             "producer": self.producer.to_data(),
+            "package_local_domains": list(self.package_local_domains),
             "report_member": self.report_member,
             "sha256": self.sha256,
             "source_artifact_members": [item.to_data() for item in self.source_artifact_members],
@@ -313,7 +315,13 @@ def _parse_member(
     _expect_keys(
         value,
         path=path,
-        required={"report_member", "sha256", "source_artifact_members", "producer"},
+        required={
+            "package_local_domains",
+            "producer",
+            "report_member",
+            "sha256",
+            "source_artifact_members",
+        },
     )
     digest = _expect_sha256(value["sha256"], f"{path}.sha256")
     report_member = _expect_string(value["report_member"], f"{path}.report_member", maximum=96)
@@ -325,6 +333,9 @@ def _parse_member(
             f"expected {expected_report_member!r}",
         )
     sources = _parse_sources(value["source_artifact_members"], f"{path}.source_artifact_members")
+    package_local_domains = _parse_package_local_domains(
+        value["package_local_domains"], f"{path}.package_local_domains"
+    )
     for source in sources:
         if expected_sources.get(source.name) != source.sha256:
             _fail(
@@ -339,7 +350,21 @@ def _parse_member(
             f"{path}.producer",
             "producer pipeline, route, and tool digest are not authorized",
         )
-    return EvidenceLineageMember(report_member, digest, sources, producer)
+    return EvidenceLineageMember(report_member, digest, package_local_domains, sources, producer)
+
+
+def _parse_package_local_domains(raw: object, path: str) -> tuple[str, ...]:
+    values = _expect_array(raw, path)
+    if len(values) > 256:
+        _fail("package_local_domain_limit_exceeded", path, "domain count exceeds 256")
+    domains = tuple(
+        _expect_revision(item, f"{path}[{index}]") for index, item in enumerate(values)
+    )
+    if len(set(domains)) != len(domains):
+        _fail("duplicate_package_local_domain", path, "domains must be unique")
+    if list(domains) != sorted(domains, key=lambda item: item.encode("utf-8")):
+        _fail("package_local_domains_not_sorted", path, "domains must use canonical byte ordering")
+    return domains
 
 
 def _parse_sources(raw: object, path: str) -> tuple[SourceArtifactMember, ...]:

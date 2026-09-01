@@ -18,6 +18,7 @@ from tools.phase4_v2.validator import (
     ValidationReceipt,
 )
 from tools.phase4_v2.validator.binding import (
+    PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
     ArtifactIdentityAttestation,
     EvidenceAnchorAttestation,
     EvidenceMemberAttestation,
@@ -47,10 +48,11 @@ EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
 PACKAGE_PIPELINE_CAPABILITY = "phase4-v2-package-analysis"
 SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v1"
 PACKAGE_REPORT_REVISION = "phase4-v2-package-report-v1"
-PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v1"
+PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v2"
 PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES = json.dumps(
     {
         "report_revision": PACKAGE_REPORT_REVISION,
+        "package_local_domain_result_schema": PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
         "required_package_local_domains": list(LOCAL_ONLY_DOMAINS),
         "requires_authoritative_root_result_set": True,
         "requires_target_package_identity": True,

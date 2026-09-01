@@ -29,10 +29,19 @@ from tools.phase4_v2.validator import (
     load_json_strict,
     validate_report_bundle,
 )
+from tools.phase4_v2.validator.binding import PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA
 
 _EVIDENCE = f"{SCHEMA_REVISION}\n{SCHEMA_REVISION}\n".encode()
 _EVIDENCE_DIGEST = hashlib.sha256(_EVIDENCE).hexdigest()
 _EVIDENCE_MEMBER = f"evidence/sha256/{_EVIDENCE_DIGEST}"
+_PACKAGE_DOMAINS = (
+    "configuration",
+    "lifecycle",
+    "negative_closure",
+    "reachability",
+    "resources",
+    "selectors",
+)
 _LINEAGE_TOOL_SHA256 = "7" * 64
 _LINEAGE_PRODUCER = TrustedProducer("phase4-extract-v1", "apktool", _LINEAGE_TOOL_SHA256)
 
@@ -308,19 +317,21 @@ def _package_bound_bundle(
     tmp_path: Path,
 ) -> tuple[Path, dict[str, bytes], PackageDependencyPins, dict[str, object]]:
     report, members, pins, contract = _bound_bundle(tmp_path)
-    package_domains = (
-        "configuration",
-        "lifecycle",
-        "negative_closure",
-        "reachability",
-        "resources",
-        "selectors",
-    )
+    package_domains = _PACKAGE_DOMAINS
     preflight = json.loads(members["inputs/preflight.json"])
+    evidence_members = contract["evidence_members"]
+    assert isinstance(evidence_members, list)
+    evidence_members[0]["package_local_domains"] = list(package_domains)
     members["analysis.json"] = _json_bytes(
         {
             "authoritative_root_results": [],
-            "package_local_domains": {name: {} for name in package_domains},
+            "package_local_domains": {
+                name: {
+                    "evidence": [_EVIDENCE_MEMBER],
+                    "status": "COMPLETE",
+                }
+                for name in package_domains
+            },
             "report_revision": "phase4-v2-package-report-v1",
             "target_package_identity": {
                 "artifact_digest": preflight["artifact_digest"],
@@ -349,10 +360,11 @@ def _package_bound_bundle(
         "inputs/report_schema.json": _json_bytes(
             {
                 "report_revision": "phase4-v2-package-report-v1",
+                "package_local_domain_result_schema": PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
                 "required_package_local_domains": list(package_domains),
                 "requires_authoritative_root_result_set": True,
                 "requires_target_package_identity": True,
-                "schema_revision": "phase4-v2-package-report-schema-v1",
+                "schema_revision": "phase4-v2-package-report-schema-v2",
             }
         ),
     }
@@ -391,6 +403,11 @@ def _trusted_lineage(
         "artifact_digest": artifact_digest,
         "members": [
             {
+                "package_local_domains": (
+                    list(_PACKAGE_DOMAINS)
+                    if isinstance(pins, PackageDependencyPins)
+                    else []
+                ),
                 "producer": {
                     "invocation_sha256": "8" * 64,
                     "outcome": "SUCCEEDED",
@@ -708,16 +725,6 @@ def test_package_profile_binds_each_authoritative_root_result_to_its_plan(
         root_plans=[root_plan],
         root_results=[root_result],
     )
-    package_report = json.loads(members["analysis.json"])
-    package_report["package_local_domains"] = {
-        name: {"status": "COMPLETE"}
-        for name in package_report["package_local_domains"]
-    }
-    replacement = _json_bytes(package_report)
-    (report / "analysis.json").write_bytes(replacement)
-    members["analysis.json"] = replacement
-    _write_manifest(report, members)
-
     assert _validate_package_bound(report, pins).accepted is True
 
     root_result["target_root_id"] = "c" * 64
@@ -913,16 +920,6 @@ def test_package_profile_accepts_typed_exact_reuse_result(tmp_path: Path) -> Non
             }
         ],
     )
-    package_report = json.loads(members["analysis.json"])
-    package_report["package_local_domains"] = {
-        name: {"status": "COMPLETE"}
-        for name in package_report["package_local_domains"]
-    }
-    replacement = _json_bytes(package_report)
-    (report / "analysis.json").write_bytes(replacement)
-    members["analysis.json"] = replacement
-    _write_manifest(report, members)
-
     assert _validate_package_bound(report, pins).accepted is True
 
 
@@ -962,16 +959,6 @@ def test_package_profile_rejects_exact_reuse_result_from_unpinned_source(
             }
         ],
     )
-    package_report = json.loads(members["analysis.json"])
-    package_report["package_local_domains"] = {
-        name: {"status": "COMPLETE"}
-        for name in package_report["package_local_domains"]
-    }
-    replacement = _json_bytes(package_report)
-    (report / "analysis.json").write_bytes(replacement)
-    members["analysis.json"] = replacement
-    _write_manifest(report, members)
-
     receipt = _validate_package_bound(report, pins)
 
     assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {
@@ -1021,7 +1008,18 @@ def test_package_profile_rejects_completed_root_without_substantive_result(
     assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
 
 
-def test_package_profile_rejects_empty_domains_for_completed_root(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "domain_result",
+    [
+        {},
+        {"placeholder": True},
+        {"status": "COMPLETE"},
+        {"evidence": ["evidence/untrusted"], "status": "COMPLETE"},
+    ],
+)
+def test_package_profile_rejects_invalid_package_local_domain_result(
+    tmp_path: Path, domain_result: dict[str, object]
+) -> None:
     report, members, pins, contract = _package_bound_bundle(tmp_path)
     root = {
         "route": "FULL_ANALYSIS",
@@ -1044,6 +1042,28 @@ def test_package_profile_rejects_empty_domains_for_completed_root(tmp_path: Path
             }
         ],
     )
+    package_report = json.loads(members["analysis.json"])
+    package_report["package_local_domains"]["configuration"] = domain_result
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_rejects_evidence_outside_domain_scope(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    evidence_members = contract["evidence_members"]
+    assert isinstance(evidence_members, list)
+    evidence_member = evidence_members[0]
+    assert isinstance(evidence_member, dict)
+    evidence_member["package_local_domains"] = [
+        domain for domain in _PACKAGE_DOMAINS if domain != "configuration"
+    ]
+    _write_contract(report, members, contract)
 
     receipt = _validate_package_bound(report, pins)
 
@@ -2043,6 +2063,7 @@ def test_lineage_cannot_borrow_route_from_another_artifact_member(tmp_path: Path
         "artifact_digest": artifact_digest,
         "members": [
             {
+                "package_local_domains": [],
                 "producer": {
                     "invocation_sha256": "8" * 64,
                     "outcome": "SUCCEEDED",

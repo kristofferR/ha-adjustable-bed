@@ -598,6 +598,7 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
     react_native_bundle_names = {
         "assets/index.android.bundle",
         "assets/index.android.bundle.hbc",
+        *(name for name in names if name.startswith("assets/") and name.endswith(".jsbundle")),
     }
     if names.intersection(react_native_bundle_names):
         stacks.add("react_native")

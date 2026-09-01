@@ -32,6 +32,7 @@ def _manifest(*, member_digest: str = "1" * 64) -> dict[str, object]:
         "artifact_digest": _ARTIFACT_DIGEST,
         "members": [
             {
+                "package_local_domains": [],
                 "producer": {
                     "invocation_sha256": _INVOCATION_SHA256,
                     "outcome": "SUCCEEDED",
