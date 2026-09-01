@@ -653,6 +653,21 @@ def test_cache_detects_member_corruption(tmp_path: Path) -> None:
         cache.verify(result.artifact_digest)
 
 
+def test_cache_rejects_members_exceeding_the_aggregate_byte_limit(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    constrained_cache = ArtifactCache(
+        cache.root,
+        limits=PreflightLimits(max_archive_bytes=artifact.stat().st_size - 1),
+    )
+
+    with pytest.raises(CacheIntegrityError, match="member bytes exceed"):
+        constrained_cache.verify(result.artifact_digest)
+
+
 def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> None:
     artifact = tmp_path / "base.apk"
     _native_apk(artifact)

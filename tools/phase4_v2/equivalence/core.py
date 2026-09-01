@@ -809,7 +809,7 @@ class AppendOnlyLedger:
             for identity, items in grouped.items()
         }
 
-    def _validate_decision(self, decision: LedgerDecision) -> None:
+    def _validate_decision(self, decision: LedgerDecision, *, replay: bool = False) -> None:
         decision.__post_init__()
         _validate_pins(decision.pins)
         if decision.revision != self._pins.ledger_decision:
@@ -821,20 +821,26 @@ class AppendOnlyLedger:
             _fail("decision target root is not registered")
         if decision.target_root_id in self._decided_roots:
             _fail("an immutable application root already has a ledger decision")
-        eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
-        if eligible_sources and eligible_sources[0].content_id == target.content_id:
-            candidate_roots = eligible_sources[1:2]
-        else:
-            candidate_roots = eligible_sources[:1]
-        expected, expected_proof = _route_application_root_validated(
-            target,
-            candidate_roots,
-            pins=self._pins,
-            audits=self._trusted_direct_audits,
-            inventory_receipts=self._trusted_inventory_receipts,
-        )
-        if decision != expected:
-            _fail("decision does not reproduce from the pinned deterministic routing inputs")
+        if self._trusted_inventory_receipts.get(target.content_id) != (
+            decision.target_inventory_receipt_sha256
+        ):
+            _fail("decision does not reproduce from the trusted target inventory receipt")
+        expected_proof: ByteIdentityProof | None = None
+        if not replay:
+            eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
+            if eligible_sources and eligible_sources[0].content_id == target.content_id:
+                candidate_roots = eligible_sources[1:2]
+            else:
+                candidate_roots = eligible_sources[:1]
+            expected, expected_proof = _route_application_root_validated(
+                target,
+                candidate_roots,
+                pins=self._pins,
+                audits=self._trusted_direct_audits,
+                inventory_receipts=self._trusted_inventory_receipts,
+            )
+            if decision != expected:
+                _fail("decision does not reproduce from the pinned deterministic routing inputs")
         if decision.route is Route.EXACT_REUSE:
             if decision.byte_identity_proof_id is None or decision.source_root_id is None:
                 _fail("exact-reuse decision is missing mandatory references")
@@ -855,10 +861,10 @@ class AppendOnlyLedger:
                 _fail("exact-reuse roots no longer reproduce the same executable identity")
             if not target.automatic_reuse_eligible or not source.automatic_reuse_eligible:
                 _fail("exact-reuse decision contains a tainted root")
-            if expected_proof != proof:
+            if not replay and expected_proof != proof:
                 _fail("exact-reuse proof differs from the deterministic routing proof")
         else:
-            if expected_proof is not None:
+            if not replay and expected_proof is not None:
                 _fail("internal non-reuse routing invariant failed")
 
     def _append_existing(self, entry: LedgerEntry) -> LedgerEntry:
@@ -871,7 +877,7 @@ class AppendOnlyLedger:
             _fail("ledger-entry revision differs from the trusted pin")
         if entry.sequence != len(self._entries) or entry.previous_entry_id != expected_previous:
             _fail("ledger entry sequence or hash-chain predecessor is invalid")
-        self._validate_decision(entry.decision)
+        self._validate_decision(entry.decision, replay=True)
         self._entries.append(entry)
         self._decided_roots.add(entry.decision.target_root_id)
         return entry
@@ -885,6 +891,7 @@ class AppendOnlyLedger:
             previous_entry_id=self._entries[-1].content_id if self._entries else None,
             decision=decision,
         )
+        self._validate_decision(decision)
         stored = self._append_existing(entry)
         return _copy_entry(stored)
 

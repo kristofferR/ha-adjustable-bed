@@ -16,7 +16,6 @@ import os
 import re
 import shutil
 import stat
-import tempfile
 from collections import Counter
 from collections.abc import Buffer, Collection, Iterator, Sequence
 from contextlib import contextmanager
@@ -1003,15 +1002,21 @@ def _validate_output(source_root: Path, output_dir: Path) -> Path:
     return candidate
 
 
-def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
-    """Publish into a newly created directory without replacing any existing path."""
+def _make_private_directory_at(directory_fd: int, prefix: str) -> str:
+    for _ in range(100):
+        name = f"{prefix}{os.urandom(8).hex()}"
+        try:
+            os.mkdir(name, mode=0o700, dir_fd=directory_fd)
+        except FileExistsError:
+            continue
+        return name
+    raise InventoryError("could not create a unique inventory temporary directory")
+
+
+def _open_output_parent(destination: Path) -> int:
     try:
-        destination.mkdir()
-    except FileExistsError as err:
-        raise InventoryError(f"output directory appeared during scan: {destination}") from err
-    try:
-        destination_descriptor = os.open(
-            destination,
+        descriptor = os.open(
+            destination.parent,
             os.O_RDONLY
             | os.O_DIRECTORY
             | getattr(os, "O_CLOEXEC", 0)
@@ -1019,37 +1024,73 @@ def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
         )
     except OSError as err:
         raise InventoryError(
-            f"new output directory could not be pinned safely: {destination}"
+            f"output parent directory is not accessible: {destination.parent}"
         ) from err
-    if not _directory_descriptor_matches_path(destination_descriptor, destination):
-        os.close(destination_descriptor)
-        raise InventoryError(f"new output directory changed before publication: {destination}")
-    children = sorted(
-        temp_dir.iterdir(), key=lambda path: (path.name.startswith("INVENTORY."), path.name)
-    )
+    if not _directory_descriptor_matches_path(descriptor, destination.parent):
+        os.close(descriptor)
+        raise InventoryError(f"output parent directory changed: {destination.parent}")
+    return descriptor
+
+
+def _publish_without_replace(
+    temp_dir: Path, destination: Path, output_parent_descriptor: int | None = None
+) -> None:
+    """Publish into a newly created directory without replacing any existing path."""
+    close_output_parent = output_parent_descriptor is None
+    if output_parent_descriptor is None:
+        output_parent_descriptor = _open_output_parent(destination)
     try:
-        marker = next((child for child in children if child.name.startswith("INVENTORY.")), None)
-        payloads = [child for child in children if child != marker]
-        for child in payloads:
-            _fsync_path(child)
-            os.rename(child, child.name, dst_dir_fd=destination_descriptor)
-        os.fsync(destination_descriptor)
+        if not _directory_descriptor_matches_path(output_parent_descriptor, destination.parent):
+            raise InventoryError(f"output parent directory changed during scan: {destination.parent}")
+        try:
+            os.mkdir(destination.name, dir_fd=output_parent_descriptor)
+        except FileExistsError as err:
+            raise InventoryError(f"output directory appeared during scan: {destination}") from err
+        try:
+            destination_descriptor = os.open(
+                destination.name,
+                os.O_RDONLY
+                | os.O_DIRECTORY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=output_parent_descriptor,
+            )
+        except OSError as err:
+            raise InventoryError(
+                f"new output directory could not be pinned safely: {destination}"
+            ) from err
         if not _directory_descriptor_matches_path(destination_descriptor, destination):
-            raise InventoryError(f"output directory changed during publication: {destination}")
-        if marker is not None:
-            _fsync_path(marker)
-            os.rename(marker, marker.name, dst_dir_fd=destination_descriptor)
+            os.close(destination_descriptor)
+            raise InventoryError(f"new output directory changed before publication: {destination}")
+        children = sorted(
+            temp_dir.iterdir(), key=lambda path: (path.name.startswith("INVENTORY."), path.name)
+        )
+        try:
+            marker = next((child for child in children if child.name.startswith("INVENTORY.")), None)
+            payloads = [child for child in children if child != marker]
+            for child in payloads:
+                _fsync_path(child)
+                os.rename(child, child.name, dst_dir_fd=destination_descriptor)
             os.fsync(destination_descriptor)
-        if not _directory_descriptor_matches_path(destination_descriptor, destination):
-            raise InventoryError(f"output directory changed during publication: {destination}")
-        _fsync_directory(destination.parent)
-        temp_dir.rmdir()
-    except OSError as err:
-        raise InventoryError(
-            f"publication was interrupted; incomplete output retained at {destination}"
-        ) from err
+            if not _directory_descriptor_matches_path(destination_descriptor, destination):
+                raise InventoryError(f"output directory changed during publication: {destination}")
+            if marker is not None:
+                _fsync_path(marker)
+                os.rename(marker, marker.name, dst_dir_fd=destination_descriptor)
+                os.fsync(destination_descriptor)
+            if not _directory_descriptor_matches_path(destination_descriptor, destination):
+                raise InventoryError(f"output directory changed during publication: {destination}")
+            os.fsync(output_parent_descriptor)
+            temp_dir.rmdir()
+        except OSError as err:
+            raise InventoryError(
+                f"publication was interrupted; incomplete output retained at {destination}"
+            ) from err
+        finally:
+            os.close(destination_descriptor)
     finally:
-        os.close(destination_descriptor)
+        if close_output_parent:
+            os.close(output_parent_descriptor)
 
 
 def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
@@ -1281,8 +1322,9 @@ def build_inventory(
     active = _normalise_active_paths(active_paths)
     _validate_active_paths(root, active)
     destination = _validate_output(root, output_dir)
-
-    temp_dir = Path(tempfile.mkdtemp(prefix=f".{destination.name}.tmp-", dir=destination.parent))
+    output_parent_descriptor = _open_output_parent(destination)
+    temp_name = _make_private_directory_at(output_parent_descriptor, f".{destination.name}.tmp-")
+    temp_dir = Path(f"/proc/self/fd/{output_parent_descriptor}") / temp_name
     raw_entries_path = temp_dir / "entries.raw.ndjson"
     entries_path = temp_dir / "entries.ndjson"
     hashes_path = temp_dir / "declared_hashes.ndjson"
@@ -1524,10 +1566,12 @@ def build_inventory(
         (temp_dir / completion_marker).write_text(
             f"{manifest_digest}  manifest.json\n", encoding="utf-8"
         )
-        _publish_without_replace(temp_dir, destination)
+        _publish_without_replace(temp_dir, destination, output_parent_descriptor)
     except BaseException:
         shutil.rmtree(temp_dir, ignore_errors=True)
         raise
+    finally:
+        os.close(output_parent_descriptor)
 
     return InventorySummary(
         output_dir=destination,
