@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import selectors
 import shutil
 import stat
@@ -970,6 +971,15 @@ def preflight_delivery(
 
 
 def _rename_noreplace(source: Path, destination: Path) -> None:
+    _rename_noreplace_at(_AT_FDCWD, os.fsencode(source), _AT_FDCWD, os.fsencode(destination))
+
+
+def _rename_noreplace_at(
+    source_dir_fd: int,
+    source: bytes,
+    destination_dir_fd: int,
+    destination: bytes,
+) -> None:
     libc = ctypes.CDLL(None, use_errno=True)
     operation = getattr(libc, "renameat2", None)
     if operation is None:
@@ -984,7 +994,11 @@ def _rename_noreplace(source: Path, destination: Path) -> None:
     operation.restype = ctypes.c_int
     if (
         operation(
-            _AT_FDCWD, os.fsencode(source), _AT_FDCWD, os.fsencode(destination), _RENAME_NOREPLACE
+            source_dir_fd,
+            source,
+            destination_dir_fd,
+            destination,
+            _RENAME_NOREPLACE,
         )
         == 0
     ):
@@ -993,6 +1007,17 @@ def _rename_noreplace(source: Path, destination: Path) -> None:
     if error == errno.EEXIST:
         raise FileExistsError(error, os.strerror(error), destination)
     raise OSError(error, os.strerror(error), destination)
+
+
+def _make_private_directory_at(directory_fd: int, prefix: str) -> str:
+    for _ in range(100):
+        name = f"{prefix}{secrets.token_hex(8)}"
+        try:
+            os.mkdir(name, mode=0o700, dir_fd=directory_fd)
+        except FileExistsError:
+            continue
+        return name
+    raise FileExistsError(errno.EEXIST, "could not create a unique temporary directory")
 
 
 def _fsync_directory(path: Path) -> None:
@@ -1400,17 +1425,32 @@ class ArtifactCache:
                 f"materialization parent is inaccessible: {target.parent}"
             ) from err
         target = parent / target.name
-        if target.exists() or target.is_symlink():
+        try:
+            parent_fd = os.open(parent, _DIRECTORY_FLAGS)
+        except OSError as err:
+            raise PreflightError(f"materialization parent is inaccessible: {parent}") from err
+        try:
+            os.stat(target.name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        except BaseException:
+            os.close(parent_fd)
+            raise
+        else:
+            os.close(parent_fd)
             raise PreflightError(f"materialization destination already exists: {target}")
-        temporary = Path(tempfile.mkdtemp(prefix=f".{target.name}.tmp-", dir=parent))
+        temporary_name = ""
         published = False
         object_fd = -1
         members_fd = -1
         destination_fd = -1
         try:
+            temporary_name = _make_private_directory_at(
+                parent_fd, f".{target.name}.tmp-"
+            )
             object_fd = os.open(self._object(artifact_digest), _DIRECTORY_FLAGS)
             members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
-            destination_fd = os.open(temporary, _DIRECTORY_FLAGS)
+            destination_fd = os.open(temporary_name, _DIRECTORY_FLAGS, dir_fd=parent_fd)
             for member in manifest["members"]:
                 source_fd = _open_readonly(member["stored_name"], dir_fd=members_fd)
                 try:
@@ -1460,9 +1500,14 @@ class ArtifactCache:
             members_fd = -1
             os.close(object_fd)
             object_fd = -1
-            _rename_noreplace(temporary, target)
+            _rename_noreplace_at(
+                parent_fd,
+                os.fsencode(temporary_name),
+                parent_fd,
+                os.fsencode(target.name),
+            )
             published = True
-            _fsync_directory(parent)
+            os.fsync(parent_fd)
         finally:
             if destination_fd >= 0:
                 os.close(destination_fd)
@@ -1470,6 +1515,7 @@ class ArtifactCache:
                 os.close(members_fd)
             if object_fd >= 0:
                 os.close(object_fd)
-            if not published:
-                shutil.rmtree(temporary, ignore_errors=True)
+            if temporary_name and not published:
+                shutil.rmtree(temporary_name, ignore_errors=True, dir_fd=parent_fd)
+            os.close(parent_fd)
         return target

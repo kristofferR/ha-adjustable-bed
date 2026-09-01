@@ -291,7 +291,7 @@ def test_heartbeat_renews_without_tracker_generation_churn(
 
 @pytest.mark.parametrize(
     ("ttl", "interval"),
-    [(0, 1.0), (10, 0), (10, 10)],
+    [(0, 1.0), (10, 0), (10, 10), (10, float("nan")), (10, float("inf"))],
 )
 def test_heartbeat_rejects_unsafe_intervals(
     publisher_queue: tuple[Queue, Lease], ttl: int, interval: float

@@ -361,7 +361,7 @@ def _validate_frozen_report_members(
 ) -> None:
     for member in sorted(_REQUIRED_FROZEN_REPORT_MEMBERS):
         node = nodes.get(member)
-        if node is None or node.kind != "file" or node.sha256 is None:
+        if node is None or node.kind != "file" or node.size == 0 or node.sha256 is None:
             diagnostics.append(BindingDiagnostic("FROZEN_REPORT_MEMBER_MISSING", member))
     if not any(
         member.startswith("reproducers/")

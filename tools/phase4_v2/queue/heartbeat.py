@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from threading import Event
 
@@ -20,7 +21,11 @@ def run_heartbeat(
     """Renew until stopped, without requiring a model or mutating work output."""
     if ttl_seconds < 1:
         raise ValueError("ttl_seconds must be positive")
-    if interval_seconds <= 0 or interval_seconds >= ttl_seconds:
+    if (
+        not math.isfinite(interval_seconds)
+        or interval_seconds <= 0
+        or interval_seconds >= ttl_seconds
+    ):
         raise ValueError("heartbeat interval must be positive and shorter than the lease TTL")
     current = lease
     while not stop.wait(interval_seconds):

@@ -544,6 +544,8 @@ class Queue:
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
         _validate_digest(input_digest, "input_digest")
+        if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
+            raise ValueError("priority must be a bounded integer")
         status = (
             WorkUnitStatus.EXTERNAL_ACTIVE
             if execution_mode is ExecutionMode.LEGACY_EXTERNAL_ACTIVE

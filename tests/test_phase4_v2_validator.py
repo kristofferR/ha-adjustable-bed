@@ -497,6 +497,22 @@ def test_package_profile_rejects_empty_reproducer_artifact(tmp_path: Path) -> No
     }
 
 
+@pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md"])
+def test_package_profile_rejects_empty_mandatory_document(
+    tmp_path: Path, member: str
+) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    (report / member).write_bytes(b"")
+    members[member] = b""
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "FROZEN_REPORT_MEMBER_MISSING" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
 @pytest.mark.parametrize(
     "missing",
     ["target_package_identity", "package_local_domains", "authoritative_root_results"],

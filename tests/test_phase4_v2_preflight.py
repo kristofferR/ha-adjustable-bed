@@ -997,21 +997,61 @@ def test_materialization_is_built_privately_then_atomically_published(
     cache = ArtifactCache(tmp_path / "cache")
     cache.store(result)
     destination = tmp_path / "materialized"
-    original_publish = legacy_preflight._rename_noreplace
+    original_publish = legacy_preflight._rename_noreplace_at
     observations: list[tuple[bool, bool]] = []
 
-    def inspect_publish(source: Path, target: Path) -> None:
-        observations.append(
-            (
-                target.exists(),
-                (source / "MATERIALIZED.COMPLETE").is_file(),
-            )
-        )
-        original_publish(source, target)
+    def inspect_publish(
+        source_dir_fd: int,
+        source: bytes,
+        destination_dir_fd: int,
+        target: bytes,
+    ) -> None:
+        try:
+            os.stat(target, dir_fd=destination_dir_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            target_exists = False
+        else:
+            target_exists = True
+        source_fd = os.open(source, legacy_preflight._DIRECTORY_FLAGS, dir_fd=source_dir_fd)
+        try:
+            marker = os.stat("MATERIALIZED.COMPLETE", dir_fd=source_fd)
+        finally:
+            os.close(source_fd)
+        observations.append((target_exists, stat.S_ISREG(marker.st_mode)))
+        original_publish(source_dir_fd, source, destination_dir_fd, target)
 
-    monkeypatch.setattr(legacy_preflight, "_rename_noreplace", inspect_publish)
+    monkeypatch.setattr(legacy_preflight, "_rename_noreplace_at", inspect_publish)
 
     cache.materialize(result.artifact_digest, destination)
 
     assert observations == [(False, True)]
     assert (destination / "MATERIALIZED.COMPLETE").is_file()
+
+
+def test_materialization_stays_in_pinned_parent_after_path_is_replaced(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    parent = tmp_path / "output"
+    parent.mkdir()
+    moved_parent = tmp_path / "moved-output"
+    replacement = tmp_path / "replacement"
+    replacement.mkdir()
+    destination = parent / "materialized"
+    original_create = legacy_preflight._make_private_directory_at
+
+    def replace_parent(directory_fd: int, prefix: str) -> str:
+        parent.rename(moved_parent)
+        parent.symlink_to(replacement, target_is_directory=True)
+        return original_create(directory_fd, prefix)
+
+    monkeypatch.setattr(legacy_preflight, "_make_private_directory_at", replace_parent)
+
+    cache.materialize(result.artifact_digest, destination)
+
+    assert (moved_parent / "materialized" / "MATERIALIZED.COMPLETE").is_file()
+    assert not (replacement / "materialized").exists()

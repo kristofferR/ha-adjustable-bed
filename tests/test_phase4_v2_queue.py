@@ -92,6 +92,18 @@ def _enqueue(queue: Queue, unit_id: str, *, priority: int = 0) -> None:
     )
 
 
+@pytest.mark.parametrize("priority", [True, -(2**31) - 1, 2**31])
+def test_enqueue_rejects_invalid_priority_before_opening_database(
+    tmp_path: Path, priority: int
+) -> None:
+    queue = Queue(tmp_path / "missing.sqlite3", tmp_path / "attempts")
+
+    with pytest.raises(ValueError, match="priority must be a bounded integer"):
+        _enqueue(queue, "package-a", priority=priority)
+
+    assert not queue.database.exists()
+
+
 def test_initialize_durably_publishes_attempt_root_before_database_pin(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
