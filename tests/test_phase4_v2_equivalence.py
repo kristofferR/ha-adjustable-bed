@@ -992,3 +992,59 @@ def test_ledger_returns_defensive_entry_and_decision_copies() -> None:
     assert ledger.head_id == trusted_head
     assert ledger.entries[0].sequence == 0
     assert ledger.entries[0].decision.reason == "no_exact_executable_identity"
+
+
+def test_ledger_replay_uses_preindexed_exact_reuse_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package_ref = package()
+    extractor = capability()
+    roots = [
+        root(package_ref, extractor, occurrence=f"{index:064x}") for index in range(16)
+    ]
+    audits = {item.content_id: SHA_D for item in roots}
+    receipts = {item.content_id: SHA_E for item in roots}
+    entries: list[LedgerEntry] = []
+    proofs: dict[str, ByteIdentityProof] = {}
+    previous_entry_id: str | None = None
+    for sequence, target in enumerate(roots):
+        decision, proof = route_application_root(
+            target,
+            roots,
+            pins=RoutingPins(),
+            trusted_direct_audits=audits,
+            trusted_inventory_receipts=receipts,
+        )
+        assert proof is not None
+        proofs[proof.content_id] = proof
+        entry = LedgerEntry(sequence, previous_entry_id, decision)
+        entries.append(entry)
+        previous_entry_id = entry.content_id
+
+    candidate_counts: list[int] = []
+    original_route = core_module._route_application_root_validated
+
+    def counted_route(
+        target: ApplicationRoot,
+        candidates: Iterator[ApplicationRoot] | tuple[ApplicationRoot, ...],
+        **kwargs: object,
+    ) -> tuple[LedgerDecision, ByteIdentityProof | None]:
+        materialized = tuple(candidates)
+        candidate_counts.append(len(materialized))
+        return original_route(target, materialized, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(core_module, "_route_application_root_validated", counted_route)
+    replayed = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=roots,
+        proofs=proofs.values(),
+        pins=RoutingPins(),
+        trusted_direct_audits=audits,
+        trusted_inventory_receipts=receipts,
+        entries=entries,
+        expected_head_id=entries[-1].content_id,
+    )
+
+    assert len(replayed.entries) == len(roots)
+    assert candidate_counts == [1] * len(roots)

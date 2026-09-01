@@ -23,6 +23,7 @@ _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _PACKAGE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
 _MAX_VARIANT_PROFILES = 100_000
+_MAX_UNIVERSE_PROFILE_REFERENCES = 1_000_000
 _MAX_VARIANT_DIMENSIONS = 128
 _MAX_PROVENANCE_DEFINITIONS = 250_000
 _MAX_PROVENANCE_REFERENCES = 4_096
@@ -795,8 +796,25 @@ def validate_universe(document: ProtocolIRDocument) -> UniverseValidation:
     """Compare expected action coverage with the command-binding multiset."""
 
     spaces = dict(document.variant_spaces)
+    referenced_space_ids = {
+        protocol.variant_space for _protocol_id, protocol in document.protocols
+    }
+    profiles_by_space = {
+        space_id: spaces[space_id].profiles() for space_id in referenced_space_ids
+    }
+    profile_references = sum(
+        len(profiles_by_space[protocol.variant_space])
+        for _protocol_id, protocol in document.protocols
+    )
+    if profile_references > _MAX_UNIVERSE_PROFILE_REFERENCES:
+        _fail(
+            "universe_too_large",
+            "$.protocols",
+            f"protocol variant expansion has {profile_references} profile references; "
+            f"limit is {_MAX_UNIVERSE_PROFILE_REFERENCES}",
+        )
     profiles_by_protocol = {
-        protocol_id: spaces[protocol.variant_space].profiles()
+        protocol_id: profiles_by_space[protocol.variant_space]
         for protocol_id, protocol in document.protocols
     }
 

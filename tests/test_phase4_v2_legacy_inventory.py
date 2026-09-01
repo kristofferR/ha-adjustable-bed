@@ -335,6 +335,29 @@ def test_inventory_rejects_duplicate_analysis_metadata_keys(tmp_path: Path) -> N
     )
 
 
+def test_inventory_retains_analysis_metadata_on_parser_recursion_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    _write_report(source / "analysis.json")
+
+    def excessively_nested(*_args: object) -> legacy_inventory.ReportRecord:
+        raise RecursionError
+
+    monkeypatch.setattr(legacy_inventory, "_report_record", excessively_nested)
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    assert _ndjson(output / "reports.ndjson") == []
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(
+        item["operation"] == "parse_analysis_json" and item["error"] == "RecursionError"
+        for item in diagnostics
+    )
+
+
 def test_inventory_bounds_tree_entries_before_sorting(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -470,6 +493,11 @@ def test_inventory_syncs_payloads_before_completion_marker(
         "_fsync_directory",
         lambda path: synced.append(f"directory:{path.name}"),
     )
+    monkeypatch.setattr(
+        legacy_inventory.os,
+        "fsync",
+        lambda _descriptor: synced.append("directory:destination"),
+    )
 
     legacy_inventory._publish_without_replace(temporary, destination)
 
@@ -480,6 +508,49 @@ def test_inventory_syncs_payloads_before_completion_marker(
         "directory:destination",
         f"directory:{tmp_path.name}",
     ]
+
+
+def test_inventory_publication_does_not_follow_replaced_destination(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    temporary = tmp_path / "temporary"
+    temporary.mkdir()
+    (temporary / "payload.json").write_text("payload", encoding="utf-8")
+    (temporary / "INVENTORY.COMPLETE").write_text("complete", encoding="utf-8")
+    destination = tmp_path / "destination"
+    displaced = tmp_path / "displaced"
+    unrelated = tmp_path / "unrelated"
+    unrelated.mkdir()
+    original_rename = os.rename
+    replaced = False
+
+    def replace_before_rename(
+        source: os.PathLike[str] | str,
+        target: os.PathLike[str] | str,
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        nonlocal replaced
+        if not replaced:
+            replaced = True
+            original_rename(destination, displaced)
+            destination.symlink_to(unrelated, target_is_directory=True)
+        original_rename(
+            source,
+            target,
+            src_dir_fd=src_dir_fd,
+            dst_dir_fd=dst_dir_fd,
+        )
+
+    monkeypatch.setattr(legacy_inventory.os, "rename", replace_before_rename)
+
+    with pytest.raises(InventoryError, match="changed during publication"):
+        legacy_inventory._publish_without_replace(temporary, destination)
+
+    assert list(unrelated.iterdir()) == []
+    assert (displaced / "payload.json").is_file()
+    assert not (displaced / "INVENTORY.COMPLETE").exists()
 
 
 def test_hash_manifest_metadata_is_rechecked_after_parsing(
@@ -678,6 +749,30 @@ def test_inventory_detects_hash_mismatch_missing_target_and_duplicate_reports(
     assert duplicates[0]["classification"] == "duplicate_identity_possible_stale_history"
     diagnostics = _ndjson(output / "diagnostics.ndjson")
     assert any(item["error"] == "possible_stale_history" for item in diagnostics)
+
+
+def test_inventory_marks_unreadable_declared_hash_targets_as_opaque(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "target.bin").write_bytes(b"target")
+    (source / "REPORT.SHA256").write_text(
+        f"{'0' * 64}  target.bin\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        legacy_inventory,
+        "_verify_declared_hash",
+        lambda *_args: ("unreadable_target", None, None),
+    )
+
+    output = tmp_path / "inventory"
+    build_inventory(source, output)
+
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["coverage"]["opaque_path_list"] == ["REPORT.SHA256"]
+    assert (output / "INVENTORY.PARTIAL").is_file()
+    assert not (output / "INVENTORY.COMPLETE").exists()
 
 
 def test_inventory_uses_nearest_package_subtree_for_cluster_artifacts(tmp_path: Path) -> None:

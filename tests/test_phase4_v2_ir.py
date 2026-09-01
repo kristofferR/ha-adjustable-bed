@@ -391,6 +391,32 @@ def test_universe_groups_duplicate_bindings_without_pairwise_expansion() -> None
     assert len(duplicates[0].binding_ids) == 101
 
 
+def test_universe_caches_shared_spaces_and_bounds_aggregate_expansion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = _document()
+    protocols = data["protocols"]
+    assert isinstance(protocols, dict)
+    protocols["secondary"] = {"variant_space": "variants"}
+    document = _load(data)
+    profile_calls = 0
+    original_profiles = ir_model.VariantSpace.profiles
+
+    def counted_profiles(space: ir_model.VariantSpace) -> tuple[ir_model.Profile, ...]:
+        nonlocal profile_calls
+        profile_calls += 1
+        return original_profiles(space)
+
+    monkeypatch.setattr(ir_model.VariantSpace, "profiles", counted_profiles)
+    monkeypatch.setattr(ir_model, "_MAX_UNIVERSE_PROFILE_REFERENCES", 7)
+
+    with pytest.raises(IRValidationError) as caught:
+        validate_universe(document)
+
+    assert caught.value.diagnostics[0].code == "universe_too_large"
+    assert profile_calls == 1
+
+
 def test_loader_is_strict_and_rejects_duplicate_definition_ids() -> None:
     payload = json.dumps(_document())
     payload = payload.replace(

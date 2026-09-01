@@ -711,7 +711,7 @@ class AppendOnlyLedger:
         self._entries: list[LedgerEntry] = []
         self._decided_roots: set[str] = set()
         self._validate_graph()
-        self._identity_index = self._build_identity_index()
+        self._reuse_source_index = self._build_reuse_source_index()
         for entry in entries:
             self._append_existing(entry)
         if self.head_id != expected_head_id:
@@ -792,12 +792,17 @@ class AppendOnlyLedger:
             if rebuilt != item or rebuilt.content_id != proof_id:
                 _fail(f"proof {proof_id} does not reproduce from its pinned roots")
 
-    def _build_identity_index(
+    def _build_reuse_source_index(
         self,
     ) -> dict[tuple[str, str, str, str, str], tuple[ApplicationRoot, ...]]:
         grouped: dict[tuple[str, str, str, str, str], list[ApplicationRoot]] = {}
         for item in self._roots.values():
-            if isinstance(item, ApplicationRoot):
+            if (
+                isinstance(item, ApplicationRoot)
+                and item.automatic_reuse_eligible
+                and item.content_id in self._trusted_direct_audits
+                and item.content_id in self._trusted_inventory_receipts
+            ):
                 grouped.setdefault(item.executable_identity, []).append(item)
         return {
             identity: tuple(sorted(items, key=lambda item: item.content_id))
@@ -816,7 +821,11 @@ class AppendOnlyLedger:
             _fail("decision target root is not registered")
         if decision.target_root_id in self._decided_roots:
             _fail("an immutable application root already has a ledger decision")
-        candidate_roots = self._identity_index.get(target.executable_identity, ())
+        eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
+        if eligible_sources and eligible_sources[0].content_id == target.content_id:
+            candidate_roots = eligible_sources[1:2]
+        else:
+            candidate_roots = eligible_sources[:1]
         expected, expected_proof = _route_application_root_validated(
             target,
             candidate_roots,

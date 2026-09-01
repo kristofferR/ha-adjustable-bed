@@ -885,6 +885,21 @@ def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
         destination.mkdir()
     except FileExistsError as err:
         raise InventoryError(f"output directory appeared during scan: {destination}") from err
+    try:
+        destination_descriptor = os.open(
+            destination,
+            os.O_RDONLY
+            | os.O_DIRECTORY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0),
+        )
+    except OSError as err:
+        raise InventoryError(
+            f"new output directory could not be pinned safely: {destination}"
+        ) from err
+    if not _directory_descriptor_matches_path(destination_descriptor, destination):
+        os.close(destination_descriptor)
+        raise InventoryError(f"new output directory changed before publication: {destination}")
     children = sorted(
         temp_dir.iterdir(), key=lambda path: (path.name.startswith("INVENTORY."), path.name)
     )
@@ -893,18 +908,36 @@ def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
         payloads = [child for child in children if child != marker]
         for child in payloads:
             _fsync_path(child)
-            child.rename(destination / child.name)
-        _fsync_directory(destination)
+            os.rename(child, child.name, dst_dir_fd=destination_descriptor)
+        os.fsync(destination_descriptor)
+        if not _directory_descriptor_matches_path(destination_descriptor, destination):
+            raise InventoryError(f"output directory changed during publication: {destination}")
         if marker is not None:
             _fsync_path(marker)
-            marker.rename(destination / marker.name)
-            _fsync_directory(destination)
+            os.rename(marker, marker.name, dst_dir_fd=destination_descriptor)
+            os.fsync(destination_descriptor)
+        if not _directory_descriptor_matches_path(destination_descriptor, destination):
+            raise InventoryError(f"output directory changed during publication: {destination}")
         _fsync_directory(destination.parent)
         temp_dir.rmdir()
     except OSError as err:
         raise InventoryError(
             f"publication was interrupted; incomplete output retained at {destination}"
         ) from err
+    finally:
+        os.close(destination_descriptor)
+
+
+def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
+    opened = os.fstat(descriptor)
+    try:
+        current = path.lstat()
+    except OSError:
+        return False
+    return stat.S_ISDIR(current.st_mode) and (opened.st_dev, opened.st_ino) == (
+        current.st_dev,
+        current.st_ino,
+    )
 
 
 def _fsync_path(path: Path) -> None:
@@ -1166,6 +1199,7 @@ def build_inventory(
                         record = _report_record(entry, absolute_path)
                     except (
                         OSError,
+                        RecursionError,
                         UnicodeError,
                         ValueError,
                         ObservedFileChangedError,
@@ -1260,8 +1294,18 @@ def build_inventory(
         opaque_paths.update(
             diagnostic.path
             for diagnostic in diagnostics
-            if diagnostic.operation in {"parse_analysis_json", "read_declared_hashes"}
-            and diagnostic.error in {"OSError", "PermissionError", "ObservedFileChangedError"}
+            if (
+                diagnostic.operation in {"parse_analysis_json", "read_declared_hashes"}
+                and diagnostic.error
+                in {"OSError", "PermissionError", "ObservedFileChangedError"}
+            )
+            or (
+                diagnostic.operation.startswith("verify_declared_hash_line:")
+                and (
+                    diagnostic.error == "unreadable_target"
+                    or diagnostic.error.startswith("filesystem_error:")
+                )
+            )
         )
         manifest: dict[str, object] = {
             "schema": MANIFEST_SCHEMA,
