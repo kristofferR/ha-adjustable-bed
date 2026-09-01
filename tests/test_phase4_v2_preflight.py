@@ -653,6 +653,27 @@ def test_cache_detects_member_corruption(tmp_path: Path) -> None:
         cache.verify(result.artifact_digest)
 
 
+def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    object_dir = cache.store(result)
+    manifest = json.loads((object_dir / "manifest.json").read_bytes())
+    manifest["members"] = []
+    manifest_bytes = legacy_preflight._canonical_json(manifest)
+    (object_dir / "manifest.json").write_bytes(manifest_bytes)
+    (object_dir / "OBJECT.COMPLETE").write_text(
+        f"{hashlib.sha256(manifest_bytes).hexdigest()}  manifest.json\n",
+        encoding="utf-8",
+    )
+    for member in (object_dir / "members").iterdir():
+        member.unlink()
+
+    with pytest.raises(CacheIntegrityError, match="member manifest"):
+        cache.verify(result.artifact_digest)
+
+
 def test_cache_object_is_published_by_atomic_directory_rename(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

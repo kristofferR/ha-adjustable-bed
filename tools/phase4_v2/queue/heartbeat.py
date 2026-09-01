@@ -6,7 +6,7 @@ import math
 from collections.abc import Callable
 from threading import Event
 
-from .core import Lease, Queue
+from .core import Lease, Queue, _validate_ttl
 
 
 def run_heartbeat(
@@ -19,8 +19,7 @@ def run_heartbeat(
     on_renewed: Callable[[Lease], None] | None = None,
 ) -> Lease:
     """Renew until stopped, without requiring a model or mutating work output."""
-    if ttl_seconds < 1:
-        raise ValueError("ttl_seconds must be positive")
+    _validate_ttl(ttl_seconds)
     if (
         not math.isfinite(interval_seconds)
         or interval_seconds <= 0
@@ -28,6 +27,11 @@ def run_heartbeat(
     ):
         raise ValueError("heartbeat interval must be positive and shorter than the lease TTL")
     current = lease
+    if stop.is_set():
+        return current
+    current = queue.renew(current, ttl_seconds=ttl_seconds)
+    if on_renewed is not None:
+        on_renewed(current)
     while not stop.wait(interval_seconds):
         current = queue.renew(current, ttl_seconds=ttl_seconds)
         if on_renewed is not None:

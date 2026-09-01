@@ -71,6 +71,97 @@ def _empty_current_ir() -> dict[str, object]:
     }
 
 
+def _complete_analysis_report(
+    *,
+    artifact_digest: str = "0" * 64,
+    package_id: str = "example.package",
+    version_code: str = "123",
+    version_name: str = "1.2.3",
+) -> dict[str, object]:
+    gates = (
+        "identity_verified",
+        "stack_coverage",
+        "artifact_inventory",
+        "decompiler_warnings_resolved",
+        "search_passes_recorded",
+        "transport_callsites_dispositioned",
+        "protocol_candidates_dispositioned",
+        "control_actions_traced",
+        "command_rows_complete",
+        "test_vectors_reproducible",
+        "feature_domains_searched",
+        "second_pass_clean",
+        "variant_reconciliation",
+        "schema_validation",
+        "report_agreement",
+        "cleanroom_isolation",
+        "uncertainties_actionable",
+    )
+    return {
+        "schema_revision": "phase4-analysis-v1.12-2026-07-26",
+        "status": "COMPLETE",
+        "artifact": {
+            "app_name": "Synthetic fixture",
+            "package_id": package_id,
+            "version_name": version_name,
+            "version_code": version_code,
+            "artifact_set_sha256": artifact_digest,
+            "files": [{"file": "base.apk", "size": 1, "sha256": "f" * 64}],
+            "signer_certificate_sha256": ["9" * 64],
+            "source": "synthetic fixture",
+        },
+        "analyst": {
+            "identity": "synthetic",
+            "prompt_revision": "synthetic",
+            "started_at": "2026-01-01T00:00:00Z",
+            "completed_at": "2026-01-01T00:00:01Z",
+        },
+        "tool_coverage": [
+            {
+                "tool": "synthetic",
+                "version": "1",
+                "purpose": "validation fixture",
+                "status": "COMPLETE",
+            }
+        ],
+        "application_stacks": [
+            {
+                "stack": "android",
+                "present": True,
+                "coverage": "COMPLETE",
+                "evidence": ["synthetic"],
+            }
+        ],
+        "variant_inventory": [],
+        "candidate_ledger": [
+            {
+                "id": "candidate-1",
+                "category": "transport",
+                "source": "synthetic",
+                "disposition": "DEAD/UNUSED",
+                "evidence": ["synthetic"],
+            }
+        ],
+        "protocols": [],
+        "test_vectors": [],
+        "evidence": [
+            {
+                "id": "evidence-1",
+                "claim": "Synthetic fixture",
+                "paths": ["ANALYSIS.md"],
+                "confidence": "VERIFIED",
+            }
+        ],
+        "completion_gates": [
+            {"gate": gate, "result": "PASS", "evidence": ["synthetic"]}
+            for gate in gates
+        ],
+        "limitations": ["No reachable protocol exists in this synthetic fixture."],
+        "blockers": [],
+        "deferred_external_validation": [],
+    }
+
+
 def _valid_bundle(tmp_path: Path) -> tuple[Path, dict[str, bytes]]:
     report = tmp_path / "report"
     scripts = report / "reproducers"
@@ -78,7 +169,7 @@ def _valid_bundle(tmp_path: Path) -> tuple[Path, dict[str, bytes]]:
     members = {
         "ANALYSIS.md": b"Synthetic validation fixture.\n",
         "SEARCH_LOG.md": b"Synthetic validation fixture.\n",
-        "analysis.json": b'{"schema_revision":"synthetic-v1","status":"COMPLETE"}\n',
+        "analysis.json": _json_bytes(_complete_analysis_report()),
         "reproducers/vector.py": b"# Stored evidence only. The validator never executes this.\n",
     }
     for relative, data in members.items():
@@ -150,6 +241,15 @@ def _bound_bundle(
         "inputs/schema.json": _json_bytes(schema_document()),
         _EVIDENCE_MEMBER: evidence,
     }
+    members["analysis.json"] = _json_bytes(
+        _complete_analysis_report(
+            artifact_digest=artifact_digest,
+            package_id="example.package",
+            version_code="123",
+            version_name="1.2.3",
+        )
+    )
+    (report / "analysis.json").write_bytes(members["analysis.json"])
     for relative, data in inputs.items():
         destination = report / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -442,6 +542,53 @@ def test_pinned_dependencies_and_evidence_anchors_are_reproduced(tmp_path: Path)
     assert first.to_json() == second.to_json()
 
 
+@pytest.mark.parametrize(
+    ("mutation", "expected_code"),
+    [
+        (lambda report: report.update(status="BLOCKED"), "FROZEN_REPORT_ANALYSIS_INVALID"),
+        (lambda report: report.pop("completion_gates"), "FROZEN_REPORT_ANALYSIS_INVALID"),
+        (
+            lambda report: report["artifact"].update(package_id="other.package"),
+            "FROZEN_REPORT_IDENTITY_MISMATCH",
+        ),
+    ],
+)
+def test_bound_profile_requires_complete_schema_valid_identity_bound_analysis(
+    tmp_path: Path, mutation: object, expected_code: str
+) -> None:
+    report, members, pins, _ = _bound_bundle(tmp_path)
+    analysis = json.loads(members["analysis.json"])
+    assert callable(mutation)
+    mutation(analysis)
+    replacement = _json_bytes(analysis)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_bound(report, pins)
+
+    assert expected_code in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize("member", ["ANALYSIS.md", "SEARCH_LOG.md", "reproducers/vector.py"])
+def test_bound_profile_requires_every_frozen_report_artifact(
+    tmp_path: Path, member: str
+) -> None:
+    report, members, pins, _ = _bound_bundle(tmp_path)
+    del members[member]
+    (report / member).unlink()
+    _write_manifest(report, members)
+
+    receipt = _validate_bound(report, pins)
+
+    expected = (
+        "FROZEN_REPORT_REPRODUCER_MISSING"
+        if member.startswith("reproducers/")
+        else "FROZEN_REPORT_MEMBER_MISSING"
+    )
+    assert expected in {item.code for item in receipt.diagnostics}
+
+
 def test_package_output_profile_attests_exact_six_pin_contract(tmp_path: Path) -> None:
     report, _, pins, _ = _package_bound_bundle(tmp_path)
 
@@ -671,6 +818,87 @@ def test_package_profile_rejects_placeholder_root_result(tmp_path: Path) -> None
     receipt = _validate_package_bound(report, pins)
 
     assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize(
+    ("route", "payload"),
+    [
+        ("FULL_ANALYSIS", {"placeholder": True}),
+        ("FULL_ANALYSIS", {"semantic_root_sha256": "not-a-digest"}),
+        ("EXACT_REUSE", {"placeholder": True}),
+        (
+            "EXACT_REUSE",
+            {
+                "inherited_semantic_root_sha256": "c" * 64,
+                "source_root_id": "not-a-digest",
+            },
+        ),
+    ],
+)
+def test_package_profile_rejects_invalid_route_payload(
+    tmp_path: Path, route: str, payload: dict[str, object]
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": route,
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    plan = {"route": route, "reuse": root} if route == "EXACT_REUSE" else root
+    result_name = "reuse" if route == "EXACT_REUSE" else "analysis"
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[plan],
+        root_results=[
+            {**root, "result": {result_name: payload, "status": "COMPLETE"}}
+        ],
+    )
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_accepts_typed_exact_reuse_result(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "EXACT_REUSE",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[{"route": "EXACT_REUSE", "reuse": root}],
+        root_results=[
+            {
+                **root,
+                "result": {
+                    "reuse": {
+                        "inherited_semantic_root_sha256": "c" * 64,
+                        "source_root_id": "d" * 64,
+                    },
+                    "status": "COMPLETE",
+                },
+            }
+        ],
+    )
+    package_report = json.loads(members["analysis.json"])
+    package_report["package_local_domains"] = {
+        name: {"status": "COMPLETE"}
+        for name in package_report["package_local_domains"]
+    }
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    assert _validate_package_bound(report, pins).accepted is True
 
 
 @pytest.mark.parametrize(
@@ -1976,7 +2204,7 @@ def test_member_read_is_bound_to_initial_snapshot(tmp_path: Path) -> None:
             report,
             validator_bundle.PurePosixPath("analysis.json"),
             snapshot_nodes,
-            max_bytes=1024,
+            max_bytes=64 * 1024,
         )
 
 

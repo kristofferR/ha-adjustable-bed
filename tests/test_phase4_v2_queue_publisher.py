@@ -256,15 +256,10 @@ def test_publication_guard_prevents_repaired_unit_retry(
     assert queue.status(lease.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
 
 
-class _StopAfterOneRenewal(Event):
-    def __init__(self) -> None:
-        super().__init__()
-        self.calls = 0
-
+class _StopOnFirstWait(Event):
     def wait(self, timeout: float | None = None) -> bool:
         del timeout
-        self.calls += 1
-        return self.calls > 1
+        return True
 
 
 def test_heartbeat_renews_without_tracker_generation_churn(
@@ -277,7 +272,7 @@ def test_heartbeat_renews_without_tracker_generation_churn(
     current = run_heartbeat(
         queue,
         lease,
-        _StopAfterOneRenewal(),
+        _StopOnFirstWait(),
         ttl_seconds=60,
         interval_seconds=10,
         on_renewed=renewed.append,

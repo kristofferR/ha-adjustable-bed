@@ -1280,7 +1280,7 @@ class ArtifactCache:
             if raw.get("schema") != CACHE_SCHEMA or raw.get("artifact_digest") != artifact_digest:
                 raise CacheIntegrityError("cache artifact identity mismatch")
             raw_members = raw.get("members")
-            if not isinstance(raw_members, list):
+            if not isinstance(raw_members, list) or not raw_members:
                 raise CacheIntegrityError("cache member manifest is invalid")
             members = [_validate_cached_member(member) for member in raw_members]
             if any(member["size"] > self.limits.max_member_bytes for member in members):

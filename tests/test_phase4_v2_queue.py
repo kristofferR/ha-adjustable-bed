@@ -104,6 +104,19 @@ def test_enqueue_rejects_invalid_priority_before_opening_database(
     assert not queue.database.exists()
 
 
+@pytest.mark.parametrize("ttl", [True, 1.0, 2**31, 2**63])
+def test_claim_and_renew_reject_unbounded_ttl(queue: Queue, ttl: object) -> None:
+    _enqueue(queue, "package-a")
+
+    with pytest.raises(ValueError, match="ttl_seconds must be a bounded positive integer"):
+        queue.claim("worker-a", ttl_seconds=ttl)  # type: ignore[arg-type]
+
+    lease = queue.claim("worker-a")
+    assert lease is not None
+    with pytest.raises(ValueError, match="ttl_seconds must be a bounded positive integer"):
+        queue.renew(lease, ttl_seconds=ttl)  # type: ignore[arg-type]
+
+
 def test_initialize_durably_publishes_attempt_root_before_database_pin(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

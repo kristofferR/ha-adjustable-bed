@@ -219,6 +219,28 @@ def test_cli_claim_checkpoint_finish_status_and_render(
     assert "<!-- phase4-v2-tracker:start" in capsys.readouterr().out
 
 
+def test_cli_rejects_ttl_outside_sqlite_range(
+    queue: Queue, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _enqueue(queue, "package-a")
+
+    assert (
+        main(
+            _args(
+                queue,
+                "claim",
+                "--owner",
+                "worker-a",
+                "--ttl-seconds",
+                str(2**63),
+            )
+        )
+        == 2
+    )
+
+    assert "ttl_seconds must be a bounded positive integer" in capsys.readouterr().err
+
+
 def test_cli_accepted_finish_fails_closed_on_input_digest_mismatch(
     queue: Queue, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

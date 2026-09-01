@@ -7,8 +7,10 @@ import json
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Protocol, TypeGuard, cast
+
+from jsonschema.validators import Draft202012Validator
 
 from tools.phase4_v2.ir import (
     SCHEMA_REVISION,
@@ -61,6 +63,12 @@ _STACK_ROUTES: dict[str, tuple[str, ...]] = {
     "react_native": ("react-native-bundle",),
     "shipped_bundle": ("shipped-bundle",),
 }
+_ANALYSIS_SCHEMA = json.loads(
+    (Path(__file__).parents[3] / "docs/apk-analysis/analysis.schema.json").read_text(
+        encoding="utf-8"
+    )
+)
+_ANALYSIS_VALIDATOR = Draft202012Validator(_ANALYSIS_SCHEMA)
 
 
 class MemberNode(Protocol):
@@ -317,14 +325,18 @@ def validate_binding_contract(
         path_is_safe,
         diagnostics,
     )
+    _validate_frozen_report_members(nodes, diagnostics)
     if isinstance(expected_dependencies, PackageDependencyPins):
-        _validate_frozen_report_members(nodes, diagnostics)
         _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
         _validate_package_report(
             dependencies,
             json_documents,
             artifact_identity,
             diagnostics,
+        )
+    else:
+        _validate_frozen_analysis_report(
+            json_documents.get("analysis.json"), artifact_identity, diagnostics
         )
 
     owners, validated_members = _validate_evidence_members(
@@ -371,6 +383,33 @@ def _validate_frozen_report_members(
         for member, node in nodes.items()
     ):
         diagnostics.append(BindingDiagnostic("FROZEN_REPORT_REPRODUCER_MISSING", "reproducers"))
+
+
+def _validate_frozen_analysis_report(
+    report: object,
+    artifact_identity: ArtifactIdentityAttestation | None,
+    diagnostics: list[BindingDiagnostic],
+) -> None:
+    report_path = "analysis.json"
+    if not isinstance(report, dict) or report.get("status") != "COMPLETE":
+        diagnostics.append(BindingDiagnostic("FROZEN_REPORT_ANALYSIS_INVALID", report_path))
+        return
+    if not _ANALYSIS_VALIDATOR.is_valid(report):
+        diagnostics.append(BindingDiagnostic("FROZEN_REPORT_ANALYSIS_INVALID", report_path))
+        return
+    artifact = cast(dict[str, object], report["artifact"])
+    if artifact_identity is None or (
+        artifact.get("package_id"),
+        artifact.get("version_code"),
+        artifact.get("version_name"),
+        artifact.get("artifact_set_sha256"),
+    ) != (
+        artifact_identity.package_name,
+        artifact_identity.version_code,
+        artifact_identity.version_name,
+        artifact_identity.artifact_digest,
+    ):
+        diagnostics.append(BindingDiagnostic("FROZEN_REPORT_IDENTITY_MISMATCH", report_path))
 
 
 def _validate_current_ir_and_schema(
@@ -1023,16 +1062,25 @@ def _valid_root_result(route: object, result: object) -> bool:
             and result["status"] == "BLOCKED"
             and _canonical_string_list(result["blockers"], require_nonempty=True) is not None
         )
-    if not isinstance(route, str):
-        return False
-    payload_name = {"EXACT_REUSE": "reuse", "FULL_ANALYSIS": "analysis"}.get(route)
-    return (
-        payload_name is not None
-        and _is_exact_object(result, {payload_name, "status"})
-        and result["status"] == "COMPLETE"
-        and isinstance(result[payload_name], dict)
-        and bool(result[payload_name])
-    )
+    if route == "FULL_ANALYSIS":
+        return (
+            _is_exact_object(result, {"analysis", "status"})
+            and result["status"] == "COMPLETE"
+            and _is_exact_object(result["analysis"], {"semantic_root_sha256"})
+            and _is_digest(result["analysis"]["semantic_root_sha256"])
+        )
+    if route == "EXACT_REUSE":
+        return (
+            _is_exact_object(result, {"reuse", "status"})
+            and result["status"] == "COMPLETE"
+            and _is_exact_object(
+                result["reuse"],
+                {"inherited_semantic_root_sha256", "source_root_id"},
+            )
+            and _is_digest(result["reuse"]["inherited_semantic_root_sha256"])
+            and _is_digest(result["reuse"]["source_root_id"])
+        )
+    return False
 
 
 def _preflight_artifact_sources(document: object | None) -> dict[str, str] | None:

@@ -30,6 +30,7 @@ _MAX_IDENTIFIER_LENGTH = 200
 _MAX_MATERIALIZED_PINS = 256
 _MIN_PRIORITY = -(2**31)
 _MAX_PRIORITY = 2**31 - 1
+_MAX_TTL_SECONDS = 2**31 - 1
 _INTERNAL_EVENT_TYPES = frozenset(
     {
         "CLAIMED",
@@ -2144,8 +2145,8 @@ def _validate_owner(owner: str) -> None:
 
 
 def _validate_ttl(ttl_seconds: int) -> None:
-    if ttl_seconds < 1:
-        raise ValueError("ttl_seconds must be positive")
+    if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= _MAX_TTL_SECONDS:
+        raise ValueError("ttl_seconds must be a bounded positive integer")
 
 
 def _bounded_materialization_values[PinT: (CapabilityPin, CompletionDependencyPin)](
