@@ -30,7 +30,7 @@ if TYPE_CHECKING:
         PackageExecutionPlan,
         ValidatedPackageOutput,
     )
-    from tools.phase4_v2.validator import ValidationReceipt
+    from tools.phase4_v2.validator import DependencyPins, EvidenceLineageTrust
 
 SCHEMA_REVISION = 2
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
@@ -1421,22 +1421,61 @@ class Queue:
         lease: Lease,
         *,
         execution_plan: PackageExecutionPlan,
-        receipt: ValidationReceipt,
-        trusted_validation_receipt_sha256: str,
+        report_root: Path,
+        trusted_dependencies: DependencyPins,
+        trusted_evidence_lineage: EvidenceLineageTrust,
     ) -> tuple[ValidatedPackageOutput, InputCheckedFinishResult]:
-        """Build and publish one reserved validated package output."""
+        """Validate report bytes, then publish one reserved package output."""
         from tools.phase4_v2.equivalence.plan import (
+            PACKAGE_REPORT_SCHEMA_SHA256,
             VALIDATED_PACKAGE_OUTPUT_REVISION,
             build_validated_package_output,
             freeze_package_execution_plan,
         )
+        from tools.phase4_v2.validator import (
+            DependencyPins,
+            PackageDependencyPins,
+            validate_report_bundle,
+        )
 
+        if type(trusted_dependencies) is not DependencyPins:
+            raise QueueConflictError("package validation requires exact trusted dependencies")
+        frozen = freeze_package_execution_plan(execution_plan)
+        target_preflight_sha256 = execution_plan.target_package_ref.preflight_sha256
+        if trusted_dependencies.preflight_sha256 != target_preflight_sha256:
+            raise QueueConflictError(
+                "trusted preflight does not match the package execution plan"
+            )
+        receipt = validate_report_bundle(
+            report_root,
+            expected_dependencies=PackageDependencyPins(
+                preflight_sha256=target_preflight_sha256,
+                ir_sha256=trusted_dependencies.ir_sha256,
+                schema_sha256=trusted_dependencies.schema_sha256,
+                corpus_sha256=trusted_dependencies.corpus_sha256,
+                execution_plan_sha256=frozen.digest,
+                report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
+            ),
+            expected_evidence_lineage=trusted_evidence_lineage,
+        )
+        receipt_sha256 = receipt.validation_receipt_sha256
+        if receipt_sha256 is None:
+            raise QueueConflictError("validator returned an unidentified package receipt")
         output = build_validated_package_output(
             execution_plan=execution_plan,
             receipt=receipt,
-            trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
+            trusted_validation_receipt_sha256=receipt_sha256,
         )
-        frozen = freeze_package_execution_plan(execution_plan)
+        if output.execution_plan_id != freeze_package_execution_plan(execution_plan).digest:
+            result = self.finish(
+                lease,
+                TerminalOutcome.INPUT_MISMATCH,
+                output_digest=output.content_id,
+            )
+            return output, InputCheckedFinishResult(
+                disposition=InputCheckedFinishDisposition.INPUT_MISMATCH,
+                finish_result=result,
+            )
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:

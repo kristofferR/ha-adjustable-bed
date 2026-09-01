@@ -11,11 +11,12 @@ from pathlib import Path
 import pytest
 
 import tools.phase4_v2.equivalence.plan as plan_module
-import tools.phase4_v2.equivalence.queue as plan_queue_module
+import tools.phase4_v2.validator as validator_module
 from tools.phase4_v2.equivalence.core import (
     EQUIVALENCE_SCHEMA_REVISION,
     LEDGER_DECISION_REVISION,
     ApplicationRoot,
+    EquivalenceError,
     ExtractorCapability,
     LedgerDecision,
     Route,
@@ -72,6 +73,9 @@ from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
     VALIDATOR_REVISION,
+    DependencyPins,
+    EvidenceLineageTrust,
+    PackageDependencyPins,
     ValidationReceipt,
 )
 from tools.phase4_v2.validator.binding import (
@@ -337,6 +341,52 @@ def _receipt(plan: PackageExecutionPlan, *, bundle_sha256: str = SHA_D) -> Valid
     )
 
 
+TRUSTED_DEPENDENCIES = DependencyPins(
+    preflight_sha256=SHA_C,
+    ir_sha256=SHA_B,
+    schema_sha256=SHA_E,
+    corpus_sha256=SHA_A,
+)
+TRUSTED_EVIDENCE_LINEAGE = EvidenceLineageTrust(
+    payload=b"{}",
+    expected_manifest_sha256=SHA_0,
+    trusted_producers=(),
+)
+
+
+def _stub_valid_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    plan: PackageExecutionPlan,
+) -> tuple[Path, ValidationReceipt]:
+    report_root = tmp_path / "report"
+    report_root.mkdir(exist_ok=True)
+    receipt = _receipt(plan)
+
+    def validate(
+        received_root: Path,
+        *,
+        expected_dependencies: DependencyPins | PackageDependencyPins | None = None,
+        expected_evidence_lineage: EvidenceLineageTrust | None = None,
+        allow_unbound: bool = False,
+    ) -> ValidationReceipt:
+        assert received_root == report_root
+        assert expected_dependencies == PackageDependencyPins(
+            preflight_sha256=SHA_C,
+            ir_sha256=SHA_B,
+            schema_sha256=SHA_E,
+            corpus_sha256=SHA_A,
+            execution_plan_sha256=freeze_package_execution_plan(plan).digest,
+            report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
+        )
+        assert expected_evidence_lineage is TRUSTED_EVIDENCE_LINEAGE
+        assert allow_unbound is False
+        return receipt
+
+    monkeypatch.setattr(validator_module, "validate_report_bundle", validate)
+    return report_root, receipt
+
+
 @pytest.fixture
 def queue(tmp_path: Path) -> Queue:
     instance = Queue(tmp_path / "state" / "queue.sqlite3", tmp_path / "attempts")
@@ -526,9 +576,13 @@ def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> Non
     assert queue.status(materialized.unit_id) is WorkUnitStatus.READY
 
 
-def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queue) -> None:
+def test_finish_builds_bound_output_and_publishes_its_exact_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, plan)
     assert receipt.validation_receipt_sha256 is not None
     _publish_prerequisites(queue, plan)
     materialized = materialize_package_execution_plan(queue, plan)
@@ -540,8 +594,9 @@ def test_finish_builds_bound_output_and_publishes_its_exact_identity(queue: Queu
         queue,
         lease,
         execution_plan=plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+        report_root=report_root,
+        trusted_dependencies=TRUSTED_DEPENDENCIES,
+        trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
     )
 
     assert finished.queue_result.disposition is FinishDisposition.COMPLETED
@@ -569,17 +624,48 @@ def test_validated_package_output_rejects_generic_completion(queue: Queue) -> No
     assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
 
 
-def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) -> None:
+def test_finish_rejects_missing_report_before_publication(
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
+    plan = _full_plan()
+    _publish_prerequisites(queue, plan)
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
+
+    with pytest.raises(EquivalenceError, match="validated artifact identity"):
+        finish_package_execution_plan(
+            queue,
+            lease,
+            execution_plan=plan,
+            report_root=tmp_path / "missing-report",
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
+        )
+
+    assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
+    with sqlite3.connect(queue.database) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
+            (lease.unit_id,),
+        ).fetchone()[0] == 0
+
+
+def test_finish_rejects_plan_drift_without_an_accepted_completion(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    queue: Queue,
+) -> None:
     original = _full_plan()
     changed = _full_plan(reason="changed_routing_evidence")
+    report_root, _ = _stub_valid_report(monkeypatch, tmp_path, changed)
     _publish_prerequisites(queue, original)
     materialized = materialize_package_execution_plan(queue, original)
     assert materialized is not None
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
-    receipt = _receipt(changed)
-    assert receipt.validation_receipt_sha256 is not None
-
     with pytest.raises(
         PackagePlanInputMismatchError, match="does not match the leased queue input"
     ) as raised:
@@ -587,8 +673,9 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) 
             queue,
             lease,
             execution_plan=changed,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=report_root,
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert raised.value.output.execution_plan_id == freeze_package_execution_plan(changed).digest
@@ -608,17 +695,18 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(queue: Queue) 
 
 def test_finish_fences_plan_mutation_while_output_is_built(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
     queue: Queue,
 ) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
+    report_root, receipt = _stub_valid_report(monkeypatch, tmp_path, plan)
     assert receipt.validation_receipt_sha256 is not None
     _publish_prerequisites(queue, plan)
     materialized = materialize_package_execution_plan(queue, plan)
     assert materialized is not None
     lease = queue.claim("package-worker")
     assert lease is not None and lease.unit_id == materialized.unit_id
-    original_builder = plan_queue_module.build_validated_package_output
+    original_builder = plan_module.build_validated_package_output
 
     def build_then_mutate(
         *,
@@ -635,20 +723,21 @@ def test_finish_fences_plan_mutation_while_output_is_built(
         return output
 
     monkeypatch.setattr(
-        plan_queue_module,
+        plan_module,
         "build_validated_package_output",
         build_then_mutate,
     )
 
     with pytest.raises(
-        PackagePlanInputMismatchError, match="changed while its output was being built"
+        PackagePlanInputMismatchError, match="does not match the leased queue input"
     ) as raised:
         finish_package_execution_plan(
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=report_root,
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.REPAIR_REQUIRED
@@ -742,8 +831,6 @@ def test_atomic_input_checked_finish_has_no_recovery_window(
 
 def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
-    assert receipt.validation_receipt_sha256 is not None
     queue.enqueue("unrelated", kind="test", input_digest=SHA_A)
     lease = queue.claim("worker")
     assert lease is not None
@@ -753,50 +840,34 @@ def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=Path("unused"),
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
 
-def test_wrong_lease_is_untouched_when_plan_mutates_during_output_build(
+def test_wrong_lease_is_untouched_before_report_validation(
     monkeypatch: pytest.MonkeyPatch,
     queue: Queue,
 ) -> None:
     plan = _full_plan()
-    receipt = _receipt(plan)
-    assert receipt.validation_receipt_sha256 is not None
     queue.enqueue("unrelated", kind="test", input_digest=SHA_A)
     lease = queue.claim("worker")
     assert lease is not None
-    original_builder = plan_queue_module.build_validated_package_output
 
-    def build_then_mutate(
-        *,
-        execution_plan: PackageExecutionPlan,
-        receipt: ValidationReceipt,
-        trusted_validation_receipt_sha256: str,
-    ) -> ValidatedPackageOutput:
-        output = original_builder(
-            execution_plan=execution_plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
-        )
-        object.__setattr__(plan, "package_local", _local_plan(version_name="1.8"))
-        return output
+    def unexpected_validation(*args: object, **kwargs: object) -> ValidationReceipt:
+        pytest.fail("wrong lease reached report validation")
 
-    monkeypatch.setattr(
-        plan_queue_module,
-        "build_validated_package_output",
-        build_then_mutate,
-    )
+    monkeypatch.setattr(validator_module, "validate_report_bundle", unexpected_validation)
 
     with pytest.raises(QueueConflictError, match="lease does not belong"):
         finish_package_execution_plan(
             queue,
             lease,
             execution_plan=plan,
-            receipt=receipt,
-            trusted_validation_receipt_sha256=receipt.validation_receipt_sha256,
+            report_root=Path("unused"),
+            trusted_dependencies=TRUSTED_DEPENDENCIES,
+            trusted_evidence_lineage=TRUSTED_EVIDENCE_LINEAGE,
         )
 
     assert queue.status("unrelated") is WorkUnitStatus.LEASED

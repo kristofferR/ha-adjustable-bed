@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from tools.phase4_v2.queue import (
     CapabilityPin as QueueCapabilityPin,
@@ -17,9 +18,8 @@ from tools.phase4_v2.queue import (
     Lease,
     Queue,
     QueueConflictError,
-    TerminalOutcome,
 )
-from tools.phase4_v2.validator import ValidationReceipt
+from tools.phase4_v2.validator import DependencyPins, EvidenceLineageTrust
 
 from .core import FrozenPackageRef
 from .plan import (
@@ -27,7 +27,6 @@ from .plan import (
     PackageExecutionPlan,
     PackagePlanStatus,
     ValidatedPackageOutput,
-    build_validated_package_output,
     freeze_package_execution_plan,
     package_queue_unit_id,
     package_validation_receipt_completion,
@@ -159,36 +158,22 @@ def finish_package_execution_plan(
     lease: Lease,
     *,
     execution_plan: PackageExecutionPlan,
-    receipt: ValidationReceipt,
-    trusted_validation_receipt_sha256: str,
+    report_root: Path,
+    trusted_dependencies: DependencyPins,
+    trusted_evidence_lineage: EvidenceLineageTrust,
 ) -> FinishedPackageWork:
-    """Build and publish an accepted package output from live trusted inputs."""
-    output = build_validated_package_output(
-        execution_plan=execution_plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
-    )
-    expected_unit_id = package_queue_unit_id(output.target_package_ref_id)
+    """Validate and publish a package report from live trusted inputs."""
+    frozen = freeze_package_execution_plan(execution_plan)
+    expected_unit_id = package_queue_unit_id(frozen.target_package_ref_id)
     if lease.unit_id != expected_unit_id:
         raise QueueConflictError("lease does not belong to the package execution plan")
-    frozen = freeze_package_execution_plan(execution_plan)
-    if output.execution_plan_id != frozen.digest:
-        result = queue.finish(
-            lease,
-            TerminalOutcome.INPUT_MISMATCH,
-            output_digest=output.content_id,
-        )
-        raise PackagePlanInputMismatchError(
-            "package plan changed while its output was being built",
-            output=output,
-            queue_result=result,
-        )
 
-    trusted_output, checked = queue.finish_validated_package_output(
+    output, checked = queue.finish_validated_package_output(
         lease,
         execution_plan=execution_plan,
-        receipt=receipt,
-        trusted_validation_receipt_sha256=trusted_validation_receipt_sha256,
+        report_root=report_root,
+        trusted_dependencies=trusted_dependencies,
+        trusted_evidence_lineage=trusted_evidence_lineage,
     )
     result = checked.finish_result
     if checked.disposition is InputCheckedFinishDisposition.INPUT_MISMATCH:
@@ -197,4 +182,4 @@ def finish_package_execution_plan(
             output=output,
             queue_result=result,
         )
-    return FinishedPackageWork(output=trusted_output, queue_result=result)
+    return FinishedPackageWork(output=output, queue_result=result)
