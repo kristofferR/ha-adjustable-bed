@@ -774,6 +774,8 @@ def test_package_profile_rejects_root_result_status_for_wrong_route(
     if route == "EXACT_REUSE":
         root_plan = {
             "reuse": {
+                "inherited_semantic_root_sha256": "c" * 64,
+                "source_root_id": "d" * 64,
                 "target_occurrence_identity_sha256": "b" * 64,
                 "target_root_id": "a" * 64,
             },
@@ -844,7 +846,18 @@ def test_package_profile_rejects_invalid_route_payload(
         "target_occurrence_identity_sha256": "b" * 64,
         "target_root_id": "a" * 64,
     }
-    plan = {"route": route, "reuse": root} if route == "EXACT_REUSE" else root
+    plan = (
+        {
+            "route": route,
+            "reuse": {
+                **root,
+                "inherited_semantic_root_sha256": "c" * 64,
+                "source_root_id": "d" * 64,
+            },
+        }
+        if route == "EXACT_REUSE"
+        else root
+    )
     result_name = "reuse" if route == "EXACT_REUSE" else "analysis"
     pins = _set_package_roots(
         report,
@@ -874,7 +887,16 @@ def test_package_profile_accepts_typed_exact_reuse_result(tmp_path: Path) -> Non
         members,
         pins,
         contract,
-        root_plans=[{"route": "EXACT_REUSE", "reuse": root}],
+        root_plans=[
+            {
+                "route": "EXACT_REUSE",
+                "reuse": {
+                    **root,
+                    "inherited_semantic_root_sha256": "c" * 64,
+                    "source_root_id": "d" * 64,
+                },
+            }
+        ],
         root_results=[
             {
                 **root,
@@ -902,6 +924,59 @@ def test_package_profile_accepts_typed_exact_reuse_result(tmp_path: Path) -> Non
 
 
 @pytest.mark.parametrize(
+    "changed_field",
+    ["inherited_semantic_root_sha256", "source_root_id"],
+)
+def test_package_profile_rejects_exact_reuse_result_from_unpinned_source(
+    tmp_path: Path, changed_field: str
+) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    root = {
+        "route": "EXACT_REUSE",
+        "target_occurrence_identity_sha256": "b" * 64,
+        "target_root_id": "a" * 64,
+    }
+    planned_reuse = {
+        **root,
+        "inherited_semantic_root_sha256": "c" * 64,
+        "source_root_id": "d" * 64,
+    }
+    reported_reuse = {
+        "inherited_semantic_root_sha256": "c" * 64,
+        "source_root_id": "d" * 64,
+        changed_field: "e" * 64,
+    }
+    pins = _set_package_roots(
+        report,
+        members,
+        pins,
+        contract,
+        root_plans=[{"route": "EXACT_REUSE", "reuse": planned_reuse}],
+        root_results=[
+            {
+                **root,
+                "result": {"reuse": reported_reuse, "status": "COMPLETE"},
+            }
+        ],
+    )
+    package_report = json.loads(members["analysis.json"])
+    package_report["package_local_domains"] = {
+        name: {"status": "COMPLETE"}
+        for name in package_report["package_local_domains"]
+    }
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_ROOT_SET_MISMATCH" in {
+        item.code for item in receipt.diagnostics
+    }
+
+
+@pytest.mark.parametrize(
     ("route", "result"),
     [
         ("EXACT_REUSE", {"status": "COMPLETE"}),
@@ -917,7 +992,18 @@ def test_package_profile_rejects_completed_root_without_substantive_result(
         "target_occurrence_identity_sha256": "b" * 64,
         "target_root_id": "a" * 64,
     }
-    plan = {"route": route, "reuse": root} if route == "EXACT_REUSE" else root
+    plan = (
+        {
+            "route": route,
+            "reuse": {
+                **root,
+                "inherited_semantic_root_sha256": "c" * 64,
+                "source_root_id": "d" * 64,
+            },
+        }
+        if route == "EXACT_REUSE"
+        else root
+    )
     pins = _set_package_roots(
         report,
         members,

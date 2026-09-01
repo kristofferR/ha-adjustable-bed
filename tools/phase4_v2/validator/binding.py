@@ -1017,7 +1017,9 @@ def _validate_package_report(
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_IDENTITY_MISMATCH", report_path))
 
 
-def _root_plan_identity(value: object) -> tuple[str, str, str] | None:
+def _root_plan_identity(
+    value: object,
+) -> tuple[str, str, str, str | None, str | None] | None:
     if not isinstance(value, dict):
         return None
     route = value.get("route")
@@ -1028,12 +1030,29 @@ def _root_plan_identity(value: object) -> tuple[str, str, str] | None:
         return None
     root_id = identity.get("target_root_id")
     occurrence = identity.get("target_occurrence_identity_sha256")
-    if not _is_digest(root_id) or not _is_digest(occurrence):
+    source_root_id = identity.get("source_root_id") if route == "EXACT_REUSE" else None
+    semantic_root = (
+        identity.get("inherited_semantic_root_sha256") if route == "EXACT_REUSE" else None
+    )
+    if (
+        not _is_digest(root_id)
+        or not _is_digest(occurrence)
+        or (route == "EXACT_REUSE" and not _is_digest(source_root_id))
+        or (route == "EXACT_REUSE" and not _is_digest(semantic_root))
+    ):
         return None
-    return cast(str, root_id), cast(str, occurrence), cast(str, route)
+    return (
+        cast(str, root_id),
+        cast(str, occurrence),
+        cast(str, route),
+        cast(str | None, source_root_id),
+        cast(str | None, semantic_root),
+    )
 
 
-def _root_result_identity(value: object) -> tuple[str, str, str] | None:
+def _root_result_identity(
+    value: object,
+) -> tuple[str, str, str, str | None, str | None] | None:
     if not isinstance(value, dict) or set(value) != {
         "result",
         "route",
@@ -1052,7 +1071,18 @@ def _root_result_identity(value: object) -> tuple[str, str, str] | None:
         or not _is_digest(occurrence)
     ):
         return None
-    return cast(str, root_id), cast(str, occurrence), cast(str, route)
+    reuse = result.get("reuse") if route == "EXACT_REUSE" and isinstance(result, dict) else None
+    return (
+        cast(str, root_id),
+        cast(str, occurrence),
+        cast(str, route),
+        cast(str, reuse["source_root_id"]) if isinstance(reuse, dict) else None,
+        (
+            cast(str, reuse["inherited_semantic_root_sha256"])
+            if isinstance(reuse, dict)
+            else None
+        ),
+    )
 
 
 def _valid_root_result(route: object, result: object) -> bool:

@@ -28,6 +28,9 @@ _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _MAX_IDENTIFIER_LENGTH = 200
 _MAX_MATERIALIZED_PINS = 256
+_MAX_EVENT_PAYLOAD_BYTES = 1024 * 1024
+_MAX_EVENT_PAYLOAD_DEPTH = 64
+_MAX_EVENT_PAYLOAD_NODES = 100_000
 _MIN_PRIORITY = -(2**31)
 _MAX_PRIORITY = 2**31 - 1
 _MAX_TTL_SECONDS = 2**31 - 1
@@ -67,6 +70,57 @@ class CompletionConflictError(QueueError):
 
 class InputDigestMismatchError(QueueError):
     """The accepted output was built from different immutable input."""
+
+
+def _encode_event_payload(payload: Mapping[str, object]) -> str:
+    nodes = 0
+    scalar_bytes = 0
+    stack: list[tuple[object, int]] = [(payload, 1)]
+    while stack:
+        value, depth = stack.pop()
+        nodes += 1
+        if nodes > _MAX_EVENT_PAYLOAD_NODES:
+            raise ValueError("event payload exceeds the node limit")
+        if isinstance(value, dict):
+            if depth > _MAX_EVENT_PAYLOAD_DEPTH:
+                raise ValueError("event payload exceeds the nesting limit")
+            if nodes + len(value) > _MAX_EVENT_PAYLOAD_NODES:
+                raise ValueError("event payload exceeds the node limit")
+            for key, child in value.items():
+                if not isinstance(key, str):
+                    raise ValueError("event payload object keys must be strings")
+                if len(key) > _MAX_EVENT_PAYLOAD_BYTES:
+                    raise ValueError("event payload exceeds the byte limit")
+                scalar_bytes += len(key.encode("utf-8"))
+                stack.append((child, depth + 1))
+        elif isinstance(value, (list, tuple)):
+            if depth > _MAX_EVENT_PAYLOAD_DEPTH:
+                raise ValueError("event payload exceeds the nesting limit")
+            if nodes + len(value) > _MAX_EVENT_PAYLOAD_NODES:
+                raise ValueError("event payload exceeds the node limit")
+            stack.extend((child, depth + 1) for child in value)
+        elif isinstance(value, str):
+            if len(value) > _MAX_EVENT_PAYLOAD_BYTES:
+                raise ValueError("event payload exceeds the byte limit")
+            scalar_bytes += len(value.encode("utf-8"))
+        elif value is None or type(value) in {bool, int, float}:
+            scalar_bytes += len(str(value))
+        else:
+            raise ValueError(f"event payload contains unsupported type: {type(value).__name__}")
+        if scalar_bytes > _MAX_EVENT_PAYLOAD_BYTES:
+            raise ValueError("event payload exceeds the byte limit")
+    try:
+        encoded = json.dumps(
+            payload,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    except (TypeError, ValueError, RecursionError) as error:
+        raise ValueError("event payload is not valid JSON") from error
+    if len(encoded.encode("utf-8")) > _MAX_EVENT_PAYLOAD_BYTES:
+        raise ValueError("event payload exceeds the byte limit")
+    return encoded
 
 
 class ExecutionMode(StrEnum):
@@ -1187,9 +1241,10 @@ class Queue:
         _validate_identifier(event_type, "event_type")
         if event_type in _INTERNAL_EVENT_TYPES:
             raise ValueError(f"event type is reserved for queue internals: {event_type}")
+        encoded = _encode_event_payload(payload or {})
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
-            self._append_event(connection, lease.attempt_id, event_type, payload or {})
+            self._append_encoded_event(connection, lease.attempt_id, event_type, encoded)
 
     def _checkpoint_internal(
         self,
@@ -1199,9 +1254,10 @@ class Queue:
     ) -> None:
         if event_type not in _INTERNAL_EVENT_TYPES:
             raise ValueError(f"event type is not reserved for queue internals: {event_type}")
+        encoded = _encode_event_payload(payload)
         with self._immediate() as connection:
             self._require_live_lease(connection, lease)
-            self._append_event(connection, lease.attempt_id, event_type, payload)
+            self._append_encoded_event(connection, lease.attempt_id, event_type, encoded)
 
     def finish(
         self,
@@ -2024,12 +2080,16 @@ class Queue:
         event_type: str,
         payload: Mapping[str, object],
     ) -> None:
-        encoded = json.dumps(
-            payload,
-            allow_nan=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
+        encoded = _encode_event_payload(payload)
+        Queue._append_encoded_event(connection, attempt_id, event_type, encoded)
+
+    @staticmethod
+    def _append_encoded_event(
+        connection: sqlite3.Connection,
+        attempt_id: str,
+        event_type: str,
+        encoded: str,
+    ) -> None:
         connection.execute(
             """
             INSERT INTO events(attempt_id, event_type, payload_json)

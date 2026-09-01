@@ -781,6 +781,43 @@ def test_inventory_marks_unreadable_declared_hash_targets_as_opaque(
     assert not (output / "INVENTORY.COMPLETE").exists()
 
 
+@pytest.mark.parametrize(
+    ("limit_name", "manifest_lines", "expected_error"),
+    [
+        (
+            "_MAX_HASH_MANIFEST_DECLARATIONS",
+            [f"{'0' * 64}  first.bin", f"{'1' * 64}  second.bin"],
+            "declaration_limit_exceeded",
+        ),
+        (
+            "_MAX_HASH_MANIFEST_DIAGNOSTICS",
+            ["invalid first line", "invalid second line"],
+            "diagnostic_limit_exceeded",
+        ),
+    ],
+)
+def test_inventory_marks_truncated_hash_manifests_as_partial(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    limit_name: str,
+    manifest_lines: list[str],
+    expected_error: str,
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "REPORT.SHA256").write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
+    monkeypatch.setattr(legacy_inventory, limit_name, 1)
+
+    output = tmp_path / "inventory"
+    result = build_inventory(source, output)
+
+    diagnostics = _ndjson(output / "diagnostics.ndjson")
+    assert any(item["error"] == expected_error for item in diagnostics)
+    assert result.completion_marker == "INVENTORY.PARTIAL"
+    assert (output / "INVENTORY.PARTIAL").is_file()
+    assert not (output / "INVENTORY.COMPLETE").exists()
+
+
 def test_inventory_uses_nearest_package_subtree_for_cluster_artifacts(tmp_path: Path) -> None:
     source = tmp_path / "legacy"
     cluster = source / "batch" / "cluster-011"

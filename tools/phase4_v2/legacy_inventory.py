@@ -1306,6 +1306,11 @@ def build_inventory(
                     or diagnostic.error.startswith("filesystem_error:")
                 )
             )
+            or (
+                diagnostic.operation == "parse_declared_hashes"
+                and diagnostic.error
+                in {"declaration_limit_exceeded", "diagnostic_limit_exceeded"}
+            )
         )
         manifest: dict[str, object] = {
             "schema": MANIFEST_SCHEMA,

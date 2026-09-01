@@ -319,6 +319,35 @@ def test_live_lease_renews_with_database_time(queue: Queue) -> None:
     queue.checkpoint(renewed, "REPORT_STARTED")
 
 
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ({"value": "x" * (1024 * 1024)}, "byte limit"),
+        ({"values": [None] * 100_000}, "node limit"),
+        ({"value": [[[[[[[[[[None]]]]]]]]]]}, "nesting limit"),
+    ],
+)
+def test_checkpoint_rejects_unbounded_payload_before_transaction(
+    monkeypatch: pytest.MonkeyPatch,
+    queue: Queue,
+    payload: dict[str, object],
+    message: str,
+) -> None:
+    _enqueue(queue, "package-a")
+    lease = queue.claim("chat-a")
+    assert lease is not None
+    if message == "nesting limit":
+        monkeypatch.setattr("tools.phase4_v2.queue.core._MAX_EVENT_PAYLOAD_DEPTH", 8)
+
+    def unexpected_transaction(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("checkpoint entered a transaction")
+
+    monkeypatch.setattr(queue, "_immediate", unexpected_transaction)
+
+    with pytest.raises(ValueError, match=message):
+        queue.checkpoint(lease, "REPORT_DATA", payload)
+
+
 def test_attempt_history_and_completion_rows_are_immutable(queue: Queue) -> None:
     _enqueue(queue, "package-a")
     queue.register_capability("validator", "validator-v1", "c" * 64)
