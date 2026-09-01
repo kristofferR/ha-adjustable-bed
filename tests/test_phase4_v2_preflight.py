@@ -629,6 +629,19 @@ def test_cache_object_is_published_by_atomic_directory_rename(
     assert (object_dir / "OBJECT.COMPLETE").is_file()
 
 
+def test_cache_rejects_inconsistent_artifact_identity_before_publication(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    inconsistent = replace(result, artifact_digest="0" * 64)
+    cache = ArtifactCache(tmp_path / "cache")
+
+    with pytest.raises(PreflightError, match="artifact digest does not match"):
+        cache.store(inconsistent)
+
+    assert not cache.root.exists()
+
+
 def test_preflight_derives_everything_from_one_sealed_source_read(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -710,6 +723,46 @@ def test_status_requires_object_and_enforces_terminal_transitions(tmp_path: Path
     cache.write_status(result.artifact_digest, "FAILED", pipeline_revision="pipeline-v3")
     with pytest.raises(PreflightError, match="transition"):
         cache.write_status(result.artifact_digest, "READY", pipeline_revision="pipeline-v3")
+
+
+def test_status_write_stays_in_pinned_root_during_path_replacement(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    status_root = cache.root / "status"
+    displaced_root = cache.root / "status-displaced"
+    outside_root = tmp_path / "outside-status"
+    revision = "pipeline-v1"
+    (outside_root / revision).mkdir(parents=True)
+    original_open = legacy_preflight.os.open
+    replaced = False
+
+    def replace_after_open(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal replaced
+        descriptor = original_open(path, flags, mode, dir_fd=dir_fd)
+        if not replaced and dir_fd is None and Path(path) == status_root:
+            replaced = True
+            status_root.rename(displaced_root)
+            status_root.symlink_to(outside_root, target_is_directory=True)
+        return descriptor
+
+    monkeypatch.setattr(legacy_preflight.os, "open", replace_after_open)
+
+    cache.write_status(result.artifact_digest, "READY", pipeline_revision=revision)
+
+    target_name = f"{result.artifact_digest}.json"
+    assert (displaced_root / revision / target_name).is_file()
+    assert not (outside_root / revision / target_name).exists()
 
 
 def test_preflight_rejects_delivery_compressed_size_before_read(tmp_path: Path) -> None:

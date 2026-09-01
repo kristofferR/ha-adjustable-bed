@@ -974,6 +974,19 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _open_status_directory(status_root: Path, pipeline_revision: str) -> int:
+    status_root_fd = os.open(status_root, _DIRECTORY_FLAGS)
+    try:
+        try:
+            os.mkdir(pipeline_revision, mode=0o700, dir_fd=status_root_fd)
+        except FileExistsError:
+            pass
+        os.fsync(status_root_fd)
+        return os.open(pipeline_revision, _DIRECTORY_FLAGS, dir_fd=status_root_fd)
+    finally:
+        os.close(status_root_fd)
+
+
 def _write_file_at(directory_fd: int, name: str, payload: bytes) -> None:
     descriptor = os.open(
         name,
@@ -1072,6 +1085,9 @@ class ArtifactCache:
         """Atomically store sealed bytes regardless of provisional routing state."""
         if not result.artifact_members:
             raise PreflightError("artifact cache requires at least one sealed APK member")
+        logical_members = [member.public_dict() for member in result.artifact_members]
+        if _digest_manifest("artifact", logical_members) != result.artifact_digest:
+            raise PreflightError("preflight result artifact digest does not match its members")
         self.root.mkdir(parents=True, exist_ok=True)
         _fsync_directory(self.root.parent)
         objects = self.root / "objects"
@@ -1271,10 +1287,8 @@ class ArtifactCache:
         status_root = self.root / "status"
         status_root.mkdir(exist_ok=True)
         status_dir = status_root / pipeline_revision
-        status_dir.mkdir(exist_ok=True)
         _fsync_directory(self.root)
-        _fsync_directory(status_root)
-        status_fd = os.open(status_dir, _DIRECTORY_FLAGS)
+        status_fd = _open_status_directory(status_root, pipeline_revision)
         fcntl.flock(status_fd, fcntl.LOCK_EX)
         target_name = f"{artifact_digest}.json"
         try:

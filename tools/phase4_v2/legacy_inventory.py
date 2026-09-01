@@ -1238,6 +1238,9 @@ def build_inventory(
         verify_unchanged(before, after)
 
         duplicate_groups = _duplicate_report_groups(report_records)
+        report_active_by_path = {
+            report.path: report.active_protected for report in report_records
+        }
         for group_number, group in enumerate(duplicate_groups, start=1):
             report_paths = group["report_paths"]
             assert isinstance(report_paths, list)
@@ -1248,10 +1251,7 @@ def build_inventory(
                         path=report_path,
                         operation=f"duplicate_report_identity:{group_number}",
                         error="possible_stale_history",
-                        active_protected=any(
-                            report.path == report_path and report.active_protected
-                            for report in report_records
-                        ),
+                        active_protected=report_active_by_path[report_path],
                     )
                 )
 

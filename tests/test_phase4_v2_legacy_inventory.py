@@ -737,7 +737,7 @@ def test_inventory_detects_hash_mismatch_missing_target_and_duplicate_reports(
     )
 
     output = tmp_path / "inventory"
-    build_inventory(source, output)
+    build_inventory(source, output, active_paths=["run-a"])
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["counts"]["duplicate_report_groups"] == 1
     assert manifest["counts"]["declared_hash_verification"] == {
@@ -748,7 +748,13 @@ def test_inventory_detects_hash_mismatch_missing_target_and_duplicate_reports(
     duplicates = _ndjson(output / "duplicate_reports.ndjson")
     assert duplicates[0]["classification"] == "duplicate_identity_possible_stale_history"
     diagnostics = _ndjson(output / "diagnostics.ndjson")
-    assert any(item["error"] == "possible_stale_history" for item in diagnostics)
+    duplicate_diagnostics = {
+        item["path"]: item
+        for item in diagnostics
+        if item["error"] == "possible_stale_history"
+    }
+    assert duplicate_diagnostics["run-a/report/analysis.json"]["active_protected"] is True
+    assert duplicate_diagnostics["run-b/report/analysis.json"]["active_protected"] is False
 
 
 def test_inventory_marks_unreadable_declared_hash_targets_as_opaque(
