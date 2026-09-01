@@ -528,6 +528,22 @@ def test_nonstandard_react_native_bundle_uses_hermes_header_for_routing(tmp_path
     assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
 
 
+def test_jsbundle_asset_uses_hermes_header_for_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "hermes.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr(
+            "assets/main.jsbundle",
+            legacy_preflight._HERMES_BYTECODE_MAGIC + b"fixture",
+        )
+
+    result = preflight_delivery([artifact])
+
+    assert {"react_native", "hermes"}.issubset(result.decision.stacks)
+    assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
+
+
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:
     artifact = tmp_path / "unknown.apk"
     _apk(artifact, "assets/unidentified.payload")
@@ -755,6 +771,47 @@ def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> No
 
     with pytest.raises(CacheIntegrityError, match="member manifest"):
         cache.verify(result.artifact_digest)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda members: members[1].update(name=members[0]["name"]), "not unique"),
+        (lambda members: members.reverse(), "not canonical"),
+    ],
+)
+def test_cache_rejects_noncanonical_logical_member_sets(
+    tmp_path: Path, mutate: object, message: str
+) -> None:
+    first = tmp_path / "base.apk"
+    second = tmp_path / "split.apk"
+    _native_apk(first)
+    _native_apk(second, "assets/split.js")
+    result = preflight_delivery([first, second])
+    cache = ArtifactCache(tmp_path / "cache")
+    object_dir = cache.store(result)
+    manifest = json.loads((object_dir / "manifest.json").read_bytes())
+    members = manifest["members"]
+    assert isinstance(members, list)
+    assert callable(mutate)
+    mutate(members)
+    logical = [
+        {"name": member["name"], "size": member["size"], "sha256": member["sha256"]}
+        for member in members
+    ]
+    tampered_digest = legacy_preflight._digest_manifest("artifact", logical)
+    manifest["artifact_digest"] = tampered_digest
+    manifest_bytes = legacy_preflight._canonical_json(manifest)
+    (object_dir / "manifest.json").write_bytes(manifest_bytes)
+    (object_dir / "OBJECT.COMPLETE").write_text(
+        f"{hashlib.sha256(manifest_bytes).hexdigest()}  manifest.json\n",
+        encoding="utf-8",
+    )
+    tampered_dir = object_dir.with_name(tampered_digest)
+    object_dir.rename(tampered_dir)
+
+    with pytest.raises(CacheIntegrityError, match=message):
+        cache.verify(tampered_digest)
 
 
 def test_cache_object_is_published_by_atomic_directory_rename(

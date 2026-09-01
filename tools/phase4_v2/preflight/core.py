@@ -573,7 +573,7 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
                 entry
                 for entry in entries
                 if entry.name.casefold().startswith("assets/")
-                and entry.name.casefold().endswith((".bundle", ".hermes", ".hbc"))
+                and entry.info.file_size >= len(_HERMES_BYTECODE_MAGIC)
             )
             hermes_bundle_names: set[str] = set()
             for bundle in candidate_bundles:
@@ -1420,6 +1420,11 @@ class ArtifactCache:
                 raise CacheIntegrityError("cache member manifest is invalid")
             members = [_validate_cached_member(member) for member in raw_members]
             self._check_limits([member["size"] for member in members])
+            logical_names = [member["name"] for member in members]
+            if len({name.casefold() for name in logical_names}) != len(logical_names):
+                raise CacheIntegrityError("cache logical member names are not unique")
+            if logical_names != sorted(logical_names, key=str.casefold):
+                raise CacheIntegrityError("cache logical member names are not canonical")
             try:
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             except OSError as err:

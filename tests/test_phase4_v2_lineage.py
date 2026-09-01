@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+from collections.abc import Iterator, Mapping
 from dataclasses import FrozenInstanceError
 
 import pytest
@@ -69,7 +70,7 @@ def _bind(
     expected_manifest_sha256: str | None = None,
     artifact_digest: str = _ARTIFACT_DIGEST,
     preflight_sha256: str = _PREFLIGHT_SHA256,
-    source_artifacts: dict[str, str] | None = None,
+    source_artifacts: Mapping[str, str] | None = None,
     producers: tuple[TrustedProducer, ...] = (_PRODUCER,),
 ) -> EvidenceLineageManifest:
     encoded = _canonical(value) if payload is None else payload
@@ -293,6 +294,27 @@ def test_trusted_producer_and_artifact_bounds_are_fail_closed(
     with pytest.raises(LineageValidationError) as artifacts:
         _bind(_manifest())
     assert _code(artifacts) == "trusted_source_artifact_limit_exceeded"
+
+
+class _LyingSourceMapping(Mapping[str, str]):
+    def __getitem__(self, key: str) -> str:
+        return "e" * 64
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(
+            f"split-{index:04d}.apk"
+            for index in range(lineage_module._MAX_ARTIFACT_MEMBERS + 1)
+        )
+
+    def __len__(self) -> int:
+        return 1
+
+
+def test_trusted_source_bound_does_not_rely_on_mapping_length() -> None:
+    with pytest.raises(LineageValidationError) as caught:
+        _bind(_manifest(), source_artifacts=_LyingSourceMapping())
+
+    assert _code(caught) == "trusted_source_artifact_limit_exceeded"
 
 
 def test_duplicate_trusted_producers_and_source_names_are_rejected() -> None:

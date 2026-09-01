@@ -1214,7 +1214,13 @@ class Queue:
             if updated.rowcount != 1:
                 raise StaleLeaseError(f"lease expired: {lease.unit_id}")
             renewed_row = connection.execute(
-                "SELECT expires_at FROM leases WHERE unit_id = ?", (lease.unit_id,)
+                """
+                SELECT live.expires_at, attempt.input_digest, attempt.workspace
+                FROM leases AS live
+                JOIN attempts AS attempt ON attempt.attempt_id = live.attempt_id
+                WHERE live.unit_id = ?
+                """,
+                (lease.unit_id,),
             ).fetchone()
             if renewed_row is None:
                 raise StaleLeaseError(f"lease disappeared while renewing: {lease.unit_id}")
@@ -1227,8 +1233,8 @@ class Queue:
                 owner=lease.owner,
                 fencing_token=lease.fencing_token,
                 expires_at=expires_at,
-                input_digest=lease.input_digest,
-                workspace=lease.workspace,
+                input_digest=str(renewed_row["input_digest"]),
+                workspace=Path(str(renewed_row["workspace"])),
             )
 
     def checkpoint(

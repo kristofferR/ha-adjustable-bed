@@ -218,14 +218,14 @@ def _parse_expected_source_artifacts(value: Mapping[str, str]) -> dict[str, str]
             "$.trust.source_artifacts",
             "validated preflight must supply at least one APK member",
         )
-    if len(value) > _MAX_ARTIFACT_MEMBERS:
-        _fail(
-            "trusted_source_artifact_limit_exceeded",
-            "$.trust.source_artifacts",
-            f"source artifact count exceeds {_MAX_ARTIFACT_MEMBERS}",
-        )
     parsed: dict[str, str] = {}
-    for name, digest in value.items():
+    for index, (name, digest) in enumerate(value.items()):
+        if index >= _MAX_ARTIFACT_MEMBERS:
+            _fail(
+                "trusted_source_artifact_limit_exceeded",
+                "$.trust.source_artifacts",
+                f"source artifact count exceeds {_MAX_ARTIFACT_MEMBERS}",
+            )
         parsed_name = _expect_artifact_member_name(name, "$.trust.source_artifacts")
         parsed_digest = _expect_sha256(digest, f"$.trust.source_artifacts.{parsed_name}")
         parsed[parsed_name] = parsed_digest
