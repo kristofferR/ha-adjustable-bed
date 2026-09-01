@@ -718,6 +718,94 @@ def test_ledger_validates_transitive_graph_and_hash_chain() -> None:
     assert restored.head_id == ledger.head_id
 
 
+def test_ledger_replay_preserves_historical_exact_reuse_source() -> None:
+    package_ref = package()
+    extractor = capability()
+    new_source, old_source, target = sorted(
+        (
+            root(package_ref, extractor, occurrence=f"{index:064x}")
+            for index in range(3)
+        ),
+        key=lambda item: item.content_id,
+    )
+    receipts = {
+        old_source.content_id: SHA_E,
+        target.content_id: SHA_E,
+    }
+    decision, proof = route_application_root(
+        target,
+        [old_source],
+        pins=RoutingPins(),
+        trusted_direct_audits={old_source.content_id: SHA_D},
+        trusted_inventory_receipts=receipts,
+    )
+    assert proof is not None
+    ledger = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=[old_source, target],
+        proofs=[proof],
+        pins=RoutingPins(),
+        trusted_direct_audits={old_source.content_id: SHA_D},
+        trusted_inventory_receipts=receipts,
+        expected_head_id=None,
+    )
+    ledger.append(decision, expected_head_id=None)
+
+    replayed = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=[new_source, old_source, target],
+        proofs=[proof],
+        pins=RoutingPins(),
+        trusted_direct_audits={new_source.content_id: SHA_D, old_source.content_id: SHA_D},
+        trusted_inventory_receipts={**receipts, new_source.content_id: SHA_E},
+        entries=ledger.entries,
+        expected_head_id=ledger.head_id,
+    )
+
+    assert replayed.entries[0].decision.source_root_id == old_source.content_id
+
+
+def test_ledger_replay_preserves_full_analysis_before_source_discovery() -> None:
+    package_ref = package()
+    extractor = capability()
+    target = root(package_ref, extractor, occurrence=SHA_A)
+    discovered_source = root(package_ref, extractor, occurrence=SHA_B)
+    decision, _ = route_application_root(
+        target,
+        [],
+        pins=RoutingPins(),
+        trusted_direct_audits={},
+        trusted_inventory_receipts={target.content_id: SHA_E},
+    )
+    ledger = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=[target],
+        proofs=[],
+        pins=RoutingPins(),
+        trusted_direct_audits={},
+        trusted_inventory_receipts={target.content_id: SHA_E},
+        expected_head_id=None,
+    )
+    ledger.append(decision, expected_head_id=None)
+
+    replayed = AppendOnlyLedger(
+        packages=[package_ref],
+        capabilities=[extractor],
+        roots=[target, discovered_source],
+        proofs=[],
+        pins=RoutingPins(),
+        trusted_direct_audits={discovered_source.content_id: SHA_D},
+        trusted_inventory_receipts={target.content_id: SHA_E, discovered_source.content_id: SHA_E},
+        entries=ledger.entries,
+        expected_head_id=ledger.head_id,
+    )
+
+    assert replayed.entries[0].decision.route is Route.FULL_ANALYSIS
+
+
 def test_ledger_validates_trust_maps_once_not_per_proof_or_decision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

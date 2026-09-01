@@ -507,22 +507,19 @@ def test_inventory_syncs_payloads_before_completion_marker(
     (temporary / "INVENTORY.COMPLETE").write_text("complete", encoding="utf-8")
     destination = tmp_path / "destination"
     synced: list[str] = []
+    parent_identity = (tmp_path.stat().st_dev, tmp_path.stat().st_ino)
+
+    def record_directory_sync(descriptor: int) -> None:
+        node = os.fstat(descriptor)
+        label = "parent" if (node.st_dev, node.st_ino) == parent_identity else "destination"
+        synced.append(f"directory:{label}")
 
     monkeypatch.setattr(
         legacy_inventory,
         "_fsync_path",
         lambda path: synced.append(f"file:{path.name}"),
     )
-    monkeypatch.setattr(
-        legacy_inventory,
-        "_fsync_directory",
-        lambda path: synced.append(f"directory:{path.name}"),
-    )
-    monkeypatch.setattr(
-        legacy_inventory.os,
-        "fsync",
-        lambda _descriptor: synced.append("directory:destination"),
-    )
+    monkeypatch.setattr(legacy_inventory.os, "fsync", record_directory_sync)
 
     legacy_inventory._publish_without_replace(temporary, destination)
 
@@ -531,8 +528,87 @@ def test_inventory_syncs_payloads_before_completion_marker(
         "directory:destination",
         "file:INVENTORY.COMPLETE",
         "directory:destination",
-        f"directory:{tmp_path.name}",
+        "directory:parent",
     ]
+
+
+def test_inventory_publication_closes_owned_parent_when_staging_open_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    missing = tmp_path / "missing"
+    destination = tmp_path / "destination"
+    original_open = os.open
+    parent_descriptor: int | None = None
+
+    def record_parent_open(
+        path: os.PathLike[str] | str,
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        nonlocal parent_descriptor
+        descriptor = original_open(path, flags, mode, dir_fd=dir_fd)
+        if Path(path) == tmp_path:
+            parent_descriptor = descriptor
+        return descriptor
+
+    monkeypatch.setattr(legacy_inventory.os, "open", record_parent_open)
+
+    with pytest.raises(FileNotFoundError):
+        legacy_inventory._publish_without_replace(missing, destination)
+
+    assert parent_descriptor is not None
+    with pytest.raises(OSError):
+        os.fstat(parent_descriptor)
+
+
+def test_inventory_cleanup_failure_does_not_invalidate_publication(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    temporary_parent = tmp_path / "staging"
+    temporary_parent.mkdir()
+    temporary = temporary_parent / "temporary"
+    temporary.mkdir()
+    (temporary / "payload.json").write_text("payload", encoding="utf-8")
+    (temporary / "INVENTORY.COMPLETE").write_text("complete", encoding="utf-8")
+    destination = tmp_path / "destination"
+
+    def fail_cleanup(_path: Path) -> None:
+        raise OSError
+
+    monkeypatch.setattr(legacy_inventory.Path, "rmdir", fail_cleanup)
+
+    legacy_inventory._publish_without_replace(temporary, destination)
+
+    assert temporary.is_dir()
+    assert (destination / "payload.json").is_file()
+    assert (destination / "INVENTORY.COMPLETE").is_file()
+
+
+def test_inventory_pins_output_parent_before_staging(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = tmp_path / "legacy"
+    source.mkdir()
+    (source / "preserved.bin").write_bytes(b"preserved")
+    approved_parent = tmp_path / "approved"
+    approved_parent.mkdir()
+    displaced_parent = tmp_path / "displaced"
+    original_create = legacy_inventory._make_private_directory_at
+
+    def replace_parent(directory_descriptor: int, prefix: str) -> str:
+        approved_parent.rename(displaced_parent)
+        approved_parent.symlink_to(source, target_is_directory=True)
+        return original_create(directory_descriptor, prefix)
+
+    monkeypatch.setattr(legacy_inventory, "_make_private_directory_at", replace_parent)
+
+    with pytest.raises(InventoryError, match="output parent directory changed"):
+        build_inventory(source, approved_parent / "inventory")
+
+    assert not (source / "inventory").exists()
+    assert not any(path.name.startswith(".inventory.tmp-") for path in displaced_parent.iterdir())
 
 
 def test_inventory_publication_does_not_follow_replaced_destination(

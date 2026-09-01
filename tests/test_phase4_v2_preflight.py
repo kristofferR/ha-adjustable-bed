@@ -674,6 +674,44 @@ def test_cache_rejects_sealed_manifest_without_apk_members(tmp_path: Path) -> No
         cache.verify(result.artifact_digest)
 
 
+def test_cache_verify_bounds_manifest_member_count_before_hashing(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    object_dir = cache.store(result)
+    manifest = json.loads((object_dir / "manifest.json").read_bytes())
+    duplicate = dict(manifest["members"][0])
+    duplicate["name"] = "second.apk"
+    duplicate["stored_name"] = "second.apk"
+    manifest["members"].append(duplicate)
+    manifest_bytes = legacy_preflight._canonical_json(manifest)
+    (object_dir / "manifest.json").write_bytes(manifest_bytes)
+    (object_dir / "OBJECT.COMPLETE").write_text(
+        f"{hashlib.sha256(manifest_bytes).hexdigest()}  manifest.json\n",
+        encoding="utf-8",
+    )
+    limited = ArtifactCache(tmp_path / "cache", limits=PreflightLimits(max_archive_members=1))
+
+    with pytest.raises(CacheIntegrityError, match="member count"):
+        limited.verify(result.artifact_digest)
+
+
+def test_cache_verify_bounds_aggregate_member_bytes_before_hashing(tmp_path: Path) -> None:
+    artifact = tmp_path / "base.apk"
+    _native_apk(artifact)
+    result = preflight_delivery([artifact])
+    cache = ArtifactCache(tmp_path / "cache")
+    cache.store(result)
+    limited = ArtifactCache(
+        tmp_path / "cache",
+        limits=PreflightLimits(max_archive_bytes=result.artifact_members[0].size - 1),
+    )
+
+    with pytest.raises(CacheIntegrityError, match="aggregate size"):
+        limited.verify(result.artifact_digest)
+
+
 def test_cache_object_is_published_by_atomic_directory_rename(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

@@ -713,7 +713,7 @@ class AppendOnlyLedger:
         self._validate_graph()
         self._reuse_source_index = self._build_reuse_source_index()
         for entry in entries:
-            self._append_existing(entry)
+            self._append_existing(entry, replay=True)
         if self.head_id != expected_head_id:
             _fail("ledger does not match the caller-pinned trusted head")
 
@@ -809,7 +809,7 @@ class AppendOnlyLedger:
             for identity, items in grouped.items()
         }
 
-    def _validate_decision(self, decision: LedgerDecision) -> None:
+    def _validate_decision(self, decision: LedgerDecision, *, replay: bool) -> None:
         decision.__post_init__()
         _validate_pins(decision.pins)
         if decision.revision != self._pins.ledger_decision:
@@ -821,11 +821,17 @@ class AppendOnlyLedger:
             _fail("decision target root is not registered")
         if decision.target_root_id in self._decided_roots:
             _fail("an immutable application root already has a ledger decision")
-        eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
-        if eligible_sources and eligible_sources[0].content_id == target.content_id:
-            candidate_roots = eligible_sources[1:2]
+        if replay and decision.route is Route.EXACT_REUSE:
+            source = self._roots.get(decision.source_root_id or "")
+            candidate_roots = (source,) if isinstance(source, ApplicationRoot) else ()
+        elif replay:
+            candidate_roots = ()
         else:
-            candidate_roots = eligible_sources[:1]
+            eligible_sources = self._reuse_source_index.get(target.executable_identity, ())
+            if eligible_sources and eligible_sources[0].content_id == target.content_id:
+                candidate_roots = eligible_sources[1:2]
+            else:
+                candidate_roots = eligible_sources[:1]
         expected, expected_proof = _route_application_root_validated(
             target,
             candidate_roots,
@@ -861,7 +867,7 @@ class AppendOnlyLedger:
             if expected_proof is not None:
                 _fail("internal non-reuse routing invariant failed")
 
-    def _append_existing(self, entry: LedgerEntry) -> LedgerEntry:
+    def _append_existing(self, entry: LedgerEntry, *, replay: bool = False) -> LedgerEntry:
         if len(self._entries) >= _MAX_LEDGER_RECORDS:
             _fail(f"ledger entry count exceeds {_MAX_LEDGER_RECORDS}")
         entry = _copy_entry(entry)
@@ -871,7 +877,7 @@ class AppendOnlyLedger:
             _fail("ledger-entry revision differs from the trusted pin")
         if entry.sequence != len(self._entries) or entry.previous_entry_id != expected_previous:
             _fail("ledger entry sequence or hash-chain predecessor is invalid")
-        self._validate_decision(entry.decision)
+        self._validate_decision(entry.decision, replay=replay)
         self._entries.append(entry)
         self._decided_roots.add(entry.decision.target_root_id)
         return entry

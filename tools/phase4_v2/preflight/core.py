@@ -1355,8 +1355,12 @@ class ArtifactCache:
             if not isinstance(raw_members, list) or not raw_members:
                 raise CacheIntegrityError("cache member manifest is invalid")
             members = [_validate_cached_member(member) for member in raw_members]
+            if len(members) > self.limits.max_archive_members:
+                raise CacheIntegrityError("cache member count exceeds the configured limit")
             if any(member["size"] > self.limits.max_member_bytes for member in members):
                 raise CacheIntegrityError("cache member exceeds the configured size limit")
+            if sum(member["size"] for member in members) > self.limits.max_archive_bytes:
+                raise CacheIntegrityError("cache members exceed the configured aggregate size limit")
             try:
                 members_fd = os.open("members", _DIRECTORY_FLAGS, dir_fd=object_fd)
             except OSError as err:

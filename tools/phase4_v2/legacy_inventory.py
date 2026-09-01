@@ -14,16 +14,16 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import stat
-import tempfile
 from collections import Counter
 from collections.abc import Buffer, Collection, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from itertools import islice
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Protocol
+from typing import BinaryIO, Protocol, TextIO
 
 MANIFEST_SCHEMA = "phase4-v2-legacy-inventory-v1"
 SCANNER_VERSION = "1"
@@ -38,6 +38,12 @@ _MAX_HASH_MANIFEST_DECLARATIONS = 4_096
 _MAX_HASH_TARGET_BYTES = 2 * 1024**3
 _MAX_HASH_VERIFICATION_BYTES = 16 * 1024**3
 _MAX_TREE_ENTRIES = 250_000
+_DIRECTORY_FLAGS = (
+    os.O_RDONLY
+    | os.O_DIRECTORY
+    | getattr(os, "O_CLOEXEC", 0)
+    | getattr(os, "O_NOFOLLOW", 0)
+)
 
 
 class InventoryError(RuntimeError):
@@ -1003,53 +1009,141 @@ def _validate_output(source_root: Path, output_dir: Path) -> Path:
     return candidate
 
 
-def _publish_without_replace(temp_dir: Path, destination: Path) -> None:
+def _publish_without_replace(
+    temp_dir: Path,
+    destination: Path,
+    *,
+    parent_descriptor: int | None = None,
+    temporary_descriptor: int | None = None,
+    temporary_name: str | None = None,
+) -> None:
     """Publish into a newly created directory without replacing any existing path."""
+    own_parent_descriptor = parent_descriptor is None
+    own_temporary_descriptor = temporary_descriptor is None
+    if parent_descriptor is None:
+        parent_descriptor = os.open(destination.parent, _DIRECTORY_FLAGS)
+    if temporary_descriptor is None:
+        try:
+            temporary_descriptor = os.open(temp_dir, _DIRECTORY_FLAGS)
+        except BaseException:
+            if own_parent_descriptor:
+                os.close(parent_descriptor)
+            raise
+    elif temporary_name is None:
+        if own_parent_descriptor:
+            os.close(parent_descriptor)
+        raise ValueError("descriptor-pinned publication requires the temporary directory name")
+    published = False
     try:
-        destination.mkdir()
-    except FileExistsError as err:
-        raise InventoryError(f"output directory appeared during scan: {destination}") from err
-    try:
-        destination_descriptor = os.open(
-            destination,
-            os.O_RDONLY
-            | os.O_DIRECTORY
-            | getattr(os, "O_CLOEXEC", 0)
-            | getattr(os, "O_NOFOLLOW", 0),
-        )
-    except OSError as err:
-        raise InventoryError(
-            f"new output directory could not be pinned safely: {destination}"
-        ) from err
-    if not _directory_descriptor_matches_path(destination_descriptor, destination):
-        os.close(destination_descriptor)
-        raise InventoryError(f"new output directory changed before publication: {destination}")
-    children = sorted(
-        temp_dir.iterdir(), key=lambda path: (path.name.startswith("INVENTORY."), path.name)
-    )
-    try:
-        marker = next((child for child in children if child.name.startswith("INVENTORY.")), None)
-        payloads = [child for child in children if child != marker]
-        for child in payloads:
-            _fsync_path(child)
-            os.rename(child, child.name, dst_dir_fd=destination_descriptor)
-        os.fsync(destination_descriptor)
-        if not _directory_descriptor_matches_path(destination_descriptor, destination):
-            raise InventoryError(f"output directory changed during publication: {destination}")
-        if marker is not None:
-            _fsync_path(marker)
-            os.rename(marker, marker.name, dst_dir_fd=destination_descriptor)
+        if not _directory_descriptor_matches_path(parent_descriptor, destination.parent):
+            raise InventoryError(f"output parent directory changed: {destination.parent}")
+        try:
+            os.mkdir(destination.name, dir_fd=parent_descriptor)
+        except FileExistsError as err:
+            raise InventoryError(
+                f"output directory appeared during scan: {destination}"
+            ) from err
+        try:
+            destination_descriptor = os.open(
+                destination.name,
+                _DIRECTORY_FLAGS,
+                dir_fd=parent_descriptor,
+            )
+        except OSError as err:
+            raise InventoryError(
+                f"new output directory could not be pinned safely: {destination}"
+            ) from err
+        try:
+            children = sorted(
+                os.listdir(temporary_descriptor),
+                key=lambda name: (name.startswith("INVENTORY."), name),
+            )
+            if not _directory_entry_matches_descriptor(
+                parent_descriptor, destination.name, destination_descriptor
+            ):
+                raise InventoryError(
+                    f"new output directory changed before publication: {destination}"
+                )
+            marker = next((name for name in children if name.startswith("INVENTORY.")), None)
+            payloads = [name for name in children if name != marker]
+            for name in payloads:
+                if own_temporary_descriptor:
+                    _fsync_path(temp_dir / name)
+                else:
+                    _fsync_entry(temporary_descriptor, name)
+                os.rename(
+                    name,
+                    name,
+                    src_dir_fd=temporary_descriptor,
+                    dst_dir_fd=destination_descriptor,
+                )
             os.fsync(destination_descriptor)
-        if not _directory_descriptor_matches_path(destination_descriptor, destination):
-            raise InventoryError(f"output directory changed during publication: {destination}")
-        _fsync_directory(destination.parent)
-        temp_dir.rmdir()
-    except OSError as err:
-        raise InventoryError(
-            f"publication was interrupted; incomplete output retained at {destination}"
-        ) from err
+            if not _directory_entry_matches_descriptor(
+                parent_descriptor, destination.name, destination_descriptor
+            ) or not _directory_descriptor_matches_path(parent_descriptor, destination.parent):
+                raise InventoryError(f"output directory changed during publication: {destination}")
+            if marker is not None:
+                if own_temporary_descriptor:
+                    _fsync_path(temp_dir / marker)
+                else:
+                    _fsync_entry(temporary_descriptor, marker)
+                os.rename(
+                    marker,
+                    marker,
+                    src_dir_fd=temporary_descriptor,
+                    dst_dir_fd=destination_descriptor,
+                )
+                os.fsync(destination_descriptor)
+            if not _directory_entry_matches_descriptor(
+                parent_descriptor, destination.name, destination_descriptor
+            ) or not _directory_descriptor_matches_path(parent_descriptor, destination.parent):
+                raise InventoryError(f"output directory changed during publication: {destination}")
+            os.fsync(parent_descriptor)
+            published = True
+        except OSError as err:
+            raise InventoryError(
+                f"publication was interrupted; incomplete output retained at {destination}"
+            ) from err
+        finally:
+            os.close(destination_descriptor)
     finally:
-        os.close(destination_descriptor)
+        if published:
+            try:
+                if own_temporary_descriptor:
+                    temp_dir.rmdir()
+                elif temporary_name is not None:
+                    os.rmdir(temporary_name, dir_fd=parent_descriptor)
+            except OSError:
+                pass
+        if own_temporary_descriptor:
+            os.close(temporary_descriptor)
+        if own_parent_descriptor:
+            os.close(parent_descriptor)
+
+
+def _directory_entry_matches_descriptor(
+    parent_descriptor: int, name: str, descriptor: int
+) -> bool:
+    opened = os.fstat(descriptor)
+    try:
+        current = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+    except OSError:
+        return False
+    return stat.S_ISDIR(current.st_mode) and (opened.st_dev, opened.st_ino) == (
+        current.st_dev,
+        current.st_ino,
+    )
+
+
+def _make_private_directory_at(directory_descriptor: int, prefix: str) -> str:
+    for _ in range(100):
+        name = f"{prefix}{secrets.token_hex(8)}"
+        try:
+            os.mkdir(name, mode=0o700, dir_fd=directory_descriptor)
+        except FileExistsError:
+            continue
+        return name
+    raise InventoryError("could not create a unique temporary inventory directory")
 
 
 def _directory_descriptor_matches_path(descriptor: int, path: Path) -> bool:
@@ -1069,6 +1163,18 @@ def _fsync_path(path: Path) -> None:
         os.fsync(file.fileno())
 
 
+def _fsync_entry(directory_descriptor: int, name: str) -> None:
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=directory_descriptor,
+    )
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _fsync_directory(path: Path) -> None:
     descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
     try:
@@ -1077,13 +1183,47 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
-def _write_json(path: Path, value: object) -> None:
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+def _open_text_at(directory_descriptor: int, name: str, mode: str) -> TextIO:
+    if mode == "r":
+        flags = os.O_RDONLY
+    elif mode == "w":
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    else:
+        raise ValueError(f"unsupported staging file mode: {mode}")
+    descriptor = os.open(
+        name,
+        flags | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        0o600,
+        dir_fd=directory_descriptor,
+    )
+    return os.fdopen(descriptor, mode, encoding="utf-8", newline="\n")
+
+
+def _write_text_at(directory_descriptor: int, name: str, value: str) -> None:
+    with _open_text_at(directory_descriptor, name, "w") as file:
+        file.write(value)
+
+
+def _read_bytes_at(directory_descriptor: int, name: str) -> bytes:
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=directory_descriptor,
+    )
+    with os.fdopen(descriptor, "rb") as file:
+        return file.read()
+
+
+def _write_json_at(directory_descriptor: int, name: str, value: object) -> None:
+    _write_text_at(
+        directory_descriptor,
+        name,
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+    )
 
 
 def _attach_package_provenance(
-    raw_entries: Path,
-    entries: Path,
+    directory_descriptor: int,
     workspaces: dict[str, _WorkspaceState],
     reports: Collection[ReportRecord],
 ) -> None:
@@ -1103,8 +1243,8 @@ def _attach_package_provenance(
         )
         prefix_packages.setdefault(prefix, set()).update(packages)
     with (
-        raw_entries.open("r", encoding="utf-8") as source,
-        entries.open("w", encoding="utf-8", newline="\n") as destination,
+        _open_text_at(directory_descriptor, "entries.raw.ndjson", "r") as source,
+        _open_text_at(directory_descriptor, "entries.ndjson", "w") as destination,
     ):
         for line in source:
             record = json.loads(line)
@@ -1126,12 +1266,21 @@ def _attach_package_provenance(
             destination.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
 
 
-def _payload_record(path: Path) -> dict[str, object]:
+def _payload_record(directory_descriptor: int, name: str) -> dict[str, object]:
     digest = hashlib.sha256()
-    with path.open("rb") as payload:
-        for chunk in iter(lambda: payload.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return {"bytes": path.stat().st_size, "sha256": digest.hexdigest()}
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=directory_descriptor,
+    )
+    try:
+        with os.fdopen(descriptor, "rb", closefd=False) as payload:
+            for chunk in iter(lambda: payload.read(1024 * 1024), b""):
+                digest.update(chunk)
+        size = os.fstat(descriptor).st_size
+    finally:
+        os.close(descriptor)
+    return {"bytes": size, "sha256": digest.hexdigest()}
 
 
 def _update_workspace_entry(
@@ -1281,15 +1430,25 @@ def build_inventory(
     active = _normalise_active_paths(active_paths)
     _validate_active_paths(root, active)
     destination = _validate_output(root, output_dir)
-
-    temp_dir = Path(tempfile.mkdtemp(prefix=f".{destination.name}.tmp-", dir=destination.parent))
-    raw_entries_path = temp_dir / "entries.raw.ndjson"
-    entries_path = temp_dir / "entries.ndjson"
-    hashes_path = temp_dir / "declared_hashes.ndjson"
-    reports_path = temp_dir / "reports.ndjson"
-    workspaces_path = temp_dir / "workspaces.ndjson"
-    duplicates_path = temp_dir / "duplicate_reports.ndjson"
-    diagnostics_path = temp_dir / "diagnostics.ndjson"
+    parent_descriptor = os.open(destination.parent, _DIRECTORY_FLAGS)
+    if not _directory_descriptor_matches_path(parent_descriptor, destination.parent):
+        os.close(parent_descriptor)
+        raise InventoryError(f"output parent directory changed: {destination.parent}")
+    try:
+        temporary_name = _make_private_directory_at(
+            parent_descriptor, f".{destination.name}.tmp-"
+        )
+        try:
+            temporary_descriptor = os.open(
+                temporary_name, _DIRECTORY_FLAGS, dir_fd=parent_descriptor
+            )
+        except BaseException:
+            os.rmdir(temporary_name, dir_fd=parent_descriptor)
+            raise
+    except BaseException:
+        os.close(parent_descriptor)
+        raise
+    temp_dir = destination.parent / temporary_name
 
     state = _ScanState.create()
     diagnostics: list[Diagnostic] = []
@@ -1307,9 +1466,9 @@ def build_inventory(
     try:
         with (
             _pinned_source_descriptor(root) as source_descriptor,
-            raw_entries_path.open("w", encoding="utf-8", newline="\n") as entries_file,
-            hashes_path.open("w", encoding="utf-8", newline="\n") as hashes_file,
-            reports_path.open("w", encoding="utf-8", newline="\n") as reports_file,
+            _open_text_at(temporary_descriptor, "entries.raw.ndjson", "w") as entries_file,
+            _open_text_at(temporary_descriptor, "declared_hashes.ndjson", "w") as hashes_file,
+            _open_text_at(temporary_descriptor, "reports.ndjson", "w") as reports_file,
         ):
             for entry, absolute_path in _walk(root, active, traversal_diagnostics):
                 payload = entry.to_json()
@@ -1386,23 +1545,29 @@ def build_inventory(
                     )
                 )
 
-        with workspaces_path.open("w", encoding="utf-8", newline="\n") as workspaces_file:
+        with _open_text_at(
+            temporary_descriptor, "workspaces.ndjson", "w"
+        ) as workspaces_file:
             for workspace_path, workspace_state in sorted(workspace_states.items()):
                 workspaces_file.write(
                     _workspace_record(workspace_path, workspace_state).to_json() + "\n"
                 )
-        with duplicates_path.open("w", encoding="utf-8", newline="\n") as duplicates_file:
+        with _open_text_at(
+            temporary_descriptor, "duplicate_reports.ndjson", "w"
+        ) as duplicates_file:
             for group in duplicate_groups:
                 duplicates_file.write(
                     json.dumps(group, sort_keys=True, separators=(",", ":")) + "\n"
                 )
-        _attach_package_provenance(raw_entries_path, entries_path, workspace_states, report_records)
-        raw_entries_path.unlink()
+        _attach_package_provenance(temporary_descriptor, workspace_states, report_records)
+        os.unlink("entries.raw.ndjson", dir_fd=temporary_descriptor)
 
         ordered_diagnostics = sorted(
             diagnostics, key=lambda item: (item.path, item.operation, item.error)
         )
-        with diagnostics_path.open("w", encoding="utf-8", newline="\n") as diagnostics_file:
+        with _open_text_at(
+            temporary_descriptor, "diagnostics.ndjson", "w"
+        ) as diagnostics_file:
             for diagnostic in ordered_diagnostics:
                 diagnostics_file.write(diagnostic.to_json() + "\n")
 
@@ -1505,7 +1670,7 @@ def build_inventory(
                 "human_summary": "SUMMARY.md",
             },
         }
-        (temp_dir / "SUMMARY.md").write_text(_human_summary(manifest), encoding="utf-8")
+        _write_text_at(temporary_descriptor, "SUMMARY.md", _human_summary(manifest))
         payload_names = (
             "entries.ndjson",
             "declared_hashes.ndjson",
@@ -1516,18 +1681,31 @@ def build_inventory(
             "SUMMARY.md",
         )
         manifest["payload_integrity"] = {
-            name: _payload_record(temp_dir / name) for name in payload_names
+            name: _payload_record(temporary_descriptor, name) for name in payload_names
         }
-        _write_json(temp_dir / "manifest.json", manifest)
-        manifest_digest = hashlib.sha256((temp_dir / "manifest.json").read_bytes()).hexdigest()
+        _write_json_at(temporary_descriptor, "manifest.json", manifest)
+        manifest_digest = hashlib.sha256(
+            _read_bytes_at(temporary_descriptor, "manifest.json")
+        ).hexdigest()
         completion_marker = "INVENTORY.COMPLETE" if not opaque_paths else "INVENTORY.PARTIAL"
-        (temp_dir / completion_marker).write_text(
-            f"{manifest_digest}  manifest.json\n", encoding="utf-8"
+        _write_text_at(
+            temporary_descriptor,
+            completion_marker,
+            f"{manifest_digest}  manifest.json\n",
         )
-        _publish_without_replace(temp_dir, destination)
+        _publish_without_replace(
+            temp_dir,
+            destination,
+            parent_descriptor=parent_descriptor,
+            temporary_descriptor=temporary_descriptor,
+            temporary_name=temporary_name,
+        )
     except BaseException:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(temporary_name, ignore_errors=True, dir_fd=parent_descriptor)
         raise
+    finally:
+        os.close(temporary_descriptor)
+        os.close(parent_descriptor)
 
     return InventorySummary(
         output_dir=destination,
