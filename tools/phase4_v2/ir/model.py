@@ -1010,14 +1010,14 @@ def _validate_json_shape_bounds(raw: object) -> None:
                 "$",
                 f"JSON nesting exceeds {_MAX_JSON_DEPTH}",
             )
-        if isinstance(value, dict):
+        if type(value) is dict:
             identity = id(value)
             if identity in seen_containers:
                 _fail("invalid_json_structure", "$", "JSON structure contains a cycle or alias")
             seen_containers.add(identity)
             stack.extend((key, depth + 1) for key in value)
             stack.extend((item, depth + 1) for item in value.values())
-        elif isinstance(value, list):
+        elif type(value) is list:
             identity = id(value)
             if identity in seen_containers:
                 _fail("invalid_json_structure", "$", "JSON structure contains a cycle or alias")

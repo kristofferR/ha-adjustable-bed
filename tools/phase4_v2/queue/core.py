@@ -303,6 +303,14 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     attempts_inode INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS queue_identity (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    database_path TEXT NOT NULL,
+    database_device INTEGER NOT NULL,
+    database_inode INTEGER NOT NULL,
+    parent_identities TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS work_units (
     unit_id TEXT PRIMARY KEY,
     kind TEXT NOT NULL,
@@ -493,6 +501,12 @@ BEGIN SELECT RAISE(ABORT, 'schema metadata is immutable'); END;
 CREATE TRIGGER IF NOT EXISTS schema_meta_no_delete
 BEFORE DELETE ON schema_meta
 BEGIN SELECT RAISE(ABORT, 'schema metadata is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS queue_identity_no_update
+BEFORE UPDATE ON queue_identity
+BEGIN SELECT RAISE(ABORT, 'queue identity metadata is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS queue_identity_no_delete
+BEFORE DELETE ON queue_identity
+BEGIN SELECT RAISE(ABORT, 'queue identity metadata is immutable'); END;
 """
 
 
@@ -587,6 +601,29 @@ class Queue:
                     raise _unsupported_schema_revision(pinned["revision"])
             self._enable_wal(connection)
             connection.executescript(_SCHEMA)
+            identity = self._database_identity()
+            existing_identity = connection.execute(
+                "SELECT database_path, database_device, database_inode, parent_identities "
+                "FROM queue_identity WHERE singleton = 1"
+            ).fetchone()
+            if existing_identity is None:
+                database_path, database_device, database_inode = identity[0]
+                connection.execute(
+                    """
+                    INSERT INTO queue_identity(
+                        singleton, database_path, database_device, database_inode,
+                        parent_identities
+                    ) VALUES (1, ?, ?, ?, ?)
+                    """,
+                    (
+                        database_path,
+                        database_device,
+                        database_inode,
+                        json.dumps(identity[1:], separators=(",", ":")),
+                    ),
+                )
+            elif self._stored_database_identity(existing_identity) != identity:
+                raise QueueError("queue database or parent identity differs from initialized queue")
         finally:
             connection.close()
         with self._immediate(require_schema=False) as connection:
@@ -1382,6 +1419,22 @@ class Queue:
             finish_result=result,
         )
 
+    def finish_input_mismatch_if_input_changed(
+        self,
+        lease: Lease,
+        *,
+        expected_input_digest: str,
+    ) -> FinishResult:
+        """Record an input mismatch only when the leased input has changed."""
+        _validate_digest(expected_input_digest, "expected_input_digest")
+        with self._connect() as connection:
+            self._require_live_lease(connection, lease)
+            if self._input_digests_match(connection, lease, expected_input_digest):
+                raise QueueConflictError(
+                    f"leased input already matches the expected digest: {lease.unit_id}"
+                )
+        return self.finish(lease, TerminalOutcome.INPUT_MISMATCH)
+
     def finish_package_validation_receipt(
         self,
         lease: Lease,
@@ -1451,19 +1504,42 @@ class Queue:
         if type(trusted_dependencies) is not DependencyPins:
             raise QueueConflictError("package validation requires exact trusted dependencies")
         frozen = freeze_package_execution_plan(execution_plan)
+        plan_input_mismatch = frozen.digest != lease.input_digest
+        if plan_input_mismatch:
+            with self._connect() as connection:
+                self._require_live_lease(connection, lease)
+                if self._input_digests_match(connection, lease, frozen.digest):
+                    raise QueueConflictError(
+                        f"lease input digest is inconsistent: {lease.unit_id}"
+                    )
         target_preflight_sha256 = execution_plan.target_package_ref.preflight_sha256
-        if trusted_dependencies.preflight_sha256 != target_preflight_sha256:
-            raise QueueConflictError(
-                "trusted preflight does not match the package execution plan"
-            )
         if type(evidence_lineage_payload) is not bytes:
             raise QueueConflictError("evidence lineage payload must be exact immutable bytes")
-        lineage_digest = self._trusted_receipt_dependency(
-            lease,
-            lease.input_digest,
-            execution_plan.target_package_ref.validation_receipt_sha256,
-            "evidence_lineage",
-        )
+        try:
+            receipt_dependencies = {
+                name: self._trusted_receipt_dependency(
+                    lease,
+                    lease.input_digest,
+                    execution_plan.target_package_ref.validation_receipt_sha256,
+                    name,
+                )
+                for name in ("corpus", "evidence_lineage", "ir", "preflight", "schema")
+            }
+        except (DependencyNotSatisfiedError, InputDigestMismatchError):
+            if not plan_input_mismatch:
+                raise
+            self.finish_input_mismatch_if_input_changed(
+                lease,
+                expected_input_digest=frozen.digest,
+            )
+            raise InputDigestMismatchError(
+                f"package plan does not match the leased queue input: {lease.unit_id}"
+            ) from None
+        if receipt_dependencies["preflight"] != target_preflight_sha256:
+            raise QueueConflictError(
+                "trusted receipt preflight does not match the package execution plan"
+            )
+        lineage_digest = receipt_dependencies["evidence_lineage"]
         producer_pins = {
             (capability.revision, capability.name, capability.digest)
             for capability in frozen.required_capabilities
@@ -1480,9 +1556,9 @@ class Queue:
             report_root,
             expected_dependencies=PackageDependencyPins(
                 preflight_sha256=target_preflight_sha256,
-                ir_sha256=trusted_dependencies.ir_sha256,
-                schema_sha256=trusted_dependencies.schema_sha256,
-                corpus_sha256=trusted_dependencies.corpus_sha256,
+                ir_sha256=receipt_dependencies["ir"],
+                schema_sha256=receipt_dependencies["schema"],
+                corpus_sha256=receipt_dependencies["corpus"],
                 execution_plan_sha256=frozen.digest,
                 report_schema_sha256=PACKAGE_REPORT_SCHEMA_SHA256,
             ),
@@ -1496,7 +1572,9 @@ class Queue:
             receipt=receipt,
             trusted_validation_receipt_sha256=receipt_sha256,
         )
-        if output.execution_plan_id != freeze_package_execution_plan(execution_plan).digest:
+        if plan_input_mismatch or output.execution_plan_id != freeze_package_execution_plan(
+            execution_plan
+        ).digest:
             result = self.finish(
                 lease,
                 TerminalOutcome.INPUT_MISMATCH,
@@ -2509,7 +2587,7 @@ class Queue:
         *,
         require_schema: bool = True,
     ) -> Iterator[sqlite3.Connection]:
-        connection = self._connect(require_schema=False)
+        connection = self._connect(require_schema=require_schema)
         try:
             connection.execute("BEGIN IMMEDIATE")
             if require_schema:
@@ -2548,7 +2626,88 @@ class Queue:
             except BaseException:
                 connection.close()
                 raise
+        self._verify_database_identity(connection, allow_create=allow_create)
         return connection
+
+    def _database_identity(self) -> tuple[tuple[str, int, int], ...]:
+        """Return the database and every directory identity in its path."""
+        identities: list[tuple[str, int, int]] = []
+        current = self.database
+        while True:
+            try:
+                node = os.lstat(current)
+            except OSError as error:
+                raise QueueError("queue database path is missing or inaccessible") from error
+            if current == self.database:
+                valid = stat.S_ISREG(node.st_mode)
+            else:
+                valid = stat.S_ISDIR(node.st_mode)
+            if not valid or stat.S_ISLNK(node.st_mode):
+                raise QueueError("queue database path contains an unsafe node")
+            identities.append((str(current), node.st_dev, node.st_ino))
+            if current.parent == current:
+                break
+            current = current.parent
+        return tuple(identities)
+
+    @staticmethod
+    def _stored_database_identity(
+        row: sqlite3.Row,
+    ) -> tuple[tuple[str, int, int], ...]:
+        try:
+            parents = json.loads(str(row["parent_identities"]))
+            if type(parents) is not list:
+                raise ValueError
+            parsed = [
+                (
+                    item[0],
+                    item[1],
+                    item[2],
+                )
+                for item in parents
+                if type(item) is list and len(item) == 3
+            ]
+            if len(parsed) != len(parents) or any(
+                type(path) is not str
+                or type(device) is not int
+                or type(inode) is not int
+                for path, device, inode in parsed
+            ):
+                raise ValueError
+            return (
+                (
+                    row["database_path"],
+                    row["database_device"],
+                    row["database_inode"],
+                ),
+                *parsed,
+            )
+        except (TypeError, ValueError, KeyError, IndexError, json.JSONDecodeError) as error:
+            raise QueueError("queue database identity metadata is invalid") from error
+
+    def _verify_database_identity(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        allow_create: bool,
+    ) -> None:
+        try:
+            row = connection.execute(
+                """
+                SELECT database_path, database_device, database_inode, parent_identities
+                FROM queue_identity WHERE singleton = 1
+                """
+            ).fetchone()
+        except sqlite3.OperationalError as error:
+            if allow_create and "no such table" in str(error).casefold():
+                return
+            raise QueueError("queue database identity metadata is missing or unreadable") from error
+        if row is None:
+            if allow_create:
+                return
+            raise QueueError("queue database identity metadata is missing or unreadable")
+        if self._stored_database_identity(row) != self._database_identity():
+            raise QueueError("queue database or parent identity changed")
 
     @staticmethod
     def _require_schema_compatible(connection: sqlite3.Connection) -> None:

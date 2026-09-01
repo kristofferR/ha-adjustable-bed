@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Literal, NamedTuple, Never, overload
 
@@ -499,6 +499,10 @@ def _accepted_inventory(value: AcceptedTargetRootInventory) -> AcceptedTargetRoo
 
 @dataclass(frozen=True, slots=True, init=False)
 class SemanticRootAudit:
+    source_root: ApplicationRoot
+    ledger_decision: LedgerDecision
+    extractor: ExtractorCapability
+    accepted_target_inventory: AcceptedTargetRootInventory
     source_root_id: str
     target_root_id: str
     target_occurrence_identity_sha256: str
@@ -518,17 +522,21 @@ class SemanticRootAudit:
 
     def to_data(self) -> dict[str, object]:
         return {
+            "accepted_target_inventory": self.accepted_target_inventory.to_data(),
             "direct_semantic_audit_completion": self.direct_semantic_audit_completion.to_data(),
             "equivalence_pipeline": self.equivalence_pipeline.to_data(),
             "extractor_capability": self.extractor_capability.to_data(),
+            "extractor": self.extractor.to_data(),
             "extractor_capability_id": self.extractor_capability_id,
             "inherited_semantic_root_sha256": self.inherited_semantic_root_sha256,
             "inherited_semantic_root_completion": (
                 self.inherited_semantic_root_completion.to_data()
             ),
             "ledger_decision_completion": self.ledger_decision_completion.to_data(),
+            "ledger_decision": self.ledger_decision.to_data(),
             "revision": self.revision,
             "source_root_id": self.source_root_id,
+            "source_root": self.source_root.to_data(),
             "target_inventory_completion": self.target_inventory_completion.to_data(),
             "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
             "target_root_id": self.target_root_id,
@@ -615,6 +623,10 @@ def build_semantic_root_audit(
         _fail("semantic audit pipeline capability has the wrong name")
     _revision(pipeline_pin.revision, EQUIVALENCE_SCHEMA_REVISION, "semantic audit pipeline")
     values: dict[str, object] = {
+        "source_root": replace(source_root),
+        "ledger_decision": replace(ledger_decision),
+        "extractor": replace(extractor),
+        "accepted_target_inventory": _accepted_inventory(accepted_target_inventory),
         "source_root_id": source_root.content_id,
         "target_root_id": ledger_decision.target_root_id,
         "target_occurrence_identity_sha256": target[0].occurrence_identity_sha256,
@@ -672,83 +684,61 @@ def _semantic_audit_binding_sha256(values: Mapping[str, object]) -> str:
 def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
     if type(value) is not SemanticRootAudit:
         _fail("exact reuse requires an exact typed SemanticRootAudit")
-    values: dict[str, object] = {
-        "source_root_id": value.source_root_id,
-        "target_root_id": value.target_root_id,
-        "target_occurrence_identity_sha256": value.target_occurrence_identity_sha256,
-        "extractor_capability_id": value.extractor_capability_id,
-        "inherited_semantic_root_sha256": value.inherited_semantic_root_sha256,
-        "inherited_semantic_root_completion": _completion(
-            value.inherited_semantic_root_completion,
-            "semantic audit inherited root completion",
-        ),
-        "target_inventory_completion": _completion(
-            value.target_inventory_completion, "semantic audit inventory"
-        ),
-        "ledger_decision_completion": _completion(
-            value.ledger_decision_completion, "semantic audit ledger"
-        ),
-        "direct_semantic_audit_completion": _completion(
-            value.direct_semantic_audit_completion, "semantic audit direct completion"
-        ),
-        "extractor_capability": _capability(
-            value.extractor_capability, "semantic audit extractor"
-        ),
-        "equivalence_pipeline": _capability(
-            value.equivalence_pipeline, "semantic audit pipeline"
-        ),
-        "revision": value.revision,
-    }
-    for field in (
-        "source_root_id",
-        "target_root_id",
-        "target_occurrence_identity_sha256",
-        "extractor_capability_id",
-        "inherited_semantic_root_sha256",
-    ):
-        raw = values[field]
-        if type(raw) is not str:
-            _fail(f"semantic audit {field} must be an exact digest")
-        _sha(raw, f"semantic audit {field}")
-    _revision(value.revision, SEMANTIC_ROOT_AUDIT_REVISION, "semantic root audit revision")
-    semantic_pin = values["inherited_semantic_root_completion"]
-    assert type(semantic_pin) is CompletionPin
-    _revision(
-        semantic_pin.revision,
-        SEMANTIC_ROOT_COMPLETION_REVISION,
-        "semantic root completion",
-    )
-    if semantic_pin.digest != _semantic_root_completion_digest(
-        value.source_root_id,
-        value.inherited_semantic_root_sha256,
-        semantic_pin.parent_unit_id,
-    ):
-        _fail("semantic root completion relation no longer reproduces")
-    extractor_pin = values["extractor_capability"]
-    assert type(extractor_pin) is CapabilityPin
-    if extractor_pin.digest != value.extractor_capability_id:
+    try:
+        source_root = replace(value.source_root)
+        ledger_decision = replace(value.ledger_decision)
+        extractor = replace(value.extractor)
+        accepted_inventory = _accepted_inventory(value.accepted_target_inventory)
+    except AttributeError as error:
+        raise EquivalenceError(
+            "semantic audit is missing its typed source records"
+        ) from error
+    extractor_pin = _capability(value.extractor_capability, "semantic audit extractor")
+    if extractor_pin.digest != extractor.content_id:
         _fail("semantic audit extractor relation no longer reproduces")
-    pipeline = values["equivalence_pipeline"]
-    assert type(pipeline) is CapabilityPin
-    if pipeline.name != EXACT_REUSE_PIPELINE_CAPABILITY:
-        _fail("semantic audit pipeline relation no longer reproduces")
-    _revision(pipeline.revision, EQUIVALENCE_SCHEMA_REVISION, "semantic audit pipeline")
-    for name, expected in (
-        ("target_inventory_completion", TARGET_ROOT_INVENTORY_REVISION),
-        ("ledger_decision_completion", LEDGER_DECISION_REVISION),
-        ("direct_semantic_audit_completion", SEMANTIC_ROOT_COMPLETION_REVISION),
-    ):
-        pin = values[name]
-        assert type(pin) is CompletionPin
-        _revision(pin.revision, expected, f"semantic audit {name}")
-    _sha(value.binding_sha256, "semantic audit binding")
-    if value.binding_sha256 != _semantic_audit_binding_sha256(values):
+    semantic_root_pin = _completion(
+        value.inherited_semantic_root_completion,
+        "semantic audit inherited root completion",
+    )
+    semantic_root_completion = build_semantic_root_completion(
+        source_root=source_root,
+        inherited_semantic_root_sha256=value.inherited_semantic_root_sha256,
+        parent_unit_id=semantic_root_pin.parent_unit_id,
+    )
+    if semantic_root_completion.completion != semantic_root_pin:
+        _fail("semantic root completion relation no longer reproduces")
+    binding_values = {
+        "direct_semantic_audit_completion": value.direct_semantic_audit_completion,
+        "equivalence_pipeline": value.equivalence_pipeline,
+        "extractor_capability": extractor_pin,
+        "extractor_capability_id": value.extractor_capability_id,
+        "inherited_semantic_root_completion": value.inherited_semantic_root_completion,
+        "inherited_semantic_root_sha256": value.inherited_semantic_root_sha256,
+        "ledger_decision_completion": value.ledger_decision_completion,
+        "revision": value.revision,
+        "source_root_id": value.source_root_id,
+        "target_inventory_completion": value.target_inventory_completion,
+        "target_occurrence_identity_sha256": value.target_occurrence_identity_sha256,
+        "target_root_id": value.target_root_id,
+    }
+    if value.binding_sha256 != _semantic_audit_binding_sha256(binding_values):
         _fail("semantic audit binding no longer reproduces its typed relationships")
-    values["binding_sha256"] = value.binding_sha256
-    result = object.__new__(SemanticRootAudit)
-    for field, copied in values.items():
-        object.__setattr__(result, field, copied)
-    return result
+    rebuilt = build_semantic_root_audit(
+        source_root=source_root,
+        ledger_decision=ledger_decision,
+        extractor=extractor,
+        accepted_target_inventory=accepted_inventory,
+        inherited_semantic_root_sha256=value.inherited_semantic_root_sha256,
+        inherited_semantic_root_completion=semantic_root_completion,
+        target_inventory_completion=value.target_inventory_completion,
+        ledger_decision_completion=value.ledger_decision_completion,
+        direct_semantic_audit_completion=value.direct_semantic_audit_completion,
+        extractor_capability=value.extractor_capability,
+        equivalence_pipeline=value.equivalence_pipeline,
+    )
+    if rebuilt.to_data() != value.to_data():
+        _fail("semantic audit source relationships no longer reproduce")
+    return rebuilt
 
 
 @dataclass(frozen=True, slots=True, init=False)

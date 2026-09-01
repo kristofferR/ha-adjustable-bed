@@ -69,7 +69,7 @@ class PackagePlanInputMismatchError(InputDigestMismatchError):
         self,
         message: str,
         *,
-        output: ValidatedPackageOutput,
+        output: ValidatedPackageOutput | None,
         queue_result: FinishResult,
     ) -> None:
         super().__init__(message)
@@ -168,13 +168,25 @@ def finish_package_execution_plan(
     if lease.unit_id != expected_unit_id:
         raise QueueConflictError("lease does not belong to the package execution plan")
 
-    output, checked = queue.finish_validated_package_output(
-        lease,
-        execution_plan=execution_plan,
-        report_root=report_root,
-        trusted_dependencies=trusted_dependencies,
-        evidence_lineage_payload=evidence_lineage_payload,
-    )
+    try:
+        output, checked = queue.finish_validated_package_output(
+            lease,
+            execution_plan=execution_plan,
+            report_root=report_root,
+            trusted_dependencies=trusted_dependencies,
+            evidence_lineage_payload=evidence_lineage_payload,
+        )
+    except InputDigestMismatchError as error:
+        raise PackagePlanInputMismatchError(
+            str(error),
+            output=None,
+            queue_result=FinishResult(
+                disposition=InputCheckedFinishDisposition.INPUT_MISMATCH,
+                unit_id=lease.unit_id,
+                attempt_id=lease.attempt_id,
+                output_digest=None,
+            ),
+        ) from error
     result = checked.finish_result
     if checked.disposition is InputCheckedFinishDisposition.INPUT_MISMATCH:
         raise PackagePlanInputMismatchError(

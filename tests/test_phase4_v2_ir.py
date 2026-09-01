@@ -482,7 +482,10 @@ def test_universe_stops_materializing_distinct_spaces_at_aggregate_limit(
     assert profile_calls == 2
 
 
-def test_variant_space_iterator_rejects_100001_valid_profiles() -> None:
+def test_variant_space_iterator_rejects_100001_valid_profiles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(ir_model, "_MAX_VARIANT_PROFILE_CANDIDATES", 100_001)
     space = ir_model.VariantSpace(
         (("variant", tuple(range(100_001))),),
         (),
@@ -492,6 +495,7 @@ def test_variant_space_iterator_rejects_100001_valid_profiles() -> None:
         tuple(space.iter_profiles())
 
     assert caught.value.diagnostics[0].code == "variant_space_too_large"
+    assert "valid profiles" in caught.value.diagnostics[0].message
 
 
 def test_variant_space_iterator_rejects_100001_candidates_before_filtering() -> None:
@@ -504,6 +508,16 @@ def test_variant_space_iterator_rejects_100001_candidates_before_filtering() -> 
         tuple(space.iter_profiles())
 
     assert caught.value.diagnostics[0].code == "variant_space_too_large"
+    assert "candidate profiles" in caught.value.diagnostics[0].message
+
+
+def test_parse_ir_rejects_json_container_subclasses_without_iterating() -> None:
+    class HostileDict(dict[str, object]):
+        def __iter__(self):
+            raise AssertionError("hostile iterator was consumed")
+
+    with pytest.raises(IRValidationError, match="invalid_json_structure"):
+        parse_ir(HostileDict())
 
 
 def test_universe_bounds_rule_and_binding_profile_expansion(

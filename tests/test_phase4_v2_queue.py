@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import sqlite3
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import closing
@@ -423,6 +424,8 @@ def test_attempt_history_and_completion_rows_are_immutable(queue: Queue) -> None
         "DELETE FROM capability_requirements",
         "UPDATE schema_meta SET attempts_inode = 1",
         "DELETE FROM schema_meta",
+        "UPDATE queue_identity SET database_inode = 1",
+        "DELETE FROM queue_identity",
     )
     for statement in statements:
         with (
@@ -430,6 +433,27 @@ def test_attempt_history_and_completion_rows_are_immutable(queue: Queue) -> None
             pytest.raises(sqlite3.IntegrityError, match="immutable"),
         ):
             connection.execute(statement)
+
+
+@pytest.mark.parametrize("replace_parent", [False, True])
+def test_queue_rejects_replaced_database_or_parent_identity(
+    queue: Queue,
+    tmp_path: Path,
+    replace_parent: bool,
+) -> None:
+    if replace_parent:
+        original_parent = queue.database.parent
+        displaced_parent = tmp_path / "displaced-state"
+        original_parent.rename(displaced_parent)
+        original_parent.mkdir()
+        shutil.copyfile(displaced_parent / queue.database.name, queue.database)
+    else:
+        displaced_database = queue.database.with_name("displaced.sqlite3")
+        queue.database.rename(displaced_database)
+        shutil.copyfile(displaced_database, queue.database)
+
+    with pytest.raises(QueueError, match="identity changed"):
+        queue.verify_schema()
 
 
 def test_completion_is_idempotent_but_conflicting_digest_is_rejected(queue: Queue) -> None:
