@@ -45,6 +45,7 @@ from tools.phase4_v2.equivalence.plan import (
     build_semantic_root_audit,
     build_semantic_root_completion,
     freeze_package_execution_plan,
+    package_validation_receipt_completion,
 )
 from tools.phase4_v2.equivalence.queue import (
     PACKAGE_QUEUE_UNIT_KIND,
@@ -343,6 +344,50 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
         (pin.parent_unit_id, pin.revision, pin.digest)
         for pin in frozen.required_completions
     ]
+
+
+def test_materialization_waits_for_the_frozen_package_validation_receipt(
+    queue: Queue,
+) -> None:
+    plan = _full_plan()
+    frozen = freeze_package_execution_plan(plan)
+    receipt_completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
+    for pin in frozen.required_completions:
+        if pin.parent_unit_id != receipt_completion.parent_unit_id:
+            queue.enqueue(pin.parent_unit_id, kind="prerequisite", input_digest=pin.digest)
+            lease = queue.claim("prerequisite-publisher")
+            assert lease is not None and lease.unit_id == pin.parent_unit_id
+            queue.finish(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=pin.digest,
+                completion_revision=pin.revision,
+            )
+    for pin in frozen.required_capabilities:
+        queue.register_capability(pin.name, pin.revision, pin.digest)
+        queue.activate_capability_from_absent(pin.name, pin.revision, pin.digest)
+
+    with pytest.raises(QueueConflictError, match="could not materialize"):
+        materialize_package_execution_plan(queue, plan)
+
+    queue.enqueue(
+        receipt_completion.parent_unit_id,
+        kind="prerequisite",
+        input_digest=receipt_completion.digest,
+    )
+    materialized = materialize_package_execution_plan(queue, plan)
+    assert materialized is not None
+    lease = queue.claim("receipt-publisher")
+    assert lease is not None and lease.unit_id == receipt_completion.parent_unit_id
+    queue.finish(
+        lease,
+        TerminalOutcome.ACCEPTED,
+        output_digest=receipt_completion.digest,
+        completion_revision=receipt_completion.revision,
+    )
+
+    lease = queue.claim("package-worker")
+    assert lease is not None and lease.unit_id == materialized.unit_id
 
 
 def test_same_package_reference_with_changed_plan_conflicts(queue: Queue) -> None:

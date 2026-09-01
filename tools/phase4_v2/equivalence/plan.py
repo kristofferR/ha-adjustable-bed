@@ -44,6 +44,7 @@ ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v2"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v2"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
+PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-receipt-v1"
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
 PACKAGE_PIPELINE_CAPABILITY = "phase4-v2-package-analysis"
 SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v1"
@@ -262,6 +263,25 @@ def _completion(value: CompletionPin, field: str) -> CompletionPin:
     if type(value) is not CompletionPin:
         _fail(f"{field} must be an exact CompletionPin")
     return CompletionPin(value.parent_unit_id, value.revision, value.digest)
+
+
+def package_validation_receipt_completion(package_ref: FrozenPackageRef) -> CompletionPin:
+    """Return the completion that externally attests a frozen package receipt."""
+    if type(package_ref) is not FrozenPackageRef:
+        _fail("package validation receipt requires an exact FrozenPackageRef")
+    frozen = FrozenPackageRef(
+        package_ref.package_name,
+        package_ref.version_code,
+        package_ref.artifact_digest,
+        package_ref.preflight_sha256,
+        package_ref.validation_receipt_sha256,
+        package_ref.revision,
+    )
+    return CompletionPin(
+        f"package-validation-receipt:{frozen.content_id}",
+        PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+        frozen.validation_receipt_sha256,
+    )
 
 
 def _capability_tuple(
@@ -1173,6 +1193,7 @@ class PackageExecutionPlan:
     @property
     def required_completions(self) -> tuple[CompletionPin, ...]:
         def values() -> Iterable[CompletionPin]:
+            yield package_validation_receipt_completion(self.target_package_ref)
             yield self.accepted_target_inventory.completion
             for item in self.root_plans:
                 if type(item) is ExactReuseRootPlan:

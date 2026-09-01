@@ -26,6 +26,7 @@ from .plan import (
     PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES,
     PACKAGE_REPORT_SCHEMA_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
+    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     ROOT_EXECUTION_PLAN_REVISION,
     SEMANTIC_ROOT_AUDIT_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
@@ -54,6 +55,7 @@ from .plan import (
     build_semantic_root_completion,
     build_validated_package_output,
     freeze_package_execution_plan,
+    package_validation_receipt_completion,
 )
 from .queue import (
     PACKAGE_QUEUE_UNIT_KIND,
@@ -90,6 +92,7 @@ __all__ = [
     "PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES",
     "PACKAGE_REPORT_SCHEMA_REVISION",
     "PACKAGE_REPORT_SCHEMA_SHA256",
+    "PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION",
     "ROOT_EXECUTION_PLAN_REVISION",
     "SEMANTIC_ROOT_COMPLETION_REVISION",
     "SEMANTIC_ROOT_AUDIT_REVISION",
@@ -125,5 +128,6 @@ __all__ = [
     "freeze_package_execution_plan",
     "materialize_package_execution_plan",
     "package_queue_unit_id",
+    "package_validation_receipt_completion",
     "route_application_root",
 ]

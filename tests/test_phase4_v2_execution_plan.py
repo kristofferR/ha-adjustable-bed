@@ -51,8 +51,10 @@ from tools.phase4_v2.equivalence.core import (
     RoutingPins,
 )
 from tools.phase4_v2.equivalence.plan import (
+    PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
     SEMANTIC_ROOT_COMPLETION_REVISION,
     TARGET_ROOT_INVENTORY_REVISION,
+    package_validation_receipt_completion,
 )
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
@@ -447,6 +449,7 @@ def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
         "analyzer:full",
     }
     assert {item.parent_unit_id for item in plan.required_completions} == {
+        f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
         "inventory:target",
         "ledger:target",
         "audit:source",
@@ -680,10 +683,20 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             root_plans=roots,
         )
 
-    at_limit = large_plan(255)
+    at_limit = large_plan(254)
     assert len(freeze_package_execution_plan(at_limit).required_completions) == 256
     with pytest.raises(EquivalenceError, match="global completion requirement count"):
-        freeze_package_execution_plan(large_plan(256))
+        freeze_package_execution_plan(large_plan(255))
+
+
+def test_package_validation_receipt_is_an_external_queue_dependency() -> None:
+    completion = package_validation_receipt_completion(TARGET_PACKAGE_REF)
+
+    assert completion == CompletionPin(
+        f"package-validation-receipt:{TARGET_PACKAGE_REF_ID}",
+        PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
+        TARGET_PACKAGE_REF.validation_receipt_sha256,
+    )
 
 
 def test_per_root_duplicates_and_global_requirement_limit_fail_closed(

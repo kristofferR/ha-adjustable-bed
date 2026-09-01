@@ -24,6 +24,7 @@ from tools.phase4_v2.queue import (
     publish_tracker,
     run_heartbeat,
 )
+from tools.phase4_v2.queue.tracker import GITHUB_ISSUE_BODY_MAX_CHARS, render_markdown
 
 
 class _MemoryGateway:
@@ -89,6 +90,21 @@ def test_publisher_preserves_manual_text_and_exactly_reads_back(
     assert second.queue_generation == generation_after_publish
 
 
+def test_publisher_replaces_an_existing_block_without_reserving_a_separator(
+    monkeypatch: pytest.MonkeyPatch,
+    publisher_queue: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher_queue
+    rendered = render_markdown(queue.snapshot())
+    gateway = _MemoryGateway(rendered)
+    monkeypatch.setattr(queue_publisher, "GITHUB_ISSUE_BODY_MAX_CHARS", len(rendered))
+
+    receipt = publish_tracker(queue, lease, gateway, 542)
+
+    assert receipt.changed is False
+    assert gateway.body == rendered
+
+
 def test_publisher_rejects_issue_cas_conflict(
     publisher_queue: tuple[Queue, Lease],
 ) -> None:
@@ -109,6 +125,30 @@ def test_publisher_rejects_inexact_readback(
 
     with pytest.raises(PublisherReadbackError, match="exact"):
         publish_tracker(queue, lease, gateway, 542)
+
+
+def test_tracker_publication_truncates_units_to_the_available_issue_body_budget(
+    publisher_queue: tuple[Queue, Lease],
+) -> None:
+    queue, lease = publisher_queue
+    for index in range(255):
+        queue.enqueue(
+            f"unit-{index:03d}-" + "x" * 191,
+            kind="kind-" + "y" * 195,
+            cluster_id="cluster-" + "z" * 192,
+            input_digest=f"{index:064x}",
+        )
+
+    rendered = render_markdown(queue.snapshot())
+    assert len(rendered) <= GITHUB_ISSUE_BODY_MAX_CHARS
+    assert "additional units omitted" in rendered
+
+    gateway = _MemoryGateway("Manual introduction.\n" + "m" * 30_000)
+    receipt = publish_tracker(queue, lease, gateway, 542)
+
+    assert receipt.changed is True
+    assert len(gateway.body) <= GITHUB_ISSUE_BODY_MAX_CHARS
+    assert "additional units omitted" in gateway.body
 
 
 def test_publisher_rejects_queue_drift_before_write(
