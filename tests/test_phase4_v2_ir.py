@@ -346,6 +346,39 @@ def test_universe_reports_bindings_outside_expected_applicability() -> None:
     assert {dict(issue.key.profile)["model"] for issue in extra if issue.key} == {"alpha"}
 
 
+def test_universe_preserves_boolean_and_integer_selector_identity() -> None:
+    data = _document()
+    data["variant_spaces"] = {
+        "variants": {
+            "dimensions": {"selector": [True, 1]},
+            "constraints": [],
+        }
+    }
+    data["actions"] = {"raise": {"summary": "Raise"}}
+    data["expected_action_rules"] = {
+        "expect_boolean": {
+            "protocol": "primary",
+            "action": "raise",
+            "when": {"op": "eq", "dimension": "selector", "value": True},
+        }
+    }
+    data["command_bindings"] = {
+        "bind_integer": {
+            "protocol": "primary",
+            "action": "raise",
+            "when": {"op": "eq", "dimension": "selector", "value": 1},
+        }
+    }
+
+    result = validate_universe(_load(data))
+
+    assert [issue.code for issue in result.issues] == ["extra_binding", "missing_binding"]
+    assert {type(dict(issue.key.profile)["selector"]) for issue in result.issues if issue.key} == {
+        bool,
+        int,
+    }
+
+
 def test_universe_distinguishes_duplicate_binding_coverage() -> None:
     data = _document()
     bindings = data["command_bindings"]

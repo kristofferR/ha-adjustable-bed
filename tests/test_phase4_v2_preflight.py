@@ -57,6 +57,7 @@ def _mock_identity_tools(
     identities: Mapping[str, tuple[str, str, str, str | None, tuple[str, ...], str]],
     *,
     split_as_package_attribute: bool = False,
+    config_for_splits: Mapping[str, str] | None = None,
 ) -> None:
     def run(arguments: Sequence[str], *, label: str) -> tuple[str | None, str | None]:
         package, code, version, split, required, signer = identities[label]
@@ -65,6 +66,8 @@ def _mock_identity_tools(
         package_line = f"package: name='{package}' versionCode='{code}' versionName='{version}'"
         if split is not None and split_as_package_attribute:
             package_line += f" split='{split}'"
+        if config_for_splits is not None and label in config_for_splits:
+            package_line += f" configForSplit='{config_for_splits[label]}'"
         lines = [package_line]
         if split is not None and not split_as_package_attribute:
             lines.append(f"split='{split}'")
@@ -307,6 +310,36 @@ def test_missing_declared_split_fails_closed(
     assert "required_split_missing:feature" in result.decision.blockers
 
 
+def test_missing_config_for_split_target_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "base.apk"
+    config = tmp_path / "config.apk"
+    _native_apk(base)
+    _apk(config, "AndroidManifest.xml", "res/drawable/icon.png")
+    signer = "a" * 64
+    _mock_identity_tools(
+        monkeypatch,
+        {
+            "base.apk": ("org.example.bed", "42", "4.2", None, (), signer),
+            "config.apk": (
+                "org.example.bed",
+                "42",
+                "4.2",
+                "config.feature.arm64",
+                (),
+                signer,
+            ),
+        },
+        config_for_splits={"config.apk": "feature"},
+    )
+
+    result = preflight_delivery([base, config])
+
+    assert result.package_identity is None
+    assert "config_for_split_missing:feature" in result.decision.blockers
+
+
 def test_ambiguous_base_and_duplicate_split_identities_fail_closed(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -457,6 +490,22 @@ def test_specialized_stack_routes_are_canonical_while_identity_fails_closed(
     assert result.decision.status == "BLOCKED"
     assert result.decision.members[0].status == "READY"
     assert "package_identity_not_verified" in result.decision.blockers
+
+
+def test_standard_react_native_bundle_uses_hermes_header_for_routing(tmp_path: Path) -> None:
+    artifact = tmp_path / "hermes.apk"
+    with zipfile.ZipFile(artifact, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("AndroidManifest.xml", b"manifest")
+        archive.writestr("classes.dex", b"dex")
+        archive.writestr(
+            "assets/index.android.bundle",
+            legacy_preflight._HERMES_BYTECODE_MAGIC + b"fixture",
+        )
+
+    result = preflight_delivery([artifact])
+
+    assert {"react_native", "hermes"}.issubset(result.decision.stacks)
+    assert {"react-native-bundle", "hermes-bundle"}.issubset(result.decision.routes)
 
 
 def test_unknown_stack_blocks_pipeline_but_not_byte_cache(tmp_path: Path) -> None:

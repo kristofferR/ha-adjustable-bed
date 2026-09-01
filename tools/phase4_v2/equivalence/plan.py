@@ -163,6 +163,92 @@ class CompletionPin:
         }
 
 
+@dataclass(frozen=True, slots=True, init=False)
+class SemanticRootCompletion:
+    """Queue completion binding inherited semantics to their audited source root."""
+
+    source_root_id: str
+    inherited_semantic_root_sha256: str
+    completion: CompletionPin
+
+    def __init__(self) -> None:
+        _fail("SemanticRootCompletion must be created by its typed evidence factory")
+
+
+def _semantic_root_completion_digest(
+    source_root_id: str,
+    inherited_semantic_root_sha256: str,
+    parent_unit_id: str,
+) -> str:
+    _sha(source_root_id, "semantic completion source root")
+    _sha(inherited_semantic_root_sha256, "semantic completion inherited root")
+    _token(parent_unit_id, "semantic completion parent unit")
+    return _content_id(
+        "phase4-v2:semantic-root-completion",
+        {
+            "inherited_semantic_root_sha256": inherited_semantic_root_sha256,
+            "parent_unit_id": parent_unit_id,
+            "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
+            "source_root_id": source_root_id,
+        },
+    )
+
+
+def build_semantic_root_completion(
+    *,
+    source_root: ApplicationRoot,
+    inherited_semantic_root_sha256: str,
+    parent_unit_id: str,
+) -> SemanticRootCompletion:
+    if type(source_root) is not ApplicationRoot:
+        _fail("semantic root completion requires an exact ApplicationRoot")
+    source_root.__post_init__()
+    digest = _semantic_root_completion_digest(
+        source_root.content_id,
+        inherited_semantic_root_sha256,
+        parent_unit_id,
+    )
+    result = object.__new__(SemanticRootCompletion)
+    object.__setattr__(result, "source_root_id", source_root.content_id)
+    object.__setattr__(
+        result, "inherited_semantic_root_sha256", inherited_semantic_root_sha256
+    )
+    object.__setattr__(
+        result,
+        "completion",
+        CompletionPin(parent_unit_id, SEMANTIC_ROOT_COMPLETION_REVISION, digest),
+    )
+    return result
+
+
+def _semantic_root_completion(value: SemanticRootCompletion) -> SemanticRootCompletion:
+    if type(value) is not SemanticRootCompletion:
+        _fail("semantic audit inherited root requires a typed SemanticRootCompletion")
+    completion = _completion(value.completion, "semantic root completion")
+    _sha(value.source_root_id, "semantic completion source root")
+    _sha(value.inherited_semantic_root_sha256, "semantic completion inherited root")
+    _revision(
+        completion.revision,
+        SEMANTIC_ROOT_COMPLETION_REVISION,
+        "semantic root completion",
+    )
+    if completion.digest != _semantic_root_completion_digest(
+        value.source_root_id,
+        value.inherited_semantic_root_sha256,
+        completion.parent_unit_id,
+    ):
+        _fail("semantic root completion does not reproduce its typed source binding")
+    result = object.__new__(SemanticRootCompletion)
+    object.__setattr__(result, "source_root_id", value.source_root_id)
+    object.__setattr__(
+        result,
+        "inherited_semantic_root_sha256",
+        value.inherited_semantic_root_sha256,
+    )
+    object.__setattr__(result, "completion", completion)
+    return result
+
+
 def _capability(value: CapabilityPin, field: str) -> CapabilityPin:
     if type(value) is not CapabilityPin:
         _fail(f"{field} must be an exact CapabilityPin")
@@ -430,7 +516,7 @@ def build_semantic_root_audit(
     extractor: ExtractorCapability,
     accepted_target_inventory: AcceptedTargetRootInventory,
     inherited_semantic_root_sha256: str,
-    inherited_semantic_root_completion: CompletionPin,
+    inherited_semantic_root_completion: SemanticRootCompletion,
     target_inventory_completion: CompletionPin,
     ledger_decision_completion: CompletionPin,
     direct_semantic_audit_completion: CompletionPin,
@@ -450,9 +536,10 @@ def build_semantic_root_audit(
     inventory_pin = _completion(target_inventory_completion, "semantic audit inventory")
     ledger_pin = _completion(ledger_decision_completion, "semantic audit ledger")
     audit_pin = _completion(direct_semantic_audit_completion, "semantic audit completion")
-    semantic_root_pin = _completion(
-        inherited_semantic_root_completion, "semantic audit inherited root completion"
+    semantic_root_completion = _semantic_root_completion(
+        inherited_semantic_root_completion
     )
+    semantic_root_pin = semantic_root_completion.completion
     extractor_pin = _capability(extractor_capability, "semantic audit extractor")
     pipeline_pin = _capability(equivalence_pipeline, "semantic audit pipeline")
     _sha(inherited_semantic_root_sha256, "semantic audit inherited root")
@@ -461,8 +548,12 @@ def build_semantic_root_audit(
         SEMANTIC_ROOT_COMPLETION_REVISION,
         "semantic root completion",
     )
-    if semantic_root_pin.digest != inherited_semantic_root_sha256:
-        _fail("semantic root completion does not bind the inherited semantic root")
+    if (
+        semantic_root_completion.source_root_id != source_root.content_id
+        or semantic_root_completion.inherited_semantic_root_sha256
+        != inherited_semantic_root_sha256
+    ):
+        _fail("semantic root completion does not bind the audited source and inherited root")
     if ledger_decision.route is not Route.EXACT_REUSE:
         _fail("semantic audit requires an EXACT_REUSE ledger decision")
     if (
@@ -596,7 +687,11 @@ def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
         SEMANTIC_ROOT_COMPLETION_REVISION,
         "semantic root completion",
     )
-    if semantic_pin.digest != value.inherited_semantic_root_sha256:
+    if semantic_pin.digest != _semantic_root_completion_digest(
+        value.source_root_id,
+        value.inherited_semantic_root_sha256,
+        semantic_pin.parent_unit_id,
+    ):
         _fail("semantic root completion relation no longer reproduces")
     extractor_pin = values["extractor_capability"]
     assert type(extractor_pin) is CapabilityPin
@@ -627,6 +722,7 @@ def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
 
 @dataclass(frozen=True, slots=True, init=False)
 class ExactReusePins:
+    source_root_id: str
     target_root_id: str
     target_occurrence_identity_sha256: str
     inherited_semantic_root_sha256: str
@@ -643,6 +739,7 @@ class ExactReusePins:
         _fail("ExactReusePins must be created from a typed SemanticRootAudit")
 
     def __post_init__(self) -> None:
+        _sha(self.source_root_id, "reuse.source_root_id")
         _sha(self.target_root_id, "reuse.target_root_id")
         _sha(self.target_occurrence_identity_sha256, "reuse.occurrence")
         _sha(self.inherited_semantic_root_sha256, "reuse.semantic_root")
@@ -662,8 +759,12 @@ class ExactReusePins:
             SEMANTIC_ROOT_COMPLETION_REVISION,
             "semantic root completion",
         )
-        if semantic_root.digest != self.inherited_semantic_root_sha256:
-            _fail("reuse semantic root completion does not bind the inherited root")
+        if semantic_root.digest != _semantic_root_completion_digest(
+            self.source_root_id,
+            self.inherited_semantic_root_sha256,
+            semantic_root.parent_unit_id,
+        ):
+            _fail("reuse semantic root completion does not bind the source and inherited root")
         _revision(
             self.extractor_record_revision,
             EXTRACTOR_CAPABILITY_REVISION,
@@ -692,6 +793,7 @@ class ExactReusePins:
             ),
             "ledger_decision_completion": self.ledger_decision_completion.to_data(),
             "revision": self.revision,
+            "source_root_id": self.source_root_id,
             "target_inventory_completion": self.target_inventory_completion.to_data(),
             "target_occurrence_identity_sha256": self.target_occurrence_identity_sha256,
             "target_root_id": self.target_root_id,
@@ -702,6 +804,7 @@ def _reuse(value: ExactReusePins) -> ExactReusePins:
     if type(value) is not ExactReusePins:
         _fail("exact route requires exact concrete ExactReusePins")
     return _new_reuse_pins(
+        source_root_id=value.source_root_id,
         target_root_id=value.target_root_id,
         target_occurrence_identity_sha256=value.target_occurrence_identity_sha256,
         inherited_semantic_root_sha256=value.inherited_semantic_root_sha256,
@@ -718,6 +821,7 @@ def _reuse(value: ExactReusePins) -> ExactReusePins:
 
 def _new_reuse_pins(
     *,
+    source_root_id: str,
     target_root_id: str,
     target_occurrence_identity_sha256: str,
     inherited_semantic_root_sha256: str,
@@ -732,6 +836,7 @@ def _new_reuse_pins(
 ) -> ExactReusePins:
     result = object.__new__(ExactReusePins)
     for field, value in (
+        ("source_root_id", source_root_id),
         ("target_root_id", target_root_id),
         ("target_occurrence_identity_sha256", target_occurrence_identity_sha256),
         ("inherited_semantic_root_sha256", inherited_semantic_root_sha256),
@@ -775,6 +880,7 @@ def build_exact_reuse_root_plan(audit: SemanticRootAudit) -> ExactReuseRootPlan:
         _fail("semantic audit pipeline relation no longer reproduces")
     _revision(pipeline.revision, EQUIVALENCE_SCHEMA_REVISION, "semantic audit pipeline")
     pins = _new_reuse_pins(
+        source_root_id=audit.source_root_id,
         target_root_id=audit.target_root_id,
         target_occurrence_identity_sha256=audit.target_occurrence_identity_sha256,
         inherited_semantic_root_sha256=audit.inherited_semantic_root_sha256,
@@ -1014,9 +1120,11 @@ class PackageExecutionPlan:
     def inherited_semantic_roots(self) -> tuple[str, ...]:
         return tuple(
             sorted(
-                item.reuse.inherited_semantic_root_sha256
-                for item in self.root_plans
-                if type(item) is ExactReuseRootPlan
+                {
+                    item.reuse.inherited_semantic_root_sha256
+                    for item in self.root_plans
+                    if type(item) is ExactReuseRootPlan
+                }
             )
         )
 

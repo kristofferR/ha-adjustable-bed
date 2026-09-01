@@ -28,6 +28,7 @@ PREFLIGHT_SCHEMA = "phase4-v2-preflight-v3"
 CACHE_SCHEMA = "phase4-v2-artifact-cache-v1"
 _DELIVERY_ARCHIVES = frozenset({".apks", ".xapk", ".zip"})
 _APK_SUFFIX = ".apk"
+_HERMES_BYTECODE_MAGIC = bytes.fromhex("c61fbc03c103191f")
 _COPY_CHUNK = 1024 * 1024
 _MAX_CACHE_MANIFEST_BYTES = 16 * 1024**2
 _MAX_ZIP_COMMENT_BYTES = 65_535
@@ -245,6 +246,7 @@ class _ApkIdentity:
     version_code: str
     version_name: str
     split_name: str | None
+    config_for_split: str | None
     required_splits: tuple[str, ...]
     signer_sha256: tuple[str, ...]
 
@@ -550,7 +552,19 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
     try:
         with _open_zip_path(path, limits) as apk:
             entries = _archive_entries(apk, limits)
-    except SafetyError as err:
+            standard_bundle = next(
+                (
+                    entry
+                    for entry in entries
+                    if entry.name.casefold() == "assets/index.android.bundle"
+                ),
+                None,
+            )
+            standard_bundle_prefix = None
+            if standard_bundle is not None:
+                with apk.open(standard_bundle.info) as stream:
+                    standard_bundle_prefix = stream.read(len(_HERMES_BYTECODE_MAGIC))
+    except (OSError, RuntimeError, ValueError, zipfile.BadZipFile, SafetyError) as err:
         raise SafetyError(f"invalid APK member {label}: {err}") from err
     names = {entry.name.casefold() for entry in entries}
     stacks: set[str] = set()
@@ -565,9 +579,16 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         name.startswith("lib/") and name.endswith("/libapp.so") for name in names
     ):
         stacks.add("flutter")
-    if "assets/index.android.bundle" in names or "assets/index.android.bundle.hbc" in names:
+    react_native_bundle_names = {
+        "assets/index.android.bundle",
+        "assets/index.android.bundle.hbc",
+    }
+    if names.intersection(react_native_bundle_names):
         stacks.add("react_native")
-    if any(name.endswith(".hermes") or name.endswith(".hbc") for name in names):
+    standard_bundle_is_hermes = standard_bundle_prefix == _HERMES_BYTECODE_MAGIC
+    if standard_bundle_is_hermes or any(
+        name.endswith(".hermes") or name.endswith(".hbc") for name in names
+    ):
         stacks.add("hermes")
     if "assets/meta-inf/air/application.xml" in names or any(
         name.endswith(".swf") for name in names
@@ -577,12 +598,8 @@ def _classify_apk(path: Path, label: str, limits: PreflightLimits) -> _ApkObserv
         stacks.add("native")
     if any(name.endswith(_EMBEDDED_ARCHIVE_SUFFIXES) for name in names):
         stacks.add("embedded_archive")
-    known_react_native_bundles = {
-        "assets/index.android.bundle",
-        "assets/index.android.bundle.hbc",
-    }
     if any(
-        name not in known_react_native_bundles
+        name not in react_native_bundle_names
         and (name.endswith(_SHIPPED_CODE_SUFFIXES) or name.endswith(".bundle"))
         and _DEX_MEMBER.fullmatch(name) is None
         for name in names
@@ -709,6 +726,7 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
     if parse_blockers:
         return None, tuple(parse_blockers)
     package = package_attributes[0]
+    config_for_split = package.get("configForSplit")
     required_splits = tuple(
         sorted(
             {
@@ -726,6 +744,7 @@ def _inspect_apk_identity(member: ArtifactMember) -> tuple[_ApkIdentity | None, 
             package["versionCode"],
             package["versionName"],
             split_matches[0] if split_matches else None,
+            config_for_split,
             required_splits,
             signer_digests,
         ),
@@ -764,6 +783,15 @@ def _derive_package_identity(
     required_splits = {name for item in inspected for name in item.required_splits}
     missing = sorted(required_splits - present_splits)
     blockers.extend(f"required_split_missing:{name}" for name in missing)
+    config_targets = {
+        item.config_for_split
+        for item in inspected
+        if item.config_for_split not in {None, "base"}
+    }
+    missing_config_targets = sorted(config_targets - present_splits)
+    blockers.extend(
+        f"config_for_split_missing:{name}" for name in missing_config_targets
+    )
     if blockers:
         return None, tuple(sorted(set(blockers)))
     package_name = next(iter(packages))

@@ -428,11 +428,25 @@ class ProtocolIRDocument:
         }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class UniverseKey:
     protocol: str
     action: str
     profile: Profile
+
+    @property
+    def _identity(self) -> tuple[str, str, tuple[tuple[str, type[object], JsonScalar], ...]]:
+        return (
+            self.protocol,
+            self.action,
+            tuple((name, type(value), value) for name, value in self.profile),
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return type(other) is UniverseKey and self._identity == other._identity
+
+    def __hash__(self) -> int:
+        return hash(self._identity)
 
 
 @dataclass(frozen=True, slots=True)

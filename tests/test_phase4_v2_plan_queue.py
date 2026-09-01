@@ -42,6 +42,7 @@ from tools.phase4_v2.equivalence.plan import (
     build_exact_reuse_root_plan,
     build_package_execution_plan,
     build_semantic_root_audit,
+    build_semantic_root_completion,
     freeze_package_execution_plan,
 )
 from tools.phase4_v2.equivalence.queue import (
@@ -187,8 +188,10 @@ def _reuse_plan() -> PackageExecutionPlan:
         extractor=extractor,
         accepted_target_inventory=accepted,
         inherited_semantic_root_sha256=SHA_0,
-        inherited_semantic_root_completion=CompletionPin(
-            "semantic-root:source", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_0
+        inherited_semantic_root_completion=build_semantic_root_completion(
+            source_root=source,
+            inherited_semantic_root_sha256=SHA_0,
+            parent_unit_id="semantic-root:source",
         ),
         target_inventory_completion=accepted.completion,
         ledger_decision_completion=CompletionPin(

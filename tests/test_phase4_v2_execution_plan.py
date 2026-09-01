@@ -37,6 +37,7 @@ from tools.phase4_v2.equivalence import (
     build_exact_reuse_root_plan,
     build_package_execution_plan,
     build_semantic_root_audit,
+    build_semantic_root_completion,
     build_validated_package_output,
     freeze_package_execution_plan,
 )
@@ -113,6 +114,8 @@ def semantic_audit(
     *,
     root_id: str = SHA_C,
     semantic_root: str = SHA_0,
+    unit_suffix: str | None = None,
+    bind_unrelated_source: bool = False,
 ) -> SemanticRootAudit:
     extractor = ExtractorCapability(
         name="dex-root-inventory",
@@ -142,21 +145,28 @@ def semantic_audit(
         source_audit_receipt_sha256=SHA_1,
         pins=RoutingPins(),
     )
+    completion_source = (
+        replace(source, occurrence_identity_sha256=SHA_D)
+        if bind_unrelated_source
+        else source
+    )
     audit = build_semantic_root_audit(
         source_root=source,
         ledger_decision=decision,
         extractor=extractor,
         accepted_target_inventory=accepted,
         inherited_semantic_root_sha256=semantic_root,
-        inherited_semantic_root_completion=CompletionPin(
-            "semantic-root:source", SEMANTIC_ROOT_COMPLETION_REVISION, semantic_root
+        inherited_semantic_root_completion=build_semantic_root_completion(
+            source_root=completion_source,
+            inherited_semantic_root_sha256=semantic_root,
+            parent_unit_id="semantic-root:source",
         ),
         target_inventory_completion=accepted.completion,
         ledger_decision_completion=CompletionPin(
-            "ledger:target", LEDGER_DECISION_REVISION, decision.content_id
+            f"ledger:{unit_suffix or 'target'}", LEDGER_DECISION_REVISION, decision.content_id
         ),
         direct_semantic_audit_completion=CompletionPin(
-            "audit:source", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_1
+            f"audit:{unit_suffix or 'source'}", SEMANTIC_ROOT_COMPLETION_REVISION, SHA_1
         ),
         extractor_capability=CapabilityPin(
             "extractor:dex", "dex-implementation-2026.08", extractor.content_id
@@ -175,12 +185,14 @@ def exact_root(
     *,
     root_id: str = SHA_C,
     semantic_root: str = SHA_0,
+    unit_suffix: str | None = None,
 ) -> ExactReuseRootPlan:
     return build_exact_reuse_root_plan(
         semantic_audit(
             accepted,
             root_id=root_id,
             semantic_root=semantic_root,
+            unit_suffix=unit_suffix,
         )
     )
 
@@ -328,7 +340,7 @@ def test_exact_route_binds_every_queue_dependency_unambiguously() -> None:
     assert data["inherited_semantic_root_completion"] == {
         "parent_unit_id": "semantic-root:source",
         "revision": SEMANTIC_ROOT_COMPLETION_REVISION,
-        "digest": SHA_0,
+        "digest": root.reuse.inherited_semantic_root_completion.digest,
     }
     assert data["extractor_capability"] == {
         "name": "extractor:dex",
@@ -379,10 +391,34 @@ def test_semantic_root_audit_is_factory_only_and_relations_are_rechecked() -> No
 def test_semantic_root_requires_its_own_typed_completion() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     audit = semantic_audit(accepted)
-    assert audit.inherited_semantic_root_completion.digest == audit.inherited_semantic_root_sha256
+    assert audit.inherited_semantic_root_completion.digest != audit.inherited_semantic_root_sha256
     object.__setattr__(audit, "inherited_semantic_root_sha256", SHA_B)
     with pytest.raises(EquivalenceError, match="semantic root completion relation"):
         build_exact_reuse_root_plan(audit)
+
+
+def test_semantic_root_completion_binds_the_audited_source_root() -> None:
+    accepted = accepted_inventory((SHA_C, SHA_D))
+
+    with pytest.raises(EquivalenceError, match="audited source and inherited root"):
+        semantic_audit(accepted, bind_unrelated_source=True)
+
+
+def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
+    accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
+    plan = build_package_execution_plan(
+        target_package_ref_id=SHA_A,
+        package_local=local_plan(),
+        accepted_target_inventory=accepted,
+        root_plans=(
+            exact_root(accepted, unit_suffix="first"),
+            exact_root(accepted, root_id=SHA_E, unit_suffix="second"),
+        ),
+    )
+
+    frozen = freeze_package_execution_plan(plan)
+
+    assert frozen.inherited_semantic_roots == (SHA_0,)
 
 
 def test_full_route_has_no_reuse_pins_and_mixed_plan_is_allowed() -> None:
