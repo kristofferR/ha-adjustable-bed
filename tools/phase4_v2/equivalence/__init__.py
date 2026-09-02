@@ -56,6 +56,7 @@ from .plan import (
     build_validated_package_output,
     freeze_package_execution_plan,
     package_validation_receipt_completion,
+    validate_frozen_package_execution_plan,
 )
 from .queue import (
     PACKAGE_QUEUE_UNIT_KIND,
@@ -137,5 +138,6 @@ __all__ = [
     "materialize_package_validation_receipt",
     "package_queue_unit_id",
     "package_validation_receipt_completion",
+    "validate_frozen_package_execution_plan",
     "route_application_root",
 ]

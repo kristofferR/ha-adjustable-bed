@@ -16,6 +16,7 @@ from tools.phase4_v2.equivalence import (
     FrozenPackageExecutionPlan,
     PackagePlanStatus,
     ValidatedPackageOutput,
+    validate_frozen_package_execution_plan,
 )
 from tools.phase4_v2.preflight import CandidateRecord, InvocationRecord, PreparationResult
 from tools.phase4_v2.reconciliation import (
@@ -84,6 +85,15 @@ def _validate_plan(plan: FrozenPackageExecutionPlan, findings: _Findings) -> Non
     if type(plan) is not FrozenPackageExecutionPlan:
         findings.add("PLAN_TYPE_INVALID", "/execution_plan")
         return
+    if (
+        findings.guard(
+            "PLAN_STRUCTURE_INVALID",
+            "/execution_plan",
+            lambda: validate_frozen_package_execution_plan(plan),
+        )
+        is None
+    ):
+        findings.add("PLAN_STRUCTURE_INVALID", "/execution_plan")
     if type(plan.canonical_bytes) is not bytes or len(plan.canonical_bytes) > _MAX_RENDER_BYTES:
         findings.add("PLAN_PREIMAGE_INVALID", "/execution_plan/canonical_bytes")
         return
@@ -104,6 +114,8 @@ def _validate_plan(plan: FrozenPackageExecutionPlan, findings: _Findings) -> Non
     data = cast(dict[str, object], decoded)
     if data.get("target_package_ref_id") != plan.target_package_ref_id:
         findings.add("PLAN_TARGET_MISMATCH", "/execution_plan/target_package_ref_id")
+    if data.get("cluster_id") != plan.cluster_id:
+        findings.add("PLAN_CLUSTER_MISMATCH", "/execution_plan/cluster_id")
     if data.get("status") != getattr(plan.status, "value", None):
         findings.add("PLAN_STATUS_MISMATCH", "/execution_plan/status")
     if data.get("authoritative_root_count") != plan.root_count:
@@ -371,6 +383,10 @@ def _validate_completion(
     report_candidates, report_actions, report_variants = _reconciliation_ledgers(
         reconciliation, target, findings
     )
+    if type(reconciliation) is ReconciliationResult and reconciliation.cluster_id != getattr(
+        execution_plan, "cluster_id", None
+    ):
+        findings.add("RECONCILIATION_CLUSTER_MISMATCH", "/reconciliation/cluster_id")
     reconciliation_id = (
         findings.guard(
             "RECONCILIATION_STRUCTURE_INVALID",
