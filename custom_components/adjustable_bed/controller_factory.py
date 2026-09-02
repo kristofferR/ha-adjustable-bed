@@ -108,6 +108,7 @@ from .const import (
     OKIN_CB24_VARIANT_DACHENG,
     OKIN_CB24_VARIANT_NEW,
     OKIN_CB24_VARIANT_OLD,
+    OKIN_CST_VARIANTS,
     RICHMAT_PROTOCOL_PREFIX55,
     RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_VARIANT_NORDIC,
@@ -267,7 +268,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_NORDIC: _ControllerSpec("okin_nordic", "OkinNordicController"),
     BED_TYPE_OKIN_CB35: _ControllerSpec("okin_cb35", "OkinCB35Controller"),
     BED_TYPE_OKIN_ORE: _ControllerSpec("okin_ore", "OkinOreController"),
-    BED_TYPE_OKIN_CST: _ControllerSpec("okin_cst", "OkinCstController"),
     BED_TYPE_MALOUF_NEW_OKIN: _ControllerSpec("malouf", "MaloufNewOkinController"),
     BED_TYPE_MALOUF_LEGACY_OKIN: _ControllerSpec("malouf", "MaloufLegacyOkinController"),
     BED_TYPE_LEGGETT_OKIN: _ControllerSpec("leggett_okin", "LeggettOkinController"),
@@ -800,6 +800,15 @@ async def create_controller(
         from .beds.jensen import JensenController
 
         return JensenController(coordinator, pin=jensen_pin)
+
+    if bed_type == BED_TYPE_OKIN_CST:
+        from .beds.okin_cst import OkinCstController
+
+        variant = protocol_variant or VARIANT_AUTO
+        if variant not in OKIN_CST_VARIANTS:
+            _LOGGER.warning("Unknown Okin CST profile %s, using auto", variant)
+            variant = VARIANT_AUTO
+        return OkinCstController(coordinator, variant=variant)
 
     if bed_type == BED_TYPE_SLEEP_NUMBER:
         from .beds.sleep_number import SleepNumberController

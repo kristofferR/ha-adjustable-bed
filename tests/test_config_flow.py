@@ -92,6 +92,8 @@ from custom_components.adjustable_bed.const import (
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    OKIN_CST_VARIANT_CAREFREE,
+    OKIN_CST_VARIANT_MF900,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     RONDURE_VARIANT_SIDE_A,
@@ -239,6 +241,13 @@ class TestPairingInstructions:
         assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, "auto", 4)
         assert BED_TYPE_OKIN_CST not in BEDS_WITH_POSITION_FEEDBACK
         assert BED_TYPE_OKIN_CST in BEDS_WITHOUT_ANGLE_FEEDBACK
+
+    async def test_okin_cst_product_profiles_constrain_motor_count(self) -> None:
+        """CST profile selection must not expose absent lumbar controls."""
+        assert _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_MF900, 3)
+        assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_MF900, 2)
+        assert _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, 2)
+        assert not _is_valid_motor_count(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, 3)
 
 
 class TestPairingPersistence:

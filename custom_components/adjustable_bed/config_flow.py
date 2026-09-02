@@ -111,6 +111,7 @@ from .const import (
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STAR2,
+    OKIN_CST_THREE_MOTOR_VARIANTS,
     POSITION_MODE_ACCURACY,
     POSITION_MODE_SPEED,
     RICHMAT_REMOTE_AUTO,
@@ -179,7 +180,7 @@ def _motor_count_options(
     if bed_type == BED_TYPE_OCTO and protocol_variant != OCTO_VARIANT_STAR2:
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
-        return [3]
+        return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
     return [2, 3, 4]
 
 
