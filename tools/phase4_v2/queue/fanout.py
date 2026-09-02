@@ -19,8 +19,8 @@ from .tracker import render_html, render_markdown
 _REVISION = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _PATH = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,4095}$")
 _MAX_TARGETS = 32
-_MAX_DOCUMENT_BYTES = 2 * 1024 * 1024
-_MAX_DOCUMENT_SET_BYTES = 8 * 1024 * 1024
+_MAX_DOCUMENT_BYTES = 900 * 1024
+_MAX_DOCUMENT_SET_BYTES = 4 * 1024 * 1024
 
 
 class TrackerFormat(StrEnum):
@@ -38,6 +38,7 @@ class TrackerTarget:
             type(self.path) is not str
             or _PATH.fullmatch(self.path) is None
             or self.path.startswith("/")
+            or self.path.endswith("/")
             or "//" in self.path
             or any(part in {".", ".."} for part in self.path.split("/"))
         ):
@@ -215,6 +216,7 @@ def _targets(targets: tuple[TrackerTarget, ...]) -> tuple[TrackerTarget, ...]:
     if (
         type(targets) is not tuple
         or not targets
+        or len(targets) > _MAX_TARGETS
         or any(type(item) is not TrackerTarget for item in targets)
     ):
         raise ValueError("tracker targets must be a non-empty exact tuple")

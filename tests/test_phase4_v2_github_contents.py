@@ -10,6 +10,7 @@ from tools.phase4_v2.queue import (
     CommandResult,
     GitHubContentsError,
     GitHubContentsGateway,
+    GitHubContentsPostWriteUnknownError,
     GitHubContentsTarget,
 )
 
@@ -205,4 +206,66 @@ def test_contents_gateway_rejects_ambiguous_json_response() -> None:
     )
 
     with pytest.raises(GitHubContentsError, match="invalid JSON"):
+        gateway.read(542)
+
+
+def test_contents_gateway_reconciles_applied_write_after_transport_error() -> None:
+    runner = _ContentsRunner()
+    original = runner.__call__
+
+    def uncertain(arguments: tuple[str, ...], timeout: int) -> CommandResult:
+        if "PUT" in arguments:
+            original(arguments, timeout)
+            raise GitHubContentsError("synthetic timeout")
+        return original(arguments, timeout)
+
+    gateway = GitHubContentsGateway(
+        {542: GitHubContentsTarget("owner/repo", "trackers", "542.md")},
+        runner=uncertain,
+    )
+
+    assert gateway.compare_and_replace(
+        542,
+        expected_revision=_BLOB,
+        expected_body_sha256=hashlib.sha256(b"manual\n").hexdigest(),
+        body="updated\n",
+    )
+
+
+def test_contents_gateway_reports_unresolved_transport_outcome() -> None:
+    runner = _ContentsRunner()
+
+    def uncertain(arguments: tuple[str, ...], timeout: int) -> CommandResult:
+        if "PUT" in arguments:
+            raise GitHubContentsError("synthetic timeout")
+        return runner(arguments, timeout)
+
+    gateway = GitHubContentsGateway(
+        {542: GitHubContentsTarget("owner/repo", "trackers", "542.md")},
+        runner=uncertain,
+    )
+
+    with pytest.raises(GitHubContentsPostWriteUnknownError, match="unknown"):
+        gateway.compare_and_replace(
+            542,
+            expected_revision=_BLOB,
+            expected_body_sha256=hashlib.sha256(b"manual\n").hexdigest(),
+            body="updated\n",
+        )
+
+
+def test_contents_gateway_bounds_json_structure() -> None:
+    class DeepRunner:
+        def __call__(self, _arguments: tuple[str, ...], _timeout: int) -> CommandResult:
+            value: object = "leaf"
+            for _ in range(40):
+                value = {"nested": value}
+            return CommandResult(0, json.dumps(value).encode(), b"")
+
+    gateway = GitHubContentsGateway(
+        {542: GitHubContentsTarget("owner/repo", "trackers", "542.md")},
+        runner=DeepRunner(),
+    )
+
+    with pytest.raises(GitHubContentsError, match="structural limits"):
         gateway.read(542)

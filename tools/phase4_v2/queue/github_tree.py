@@ -18,9 +18,16 @@ _OBJECT_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 _MAX_REQUEST_BYTES = 12 * 1024 * 1024
+_MAX_DOCUMENT_SET_BYTES = 4 * 1024 * 1024
+_MAX_JSON_DEPTH = 32
+_MAX_JSON_NODES = 10_000
 _TIMEOUT_SECONDS = 60
 
 type TreeCommandRunner = Callable[[tuple[str, ...], bytes | None, int], CommandResult]
+
+
+class GitHubTreePostWriteUnknownError(GitHubContentsError):
+    """A failed ref transport may have made the commit visible."""
 
 
 class GitHubTreeGateway:
@@ -44,6 +51,7 @@ class GitHubTreeGateway:
         canonical_paths = _paths(paths)
         revision = self._read_ref()
         documents: list[TrackerDocument] = []
+        total_bytes = 0
         for path in canonical_paths:
             result = self._call(
                 (
@@ -63,12 +71,22 @@ class GitHubTreeGateway:
                 raise GitHubContentsError(_error("read tracker file", result.stderr))
             response = _object(result.stdout)
             content = response.get("content")
-            if response.get("encoding") != "base64" or type(content) is not str:
+            blob_id = response.get("sha")
+            if (
+                response.get("type") != "file"
+                or response.get("encoding") != "base64"
+                or type(content) is not str
+                or type(blob_id) is not str
+                or _OBJECT_ID.fullmatch(blob_id) is None
+            ):
                 raise GitHubContentsError("GitHub returned invalid tracker file content")
             try:
                 body = base64.b64decode("".join(content.split()), validate=True)
             except binascii.Error as error:
                 raise GitHubContentsError("GitHub returned invalid tracker file base64") from error
+            total_bytes += len(body)
+            if total_bytes > _MAX_DOCUMENT_SET_BYTES:
+                raise GitHubContentsError("GitHub tracker document set exceeds its byte limit")
             documents.append(TrackerDocument(path, body))
         return TrackerDocumentSet(revision, tuple(documents))
 
@@ -99,6 +117,7 @@ class GitHubTreeGateway:
             or document_set_sha256(current.documents) != expected_documents_sha256
         ):
             return False
+        self._require_protected_branch()
 
         commit = self._get(
             f"repos/{self._repository}/git/commits/{expected_revision}",
@@ -146,14 +165,20 @@ class GitHubTreeGateway:
             "create tracker commit",
         )
         commit_id = _object_id(new_commit.get("sha"), "created commit")
-        result = self._call_json(
-            "PATCH",
-            f"repos/{self._repository}/git/refs/heads/{quote(self._branch, safe='/')}",
-            {"force": False, "sha": commit_id},
-        )
+        try:
+            result = self._call_json(
+                "PATCH",
+                f"repos/{self._repository}/git/refs/heads/{quote(self._branch, safe='/')}",
+                {"force": False, "sha": commit_id},
+            )
+        except GitHubContentsError as error:
+            return self._resolve_uncertain_write(paths, documents, commit_id, error)
         if result.returncode != 0:
-            if self._read_ref() != expected_revision:
-                return False
+            current_revision = self._read_ref()
+            if current_revision == commit_id:
+                return True
+            if current_revision != expected_revision:
+                return self.read(paths).documents == documents
             raise GitHubContentsError(_error("update tracker ref", result.stderr))
         response = _object(result.stdout)
         target = response.get("object")
@@ -164,6 +189,40 @@ class GitHubTreeGateway:
         ):
             raise GitHubContentsError("GitHub returned an invalid tracker ref receipt")
         return True
+
+    def _require_protected_branch(self) -> None:
+        response = self._get(
+            f"repos/{self._repository}/branches/{quote(self._branch, safe='')}/protection",
+            "read tracker branch protection",
+        )
+        force_pushes = response.get("allow_force_pushes")
+        deletions = response.get("allow_deletions")
+        if (
+            type(force_pushes) is not dict
+            or force_pushes.get("enabled") is not False
+            or type(deletions) is not dict
+            or deletions.get("enabled") is not False
+        ):
+            raise GitHubContentsError("tracker branch must forbid force pushes and deletions")
+
+    def _resolve_uncertain_write(
+        self,
+        paths: tuple[str, ...],
+        documents: tuple[TrackerDocument, ...],
+        commit_id: str,
+        error: GitHubContentsError,
+    ) -> bool:
+        try:
+            after = self.read(paths)
+        except GitHubContentsError as read_error:
+            raise GitHubTreePostWriteUnknownError(
+                "GitHub tracker ref update and readback outcomes are unknown"
+            ) from read_error
+        if after.revision == commit_id or after.documents == documents:
+            return True
+        raise GitHubTreePostWriteUnknownError(
+            "GitHub tracker ref update outcome is unknown"
+        ) from error
 
     def _read_ref(self) -> str:
         response = self._get(
@@ -264,6 +323,7 @@ def _object(payload: bytes) -> dict[str, object]:
         raise GitHubContentsError("GitHub returned invalid JSON") from error
     if type(value) is not dict:
         raise GitHubContentsError("GitHub returned an invalid response object")
+    _bounded_json(value)
     return value
 
 
@@ -274,6 +334,20 @@ def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
             raise ValueError("duplicate JSON object key")
         value[key] = item
     return value
+
+
+def _bounded_json(value: object) -> None:
+    nodes = 0
+    stack = [(value, 0)]
+    while stack:
+        current, depth = stack.pop()
+        nodes += 1
+        if nodes > _MAX_JSON_NODES or depth > _MAX_JSON_DEPTH:
+            raise GitHubContentsError("GitHub JSON response exceeds structural limits")
+        if type(current) is dict:
+            stack.extend((item, depth + 1) for item in current.values())
+        elif type(current) is list:
+            stack.extend((item, depth + 1) for item in current)
 
 
 def _object_id(value: object, label: str) -> str:

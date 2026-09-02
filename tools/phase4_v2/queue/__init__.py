@@ -42,9 +42,10 @@ from .github_contents import (
     CommandResult,
     GitHubContentsError,
     GitHubContentsGateway,
+    GitHubContentsPostWriteUnknownError,
     GitHubContentsTarget,
 )
-from .github_tree import GitHubTreeGateway, TreeCommandRunner
+from .github_tree import GitHubTreeGateway, GitHubTreePostWriteUnknownError, TreeCommandRunner
 from .heartbeat import run_heartbeat
 from .publisher import (
     AtomicIssueGateway,
@@ -76,9 +77,11 @@ __all__ = [
     "FinishResult",
     "FanoutPublishReceipt",
     "GitHubContentsError",
+    "GitHubContentsPostWriteUnknownError",
     "GitHubContentsGateway",
     "GitHubContentsTarget",
     "GitHubTreeGateway",
+    "GitHubTreePostWriteUnknownError",
     "InputCheckedFinishDisposition",
     "InputCheckedFinishResult",
     "InputDigestMismatchError",
