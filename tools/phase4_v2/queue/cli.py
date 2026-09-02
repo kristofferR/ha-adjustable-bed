@@ -12,7 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import NoReturn
 
-from .core import Lease, Queue, QueueError, TerminalOutcome
+from .core import ORCHESTRATION_KINDS, Lease, Queue, QueueError, TerminalOutcome
 from .fanout import publish_tracker_fanout
 from .github_contents import GitHubContentsError
 from .github_tree import GitHubTreeGateway
@@ -213,6 +213,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             lease = _lease_from_file(args.lease_file)
             outcome = TerminalOutcome(args.outcome)
             if outcome is TerminalOutcome.ACCEPTED:
+                unit = next(
+                    (item for item in queue.snapshot().units if item.unit_id == lease.unit_id),
+                    None,
+                )
+                if unit is not None and unit.kind in ORCHESTRATION_KINDS:
+                    raise ValueError(
+                        "semantic orchestration stages require their typed completion adapter"
+                    )
                 if (
                     args.output_digest is None
                     or args.completion_revision is None

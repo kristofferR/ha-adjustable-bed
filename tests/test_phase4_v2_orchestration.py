@@ -59,9 +59,13 @@ def _enqueue_stage(
 
 
 def _accept(queue: Queue, lease: Lease, marker: str) -> None:
-    queue.finish(
+    unit = next(item for item in queue.snapshot().units if item.unit_id == lease.unit_id)
+    assert unit.cluster_id is not None
+    queue._finish_trusted_orchestration_stage(
         lease,
-        TerminalOutcome.ACCEPTED,
+        kind=unit.kind,
+        cluster_id=unit.cluster_id,
+        expected_input_digest=lease.input_digest,
         output_digest=_digest(f"output:{marker}"),
         completion_revision="orchestration-test-v1",
     )
@@ -90,6 +94,12 @@ def _accept(queue: Queue, lease: Lease, marker: str) -> None:
         ),
         (
             WorkStage.CLUSTER_IMPLEMENTATION,
+            TerminalOutcome.ACCEPTED,
+            FollowUpAction.ADVANCE,
+            WorkStage.TRACKER_PUBLICATION,
+        ),
+        (
+            WorkStage.TRACKER_PUBLICATION,
             TerminalOutcome.ACCEPTED,
             FollowUpAction.COMPLETE,
             None,
@@ -290,7 +300,7 @@ def test_reconciliation_leases_are_serialized_across_clusters(queue: Queue) -> N
     assert second.unit_id == "reconciliation-1"
 
 
-def test_reconciliation_requires_materialized_implementation(queue: Queue) -> None:
+def test_reconciliation_can_create_bounded_implementation_debt(queue: Queue) -> None:
     _enqueue_stage(
         queue,
         "reconciliation",
@@ -298,7 +308,28 @@ def test_reconciliation_requires_materialized_implementation(queue: Queue) -> No
         "cluster-001",
     )
 
-    assert queue.claim("reconciler") is None
+    lease = queue.claim("reconciler")
+    assert lease is not None
+    assert lease.unit_id == "reconciliation"
+    _accept(queue, lease, "reconciliation")
+    _enqueue_stage(
+        queue,
+        "second-reconciliation",
+        WorkStage.CLUSTER_RECONCILIATION,
+        "cluster-002",
+    )
+    assert queue.claim("second-reconciler") is None
+
+
+def test_tracker_publication_requires_accepted_implementation(queue: Queue) -> None:
+    _enqueue_stage(
+        queue,
+        "publication",
+        WorkStage.TRACKER_PUBLICATION,
+        "cluster-001",
+    )
+
+    assert queue.claim("publisher") is None
 
 
 class _CompletingHandle:
