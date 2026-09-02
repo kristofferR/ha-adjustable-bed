@@ -25,8 +25,22 @@ The apktool route is retained alongside jadx for DEX-bearing APKs so its smali o
 as the deterministic fallback when later jadx coverage is suspicious or incomplete.
 
 `READY` means that byte identity and deterministic routing are safe to hand to later preparation
-stages. It does not claim that the required decompilers have run or that #544 is complete. Those
-stages must still fail closed on missing tools, warnings, crashes, or incomplete output.
+stages. It does not claim that the required decompilers have run.
+
+`execute_preparation` consumes a live `READY` result and an explicit `ToolSpec` for every routed
+tool. Each specification pins the version command, normalized arguments, and deterministic flags.
+The executor additionally hashes the resolved executable, captures bounded stdout and stderr,
+rejects warnings, crashes, partial output, unsafe output nodes, and input or binary mutation, then
+publishes a sealed package-local manifest and a protocol-neutral BLE API candidate index. A jadx
+run that produces no Java or Kotlin source is accepted only as a recorded fallback when the same
+APK member has a complete apktool result containing smali.
+
+Complete invocations are cached by the input member digest, tool binary and version, arguments,
+flags, schema revisions, and pipeline revision. Cache hits are fully rehashed. Tool paths, temporary
+paths, cache-hit state, and analyst annotations are not part of the stable manifest. Callers provide
+the tool specifications so installation-specific wrapper paths do not become an implicit execution
+contract. `PREPARATION.COMPLETE` or `PREPARATION.BLOCKED` is published last beside the manifest and
+candidate index.
 
 Cache objects contain APK bytes and byte identity only, are addressed by cache-schema revision plus
 `artifact_digest`, and never retain package identity or classification output. Mutable processing

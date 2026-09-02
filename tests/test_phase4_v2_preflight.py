@@ -93,7 +93,7 @@ def test_identity_tool_output_is_bounded_while_streaming(
 ) -> None:
     tool = tmp_path / "noisy-tool"
     tool.write_text(
-        f"#!{sys.executable}\n"
+        "#!/usr/bin/python3\n"
         "import os\n"
         "chunk = b'x' * (64 * 1024)\n"
         "for _ in range(100):\n"
@@ -179,9 +179,9 @@ def test_ready_classifies_every_apk_once_and_routes_resource_only_split(
     assert result.decision.members[0].routes == ("apktool", "jadx")
     assert result.decision.members[1].stacks == ("android",)
     assert result.decision.members[1].routes == ("apktool",)
-    assert {
-        member.name for member in result.decision.members
-    } == {member.name for member in result.artifact_members}
+    assert sorted(member.name for member in result.decision.members) == sorted(
+        member.name for member in result.artifact_members
+    )
 
 
 def test_ready_routes_all_protocol_neutral_application_substrates(
@@ -988,9 +988,7 @@ def test_cache_rejects_noncanonical_stored_member_name(tmp_path: Path) -> None:
     member = manifest["members"][0]
     original_name = member["stored_name"]
     member["stored_name"] = "MATERIALIZED.COMPLETE"
-    (object_dir / "members" / original_name).rename(
-        object_dir / "members" / member["stored_name"]
-    )
+    (object_dir / "members" / original_name).rename(object_dir / "members" / member["stored_name"])
     manifest_bytes = legacy_preflight._canonical_json(manifest)
     (object_dir / "manifest.json").write_bytes(manifest_bytes)
     (object_dir / "OBJECT.COMPLETE").write_text(
