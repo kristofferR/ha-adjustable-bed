@@ -460,13 +460,38 @@ async def test_profile_actions_route_artifact_fields_exactly(
     assert write.await_args_list[0].args[0].hex() == expected_hex
 
 
+@pytest.mark.parametrize(
+    ("variant", "method_name"),
+    [
+        (OKIN_CST_VARIANT_AVIADA, "massage_head_up"),
+        (OKIN_CST_VARIANT_RESIDENT, "massage_toggle"),
+        (OKIN_CST_VARIANT_CAREFREE, "massage_head_up"),
+        (OKIN_CST_VARIANT_CAREFREE, "massage_toggle"),
+    ],
+)
+async def test_profile_actions_reject_unproven_commands_without_writing(
+    variant: str,
+    method_name: str,
+) -> None:
+    """Profiles must fail closed when an action has no frozen command mapping."""
+    controller = OkinCstController(MagicMock(), variant=variant)
+    write = AsyncMock()
+    method: Callable[[], Awaitable[None]] = getattr(controller, method_name)
+
+    with (
+        patch.object(controller, "write_command", write),
+        pytest.raises(NotImplementedError, match="not supported"),
+    ):
+        await method()
+
+    write.assert_not_awaited()
+
+
 @patch(
     "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
     new_callable=AsyncMock,
 )
-@pytest.mark.parametrize(
-    "expected", _PROFILE_EXPECTATIONS, ids=lambda expected: expected.variant
-)
+@pytest.mark.parametrize("expected", _PROFILE_EXPECTATIONS, ids=lambda expected: expected.variant)
 async def test_every_profile_memory_slot_uses_its_exact_vectors(
     _mock_sleep: AsyncMock,
     expected: CstProfileExpectation,
@@ -476,9 +501,7 @@ async def test_every_profile_memory_slot_uses_its_exact_vectors(
     write = AsyncMock()
 
     with patch.object(controller, "write_command", write):
-        for slot, (recall_hex, program_hex) in enumerate(
-            expected.memory_vectors, start=1
-        ):
+        for slot, (recall_hex, program_hex) in enumerate(expected.memory_vectors, start=1):
             await controller.preset_memory(slot)
             assert write.await_args_list[0].args[0].hex() == recall_hex
             write.reset_mock()
