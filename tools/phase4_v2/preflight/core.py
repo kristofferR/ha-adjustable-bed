@@ -76,6 +76,7 @@ _STACK_ROUTES: Mapping[str, tuple[str, ...]] = MappingProxyType(
         "shipped_bundle": ("shipped-bundle",),
     }
 )
+PREPARATION_ROUTES = tuple(sorted({route for routes in _STACK_ROUTES.values() for route in routes}))
 _AT_FDCWD = -100
 _RENAME_NOREPLACE = 1
 _O_NOATIME = getattr(os, "O_NOATIME", 0)

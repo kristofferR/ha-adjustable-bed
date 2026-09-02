@@ -1,6 +1,7 @@
 """Deterministic, read-only APK delivery preflight and artifact caching."""
 
 from .core import (
+    PREPARATION_ROUTES,
     ArtifactCache,
     ArtifactMember,
     CacheIntegrityError,
@@ -16,7 +17,10 @@ from .core import (
     preflight_delivery,
 )
 from .execution import (
+    CANDIDATE_CONTRACT_REVISION,
+    CANDIDATE_CONTRACT_SHA256,
     CANDIDATE_INDEX_SCHEMA,
+    CANDIDATE_SIGNAL_IDS,
     EXECUTION_CACHE_SCHEMA,
     EXECUTION_SCHEMA,
     CandidateRecord,
@@ -33,12 +37,27 @@ from .execution import (
     WarningRecord,
     execute_preparation,
 )
+from .registry import (
+    PREPARATION_RECEIPT_REVISION,
+    REQUIRED_PREPARATION_ROUTES,
+    TOOL_REGISTRY_SCHEMA,
+    ApprovedRoute,
+    ApprovedToolRegistry,
+    OutputSufficiencyContract,
+    PreparationReceipt,
+    ToolQualification,
+    execute_registered_preparation,
+    load_preparation_receipt,
+)
 
 __all__ = [
     "ArtifactCache",
     "ArtifactMember",
     "CacheIntegrityError",
     "CacheLimitError",
+    "CANDIDATE_CONTRACT_REVISION",
+    "CANDIDATE_CONTRACT_SHA256",
+    "CANDIDATE_SIGNAL_IDS",
     "CANDIDATE_INDEX_SCHEMA",
     "CandidateRecord",
     "DeliveryFile",
@@ -48,11 +67,15 @@ __all__ = [
     "InvocationRecord",
     "MemberClassification",
     "OutputMember",
+    "OutputSufficiencyContract",
+    "PREPARATION_ROUTES",
+    "PREPARATION_RECEIPT_REVISION",
     "PackageIdentity",
     "PreparationCache",
     "PreparationCacheError",
     "PreparationError",
     "PreparationResult",
+    "PreparationReceipt",
     "PreflightError",
     "PreflightLimits",
     "PreflightResult",
@@ -60,8 +83,15 @@ __all__ = [
     "StackDecision",
     "StreamDigest",
     "ToolRecord",
+    "ToolQualification",
     "ToolSpec",
+    "TOOL_REGISTRY_SCHEMA",
+    "REQUIRED_PREPARATION_ROUTES",
+    "ApprovedRoute",
+    "ApprovedToolRegistry",
     "WarningRecord",
     "execute_preparation",
+    "execute_registered_preparation",
+    "load_preparation_receipt",
     "preflight_delivery",
 ]

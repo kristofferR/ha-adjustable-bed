@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import errno
 import hashlib
 import json
@@ -23,6 +24,7 @@ from .core import PREFLIGHT_SCHEMA, ArtifactMember, PreflightResult, _rename_nor
 EXECUTION_SCHEMA = "phase4-v2-preparation-execution-v1"
 EXECUTION_CACHE_SCHEMA = "phase4-v2-preparation-cache-v1"
 CANDIDATE_INDEX_SCHEMA = "phase4-v2-ble-candidate-index-v1"
+CANDIDATE_CONTRACT_REVISION = "phase4-v2-ble-candidate-contract-v2"
 
 _REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$")
 _PLACEHOLDERS = frozenset({"{input}", "{output}"})
@@ -45,7 +47,40 @@ _CANDIDATE_SIGNALS: tuple[tuple[str, bytes], ...] = (
     ("bluetooth.write", b"writeCharacteristic"),
     ("corebluetooth.uuid", b"CBUUID"),
     ("uuid.construction", b"UUID.fromString"),
+    ("air.bluetooth-le", b"BluetoothLE"),
+    ("air.byte-array", b"ByteArray"),
+    ("ble.characteristic-uuid", b"characteristicUUID"),
+    ("ble.connect", b"connectToDevice"),
+    ("ble.gatt-native", b"bt_gatt"),
+    ("ble.monitor", b"monitorCharacteristic"),
+    ("ble.notification-start", b"startNotification"),
+    ("ble.scan", b"startDeviceScan"),
+    ("ble.service-uuids", b"serviceUUIDs"),
+    ("ble.write-without-response", b"writeWithoutResponse"),
+    ("flutter.characteristic", b"BluetoothCharacteristic"),
+    ("flutter.guid", b"Guid("),
+    ("flutter.reactive-ble", b"flutter_reactive_ble"),
+    ("flutter.blue", b"flutter_blue"),
+    ("native.bluetooth-gatt", b"bluetooth_gatt"),
+    ("native.nordic-write", b"sd_ble_gattc_write"),
+    ("native.uuid-parse", b"uuid_parse"),
+    ("react-native.ble-manager", b"BleManager"),
+    ("react-native.ble-plx", b"react-native-ble-plx"),
+    ("react-native.write", b"writeCharacteristicWithResponseForDevice"),
 )
+CANDIDATE_SIGNAL_IDS = frozenset(name for name, _needle in _CANDIDATE_SIGNALS)
+CANDIDATE_CONTRACT_SHA256 = hashlib.sha256(
+    json.dumps(
+        {
+            "revision": CANDIDATE_CONTRACT_REVISION,
+            "signals": [
+                {"id": name, "needle_hex": needle.hex()} for name, needle in _CANDIDATE_SIGNALS
+            ],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+).hexdigest()
 
 
 class PreparationError(RuntimeError):
@@ -157,7 +192,7 @@ class StreamDigest:
     sha256: str
 
     @classmethod
-    def from_bytes(cls, payload: bytes) -> StreamDigest:
+    def from_bytes(cls, payload: builtins.bytes) -> StreamDigest:
         return cls(len(payload), hashlib.sha256(payload).hexdigest())
 
     def to_data(self) -> dict[str, object]:
@@ -722,16 +757,19 @@ def _invocation_key(
     tool: ToolRecord,
     spec: ToolSpec,
     pipeline_revision: str,
+    tool_registry_sha256: str | None,
 ) -> str:
     return hashlib.sha256(
         _canonical_json(
             {
                 "cache_schema": EXECUTION_CACHE_SCHEMA,
                 "candidate_index_schema": CANDIDATE_INDEX_SCHEMA,
+                "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
                 "artifact_digest": artifact_digest,
                 "input_sha256": member.sha256,
                 "member": member.name,
                 "pipeline_revision": pipeline_revision,
+                "tool_registry_sha256": tool_registry_sha256,
                 "preflight_schema": PREFLIGHT_SCHEMA,
                 "route": route,
                 "tool": tool.to_data(),
@@ -821,6 +859,7 @@ def _execute_one(
     tool: ToolRecord,
     binary: Path | None,
     pipeline_revision: str,
+    tool_registry_sha256: str | None,
     limits: ExecutionLimits,
 ) -> _PreparedInvocation:
     key = None
@@ -852,6 +891,7 @@ def _execute_one(
         tool=tool,
         spec=spec,
         pipeline_revision=pipeline_revision,
+        tool_registry_sha256=tool_registry_sha256,
     )
     expected = InvocationRecord(
         member.name,
@@ -1155,6 +1195,8 @@ def execute_preparation(
     cache_directory: Path | str,
     output_directory: Path | str,
     pipeline_revision: str,
+    tool_registry_sha256: str | None = None,
+    approved_tool_builds: Mapping[str, frozenset[tuple[str, str]]] | None = None,
     limits: ExecutionLimits | None = None,
 ) -> PreparationResult:
     """Execute every routed tool and publish a deterministic package-local manifest."""
@@ -1162,6 +1204,33 @@ def execute_preparation(
     selected_limits = limits or ExecutionLimits()
     selected_limits.validate()
     _validate_token(pipeline_revision, "pipeline revision")
+    if tool_registry_sha256 is not None and (
+        type(tool_registry_sha256) is not str
+        or len(tool_registry_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in tool_registry_sha256)
+    ):
+        raise PreparationError("tool registry digest must be a lowercase SHA-256")
+    if approved_tool_builds is not None and tool_registry_sha256 is None:
+        raise PreparationError("approved tool builds require a bound tool registry digest")
+    if approved_tool_builds is not None:
+        if len(approved_tool_builds) > 256:
+            raise PreparationError("approved tool build registry exceeds the route limit")
+        for route, builds in approved_tool_builds.items():
+            _validate_token(route, "approved tool route")
+            if type(builds) is not frozenset or not builds or len(builds) > 256:
+                raise PreparationError("approved tool builds must be bounded non-empty frozensets")
+            for build in builds:
+                if (
+                    type(build) is not tuple
+                    or len(build) != 2
+                    or type(build[0]) is not str
+                    or re.fullmatch(r"[0-9a-f]{64}", build[0]) is None
+                    or type(build[1]) is not str
+                    or not build[1]
+                    or len(build[1]) > 16_384
+                    or any(character in build[1] for character in ("\x00", "\r", "\n"))
+                ):
+                    raise PreparationError("approved tool build identity is invalid")
     if preflight.decision.status != "READY" or preflight.package_identity is None:
         raise PreparationError("preflight result must be READY with authoritative package identity")
     artifact_member_names = [member.name for member in preflight.artifact_members]
@@ -1191,8 +1260,8 @@ def execute_preparation(
         for name in ("home", "tmp"):
             (probe_workspace / name).mkdir(mode=0o700)
         for route in required_routes:
-            spec = tool_specs.get(route)
-            if spec is None:
+            configured_spec = tool_specs.get(route)
+            if configured_spec is None:
                 empty = StreamDigest.from_bytes(b"")
                 tools[route] = (
                     ToolRecord(
@@ -1205,7 +1274,16 @@ def execute_preparation(
                 route_workspace.mkdir(mode=0o700)
                 for name in ("home", "tmp"):
                     (route_workspace / name).mkdir(mode=0o700)
-                tools[route] = _tool_record(spec, route_workspace, selected_limits)
+                tool, binary = _tool_record(configured_spec, route_workspace, selected_limits)
+                if (
+                    approved_tool_builds is not None
+                    and tool.failure is None
+                    and (tool.binary_sha256, tool.version)
+                    not in approved_tool_builds.get(route, frozenset())
+                ):
+                    tool = replace(tool, failure="TOOL_BUILD_UNAPPROVED")
+                    binary = None
+                tools[route] = (tool, binary)
     finally:
         shutil.rmtree(probe_workspace, ignore_errors=True)
 
@@ -1215,19 +1293,20 @@ def execute_preparation(
     for classification in preflight.decision.members:
         member = member_by_name[classification.name]
         for route in classification.routes:
-            spec = tool_specs.get(route)
+            configured_spec = tool_specs.get(route)
             tool, binary = tools[route]
-            if spec is None:
-                spec = ToolSpec(route, ("--version",), ("{input}", "{output}"))
+            if configured_spec is None:
+                configured_spec = ToolSpec(route, ("--version",), ("{input}", "{output}"))
             invocation = _execute_one(
                 cache=cache,
                 artifact_digest=preflight.artifact_digest,
                 member=member,
                 route=route,
-                spec=spec,
+                spec=configured_spec,
                 tool=tool,
                 binary=binary,
                 pipeline_revision=pipeline_revision,
+                tool_registry_sha256=tool_registry_sha256,
                 limits=selected_limits,
             )
             prepared.append(invocation)
@@ -1249,6 +1328,7 @@ def execute_preparation(
     )
     candidate_data = {
         "artifact_digest": preflight.artifact_digest,
+        "candidate_contract_sha256": CANDIDATE_CONTRACT_SHA256,
         "candidates": [candidate.to_data() for candidate in candidates],
         "schema": CANDIDATE_INDEX_SCHEMA,
     }
@@ -1264,10 +1344,15 @@ def execute_preparation(
             "member": "candidate-index.json",
             "sha256": candidate_sha256,
         },
+        "candidate_contract": {
+            "revision": CANDIDATE_CONTRACT_REVISION,
+            "sha256": CANDIDATE_CONTRACT_SHA256,
+        },
         "failures": aggregate_failures,
         "invocations": [record.to_data() for record in records],
         "package_identity": preflight.package_identity.public_dict(),
         "pipeline_revision": pipeline_revision,
+        "tool_registry_sha256": tool_registry_sha256,
         "preflight": {
             "manifest_sha256": preflight_manifest_sha256,
             "schema": PREFLIGHT_SCHEMA,

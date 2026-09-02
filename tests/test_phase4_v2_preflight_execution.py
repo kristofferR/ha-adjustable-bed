@@ -12,10 +12,18 @@ from tools.phase4_v2.preflight import (
     CANDIDATE_INDEX_SCHEMA,
     EXECUTION_CACHE_SCHEMA,
     EXECUTION_SCHEMA,
+    REQUIRED_PREPARATION_ROUTES,
+    ApprovedRoute,
+    ApprovedToolRegistry,
     ExecutionLimits,
+    OutputSufficiencyContract,
     PreparationCacheError,
+    PreparationError,
+    ToolQualification,
     ToolSpec,
     execute_preparation,
+    execute_registered_preparation,
+    load_preparation_receipt,
     preflight_delivery,
 )
 
@@ -63,7 +71,7 @@ def _tool(
         "version_mode": version_mode,
     }
     tool.write_text(
-        "#!/usr/bin/python3\n"
+        "#!/usr/bin/env python3\n"
         "import json, os, pathlib, sys, time\n"
         f"config = json.loads({json.dumps(json.dumps(configuration))})\n"
         "if sys.argv[1:] == ['--version']:\n"
@@ -118,6 +126,178 @@ def _specs(tool: Path, *, extra_flag: str | None = None) -> dict[str, ToolSpec]:
         )
         for route in ("apktool", "jadx")
     }
+
+
+def _registry(
+    tool: Path,
+    *,
+    qualification_sha256: str | None = None,
+    extra_flag: str | None = None,
+) -> ApprovedToolRegistry:
+    flags = ("--deterministic",) + ((extra_flag,) if extra_flag is not None else ())
+    qualification = ToolQualification(
+        qualification_sha256 or hashlib.sha256(tool.read_bytes()).hexdigest(),
+        "fixture-tool 1.2.3",
+    )
+    return ApprovedToolRegistry(
+        "fixture-registry-v1",
+        "pipeline-v1",
+        tuple(
+            ApprovedRoute(
+                route,
+                ToolSpec(
+                    str(tool),
+                    ("--version",),
+                    (*flags, route, "{input}", "{output}"),
+                    flags,
+                ),
+                (qualification,),
+                OutputSufficiencyContract(
+                    required_suffixes=(
+                        (".smali",) if route == "apktool" else (".java",) if route == "jadx" else ()
+                    )
+                ),
+            )
+            for route in REQUIRED_PREPARATION_ROUTES
+        ),
+    )
+
+
+def test_registered_preparation_binds_the_complete_approved_contract(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(
+        tmp_path,
+        outputs={
+            "apktool": {"smali/App.smali": "Landroid/bluetooth/BluetoothGatt;"},
+            "jadx": {
+                "sources/App.java": (
+                    "BluetoothLE ByteArray BluetoothCharacteristic Guid( "
+                    "flutter_reactive_ble flutter_blue bt_gatt bluetooth_gatt "
+                    "sd_ble_gattc_write uuid_parse BleManager react-native-ble-plx "
+                    "writeCharacteristicWithResponseForDevice characteristicUUID "
+                    "connectToDevice monitorCharacteristic startNotification "
+                    "startDeviceScan serviceUUIDs writeWithoutResponse"
+                )
+            },
+        },
+    )
+    registry = _registry(tool)
+
+    receipt = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        expected_registry_sha256=registry.sha256,
+        cache_directory=tmp_path / "cache",
+        output_directory=tmp_path / "result",
+    )
+
+    assert receipt.tool_registry_sha256 == registry.sha256
+    assert receipt.pipeline_revision == "pipeline-v1"
+    assert {candidate.signal for candidate in receipt.candidates} >= {
+        "air.bluetooth-le",
+        "flutter.characteristic",
+        "native.nordic-write",
+        "react-native.ble-plx",
+        "react-native.write",
+    }
+    reloaded = load_preparation_receipt(
+        tmp_path / "result",
+        preflight=preflight,
+        registry=registry,
+        expected_registry_sha256=registry.sha256,
+        expected_manifest_sha256=receipt.manifest_sha256,
+        expected_candidate_index_sha256=receipt.candidate_index_sha256,
+    )
+    assert reloaded.content_id == receipt.content_id
+
+
+def test_registered_preparation_rejects_untrusted_registry_and_tool_build(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(tmp_path)
+    registry = _registry(tool)
+    changed = _registry(tool, extra_flag="--changed")
+
+    with pytest.raises(PreparationError, match="canonical|externally trusted digest"):
+        execute_registered_preparation(
+            preflight,
+            registry=changed,
+            expected_registry_sha256=registry.sha256,
+            cache_directory=tmp_path / "cache-a",
+            output_directory=tmp_path / "result-a",
+        )
+    assert not (tmp_path / "result-a").exists()
+
+    unqualified = _registry(tool, qualification_sha256="f" * 64)
+    with pytest.raises(PreparationError, match="tool build is not approved"):
+        execute_registered_preparation(
+            preflight,
+            registry=unqualified,
+            expected_registry_sha256=unqualified.sha256,
+            cache_directory=tmp_path / "cache-b",
+            output_directory=tmp_path / "result-b",
+        )
+    assert not (tmp_path / "result-b" / "PREPARATION.COMPLETE").exists()
+    assert (tmp_path / "result-b" / "PREPARATION.BLOCKED").is_file()
+
+
+def test_frozen_preparation_requires_external_payload_pins(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(tmp_path)
+    registry = _registry(tool)
+    receipt = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        expected_registry_sha256=registry.sha256,
+        cache_directory=tmp_path / "cache",
+        output_directory=tmp_path / "result",
+    )
+    candidate_index = tmp_path / "result" / "candidate-index.json"
+    candidate_index.write_bytes(candidate_index.read_bytes() + b" ")
+
+    with pytest.raises(PreparationError, match="canonical|externally trusted digest"):
+        load_preparation_receipt(
+            tmp_path / "result",
+            preflight=preflight,
+            registry=registry,
+            expected_registry_sha256=registry.sha256,
+            expected_manifest_sha256=receipt.manifest_sha256,
+            expected_candidate_index_sha256=receipt.candidate_index_sha256,
+        )
+
+
+def test_registered_preparation_accepts_only_authoritative_jadx_fallback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    tool = _tool(
+        tmp_path,
+        outputs={
+            "apktool": {"smali/App.smali": "Landroid/bluetooth/BluetoothGatt;"},
+            "jadx": {"resources/notice.txt": "no source recovered"},
+        },
+    )
+    registry = _registry(tool)
+
+    receipt = execute_registered_preparation(
+        preflight,
+        registry=registry,
+        expected_registry_sha256=registry.sha256,
+        cache_directory=tmp_path / "cache",
+        output_directory=tmp_path / "result",
+    )
+
+    jadx = next(item for item in receipt.invocations if item.route == "jadx")
+    assert jadx.status == "FALLBACK"
+    assert (jadx.fallback_route, jadx.fallback_reason) == (
+        "apktool",
+        "JADX_OUTPUT_SUSPICIOUS",
+    )
 
 
 def test_execution_manifest_is_complete_content_bound_and_deterministic(
@@ -205,6 +385,32 @@ def test_complete_invocations_are_cached_and_pipeline_and_flags_invalidate(
     assert counter.read_text(encoding="utf-8").splitlines() == [
         "apktool",
         "jadx",
+        "apktool",
+        "jadx",
+        "apktool",
+        "jadx",
+    ]
+
+
+def test_approved_registry_digest_invalidates_preparation_cache(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    preflight = _ready_preflight(monkeypatch, tmp_path)
+    counter = tmp_path / "invocations"
+    tool = _tool(tmp_path, counter=counter)
+    cache = tmp_path / "cache"
+
+    for name, registry_sha256 in (("one", "a" * 64), ("two", "a" * 64), ("three", "b" * 64)):
+        execute_preparation(
+            preflight,
+            tool_specs=_specs(tool),
+            cache_directory=cache,
+            output_directory=tmp_path / name,
+            pipeline_revision="pipeline-v1",
+            tool_registry_sha256=registry_sha256,
+        )
+
+    assert counter.read_text(encoding="utf-8").splitlines() == [
         "apktool",
         "jadx",
         "apktool",
