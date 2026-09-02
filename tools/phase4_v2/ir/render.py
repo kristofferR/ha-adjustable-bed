@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import json
 import re
+from typing import TYPE_CHECKING
 
 from .model import IRDiagnostic, IRValidationError, ProtocolIRDocument, semantic_fingerprint
+
+if TYPE_CHECKING:
+    from .v1 import FinalProtocolIRDocument
 
 _FINGERPRINT = re.compile(r"^Semantic fingerprint: `([0-9a-f]{64})`$", re.MULTILINE)
 
@@ -73,6 +77,75 @@ def validate_ir_markdown(document: ProtocolIRDocument, rendered: str) -> str:
             )
         )
     return expected_fingerprint
+
+
+def render_final_ir_markdown(document: FinalProtocolIRDocument) -> str:
+    """Render every closed final-v1 domain from canonical IR semantics."""
+
+    from .v1 import final_semantic_fingerprint
+
+    fingerprint = final_semantic_fingerprint(document)
+    lines = [
+        "# Protocol analysis",
+        "",
+        f"Schema: `{document.schema_revision}`  ",
+        f"Semantic fingerprint: `{fingerprint}`",
+        "",
+    ]
+    for collection_name in document.semantic_collection_names:
+        title = collection_name.replace("_", " ").capitalize()
+        if collection_name == "domain_closure":
+            _definition_section(lines, title, (("closure", document.domain_closure),))
+        else:
+            _definition_section(lines, title, getattr(document, collection_name))
+    lines.extend(
+        [
+            "## Provenance summary",
+            "",
+            "| Collection | Count |",
+            "| --- | ---: |",
+            f"| Source packages | {len(document.source_packages)} |",
+            f"| Evidence files | {len(document.evidence_files)} |",
+            f"| Evidence anchors | {len(document.evidence_anchors)} |",
+            f"| Source sets | {len(document.source_sets)} |",
+            f"| Evidence bindings | {len(document.evidence_bindings)} |",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def validate_final_ir_markdown(document: FinalProtocolIRDocument, rendered: str) -> str:
+    """Require exact Markdown agreement with final-v1 canonical semantics."""
+
+    from .v1 import final_semantic_fingerprint
+
+    if type(rendered) is not str:
+        raise IRValidationError(
+            (IRDiagnostic("markdown_invalid", "$", "Markdown render must be a string"),)
+        )
+    fingerprint = final_semantic_fingerprint(document)
+    if _FINGERPRINT.findall(rendered) != [fingerprint]:
+        raise IRValidationError(
+            (
+                IRDiagnostic(
+                    "markdown_fingerprint_mismatch",
+                    "$.semantic_fingerprint",
+                    "Markdown does not identify the canonical final IR semantics",
+                ),
+            )
+        )
+    if rendered != render_final_ir_markdown(document):
+        raise IRValidationError(
+            (
+                IRDiagnostic(
+                    "markdown_render_mismatch",
+                    "$",
+                    "Markdown differs from the deterministic canonical final render",
+                ),
+            )
+        )
+    return fingerprint
 
 
 def _definition_section(
