@@ -13,9 +13,15 @@ from typing import Protocol, TypeGuard, cast
 from jsonschema.validators import Draft202012Validator
 
 from tools.phase4_v2.ir import (
+    FINAL_SCHEMA_REVISION,
     SCHEMA_REVISION,
     IRValidationError,
+    ProtocolIRDocument,
+    dumps_final_ir,
+    final_schema_document,
     schema_document,
+    validate_final_ir_markdown,
+    validate_final_universe,
     validate_universe,
 )
 from tools.phase4_v2.ir.model import (
@@ -23,6 +29,7 @@ from tools.phase4_v2.ir.model import (
     _resolve_semantic_pointer,
     _validate_exact_evidence_coverage,
 )
+from tools.phase4_v2.ir.v1 import _parse_final_ir_structure
 
 from .lineage import (
     EvidenceLineageTrust,
@@ -50,6 +57,8 @@ _PACKAGE_NAME = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+$")
 _MAX_ANCHOR_COUNT = 4_096
 _MAX_EVIDENCE_MEMBER_COUNT = 4_096
 _MAX_ANCHOR_BYTES = 64 * 1024**2
+_MAX_FINAL_IR_BYTES = 64 * 1024**2
+_MAX_FINAL_MARKDOWN_BYTES = 256 * 1024**2
 _MAX_ANCHOR_ID_LENGTH = 256
 _MAX_JSON_POINTER_LENGTH = 8_192
 PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA: dict[str, object] = {
@@ -322,9 +331,16 @@ def validate_binding_contract(
             diagnostics,
             dependency_names,
         )
+    package_contract = isinstance(expected_dependencies, PackageDependencyPins)
     ir_document = _dependency_document(dependencies, "ir", json_documents)
     schema = _dependency_document(dependencies, "schema", json_documents)
-    _validate_current_ir_and_schema(ir_document, schema, dependencies, diagnostics)
+    _validate_current_ir_and_schema(
+        ir_document,
+        schema,
+        dependencies,
+        diagnostics,
+        require_final=package_contract,
+    )
     preflight_document = _dependency_document(dependencies, "preflight", json_documents)
     artifact_identity = _validate_preflight_identity(
         preflight_document,
@@ -341,7 +357,6 @@ def validate_binding_contract(
         diagnostics,
     )
     _validate_frozen_report_members(nodes, diagnostics)
-    package_contract = isinstance(expected_dependencies, PackageDependencyPins)
     if package_contract:
         _validate_package_dependency_documents(dependencies, json_documents, diagnostics)
     else:
@@ -380,6 +395,9 @@ def validate_binding_contract(
             trusted_evidence,
             evidence_scopes,
             trusted_root_analyses,
+            nodes,
+            read_range,
+            ir_document,
             diagnostics,
         )
     return _result(
@@ -442,6 +460,8 @@ def _validate_current_ir_and_schema(
     pinned_schema: object | None,
     dependencies: object,
     diagnostics: list[BindingDiagnostic],
+    *,
+    require_final: bool,
 ) -> None:
     ir_member = _dependency_member(dependencies, "ir")
     schema_member = _dependency_member(dependencies, "schema")
@@ -449,8 +469,12 @@ def _validate_current_ir_and_schema(
         diagnostics.append(BindingDiagnostic("PINNED_IR_INVALID", ir_member))
     else:
         try:
-            parsed_ir = _parse_ir_structure(ir_document)
-            universe = validate_universe(parsed_ir)
+            if require_final:
+                parsed_ir = _parse_final_ir_structure(ir_document)
+                universe = validate_final_universe(parsed_ir)
+            else:
+                parsed_ir = _parse_ir_structure(ir_document)
+                universe = validate_universe(parsed_ir)
             if universe.issues:
                 first = universe.issues[0]
                 diagnostics.append(
@@ -461,7 +485,7 @@ def _validate_current_ir_and_schema(
                     )
                 )
             else:
-                _validate_exact_evidence_coverage(parsed_ir)
+                _validate_exact_evidence_coverage(cast(ProtocolIRDocument, parsed_ir))
         except IRValidationError as error:
             context: tuple[tuple[str, str], ...] = ()
             if error.diagnostics:
@@ -469,14 +493,15 @@ def _validate_current_ir_and_schema(
                 context = (("ir_code", first.code), ("ir_path", first.path))
             diagnostics.append(BindingDiagnostic("PINNED_IR_INVALID", ir_member, context))
 
-    current_schema = schema_document()
+    current_schema = final_schema_document() if require_final else schema_document()
     pinned_revision = _schema_revision(pinned_schema)
-    if pinned_revision != SCHEMA_REVISION:
+    expected_revision = FINAL_SCHEMA_REVISION if require_final else SCHEMA_REVISION
+    if pinned_revision != expected_revision:
         diagnostics.append(
             BindingDiagnostic(
                 "PINNED_SCHEMA_REVISION_MISMATCH",
                 schema_member,
-                (("expected", SCHEMA_REVISION),),
+                (("expected", expected_revision),),
             )
         )
     if pinned_schema != current_schema:
@@ -980,15 +1005,22 @@ def _validate_package_report(
     trusted_evidence: Mapping[str, str],
     evidence_scopes: Mapping[str, frozenset[str]],
     trusted_root_analyses: Mapping[tuple[str, str], frozenset[str]],
+    nodes: Mapping[str, MemberNode],
+    read_range: RangeReader,
+    ir_document: object | None,
     diagnostics: list[BindingDiagnostic],
 ) -> None:
     schema_member = _dependency_member(dependencies, "report_schema")
     schema = _dependency_document(dependencies, "report_schema", json_documents)
     if not isinstance(schema, dict) or set(schema) != {
+        "final_ir_schema_revision",
+        "final_ir_schema_sha256",
         "report_revision",
         "package_local_domain_result_schema",
         "required_package_local_domains",
         "requires_authoritative_root_result_set",
+        "requires_canonical_final_ir_json",
+        "requires_final_ir_markdown_agreement",
         "requires_target_package_identity",
         "schema_revision",
     }:
@@ -1004,10 +1036,16 @@ def _validate_package_report(
         or not report_revision
         or not isinstance(schema_revision, str)
         or not schema_revision
-        or schema.get("package_local_domain_result_schema")
-        != PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA
+        or schema.get("final_ir_schema_revision") != FINAL_SCHEMA_REVISION
+        or schema.get("final_ir_schema_sha256")
+        != hashlib.sha256(
+            json.dumps(final_schema_document(), sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        or schema.get("package_local_domain_result_schema") != PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA
         or required_domains is None
         or schema.get("requires_authoritative_root_result_set") is not True
+        or schema.get("requires_canonical_final_ir_json") is not True
+        or schema.get("requires_final_ir_markdown_agreement") is not True
         or schema.get("requires_target_package_identity") is not True
     ):
         diagnostics.append(BindingDiagnostic("PINNED_REPORT_SCHEMA_INVALID", schema_member))
@@ -1045,11 +1083,26 @@ def _validate_package_report(
     if not isinstance(report, dict):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
         return
+    if set(report) != {
+        "authoritative_root_results",
+        "final_ir_json_sha256",
+        "final_ir_markdown_sha256",
+        "final_ir_schema_revision",
+        "package_local_domains",
+        "report_revision",
+        "target_package_identity",
+    }:
+        diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
     identity = report.get("target_package_identity")
     domains = report.get("package_local_domains")
     root_results = report.get("authoritative_root_results")
     if (
         report.get("report_revision") != report_revision
+        or report.get("final_ir_schema_revision") != FINAL_SCHEMA_REVISION
+        or report.get("final_ir_json_sha256") != _dependency_sha256(dependencies, "ir")
+        or report.get("final_ir_markdown_sha256")
+        != getattr(nodes.get("ANALYSIS.md"), "sha256", None)
         or not isinstance(identity, dict)
         or set(identity) != {"artifact_digest", "package_name", "version_code", "version_name"}
         or not isinstance(domains, dict)
@@ -1065,6 +1118,31 @@ def _validate_package_report(
         or any(_root_result_identity(item) is None for item in root_results)
     ):
         diagnostics.append(BindingDiagnostic("PACKAGE_REPORT_INVALID", report_path))
+        return
+    markdown_node = nodes.get("ANALYSIS.md")
+    ir_member = _dependency_member(dependencies, "ir")
+    ir_node = nodes.get(ir_member)
+    if ir_node is None or not 0 < ir_node.size <= _MAX_FINAL_IR_BYTES:
+        diagnostics.append(BindingDiagnostic("PACKAGE_FINAL_IR_JSON_INVALID", ir_member))
+        return
+    if markdown_node is None or not 0 < markdown_node.size <= _MAX_FINAL_MARKDOWN_BYTES:
+        diagnostics.append(BindingDiagnostic("PACKAGE_FINAL_IR_RENDER_INVALID", "ANALYSIS.md"))
+        return
+    try:
+        parsed_final_ir = _parse_final_ir_structure(ir_document)
+        ir_bytes = read_range(ir_member, 0, ir_node.size)
+        if dumps_final_ir(parsed_final_ir) != ir_bytes:
+            diagnostics.append(BindingDiagnostic("PACKAGE_FINAL_IR_JSON_INVALID", ir_member))
+            return
+    except IRValidationError, OSError, UnicodeError, ValueError:
+        diagnostics.append(BindingDiagnostic("PACKAGE_FINAL_IR_JSON_INVALID", ir_member))
+        return
+    try:
+        markdown_bytes = read_range("ANALYSIS.md", 0, markdown_node.size)
+        markdown = markdown_bytes.decode("utf-8", errors="strict")
+        validate_final_ir_markdown(parsed_final_ir, markdown)
+    except IRValidationError, OSError, UnicodeError, ValueError:
+        diagnostics.append(BindingDiagnostic("PACKAGE_FINAL_IR_RENDER_INVALID", "ANALYSIS.md"))
         return
     reported_roots = tuple(_root_result_identity(item) for item in root_results)
     if set(reported_roots) != set(planned_roots):
@@ -1599,6 +1677,16 @@ def _dependency_member(dependencies: object, name: str) -> str:
             if isinstance(member, str):
                 return member
     return VALIDATION_INPUT
+
+
+def _dependency_sha256(dependencies: object, name: str) -> str | None:
+    if isinstance(dependencies, dict):
+        entry = dependencies.get(name)
+        if isinstance(entry, dict):
+            digest = entry.get("sha256")
+            if isinstance(digest, str):
+                return digest
+    return None
 
 
 def _result(

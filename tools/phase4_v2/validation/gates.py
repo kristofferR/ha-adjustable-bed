@@ -18,11 +18,20 @@ from tools.phase4_v2.equivalence import (
     ValidatedPackageOutput,
     validate_frozen_package_execution_plan,
 )
+from tools.phase4_v2.ir import (
+    FINAL_SCHEMA_REVISION,
+    FinalProtocolIRDocument,
+    final_schema_document,
+)
 from tools.phase4_v2.preflight import CandidateRecord, InvocationRecord, PreparationResult
 from tools.phase4_v2.reconciliation import (
     ClosureStatus,
     ComparisonDecision,
+    FinalIRSurfaceDerivation,
+    ReconciliationInput,
     ReconciliationResult,
+    derive_final_ir_package_surface,
+    reconcile,
     render_json,
     render_markdown,
     verify_render_agreement,
@@ -79,6 +88,12 @@ class _Findings:
 
 def _sha(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
+
+
+def _final_schema_sha256() -> str:
+    return _sha(
+        json.dumps(final_schema_document(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    )
 
 
 def _validate_plan(plan: FrozenPackageExecutionPlan, findings: _Findings) -> None:
@@ -352,13 +367,25 @@ def _validate_completion(
     preparation: PreparationResult,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
+    reconciliation_input: ReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
     reconciliation_markdown: str,
+    final_ir: FinalProtocolIRDocument,
+    final_ir_json: bytes,
+    final_ir_markdown: str,
     adapter: CompletionAdapter,
     pins: ValidationPins,
 ) -> CompletenessReceipt:
     findings = _Findings()
+    final_schema_sha256 = cast(
+        str | None,
+        findings.guard(
+            "FINAL_IR_SCHEMA_INVALID",
+            "/final_ir/schema",
+            _final_schema_sha256,
+        ),
+    )
     if type(adapter) is not CompletionAdapter:
         findings.add("ADAPTER_TYPE_INVALID", "/adapter")
         candidate_links: set[str] = set()
@@ -402,9 +429,61 @@ def _validate_completion(
         else None
     )
 
+    if type(reconciliation_input) is not ReconciliationInput:
+        findings.add("RECONCILIATION_INPUT_TYPE_INVALID", "/reconciliation_input")
+    elif type(reconciliation) is ReconciliationResult and (
+        reconciliation_input.content_id != reconciliation.input_id
+        or reconciliation_input.cluster_id != reconciliation.cluster_id
+    ):
+        findings.add("RECONCILIATION_INPUT_MISMATCH", "/reconciliation_input")
+    if type(reconciliation_input) is ReconciliationInput:
+        reproduced_reconciliation = findings.guard(
+            "RECONCILIATION_INPUT_INVALID",
+            "/reconciliation_input",
+            lambda: reconcile(reconciliation_input),
+        )
+        if reproduced_reconciliation is not None and reproduced_reconciliation != reconciliation:
+            findings.add("RECONCILIATION_RESULT_MISMATCH", "/reconciliation")
+    target_surfaces = (
+        [item for item in reconciliation_input.packages if item.package_ref.content_id == target]
+        if type(reconciliation_input) is ReconciliationInput
+        else []
+    )
+    derivation: FinalIRSurfaceDerivation | None = None
+    if len(target_surfaces) != 1:
+        findings.add("FINAL_SURFACE_TARGET_MISSING", "/reconciliation/packages")
+    elif type(final_ir) is not FinalProtocolIRDocument:
+        findings.add("FINAL_IR_TYPE_INVALID", "/final_ir")
+    else:
+        target_surface = target_surfaces[0]
+        derivation = cast(
+            FinalIRSurfaceDerivation | None,
+            findings.guard(
+                "FINAL_IR_DERIVATION_INVALID",
+                "/final_ir",
+                lambda: derive_final_ir_package_surface(
+                    package_ref=target_surface.package_ref,
+                    report_sha256=getattr(validated_output, "target_report_sha256", ""),
+                    report_revision=PACKAGE_REPORT_REVISION,
+                    roots=target_surface.roots,
+                    document=final_ir,
+                    canonical_json=final_ir_json,
+                    markdown=final_ir_markdown,
+                ),
+            ),
+        )
+        if derivation is not None and target_surface != derivation.package_surface:
+            findings.add("FINAL_SURFACE_MISMATCH", "/reconciliation/packages")
+
     if candidate_links != expected_candidates:
         findings.add("CANDIDATE_SOURCE_SET_MISMATCH", "/adapter/candidate_links")
-    if linked_items != report_candidates:
+    if derivation is not None and report_candidates != set(derivation.candidate_ids):
+        findings.add("CANDIDATE_FINAL_IR_SET_MISMATCH", "/reconciliation/atoms")
+    if derivation is not None and report_actions != set(derivation.action_ids):
+        findings.add("ACTION_FINAL_IR_SET_MISMATCH", "/reconciliation/atoms")
+    if derivation is not None and report_variants != set(derivation.variant_ids):
+        findings.add("VARIANT_FINAL_IR_SET_MISMATCH", "/reconciliation/atoms")
+    if derivation is not None and not linked_items <= set(derivation.candidate_ids):
         findings.add("CANDIDATE_REPORT_SET_MISMATCH", "/adapter/candidate_links")
     if set(warning_dispositions) != expected_warnings:
         findings.add("WARNING_SET_MISMATCH", "/adapter/warning_dispositions")
@@ -442,17 +521,23 @@ def _validate_completion(
             validated_output.validation_receipt_sha256,
             validated_output.target_report_schema_sha256,
             validated_output.target_report_sha256,
+            validated_output.target_final_ir_schema_sha256,
+            validated_output.target_final_ir_json_sha256,
         )
         if any(not _is_digest(item) for item in output_digests) or (
             validated_output.revision,
             validated_output.target_report_revision,
             validated_output.target_report_schema_revision,
             validated_output.target_report_schema_sha256,
+            validated_output.target_final_ir_schema_revision,
+            validated_output.target_final_ir_schema_sha256,
         ) != (
             VALIDATED_PACKAGE_OUTPUT_REVISION,
             PACKAGE_REPORT_REVISION,
             PACKAGE_REPORT_SCHEMA_REVISION,
             PACKAGE_REPORT_SCHEMA_SHA256,
+            FINAL_SCHEMA_REVISION,
+            final_schema_sha256,
         ):
             findings.add("VALIDATED_OUTPUT_INVALID", "/validated_output")
         matching = (
@@ -462,6 +547,13 @@ def _validate_completion(
         )
         if len(matching) != 1 or matching[0].report_sha256 != validated_output.target_report_sha256:
             findings.add("OUTPUT_REPORT_MISMATCH", "/validated_output/target_report_sha256")
+        if (
+            derivation is not None
+            and validated_output.target_final_ir_json_sha256 != derivation.final_ir_json_sha256
+        ):
+            findings.add(
+                "OUTPUT_FINAL_IR_MISMATCH", "/validated_output/target_final_ir_json_sha256"
+            )
 
     if getattr(preparation, "artifact_digest", None) != getattr(
         execution_plan, "target_artifact_digest", None
@@ -514,7 +606,11 @@ def _validate_completion(
         "candidate_index_sha256": getattr(preparation, "candidate_index_sha256", None),
         "execution_plan_sha256": getattr(execution_plan, "digest", None),
         "validated_package_output_sha256": output_id,
-        "reconciliation_input_sha256": getattr(reconciliation, "input_id", None),
+        "reconciliation_input_sha256": (
+            reconciliation_input.content_id
+            if type(reconciliation_input) is ReconciliationInput
+            else None
+        ),
         "reconciliation_result_sha256": reconciliation_id,
         "reconciliation_json_sha256": (
             _sha(reconciliation_json) if type(reconciliation_json) is bytes else None
@@ -523,6 +619,21 @@ def _validate_completion(
             _sha(markdown_bytes) if markdown_bytes is not None else None
         ),
         "completion_adapter_sha256": adapter_id,
+        "final_ir_schema_sha256": (
+            final_schema_sha256
+            if type(final_ir) is FinalProtocolIRDocument
+            and final_ir.schema_revision == FINAL_SCHEMA_REVISION
+            else None
+        ),
+        "final_ir_json_sha256": (
+            derivation.final_ir_json_sha256 if derivation is not None else None
+        ),
+        "final_ir_markdown_sha256": (
+            derivation.final_ir_markdown_sha256 if derivation is not None else None
+        ),
+        "final_package_surface_sha256": (
+            derivation.package_surface.content_id if derivation is not None else None
+        ),
     }
     for field, actual in actual_pins.items():
         if getattr(pins, field) != actual:
@@ -533,9 +644,9 @@ def _validate_completion(
         accepted=not diagnostics,
         diagnostics=diagnostics,
         pins=pins,
-        candidate_count=len(expected_candidates),
-        action_count=len(report_actions),
-        variant_count=len(report_variants),
+        candidate_count=len(derivation.candidate_ids) if derivation is not None else 0,
+        action_count=len(derivation.action_ids) if derivation is not None else 0,
+        variant_count=len(derivation.variant_ids) if derivation is not None else 0,
         warning_count=len(expected_warnings),
     )
 
@@ -545,9 +656,13 @@ def validate_completion(
     preparation: PreparationResult,
     execution_plan: FrozenPackageExecutionPlan,
     validated_output: ValidatedPackageOutput,
+    reconciliation_input: ReconciliationInput,
     reconciliation: ReconciliationResult,
     reconciliation_json: bytes,
     reconciliation_markdown: str,
+    final_ir: FinalProtocolIRDocument,
+    final_ir_json: bytes,
+    final_ir_markdown: str,
     adapter: CompletionAdapter,
     pins: ValidationPins,
 ) -> CompletenessReceipt:
@@ -560,9 +675,13 @@ def validate_completion(
             preparation=preparation,
             execution_plan=execution_plan,
             validated_output=validated_output,
+            reconciliation_input=reconciliation_input,
             reconciliation=reconciliation,
             reconciliation_json=reconciliation_json,
             reconciliation_markdown=reconciliation_markdown,
+            final_ir=final_ir,
+            final_ir_json=final_ir_json,
+            final_ir_markdown=final_ir_markdown,
             adapter=adapter,
             pins=pins,
         )

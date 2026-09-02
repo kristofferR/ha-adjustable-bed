@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import NoReturn
@@ -131,7 +131,7 @@ class V112MigrationPlan:
 
 def plan_v112_migration(
     payload: str | bytes,
-    mappings: Mapping[str, MigrationDomain],
+    mappings: dict[str, MigrationDomain],
 ) -> V112MigrationPlan:
     """Inventory every source leaf and map only caller-declared paths."""
 
@@ -213,6 +213,7 @@ def _decode(payload: str | bytes) -> tuple[object, bytes]:
             encoded,
             object_pairs_hook=_reject_duplicate_keys,
             parse_constant=_reject_constant,
+            parse_float=_reject_float,
             parse_int=_parse_integer,
         )
     except (UnicodeError, ValueError, json.JSONDecodeError, RecursionError) as error:
@@ -273,6 +274,10 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
 
 def _reject_constant(value: str) -> NoReturn:
     raise ValueError(f"non-finite JSON number: {value}")
+
+
+def _reject_float(value: str) -> NoReturn:
+    raise ValueError(f"JSON decimal is unsupported: {value}")
 
 
 def _parse_integer(value: str) -> int:

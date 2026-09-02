@@ -204,6 +204,30 @@ def test_identical_semantics_ignore_package_local_provenance() -> None:
     assert all(len(item.sources) == 2 for item in result.atoms)
 
 
+def test_atom_sources_are_sorted_and_deduplicated_by_root() -> None:
+    packages: list[PackageSurface] = []
+    for name in ("org.example.one", "org.example.two"):
+        package = package_surface(name)
+        area = package.areas[0]
+        claim = area.claims[0]
+        second = replace(claim.provenance[0], report_pointer="/normalized/second")
+        changed_claim = replace(
+            claim,
+            provenance=tuple(sorted((*claim.provenance, second), key=lambda item: item.sort_key)),
+        )
+        packages.append(
+            replace(
+                package,
+                areas=(replace(area, claims=(changed_claim,)), *package.areas[1:]),
+            )
+        )
+
+    result = reconcile(cluster(*packages))
+
+    assert all(atom.sources == tuple(sorted(set(atom.sources))) for atom in result.atoms)
+    assert all(len(atom.sources) == 2 for atom in result.atoms)
+
+
 def test_structured_value_order_is_canonical_and_frame_order_is_not_hidden() -> None:
     area = ComparisonArea.PACKET_CONSTRUCTION
     left = package_surface("org.example.one", values={area: {"fields": [1, 2], "target": "write"}})
@@ -562,6 +586,27 @@ def test_json_and_markdown_are_deterministic_and_exactly_agree() -> None:
     assert render_json(result) == json_payload
     assert render_markdown(result) == markdown
     assert result.content_id in markdown
+    assert verify_render_agreement(json_payload, markdown) == result.content_id
+
+
+def test_render_markers_inside_payload_strings_do_not_shadow_marker_lines() -> None:
+    marker_text = "payload <!-- phase4-v2-reconciliation-json:START --> text"
+    result = reconcile(
+        cluster(
+            package_surface(
+                "org.example.one",
+                values={ComparisonArea.ACTIONS: marker_text},
+            ),
+            package_surface(
+                "org.example.two",
+                values={ComparisonArea.ACTIONS: marker_text},
+            ),
+        )
+    )
+    json_payload = render_json(result)
+    markdown = render_markdown(result)
+
+    assert marker_text in markdown
     assert verify_render_agreement(json_payload, markdown) == result.content_id
 
 

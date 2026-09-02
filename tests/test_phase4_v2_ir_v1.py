@@ -177,8 +177,10 @@ def _load(data: dict[str, object] | None = None) -> v1.FinalProtocolIRDocument:
     return v1._parse_final_ir_structure(json.loads(json.dumps(data or _document())))
 
 
-def _authorized_document() -> tuple[dict[str, object], dict[str, str]]:
-    data = _document()
+def _authorized_document(
+    source: dict[str, object] | None = None,
+) -> tuple[dict[str, object], dict[str, str]]:
+    data = source or _document()
     semantic = core._semantic_data(_load(data))
     pointers = sorted(core._semantic_leaf_pointers(semantic))
     artifact = core.build_artifact_identity(
@@ -359,6 +361,19 @@ def test_final_universe_rejects_duplicate_and_missing_mappings() -> None:
         _load(data)
 
     assert caught.value.diagnostics[0].code == "duplicate_action_mapping"
+
+
+def test_action_mapping_expansion_is_bounded_when_expected_universe_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = _document()
+    data["expected_action_rules"] = {}
+    monkeypatch.setattr(v1, "_MAX_DOMAIN_EXPANSIONS", 1)
+
+    with pytest.raises(IRValidationError) as caught:
+        _load(data)
+
+    assert caught.value.diagnostics[0].code == "universe_too_large"
 
 
 def test_every_final_semantic_leaf_requires_exact_evidence() -> None:
