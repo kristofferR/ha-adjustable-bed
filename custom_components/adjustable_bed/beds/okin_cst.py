@@ -337,6 +337,10 @@ class OkinCstController(BedController):
         return self._profile.lights
 
     @property
+    def supports_light_toggle_control(self) -> bool:
+        return self._profile.lights
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         return self._profile.lights
 

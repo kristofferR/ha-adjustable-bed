@@ -57,15 +57,17 @@ Totals: **18 IMPLEMENTED, 54 ALREADY IMPLEMENTED, 27 EXCLUDED**.
 - Constrained motor entities to the accepted two-axis or three-axis product
   layout and remove stale lumbar entities when a two-axis profile is selected.
 - Constrained lounge, incline, memory, light, and massage entities to each
-  shipped app's reachable capability surface.
+  shipped app's reachable capability surface. Both light command capability
+  paths are profile-gated, so Resident cannot retain a dead toggle entity.
 - Added Resident's fourth `M` recall/program pair and timer-step frame.
 - Added Sanctuary and Bob's full-body massage start.
 - Added zoned head/foot intensity controls. The Sanctuary/Resident primary-only,
   Bob dual-field, and Support asymmetric decrease frames remain distinct.
 - Added profile diagnostics and configuration validation, including two- versus
   three-motor constraints.
-- Added frozen artifact-derived vectors for the new field combinations and a
-  complete nine-profile capability matrix.
+- Added frozen artifact-derived vectors for every distinct field combination
+  and a complete nine-profile capability and exposed-entity matrix, including
+  every factory, motor-count, and memory mapping.
 
 ## Already implemented
 

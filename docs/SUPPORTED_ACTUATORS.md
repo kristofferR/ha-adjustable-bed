@@ -38,7 +38,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Remacro](beds/remacro.md) | ✅ Supported | 4 motors, 8 presets, RGB lights, heat |
 | [Logicdata](beds/logicdata.md) | 🧪 Needs Testing | XXTEA encrypted, 2 memory slots, lights, massage |
 | [Okin CB35](beds/okin-cb35.md) | 🧪 Needs Testing | 7-byte Nordic UART (Sealy Posturematic), 6 motors, massage, lights |
-| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion) |
+| [Okin CST](beds/okin-cst.md) | 🧪 Needs Testing | 14-byte dual-field protocol (Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion) |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 🧪 Needs Testing | Single stair actuator for Elda BTH / MEGAMAT |
 
 ---
@@ -69,7 +69,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
 | [Malouf](beds/malouf.md) | 8-byte (32-bit cmd) | Nordic UART or FFE5 | ❌ No | Service UUID detection |
 | [Keeson/Ergomotion](beds/keeson.md) | 8-byte (32-bit cmd) | Nordic UART | ❌ No | Name patterns |
 | [Okin CB35](beds/okin-cb35.md) | 7-byte (1-byte cmd) | Nordic UART | ❌ No | Name starts with "Star35" |
-| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Mattress Firm 900-O / MFirm 900-O, Rize MF900, Nectar Motion, some `OKIN-*` bases |
+| [Okin CST](beds/okin-cst.md) | 14-byte (dual 32-bit) | UUID `62741525-...` | ✅ Yes | Rize Sanctuary, Resident, Aviada, Bob, Contempo, II Carefree, II Clarity, MF900; Support; Mattress Firm 900-O / MFirm 900-O; Nectar Motion; some `OKIN-*` bases |
 | [OKIN Smart Remote / RF ECO BT](beds/okin-rf-eco-bt.md) | 6-byte (32-bit cmd) | UUID `62741525-...` | Unknown | Manual selection; diagnostics can match CSS GATT signature |
 
 **Key differences:**
