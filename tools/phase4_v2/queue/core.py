@@ -43,6 +43,20 @@ _MAX_EVENT_PAYLOAD_NODES = 100_000
 _MIN_PRIORITY = -(2**31)
 _MAX_PRIORITY = 2**31 - 1
 _MAX_TTL_SECONDS = 2**31 - 1
+MAX_ACTIVE_ORCHESTRATION_CLUSTERS = 4
+MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER = 8
+ORCHESTRATION_PACKAGE_ANALYSIS_KIND = "validated-package-output"
+ORCHESTRATION_PACKAGE_AUDIT_KIND = "phase4-v2-package-audit"
+ORCHESTRATION_CLUSTER_RECONCILIATION_KIND = "phase4-v2-cluster-reconciliation"
+ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND = "phase4-v2-cluster-implementation"
+ORCHESTRATION_KINDS = frozenset(
+    {
+        ORCHESTRATION_PACKAGE_ANALYSIS_KIND,
+        ORCHESTRATION_PACKAGE_AUDIT_KIND,
+        ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+        ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+    }
+)
 _INTERNAL_EVENT_TYPES = frozenset(
     {
         "CLAIMED",
@@ -672,6 +686,7 @@ class Queue:
         _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
+        _validate_orchestration_definition(kind, cluster_id)
         _validate_digest(input_digest, "input_digest")
         if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
             raise ValueError("priority must be a bounded integer")
@@ -740,6 +755,7 @@ class Queue:
         _validate_reserved_unit_kind(unit_id, kind)
         if cluster_id is not None:
             _validate_identifier(cluster_id, "cluster_id")
+        _validate_orchestration_definition(kind, cluster_id)
         if type(priority) is not int or not _MIN_PRIORITY <= priority <= _MAX_PRIORITY:
             raise ValueError("priority must be a bounded integer")
         if not isinstance(execution_mode, ExecutionMode):
@@ -1098,28 +1114,66 @@ class Queue:
                         f"dependency changed: {unit_id}/{parent_unit_id}"
                     ) from error
 
-    def claim(self, owner: str, *, ttl_seconds: int = 1_800) -> Lease | None:
+    def claim(
+        self,
+        owner: str,
+        *,
+        ttl_seconds: int = 1_800,
+        allowed_kinds: Iterable[str] | None = None,
+    ) -> Lease | None:
         """Atomically claim the first eligible work unit."""
         _validate_owner(owner)
         _validate_ttl(ttl_seconds)
+        kinds = _validate_allowed_kinds(allowed_kinds)
         self.verify_schema()
         guard = self._try_acquire_publication_guard(wait=True)
         if guard is None:
             return None
         try:
-            return self._claim_with_publication_guard(owner, ttl_seconds)
+            return self._claim_with_publication_guard(owner, ttl_seconds, kinds)
         finally:
             os.close(guard)
 
-    def _claim_with_publication_guard(self, owner: str, ttl_seconds: int) -> Lease | None:
+    def _claim_with_publication_guard(
+        self,
+        owner: str,
+        ttl_seconds: int,
+        allowed_kinds: tuple[str, ...] | None,
+    ) -> Lease | None:
         with self._immediate() as connection:
             self._recover_expired(connection)
+            kind_filter = ""
+            parameters: tuple[object, ...]
+            if allowed_kinds is not None:
+                placeholders = ",".join("?" for _ in allowed_kinds)
+                kind_filter = f" AND unit.kind IN ({placeholders})"
+                parameters = allowed_kinds
+            else:
+                parameters = ()
+            orchestration_kinds = tuple(sorted(ORCHESTRATION_KINDS))
+            orchestration_values = ",".join("(?)" for _ in orchestration_kinds)
+            parameters = (
+                *orchestration_kinds,
+                *parameters,
+                MAX_ACTIVE_ORCHESTRATION_CLUSTERS,
+                MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER,
+                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+            )
             row = connection.execute(
-                """
+                f"""
+                WITH orchestration_kinds(kind) AS (VALUES {orchestration_values})
                 SELECT unit_id, input_digest, fencing_generation
                 FROM work_units AS unit
                 WHERE unit.status = 'READY'
                   AND unit.execution_mode = 'NORMAL'
+                  {kind_filter}
                   AND NOT EXISTS (
                       SELECT 1 FROM leases WHERE leases.unit_id = unit.unit_id
                   )
@@ -1150,9 +1204,91 @@ class Queue:
                       WHERE requirement.unit_id = unit.unit_id
                         AND activation.capability IS NULL
                   )
+                  AND (
+                      unit.cluster_id IS NULL
+                      OR unit.kind NOT IN (SELECT kind FROM orchestration_kinds)
+                      OR (
+                          (
+                              EXISTS (
+                                  SELECT 1
+                                  FROM leases AS active
+                                  JOIN work_units AS active_unit
+                                    ON active_unit.unit_id = active.unit_id
+                                  WHERE active_unit.cluster_id = unit.cluster_id
+                                    AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                              )
+                              OR (
+                                  SELECT COUNT(DISTINCT active_unit.cluster_id)
+                                  FROM leases AS active
+                                  JOIN work_units AS active_unit
+                                    ON active_unit.unit_id = active.unit_id
+                                  WHERE active_unit.cluster_id IS NOT NULL
+                                    AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                              ) < ?
+                          )
+                          AND (
+                              SELECT COUNT(*)
+                              FROM leases AS active
+                              JOIN work_units AS active_unit
+                                ON active_unit.unit_id = active.unit_id
+                              WHERE active_unit.cluster_id = unit.cluster_id
+                                AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
+                          ) < ?
+                      )
+                  )
+                  AND (
+                      unit.kind <> ?
+                      OR EXISTS (
+                          SELECT 1
+                          FROM work_units AS required_implementation
+                          WHERE required_implementation.kind = ?
+                            AND required_implementation.cluster_id = unit.cluster_id
+                      )
+                  )
+                  AND (
+                      unit.kind <> ?
+                      OR (
+                          NOT EXISTS (
+                              SELECT 1
+                              FROM leases AS active_reconciliation
+                              JOIN work_units AS reconciliation
+                                ON reconciliation.unit_id = active_reconciliation.unit_id
+                              WHERE reconciliation.kind = ?
+                                AND reconciliation.cluster_id <> unit.cluster_id
+                          )
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM formal_completions AS completed_reconciliation
+                              JOIN work_units AS reconciliation
+                                ON reconciliation.unit_id = completed_reconciliation.unit_id
+                              WHERE reconciliation.kind = ?
+                                AND reconciliation.cluster_id <> unit.cluster_id
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM work_units AS implementation
+                                    JOIN formal_completions AS completed_implementation
+                                      ON completed_implementation.unit_id = implementation.unit_id
+                                    WHERE implementation.kind = ?
+                                      AND implementation.cluster_id = reconciliation.cluster_id
+                                )
+                            )
+                      )
+                  )
+                  AND (
+                      unit.kind <> ?
+                      OR EXISTS (
+                          SELECT 1
+                          FROM work_units AS reconciliation
+                          JOIN formal_completions AS completed_reconciliation
+                            ON completed_reconciliation.unit_id = reconciliation.unit_id
+                          WHERE reconciliation.kind = ?
+                            AND reconciliation.cluster_id = unit.cluster_id
+                      )
+                  )
                 ORDER BY unit.priority DESC, unit.ordinal, unit.unit_id
                 LIMIT 1
-                """
+                """,
+                parameters,
             ).fetchone()
             if row is None:
                 return None
@@ -1760,6 +1896,12 @@ class Queue:
                 raise DependencyNotSatisfiedError(
                     f"dependencies changed before completion: {lease.unit_id}"
                 )
+            if (
+                outcome is TerminalOutcome.ACCEPTED
+                and str(unit["kind"]) == ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND
+                and not self._cluster_has_accepted_reconciliation(connection, lease.unit_id)
+            ):
+                raise QueueConflictError("cluster implementation requires accepted reconciliation")
 
             connection.execute(
                 """
@@ -1834,6 +1976,28 @@ class Queue:
                 attempt_id=lease.attempt_id,
                 output_digest=output_digest,
             )
+
+    @staticmethod
+    def _cluster_has_accepted_reconciliation(
+        connection: sqlite3.Connection,
+        unit_id: str,
+    ) -> bool:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM work_units AS implementation
+            JOIN work_units AS reconciliation
+              ON reconciliation.kind = ?
+             AND reconciliation.cluster_id = implementation.cluster_id
+            JOIN formal_completions AS completed_reconciliation
+              ON completed_reconciliation.unit_id = reconciliation.unit_id
+            WHERE implementation.unit_id = ?
+              AND implementation.cluster_id IS NOT NULL
+            LIMIT 1
+            """,
+            (ORCHESTRATION_CLUSTER_RECONCILIATION_KIND, unit_id),
+        ).fetchone()
+        return row is not None
 
     @staticmethod
     def _validate_package_receipt_publication(
@@ -1919,6 +2083,19 @@ class Queue:
         if row is None:
             raise QueueError(f"unknown work unit: {unit_id}")
         return WorkUnitStatus(row["status"])
+
+    def attempt_outcome(self, attempt_id: str) -> TerminalOutcome | None:
+        """Read the immutable terminal for one exact attempt, if it has one."""
+        _validate_identifier(attempt_id, "attempt_id")
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT outcome FROM attempt_terminals WHERE attempt_id = ?",
+                (attempt_id,),
+            ).fetchone()
+        finally:
+            connection.close()
+        return TerminalOutcome(row["outcome"]) if row is not None else None
 
     def retry_repaired(self, unit_id: str) -> None:
         """Return an explicitly repaired failed unit to the ready queue."""
@@ -2800,6 +2977,29 @@ def _validate_owner(owner: str) -> None:
 def _validate_ttl(ttl_seconds: int) -> None:
     if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= _MAX_TTL_SECONDS:
         raise ValueError("ttl_seconds must be a bounded positive integer")
+
+
+def _validate_allowed_kinds(allowed_kinds: Iterable[str] | None) -> tuple[str, ...] | None:
+    if allowed_kinds is None:
+        return None
+    if isinstance(allowed_kinds, (str, bytes)):
+        raise ValueError("allowed_kinds must be a collection of identifiers")
+    kinds = tuple(islice(allowed_kinds, _MAX_MATERIALIZED_PINS + 1))
+    if not kinds or len(kinds) > _MAX_MATERIALIZED_PINS:
+        raise ValueError("allowed_kinds must be a non-empty bounded collection")
+    for kind in kinds:
+        _validate_identifier(kind, "allowed kind")
+    if len(set(kinds)) != len(kinds):
+        raise ValueError("allowed_kinds contains duplicates")
+    return tuple(sorted(kinds))
+
+
+def _validate_orchestration_definition(kind: str, cluster_id: str | None) -> None:
+    if (
+        kind in ORCHESTRATION_KINDS - {ORCHESTRATION_PACKAGE_ANALYSIS_KIND}
+        and cluster_id is None
+    ):
+        raise ValueError("orchestration stage requires a cluster_id")
 
 
 def _bounded_materialization_values[PinT: (CapabilityPin, CompletionDependencyPin)](
