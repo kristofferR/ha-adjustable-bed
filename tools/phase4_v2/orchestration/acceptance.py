@@ -10,7 +10,7 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
-from tools.phase4_v2.queue import Queue, StaleLeaseError, TerminalOutcome, WorkUnitStatus
+from tools.phase4_v2.queue import Lease, Queue, StaleLeaseError, TerminalOutcome, WorkUnitStatus
 
 from .model import WorkStage
 
@@ -77,12 +77,16 @@ def run_synthetic_acceptance(
     queue = Queue(database, attempts_root)
     queue.initialize()
     unit_count = config.clusters * (config.units_per_cluster + 2)
+    unit_stages: dict[str, WorkStage] = {}
+    unit_clusters: dict[str, str] = {}
     for cluster in range(config.clusters):
         cluster_id = f"synthetic-cluster:{cluster:04d}"
         audit_units = []
         for index in range(config.units_per_cluster):
             unit_id = f"synthetic-audit:{cluster:04d}:{index:04d}"
             audit_units.append(unit_id)
+            unit_stages[unit_id] = WorkStage.PACKAGE_AUDIT
+            unit_clusters[unit_id] = cluster_id
             queue.enqueue(
                 unit_id,
                 kind=WorkStage.PACKAGE_AUDIT.value,
@@ -90,6 +94,8 @@ def run_synthetic_acceptance(
                 input_digest=_digest(f"input:{unit_id}"),
             )
         reconciliation_id = f"synthetic-reconciliation:{cluster:04d}"
+        unit_stages[reconciliation_id] = WorkStage.CLUSTER_RECONCILIATION
+        unit_clusters[reconciliation_id] = cluster_id
         queue.enqueue(
             reconciliation_id,
             kind=WorkStage.CLUSTER_RECONCILIATION.value,
@@ -104,6 +110,8 @@ def run_synthetic_acceptance(
                 digest=_digest(f"output:{audit_id}"),
             )
         implementation_id = f"synthetic-implementation:{cluster:04d}"
+        unit_stages[implementation_id] = WorkStage.CLUSTER_IMPLEMENTATION
+        unit_clusters[implementation_id] = cluster_id
         queue.enqueue(
             implementation_id,
             kind=WorkStage.CLUSTER_IMPLEMENTATION.value,
@@ -123,6 +131,8 @@ def run_synthetic_acceptance(
     recovered_attempts = 0
     stale_writers_fenced = 0
     max_implementation_debt_clusters = 0
+    reconciled_clusters: set[str] = set()
+    implemented_clusters: set[str] = set()
     rounds = 0
     while any(unit.status is not WorkUnitStatus.COMPLETED for unit in queue.snapshot().units):
         rounds += 1
@@ -159,13 +169,14 @@ def run_synthetic_acceptance(
                 crashed.append(lease)
                 injected_crashes += 1
             else:
-                queue.finish(
-                    lease,
-                    TerminalOutcome.ACCEPTED,
-                    output_digest=_digest(f"output:{lease.unit_id}"),
-                    completion_revision="synthetic-acceptance-v1",
-                )
-                debt_clusters = _implementation_debt_clusters(queue)
+                stage = unit_stages[lease.unit_id]
+                cluster_id = unit_clusters[lease.unit_id]
+                _finish_synthetic_stage(queue, lease, stage, cluster_id)
+                if stage is WorkStage.CLUSTER_RECONCILIATION:
+                    reconciled_clusters.add(cluster_id)
+                elif stage is WorkStage.CLUSTER_IMPLEMENTATION:
+                    implemented_clusters.add(cluster_id)
+                debt_clusters = reconciled_clusters - implemented_clusters
                 max_implementation_debt_clusters = max(
                     max_implementation_debt_clusters,
                     len(debt_clusters),
@@ -214,20 +225,26 @@ def _digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def _implementation_debt_clusters(queue: Queue) -> frozenset[str]:
-    snapshot = queue.snapshot()
-    reconciled = {
-        unit.cluster_id
-        for unit in snapshot.units
-        if unit.kind == WorkStage.CLUSTER_RECONCILIATION.value
-        and unit.status is WorkUnitStatus.COMPLETED
-        and unit.cluster_id is not None
-    }
-    implemented = {
-        unit.cluster_id
-        for unit in snapshot.units
-        if unit.kind == WorkStage.CLUSTER_IMPLEMENTATION.value
-        and unit.status is WorkUnitStatus.COMPLETED
-        and unit.cluster_id is not None
-    }
-    return frozenset(reconciled - implemented)
+def _finish_synthetic_stage(
+    queue: Queue,
+    lease: object,
+    stage: WorkStage,
+    cluster_id: str,
+) -> None:
+    """Exercise the trusted boundary without exposing it for production work."""
+    if not isinstance(lease, Lease):
+        raise RuntimeError("synthetic harness received an invalid lease")
+    if stage.value not in {
+        WorkStage.PACKAGE_AUDIT.value,
+        WorkStage.CLUSTER_RECONCILIATION.value,
+        WorkStage.CLUSTER_IMPLEMENTATION.value,
+    }:
+        raise RuntimeError("synthetic harness claimed an unexpected stage")
+    queue._finish_trusted_orchestration_stage(
+        lease,
+        kind=stage.value,
+        cluster_id=cluster_id,
+        expected_input_digest=lease.input_digest,
+        output_digest=_digest(f"output:{lease.unit_id}"),
+        completion_revision="synthetic-acceptance-v1",
+    )

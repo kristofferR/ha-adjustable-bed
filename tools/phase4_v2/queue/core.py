@@ -49,14 +49,19 @@ ORCHESTRATION_PACKAGE_ANALYSIS_KIND = "validated-package-output"
 ORCHESTRATION_PACKAGE_AUDIT_KIND = "phase4-v2-package-audit"
 ORCHESTRATION_CLUSTER_RECONCILIATION_KIND = "phase4-v2-cluster-reconciliation"
 ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND = "phase4-v2-cluster-implementation"
+ORCHESTRATION_TRACKER_PUBLICATION_KIND = "phase4-v2-tracker-publication"
 ORCHESTRATION_KINDS = frozenset(
     {
         ORCHESTRATION_PACKAGE_ANALYSIS_KIND,
         ORCHESTRATION_PACKAGE_AUDIT_KIND,
         ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
         ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+        ORCHESTRATION_TRACKER_PUBLICATION_KIND,
     }
 )
+_TRUSTED_ORCHESTRATION_STAGE_KINDS = ORCHESTRATION_KINDS - {
+    ORCHESTRATION_PACKAGE_ANALYSIS_KIND
+}
 _INTERNAL_EVENT_TYPES = frozenset(
     {
         "CLAIMED",
@@ -548,6 +553,10 @@ _REQUIRED_SCHEMA_OBJECTS = _required_schema_objects()
 _TRUSTED_COMPLETION_KIND_PREFIX = "trusted-"
 _RESERVED_UNIT_KINDS = {
     "package-validation-receipt:": "trusted-package-validation-receipt",
+    "phase4-v2-audit:": ORCHESTRATION_PACKAGE_AUDIT_KIND,
+    "phase4-v2-implementation:": ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+    "phase4-v2-publication:": ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+    "phase4-v2-reconciliation:": ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
 }
 
 
@@ -564,6 +573,12 @@ class _PackageReceiptPublication:
 @dataclass(frozen=True, slots=True)
 class _ValidatedPackageOutputPublication:
     output: object
+
+
+@dataclass(frozen=True, slots=True)
+class _OrchestrationStagePublication:
+    kind: str
+    cluster_id: str
 
 
 class Queue:
@@ -1143,29 +1158,26 @@ class Queue:
         with self._immediate() as connection:
             self._recover_expired(connection)
             kind_filter = ""
-            parameters: tuple[object, ...]
+            parameters: dict[str, object] = {
+                "implementation_kind": ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
+                "max_active_clusters": MAX_ACTIVE_ORCHESTRATION_CLUSTERS,
+                "max_leases_per_cluster": MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER,
+                "publication_kind": ORCHESTRATION_TRACKER_PUBLICATION_KIND,
+                "reconciliation_kind": ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+            }
             if allowed_kinds is not None:
-                placeholders = ",".join("?" for _ in allowed_kinds)
+                allowed_names = tuple(
+                    f"allowed_kind_{index}" for index in range(len(allowed_kinds))
+                )
+                placeholders = ",".join(f":{name}" for name in allowed_names)
                 kind_filter = f" AND unit.kind IN ({placeholders})"
-                parameters = allowed_kinds
-            else:
-                parameters = ()
+                parameters.update(zip(allowed_names, allowed_kinds, strict=True))
             orchestration_kinds = tuple(sorted(ORCHESTRATION_KINDS))
-            orchestration_values = ",".join("(?)" for _ in orchestration_kinds)
-            parameters = (
-                *orchestration_kinds,
-                *parameters,
-                MAX_ACTIVE_ORCHESTRATION_CLUSTERS,
-                MAX_ACTIVE_ORCHESTRATION_LEASES_PER_CLUSTER,
-                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
-                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
-                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
-                ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND,
-                ORCHESTRATION_CLUSTER_RECONCILIATION_KIND,
+            orchestration_names = tuple(
+                f"orchestration_kind_{index}" for index in range(len(orchestration_kinds))
             )
+            orchestration_values = ",".join(f"(:{name})" for name in orchestration_names)
+            parameters.update(zip(orchestration_names, orchestration_kinds, strict=True))
             row = connection.execute(
                 f"""
                 WITH orchestration_kinds(kind) AS (VALUES {orchestration_values})
@@ -1224,7 +1236,7 @@ class Queue:
                                     ON active_unit.unit_id = active.unit_id
                                   WHERE active_unit.cluster_id IS NOT NULL
                                     AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
-                              ) < ?
+                              ) < :max_active_clusters
                           )
                           AND (
                               SELECT COUNT(*)
@@ -1233,27 +1245,18 @@ class Queue:
                                 ON active_unit.unit_id = active.unit_id
                               WHERE active_unit.cluster_id = unit.cluster_id
                                 AND active_unit.kind IN (SELECT kind FROM orchestration_kinds)
-                          ) < ?
+                          ) < :max_leases_per_cluster
                       )
                   )
                   AND (
-                      unit.kind <> ?
-                      OR EXISTS (
-                          SELECT 1
-                          FROM work_units AS required_implementation
-                          WHERE required_implementation.kind = ?
-                            AND required_implementation.cluster_id = unit.cluster_id
-                      )
-                  )
-                  AND (
-                      unit.kind <> ?
+                      unit.kind <> :reconciliation_kind
                       OR (
                           NOT EXISTS (
                               SELECT 1
                               FROM leases AS active_reconciliation
                               JOIN work_units AS reconciliation
                                 ON reconciliation.unit_id = active_reconciliation.unit_id
-                              WHERE reconciliation.kind = ?
+                              WHERE reconciliation.kind = :reconciliation_kind
                                 AND reconciliation.cluster_id <> unit.cluster_id
                           )
                           AND NOT EXISTS (
@@ -1261,28 +1264,39 @@ class Queue:
                               FROM formal_completions AS completed_reconciliation
                               JOIN work_units AS reconciliation
                                 ON reconciliation.unit_id = completed_reconciliation.unit_id
-                              WHERE reconciliation.kind = ?
+                              WHERE reconciliation.kind = :reconciliation_kind
                                 AND reconciliation.cluster_id <> unit.cluster_id
                                 AND NOT EXISTS (
                                     SELECT 1
                                     FROM work_units AS implementation
                                     JOIN formal_completions AS completed_implementation
                                       ON completed_implementation.unit_id = implementation.unit_id
-                                    WHERE implementation.kind = ?
+                                    WHERE implementation.kind = :implementation_kind
                                       AND implementation.cluster_id = reconciliation.cluster_id
                                 )
                             )
                       )
                   )
                   AND (
-                      unit.kind <> ?
+                      unit.kind <> :implementation_kind
                       OR EXISTS (
                           SELECT 1
                           FROM work_units AS reconciliation
                           JOIN formal_completions AS completed_reconciliation
                             ON completed_reconciliation.unit_id = reconciliation.unit_id
-                          WHERE reconciliation.kind = ?
+                          WHERE reconciliation.kind = :reconciliation_kind
                             AND reconciliation.cluster_id = unit.cluster_id
+                      )
+                  )
+                  AND (
+                      unit.kind <> :publication_kind
+                      OR EXISTS (
+                          SELECT 1
+                          FROM work_units AS implementation
+                          JOIN formal_completions AS completed_implementation
+                            ON completed_implementation.unit_id = implementation.unit_id
+                          WHERE implementation.kind = :implementation_kind
+                            AND implementation.cluster_id = unit.cluster_id
                       )
                   )
                 ORDER BY unit.priority DESC, unit.ordinal, unit.unit_id
@@ -1555,6 +1569,48 @@ class Queue:
             finish_result=result,
         )
 
+    def _finish_trusted_orchestration_stage(
+        self,
+        lease: Lease,
+        *,
+        kind: str,
+        cluster_id: str,
+        expected_input_digest: str,
+        output_digest: str,
+        completion_revision: str,
+    ) -> InputCheckedFinishResult:
+        """Publish one typed orchestration receipt through a stage adapter."""
+        if kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS:
+            raise QueueConflictError("kind has no trusted orchestration-stage adapter")
+        _validate_identifier(cluster_id, "cluster_id")
+        _validate_digest(expected_input_digest, "expected_input_digest")
+        _validate_digest(output_digest, "output_digest")
+        _validate_revision(completion_revision)
+        self.verify_schema()
+        guard = self._try_acquire_publication_guard(wait=True)
+        if guard is None:
+            raise QueueConflictError("tracker publication prevented attempt completion")
+        try:
+            result = self._finish_with_publication_guard(
+                lease,
+                TerminalOutcome.ACCEPTED,
+                output_digest=output_digest,
+                completion_revision=completion_revision,
+                expected_input_digest=expected_input_digest,
+                terminalize_input_mismatch=True,
+                trusted_publication=_OrchestrationStagePublication(kind, cluster_id),
+            )
+        finally:
+            os.close(guard)
+        return InputCheckedFinishResult(
+            disposition=(
+                InputCheckedFinishDisposition.INPUT_MISMATCH
+                if result.disposition is FinishDisposition.TERMINAL_ONLY
+                else InputCheckedFinishDisposition.ACCEPTED
+            ),
+            finish_result=result,
+        )
+
     def finish_input_mismatch_if_input_changed(
         self,
         lease: Lease,
@@ -1812,7 +1868,10 @@ class Queue:
         expected_input_digest: str | None,
         terminalize_input_mismatch: bool,
         trusted_publication: (
-            _PackageReceiptPublication | _ValidatedPackageOutputPublication | None
+            _PackageReceiptPublication
+            | _ValidatedPackageOutputPublication
+            | _OrchestrationStagePublication
+            | None
         ),
     ) -> FinishResult:
         trusted_receipt_dependencies: dict[str, str] | None = None
@@ -1832,9 +1891,15 @@ class Queue:
                 completion_revision=completion_revision,
                 expected_input_digest=expected_input_digest,
             )
+        elif isinstance(trusted_publication, _OrchestrationStagePublication):
+            if (
+                trusted_publication.kind not in _TRUSTED_ORCHESTRATION_STAGE_KINDS
+                or expected_input_digest != lease.input_digest
+            ):
+                raise QueueConflictError("orchestration publication does not bind the lease")
         with self._immediate() as connection:
             unit = connection.execute(
-                "SELECT kind FROM work_units WHERE unit_id = ?",
+                "SELECT kind, cluster_id FROM work_units WHERE unit_id = ?",
                 (lease.unit_id,),
             ).fetchone()
             if unit is None:
@@ -1848,6 +1913,11 @@ class Queue:
                 raise QueueConflictError(
                     "reserved completion must use its trusted publication adapter"
                 )
+            if isinstance(trusted_publication, _OrchestrationStagePublication) and (
+                str(unit["kind"]) != trusted_publication.kind
+                or unit["cluster_id"] != trusted_publication.cluster_id
+            ):
+                raise QueueConflictError("orchestration receipt belongs to another stage")
             terminal = connection.execute(
                 """
                 SELECT outcome, output_digest, completion_revision
@@ -1902,6 +1972,12 @@ class Queue:
                 and not self._cluster_has_accepted_reconciliation(connection, lease.unit_id)
             ):
                 raise QueueConflictError("cluster implementation requires accepted reconciliation")
+            if (
+                outcome is TerminalOutcome.ACCEPTED
+                and str(unit["kind"]) == ORCHESTRATION_TRACKER_PUBLICATION_KIND
+                and not self._cluster_has_accepted_implementation(connection, lease.unit_id)
+            ):
+                raise QueueConflictError("tracker publication requires accepted implementation")
 
             connection.execute(
                 """
@@ -1996,6 +2072,28 @@ class Queue:
             LIMIT 1
             """,
             (ORCHESTRATION_CLUSTER_RECONCILIATION_KIND, unit_id),
+        ).fetchone()
+        return row is not None
+
+    @staticmethod
+    def _cluster_has_accepted_implementation(
+        connection: sqlite3.Connection,
+        unit_id: str,
+    ) -> bool:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM work_units AS publication
+            JOIN work_units AS implementation
+              ON implementation.kind = ?
+             AND implementation.cluster_id = publication.cluster_id
+            JOIN formal_completions AS completed_implementation
+              ON completed_implementation.unit_id = implementation.unit_id
+            WHERE publication.unit_id = ?
+              AND publication.cluster_id IS NOT NULL
+            LIMIT 1
+            """,
+            (ORCHESTRATION_CLUSTER_IMPLEMENTATION_KIND, unit_id),
         ).fetchone()
         return row is not None
 
@@ -2954,8 +3052,10 @@ def _reserved_unit_kinds() -> dict[str, str]:
 
 
 def _requires_trusted_completion_adapter(unit_id: str, kind: str) -> bool:
-    return kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX) or any(
-        unit_id.startswith(prefix) for prefix in _reserved_unit_kinds()
+    return (
+        kind in ORCHESTRATION_KINDS
+        or kind.startswith(_TRUSTED_COMPLETION_KIND_PREFIX)
+        or any(unit_id.startswith(prefix) for prefix in _reserved_unit_kinds())
     )
 
 
