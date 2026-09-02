@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import NoReturn
 
 from .core import Lease, Queue, QueueError, TerminalOutcome
+from .fanout import publish_tracker_fanout
+from .github_contents import GitHubContentsError
+from .github_tree import GitHubTreeGateway
+from .publication_config import parse_publication_config
+from .publisher import PublisherConflictError
 from .tracker import render_html, render_markdown
 
 _MAX_INPUT_BYTES = 1024 * 1024
@@ -171,6 +176,9 @@ def _parser() -> argparse.ArgumentParser:
     status.add_argument("--unit-id")
     render = commands.add_parser("render")
     render.add_argument("--format", choices=("markdown", "html"), required=True)
+    publish = commands.add_parser("publish")
+    publish.add_argument("--lease-file", type=Path, required=True)
+    publish.add_argument("--config-file", type=Path, required=True)
     return parser
 
 
@@ -223,9 +231,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 emitted = {"input_check": checked.disposition, **asdict(result)}
             else:
                 if args.expected_input_digest is not None:
-                    raise ValueError(
-                        "expected input digest is only valid for accepted attempts"
-                    )
+                    raise ValueError("expected input digest is only valid for accepted attempts")
                 result = queue.finish(
                     lease,
                     outcome,
@@ -253,9 +259,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 render_markdown(snapshot) if args.format == "markdown" else render_html(snapshot),
                 end="",
             )
+        elif args.command == "publish":
+            config = parse_publication_config(_read_json_file(args.config_file))
+            lease = _lease_from_file(args.lease_file)
+            gateway = GitHubTreeGateway(config.repository, config.branch)
+            receipt = publish_tracker_fanout(queue, lease, gateway, config.targets)
+            _emit(
+                {
+                    "publication_config": config.to_data(),
+                    "publication_config_sha256": config.sha256,
+                    **asdict(receipt),
+                }
+            )
         else:  # pragma: no cover - argparse constrains commands
             parser.error("unknown command")
-    except (QueueError, ValueError) as error:
+    except (GitHubContentsError, PublisherConflictError, QueueError, ValueError) as error:
         print(str(error), file=sys.stderr)
         return 2
     return 0
