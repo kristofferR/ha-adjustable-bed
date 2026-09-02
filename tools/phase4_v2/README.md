@@ -24,9 +24,10 @@ is content-addressed and pins the exact upstream revisions and digests it consum
 
 The production tracker publisher writes dedicated generated documents. It creates all Markdown and
 HTML blobs and one Git tree/commit, then advances the tracker branch with a non-force fast-forward.
-Concurrent publishers therefore cannot expose a mixture of queue generations. GitHub issue bodies
-should contain stable links to those generated documents; automation does not rewrite manual issue
-prose.
+The gateway verifies that branch protection forbids force pushes and deletion before publishing.
+Concurrent publishers therefore cannot expose a mixture of queue generations, and uncertain write
+outcomes are reconciled against exact readback. GitHub issue bodies should contain stable links to
+those generated documents; automation does not rewrite manual issue prose.
 
 Real APK selection, corpus materialization, holdout execution, and bulk workers remain separate
 operator-controlled actions. Synthetic validation of this tooling does not cross that boundary.
