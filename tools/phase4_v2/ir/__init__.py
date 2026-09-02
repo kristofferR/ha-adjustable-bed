@@ -41,6 +41,7 @@ from .model import (
     semantic_fingerprint,
     validate_universe,
 )
+from .render import render_ir_markdown, validate_ir_markdown
 from .schema import schema_document
 
 __all__ = [
@@ -81,7 +82,9 @@ __all__ = [
     "load_ir",
     "loads_ir",
     "parse_ir",
+    "render_ir_markdown",
     "schema_document",
     "semantic_fingerprint",
     "validate_universe",
+    "validate_ir_markdown",
 ]
