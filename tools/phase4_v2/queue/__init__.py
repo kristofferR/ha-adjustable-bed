@@ -44,6 +44,7 @@ from .github_contents import (
     GitHubContentsGateway,
     GitHubContentsTarget,
 )
+from .github_tree import GitHubTreeGateway, TreeCommandRunner
 from .heartbeat import run_heartbeat
 from .publisher import (
     AtomicIssueGateway,
@@ -77,6 +78,7 @@ __all__ = [
     "GitHubContentsError",
     "GitHubContentsGateway",
     "GitHubContentsTarget",
+    "GitHubTreeGateway",
     "InputCheckedFinishDisposition",
     "InputCheckedFinishResult",
     "InputDigestMismatchError",
@@ -103,6 +105,7 @@ __all__ = [
     "TrackerDocumentSet",
     "TrackerFormat",
     "TrackerTarget",
+    "TreeCommandRunner",
     "WorkUnitStatus",
     "WorkUnitSnapshot",
     "managed_block_generation",
