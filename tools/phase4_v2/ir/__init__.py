@@ -1,5 +1,16 @@
 """Canonical protocol intermediate representation for Phase 4 v2."""
 
+from .migration import (
+    MIGRATION_REVISION,
+    SOURCE_SCHEMA_REVISION,
+    MigratedClaim,
+    MigrationDomain,
+    MigrationStatus,
+    V112MigrationPlan,
+    migration_json,
+    plan_v112_migration,
+    require_complete_migration,
+)
 from .model import (
     BOUND_VALIDATION_PROFILE,
     PROVENANCE_IDENTITY_REVISION,
@@ -46,8 +57,10 @@ from .schema import schema_document
 
 __all__ = [
     "BOUND_VALIDATION_PROFILE",
+    "MIGRATION_REVISION",
     "PROVENANCE_IDENTITY_REVISION",
     "SCHEMA_REVISION",
+    "SOURCE_SCHEMA_REVISION",
     "SUPPORTED_CONTRACT_REVISION",
     "SUPPORTED_VALIDATOR_REVISION",
     "ActionDefinition",
@@ -61,6 +74,9 @@ __all__ = [
     "ExpectedActionRule",
     "IRDiagnostic",
     "IRValidationError",
+    "MigratedClaim",
+    "MigrationDomain",
+    "MigrationStatus",
     "Predicate",
     "ProtocolDefinition",
     "ProtocolIRDocument",
@@ -71,6 +87,7 @@ __all__ = [
     "UniverseValidation",
     "ValidatedReport",
     "VariantSpace",
+    "V112MigrationPlan",
     "bind_validator_receipt",
     "build_artifact_identity",
     "build_evidence_anchor",
@@ -81,10 +98,13 @@ __all__ = [
     "dumps_ir",
     "load_ir",
     "loads_ir",
+    "migration_json",
     "parse_ir",
+    "plan_v112_migration",
     "render_ir_markdown",
     "schema_document",
     "semantic_fingerprint",
+    "require_complete_migration",
     "validate_universe",
     "validate_ir_markdown",
 ]
