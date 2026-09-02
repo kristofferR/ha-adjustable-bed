@@ -28,6 +28,12 @@ from .core import (
     WorkUnitSnapshot,
     WorkUnitStatus,
 )
+from .github_contents import (
+    CommandResult,
+    GitHubContentsError,
+    GitHubContentsGateway,
+    GitHubContentsTarget,
+)
 from .heartbeat import run_heartbeat
 from .publisher import (
     AtomicIssueGateway,
@@ -49,12 +55,16 @@ from .tracker import (
 __all__ = [
     "AtomicIssueGateway",
     "CapabilityPin",
+    "CommandResult",
     "CompletionConflictError",
     "CompletionDependencyPin",
     "DependencyNotSatisfiedError",
     "ExecutionMode",
     "FinishDisposition",
     "FinishResult",
+    "GitHubContentsError",
+    "GitHubContentsGateway",
+    "GitHubContentsTarget",
     "InputCheckedFinishDisposition",
     "InputCheckedFinishResult",
     "InputDigestMismatchError",
