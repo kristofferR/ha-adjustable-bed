@@ -41,7 +41,7 @@ PACKAGE_LOCAL_PLAN_REVISION = "phase4-v2-package-local-plan-v2"
 TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
 EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
-PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v2"
+PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
 VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v2"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
@@ -222,9 +222,7 @@ def build_semantic_root_completion(
     )
     result = object.__new__(SemanticRootCompletion)
     object.__setattr__(result, "source_root_id", source_root.content_id)
-    object.__setattr__(
-        result, "inherited_semantic_root_sha256", inherited_semantic_root_sha256
-    )
+    object.__setattr__(result, "inherited_semantic_root_sha256", inherited_semantic_root_sha256)
     object.__setattr__(
         result,
         "completion",
@@ -575,9 +573,7 @@ def build_semantic_root_audit(
     inventory_pin = _completion(target_inventory_completion, "semantic audit inventory")
     ledger_pin = _completion(ledger_decision_completion, "semantic audit ledger")
     audit_pin = _completion(direct_semantic_audit_completion, "semantic audit completion")
-    semantic_root_completion = _semantic_root_completion(
-        inherited_semantic_root_completion
-    )
+    semantic_root_completion = _semantic_root_completion(inherited_semantic_root_completion)
     semantic_root_pin = semantic_root_completion.completion
     extractor_pin = _capability(extractor_capability, "semantic audit extractor")
     pipeline_pin = _capability(equivalence_pipeline, "semantic audit pipeline")
@@ -589,8 +585,7 @@ def build_semantic_root_audit(
     )
     if (
         semantic_root_completion.source_root_id != source_root.content_id
-        or semantic_root_completion.inherited_semantic_root_sha256
-        != inherited_semantic_root_sha256
+        or semantic_root_completion.inherited_semantic_root_sha256 != inherited_semantic_root_sha256
     ):
         _fail("semantic root completion does not bind the audited source and inherited root")
     if ledger_decision.route is not Route.EXACT_REUSE:
@@ -657,25 +652,17 @@ def _semantic_audit_binding_sha256(values: Mapping[str, object]) -> str:
     return _content_id(
         "phase4-v2:semantic-root-audit-binding",
         {
-            "direct_semantic_audit_completion": pin_data(
-                "direct_semantic_audit_completion"
-            ),
+            "direct_semantic_audit_completion": pin_data("direct_semantic_audit_completion"),
             "equivalence_pipeline": pin_data("equivalence_pipeline"),
             "extractor_capability": pin_data("extractor_capability"),
             "extractor_capability_id": values["extractor_capability_id"],
-            "inherited_semantic_root_completion": pin_data(
-                "inherited_semantic_root_completion"
-            ),
-            "inherited_semantic_root_sha256": values[
-                "inherited_semantic_root_sha256"
-            ],
+            "inherited_semantic_root_completion": pin_data("inherited_semantic_root_completion"),
+            "inherited_semantic_root_sha256": values["inherited_semantic_root_sha256"],
             "ledger_decision_completion": pin_data("ledger_decision_completion"),
             "revision": values["revision"],
             "source_root_id": values["source_root_id"],
             "target_inventory_completion": pin_data("target_inventory_completion"),
-            "target_occurrence_identity_sha256": values[
-                "target_occurrence_identity_sha256"
-            ],
+            "target_occurrence_identity_sha256": values["target_occurrence_identity_sha256"],
             "target_root_id": values["target_root_id"],
         },
     )
@@ -690,9 +677,7 @@ def _semantic_audit(value: SemanticRootAudit) -> SemanticRootAudit:
         extractor = replace(value.extractor)
         accepted_inventory = _accepted_inventory(value.accepted_target_inventory)
     except AttributeError as error:
-        raise EquivalenceError(
-            "semantic audit is missing its typed source records"
-        ) from error
+        raise EquivalenceError("semantic audit is missing its typed source records") from error
     extractor_pin = _capability(value.extractor_capability, "semantic audit extractor")
     if extractor_pin.digest != extractor.content_id:
         _fail("semantic audit extractor relation no longer reproduces")
@@ -1089,6 +1074,7 @@ class PackageExecutionPlan:
 
     target_package_ref_id: str
     target_package_ref: FrozenPackageRef
+    cluster_id: str
     package_local: PackageLocalPlan
     accepted_target_inventory: AcceptedTargetRootInventory
     root_plans: tuple[RootExecutionPlan, ...]
@@ -1096,6 +1082,7 @@ class PackageExecutionPlan:
 
     def __post_init__(self) -> None:
         _sha(self.target_package_ref_id, "plan.target_package_ref_id")
+        _token(self.cluster_id, "plan.cluster_id")
         if type(self.target_package_ref) is not FrozenPackageRef:
             _fail("plan requires an exact FrozenPackageRef")
         target_package_ref = FrozenPackageRef(
@@ -1209,6 +1196,7 @@ class PackageExecutionPlan:
             "accepted_target_inventory": self.accepted_target_inventory.to_data(),
             "authoritative_occurrence_root_set_sha256": inventory.occurrence_root_set_sha256,
             "authoritative_root_count": inventory.root_count,
+            "cluster_id": self.cluster_id,
             "package_local": self.package_local.to_data(),
             "required_capabilities": [item.to_data() for item in self.required_capabilities],
             "required_completions": [item.to_data() for item in self.required_completions],
@@ -1254,6 +1242,7 @@ class FrozenPackageExecutionPlan:
     """Canonical immutable snapshot consumed by trust-sensitive adapters."""
 
     target_package_ref_id: str
+    cluster_id: str
     canonical_bytes: bytes
     digest: str
     status: PackagePlanStatus
@@ -1274,6 +1263,7 @@ class FrozenPackageExecutionPlan:
 def _new_frozen_package_execution_plan(
     *,
     target_package_ref_id: str,
+    cluster_id: str,
     canonical_bytes: bytes,
     digest: str,
     status: PackagePlanStatus,
@@ -1289,6 +1279,7 @@ def _new_frozen_package_execution_plan(
 ) -> FrozenPackageExecutionPlan:
     values: dict[str, object] = {
         "target_package_ref_id": target_package_ref_id,
+        "cluster_id": cluster_id,
         "canonical_bytes": canonical_bytes,
         "digest": digest,
         "status": status,
@@ -1303,6 +1294,7 @@ def _new_frozen_package_execution_plan(
         "required_completions": required_completions,
     }
     _sha(target_package_ref_id, "snapshot.target_package_ref_id")
+    _token(cluster_id, "snapshot.cluster_id")
     if type(canonical_bytes) is not bytes:
         _fail("snapshot canonical bytes must be exact immutable bytes")
     _sha(digest, "snapshot.digest")
@@ -1323,6 +1315,8 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot root count is invalid")
     if decoded.get("target_package_ref_id") != target_package_ref_id:
         _fail("snapshot target does not match its canonical preimage")
+    if decoded.get("cluster_id") != cluster_id:
+        _fail("snapshot cluster does not match its canonical preimage")
     if decoded.get("status") != status.value:
         _fail("snapshot status does not match its canonical preimage")
     if decoded.get("authoritative_root_count") != root_count:
@@ -1381,13 +1375,12 @@ def _new_frozen_package_execution_plan(
         != required_completions
     ):
         _fail("snapshot completions are not canonical")
-    if len({item.parent_unit_id for item in required_completions}) != len(
-        required_completions
-    ):
+    if len({item.parent_unit_id for item in required_completions}) != len(required_completions):
         _fail("snapshot completions contain duplicate unit IDs")
-    if len(required_capabilities) > _MAX_GLOBAL_REQUIREMENTS or len(
-        required_completions
-    ) > _MAX_GLOBAL_REQUIREMENTS:
+    if (
+        len(required_capabilities) > _MAX_GLOBAL_REQUIREMENTS
+        or len(required_completions) > _MAX_GLOBAL_REQUIREMENTS
+    ):
         _fail("snapshot requirement set exceeds the queue limit")
     result = object.__new__(FrozenPackageExecutionPlan)
     for field, value in values.items():
@@ -1402,6 +1395,7 @@ def _validate_frozen_package_execution_plan(
         _fail("expected an exact frozen package execution plan")
     return _new_frozen_package_execution_plan(
         target_package_ref_id=value.target_package_ref_id,
+        cluster_id=value.cluster_id,
         canonical_bytes=value.canonical_bytes,
         digest=value.digest,
         status=value.status,
@@ -1421,17 +1415,19 @@ def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageE
     if type(value) is not PackageExecutionPlan:
         _fail("plan snapshot requires an exact PackageExecutionPlan")
     frozen = PackageExecutionPlan(
-        value.target_package_ref_id,
-        value.target_package_ref,
-        value.package_local,
-        value.accepted_target_inventory,
-        value.root_plans,
-        value.revision,
+        target_package_ref_id=value.target_package_ref_id,
+        target_package_ref=value.target_package_ref,
+        cluster_id=value.cluster_id,
+        package_local=value.package_local,
+        accepted_target_inventory=value.accepted_target_inventory,
+        root_plans=value.root_plans,
+        revision=value.revision,
     )
     canonical = _canonical_bytes(frozen.to_data())
     digest = hashlib.sha256(b"phase4-v2:package-execution-plan\0" + canonical).hexdigest()
     return _new_frozen_package_execution_plan(
         target_package_ref_id=frozen.target_package_ref_id,
+        cluster_id=frozen.cluster_id,
         canonical_bytes=canonical,
         digest=digest,
         status=frozen.status,
@@ -1463,6 +1459,7 @@ def build_package_execution_plan(
     *,
     target_package_ref_id: str,
     target_package_ref: FrozenPackageRef,
+    cluster_id: str,
     package_local: PackageLocalPlan,
     accepted_target_inventory: AcceptedTargetRootInventory,
     root_plans: Iterable[RootExecutionPlan],
@@ -1473,11 +1470,12 @@ def build_package_execution_plan(
             _fail(f"package execution plan exceeds {_MAX_ROOTS} roots")
         roots.append(_root(item))
     return PackageExecutionPlan(
-        target_package_ref_id,
-        target_package_ref,
-        package_local,
-        accepted_target_inventory,
-        tuple(sorted(roots, key=_root_key)),
+        target_package_ref_id=target_package_ref_id,
+        target_package_ref=target_package_ref,
+        cluster_id=cluster_id,
+        package_local=package_local,
+        accepted_target_inventory=accepted_target_inventory,
+        root_plans=tuple(sorted(roots, key=_root_key)),
     )
 
 
@@ -1549,15 +1547,11 @@ def _receipt_string(
 
 
 @overload
-def _receipt_sha(
-    value: object, field: str, *, optional: Literal[False] = False
-) -> str: ...
+def _receipt_sha(value: object, field: str, *, optional: Literal[False] = False) -> str: ...
 
 
 @overload
-def _receipt_sha(
-    value: object, field: str, *, optional: Literal[True]
-) -> str | None: ...
+def _receipt_sha(value: object, field: str, *, optional: Literal[True]) -> str | None: ...
 
 
 def _receipt_sha(value: object, field: str, *, optional: bool = False) -> str | None:
@@ -1644,9 +1638,7 @@ def _snapshot_receipt(receipt: ValidationReceipt) -> ValidationReceipt:
         )
         if item.end_byte <= item.start_byte:
             _fail("evidence anchor range is invalid")
-    dependencies = _exact_pair_tuple(
-        receipt.dependency_digests, "validator dependency digests"
-    )
+    dependencies = _exact_pair_tuple(receipt.dependency_digests, "validator dependency digests")
     if tuple(name for name, _ in dependencies) != _PACKAGE_RECEIPT_DEPENDENCIES:
         _fail("validator dependency digests are not the exact BOUND_V5 set")
     for name, digest in dependencies:

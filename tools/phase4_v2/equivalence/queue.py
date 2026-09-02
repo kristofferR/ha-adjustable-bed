@@ -12,6 +12,7 @@ from tools.phase4_v2.queue import (
 from tools.phase4_v2.queue import (
     CompletionDependencyPin,
     ExecutionMode,
+    FinishDisposition,
     FinishResult,
     InputCheckedFinishDisposition,
     InputDigestMismatchError,
@@ -147,6 +148,7 @@ def materialize_package_execution_plan(
         input_digest=frozen.digest,
         priority=priority,
         execution_mode=ExecutionMode.NORMAL,
+        cluster_id=frozen.cluster_id,
     )
     if input_digest != frozen.digest:
         raise QueueConflictError("queue did not preserve the frozen package plan digest")
@@ -181,7 +183,7 @@ def finish_package_execution_plan(
             str(error),
             output=None,
             queue_result=FinishResult(
-                disposition=InputCheckedFinishDisposition.INPUT_MISMATCH,
+                disposition=FinishDisposition.TERMINAL_ONLY,
                 unit_id=lease.unit_id,
                 attempt_id=lease.attempt_id,
                 output_digest=None,

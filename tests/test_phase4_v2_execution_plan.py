@@ -79,6 +79,7 @@ SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
 SHA_2 = "2" * 64
+CLUSTER_ID = "cluster-synthetic"
 
 TARGET_PACKAGE_REF = FrozenPackageRef(
     package_name="org.example.target",
@@ -159,9 +160,7 @@ def semantic_audit(
         pins=RoutingPins(),
     )
     completion_source = (
-        replace(source, occurrence_identity_sha256=SHA_D)
-        if bind_unrelated_source
-        else source
+        replace(source, occurrence_identity_sha256=SHA_D) if bind_unrelated_source else source
     )
     audit = build_semantic_root_audit(
         source_root=source,
@@ -230,6 +229,7 @@ def full_root(
 def mixed_plan() -> PackageExecutionPlan:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
     return build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
@@ -421,6 +421,7 @@ def test_semantic_root_completion_binds_the_audited_source_root() -> None:
 def test_freeze_deduplicates_shared_inherited_semantic_roots() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D), (SHA_E, SHA_F))
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
@@ -463,6 +464,7 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
     exact = exact_root(accepted)
     with pytest.raises(EquivalenceError, match="conflicting capability"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -477,6 +479,7 @@ def test_aggregate_queue_requirements_reject_conflicting_pins() -> None:
         )
     with pytest.raises(EquivalenceError, match="conflicting completion"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -497,6 +500,7 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
 
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -505,6 +509,7 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
         )
     with pytest.raises(EquivalenceError, match="authoritative occurrence/root set"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -516,6 +521,7 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
     transplanted = exact_root(other)
     with pytest.raises(EquivalenceError, match="transplanted"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -527,6 +533,7 @@ def test_omitted_extra_or_transplanted_roots_are_rejected() -> None:
 def test_any_blocked_root_blocks_package_and_output() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
@@ -550,6 +557,7 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
 ) -> None:
     plan = mixed_plan()
     reverse = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local_plan(),
@@ -561,6 +569,7 @@ def test_builder_canonicalizes_order_and_rejects_unbounded_iterable(
     monkeypatch.setattr(plan_module, "_MAX_ROOTS", 2)
     with pytest.raises(EquivalenceError, match="exceeds 2 roots"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -574,13 +583,14 @@ def test_frozen_snapshot_is_stable_but_fresh_snapshot_observes_mutation() -> Non
     frozen = freeze_package_execution_plan(plan)
     assert frozen.canonical_bytes
     assert frozen.digest == plan.content_id
+    assert frozen.cluster_id == CLUSTER_ID
+    assert json.loads(frozen.canonical_bytes)["cluster_id"] == CLUSTER_ID
     assert frozen.root_count == 2
     assert frozen.required_capabilities == tuple(
         (item.name, item.revision, item.digest) for item in plan.required_capabilities
     )
     assert frozen.required_completions == tuple(
-        (item.parent_unit_id, item.revision, item.digest)
-        for item in plan.required_completions
+        (item.parent_unit_id, item.revision, item.digest) for item in plan.required_completions
     )
 
     object.__setattr__(plan.package_local, "version_name", "1.8")
@@ -599,6 +609,7 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
 
     with pytest.raises(EquivalenceError, match="reproduce the target package ID"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=SHA_A,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -609,6 +620,7 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
     other_artifact = replace(TARGET_PACKAGE_REF, artifact_digest=SHA_E)
     with pytest.raises(EquivalenceError, match="frozen package artifact identity"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=other_artifact.content_id,
             target_package_ref=other_artifact,
             package_local=local_plan(),
@@ -618,6 +630,7 @@ def test_package_plan_requires_the_exact_frozen_package_identity() -> None:
 
     with pytest.raises(EquivalenceError, match="frozen package preflight"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=replace(local_plan(), requirements_sha256=SHA_E),
@@ -643,6 +656,11 @@ def test_frozen_snapshot_is_factory_only_and_pins_are_structurally_immutable() -
     with pytest.raises(EquivalenceError, match="digest does not bind"):
         plan_module._validate_frozen_package_execution_plan(frozen)
 
+    clean = freeze_package_execution_plan(mixed_plan())
+    object.__setattr__(clean, "cluster_id", "cluster-transplanted")
+    with pytest.raises(EquivalenceError, match="cluster does not match"):
+        plan_module._validate_frozen_package_execution_plan(clean)
+
 
 def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
     CapabilityPin("x" * 200, "v1", SHA_A)
@@ -661,12 +679,12 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             dependencies = tuple(
                 sorted(
                     (
-                    CompletionPin(
-                        f"dependency:{root_index}:{index}",
-                        "report-v1",
-                        hashlib.sha256(f"dependency:{root_index}:{index}".encode()).hexdigest(),
-                    )
-                    for index in range(count)
+                        CompletionPin(
+                            f"dependency:{root_index}:{index}",
+                            "report-v1",
+                            hashlib.sha256(f"dependency:{root_index}:{index}".encode()).hexdigest(),
+                        )
+                        for index in range(count)
                     ),
                     key=lambda item: item.parent_unit_id,
                 )
@@ -677,6 +695,7 @@ def test_queue_identifier_and_global_requirement_boundaries_are_exact() -> None:
             root_index += 1
         accepted = accepted_inventory(*inventory_pairs)
         return build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -757,6 +776,7 @@ def test_nested_inputs_are_copied_and_content_id_survives_caller_mutation() -> N
     root = exact_root(accepted)
     extractor_digest = root.reuse.extractor_capability.digest
     plan = build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=local,
@@ -782,6 +802,7 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     accepted = accepted_inventory((SHA_C, SHA_D))
     with pytest.raises(EquivalenceError, match="exact mandatory tuple"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local,
@@ -798,6 +819,7 @@ def test_hostile_lists_are_not_normalized_into_trusted_tuples() -> None:
     object.__setattr__(blocked, "blockers", ["blocked"])
     with pytest.raises(EquivalenceError, match="at least one blocker"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -825,6 +847,7 @@ def test_subclasses_are_rejected_at_every_trust_boundary() -> None:
 
     with pytest.raises(EquivalenceError, match="exact supported concrete type"):
         build_package_execution_plan(
+            cluster_id=CLUSTER_ID,
             target_package_ref_id=TARGET_PACKAGE_REF_ID,
             target_package_ref=TARGET_PACKAGE_REF,
             package_local=local_plan(),
@@ -936,9 +959,7 @@ def test_validator_receipt_deep_snapshot_rejects_scalar_subclasses() -> None:
             build_validated_package_output(
                 execution_plan=mixed_plan(),
                 receipt=signed,
-                trusted_validation_receipt_sha256=cast(
-                    str, signed.validation_receipt_sha256
-                ),
+                trusted_validation_receipt_sha256=cast(str, signed.validation_receipt_sha256),
             )
 
 
