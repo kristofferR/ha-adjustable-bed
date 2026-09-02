@@ -11,6 +11,7 @@ from typing import cast
 import pytest
 
 from tools.phase4_v2.equivalence import (
+    PACKAGE_EXECUTION_PLAN_REVISION,
     PACKAGE_REPORT_REVISION,
     PACKAGE_REPORT_SCHEMA_REVISION,
     PACKAGE_REPORT_SCHEMA_SHA256,
@@ -219,6 +220,7 @@ def frozen_plan(target: FrozenPackageRef) -> FrozenPackageExecutionPlan:
     canonical = json.dumps(
         {
             "authoritative_root_count": 1,
+            "cluster_id": "cluster-synthetic",
             "package_local": {
                 "package_name": target.package_name,
                 "target_artifact_digest": target.artifact_digest,
@@ -235,6 +237,7 @@ def frozen_plan(target: FrozenPackageRef) -> FrozenPackageExecutionPlan:
                     "revision": PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION,
                 }
             ],
+            "revision": PACKAGE_EXECUTION_PLAN_REVISION,
             "status": "EXECUTABLE",
             "target_package_ref_id": target.content_id,
         },
@@ -244,6 +247,7 @@ def frozen_plan(target: FrozenPackageRef) -> FrozenPackageExecutionPlan:
     result = object.__new__(FrozenPackageExecutionPlan)
     values: dict[str, object] = {
         "target_package_ref_id": target.content_id,
+        "cluster_id": "cluster-synthetic",
         "canonical_bytes": canonical,
         "digest": sha(b"phase4-v2:package-execution-plan\0" + canonical),
         "status": PackagePlanStatus.EXECUTABLE,
@@ -425,6 +429,7 @@ def test_valid_incomplete_results_expose_each_terminal_reconciliation_gate() -> 
         ("output_receipt", "OUTPUT_RECEIPT_MISMATCH"),
         ("output_report", "OUTPUT_REPORT_MISMATCH"),
         ("adapter_target", "ADAPTER_TARGET_MISMATCH"),
+        ("cluster_mismatch", "RECONCILIATION_CLUSTER_MISMATCH"),
         ("reconciliation_incomplete", "RECONCILIATION_STRUCTURE_INVALID"),
         ("reconciliation_wrong_type", "RECONCILIATION_TYPE_INVALID"),
         ("json_changed", "RENDER_AGREEMENT_INVALID"),
@@ -469,6 +474,8 @@ def test_hostile_mutation_matrix_fails_closed(mutation: str, expected: str) -> N
         object.__setattr__(case.validated_output, "target_report_sha256", sha("changed"))
     elif mutation == "adapter_target":
         object.__setattr__(case.adapter, "target_package_ref_id", sha("changed"))
+    elif mutation == "cluster_mismatch":
+        object.__setattr__(case.reconciliation, "cluster_id", "cluster-transplanted")
     elif mutation == "reconciliation_incomplete":
         object.__setattr__(case.reconciliation, "status", ClosureStatus.INCOMPLETE)
     elif mutation == "reconciliation_wrong_type":

@@ -137,6 +137,15 @@ def _canonical_bytes(data: Mapping[str, object]) -> bytes:
         raise EquivalenceError("canonical content contains an unsupported value") from error
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    value: dict[str, object] = {}
+    for key, item in pairs:
+        if key in value:
+            _fail("canonical content contains a duplicate object key")
+        value[key] = item
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class CapabilityPin:
     """Exact shape consumed by ``Queue.require_capability``."""
@@ -1299,7 +1308,7 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot canonical bytes must be exact immutable bytes")
     _sha(digest, "snapshot.digest")
     try:
-        decoded = json.loads(canonical_bytes)
+        decoded = json.loads(canonical_bytes, object_pairs_hook=_unique_json_object)
     except (UnicodeError, ValueError, RecursionError) as error:
         raise EquivalenceError("snapshot canonical bytes are not valid JSON") from error
     if not isinstance(decoded, dict) or _canonical_bytes(decoded) != canonical_bytes:
@@ -1317,6 +1326,8 @@ def _new_frozen_package_execution_plan(
         _fail("snapshot target does not match its canonical preimage")
     if decoded.get("cluster_id") != cluster_id:
         _fail("snapshot cluster does not match its canonical preimage")
+    if decoded.get("revision") != PACKAGE_EXECUTION_PLAN_REVISION:
+        _fail("snapshot revision does not match the supported plan contract")
     if decoded.get("status") != status.value:
         _fail("snapshot status does not match its canonical preimage")
     if decoded.get("authoritative_root_count") != root_count:
@@ -1409,6 +1420,14 @@ def _validate_frozen_package_execution_plan(
         required_capabilities=value.required_capabilities,
         required_completions=value.required_completions,
     )
+
+
+def validate_frozen_package_execution_plan(
+    value: FrozenPackageExecutionPlan,
+) -> FrozenPackageExecutionPlan:
+    """Reconstruct and verify an immutable package-plan trust boundary."""
+
+    return _validate_frozen_package_execution_plan(value)
 
 
 def freeze_package_execution_plan(value: PackageExecutionPlan) -> FrozenPackageExecutionPlan:
