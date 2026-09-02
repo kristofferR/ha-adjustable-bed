@@ -163,3 +163,15 @@ def test_document_set_duplicate_path_with_different_presence_fails_closed() -> N
             _REVISION,
             (TrackerDocument("queue.md", None), TrackerDocument("queue.md", b"")),
         )
+
+
+def test_fanout_bounds_targets_before_rendering(publisher: tuple[Queue, Lease]) -> None:
+    queue, lease = publisher
+    targets = tuple(
+        TrackerTarget(f"issues/{index:03d}.md", TrackerFormat.MARKDOWN) for index in range(33)
+    )
+
+    with pytest.raises(ValueError, match="non-empty exact tuple"):
+        publish_tracker_fanout(queue, lease, _MemorySetGateway(), targets)
+    with pytest.raises(ValueError, match="canonical"):
+        TrackerTarget("issues/", TrackerFormat.MARKDOWN)

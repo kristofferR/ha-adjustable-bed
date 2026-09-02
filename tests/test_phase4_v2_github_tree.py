@@ -10,6 +10,7 @@ from tools.phase4_v2.queue import (
     CommandResult,
     GitHubContentsError,
     GitHubTreeGateway,
+    GitHubTreePostWriteUnknownError,
     TrackerDocument,
     document_set_sha256,
 )
@@ -29,6 +30,8 @@ class _GitDataRunner:
         self.pending_entries: list[dict[str, str]] = []
         self.calls: list[tuple[tuple[str, ...], bytes | None]] = []
         self.conflict = False
+        self.uncertain_apply = False
+        self.allow_force_pushes = False
 
     def __call__(
         self, arguments: tuple[str, ...], payload: bytes | None, _timeout: int
@@ -38,12 +41,26 @@ class _GitDataRunner:
         endpoint = arguments[4]
         if method == "GET" and "/git/ref/" in endpoint:
             return self._ok({"object": {"sha": self.ref, "type": "commit"}})
+        if method == "GET" and "/branches/" in endpoint and endpoint.endswith("/protection"):
+            return self._ok(
+                {
+                    "allow_deletions": {"enabled": False},
+                    "allow_force_pushes": {"enabled": self.allow_force_pushes},
+                }
+            )
         if method == "GET" and "/contents/" in endpoint:
             path = endpoint.split("/contents/", 1)[1].replace("%20", " ")
             body = self.documents.get(path)
             if body is None:
                 return CommandResult(1, b"", b"gh: Not Found (HTTP 404)")
-            return self._ok({"content": base64.b64encode(body).decode(), "encoding": "base64"})
+            return self._ok(
+                {
+                    "content": base64.b64encode(body).decode(),
+                    "encoding": "base64",
+                    "sha": "f" * 40,
+                    "type": "file",
+                }
+            )
         if method == "GET" and "/git/commits/" in endpoint:
             return self._ok({"tree": {"sha": _BASE_TREE}})
         assert payload is not None
@@ -68,6 +85,8 @@ class _GitDataRunner:
             self.ref = _NEW_COMMIT
             for entry in self.pending_entries:
                 self.documents[entry["path"]] = self.blobs[entry["sha"]]
+            if self.uncertain_apply:
+                raise GitHubContentsError("synthetic timeout")
             return self._ok({"object": {"sha": _NEW_COMMIT, "type": "commit"}})
         raise AssertionError((method, endpoint))
 
@@ -160,3 +179,67 @@ def test_tree_gateway_rejects_invalid_or_ambiguous_api_receipts() -> None:
 
     with pytest.raises(GitHubContentsError, match="invalid JSON"):
         gateway.read(("queue.md",))
+
+
+def test_tree_gateway_reconciles_success_after_uncertain_ref_transport() -> None:
+    runner = _GitDataRunner()
+    runner.uncertain_apply = True
+    gateway = _gateway(runner)
+    before = gateway.read(("issues/436.md",))
+    desired = (TrackerDocument("issues/436.md", b"new\n"),)
+
+    assert gateway.compare_and_replace(
+        expected_revision=before.revision,
+        expected_documents_sha256=document_set_sha256(before.documents),
+        documents=desired,
+    )
+
+
+def test_tree_gateway_refuses_unprotected_force_pushes() -> None:
+    runner = _GitDataRunner()
+    runner.allow_force_pushes = True
+    gateway = _gateway(runner)
+    before = gateway.read(("issues/436.md",))
+
+    with pytest.raises(GitHubContentsError, match="forbid force pushes"):
+        gateway.compare_and_replace(
+            expected_revision=before.revision,
+            expected_documents_sha256=document_set_sha256(before.documents),
+            documents=(TrackerDocument("issues/436.md", b"new\n"),),
+        )
+    assert not runner.blobs
+
+
+def test_tree_gateway_bounds_total_decoded_readback() -> None:
+    runner = _GitDataRunner()
+    paths = tuple(f"issues/{index:03d}.md" for index in range(5))
+    runner.documents = dict.fromkeys(paths, b"x" * (900 * 1024))
+
+    with pytest.raises(GitHubContentsError, match="document set exceeds"):
+        _gateway(runner).read(paths)
+
+
+def test_tree_gateway_reports_unresolved_uncertain_write() -> None:
+    class UnknownRunner(_GitDataRunner):
+        patch_attempted = False
+
+        def __call__(
+            self, arguments: tuple[str, ...], payload: bytes | None, timeout: int
+        ) -> CommandResult:
+            if arguments[3] == "PATCH":
+                self.patch_attempted = True
+                raise GitHubContentsError("synthetic timeout")
+            if self.patch_attempted and arguments[3] == "GET":
+                raise GitHubContentsError("synthetic readback failure")
+            return super().__call__(arguments, payload, timeout)
+
+    runner = UnknownRunner()
+    gateway = _gateway(runner)
+    before = gateway.read(("issues/436.md",))
+
+    with pytest.raises(GitHubTreePostWriteUnknownError, match="unknown"):
+        gateway.compare_and_replace(
+            expected_revision=before.revision,
+            expected_documents_sha256=document_set_sha256(before.documents),
+            documents=(TrackerDocument("issues/436.md", b"new\n"),),
+        )

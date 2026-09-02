@@ -21,11 +21,17 @@ _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 _REVISION = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _MISSING_REVISION = "missing"
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+_MAX_JSON_DEPTH = 32
+_MAX_JSON_NODES = 10_000
 _TIMEOUT_SECONDS = 60
 
 
 class GitHubContentsError(RuntimeError):
     """GitHub could not safely read or update a tracker document."""
+
+
+class GitHubContentsPostWriteUnknownError(GitHubContentsError):
+    """A failed transport may have applied the requested write."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,7 +192,20 @@ class GitHubContentsGateway:
         ]
         if expected_revision != _MISSING_REVISION:
             arguments.extend(("--raw-field", f"sha={expected_revision}"))
-        result = self._call(tuple(arguments), _TIMEOUT_SECONDS)
+        try:
+            result = self._call(tuple(arguments), _TIMEOUT_SECONDS)
+        except GitHubContentsError as error:
+            try:
+                after_uncertain = self.read(issue_number)
+            except GitHubContentsError as read_error:
+                raise GitHubContentsPostWriteUnknownError(
+                    "GitHub tracker update outcome and readback are unknown"
+                ) from read_error
+            if after_uncertain.body == body:
+                return True
+            raise GitHubContentsPostWriteUnknownError(
+                "GitHub tracker update outcome is unknown"
+            ) from error
         if result.returncode == 0:
             _validate_update_response(result.stdout)
             return True
@@ -246,10 +265,11 @@ def _response_object(payload: bytes) -> dict[str, object]:
         raise GitHubContentsError("GitHub response exceeds the configured limit")
     try:
         value = json.loads(payload, object_pairs_hook=_unique_object)
-    except (UnicodeError, ValueError, json.JSONDecodeError) as error:
+    except (UnicodeError, ValueError, RecursionError) as error:
         raise GitHubContentsError("GitHub returned invalid JSON") from error
     if type(value) is not dict:
         raise GitHubContentsError("GitHub returned an invalid response object")
+    _bounded_json(value)
     return value
 
 
@@ -260,6 +280,20 @@ def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
             raise ValueError("duplicate JSON object key")
         value[key] = item
     return value
+
+
+def _bounded_json(value: object) -> None:
+    nodes = 0
+    stack = [(value, 0)]
+    while stack:
+        current, depth = stack.pop()
+        nodes += 1
+        if nodes > _MAX_JSON_NODES or depth > _MAX_JSON_DEPTH:
+            raise GitHubContentsError("GitHub JSON response exceeds structural limits")
+        if type(current) is dict:
+            stack.extend((item, depth + 1) for item in current.values())
+        elif type(current) is list:
+            stack.extend((item, depth + 1) for item in current)
 
 
 def _validate_update_response(payload: bytes) -> None:
