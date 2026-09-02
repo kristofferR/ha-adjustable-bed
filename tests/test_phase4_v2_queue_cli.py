@@ -5,22 +5,30 @@ from __future__ import annotations
 import json
 import sqlite3
 from contextlib import closing
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 
+import tools.phase4_v2.queue.cli as queue_cli
 from tools.phase4_v2.queue import (
+    CommandResult,
     ExecutionMode,
+    GitHubTreeGateway,
     Queue,
     QueueError,
     TerminalOutcome,
+    TrackerDocument,
+    TrackerDocumentSet,
     WorkUnitStatus,
+    document_set_sha256,
     managed_block_sha256,
     render_html,
     render_markdown,
     replace_managed_block,
 )
 from tools.phase4_v2.queue.cli import main
+from tools.phase4_v2.queue.publication_config import PUBLICATION_CONFIG_REVISION
 
 
 @pytest.fixture
@@ -48,6 +56,74 @@ def _enqueue(queue: Queue, unit_id: str, *, mode: ExecutionMode = ExecutionMode.
         input_digest=(unit_id.encode().hex() + "0" * 64)[:64],
         execution_mode=mode,
     )
+
+
+class _MemoryPublicationGateway:
+    def __init__(self) -> None:
+        self.revision = "a" * 40
+        self.documents: dict[str, bytes] = {}
+        self.writes = 0
+
+    def read(self, paths: tuple[str, ...]) -> TrackerDocumentSet:
+        return TrackerDocumentSet(
+            self.revision,
+            tuple(TrackerDocument(path, self.documents.get(path)) for path in paths),
+        )
+
+    def compare_and_replace(
+        self,
+        *,
+        expected_revision: str,
+        expected_documents_sha256: str,
+        documents: tuple[TrackerDocument, ...],
+    ) -> bool:
+        before = tuple(
+            TrackerDocument(document.path, self.documents.get(document.path))
+            for document in documents
+        )
+        if expected_revision != self.revision or expected_documents_sha256 != document_set_sha256(
+            before
+        ):
+            return False
+        self.documents = {
+            document.path: document.body for document in documents if document.body is not None
+        }
+        self.revision = "b" * 40
+        self.writes += 1
+        return True
+
+
+def _publication_inputs(
+    queue: Queue,
+    tmp_path: Path,
+    *,
+    config: object | None = None,
+) -> tuple[Path, Path]:
+    _enqueue(queue, "tracker-publication")
+    lease = queue.claim("publisher")
+    assert lease is not None
+    lease_data = asdict(lease)
+    lease_data["workspace"] = str(lease.workspace)
+    lease_file = tmp_path / "publisher-lease.json"
+    lease_file.write_text(json.dumps(lease_data), encoding="utf-8")
+    config_file = tmp_path / "publication.json"
+    config_file.write_text(
+        json.dumps(
+            config
+            if config is not None
+            else {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "phase4/trackers",
+                "targets": [
+                    {"path": "issues/436.md", "format": "MARKDOWN"},
+                    {"path": "public/queue.html", "format": "HTML"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return lease_file, config_file
 
 
 def test_snapshot_and_renderers_share_one_deterministic_generation(queue: Queue) -> None:
@@ -161,7 +237,10 @@ def test_cli_claim_checkpoint_finish_status_and_render(
     assert main(_args(queue, "claim", "--owner", "worker-a")) == 0
     claimed = json.loads(capsys.readouterr().out)
     assert claimed["claimed"] is True
-    assert claimed["lease"]["input_digest"] == "7061636b6167652d610000000000000000000000000000000000000000000000"
+    assert (
+        claimed["lease"]["input_digest"]
+        == "7061636b6167652d610000000000000000000000000000000000000000000000"
+    )
     marker = json.loads(
         (Path(claimed["lease"]["workspace"]) / "ATTEMPT.READY").read_text(encoding="utf-8")
     )
@@ -416,6 +495,242 @@ def test_every_operation_rejects_incompatible_schema_without_mutation(
             ).fetchall()
         }
     assert tables == {"schema_meta"}
+
+
+def test_cli_publishes_complete_target_set_and_emits_canonical_receipt(
+    queue: Queue,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease_file, config_file = _publication_inputs(queue, tmp_path)
+    gateway = _MemoryPublicationGateway()
+    constructed: list[tuple[str, str]] = []
+
+    def gateway_factory(repository: str, branch: str) -> _MemoryPublicationGateway:
+        constructed.append((repository, branch))
+        return gateway
+
+    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", gateway_factory)
+
+    assert (
+        main(
+            _args(
+                queue,
+                "publish",
+                "--lease-file",
+                str(lease_file),
+                "--config-file",
+                str(config_file),
+            )
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    receipt = json.loads(output)
+    assert output == json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n"
+    assert constructed == [("owner/repo", "phase4/trackers")]
+    assert receipt["changed"] is True
+    assert receipt["before_revision"] == "a" * 40
+    assert receipt["after_revision"] == "b" * 40
+    assert receipt["paths"] == ["issues/436.md", "public/queue.html"]
+    assert receipt["publication_config"] == {
+        "schema_revision": PUBLICATION_CONFIG_REVISION,
+        "repository": "owner/repo",
+        "branch": "phase4/trackers",
+        "targets": [
+            {"path": "issues/436.md", "format": "MARKDOWN"},
+            {"path": "public/queue.html", "format": "HTML"},
+        ],
+    }
+    assert len(receipt["publication_config_sha256"]) == 64
+    assert gateway.writes == 1
+    generation = receipt["queue_generation"].encode()
+    assert generation in gateway.documents["issues/436.md"]
+    assert generation in gateway.documents["public/queue.html"]
+
+
+def test_cli_fails_closed_when_tracker_branch_is_missing(
+    queue: Queue,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease_file, config_file = _publication_inputs(queue, tmp_path)
+    calls: list[tuple[tuple[str, ...], bytes | None]] = []
+
+    def runner(arguments: tuple[str, ...], payload: bytes | None, _timeout: int) -> CommandResult:
+        calls.append((arguments, payload))
+        return CommandResult(1, b"", b"gh: Not Found (HTTP 404)")
+
+    def gateway_factory(repository: str, branch: str) -> GitHubTreeGateway:
+        return GitHubTreeGateway(repository, branch, runner=runner)
+
+    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", gateway_factory)
+
+    assert (
+        main(
+            _args(
+                queue,
+                "publish",
+                "--lease-file",
+                str(lease_file),
+                "--config-file",
+                str(config_file),
+            )
+        )
+        == 2
+    )
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "read tracker ref failed" in captured.err
+    assert len(calls) == 1
+    assert calls[0][0][3] == "GET"
+    assert calls[0][1] is None
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        ({}, "unexpected fields"),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "targets": [],
+            },
+            "unexpected fields",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": 1,
+                "branch": "trackers",
+                "targets": [],
+            },
+            "must be strings",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "trackers",
+                "targets": [
+                    {"path": "z.md", "format": "MARKDOWN"},
+                    {"path": "a.html", "format": "HTML"},
+                ],
+            },
+            "must be sorted",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "trackers",
+                "targets": [
+                    {"path": "same", "format": "HTML"},
+                    {"path": "same", "format": "MARKDOWN"},
+                ],
+            },
+            "paths must be unique",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "trackers",
+                "targets": [{"path": "queue.md", "format": "TEXT"}],
+            },
+            "format is unsupported",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "trackers",
+                "targets": [{"path": "queue/", "format": "MARKDOWN"}],
+            },
+            "must identify a file",
+        ),
+        (
+            {
+                "schema_revision": PUBLICATION_CONFIG_REVISION,
+                "repository": "owner/repo",
+                "branch": "trackers",
+                "targets": [
+                    {"path": f"{index:02d}.md", "format": "MARKDOWN"} for index in range(33)
+                ],
+            },
+            "bounded array",
+        ),
+    ],
+)
+def test_cli_rejects_hostile_or_incomplete_publication_config(
+    config: object,
+    message: str,
+    queue: Queue,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease_file, config_file = _publication_inputs(queue, tmp_path, config=config)
+
+    def forbidden_gateway(_repository: str, _branch: str) -> None:
+        raise AssertionError("invalid config must not construct a GitHub gateway")
+
+    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", forbidden_gateway)
+
+    assert (
+        main(
+            _args(
+                queue,
+                "publish",
+                "--lease-file",
+                str(lease_file),
+                "--config-file",
+                str(config_file),
+            )
+        )
+        == 2
+    )
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert message in captured.err
+
+
+def test_cli_rejects_missing_or_unsafe_publication_config_before_github(
+    queue: Queue,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease_file, config_file = _publication_inputs(queue, tmp_path)
+    alias = tmp_path / "publication-link.json"
+    alias.symlink_to(config_file)
+
+    def forbidden_gateway(_repository: str, _branch: str) -> None:
+        raise AssertionError("unsafe config must not construct a GitHub gateway")
+
+    monkeypatch.setattr(queue_cli, "GitHubTreeGateway", forbidden_gateway)
+    for candidate in (tmp_path / "missing.json", alias):
+        assert (
+            main(
+                _args(
+                    queue,
+                    "publish",
+                    "--lease-file",
+                    str(lease_file),
+                    "--config-file",
+                    str(candidate),
+                )
+            )
+            == 2
+        )
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "unsafe or inaccessible JSON file" in captured.err
 
 
 def test_finish_snapshot_reports_latest_terminal(queue: Queue) -> None:
