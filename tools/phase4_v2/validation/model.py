@@ -10,7 +10,7 @@ from enum import StrEnum
 
 from tools.phase4_v2.preflight import CandidateRecord, InvocationRecord, WarningRecord
 
-VALIDATION_REVISION = "phase4-v2-completeness-validation-v1"
+VALIDATION_REVISION = "phase4-v2-completeness-validation-v2"
 ADAPTER_REVISION = "phase4-v2-completion-adapter-v1"
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -55,6 +55,18 @@ def _text(value: object, field: str) -> str:
     return value
 
 
+def _bounded_exact_string(value: object, maximum: int, field: str) -> str:
+    if type(value) is not str or not value:
+        raise ValidationError(f"{field} must be an exact bounded string")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as error:
+        raise ValidationError(f"{field} is not valid Unicode") from error
+    if len(encoded) > maximum:
+        raise ValidationError(f"{field} must be an exact bounded string")
+    return value
+
+
 def _canonical_json(value: object) -> bytes:
     try:
         return json.dumps(
@@ -84,9 +96,7 @@ def candidate_occurrence_id(value: CandidateRecord) -> str:
         ("output_sha256", 64),
         ("signal", 200),
     ):
-        item = getattr(value, field)
-        if type(item) is not str or not item or len(item.encode("utf-8")) > maximum:
-            raise ValidationError(f"candidate.{field} must be an exact bounded string")
+        _bounded_exact_string(getattr(value, field), maximum, f"candidate.{field}")
     _digest(value.invocation_cache_key, "candidate.invocation_cache_key")
     _digest(value.output_sha256, "candidate.output_sha256")
     if (
@@ -103,12 +113,10 @@ def warning_occurrence_id(invocation: InvocationRecord, value: WarningRecord) ->
     if type(invocation) is not InvocationRecord or type(value) is not WarningRecord:
         raise ValidationError("warning identity requires exact public execution record types")
     for field, maximum in (("member", 4_096), ("route", 200)):
-        item = getattr(invocation, field)
-        if type(item) is not str or not item or len(item.encode("utf-8")) > maximum:
-            raise ValidationError(f"invocation.{field} must be an exact bounded string")
+        _bounded_exact_string(getattr(invocation, field), maximum, f"invocation.{field}")
     if invocation.cache_key is not None:
         _digest(invocation.cache_key, "invocation.cache_key")
-    if value.stream not in {"stdout", "stderr"} or type(value.stream) is not str:
+    if type(value.stream) is not str or value.stream not in {"stdout", "stderr"}:
         raise ValidationError("warning stream is invalid")
     if type(value.line) is not int or not 1 <= value.line <= 2**31 - 1:
         raise ValidationError("warning line is invalid")
@@ -238,6 +246,10 @@ class ValidationPins:
     reconciliation_json_sha256: str
     reconciliation_markdown_sha256: str
     completion_adapter_sha256: str
+    final_ir_schema_sha256: str
+    final_ir_json_sha256: str
+    final_ir_markdown_sha256: str
+    final_package_surface_sha256: str
 
     def __post_init__(self) -> None:
         for name in self.__dataclass_fields__:

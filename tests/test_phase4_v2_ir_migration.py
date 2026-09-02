@@ -86,7 +86,7 @@ def test_migration_rejects_non_leaf_and_non_enum_mappings() -> None:
 def test_migration_rejects_duplicate_keys_and_wrong_revision() -> None:
     with pytest.raises(IRValidationError) as duplicate:
         plan_v112_migration(
-            b'{"schema_revision":"phase4-analysis-v1.12-2026-07-26","x":1,"x":2}',
+            (f'{{"schema_revision":"{SOURCE_SCHEMA_REVISION}","x":1,"x":2}}').encode(),
             {},
         )
     assert duplicate.value.diagnostics[0].code == "migration_source_invalid"
@@ -94,6 +94,16 @@ def test_migration_rejects_duplicate_keys_and_wrong_revision() -> None:
     with pytest.raises(IRValidationError) as revision:
         plan_v112_migration(b'{"schema_revision":"future"}', {})
     assert revision.value.diagnostics[0].code == "migration_source_revision_mismatch"
+
+
+@pytest.mark.parametrize("number", ("1.0", "1e999"))
+def test_migration_rejects_decimal_numbers_deterministically(number: str) -> None:
+    payload = f'{{"schema_revision":"{SOURCE_SCHEMA_REVISION}","value":{number}}}'
+
+    with pytest.raises(IRValidationError) as caught:
+        plan_v112_migration(payload, {})
+
+    assert caught.value.diagnostics[0].code == "migration_source_invalid"
 
 
 def test_migration_value_digest_changes_with_exact_source_semantics() -> None:

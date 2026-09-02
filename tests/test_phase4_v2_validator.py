@@ -14,7 +14,21 @@ import pytest
 import tools.phase4_v2.validator.__main__ as validator_main
 import tools.phase4_v2.validator.binding as validator_binding
 import tools.phase4_v2.validator.bundle as validator_bundle
-from tools.phase4_v2.ir import SCHEMA_REVISION, bind_validator_receipt, schema_document
+from tests.test_phase4_v2_ir_v1 import _authorized_document, _document
+from tools.phase4_v2.equivalence import (
+    FINAL_IR_SCHEMA_SHA256,
+    PACKAGE_REPORT_REVISION,
+    PACKAGE_REPORT_SCHEMA_REVISION,
+)
+from tools.phase4_v2.ir import (
+    FINAL_SCHEMA_REVISION,
+    SCHEMA_REVISION,
+    bind_validator_receipt,
+    final_schema_document,
+    loads_final_ir,
+    render_final_ir_markdown,
+    schema_document,
+)
 from tools.phase4_v2.ir.model import _resolve_json_pointer
 from tools.phase4_v2.validator import (
     BOUND_VALIDATION_PROFILE,
@@ -322,6 +336,26 @@ def _package_bound_bundle(
     evidence_members = contract["evidence_members"]
     assert isinstance(evidence_members, list)
     evidence_members[0]["package_local_domains"] = list(package_domains)
+    anchors = contract["anchors"]
+    assert isinstance(anchors, list)
+    for anchor in anchors:
+        assert isinstance(anchor, dict)
+        anchor["ir_pointer"] = "/actions/raise/summary"
+    final_data = _document()
+    actions = final_data["actions"]
+    assert isinstance(actions, dict)
+    raise_action = actions["raise"]
+    assert isinstance(raise_action, dict)
+    raise_action["summary"] = SCHEMA_REVISION
+    final_data, trusted = _authorized_document(final_data)
+    final_json = _json_bytes(final_data)
+    final_document = loads_final_ir(final_json, trusted_receipts=trusted)
+    final_markdown = render_final_ir_markdown(final_document).encode()
+    members["inputs/ir.json"] = final_json
+    members["inputs/schema.json"] = _json_bytes(final_schema_document())
+    members["ANALYSIS.md"] = final_markdown
+    for relative in ("inputs/ir.json", "inputs/schema.json", "ANALYSIS.md"):
+        (report / relative).write_bytes(members[relative])
     members["analysis.json"] = _json_bytes(
         {
             "authoritative_root_results": [],
@@ -332,7 +366,10 @@ def _package_bound_bundle(
                 }
                 for name in package_domains
             },
-            "report_revision": "phase4-v2-package-report-v1",
+            "final_ir_json_sha256": hashlib.sha256(final_json).hexdigest(),
+            "final_ir_markdown_sha256": hashlib.sha256(final_markdown).hexdigest(),
+            "final_ir_schema_revision": FINAL_SCHEMA_REVISION,
+            "report_revision": PACKAGE_REPORT_REVISION,
             "target_package_identity": {
                 "artifact_digest": preflight["artifact_digest"],
                 "package_name": preflight["package_identity"]["package_name"],
@@ -359,12 +396,16 @@ def _package_bound_bundle(
         ),
         "inputs/report_schema.json": _json_bytes(
             {
-                "report_revision": "phase4-v2-package-report-v1",
+                "final_ir_schema_revision": FINAL_SCHEMA_REVISION,
+                "final_ir_schema_sha256": FINAL_IR_SCHEMA_SHA256,
+                "report_revision": PACKAGE_REPORT_REVISION,
                 "package_local_domain_result_schema": PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
                 "required_package_local_domains": list(package_domains),
                 "requires_authoritative_root_result_set": True,
+                "requires_canonical_final_ir_json": True,
+                "requires_final_ir_markdown_agreement": True,
                 "requires_target_package_identity": True,
-                "schema_revision": "phase4-v2-package-report-schema-v2",
+                "schema_revision": PACKAGE_REPORT_SCHEMA_REVISION,
             }
         ),
     }
@@ -374,8 +415,8 @@ def _package_bound_bundle(
         members[relative] = data
     package_pins = PackageDependencyPins(
         preflight_sha256=pins.preflight_sha256,
-        ir_sha256=pins.ir_sha256,
-        schema_sha256=pins.schema_sha256,
+        ir_sha256=hashlib.sha256(final_json).hexdigest(),
+        schema_sha256=hashlib.sha256(members["inputs/schema.json"]).hexdigest(),
         corpus_sha256=pins.corpus_sha256,
         execution_plan_sha256=hashlib.sha256(
             package_inputs["inputs/execution_plan.json"]
@@ -689,7 +730,14 @@ def test_package_profile_rejects_empty_mandatory_document(
 
 @pytest.mark.parametrize(
     "missing",
-    ["target_package_identity", "package_local_domains", "authoritative_root_results"],
+    [
+        "target_package_identity",
+        "package_local_domains",
+        "authoritative_root_results",
+        "final_ir_schema_revision",
+        "final_ir_json_sha256",
+        "final_ir_markdown_sha256",
+    ],
 )
 def test_package_profile_requires_the_package_report_contract(tmp_path: Path, missing: str) -> None:
     report, members, pins, _ = _package_bound_bundle(tmp_path)
@@ -703,6 +751,110 @@ def test_package_profile_requires_the_package_report_contract(tmp_path: Path, mi
     receipt = _validate_package_bound(report, pins)
 
     assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_rejects_unknown_package_report_field(tmp_path: Path) -> None:
+    report, members, pins, _ = _package_bound_bundle(tmp_path)
+    package_report = json.loads(members["analysis.json"])
+    package_report["untrusted_extension"] = True
+    replacement = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(replacement)
+    members["analysis.json"] = replacement
+    _write_manifest(report, members)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_REPORT_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_requires_canonical_final_ir_json(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    ir_member = "inputs/ir.json"
+    replacement = members[ir_member][:-1] + b" \n"
+    (report / ir_member).write_bytes(replacement)
+    members[ir_member] = replacement
+    digest = hashlib.sha256(replacement).hexdigest()
+    dependencies = contract["dependencies"]
+    assert isinstance(dependencies, dict)
+    ir_dependency = dependencies["ir"]
+    assert isinstance(ir_dependency, dict)
+    ir_dependency["sha256"] = digest
+    package_report = json.loads(members["analysis.json"])
+    package_report["final_ir_json_sha256"] = digest
+    report_bytes = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(report_bytes)
+    members["analysis.json"] = report_bytes
+    _write_contract(report, members, contract)
+
+    receipt = _validate_package_bound(report, replace(pins, ir_sha256=digest))
+
+    assert "PACKAGE_FINAL_IR_JSON_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_requires_exact_final_ir_markdown(tmp_path: Path) -> None:
+    report, members, pins, contract = _package_bound_bundle(tmp_path)
+    replacement = members["ANALYSIS.md"] + b"\n"
+    (report / "ANALYSIS.md").write_bytes(replacement)
+    members["ANALYSIS.md"] = replacement
+    package_report = json.loads(members["analysis.json"])
+    package_report["final_ir_markdown_sha256"] = hashlib.sha256(replacement).hexdigest()
+    report_bytes = _json_bytes(package_report)
+    (report / "analysis.json").write_bytes(report_bytes)
+    members["analysis.json"] = report_bytes
+    _write_contract(report, members, contract)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert "PACKAGE_FINAL_IR_RENDER_INVALID" in {item.code for item in receipt.diagnostics}
+
+
+@pytest.mark.parametrize(
+    ("limit_name", "expected"),
+    [
+        ("_MAX_FINAL_IR_BYTES", "PACKAGE_FINAL_IR_JSON_INVALID"),
+        ("_MAX_FINAL_MARKDOWN_BYTES", "PACKAGE_FINAL_IR_RENDER_INVALID"),
+    ],
+)
+def test_package_profile_bounds_final_ir_render_reads(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    limit_name: str,
+    expected: str,
+) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+    monkeypatch.setattr(validator_binding, limit_name, 1)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert expected in {item.code for item in receipt.diagnostics}
+
+
+def test_package_profile_reports_final_ir_read_failure_on_ir_member(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    report, _, pins, _ = _package_bound_bundle(tmp_path)
+    original = validator_bundle._read_member_range
+
+    def fail_final_ir_read(
+        root: Path,
+        member: validator_bundle.PurePosixPath,
+        snapshot_nodes: dict[str, validator_bundle._Node],
+        start: int,
+        end: int,
+    ) -> bytes:
+        if member.as_posix() == "inputs/ir.json":
+            raise OSError("synthetic final IR read failure")
+        return original(root, member, snapshot_nodes, start, end)
+
+    monkeypatch.setattr(validator_bundle, "_read_member_range", fail_final_ir_read)
+
+    receipt = _validate_package_bound(report, pins)
+
+    assert any(
+        item.code == "PACKAGE_FINAL_IR_JSON_INVALID" and item.path == "inputs/ir.json"
+        for item in receipt.diagnostics
+    )
 
 
 def test_package_profile_binds_each_authoritative_root_result_to_its_plan(

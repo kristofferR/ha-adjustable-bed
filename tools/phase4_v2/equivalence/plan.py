@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Literal, NamedTuple, Never, overload
 
+from tools.phase4_v2.ir import FINAL_SCHEMA_REVISION, final_schema_document
 from tools.phase4_v2.validator import (
     PACKAGE_BOUND_VALIDATION_PROFILE,
     PACKAGE_CONTRACT_REVISION,
@@ -42,7 +43,7 @@ TARGET_ROOT_INVENTORY_REVISION = "phase4-v2-target-root-inventory-v1"
 EXACT_REUSE_PINS_REVISION = "phase4-v2-exact-reuse-pins-v2"
 ROOT_EXECUTION_PLAN_REVISION = "phase4-v2-root-execution-plan-v2"
 PACKAGE_EXECUTION_PLAN_REVISION = "phase4-v2-package-execution-plan-v3"
-VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v2"
+VALIDATED_PACKAGE_OUTPUT_REVISION = "phase4-v2-validated-package-output-v3"
 PACKAGE_QUEUE_UNIT_KIND = "validated-package-output"
 PACKAGE_QUEUE_UNIT_PREFIX = "package-output"
 SEMANTIC_ROOT_COMPLETION_REVISION = "phase4-v2-semantic-root-completion-v1"
@@ -50,14 +51,22 @@ PACKAGE_VALIDATION_RECEIPT_COMPLETION_REVISION = "phase4-v2-package-validation-r
 EXACT_REUSE_PIPELINE_CAPABILITY = "phase4-v2-exact-reuse"
 PACKAGE_PIPELINE_CAPABILITY = "phase4-v2-package-analysis"
 SEMANTIC_ROOT_AUDIT_REVISION = "phase4-v2-semantic-root-audit-v1"
-PACKAGE_REPORT_REVISION = "phase4-v2-package-report-v1"
-PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v2"
+PACKAGE_REPORT_REVISION = "phase4-v2-package-report-v2"
+PACKAGE_REPORT_SCHEMA_REVISION = "phase4-v2-package-report-schema-v3"
+FINAL_IR_SCHEMA_CANONICAL_BYTES = json.dumps(
+    final_schema_document(), sort_keys=True, separators=(",", ":")
+).encode("utf-8")
+FINAL_IR_SCHEMA_SHA256 = hashlib.sha256(FINAL_IR_SCHEMA_CANONICAL_BYTES).hexdigest()
 PACKAGE_REPORT_SCHEMA_CANONICAL_BYTES = json.dumps(
     {
+        "final_ir_schema_revision": FINAL_SCHEMA_REVISION,
+        "final_ir_schema_sha256": FINAL_IR_SCHEMA_SHA256,
         "report_revision": PACKAGE_REPORT_REVISION,
         "package_local_domain_result_schema": PACKAGE_LOCAL_DOMAIN_RESULT_SCHEMA,
         "required_package_local_domains": list(LOCAL_ONLY_DOMAINS),
         "requires_authoritative_root_result_set": True,
+        "requires_canonical_final_ir_json": True,
+        "requires_final_ir_markdown_agreement": True,
         "requires_target_package_identity": True,
         "schema_revision": PACKAGE_REPORT_SCHEMA_REVISION,
     },
@@ -1507,6 +1516,9 @@ class ValidatedPackageOutput:
     target_report_schema_revision: str
     target_report_schema_sha256: str
     target_report_sha256: str
+    target_final_ir_schema_revision: str
+    target_final_ir_schema_sha256: str
+    target_final_ir_json_sha256: str
     revision: str
 
     def __init__(self) -> None:
@@ -1521,6 +1533,9 @@ class ValidatedPackageOutput:
             "target_report_schema_revision": self.target_report_schema_revision,
             "target_report_schema_sha256": self.target_report_schema_sha256,
             "target_report_sha256": self.target_report_sha256,
+            "target_final_ir_schema_revision": self.target_final_ir_schema_revision,
+            "target_final_ir_schema_sha256": self.target_final_ir_schema_sha256,
+            "target_final_ir_json_sha256": self.target_final_ir_json_sha256,
             "validation_receipt_sha256": self.validation_receipt_sha256,
         }
 
@@ -1761,6 +1776,12 @@ def build_validated_package_output(
         _fail("validator receipt does not bind the frozen execution plan")
     if dependencies.get("report_schema") != PACKAGE_REPORT_SCHEMA_SHA256:
         _fail("validator receipt does not bind the current package-report schema")
+    if dependencies.get("schema") != FINAL_IR_SCHEMA_SHA256:
+        _fail("validator receipt does not bind the current final-IR schema")
+    final_ir_sha256 = dependencies.get("ir")
+    if final_ir_sha256 is None:
+        _fail("validator receipt does not bind canonical final-IR JSON")
+    _sha(final_ir_sha256, "validator final-IR dependency")
     if frozen_receipt.bundle_sha256 is None:
         _fail("validator receipt has no target bundle digest")
     _sha(frozen_receipt.bundle_sha256, "receipt.bundle_sha256")
@@ -1789,5 +1810,8 @@ def build_validated_package_output(
     object.__setattr__(output, "target_report_schema_revision", PACKAGE_REPORT_SCHEMA_REVISION)
     object.__setattr__(output, "target_report_schema_sha256", PACKAGE_REPORT_SCHEMA_SHA256)
     object.__setattr__(output, "target_report_sha256", frozen_receipt.bundle_sha256)
+    object.__setattr__(output, "target_final_ir_schema_revision", FINAL_SCHEMA_REVISION)
+    object.__setattr__(output, "target_final_ir_schema_sha256", FINAL_IR_SCHEMA_SHA256)
+    object.__setattr__(output, "target_final_ir_json_sha256", final_ir_sha256)
     object.__setattr__(output, "revision", VALIDATED_PACKAGE_OUTPUT_REVISION)
     return output

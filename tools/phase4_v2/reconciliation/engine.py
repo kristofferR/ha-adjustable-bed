@@ -861,7 +861,7 @@ def _surface_atoms(
             identity=claim.key,
             payload=CanonicalValue.from_data(payload),
             sources=tuple(
-                AtomSource(package_ref_id, item.root_ref_id) for item in claim.provenance
+                sorted({AtomSource(package_ref_id, item.root_ref_id) for item in claim.provenance})
             ),
         )
         grouped[f"CLAIM:{claim.key}"].append(atom)
@@ -877,7 +877,12 @@ def _surface_atoms(
             identity=disposition.item_id,
             payload=CanonicalValue.from_data(payload),
             sources=tuple(
-                AtomSource(package_ref_id, item.root_ref_id) for item in disposition.provenance
+                sorted(
+                    {
+                        AtomSource(package_ref_id, item.root_ref_id)
+                        for item in disposition.provenance
+                    }
+                )
             ),
         )
         grouped[f"{disposition.kind.value}:{disposition.item_id}"].append(atom)

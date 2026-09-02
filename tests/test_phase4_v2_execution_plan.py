@@ -14,6 +14,7 @@ import tools.phase4_v2.equivalence.plan as plan_module
 from tools.phase4_v2.equivalence import (
     EQUIVALENCE_SCHEMA_REVISION,
     EXACT_REUSE_PIPELINE_CAPABILITY,
+    FINAL_IR_SCHEMA_SHA256,
     LOCAL_ONLY_DOMAINS,
     PACKAGE_EXECUTION_PLAN_REVISION,
     PACKAGE_PIPELINE_CAPABILITY,
@@ -259,7 +260,7 @@ def receipt(*, bundle: str = SHA_D, plan: PackageExecutionPlan | None = None) ->
             ("ir", SHA_B),
             ("preflight", SHA_C),
             ("report_schema", PACKAGE_REPORT_SCHEMA_SHA256),
-            ("schema", SHA_E),
+            ("schema", FINAL_IR_SCHEMA_SHA256),
         ),
         validation_profile=PACKAGE_BOUND_VALIDATION_PROFILE,
         contract_revision=PACKAGE_CONTRACT_REVISION,
@@ -875,6 +876,8 @@ def test_validated_output_can_only_come_from_current_clean_bound_receipt() -> No
     assert output.target_report_sha256 == SHA_D
     assert output.target_report_revision == PACKAGE_REPORT_REVISION
     assert output.target_report_schema_sha256 == PACKAGE_REPORT_SCHEMA_SHA256
+    assert output.target_final_ir_json_sha256 == SHA_B
+    assert output.target_final_ir_schema_sha256 == FINAL_IR_SCHEMA_SHA256
     assert output.validation_receipt_sha256 == receipt(plan=plan).validation_receipt_sha256
     with pytest.raises(EquivalenceError, match="trusted receipt factory"):
         ValidatedPackageOutput()

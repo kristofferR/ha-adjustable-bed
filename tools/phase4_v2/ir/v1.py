@@ -740,6 +740,13 @@ def validate_final_universe(document: FinalProtocolIRDocument) -> FinalUniverseV
             names = tuple(item[0] for item in parameter_domains)
             values = tuple(item[1] for item in parameter_domains)
             for combination in itertools.product(*values) if values else ((),):
+                expansions += 1
+                if expansions > _MAX_DOMAIN_EXPANSIONS:
+                    core._fail(
+                        "universe_too_large",
+                        "$.action_mappings",
+                        "final universe expansion exceeds its bound",
+                    )
                 combined = dict(profile)
                 combined.update(zip(names, combination, strict=True))
                 if mapping.when.matches(combined):
