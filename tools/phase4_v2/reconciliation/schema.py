@@ -1,0 +1,232 @@
+"""Closed input schema for deterministic Phase 4 v2 reconciliation."""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+
+INPUT_SCHEMA_REVISION = "phase4-v2-reconciliation-input-v1"
+COMPARISON_AREAS = (
+    "actions",
+    "authentication",
+    "capabilities_configuration",
+    "discovery",
+    "gatt",
+    "lifecycle",
+    "models_variants",
+    "packet_construction",
+    "parsing",
+    "timing_stop_release",
+    "transport",
+)
+
+_SHA256 = {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+_TOKEN = {
+    "maxLength": 200,
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+    "type": "string",
+}
+_POINTER = {
+    "maxLength": 8192,
+    "minLength": 1,
+    "pattern": "^(?:/(?:[^~/]|~[01])*)+$",
+    "type": "string",
+}
+_STRING_SET = {
+    "items": {"maxLength": 256, "minLength": 1, "type": "string"},
+    "maxItems": 4096,
+    "type": "array",
+    "uniqueItems": True,
+}
+_LONG_STRING_SET = {
+    "items": {"maxLength": 4096, "minLength": 1, "type": "string"},
+    "maxItems": 4096,
+    "type": "array",
+    "uniqueItems": True,
+}
+_POINTER_SET = {
+    "items": _POINTER,
+    "maxItems": 4096,
+    "type": "array",
+    "uniqueItems": True,
+}
+
+_SCHEMA: dict[str, object] = {
+    "$id": f"https://local.invalid/schemas/{INPUT_SCHEMA_REVISION}.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": False,
+    "properties": {
+        "cluster_id": _TOKEN,
+        "packages": {
+            "items": {"$ref": "#/$defs/package_surface"},
+            "maxItems": 32,
+            "minItems": 2,
+            "type": "array",
+        },
+        "revision": {"const": INPUT_SCHEMA_REVISION},
+    },
+    "required": ["cluster_id", "packages", "revision"],
+    "title": "Phase 4 v2 typed cluster reconciliation input",
+    "type": "object",
+    "$defs": {
+        "area_surface": {
+            "additionalProperties": False,
+            "properties": {
+                "area": {"enum": list(COMPARISON_AREAS)},
+                "claims": {
+                    "items": {"$ref": "#/$defs/claim"},
+                    "maxItems": 100000,
+                    "type": "array",
+                },
+                "closure": {"enum": ["COMPLETE", "INCOMPLETE"]},
+                "dispositions": {
+                    "items": {"$ref": "#/$defs/disposition"},
+                    "maxItems": 100000,
+                    "type": "array",
+                },
+                "gaps": _LONG_STRING_SET,
+            },
+            "required": ["area", "claims", "closure", "dispositions", "gaps"],
+            "type": "object",
+        },
+        "claim": {
+            "additionalProperties": False,
+            "properties": {
+                "key": _POINTER,
+                "polarity": {"enum": ["AFFIRMED", "DENIED"]},
+                "provenance": {
+                    "items": {"$ref": "#/$defs/leaf_provenance"},
+                    "maxItems": 4096,
+                    "minItems": 1,
+                    "type": "array",
+                },
+                "value": {},
+            },
+            "required": ["key", "polarity", "provenance", "value"],
+            "type": "object",
+        },
+        "disposition": {
+            "additionalProperties": False,
+            "properties": {
+                "claim_keys": _POINTER_SET,
+                "item_id": _TOKEN,
+                "kind": {"enum": ["ACTION", "CANDIDATE", "VARIANT"]},
+                "provenance": {
+                    "items": {"$ref": "#/$defs/leaf_provenance"},
+                    "maxItems": 4096,
+                    "minItems": 1,
+                    "type": "array",
+                },
+                "reason_code": _TOKEN,
+                "status": {"enum": ["ABSENT", "COVERED", "EXCLUDED", "INCOMPLETE"]},
+            },
+            "required": [
+                "claim_keys",
+                "item_id",
+                "kind",
+                "provenance",
+                "reason_code",
+                "status",
+            ],
+            "type": "object",
+        },
+        "frozen_package_ref": {
+            "additionalProperties": False,
+            "properties": {
+                "artifact_digest": _SHA256,
+                "package_name": {
+                    "maxLength": 512,
+                    "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+$",
+                    "type": "string",
+                },
+                "preflight_sha256": _SHA256,
+                "revision": {"const": "phase4-v2-frozen-package-ref-v1"},
+                "validation_receipt_sha256": _SHA256,
+                "version_code": {"maxLength": 256, "minLength": 1, "type": "string"},
+            },
+            "required": [
+                "artifact_digest",
+                "package_name",
+                "preflight_sha256",
+                "revision",
+                "validation_receipt_sha256",
+                "version_code",
+            ],
+            "type": "object",
+        },
+        "leaf_provenance": {
+            "additionalProperties": False,
+            "properties": {
+                "evidence_anchor_ids": {
+                    **_STRING_SET,
+                    "minItems": 1,
+                },
+                "report_pointer": _POINTER,
+                "root_ref_id": _SHA256,
+            },
+            "required": ["evidence_anchor_ids", "report_pointer", "root_ref_id"],
+            "type": "object",
+        },
+        "package_surface": {
+            "additionalProperties": False,
+            "properties": {
+                "areas": {
+                    "items": {"$ref": "#/$defs/area_surface"},
+                    "maxItems": 11,
+                    "type": "array",
+                },
+                "package_ref": {"$ref": "#/$defs/frozen_package_ref"},
+                "report_revision": _TOKEN,
+                "report_sha256": _SHA256,
+                "roots": {
+                    "items": {"$ref": "#/$defs/root_provenance"},
+                    "maxItems": 4096,
+                    "minItems": 1,
+                    "type": "array",
+                },
+            },
+            "required": ["areas", "package_ref", "report_revision", "report_sha256", "roots"],
+            "type": "object",
+        },
+        "root_provenance": {
+            "additionalProperties": False,
+            "properties": {
+                "blockers": _LONG_STRING_SET,
+                "evidence_anchor_ids": _STRING_SET,
+                "occurrence_identity_sha256": _SHA256,
+                "package_ref_id": _SHA256,
+                "report_pointer": _POINTER,
+                "route": {"enum": ["BLOCKED", "EXACT_REUSE", "FULL_ANALYSIS"]},
+                "semantic_root_sha256": {"oneOf": [_SHA256, {"type": "null"}]},
+                "source_root_id": {"oneOf": [_SHA256, {"type": "null"}]},
+                "target_root_id": _SHA256,
+            },
+            "required": [
+                "blockers",
+                "evidence_anchor_ids",
+                "occurrence_identity_sha256",
+                "package_ref_id",
+                "report_pointer",
+                "route",
+                "semantic_root_sha256",
+                "source_root_id",
+                "target_root_id",
+            ],
+            "type": "object",
+        },
+    },
+}
+INPUT_SCHEMA_CANONICAL_BYTES = json.dumps(
+    _SCHEMA,
+    allow_nan=False,
+    ensure_ascii=False,
+    separators=(",", ":"),
+    sort_keys=True,
+).encode("utf-8")
+INPUT_SCHEMA_SHA256 = hashlib.sha256(INPUT_SCHEMA_CANONICAL_BYTES).hexdigest()
+
+
+def schema_document() -> dict[str, object]:
+    """Return a defensive copy of the pinned closed schema."""
+    return copy.deepcopy(_SCHEMA)
