@@ -92,6 +92,7 @@ SHA_E = "e" * 64
 SHA_F = "f" * 64
 SHA_0 = "0" * 64
 SHA_1 = "1" * 64
+CLUSTER_ID = "cluster-synthetic"
 
 SOURCE_RECEIPT_DEPENDENCIES = {
     "corpus": SHA_A,
@@ -119,9 +120,7 @@ _SOURCE_RECEIPT_WITHOUT_IDENTITY = ValidationReceipt(
         artifact_digest=SHA_B,
     ),
     evidence_anchors_checked=1,
-    validated_evidence_members=(
-        EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_F),
-    ),
+    validated_evidence_members=(EvidenceMemberAttestation("evidence/source.txt", SHA_B, SHA_F),),
     validated_evidence_anchors=(
         EvidenceAnchorAttestation(
             "source",
@@ -207,6 +206,7 @@ def _accepted_inventory(
 def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
@@ -226,6 +226,7 @@ def _full_plan(*, reason: str = "no_exact_identity") -> PackageExecutionPlan:
 def _blocked_plan() -> PackageExecutionPlan:
     accepted = _accepted_inventory((SHA_E, SHA_F))
     return build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
@@ -292,6 +293,7 @@ def _reuse_plan() -> PackageExecutionPlan:
         ),
     )
     return build_package_execution_plan(
+        cluster_id=CLUSTER_ID,
         target_package_ref_id=TARGET_PACKAGE_REF_ID,
         target_package_ref=TARGET_PACKAGE_REF,
         package_local=_local_plan(),
@@ -431,9 +433,10 @@ def _publish_prerequisites(queue: Queue, plan: PackageExecutionPlan) -> None:
 
 
 def _materialize_prerequisite(queue: Queue, pin: CompletionPin) -> None:
-    if pin.parent_unit_id == package_validation_receipt_completion(
-        TARGET_PACKAGE_REF
-    ).parent_unit_id:
+    if (
+        pin.parent_unit_id
+        == package_validation_receipt_completion(TARGET_PACKAGE_REF).parent_unit_id
+    ):
         work = materialize_package_validation_receipt(queue, TARGET_PACKAGE_REF)
         assert work.unit_id == pin.parent_unit_id
         return
@@ -463,7 +466,7 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
     assert first.input_digest == frozen.digest
     with sqlite3.connect(queue.database) as connection:
         unit = connection.execute(
-            "SELECT kind, priority, input_digest FROM work_units WHERE unit_id = ?",
+            "SELECT kind, cluster_id, priority, input_digest FROM work_units WHERE unit_id = ?",
             (first.unit_id,),
         ).fetchone()
         capabilities = connection.execute(
@@ -480,13 +483,12 @@ def test_materialization_maps_exact_frozen_plan_and_is_idempotent(queue: Queue) 
             """,
             (first.unit_id,),
         ).fetchall()
-    assert unit == (PACKAGE_QUEUE_UNIT_KIND, 17, frozen.digest)
+    assert unit == (PACKAGE_QUEUE_UNIT_KIND, CLUSTER_ID, 17, frozen.digest)
     assert capabilities == [
         (pin.name, pin.revision, pin.digest) for pin in frozen.required_capabilities
     ]
     assert dependencies == [
-        (pin.parent_unit_id, pin.revision, pin.digest)
-        for pin in frozen.required_completions
+        (pin.parent_unit_id, pin.revision, pin.digest) for pin in frozen.required_completions
     ]
 
 
@@ -573,9 +575,7 @@ def test_all_reuse_still_materializes_distinct_package_unit(queue: Queue) -> Non
     materialized = materialize_package_execution_plan(queue, plan)
 
     assert materialized is not None
-    assert materialized.unit_id not in {
-        pin.parent_unit_id for pin in frozen.required_completions
-    }
+    assert materialized.unit_id not in {pin.parent_unit_id for pin in frozen.required_completions}
     assert queue.status(materialized.unit_id) is WorkUnitStatus.READY
 
 
@@ -650,10 +650,13 @@ def test_finish_rejects_missing_report_before_publication(
 
     assert queue.status(materialized.unit_id) is WorkUnitStatus.LEASED
     with sqlite3.connect(queue.database) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
-            (lease.unit_id,),
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_finish_rejects_plan_drift_without_an_accepted_completion(
@@ -690,10 +693,13 @@ def test_finish_rejects_plan_drift_without_an_accepted_completion(
             "SELECT outcome, output_digest FROM attempt_terminals WHERE attempt_id = ?",
             (lease.attempt_id,),
         ).fetchone() == (TerminalOutcome.INPUT_MISMATCH.value, raised.value.output.content_id)
-        assert connection.execute(
-            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
-            (lease.unit_id,),
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_finish_fences_plan_mutation_while_output_is_built(
@@ -747,10 +753,13 @@ def test_finish_fences_plan_mutation_while_output_is_built(
     assert raised.value.queue_result.output_digest == raised.value.output.content_id
     assert lease.workspace.is_dir()
     with sqlite3.connect(queue.database) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
-            (lease.unit_id,),
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM formal_completions WHERE unit_id = ?",
+                (lease.unit_id,),
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_finish_requires_matching_attempt_and_work_unit_input_digests(queue: Queue) -> None:
@@ -827,9 +836,12 @@ def test_atomic_input_checked_finish_has_no_recovery_window(
             "SELECT outcome, output_digest FROM attempt_terminals WHERE attempt_id = ?",
             (lease.attempt_id,),
         ).fetchone() == (TerminalOutcome.INPUT_MISMATCH.value, SHA_C)
-        assert connection.execute(
-            "SELECT COUNT(*) FROM formal_completions WHERE unit_id = 'unit'"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM formal_completions WHERE unit_id = 'unit'"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_finish_rejects_lease_for_a_different_package_plan(queue: Queue) -> None:
@@ -875,7 +887,10 @@ def test_wrong_lease_is_untouched_before_report_validation(
 
     assert queue.status("unrelated") is WorkUnitStatus.LEASED
     with sqlite3.connect(queue.database) as connection:
-        assert connection.execute(
-            "SELECT COUNT(*) FROM attempt_terminals WHERE attempt_id = ?",
-            (lease.attempt_id,),
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM attempt_terminals WHERE attempt_id = ?",
+                (lease.attempt_id,),
+            ).fetchone()[0]
+            == 0
+        )
