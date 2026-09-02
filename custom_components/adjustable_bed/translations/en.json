@@ -615,6 +615,15 @@
       "preset_yoga": {
         "name": "Yoga"
       },
+      "preset_relaxing_bedtime": {
+        "name": "Relaxing Bedtime"
+      },
+      "solace_music_toggle": {
+        "name": "Music"
+      },
+      "solace_music_off": {
+        "name": "Music Off"
+      },
       "preset_memory_1": {
         "name": "Memory 1"
       },
@@ -896,6 +905,33 @@
       },
       "preset_yoga_both": {
         "name": "Both sides: Yoga"
+      },
+      "preset_relaxing_bedtime_left": {
+        "name": "Left: Relaxing Bedtime"
+      },
+      "preset_relaxing_bedtime_right": {
+        "name": "Right: Relaxing Bedtime"
+      },
+      "preset_relaxing_bedtime_both": {
+        "name": "Both sides: Relaxing Bedtime"
+      },
+      "solace_music_toggle_left": {
+        "name": "Left: Music"
+      },
+      "solace_music_toggle_right": {
+        "name": "Right: Music"
+      },
+      "solace_music_toggle_both": {
+        "name": "Both sides: Music"
+      },
+      "solace_music_off_left": {
+        "name": "Left: Music Off"
+      },
+      "solace_music_off_right": {
+        "name": "Right: Music Off"
+      },
+      "solace_music_off_both": {
+        "name": "Both sides: Music Off"
       },
       "preset_memory_1_left": {
         "name": "Left: Memory 1"
@@ -1645,6 +1681,9 @@
       "linak_alarm_status": {
         "name": "Alarm Status"
       },
+      "solace_audio_volume": {
+        "name": "Audio Volume"
+      },
       "head_angle_left": {
         "name": "Left: Head Angle"
       },
@@ -1770,6 +1809,9 @@
       },
       "linak_position_feedback_fault": {
         "name": "Position Feedback Fault"
+      },
+      "solace_alarm_enabled": {
+        "name": "Alarm Enabled"
       },
       "bed_presence_left": {
         "name": "Left Bed Presence"

@@ -1857,12 +1857,12 @@ class TestFFE0UUIDDisambiguation:
     """Test disambiguation of beds sharing FFE0 service UUID (Octo/Solace/MotoSleep)."""
 
     def test_ffe0_with_solace_name(self):
-        """Test Solace detection with FFE0 UUID + 'solace' in name."""
+        """An unproven marketing-name guess no longer overrides shared FFE0."""
         service_info = _make_service_info(
             name="Solace Smart Bed",
             service_uuids=[SOLACE_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_SOLACE
+        assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
     def test_ffe0_with_qms_prefix(self):
         """Test Solace detection with FFE0 UUID + QMS- prefix."""
@@ -1881,12 +1881,12 @@ class TestFFE0UUIDDisambiguation:
         assert detect_bed_type(service_info) == BED_TYPE_SOLACE
 
     def test_ffe0_with_legacy_solace_pattern(self):
-        """Test Solace detection with FFE0 UUID + legacy S2-* naming format."""
+        """Unverified S-series names no longer route to the union controller."""
         service_info = _make_service_info(
             name="S2-Y-192-461000AD",
             service_uuids=[SOLACE_SERVICE_UUID],
         )
-        assert detect_bed_type(service_info) == BED_TYPE_SOLACE
+        assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
     def test_ffe0_with_sealymf_name(self):
         """Test Solace detection with FFE0 UUID + SealyMF in name."""
@@ -1905,6 +1905,43 @@ class TestFFE0UUIDDisambiguation:
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_OCTO
         assert result.confidence == 0.5
+
+    @pytest.mark.parametrize(
+        "name", ["QMS-IQ", "QMS2", "QMS-MQ", "My QMS2 Base", "SealyMF Base"]
+    )
+    def test_accepted_names_do_not_require_advertised_ffe0(self, name: str):
+        """Accepted apps select these names before dynamically finding FFE1."""
+        service_info = _make_service_info(name=name, service_uuids=[])
+        assert detect_bed_type(service_info) == BED_TYPE_SOLACE
+
+    def test_exact_s4_y_legacy_name_does_not_require_advertised_ffe0(self):
+        """Retain the exact hardware-confirmed S4-Y naming route."""
+        service_info = _make_service_info(
+            name="S4-Y-192-461000AD",
+            service_uuids=[],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_SOLACE
+
+    def test_arbitrarily_prefixed_qms_name_is_not_auto_discovered(self):
+        """Keep detector routes aligned with manifest-safe local-name prefixes."""
+        service_info = _make_service_info(name="Bedroom QMS2 Base", service_uuids=[])
+        assert detect_bed_type(service_info) is None
+
+    def test_broad_s_series_no_longer_routes_to_solace(self):
+        """The pending Motion Bed APK cannot justify broad S-series matching."""
+        service_info = _make_service_info(
+            name="S3-X-100-ABC",
+            service_uuids=[SOLACE_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_OCTO
+
+    def test_unaccepted_qms_name_no_longer_routes_to_solace(self):
+        """Do not widen the accepted app whitelists to every QMS-looking name."""
+        service_info = _make_service_info(
+            name="QMS-I16",
+            service_uuids=[SOLACE_SERVICE_UUID],
+        )
+        assert detect_bed_type(service_info) == BED_TYPE_OCTO
 
 
 class TestOctoNamePatterns:

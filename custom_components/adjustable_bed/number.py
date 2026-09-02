@@ -21,6 +21,7 @@ from .beds.base import PositionNumberSpec
 from .const import (
     BED_TYPE_LINAK,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SOLACE,
     BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -399,6 +400,8 @@ def _number_entities_for(
             mode=NumberMode.SLIDER,
         )
         entities.append(AdjustableBedLightLevelNumber(coordinator, light_adjusted))
+    elif bed_type == BED_TYPE_SOLACE and controller is not None:
+        _async_remove_stale_light_level_entity(hass, coordinator)
 
     sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
     if controller is not None and sleep_number_sides:
@@ -461,6 +464,21 @@ def _async_remove_stale_sleep_number_entity(
         "number",
         DOMAIN,
         coordinator.entity_unique_id(SLEEP_NUMBER_SETTING_DESCRIPTION.key),
+    )
+    if entity_id is not None:
+        registry.async_remove(entity_id)
+
+
+def _async_remove_stale_light_level_entity(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+) -> None:
+    """Remove the broad legacy Solace brightness number from narrowed profiles."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "number",
+        DOMAIN,
+        coordinator.entity_unique_id(LIGHT_LEVEL_DESCRIPTION.key),
     )
     if entity_id is not None:
         registry.async_remove(entity_id)

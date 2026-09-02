@@ -186,6 +186,28 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         required_capability="supports_preset_yoga",
     ),
     AdjustableBedButtonEntityDescription(
+        key="preset_relaxing_bedtime",
+        translation_key="preset_relaxing_bedtime",
+        icon="mdi:weather-night",
+        press_fn=lambda ctrl: ctrl.preset_relaxing_bedtime(),
+        cancel_movement=True,
+        required_capability="supports_relaxing_bedtime",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="solace_music_toggle",
+        translation_key="solace_music_toggle",
+        icon="mdi:music",
+        press_fn=lambda ctrl: ctrl.solace_music_toggle(),
+        required_capability="supports_solace_audio",
+    ),
+    AdjustableBedButtonEntityDescription(
+        key="solace_music_off",
+        translation_key="solace_music_off",
+        icon="mdi:music-off",
+        press_fn=lambda ctrl: ctrl.solace_music_off(),
+        required_capability="supports_solace_audio",
+    ),
+    AdjustableBedButtonEntityDescription(
         key="auxiliary_action",
         translation_key="auxiliary_action",
         icon="mdi:gesture-tap-button",

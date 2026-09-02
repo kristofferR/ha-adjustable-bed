@@ -388,7 +388,7 @@ def _is_malouf_new_okin_smartbed_signature(
 
 
 # Solace naming convention pattern (e.g., S4-Y-192-461000AD)
-SOLACE_NAME_PATTERN = re.compile(r"^s\d+-[a-z]-\d+-[a-z0-9]+$", re.IGNORECASE)
+SOLACE_NAME_PATTERN = re.compile(r"^s4-y-\d+-[a-z0-9]+$", re.IGNORECASE)
 
 # Generic/shared BLE service UUIDs used by multiple bed types AND non-bed devices.
 # Name-based exclusions are only applied when a device advertises these UUIDs,
@@ -1839,6 +1839,22 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         )
         return DetectionResult(bed_type=BED_TYPE_OCTO, confidence=0.9, signals=signals)
 
+    # Home Assistant's Bluetooth index requires three literal leading characters,
+    # so automatic discovery is limited to the accepted prefixes represented in
+    # the manifest. Exact S4-Y retains its hardware-confirmed legacy route.
+    if any(device_name.startswith(pattern) for pattern in SOLACE_NAME_PATTERNS) or (
+        device_name.startswith("my qms2")
+    ) or (
+        SOLACE_NAME_PATTERN.fullmatch(device_name)
+    ):
+        signals.append("name:solace")
+        _LOGGER.info(
+            "Detected Solace bed at %s (name: %s) by accepted name route",
+            service_info.address,
+            service_info.name,
+        )
+        return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
+
     # Check for Solace/Octo/MotoSleep disambiguation (FFE0 UUID)
     # MUST be before Richmat WiLinke since FFE0 is in RICHMAT_WILINKE_SERVICE_UUIDS as W3
     if SOLACE_SERVICE_UUID.lower() in service_uuids:
@@ -1853,28 +1869,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             )
             return DetectionResult(bed_type=BED_TYPE_LIMOSS, confidence=0.9, signals=signals)
 
-        # Check for Solace name patterns from Motion Bed app reverse engineering:
-        # - QMS-*, QMS2, QMS3, QMS4 (QMS series)
-        # - S3-*, S4-*, S5-*, S6-* (S-series)
-        # - SealyMF (Sealy Motion Flex)
-        # - Contains "solace"
-        # - Matches legacy Solace naming convention like "S2-Y-192-461000AD"
-        if any(device_name.startswith(p) for p in SOLACE_NAME_PATTERNS):
-            signals.append("name:solace")
-            _LOGGER.info(
-                "Detected Solace bed at %s (name: %s) by name pattern",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
-        if "solace" in device_name or SOLACE_NAME_PATTERN.match(device_name):
-            signals.append("name:solace")
-            _LOGGER.info(
-                "Detected Solace bed at %s (name: %s)",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.9, signals=signals)
         # MotoSleep and Power Bob use HHC names; the current MotoSleep app also
         # routes exact 28-character MOTO model names to its binary bed protocol.
         # AUDIO and MotoAMP are intentionally not bed controllers.

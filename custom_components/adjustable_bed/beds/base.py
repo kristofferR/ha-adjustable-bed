@@ -11,7 +11,7 @@ import asyncio
 import inspect
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Collection, Coroutine, Sequence
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
@@ -1005,6 +1005,21 @@ class BedController(ABC):
         return False
 
     @property
+    def supports_relaxing_bedtime(self) -> bool:
+        """Return True if the bed exposes a relaxing-bedtime preset."""
+        return False
+
+    @property
+    def supports_solace_audio(self) -> bool:
+        """Return True if the bed exposes the Solace music/audio surface."""
+        return False
+
+    @property
+    def supports_solace_alarm(self) -> bool:
+        """Return True if the bed exposes the Solace alarm surface."""
+        return False
+
+    @property
     def supports_memory_presets(self) -> bool:
         """Return True if bed supports recalling saved memory presets."""
         return False
@@ -1829,6 +1844,44 @@ class BedController(ABC):
             NotImplementedError: If the bed doesn't support this preset
         """
         raise NotImplementedError("Yoga preset not supported on this bed")
+
+    async def preset_relaxing_bedtime(self) -> None:
+        """Move the bed to its relaxing-bedtime preset."""
+        raise NotImplementedError("Relaxing-bedtime preset not supported on this bed")
+
+    async def solace_music_toggle(self) -> None:
+        """Toggle the Solace music feature."""
+        raise NotImplementedError("Solace audio not supported on this bed")
+
+    async def solace_music_off(self) -> None:
+        """Stop the Solace music feature."""
+        raise NotImplementedError("Solace audio not supported on this bed")
+
+    async def solace_select_music(self, track: int, *, preview: bool = False) -> None:
+        """Select or preview a Solace music track."""
+        raise NotImplementedError("Solace audio not supported on this bed")
+
+    async def solace_set_audio_volume(self, level: int) -> None:
+        """Set the Solace audio volume."""
+        raise NotImplementedError("Solace audio not supported on this bed")
+
+    async def solace_query_audio_volume(self) -> None:
+        """Request the Solace audio volume."""
+        raise NotImplementedError("Solace audio not supported on this bed")
+
+    async def program_solace_alarm(
+        self,
+        *,
+        enabled: bool,
+        hour: int,
+        minute: int,
+        weekdays: Collection[int],
+        mode: str,
+        massage: bool,
+        sound: str,
+    ) -> None:
+        """Program a Solace alarm."""
+        raise NotImplementedError("Solace alarm programming not supported on this bed")
 
     async def set_control_mode_press_and_hold(self) -> None:
         """Require controls to remain pressed while their action runs."""

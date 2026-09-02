@@ -152,6 +152,20 @@ test("Linak configuration controls bucket into utility", () => {
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("MotionFlex music controls bucket into utility", () => {
+  const hass = hassWith([
+    entry("button.b_music", "solace_music_toggle"),
+    entry("button.b_music_off", "solace_music_off"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+
+  expect(bed.utility).toEqual([
+    "button.b_music",
+    "button.b_music_off",
+  ]);
+  expect(bedIsEmpty(bed)).toBe(false);
+});
+
 test("Octo combined back and legs cover is a motor, not a preset", () => {
   const hass = hassWith([
     entry("cover.octo_back", "back"),

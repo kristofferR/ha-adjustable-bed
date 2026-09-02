@@ -26,6 +26,8 @@ from custom_components.adjustable_bed import (
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
+    SERVICE_SOLACE_AUDIO,
+    SERVICE_SOLACE_SET_ALARM,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     async_migrate_entry,
@@ -150,6 +152,8 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS)
         assert hass.services.has_service(DOMAIN, SERVICE_LINAK_RENAME)
         assert hass.services.has_service(DOMAIN, SERVICE_LINAK_SET_ALARM)
+        assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_AUDIO)
+        assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_SET_ALARM)
 
     async def test_setup_entry_connection_timeout(
         self,

@@ -380,6 +380,95 @@ linak_set_alarm:
         select:
           options: [both, left, right]
 
+solace_audio:
+  name: Control Solace audio
+  description: Select or preview MotionFlex music, query volume, or set volume.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      name: Action
+      required: true
+      selector:
+        select:
+          options: [select, preview, query, set_volume]
+    track:
+      name: Track
+      description: Required for select and preview actions.
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: box
+    volume:
+      name: Volume
+      description: Required for the set_volume action.
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: slider
+    side:
+      name: Side
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
+solace_set_alarm:
+  name: Set Solace alarm
+  description: Program the MotionFlex alarm time, recurrence, action, massage, and sound.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean:
+    time:
+      name: Time
+      selector:
+        time:
+    weekdays:
+      name: Weekdays
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    mode:
+      name: Bed action
+      selector:
+        select:
+          options: [zero_g, memory_1, no_action]
+    massage:
+      name: Massage
+      selector:
+        boolean:
+    sound:
+      name: Sound
+      selector:
+        select:
+          options: [none, alarm, music_1, music_2, music_3, music_4, music_5]
+    side:
+      name: Side
+      required: false
+      selector:
+        select:
+          options: [both, left, right]
+
 generate_support_bundle:
   name: Generate Support Bundle
   description: Capture the full adjustable-bed support bundle. This combines BLE diagnostics, pairing evidence, adapter and ESPHome proxy health, GATT details, scanner state, up to 30 ranked nearby Bluetooth devices, command trace, and recent integration logs into one JSON file. Nearby device names and addresses are included.

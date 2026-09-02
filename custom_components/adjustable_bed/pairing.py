@@ -31,6 +31,7 @@ from .const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_PAIR_CHILDREN,
@@ -348,19 +349,19 @@ def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     ordinary bed configuration, including options folded into the descriptor at
     pairing time, is retained.
 
-    Bond state is taken from the live descriptor rather than the frozen
-    pre-combine snapshot: a bond belongs to a BLE address, so whatever the side
-    proved or had removed while it was combined is still true afterwards.
+    Bond state and the latest observed BLE name are taken from the live descriptor
+    rather than the frozen pre-combine snapshot. A bond belongs to a BLE address,
+    so whatever the side proved or had removed while it was combined is still true.
     Absence is meaningful too, or a bond removed while paired would resurrect on
     the standalone entry and later authorize removing a bond that is gone.
     """
     origin_data = descriptor.get(KEY_ORIGIN_DATA)
     if isinstance(origin_data, Mapping):
         data = dict(origin_data)
-        for key in RUNTIME_BOND_KEYS:
+        for key in (*RUNTIME_BOND_KEYS, CONF_BLE_DEVICE_NAME):
             if key in descriptor:
                 data[key] = descriptor[key]
-            else:
+            elif key in RUNTIME_BOND_KEYS:
                 data.pop(key, None)
         return data
 

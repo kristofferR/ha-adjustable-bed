@@ -114,6 +114,7 @@ from .const import (
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
+    CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -323,7 +324,7 @@ class AdjustableBedCoordinator:
         # Malouf's APK has one command exception keyed to Smartbed238. Keep the
         # configured name as a controller fallback, but track actual observations
         # separately so protocol detection never relies on a user-facing rename.
-        self._ble_device_name: str = self._name
+        self._ble_device_name: str = entry.data.get(CONF_BLE_DEVICE_NAME, self._name)
         self._observed_ble_device_name: str | None = None
         self._malouf_layout: str = entry.data.get(CONF_MALOUF_LAYOUT, MALOUF_LAYOUT_AUTO)
         self._malouf_memory_slots: int = int(
@@ -475,6 +476,12 @@ class AdjustableBedCoordinator:
         # Set just before an internal bond-marker write; see
         # _begin_internal_entry_update().
         self._pending_internal_bond_marker: bool | None = None
+        # Learning a Solace profile changes which entities should exist. Persist
+        # the name immediately, but defer the resulting reload until this link is
+        # released so discovery cannot unload us halfway through a connection.
+        self._pending_capability_reload = False
+        self._capability_reload_scheduled = False
+        self._shutting_down = False
         self._last_bond_verification: dict[str, Any] = {
             "status": "not_attempted",
             "timestamp": None,
@@ -558,6 +565,90 @@ class AdjustableBedCoordinator:
             entry.persist_data(new_data, keys=keys)
         else:
             self.hass.config_entries.async_update_entry(entry, data=new_data)
+
+    def _record_observed_ble_device_name(self, device_name: str) -> None:
+        """Remember the advertising name used by protocol capability routing."""
+        self._ble_device_name = device_name
+        self._observed_ble_device_name = device_name
+        if (
+            self._bed_type == BED_TYPE_SOLACE
+            and self.entry.data.get(CONF_BLE_DEVICE_NAME) != device_name
+        ):
+            self._begin_internal_entry_update(
+                bool(self.entry.data.get(CONF_BLE_BOND_ESTABLISHED, False))
+            )
+            if self._pending_internal_bond_marker is not None:
+                self._pending_capability_reload = True
+            self._async_persist_config(
+                {**self.entry.data, CONF_BLE_DEVICE_NAME: device_name},
+                keys={CONF_BLE_DEVICE_NAME},
+            )
+
+    def _schedule_pending_capability_reload(self) -> None:
+        """Reload capability-gated entities once this BLE link is released."""
+        if (
+            not self._pending_capability_reload
+            or self._capability_reload_scheduled
+            or self._shutting_down
+        ):
+            return
+        self._capability_reload_scheduled = True
+        self.hass.async_create_task(
+            self._async_reload_after_capability_change(),
+            f"adjustable_bed_capability_reload_{self._address}",
+        )
+
+    async def _async_reload_after_capability_change(self) -> None:
+        """Wait for commands to release the link, then reconcile entity platforms."""
+        try:
+            loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+            reload_guard = (
+                getattr(loaded, "async_capability_reload_guard", None)
+                if isinstance(self.entry, ChildEntryView)
+                else None
+            )
+            if callable(reload_guard):
+                typed_reload_guard = cast(
+                    Callable[[], contextlib.AbstractAsyncContextManager[None]],
+                    reload_guard,
+                )
+                async with typed_reload_guard():
+                    await self._async_reload_if_capability_changed()
+            else:
+                async with self.async_command_operation_guard():
+                    await self._async_reload_if_capability_changed()
+        finally:
+            self._capability_reload_scheduled = False
+
+    async def _async_reload_if_capability_changed(self) -> None:
+        """Reload if this disconnected coordinator still owns the loaded entry."""
+        if not self._pending_capability_reload or self._shutting_down:
+            return
+        if self._client is not None and self._client.is_connected:
+            return
+        loaded = self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id)
+        owns_loaded_child = False
+        if isinstance(self.entry, ChildEntryView) and loaded is not None:
+            child_for_side = getattr(loaded, "child_for_side", None)
+            side = self.entry.data.get(CONF_SIDE)
+            owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
+        if loaded is not self and not owns_loaded_child:
+            return
+        self._pending_capability_reload = False
+        await self.hass.config_entries.async_reload(self.entry.entry_id)
+
+    @contextlib.asynccontextmanager
+    async def async_command_operation_guard(self) -> AsyncIterator[None]:
+        """Wait for this child's command lane and keep it idle."""
+        async with self._command_lock:
+            yield
+
+    def _capability_reload_blocks_connection(self) -> bool:
+        """Return whether a deferred entity reload owns the next disconnected state."""
+        link_is_up = self._client is not None and self._client.is_connected
+        return (
+            self._pending_capability_reload or self._capability_reload_scheduled
+        ) and not link_is_up
 
     def _apply_runtime_bed_type_correction(self, corrected_bed_type: str) -> bool:
         """Apply a protocol correction discovered after BLE service discovery."""
@@ -890,8 +981,12 @@ class AdjustableBedCoordinator:
         is_linak_performance = (
             bed_type == BED_TYPE_LINAK and self._protocol_variant == LINAK_VARIANT_PERFORMANCE
         )
+        statically_mintable = bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES and (
+            bed_type != BED_TYPE_SOLACE
+            or isinstance(self.entry.data.get(CONF_BLE_DEVICE_NAME), str)
+        )
         mintable = (
-            bed_type in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+            statically_mintable
             or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
             or (bed_type == BED_TYPE_LINAK and (linak_snapshot is not None or is_linak_performance))
         )
@@ -1524,6 +1619,12 @@ class AdjustableBedCoordinator:
         success while the link is still unbonded.
         """
         async with self._lock:
+            if self._capability_reload_blocks_connection():
+                _LOGGER.debug(
+                    "Deferring pairing for %s until its capability reload completes",
+                    self._address,
+                )
+                return False
             self._clear_ble_bond_established()
             self._skip_pair_next_attempt = False
             self._bond_probe_timed_out = False
@@ -2253,6 +2354,12 @@ class AdjustableBedCoordinator:
         self, reset_timer: bool = True
     ) -> bool:
         """Connect to the bed (must hold lock)."""
+        if self._capability_reload_blocks_connection():
+            _LOGGER.debug(
+                "Deferring connection to %s until its capability reload completes",
+                self._address,
+            )
+            return False
         # Clear any prior manual/idle disconnect marker before a fresh connect attempt.
         self._intentional_disconnect = False
 
@@ -2443,8 +2550,7 @@ class AdjustableBedCoordinator:
                     getattr(device, "details", "N/A"),
                 )
                 if device.name:
-                    self._ble_device_name = device.name
-                    self._observed_ble_device_name = device.name
+                    self._record_observed_ble_device_name(device.name)
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if device_source == self._preferred_adapter:
@@ -2496,8 +2602,7 @@ class AdjustableBedCoordinator:
                         svc_source = getattr(svc_info, "source", None)
                         if selected_source is None or svc_source == selected_source:
                             if svc_info.device.name:
-                                self._ble_device_name = svc_info.device.name
-                                self._observed_ble_device_name = svc_info.device.name
+                                self._record_observed_ble_device_name(svc_info.device.name)
                             _LOGGER.debug(
                                 "ble_device_callback returning device from %s (RSSI: %s, connectable=%s)",
                                 svc_source or "unknown",
@@ -2521,8 +2626,7 @@ class AdjustableBedCoordinator:
                     if fallback is None:
                         raise BleakError(f"Device {self._address} not found")
                     if fallback.name:
-                        self._ble_device_name = fallback.name
-                        self._observed_ble_device_name = fallback.name
+                        self._record_observed_ble_device_name(fallback.name)
                     if connectable is False:
                         _LOGGER.debug(
                             "ble_device_callback falling back to non-connectable record for %s",
@@ -3340,6 +3444,7 @@ class AdjustableBedCoordinator:
             self._max_retries,
             total_elapsed,
         )
+        self._schedule_pending_capability_reload()
         return False
 
     def _on_disconnect(self, client: BleakClient) -> None:
@@ -3390,6 +3495,7 @@ class AdjustableBedCoordinator:
             # Keep _position_data for last known state; entity availability handles offline
             # Flag is reset in _async_connect_locked when reconnecting
             self._notify_connection_state_change(False)
+            self._schedule_pending_capability_reload()
             return
 
         _LOGGER.warning(
@@ -3408,6 +3514,7 @@ class AdjustableBedCoordinator:
         self._cancel_disconnect_timer()
         self._notify_connection_state_change(False)
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
+        self._schedule_pending_capability_reload()
 
         if not self._auto_reconnect_enabled():
             _LOGGER.debug(
@@ -3807,6 +3914,8 @@ class AdjustableBedCoordinator:
 
     async def async_shutdown(self) -> None:
         """Stop background tasks and disconnect the coordinator."""
+        self._shutting_down = True
+        self._pending_capability_reload = False
         try:
             await self._async_cancel_position_hydration()
         finally:
@@ -4005,6 +4114,7 @@ class AdjustableBedCoordinator:
             # _on_disconnect, which may not fire after a clean disconnect).
             self._last_disconnected = datetime.now(UTC)
             self._notify_connection_state_change(False)
+        self._schedule_pending_capability_reload()
         return True
 
     def _reset_disconnect_timer(self) -> None:

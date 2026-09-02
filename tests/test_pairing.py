@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
+    CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_PAIR_CHILDREN,
@@ -234,6 +235,28 @@ class TestBuildPairEntryData:
         assert "ble_bond_context" not in restored
         assert "ble_bond_established" not in restored
         assert restored["name"] == "Left"
+
+    def test_a_split_keeps_the_ble_name_learned_while_paired(self):
+        original_data = {
+            "address": LEFT_ADDR,
+            "name": "Left",
+            "bed_type": "solace",
+            CONF_BLE_DEVICE_NAME: "QMS2",
+        }
+        data = build_pair_entry_data(
+            dict(original_data),
+            {"address": RIGHT_ADDR, "bed_type": "solace"},
+            name="Master",
+            left_origin_data=original_data,
+        )
+        left = get_child(data, SIDE_LEFT)
+        assert left is not None
+        child = dict(left)
+        child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+
+        restored = single_data_from_child(child)
+
+        assert restored[CONF_BLE_DEVICE_NAME] == "SealyMF Base"
 
 
 class TestBuildSingleAddressPairEntryData:

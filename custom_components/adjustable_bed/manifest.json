@@ -96,6 +96,84 @@
       "service_uuid": "0000ffe0-0000-1000-8000-00805f9b34fb"
     },
     {
+      "local_name": "QMS-IQ*"
+    },
+    {
+      "local_name": "qms-iq*"
+    },
+    {
+      "local_name": "QMS-I06*"
+    },
+    {
+      "local_name": "qms-i06*"
+    },
+    {
+      "local_name": "QMS-LQ*"
+    },
+    {
+      "local_name": "qms-lq*"
+    },
+    {
+      "local_name": "QMS-L04*"
+    },
+    {
+      "local_name": "qms-l04*"
+    },
+    {
+      "local_name": "QMS-JQ-D*"
+    },
+    {
+      "local_name": "qms-jq-d*"
+    },
+    {
+      "local_name": "QMS4*"
+    },
+    {
+      "local_name": "qms4*"
+    },
+    {
+      "local_name": "QMS-NQ*"
+    },
+    {
+      "local_name": "qms-nq*"
+    },
+    {
+      "local_name": "QMS3*"
+    },
+    {
+      "local_name": "qms3*"
+    },
+    {
+      "local_name": "QMS-MQ*"
+    },
+    {
+      "local_name": "qms-mq*"
+    },
+    {
+      "local_name": "QMS2*"
+    },
+    {
+      "local_name": "qms2*"
+    },
+    {
+      "local_name": "My QMS2*"
+    },
+    {
+      "local_name": "my qms2*"
+    },
+    {
+      "local_name": "SealyMF*"
+    },
+    {
+      "local_name": "sealymf*"
+    },
+    {
+      "local_name": "S4-Y-*"
+    },
+    {
+      "local_name": "s4-y-*"
+    },
+    {
       "service_uuid": "0000aa5c-0000-1000-8000-00805f9b34fb"
     },
     {

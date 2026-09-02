@@ -1,168 +1,145 @@
-# Solace
+# Solace / QMS 11-byte protocol
 
-**Status:** ❓ Needs testing
+**Static analysis:** Complete
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+**Hardware validation:** Partial (the legacy S4-Y motor layout is user-confirmed; accepted APK routes await post-release validation)
 
-## Known Models
-- Solace hospital/care beds
-- Sealy adjustable bases
-- Woosa Sleep adjustable bases
-- Some medical adjustable beds
-- QMS-series beds (QMS-IQ, QMS-I06, QMS-I16, QMS-I26, etc.)
-- S-series beds (S3-2, S3-3, S3-4, S4-N, S4-Y, S5-Y, S6-Y)
-- SealyMF beds
+This controller covers a family of beds that write fixed 11-byte frames to FFE1. The apps overlap, but do not expose one universal feature set. The integration therefore selects a conservative capability profile from the observed BLE name.
 
-## Apps
+## Evidence status
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | [Motion Bed](https://play.google.com/store/apps/details?id=com.sn.blackdianqi) | `com.sn.blackdianqi` |
-| ✅ | [Woosa Sleep](https://play.google.com/store/apps/details?id=com.sn.woosa) | `com.sn.woosa` |
+| App | Package and version | Phase 4 result |
+|---|---|---|
+| HomeKobo | `com.ly.homekobo` 1.4 | COMPLETE |
+| Sealy MotionFlex | `com.sealy.motionflex` 1.0.3 | COMPLETE |
+| Sweet Night | `com.sn.dianqi` 1.0.6 | COMPLETE, FULL comparison |
+| Motion Bed | `com.sn.blackdianqi` 1.24 | Pending |
+| Woosa Sleep | `com.sn.woosa` 1.1.6 | Pending |
 
-Both apps are by the same developer (Zhejiang Tri Mix Technology / `com.sn` prefix) and use the same protocol.
+The accepted reports prove application behavior exhaustively. Physical behavior that cannot be established statically remains explicitly hardware-unverified.
 
-## Features
+## Profile routing
 
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ (head, back, legs, lift, tilt) |
-| Hip Motor | ⚠️ Model-specific (not all beds have this) |
-| Position Feedback | ❌ |
-| Memory Presets | ✅ (5 slots) |
-| Zero-G / Anti-Snore / TV / Yoga | ✅ |
-| Massage | ✅ (zones + circulation modes + timers) |
-| Lights | ✅ (11 brightness levels + timers) |
+| Observed name | Motors | Accessories | Status query |
+|---|---|---|---|
+| `QMS-IQ`, `QMS-I06`, `QMS-LQ`, `QMS-L04`, `QMS-NQ`, `QMS3` | Back, head, legs, hip | Two memories, TV/zero-G/anti-snore, massage, massage cycles/timers, light timers | Q1 |
+| `QMS-JQ-D`, `QMS4` | Back, head, legs, lumbar | Two memories, TV/zero-G/anti-snore, massage/timers, light timers | Q1 (Q2 for compound Q2 names) |
+| `QMS2`, `QMS-MQ` | Back, legs | Two memories, TV/zero-G/anti-snore, light timers | Q2 |
+| `SealyMF*` | Back, legs | Two memories, TV/zero-G/anti-snore, light levels 0-10, light timers | Q2 |
+| Exact `S4-Y-<digits>-<id>` | Back, legs, bed height, tilt | Two memories, TV/zero-G/anti-snore, deployed legacy flat | None |
+| Any unidentified manual Solace route | Back, legs | No unverified presets or accessories | None |
 
-## Protocol Details
+`QMS2` and `QMS-MQ` deliberately use the common profile. HomeKobo and Sweet Night both route these names, but only HomeKobo exposes massage. The integration does not assume that optional hardware exists.
 
-**Service UUID:** `0000ffe0-0000-1000-8000-00805f9b34fb`
-**Characteristic UUID:** `0000ffe1-0000-1000-8000-00805f9b34fb`
-**Format:** 11-byte fixed packets with CRC-16 Modbus checksum (bytes 9-10, little-endian, computed over bytes 0-8)
+The exact S4-Y route preserves a real user's confirmed four-cover layout and the previously deployed legacy all-flat command. Auto-discovery is limited to names beginning with the accepted values in the table, plus the accepted `My QMS2` prefix. Broad `QMS*`, arbitrarily prefixed substring, and S3/S4/S5/S6 matching was removed because Home Assistant cannot safely index leading-wildcard discovery hints and the broader families include names sourced only from the still-pending Motion Bed APK. A name merely containing `solace` is not evidence and is not auto-detected. Existing manual entries with an unidentified name retain basic back/legs movement and STOP but do not receive guessed query, preset, massage, or lighting commands.
 
-## Detection
+## BLE session
 
-Device names starting with:
-- `QMS-` (QMS-IQ, QMS-I06, QMS-I16, QMS-L04, QMS-JQ-D, QMS-NQ, QMS-MQ, QMS-KQ-H, QMS-DFQ, QMS-DQ, etc.)
-- `QMS2`, `QMS3`, `QMS4`
-- `S3-`, `S4-`, `S5-`, `S6-`
-- `SealyMF`
+- Apps scan without a UUID filter and select devices by case-sensitive local-name substrings.
+- No fixed service UUID is required. Every discovered service is traversed.
+- Control and notifications use `0000ffe1-0000-1000-8000-00805f9b34fb`.
+- CCCD `00002902-0000-1000-8000-00805f9b34fb` is enabled with `01 00`.
+- There is no authentication, bonding requirement, MTU negotiation, encryption, retry loop, or protocol command queue in the accepted apps.
+- Accepted profiles subscribe to FFE1 even when angle sensing is disabled because preset and accessory state arrive there. The exact S4-Y legacy profile is excluded because no accepted query family applies to it.
 
-### Motor Commands
+## Packet format
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Head Up | `FF FF FF FF 05 00 00 00 01 16 C0` |
-| Head Down | `FF FF FF FF 05 00 00 00 02 56 C1` |
-| Back Up | `FF FF FF FF 05 00 00 00 03 97 01` |
-| Back Down | `FF FF FF FF 05 00 00 00 04 D6 C3` |
-| Legs Up | `FF FF FF FF 05 00 00 00 06 57 02` |
-| Legs Down | `FF FF FF FF 05 00 00 00 07 96 C2` |
-| Hip Up | `FF FF FF FF 05 00 00 00 0D 16 C5` |
-| Hip Down | `FF FF FF FF 05 00 00 00 0E 56 C4` |
-| Lift Up | `FF FF FF FF 05 00 00 00 21 17 18` |
-| Lift Down | `FF FF FF FF 05 00 00 00 22 57 19` |
-| Tilt Up | `FF FF FF FF 05 00 00 00 28 D7 1E` |
-| Tilt Down | `FF FF FF FF 05 00 00 00 29 16 DE` |
+Control frames are fixed 11-byte values:
+
+```text
+FF FF FF FF 05 00 00 <mode> <selector> <crc-low> <crc-high>
+```
+
+The checksum is CRC-16/MODBUS over bytes 0-8, initial value `0xFFFF`, reflected polynomial `0xA001`, low byte first. The accepted apps decode fixed hexadecimal strings rather than constructing these CRCs at runtime.
+
+The integration's accepted family command set is:
+
+| Action | Frame |
+|---|---|
 | Stop | `FF FF FF FF 05 00 00 00 00 D7 00` |
-
-### Preset Commands
-
-| Command | Bytes (hex) |
-|---------|-------------|
+| Back up/down | selector `03` / `04` |
+| Legs up/down | selector `06` / `07` |
 | Flat | `FF FF FF FF 05 00 00 00 08 D6 C6` |
-| All Flat | `FF FF FF FF 05 00 00 00 2A 56 DF` |
-| Zero-G | `FF FF FF FF 05 00 00 00 09 17 06` |
-| Anti-Snore | `FF FF FF FF 05 00 00 00 0F 97 04` |
 | TV | `FF FF FF FF 05 00 00 00 05 17 03` |
-| Yoga | `FF FF FF FF 05 00 00 00 4E 57 34` |
+| Zero-G | `FF FF FF FF 05 00 00 00 09 17 06` |
+| Anti-snore | `FF FF FF FF 05 00 00 00 0F 97 04` |
+| Memory 1 recall/save | mode `A1` / `A0`, selector `0A` |
+| Memory 2 recall/save | mode `B1` / `B0`, selector `0B` |
 
-### Memory Commands
+Sweet Night's shipped Memory 2 short-press path duplicates Memory 1. The
+distinct Memory 2 frame above is independently accepted from HomeKobo and
+MotionFlex; Sweet Night runtime validation remains explicitly requested.
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Memory 1 | `FF FF FF FF 05 00 00 A1 0A 2E 97` |
-| Memory 2 | `FF FF FF FF 05 00 00 B1 0B E2 97` |
-| Memory 3 | `FF FF FF FF 05 00 00 51 05 2A 93` |
-| Memory 4 | `FF FF FF FF 05 00 00 91 09 7A 96` |
-| Memory 5 | `FF FF FF FF 05 00 00 F1 0F D2 94` |
-| Save Memory 1 | `FF FF FF FF 05 00 00 A0 0A 2F 07` |
-| Save Memory 2 | `FF FF FF FF 05 00 00 B0 0B E3 07` |
-| Save Memory 3 | `FF FF FF FF 05 00 00 50 05 2B 03` |
-| Save Memory 4 | `FF FF FF FF 05 00 00 90 09 7B 06` |
-| Save Memory 5 | `FF FF FF FF 05 00 00 F0 0F D3 04` |
-| Delete Memory 1 | `FF FF FF FF 05 00 00 AF 0A 2A F7` |
-| Delete Memory 2 | `FF FF FF FF 05 00 00 BF 0B E6 F7` |
-| Delete Memory 3 | `FF FF FF FF 05 00 00 5F 05 2E F3` |
-| Delete Memory 4 | `FF FF FF FF 05 00 00 9F 09 7E F6` |
-| Delete Memory 5 | `FF FF FF FF 05 00 00 FF 0F D6 F4` |
+Flat and preset actions are single writes. The accepted apps do not send STOP or wait 200 ms before a preset. Movement sends one start frame and the global STOP on release. Home Assistant cover actions have no matching button-release event, so the integration retains a five-second integration safety cap and always sends STOP in cleanup; an explicit Stop cancels it immediately.
 
-### Massage Commands
+## Preset state
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Head Massage + | `FF FF FF FF 05 00 00 00 10 D6 CC` |
-| Head Massage - | `FF FF FF FF 05 00 00 00 11 17 0C` |
-| Foot Massage + | `FF FF FF FF 05 00 00 00 12 57 0D` |
-| Foot Massage - | `FF FF FF FF 05 00 00 00 13 96 CD` |
-| Frequency + | `FF FF FF FF 05 00 00 00 14 D7 0F` |
-| Frequency - | `FF FF FF FF 05 00 00 00 15 16 CF` |
-| Timer 10 min | `FF FF FF FF 05 00 00 00 16 56 CE` |
-| Timer 20 min | `FF FF FF FF 05 00 00 00 17 97 0E` |
-| Timer 30 min | `FF FF FF FF 05 00 00 00 18 D7 0A` |
-| Stop Massage | `FF FF FF FF 05 00 00 00 1C D6 C9` |
+Q1 and Q2 use different five-command query sets. Queries start after notification setup, then use the app-proven pacing. Responses are substring-matched by the accepted apps and identify selected state for memory 1, memory 2, TV, zero-G, and anti-snore. The integration records the same controller state for diagnostics without treating it as position feedback.
 
-### Circulation/Loop Modes
+There are two numbered memory slots. Historical “memory 3-5” frames are actually the selected/program branches for TV, zero-G, and anti-snore.
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Full Body | `FF FF FF FF 05 00 05 00 E4 C7 4A` |
-| Head | `FF FF FF FF 05 00 05 00 E3 86 88` |
-| Leg | `FF FF FF FF 05 00 05 00 E5 06 8A` |
-| Hip | `FF FF FF FF 05 00 05 00 E6 46 8B` |
+## Profile-specific features
 
-### Light Commands
+Home profiles prove head/upper (app label “Back Mass”), foot/lower (app label “Leg Mass”), and wave massage step controls, massage stop, 10/20/30-minute timers, and cycle modes. Opcode direction is:
 
-| Command | Bytes (hex) |
-|---------|-------------|
-| Light Level 0 (Off) | `FF FF FF FF 05 00 00 00 23 96 D9` |
-| Light Level 1 | `FF FF FF FF 05 00 00 01 23 97 49` |
-| Light Level 2 | `FF FF FF FF 05 00 00 02 23 97 B9` |
-| Light Level 3 | `FF FF FF FF 05 00 00 03 23 96 29` |
-| Light Level 4 | `FF FF FF FF 05 00 00 04 23 94 19` |
-| Light Level 5 | `FF FF FF FF 05 00 00 05 23 95 89` |
-| Light Level 6 | `FF FF FF FF 05 00 00 06 23 95 79` |
-| Light Level 7 | `FF FF FF FF 05 00 00 07 23 94 E9` |
-| Light Level 8 | `FF FF FF FF 05 00 00 08 23 91 19` |
-| Light Level 9 | `FF FF FF FF 05 00 00 09 23 90 89` |
-| Light Level 10 | `FF FF FF FF 05 00 00 0A 23 90 79` |
-| Light Timer 10 min | `FF FF FF FF 05 00 00 00 19 16 CA` |
-| Light Timer 8 hours | `FF FF FF FF 05 00 00 00 1A 56 CB` |
-| Light Timer 10 hours | `FF FF FF FF 05 00 00 00 1B 97 0B` |
-| Query Light Status | `FF FF FF FF 05 00 05 FF 23 C7 28` |
+- Wave minus `15`, plus `14`
+- Head/upper minus `11`, plus `10`
+- Foot/lower minus `13`, plus `12`
 
-## Command Timing
+The K1 fourth cycle zone is hip. K2 uses the same frame for lumbar, so the generic hip-labeled cycle button is withheld on K2 rather than mislabeled.
 
-From app disassembly analysis (Motion Bed):
+MotionFlex proves light brightness levels 0-10; level 0 is the accepted off command. HomeKobo and Sweet Night prove only the 10-minute, 8-hour, and 10-hour light timer frames, so brightness and an invented timer “Off” option are not exposed there.
 
-- **Motor Commands:** Single command per button press (controller latches state)
-- **Stop Required:** Yes, explicit stop command on button release
-- **No continuous sending** - the bed controller maintains motor movement until a stop command is received
+## Intentionally withheld behavior
 
-Unlike other protocols that send repeated commands while the button is held, Solace/Motion Bed motors are latched - send move command once, motor keeps running until stop command is received. The integration sends the move command, holds for 5 seconds, then sends stop. Pressing stop during movement interrupts immediately.
+These historical commands remain out of accepted profiles until their own APKs pass Phase 4:
 
-## Notes
+- Yoga selector `4E`
+- Legacy all-flat selector `2A` outside the exact S4-Y compatibility profile
+- Woosa absolute massage selectors `4F`-`56`
+- Woosa light-off selector `4B`
+- Five generic numbered memory slots
+- Broad S3/S4/S5/S6 detection
+- The historical STOP + 200 ms preset preamble
 
-### Woosa Sleep Dual-Device Detection
+## MotionFlex audio, clock, and alarm
 
-Woosa Sleep beds may advertise **two** BLE devices:
-- `QMS-MQ-*` — the actual bed controller (Solace protocol, use this one)
-- `ECBLE*` — a secondary BLE module (detected as Remacro, does not respond to bed commands)
+The MotionFlex profile exposes its relaxing-bedtime preset and music start/stop actions as buttons. The `adjustable_bed.solace_audio` service selects or previews tracks 1-5, queries the current volume, and sets volume levels 1-5. The `adjustable_bed.solace_set_alarm` service programs the enabled state, time, weekdays, bed action, massage flag, and alarm or music sound. These services reject non-MotionFlex targets.
 
-Connect to the QMS-MQ device. The ECBLE device is not the bed controller.
+On notification startup the controller first sends the app's local-time clock frame, then runs the Q2 preset queries and brightness query. MotionFlex brightness, audio-volume, and alarm replies are decoded into controller state.
 
-### Checksum Algorithm
+## MotionFlex discovery ledger
 
-All 11-byte commands (type `05`) use **CRC-16 Modbus** (polynomial 0xA001) computed over the first 9 bytes. The 2-byte checksum is stored in little-endian format as bytes 9-10.
+Every behavior reachable in the frozen MotionFlex report has one disposition below. Grouped rows cover commands or notifications that share one reachable surface and implementation path.
 
-Some auxiliary commands (sync, alarm — type `01`) use a simple byte-sum checksum instead.
+| Reachable discovery | Disposition | Integration reference |
+|---|---|---|
+| Accepted local-name prefix discovery, including `My QMS2`, and conservative profile routing | IMPLEMENTED | `manifest.json`, `detection.py`, and `resolve_solace_profile()` |
+| FFE1 connection, notification/CCCD setup, writes, clean disconnect, and the absence of authentication or bonding | ALREADY_IMPLEMENTED | Coordinator BLE lifecycle plus `SolaceController` transport tests |
+| Fixed CRC frames and additive-checksum variable frames | IMPLEMENTED | `SolaceCommands`, `_with_additive_checksum()`, and artifact-vector tests |
+| Back/legs movement with STOP cleanup | ALREADY_IMPLEMENTED | Solace movement methods and cancellation tests |
+| Flat, relaxing-bedtime, memory, TV, zero-G, and anti-snore actions | IMPLEMENTED | Preset buttons/methods and Solace command tests |
+| Five startup preset queries and selected-state notification parsing | ALREADY_IMPLEMENTED | `_async_query_preset_states()` and notification tests |
+| Music start/stop, track selection, previews, volume query/set, and volume reply | IMPLEMENTED | Music buttons, `solace_audio`, audio-volume sensor, and service-to-entity test |
+| Startup local-time clock synchronization | IMPLEMENTED | `build_solace_clock_command()` and startup-query tests |
+| Alarm programming and alarm/audio-availability replies | IMPLEMENTED | `solace_set_alarm`, `build_solace_alarm_command()`, and parser tests |
+| Brightness writes 0-10, brightness query/reply, and three timer toggles | IMPLEMENTED | Solace light, number, and select entities plus command, parser, and entity-state tests |
+| Model-setting identifiers whose predicate has no visible effect | EXCLUDED | Reachable app settings are behaviorally inert, so there is no state or command to reproduce |
+| Sync notifications with empty EventBus consumers | EXCLUDED | The app records a switch, but no reachable behavior consumes or changes it |
+| Arbitrarily prefixed or broad case-sensitive `QMS` substring discovery | EXCLUDED | Home Assistant rejects leading-wildcard discovery hints as too broad; accepted prefixes remain reachable, while auto-configuring unknown FFE1 families would be unsafe |
+| Initial FFE1 write without an initialized application value | EXCLUDED | The artifact does not assign command bytes before this write, so reproducing an unknown cached characteristic value would be nondeterministic and unsafe |
+| Reads of every GATT descriptor and their passive callbacks | EXCLUDED | The app has no consumer for the returned values; Home Assistant's Bluetooth stack owns the CCCD operation needed for notifications |
+
+Ledger totals: **IMPLEMENTED 7, ALREADY_IMPLEMENTED 3, EXCLUDED 5**.
+
+Dead or unreachable artifact code is outside the reachable ledger: the hidden massage and fault surfaces, characteristic reads, RSSI reads, reliable writes, and the unused advertisement parser are not exposed by the MotionFlex application.
+
+## Validation requests
+
+After beta or release, useful captures are:
+
+1. One movement start and STOP for each active profile.
+2. All five startup status replies.
+3. Flat and one named preset per profile.
+4. The Sweet Night Memory 2 short-press behavior, whose shipped app duplicates Memory 1.
+5. Runtime FFE1 properties/write type on each controller family.

@@ -1198,10 +1198,12 @@ class TestDetectBedType:
         bed_type = detect_bed_type(mock_bluetooth_service_info_octo_rc2)
         assert bed_type == BED_TYPE_OCTO
 
-    def test_detect_solace_bed(self, mock_bluetooth_service_info_solace):
-        """Test detection of Solace bed by name containing 'solace'."""
-        bed_type = detect_bed_type(mock_bluetooth_service_info_solace)
-        assert bed_type == BED_TYPE_SOLACE
+    def test_unproven_solace_name_defaults_to_octo(
+        self, mock_bluetooth_service_info_unproven_solace_name
+    ):
+        """Do not treat an unproven marketing-name substring as protocol evidence."""
+        bed_type = detect_bed_type(mock_bluetooth_service_info_unproven_solace_name)
+        assert bed_type == BED_TYPE_OCTO
 
     def test_detect_solace_bed_pattern(self, mock_bluetooth_service_info_solace_pattern):
         """Test detection of Solace bed by naming pattern like S4-Y-192-461000AD."""

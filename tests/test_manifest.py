@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 from homeassistant.components.bluetooth.match import IntegrationMatcher
@@ -29,6 +30,20 @@ def test_manifest_bluetooth_matchers_are_accepted_by_home_assistant() -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     IntegrationMatcher(manifest["bluetooth"]).async_setup()
+
+
+def test_manifest_discovers_supported_prefixed_qms2_name() -> None:
+    """The detector-supported prefixed name must pass the discovery gate."""
+    manifest_path = (
+        Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert any(
+        fnmatchcase("My QMS2 Base", entry["local_name"])
+        for entry in manifest["bluetooth"]
+        if "local_name" in entry
+    )
 
 
 def test_manifest_discovers_okin_receiver_name_only_advertisements() -> None:

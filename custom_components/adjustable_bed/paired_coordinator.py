@@ -176,6 +176,19 @@ class PairedBedCoordinator:
     def child_for_side(self, side: str) -> AdjustableBedCoordinator | None:
         return self._children.get(side)
 
+    @contextlib.asynccontextmanager
+    async def async_capability_reload_guard(self) -> AsyncIterator[None]:
+        """Wait for every side to become idle before reloading the pair."""
+        targets = list(self._children.items())
+        async with contextlib.AsyncExitStack() as stack:
+            if self._connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL:
+                await stack.enter_async_context(self._pair_command_lock)
+            else:
+                await stack.enter_async_context(self._locked_target_sides(targets))
+            for _, child in targets:
+                await stack.enter_async_context(child.async_command_operation_guard())
+            yield
+
     async def async_remove_child(self, side: str) -> None:
         """Drop a side whose standalone entry could not be absorbed safely."""
         child = self._children.pop(side, None)

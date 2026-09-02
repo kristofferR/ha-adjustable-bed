@@ -9,7 +9,7 @@ This document provides an overview of supported bed brands. Click on a brand nam
 | [Richmat](beds/richmat.md) | ✅ Supported | 1-5 memory presets, massage (discrete), RGB lights + timer, sync mode, motors 5-7 |
 | [MotoSleep](beds/motosleep.md) | ✅ Supported | 2 memory presets, massage, lights, Zero-G |
 | [Octo](beds/octo.md) | ✅ Supported | Two protocol variants, optional PIN auth, RGBW lights. Sold as bett1.de, Dunlopillo, Hüsler Nest, Swiss Sense, Velda, Werkmeister, sleepling and more ([known brand list](beds/octo.md#bed-brands-that-ship-octo-actuators)) |
-| [Solace](beds/solace.md) | ✅ Supported | 5 memory presets, lift/tilt, Zero-G, massage (zones + timers), lights (11 levels) |
+| [Solace](beds/solace.md) | ✅ Supported | Name-based profiles, 2 memories, named presets, optional massage/lights, exact S4-Y lift/tilt |
 | [Leggett & Platt](beds/leggett-platt.md) | ✅ Supported | Gen2: motor control + RGB lighting; Okin: tilt/lumbar, massage |
 | [Reverie](beds/reverie.md) | ✅ Supported | Position control (0-100%), 4 presets, wave massage |
 | [Okimat/Okin](beds/okimat.md) | ✅ Supported | 4 memory presets, massage, lights (requires pairing) |
@@ -126,7 +126,7 @@ These beds have their own dedicated integrations:
 2. **Check the remote or controller** for brand markings.
 
 3. **Look at the device name** (shown during manual setup or in diagnostics):
-   - `QMS-*`, `QMS2*`, `QMS3*`, `QMS4*`, `S3-*`, `S4-*`, `S5-*`, `S6-*`, `SealyMF*` → Solace (Woosa Sleep, Sealy, QMS beds)
+   - A name beginning with accepted `QMS-IQ`, `QMS-I06`, `QMS-LQ`, `QMS-L04`, `QMS-JQ-D`, `QMS4`, `QMS-NQ`, `QMS3`, `QMS-MQ`, `QMS2`, `My QMS2`, `SealyMF`, or exact `S4-Y-<digits>-<id>` → Solace/QMS 11-byte family
    - `HHC*` → MotoSleep
    - `DPG*` or `Desk*` → Linak
    - `Mouselet*` → Kaidi
@@ -170,7 +170,7 @@ These beds have their own dedicated integrations:
    - Service `6e400001-...` + name `AHF*` → TiMOTION AHF
    - Service `0000fee9-...` → Richmat WiLinke or BedTech
    - Service `00001525-...` → Vibradorm
-   - Service `0000ffe0-...` + name `QMS-*` or `S3-*` etc. → Solace (Woosa Sleep, Sealy, QMS)
+   - A name beginning with an accepted QMS or SealyMF prefix listed above, or exact `S4-Y-<digits>-<id>` → Solace/QMS; accepted apps discover FFE1 dynamically and do not require advertised FFE0
    - Service `6e403587-...` → Remacro
    - Service `09d23fae-...` → [Sleep Number](beds/sleep_number.md) (Climate 360 / FlexFit, Fuzion)
    - Service `ffffd1fd-...` → [Sleep Number](beds/sleep_number.md) (i8 / 360 FlexFit 2, BAM/MCR)

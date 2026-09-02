@@ -174,6 +174,8 @@ export function bedEntitiesForDevice(
           key === "sync_positions" ||
           key === "child_lock_toggle" ||
           key === "auxiliary_action" ||
+          key === "solace_music_toggle" ||
+          key === "solace_music_off" ||
           key === "wake_controller" ||
           key === "reset_defaults" ||
           key === "factory_reset"
